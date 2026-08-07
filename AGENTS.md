@@ -77,6 +77,8 @@ Four facts that matter more than the rest:
 - iteration over unordered `set`/`dict` where the order can affect game state
 - threading or async that touches game state
 
+The engine has been audited against all four — see [docs/determinism-audit.md](docs/determinism-audit.md) for what was found, which environment variables the harness must pin, and which sets are already known to be harmless. Check there before re-deriving anything. The verification harness lives in `tools/determinism/`; run `python -m tools.determinism.check_runs` after any change to a gameplay path.
+
 **The corpus is immutable once frozen.** Changing engine behavior after the corpus is generated invalidates it. If a change is genuinely required, that is a decision to raise, not to make silently.
 
 ## Security
