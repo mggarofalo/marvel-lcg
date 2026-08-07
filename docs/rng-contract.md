@@ -178,6 +178,15 @@ Three properties worth stating because they are easy to get wrong:
   that peeks or reuses it produces a different stream.
 - **Powers of two are not special-cased either.** They simply never reject.
 
+> **`n` does not fit in 32 bits.** The upper bound is `2**32`, which is one
+> more than `uint.MaxValue`. Take `n` as a **64-bit** value — `ulong` or `long`
+> in C#, not `uint`. A `uint` parameter wraps `n = 2**32` to `0`; `mask`
+> coincidentally still comes out `0xFFFFFFFF`, but `value < n` becomes
+> `value < 0`, which is never true on an unsigned type, and the loop **spins
+> forever**. `datasets/rng/vectors.json` covers `n = 2**32`, so this fails the
+> acceptance fixture by hanging rather than by returning a wrong answer.
+> The comparison and the mask stay 32-bit; only the parameter widens.
+
 Rejected as alternatives: Lemire multiply-shift (fewer draws, but the
 consumption pattern is harder to specify unambiguously across languages), and
 modulo (biased).
@@ -232,6 +241,13 @@ the front. They are different functions and the difference is observable.
 
 For `k = 1` this reduces to exactly `Choice`: same result, same one draw. So
 the two are consistent and neither needs to special-case the other.
+
+**Range and errors.** `k` must satisfy `0 <= k <= len(sequence)`. `k = 0`
+returns an empty list and consumes nothing. Anything outside that range is an
+error and must be rejected, not clamped — the Python raises `ValueError`. The
+fixture cannot check this for you (it only records successful calls), so it is
+stated here instead: an implementation that silently clamps `k` would pass
+every vector and then quietly produce the wrong number of targets in a game.
 
 **The engine layer adds one short-circuit**, described in section 6.
 
@@ -333,7 +349,8 @@ intentional.
 ## 10. Notes for the C# implementer
 
 - Use `uint` for the state and all intermediates. The masks in section 1 become
-  no-ops; keep the shifts exactly as written.
+  no-ops; keep the shifts exactly as written. **The one exception is
+  `NextBelow`'s `n`**, which must be 64-bit — see the box in section 2.
 - `>>` on `uint` in C# is a logical shift, which is what this contract means
   everywhere. Do not use `int` — its `>>` is arithmetic and will differ on the
   high bit.

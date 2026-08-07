@@ -35,22 +35,32 @@ SEEDS = [0, 1, 42, 12345, 20260807]
 
 
 class Counting:
-    """Wraps the generator to count raw words, so vectors can pin consumption."""
+    """Counts raw words, so vectors can pin consumption.
+
+    A context manager because `Random.rand` is a long-lived shared instance:
+    left installed, each wrapper would nest inside the last.
+    """
 
     def __init__(self, rng: Any) -> None:
         self.rng = rng
         self.words = 0
-        original = rng.NextUInt32
+        self.original = rng.NextUInt32
 
         def Counted() -> int:
             self.words += 1
-            return original()
+            return self.original()
 
         rng.NextUInt32 = Counted  # type: ignore[method-assign]
 
     def Reset(self) -> int:
         used, self.words = self.words, 0
         return used
+
+    def __enter__(self) -> 'Counting':
+        return self
+
+    def __exit__(self, *_: Any) -> None:
+        self.rng.NextUInt32 = self.original
 
 
 def _new(seed: int) -> Any:
@@ -94,15 +104,15 @@ def _next_below() -> List[Dict[str, Any]]:
     for n in [1, 2, 3, 52, 256, 1000, 2**32]:
         for seed in [42, 20260807]:
             rng = _new(seed)
-            counting = Counting(rng)
-            expect = [rng.NextBelow(n) for _ in range(10)]
-            cases.append({
-                "seed": seed,
-                "n": n,
-                "count": 10,
-                "expect": expect,
-                "words_consumed": counting.Reset(),
-            })
+            with Counting(rng) as counting:
+                expect = [rng.NextBelow(n) for _ in range(10)]
+                cases.append({
+                    "seed": seed,
+                    "n": n,
+                    "count": 10,
+                    "expect": expect,
+                    "words_consumed": counting.Reset(),
+                })
     return cases
 
 
@@ -111,15 +121,15 @@ def _shuffle() -> List[Dict[str, Any]]:
     for length in [0, 1, 2, 5, 52]:
         for seed in [1, 42]:
             rng = _new(seed)
-            counting = Counting(rng)
-            items = _sequence(length)
-            rng.Shuffle(items)
-            cases.append({
-                "seed": seed,
-                "length": length,
-                "expect": items,
-                "words_consumed": counting.Reset(),
-            })
+            with Counting(rng) as counting:
+                items = _sequence(length)
+                rng.Shuffle(items)
+                cases.append({
+                    "seed": seed,
+                    "length": length,
+                    "expect": items,
+                    "words_consumed": counting.Reset(),
+                })
     return cases
 
 
@@ -143,15 +153,15 @@ def _choose_without_replacement() -> List[Dict[str, Any]]:
     for length, k in [(1, 0), (1, 1), (9, 4), (20, 3), (20, 20), (52, 7)]:
         for seed in [7, 42]:
             rng = _new(seed)
-            counting = Counting(rng)
-            expect = rng.ChooseWithoutReplacement(_sequence(length), k)
-            cases.append({
-                "seed": seed,
-                "length": length,
-                "k": k,
-                "expect": expect,
-                "words_consumed": counting.Reset(),
-            })
+            with Counting(rng) as counting:
+                expect = rng.ChooseWithoutReplacement(_sequence(length), k)
+                cases.append({
+                    "seed": seed,
+                    "length": length,
+                    "k": k,
+                    "expect": expect,
+                    "words_consumed": counting.Reset(),
+                })
     return cases
 
 
@@ -167,49 +177,49 @@ def _engine_choice2() -> List[Dict[str, Any]]:
     cases = []
     for length, x in [(4, 4), (4, 0), (4, 1), (4, 3), (1, 1)]:
         Random.SetSeed(99)
-        counting = Counting(Random.rand)
-        expect = Random.RandomChoice2(_sequence(length), x)
-        cases.append({
-            "seed": 99,
-            "length": length,
-            "x": x,
-            "expect": expect,
-            "words_consumed": counting.Reset(),
-        })
+        with Counting(Random.rand) as counting:
+            expect = Random.RandomChoice2(_sequence(length), x)
+            cases.append({
+                "seed": 99,
+                "length": length,
+                "x": x,
+                "expect": expect,
+                "words_consumed": counting.Reset(),
+            })
     return cases
 
 
 def _mixed() -> Dict[str, Any]:
     seed = 20260807
     rng = _new(seed)
-    counting = Counting(rng)
     steps: List[Dict[str, Any]] = []
 
-    def Step(entry: Dict[str, Any]) -> None:
-        entry["words_consumed"] = counting.Reset()
-        steps.append(entry)
+    with Counting(rng) as counting:
+        def Step(entry: Dict[str, Any]) -> None:
+            entry["words_consumed"] = counting.Reset()
+            steps.append(entry)
 
-    Step({"op": "next_uint32", "result": rng.NextUInt32()})
-    Step({"op": "next_below", "n": 6, "result": rng.NextBelow(6)})
+        Step({"op": "next_uint32", "result": rng.NextUInt32()})
+        Step({"op": "next_below", "n": 6, "result": rng.NextBelow(6)})
 
-    items = _sequence(5)
-    rng.Shuffle(items)
-    Step({"op": "shuffle", "length": 5, "result": items})
+        items = _sequence(5)
+        rng.Shuffle(items)
+        Step({"op": "shuffle", "length": 5, "result": items})
 
-    Step({"op": "choice", "length": 7, "result": rng.Choice(_sequence(7))})
-    Step({
-        "op": "choose_without_replacement", "length": 9, "k": 4,
-        "result": rng.ChooseWithoutReplacement(_sequence(9), 4),
-    })
-    Step({"op": "next_below", "n": 3, "result": rng.NextBelow(3)})
+        Step({"op": "choice", "length": 7, "result": rng.Choice(_sequence(7))})
+        Step({
+            "op": "choose_without_replacement", "length": 9, "k": 4,
+            "result": rng.ChooseWithoutReplacement(_sequence(9), 4),
+        })
+        Step({"op": "next_below", "n": 3, "result": rng.NextBelow(3)})
 
-    items = _sequence(13)
-    rng.Shuffle(items)
-    Step({"op": "shuffle", "length": 13, "result": items})
+        items = _sequence(13)
+        rng.Shuffle(items)
+        Step({"op": "shuffle", "length": 13, "result": items})
 
-    # A raw word at the end: if any step above consumed the wrong number of
-    # words, this is what disagrees even when every result above matched.
-    Step({"op": "next_uint32", "result": rng.NextUInt32()})
+        # A raw word at the end: if any step above consumed the wrong number of
+        # words, this is what disagrees even when every result above matched.
+        Step({"op": "next_uint32", "result": rng.NextUInt32()})
 
     return {"seed": seed, "steps": steps}
 
@@ -271,3 +281,4 @@ def main(argv: List[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

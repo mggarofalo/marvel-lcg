@@ -34,15 +34,20 @@ def LoadVectors():
 
 
 class WordCounter:
-    """Counts raw 32-bit draws, so tests can pin stream consumption."""
+    """Counts raw 32-bit draws, so tests can pin stream consumption.
+
+    Restores the original on exit. `Random.rand` is a long-lived shared
+    instance, so a counter left installed would nest inside the next one.
+    """
 
     def __init__(self, rng):
+        self.rng = rng
         self.words = 0
-        original = rng.NextUInt32
+        self.original = rng.NextUInt32
 
         def Counted():
             self.words += 1
-            return original()
+            return self.original()
 
         rng.NextUInt32 = Counted
 
@@ -50,12 +55,30 @@ class WordCounter:
         used, self.words = self.words, 0
         return used
 
+    def Restore(self):
+        self.rng.NextUInt32 = self.original
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.Restore()
+
 
 def Sequence(length):
     return list(range(length))
 
 
-class TestPublishedKnownAnswers(unittest.TestCase):
+class RngTestCase(unittest.TestCase):
+
+    def Counter(self, rng):
+        """A word counter that uninstalls itself when the test finishes."""
+        counter = WordCounter(rng)
+        self.addCleanup(counter.Restore)
+        return counter
+
+
+class TestPublishedKnownAnswers(RngTestCase):
     """External truth: these values do not come from this repository."""
 
     def test_the_reference_seed_matches_the_published_stream(self):
@@ -88,7 +111,7 @@ class TestPublishedKnownAnswers(unittest.TestCase):
         self.assertEqual(rng.NextUInt32(), 1791095845)
 
 
-class TestBoundedIntegers(unittest.TestCase):
+class TestBoundedIntegers(RngTestCase):
 
     def test_results_stay_in_range(self):
         rng = Mt19937(42)
@@ -102,14 +125,14 @@ class TestBoundedIntegers(unittest.TestCase):
         # Not special-cased: short-circuiting would move the stream for every
         # draw after it. See `docs/rng-contract.md` section 2.
         rng = Mt19937(42)
-        counter = WordCounter(rng)
+        counter = self.Counter(rng)
 
         self.assertEqual(rng.NextBelow(1), 0)
         self.assertEqual(counter.Reset(), 1)
 
     def test_powers_of_two_never_reject(self):
         rng = Mt19937(42)
-        counter = WordCounter(rng)
+        counter = self.Counter(rng)
 
         for _ in range(50):
             rng.NextBelow(256)
@@ -121,7 +144,7 @@ class TestBoundedIntegers(unittest.TestCase):
         # The next result must come from a fresh word, never from the rejected
         # one shifted or reused.
         rng = Mt19937(20260807)
-        counter = WordCounter(rng)
+        counter = self.Counter(rng)
         results = [rng.NextBelow(3) for _ in range(100)]
 
         self.assertTrue(all(0 <= value < 3 for value in results))
@@ -142,7 +165,7 @@ class TestBoundedIntegers(unittest.TestCase):
             rng.NextBelow(2**32 + 1)
 
 
-class TestShuffle(unittest.TestCase):
+class TestShuffle(RngTestCase):
 
     def test_the_result_is_a_permutation(self):
         rng = Mt19937(42)
@@ -153,7 +176,7 @@ class TestShuffle(unittest.TestCase):
 
     def test_it_consumes_one_draw_per_element_after_the_first(self):
         rng = Mt19937(42)
-        counter = WordCounter(rng)
+        counter = self.Counter(rng)
         rng.Shuffle(Sequence(10))
 
         # Nine draws, plus whatever rejection costs on this seed.
@@ -161,7 +184,7 @@ class TestShuffle(unittest.TestCase):
 
     def test_short_lists_consume_nothing(self):
         rng = Mt19937(42)
-        counter = WordCounter(rng)
+        counter = self.Counter(rng)
 
         rng.Shuffle([])
         rng.Shuffle([7])
@@ -185,7 +208,7 @@ class TestShuffle(unittest.TestCase):
         self.assertEqual(items, expected)
 
 
-class TestChoice(unittest.TestCase):
+class TestChoice(RngTestCase):
 
     def test_choice_returns_a_member(self):
         rng = Mt19937(42)
@@ -210,12 +233,12 @@ class TestChoice(unittest.TestCase):
         # The contract says these coincide, so neither has to special-case the
         # other. Same element and same consumption, from the same seed.
         one = Mt19937(42)
-        one_counter = WordCounter(one)
+        one_counter = self.Counter(one)
         picked = one.ChooseWithoutReplacement(Sequence(30), 1)
         one_words = one_counter.Reset()
 
         other = Mt19937(42)
-        other_counter = WordCounter(other)
+        other_counter = self.Counter(other)
         chosen = other.Choice(Sequence(30))
 
         self.assertEqual(picked, [chosen])
@@ -223,7 +246,7 @@ class TestChoice(unittest.TestCase):
 
     def test_choosing_none_consumes_nothing(self):
         rng = Mt19937(42)
-        counter = WordCounter(rng)
+        counter = self.Counter(rng)
 
         self.assertEqual(rng.ChooseWithoutReplacement(Sequence(9), 0), [])
         self.assertEqual(counter.Reset(), 0)
@@ -237,14 +260,14 @@ class TestChoice(unittest.TestCase):
             rng.ChooseWithoutReplacement(Sequence(3), -1)
 
 
-class TestTheEngineFacade(unittest.TestCase):
+class TestTheEngineFacade(RngTestCase):
 
     def test_choosing_every_element_consumes_no_randomness(self):
         # `docs/rng-contract.md` section 6. Selecting all of them is not a
         # random choice, so it returns input order and does not move the
         # stream. C# has to reproduce this, so it is pinned here too.
         Random.SetSeed(99)
-        counter = WordCounter(Random.rand)
+        counter = self.Counter(Random.rand)
 
         result = Random.RandomChoice2(Sequence(4), 4)
 
@@ -253,7 +276,7 @@ class TestTheEngineFacade(unittest.TestCase):
 
     def test_choosing_some_elements_does_move_the_stream(self):
         Random.SetSeed(99)
-        counter = WordCounter(Random.rand)
+        counter = self.Counter(Random.rand)
 
         Random.RandomChoice2(Sequence(4), 3)
 
@@ -276,7 +299,7 @@ class TestTheEngineFacade(unittest.TestCase):
         self.assertNotIn("numpy", module.__dict__)
 
 
-class TestState(unittest.TestCase):
+class TestState(RngTestCase):
 
     def test_a_restored_state_reproduces_the_stream(self):
         rng = Mt19937(42)
@@ -308,7 +331,7 @@ class TestState(unittest.TestCase):
             rng.SetState(([0] * N, N + 5))
 
 
-class TestUndo(unittest.TestCase):
+class TestUndo(RngTestCase):
 
     def test_undo_rewinds_the_most_recent_draw(self):
         rng = Mt19937(42)
@@ -344,7 +367,7 @@ class TestUndo(unittest.TestCase):
             rng.Undo()
 
 
-class TestTheCrossLanguageFixture(unittest.TestCase):
+class TestTheCrossLanguageFixture(RngTestCase):
     """Replay `datasets/rng/vectors.json`, the MARVEL-8 acceptance fixture."""
 
     @classmethod
@@ -364,7 +387,7 @@ class TestTheCrossLanguageFixture(unittest.TestCase):
         for case in self.vectors["cases"]["next_below"]:
             with self.subTest(seed=case["seed"], n=case["n"]):
                 rng = Mt19937(case["seed"])
-                counter = WordCounter(rng)
+                counter = self.Counter(rng)
                 actual = [rng.NextBelow(case["n"]) for _ in range(case["count"])]
                 self.assertEqual(actual, case["expect"])
                 self.assertEqual(counter.Reset(), case["words_consumed"])
@@ -373,7 +396,7 @@ class TestTheCrossLanguageFixture(unittest.TestCase):
         for case in self.vectors["cases"]["shuffle"]:
             with self.subTest(seed=case["seed"], length=case["length"]):
                 rng = Mt19937(case["seed"])
-                counter = WordCounter(rng)
+                counter = self.Counter(rng)
                 items = Sequence(case["length"])
                 rng.Shuffle(items)
                 self.assertEqual(items, case["expect"])
@@ -391,7 +414,7 @@ class TestTheCrossLanguageFixture(unittest.TestCase):
         for case in self.vectors["cases"]["choose_without_replacement"]:
             with self.subTest(seed=case["seed"], length=case["length"], k=case["k"]):
                 rng = Mt19937(case["seed"])
-                counter = WordCounter(rng)
+                counter = self.Counter(rng)
                 actual = rng.ChooseWithoutReplacement(Sequence(case["length"]), case["k"])
                 self.assertEqual(actual, case["expect"])
                 self.assertEqual(counter.Reset(), case["words_consumed"])
@@ -400,7 +423,7 @@ class TestTheCrossLanguageFixture(unittest.TestCase):
         for case in self.vectors["cases"]["engine_choice2"]:
             with self.subTest(length=case["length"], x=case["x"]):
                 Random.SetSeed(case["seed"])
-                counter = WordCounter(Random.rand)
+                counter = self.Counter(Random.rand)
                 actual = Random.RandomChoice2(Sequence(case["length"]), case["x"])
                 self.assertEqual(actual, case["expect"])
                 self.assertEqual(counter.Reset(), case["words_consumed"])
@@ -410,7 +433,7 @@ class TestTheCrossLanguageFixture(unittest.TestCase):
         # vectors would each pass through.
         mixed = self.vectors["cases"]["mixed"]
         rng = Mt19937(mixed["seed"])
-        counter = WordCounter(rng)
+        counter = self.Counter(rng)
 
         for index, step in enumerate(mixed["steps"]):
             with self.subTest(step=index, op=step["op"]):
@@ -448,3 +471,5 @@ class TestTheCrossLanguageFixture(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

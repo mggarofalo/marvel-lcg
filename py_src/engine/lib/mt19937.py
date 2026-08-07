@@ -104,6 +104,10 @@ class Mt19937:
 
     def Shuffle(self, items: List[T]) -> None:
         """Fisher-Yates, downward, in place. `len - 1` draws."""
+        if len(items) < 2:
+            # No draw, so nothing to rewind to. Recording one anyway would
+            # spend a slot in the bounded ring on a call that did nothing.
+            return
         self.PushState()
         for i in range(len(items) - 1, 0, -1):
             j = self.NextBelow(i + 1)
@@ -126,6 +130,8 @@ class Mt19937:
             raise ValueError(f"k cannot be negative, got {k}")
         if k > len(sequence):
             raise ValueError(f"k cannot exceed the sequence length, got {k} of {len(sequence)}")
+        if k == 0:
+            return []
 
         self.PushState()
         pool = list(sequence)
