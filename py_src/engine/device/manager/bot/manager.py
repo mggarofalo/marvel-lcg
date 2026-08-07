@@ -72,6 +72,7 @@ class BotDeviceManager(DeviceManager):
         self.stopped_on_max_steps = False
         self.attempt_key = (-1, -1)
         self.attempt = 0
+        self.fabricated_inputs_since_game = 0
         self.policy.OnGameStart(seed)
 
     ################################################################################

@@ -15,6 +15,7 @@ See MARVEL-32 and `docs/determinism-audit.md` (F1).
 """
 
 import unittest
+from unittest import mock
 
 # The `game.*` packages import each other circularly and only resolve once the
 # `engine` package has been imported.
@@ -69,9 +70,11 @@ class FakeTimer:
 
 
 class FakeDeviceManager:
-    def __init__(self, max_timeout=0, policy_name="first"):
+    def __init__(self, max_timeout=0, policy_name="first", fabricated=0):
         self.timer = FakeTimer(max_timeout)
         self.policy = type("Policy", (), {"name": policy_name})()
+        self.fabricated_inputs_since_game = fabricated
+        self.fabricated_inputs_total = fabricated
 
 
 class TestTimeoutIsNotSilent(unittest.TestCase):
@@ -86,24 +89,35 @@ class TestTimeoutIsNotSilent(unittest.TestCase):
         self.assertEqual(result, "{}")
         self.assertEqual(manager.timed_out_for, [0])
 
+    def test_a_timed_out_wait_is_counted_as_well_as_reported(self):
+        # The hook can be swallowed by a handler protecting against something
+        # else; a counter cannot. See `Log.OnCrash` and MARVEL-32.
+        manager = RecordingDeviceManager()
+        manager.timer.UpdateMaxTimeout(0.05)
+
+        manager.DoGetInput(MakePayload(), 0, lambda: False)
+
+        self.assertEqual(manager.fabricated_inputs_since_game, 1)
+        self.assertEqual(manager.fabricated_inputs_total, 1)
+
     def test_an_answered_wait_reports_nothing(self):
         manager = RecordingDeviceManager()
         manager.timer.UpdateMaxTimeout(0.05)
 
-        answered = []
+        def Answer():
+            # `BotDevice.IsInputReady` and `KeyInput.IsInputReady` both answer
+            # through `WhenInput` and return True in the same call, so the
+            # predicate resolves on its first evaluation and the wait never
+            # blocks. Mirror that, or the test passes on the timeout path it is
+            # supposed to be distinguishing itself from.
+            manager.WhenInput('{"id": 7}', 0)
+            return True
 
-        def AnswerOnFirstCheck():
-            # `WhenInput` is the same entry point the web server calls when a
-            # browser posts its selection, and the bot device calls from here.
-            if not answered:
-                answered.append(True)
-                manager.WhenInput('{"id": 7}', 0)
-            return False
-
-        result = manager.DoGetInput(MakePayload(), 0, AnswerOnFirstCheck)
+        result = manager.DoGetInput(MakePayload(), 0, Answer)
 
         self.assertEqual(result, '{"id": 7}')
         self.assertEqual(manager.timed_out_for, [])
+        self.assertEqual(manager.fabricated_inputs_total, 0)
 
     def test_the_bot_refuses_to_fabricate(self):
         # Constructing a `BotDeviceManager` builds a policy from config; the
@@ -112,6 +126,52 @@ class TestTimeoutIsNotSilent(unittest.TestCase):
 
         with self.assertRaises(FabricatedInputError):
             BotDeviceManager.OnInputTimedOut(stub, 0)
+
+
+class TestTheRefusalSurvivesTheEnginesCatchAlls(unittest.TestCase):
+    """`ChoiceOne` runs under handlers that absorb exceptions by design.
+
+    `EffectInvoker.ResolveSelfInternal`, `Message2.Send`, the cost and target
+    checkers and `Engine.EngineRun` all catch broadly so that one broken card
+    does not end the game, and every one of them reports through
+    `Log.OnCrash`. `Log.OnCrash` re-raises only when `Build.release` is false,
+    and `build.py` hardcodes it true -- so before MARVEL-32 the refusal was
+    raised, swallowed, and the game carried on and saved.
+    """
+
+    @staticmethod
+    def Handle(exc):
+        """Call `OnCrash` the way the engine's handlers do: from an except."""
+        from engine import Engine
+        from engine.log import Log
+
+        try:
+            raise exc
+        except Exception as raised:
+            # The ordinary path dumps the scene on the way through, which wants
+            # a live game. The integrity path returns before that, which is why
+            # stubbing it here does not weaken the tests below.
+            with mock.patch.object(Engine, "SaveCrash", staticmethod(lambda: None)):
+                return Log.OnCrash("BOT", raised, "step", None)
+
+    def test_an_ordinary_exception_is_still_absorbed(self):
+        # The behaviour every one of those handlers was written for.
+        info = self.Handle(ValueError("a card script blew up"))
+
+        self.assertIn("ValueError", info)
+
+    def test_an_integrity_error_is_not_absorbed(self):
+        with self.assertRaises(FabricatedInputError):
+            self.Handle(FabricatedInputError("timed out"))
+
+    def test_the_release_build_does_not_change_that(self):
+        # `Build.release` is what disables the re-raise for ordinary errors.
+        # The integrity path must not be conditional on it.
+        from build import Build
+
+        self.assertTrue(Build.release, "this test is only meaningful on a release build")
+        with self.assertRaises(FabricatedInputError):
+            self.Handle(FabricatedInputError("timed out"))
 
 
 class TestGenerationRefusesATimeout(unittest.TestCase):
@@ -156,6 +216,20 @@ class TestRunManifest(unittest.TestCase):
         manifest = BotRunner.BuildManifest(FakeGame(0), FakeDeviceManager(0), played)
 
         self.assertEqual([game["seed"] for game in manifest["games"]], [7])
+
+    def test_a_fabricated_input_is_recorded_for_the_whole_run(self):
+        # The resolved timeout is a point-in-time sample: a disturbance that
+        # cleared itself leaves every sample at zero. The count does not.
+        manifest = BotRunner.BuildManifest(
+            FakeGame(0), FakeDeviceManager(0, fabricated=2), [])
+
+        self.assertEqual(manifest["timeout"], {"requested": 0.0, "resolved": 0.0})
+        self.assertEqual(manifest["fabricated_inputs"], 2)
+
+    def test_a_clean_run_records_no_fabricated_inputs(self):
+        manifest = BotRunner.BuildManifest(FakeGame(0), FakeDeviceManager(0), [])
+
+        self.assertEqual(manifest["fabricated_inputs"], 0)
 
     def test_the_manifest_reads_no_clock_and_no_host(self):
         # It sits beside byte-reproducible scenes (MARVEL-27); it must not be

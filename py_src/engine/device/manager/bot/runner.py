@@ -151,6 +151,18 @@ class BotRunner:
         if not BotRunner.CheckNoTimeout(game, device_manager, "before saving"):
             return None
 
+        # `CheckNoTimeout` samples the timer at three moments. A timeout that
+        # appeared and cleared again between them would leave every sample at
+        # zero and the fabricated decline still in the replay, so trust the
+        # counter over the sample: it records that it happened, not that it is
+        # happening. See MARVEL-32.
+        if device_manager.fabricated_inputs_since_game:
+            Log.Assert(CATEGORY_NAME,
+                f"{device_manager.fabricated_inputs_since_game} input(s) in this game were "
+                "recorded from a timed-out wait rather than from the policy. "
+                "The replay is corrupt and will not be saved.")
+            return None
+
         record: Dict[str, Any] = {
             "seed": seed,
             "steps": steps,
@@ -255,6 +267,12 @@ class BotRunner:
             "timeout": {"requested": requested, "resolved": resolved},
             "deterministic_save": BOT_DETERMINISTIC_SAVE.value,
             "max_steps": BOT_MAX_STEPS.value,
+            # Across the whole run, including games that were discarded for it.
+            # A non-zero value here means the timeout guard was bypassed and
+            # every file in this run deserves suspicion, not just the dropped
+            # ones -- the resolved timeout alone cannot say that, because it
+            # only reports the value at the moment it was read.
+            "fabricated_inputs": device_manager.fabricated_inputs_total,
             "games": played,
         }
 

@@ -5,7 +5,7 @@ from engine.log import Log
 
 CATEGORY_NAME = "DEVICE_MANAGER"
 
-class FabricatedInputError(Exception):
+class FabricatedInputError(EngineIntegrityError):
     """A wall-clock timeout was about to be recorded as a player's decision.
 
     When the input wait expires, `DoGetInput` returns the untouched `"{}"` and
@@ -14,7 +14,11 @@ class FabricatedInputError(Exception):
     away. For a headless generation run it is a fabricated input written into
     the corpus, which would then fail to reproduce on a faster machine.
 
-    Raised by device managers that must not fabricate. See MARVEL-32.
+    Raised by device managers that must not fabricate. It derives from
+    `EngineIntegrityError` because the engine's play-time handlers otherwise
+    swallow it: `ChoiceOne` runs under `EffectInvoker` and `Message2.Send`,
+    both of which catch broadly and report through `Log.OnCrash`. See
+    MARVEL-32.
     """
 
 @dataclass
@@ -36,6 +40,15 @@ class DeviceManager:
 
         self.asking_players: List[int] = [] # 0,1,2,3
         self.ask_options: Dict[int, AskOptionPayload] = {}
+
+        # How many times a timed-out wait has handed back an unanswered input.
+        # Raising from `OnInputTimedOut` is the primary defence, but an
+        # exception can be absorbed by a handler that was written to protect
+        # against a broken card, so record the fact as well as raising: a
+        # counter cannot be swallowed. `since_game` is reset per game by the
+        # bot device, `total` never is. See MARVEL-32.
+        self.fabricated_inputs_since_game = 0
+        self.fabricated_inputs_total = 0
 
         self.notify = SynchronizationNotifier()
 
@@ -130,6 +143,8 @@ class DeviceManager:
         input_json = self.ask_options[player_id].input_json
         if not no_time_out and input_json == "{}":
             # Nothing was ever posted, and this is what the step will record.
+            self.fabricated_inputs_since_game += 1
+            self.fabricated_inputs_total += 1
             self.OnInputTimedOut(player_id)
         return input_json
 
