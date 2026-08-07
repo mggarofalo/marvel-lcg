@@ -26,8 +26,6 @@ multidict==6.7.1
     # via
     #   aiohttp
     #   yarl
-numpy==2.5.1
-    # via -r requirements.txt
 packaging==26.3
     # via -r requirements.txt
 pillow==12.3.0

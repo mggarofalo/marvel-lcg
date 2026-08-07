@@ -1,6 +1,5 @@
 aiohttp
 colorama
-numpy
 packaging
 Pillow
 requests
