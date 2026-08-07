@@ -336,6 +336,11 @@ class EventManager:
 
         # The order of `forced_effects` is by the id, which means when this card be created
         # And we didn't make them same to the hand card order
+        #
+        # That invariant is now actually held: the local effects arrive sorted
+        # by `object_id` from `FindLocalEffects`, and the globally registered
+        # ones that may be appended after them are in registration order.
+        # Before MARVEL-31 the local part was in memory-address order.
 
         # if isinstance(message, Send.CheckPlayerCanPayCost):
         #     pass
@@ -610,6 +615,47 @@ class EventManager:
 
     ################################################################################
     #
+    @staticmethod
+    def GatherLocalEffects(message: 'Message2') -> List['Effect']:
+        """The on-card effects a message triggers, in the order they are found.
+
+        That order comes from `Message2.related_faces`, a `Set[CardFace]`, and
+        `CardFace` defines no `__hash__` -- so it is memory-address order and
+        nothing may depend on it. Callers want `FindLocalEffects`. This is
+        separate only so `tools/determinism/probe_local_effect_order.py` can
+        measure what the sort changes without copying this loop.
+        """
+        from game.message import Message
+
+        if isinstance(message, Message.WhenPlayerPayingResources):
+            return [message.by_effect]
+
+        local_effects: List['Effect'] = []
+        for face in message.related_faces:
+            for check_effect in face.effect.local_effects:
+                if isinstance(message, check_effect.ability.when):
+                    local_effects.append(check_effect)
+        return local_effects
+
+    @staticmethod
+    def FindLocalEffects(message: 'Message2') -> List['Effect']:
+        """The on-card effects that a message triggers, in `object_id` order.
+
+        The list returned here decides the order `ProcessForcedEffect` resolves
+        forced abilities in, the order the first player is offered the
+        tie-break in, and the order the `NoSendResolve` path runs them in --
+        none of which may depend on the allocator.
+
+        Sorting by `object_id` is the key the optional path already uses
+        (`ProcessOptionalEffect`). It orders by when the effect was created,
+        which is what the comment on `ProcessForcedEffect` has always claimed.
+        See MARVEL-31.
+        """
+        return sorted(EventManager.GatherLocalEffects(message),
+                      key=lambda effect: effect.object_id)
+
+    ################################################################################
+    #
     def StackMessage(self, message: 'CardStateUpdatedMessage'):
         self.stack_message.append(message)
 
@@ -641,18 +687,7 @@ class EventManager:
 
         is_playing_res = isinstance(message, Message.WhenPlayerPayingResources)
 
-        def find_local_effects():
-            if isinstance(message, Message.WhenPlayerPayingResources):
-                return [message.by_effect]
-
-            local_effects: List['Effect'] = []
-            for face in message.related_faces:
-                for check_effect in face.effect.local_effects:
-                    if isinstance(message, check_effect.ability.when):
-                        local_effects.append(check_effect)
-            return local_effects
-
-        local_effects = find_local_effects()
+        local_effects = EventManager.FindLocalEffects(message)
         has_registered_event = self.HasRegisteredEvent(type(message))
 
         if not has_registered_event and not local_effects:

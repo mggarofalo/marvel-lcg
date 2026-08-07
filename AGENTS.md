@@ -106,11 +106,15 @@ The device answers through `DeviceManager.WhenInput`, the same entry point the w
 From `py_src/`:
 
 ```bash
-python -m unittest unit_test.test_bot          # bot decision logic, no engine bootstrap
-python -m unittest unit_test.test_teamup_order  # team-up target ordering contract
-python -m tools.determinism.check_runs --runs 6 # digest reproduction across processes
-python main.py -bot -bot_verify                 # generate a game and replay-verify it
+# fast tests: pure logic, no engine bootstrap beyond `import engine`
+python -m unittest unit_test.test_bot unit_test.test_teamup_order \
+                   unit_test.test_local_effect_order
+python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
+python main.py -bot -bot_verify                  # generate a game and replay-verify it
 ```
+
+Name the modules explicitly. `unittest discover` picks up `unit_test/test_all.py`,
+which is the replay suite described below and does not run.
 
 The replay suite (`game/test/test.py` → `TestRun`) re-executes a scene's inputs and asserts per-step digest equality. **There is no working command-line flag for it** — `-test` only expands to `-device -no_editor …`, nothing sets the `InTesting` start state, and the process blocks in `WaitUntilGameStart()`. The `-test_all` and `-profile_folder` branches are unreachable because `build.py` hardcodes `Build.release = True`. Tracked as MARVEL-28. Until then, use `-bot_verify` or the `/T` debug command from the web client.
 

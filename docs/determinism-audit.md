@@ -114,6 +114,37 @@ what the optional path already does. One line. It changes resolution order in
 cases where the order was previously arbitrary, so it needs its own issue and a
 corpus regenerated afterwards — do not land it silently.
 
+**Status: fixed (MARVEL-31).** The closure is now
+`EventManager.FindLocalEffects`, a static method that sorts by
+`Effect.object_id`, so both consumers — the forced path and the `NoSendResolve`
+path — see creation order. Covered by `unit_test/test_local_effect_order.py`.
+
+*Digest impact, measured.* All seven wide-matrix digests are unchanged
+(`97fa1611b360d813`, `9fafd7bbe3691fea`, `0d9b285879f79e09`, `625cb6235b2da284`,
+`335b13994eb44ac3`, `0f56cf5fc6bc92dc`, `9e97e7d8310a7fd5`). On its own that is
+ambiguous, so `tools/determinism/probe_local_effect_order.py` counts what the
+sort actually saw:
+
+```
+total: 81 batches, 5 with two or more effects, 0 reordered by the sort
+```
+
+So the sort was reached and agreed with the address order everywhere it could
+have disagreed — the digests are unchanged because the orders matched, not
+because the code path went unexercised. Coverage is still thin: five
+multi-effect batches, largest of size two. The decline-only driver is the limit
+here, not the fix.
+
+*Rules check.* The Rules Reference says "if two or more forced abilities would
+initiate at the same moment, the first player determines the order in which the
+abilities initiate, regardless of who controls the cards bearing those
+abilities." `ProcessForcedEffect` already implements that via
+`first_player.AskChooseFace`, so list order decides only which order the options
+are *offered* in — not who decides. Two deviations found while confirming this
+are filed separately: `MARVEL-39` (the tie-break resolves the wrong effect when
+a delay ability is in the batch) and `MARVEL-40` (abilities on one card skip the
+first-player choice entirely).
+
 ### F3 — `GetTeamUpUnits` returns a list built from a `set` (High)
 
 `game/card/face/attribute/has_teamup.py:24-36`
