@@ -97,6 +97,8 @@ python main.py -bot -bot_scenario klaw -bot_heroes she_hulk captain_marvel
 
 `-bot` is shorthand for `-device bot` plus quieter logging. Exit code 0 when every game finished and saved, 1 otherwise.
 
+Bot saves are **deterministic saves**: `sign`, `time`, and `playtime` are omitted, so the same seed writes a byte-identical file on any machine and no host fingerprint reaches the repo. `-no_bot_deterministic_save` restores the human save format. Human-facing saves are unaffected either way — see MARVEL-27.
+
 Decisions come from a **policy** (`BotPolicy.Choose(decision) -> CommandDescriptor`) injected into `BotDeviceManager`. The two shipped policies are deliberately trivial — they prove the device works, they do not play well. A real policy subclasses `BotPolicy` and registers in `BotPolicyFactory`.
 
 The device answers through `DeviceManager.WhenInput`, the same entry point the web server uses for a browser POST, so `Controller.ChoiceOne` runs its normal validation, CRC and `replay.Push` path. **Do not add a shortcut around `ChoiceOne`** — bot replays must be structurally indistinguishable from human ones or the corpus is worthless.
@@ -108,8 +110,9 @@ From `py_src/`:
 ```bash
 # fast tests: pure logic, no engine bootstrap beyond `import engine`
 python -m unittest unit_test.test_bot unit_test.test_teamup_order \
-                   unit_test.test_local_effect_order
+                   unit_test.test_local_effect_order unit_test.test_scene_hash
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
+python -m tools.determinism.check_scene_repro    # same seed -> same saved file
 python main.py -bot -bot_verify                  # generate a game and replay-verify it
 ```
 

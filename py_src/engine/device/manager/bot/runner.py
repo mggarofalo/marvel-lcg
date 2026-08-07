@@ -39,6 +39,11 @@ BOT_SAVE                = ConfigVariables.Bool('bot_save', True)
 BOT_SAVE_FOLDER         = ConfigVariables.Folder('bot_save_folder', "")
 BOT_CONTINUE_ON_ERROR   = ConfigVariables.Bool('bot_continue_on_error', False)
 
+# Omit the wall-clock and machine metadata (`sign`, `time`, `playtime`) so the
+# same seed produces a byte-identical file on any machine on any day. On by
+# default: everything the bot writes is a corpus artefact. See MARVEL-27.
+BOT_DETERMINISTIC_SAVE  = ConfigVariables.Bool('bot_deterministic_save', True)
+
 # Replay each saved scene straight back through the engine's own test path and
 # assert the per-step state digest matches. Doubles the run time.
 BOT_VERIFY              = ConfigVariables.Bool('bot_verify', False)
@@ -61,6 +66,8 @@ class BotRunner:
         total = max(1, BOT_GAMES.value)
         if BOT_SEED.value < 0:
             Log.Warn(CATEGORY_NAME, "bot_seed is negative: the engine will pick a random seed and the run will not be reproducible")
+        if not BOT_DETERMINISTIC_SAVE.value:
+            Log.Warn(CATEGORY_NAME, "bot_deterministic_save is off: saved scenes will carry wall-clock and machine metadata and will not be byte-reproducible")
 
         all_ok = True
         for index in range(total):
@@ -165,7 +172,8 @@ class BotRunner:
         folder = BOT_SAVE_FOLDER.value
         if folder:
             name = FileManager.JoinPath(folder, f'{game.scene.GetSaveFileName()}.json')
-        return game.session.SaveScene(name, delete_old=False)
+        return game.session.SaveScene(name, delete_old=False,
+                                      deterministic=BOT_DETERMINISTIC_SAVE.value)
 
     ################################################################################
     #

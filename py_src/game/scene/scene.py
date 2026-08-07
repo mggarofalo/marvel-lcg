@@ -34,6 +34,17 @@ METADATA_KEY_FLOAT = Literal[
 
 METADATA_KEY = METADATA_KEY_LIST | METADATA_KEY_BOOL | METADATA_KEY_INT | METADATA_KEY_STR | METADATA_KEY_FLOAT
 
+# Metadata that records where and when a file was produced rather than what
+# game it is. None of it is replayed. A content hash of a scene must ignore all
+# of it, or the same seed hashes differently on every run and on every machine
+# and the corpus cannot be content-addressed. See MARVEL-27.
+PROVENANCE_KEYS: Tuple[METADATA_KEY, ...] = ("sign", "time", "playtime", "path", "clients", "report")
+
+# The subset a deterministic save does not write at all: the ones the engine
+# fills in from the machine or the clock. `report` is caller-supplied content,
+# so it is still written when passed -- it is merely left out of the hash.
+AMBIENT_KEYS: Tuple[METADATA_KEY, ...] = ("sign", "time", "playtime", "path", "clients")
+
 @dataclass
 class Scene:
     version: str = field(default_factory=lambda: "")
@@ -98,16 +109,26 @@ class Scene:
     def UpdateInputs(self, game: 'Game'):
         self.inputs = game.controller_manager.replay.history_inputs
 
-    def PrepareSave(self, game: 'Game', *, playtime: float|None, report: str|None=None, clients: List[str]|None=None):
+    def PrepareSave(self, game: 'Game', *, playtime: float|None, report: str|None=None, clients: List[str]|None=None, deterministic: bool=False):
         from engine.user.user_info import UserInfo
 
         self.UpdateInputs(game)
 
-        if self.sign == "":
-            self.SetMetadataStr("sign", UserInfo.fingerprint)
+        if deterministic:
+            # A corpus replay has to come out byte-identical from the same seed
+            # on another machine on another day, so none of the ambient
+            # metadata is written -- not even carried over from a scene that
+            # was loaded from a human save. See MARVEL-27.
+            for key in AMBIENT_KEYS:
+                self.metadata.pop(key, None)
+            playtime = None
+            clients = None
+        else:
+            if self.sign == "":
+                self.SetMetadataStr("sign", UserInfo.fingerprint)
 
-        if self.time == "":
-            self.SetMetadataStr("time", Time.Format())
+            if self.time == "":
+                self.SetMetadataStr("time", Time.Format())
 
         data = self
         if self.is_puzzle:
@@ -133,7 +154,29 @@ class Scene:
         sorted_metadata: Dict[METADATA_KEY, Union[str, int, bool]] = {key: self.metadata[key] for key in ordered_keys if key in self.metadata}
         self.metadata = sorted_metadata
 
-    def Save(self, file_path: str, game: 'Game', *, playtime: float|None=None) -> bool:
+    @staticmethod
+    def HashablePayload(data: Dict[str, Any]) -> str:
+        """The part of a saved scene a content hash may depend on.
+
+        Takes a scene as loaded from disk (`Json.Load`) rather than a live
+        `Scene`, because that is what a corpus manifest has in hand and because
+        it works on files this build did not write.
+
+        Everything survives except `PROVENANCE_KEYS` and the file checksum,
+        which is a function of the provenance. Keys are sorted so the result
+        does not depend on the order `PrepareSave` happened to emit them in.
+        See MARVEL-27; consumed by MARVEL-17 and MARVEL-18.
+        """
+        payload = {key: value for key, value in data.items() if key != Json.CHECK_SUM_KEY}
+        metadata = payload.get("metadata")
+        if isinstance(metadata, dict):
+            payload["metadata"] = {
+                key: value for key, value in metadata.items() # type: ignore[misc]
+                if key not in PROVENANCE_KEYS
+            }
+        return Json.Dumps(payload, indent=4, sort_keys=True)
+
+    def Save(self, file_path: str, game: 'Game', *, playtime: float|None=None, deterministic: bool=False) -> bool:
         if self.is_puzzle:
             return False
 
@@ -144,7 +187,7 @@ class Scene:
         #         del self.metadata['time']
         #     # if 'rule' in self.metadata:
         #     #     del self.metadata['rule']
-        self.PrepareSave(game, playtime=playtime)
+        self.PrepareSave(game, playtime=playtime, deterministic=deterministic)
 
         path = FileManager.GetDirName(file_path)
         FileManager.MakeDir(path)
