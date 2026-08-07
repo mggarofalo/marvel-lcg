@@ -594,18 +594,20 @@ dependency order:
 8. **Compare as strings.**
 9. **Emit one digest, not three** (`D1`).
 
-## Candidate follow-up issues
+## Follow-up issues
 
-| Proposed | Severity | Summary |
+All filed. `D11` needs no issue — it is a fact a port must honour, not a defect.
+
+| Issue | Finding | Summary |
 |---|---|---|
-| Fix the inverted CRC mismatch verdict | High | `D4`. `all(x for x in diff_ids if x in CRC_IGNORE_IDS)` accepts every mismatch when the ignore list is empty. Live play and non-test replay currently pass on divergence. |
-| Design a v2 state digest for cross-engine use | High | `D2`, `D3`, `D8`, `D12`. Per-field values instead of a sum, an explicit position enum instead of negative sentinels, no hidden information. Must land before the corpus is frozen or it is a regeneration. |
-| Drop the vestigial CRC slots 1 and 2 | Medium | `D1`. Remove the always-empty slots and the `0.5.9.4` special case, or establish what that case was for. |
-| Include boost-area cards in the digest | Medium | `D5`. Boost cards change attack outcomes and are invisible to the oracle. Changes recorded digests, so it needs corpus regeneration. |
-| Exclude the rules card by identity, not by id 0 | Low | `D9`. Removes a silent coupling between the digest and allocation order. |
-| Read decks without `removed_cards` in `GetCRC` | Low | `D6`. Latent today; also stops detached attachments scoring as in play. |
-| Normalise `GetInfoDict` merge direction | Low | `D7`. Eight overrides, two of which merge the other way round. |
-| Remove destroyed cards from `card_dict` | Low | `D10`. Not on a live path, but a stale area pointer is a trap for the port. |
+| `MARVEL-43` | `D4` | `all(x for x in diff_ids if x in CRC_IGNORE_IDS)` accepts every mismatch when the ignore list is empty. Live play and non-test replay currently pass on divergence. |
+| `MARVEL-44` | `D2` `D3` `D8` `D12` | Design a v2 digest: per-field values instead of a sum, an explicit position enum instead of negative sentinels, no hidden information. Must be decided before the corpus is frozen or it is a regeneration. |
+| `MARVEL-45` | `D1` | Remove the always-empty slots 1 and 2 and the `0.5.9.4` special case, or establish what that case was for. |
+| `MARVEL-46` | `D5` | Boost cards change attack outcomes and are invisible to the oracle. Fixing it changes recorded digests, so it needs corpus regeneration. |
+| `MARVEL-47` | `D6` | Read the deck list without `removed_cards` in `GetCRC`. Latent today; also settles what a detached attachment should contribute. |
+| `MARVEL-48` | `D9` | Exclude the rules card by identity rather than by id 0, removing a silent coupling between the digest and allocation order. |
+| `MARVEL-49` | `D7` | Normalise the `GetInfoDict` merge direction — eight overrides, two of which merge the other way round. |
+| `MARVEL-50` | `D10` | Destroyed cards keep a stale area pointer in `card_dict`. Not on a live path, but a trap for the port. |
 
 ## How the measurements were taken
 
