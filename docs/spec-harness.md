@@ -3,13 +3,16 @@
 How a card's printed text becomes an executable claim about the engine, and how
 that claim earns the right to be trusted.
 
+The format decision this implements is [MARVEL-22](https://plane.wallingford.me);
+read it before changing anything here.
+
 ## Why this exists
 
 The replay corpus is a good oracle for one question: *did this game reproduce?*
 It cannot answer *does Swinging Web Kick deal 8 damage?* — a CRC mismatch is a
 hex diff, not a sentence about the game.
 
-Behavioral specs answer that second question, and they are what the C# engine
+Behavioral specs answer the second question, and they are what the C# engine
 will be held to. But a spec authored from printed card text is a **guess** until
 something checks it. The Python engine is the only thing that can check it, and
 only while it is still the reference. So:
@@ -20,197 +23,200 @@ only while it is still the reference. So:
 
 That is differential spec extraction, and it is what `tools/spec/` implements.
 
-## The two pieces
+## A scenario is a transcript
+
+The engine is a fold `(state, input) -> (state, prompt)`. A scenario is a
+literal trace of that fold: **one `When` per decision**, with `Then`s
+interleaved wherever the board is worth checking.
+
+```gherkin
+Feature: Nick Fury
+
+  Background:
+    Given the scenario is "rhino"
+    And the hero is "spider_man"
+
+  @card:01084
+  Scenario: damage is dealt to the chosen enemy, not the first one
+    Given I am in hero form
+    And my hand is "Nick Fury", "Backflip", "Backflip", "Webbed Up", "Enhanced Spider-Sense"
+    And "Shocker" is in play
+
+    When I play "Nick Fury"
+    Then I am prompted to choose one
+      | Draw 3 cards              |
+      | Deal 4 damage to an enemy |
+
+    When I choose "Deal 4 damage to an enemy" targeting "Shocker"
+    Then "Shocker" has 4 damage
+    And "Rhino" has 0 damage
+    And I am not prompted again
+```
+
+This is more verbose than "set up, act, assert", and the verbosity buys two
+things nothing else can.
+
+**`Then I am prompted to choose one` pins the question, not just the answer.**
+The option set is behavior. Nick Fury is printed as a three-way choice, but the
+engine offers *two* when no scheme has threat — "remove 2 threat" has no legal
+target and is filtered out. A format that cannot say which options appeared
+cannot catch that changing.
+
+**`Then I am not prompted again` pins that the resolution is over.** `event_name`
+discriminates a mid-resolution ask from the turn menu coming back around, so
+"the card finished without asking me anything else" is checkable.
+
+A format that batches actions and asserts once at the end encodes the number of
+prompts *implicitly*. It passes against an engine that asks a different set of
+questions and lands on the same final state. With 334 interaction-heavy cards to
+author, that is the mid-project rewrite MARVEL-22 exists to prevent.
+
+**The harness never answers a decision the transcript omits.** A mid-resolution
+choice with no beat to answer it is `FAIL-spec-wrong`, not a silent pick. That
+rule is the format's whole value; without it the two assertions above are
+decoration.
+
+Gherkin permits `When` after `Then`. One-`When`-per-scenario is a user-story BDD
+convention, not a language or Reqnroll constraint, and it is the wrong
+convention for an interactive rules engine.
+
+## Layout
+
+```
+specs/cards/<pack>/<card_id>-<slug>.feature   one file per card
+specs/rules/<topic>.feature                   rulebook behavior
+specs/self-test/quarantine.feature            deliberately wrong, proves the gate
+specs/steps.catalogue.json                    the closed vocabulary
+specs/trusted.json                            generated: scenarios that passed
+specs/quarantine.json                         generated: everything else
+specs/history.jsonl                           generated: counts per run
+```
+
+Tag scenarios `@card:01084` so verdicts and coverage numbers join against the
+card-text dataset by card id.
+
+**Granularity: one scenario per decision path.** Not one per card, not one per
+ability. `Scenario Outline` only where branches are genuinely symmetric. This is
+also the unit the validation runner hands a single verdict to. Nick Fury needs
+three; budget roughly 3–5 per interaction-heavy card.
+
+## Running it
 
 | | What it does | Entry point |
 |---|---|---|
-| **Harness** | Runs one scenario, reports what happened | `python -m tools.spec.run_case` |
-| **Validation runner** | Runs the suite, assigns verdicts, keeps the quarantine | `python -m tools.spec.validate` |
+| **Harness** | Runs scenarios, reports what happened | `python -m tools.spec.run_case` |
+| **Validation runner** | Assigns verdicts, keeps the quarantine | `python -m tools.spec.validate` |
 
 Run both from `py_src/`. Every data path in the engine is relative to it.
 
 ```bash
 cd py_src
-.venv/Scripts/python.exe -m tools.spec.run_case specs/scenarios/
+.venv/Scripts/python.exe -m tools.spec.run_case specs/
 .venv/Scripts/python.exe -m tools.spec.validate
 .venv/Scripts/python.exe -m tools.spec.validate --trusted-only    # the CI gate
 ```
 
+A run costs about 25 ms after a 0.2 s engine boot, with a fresh world each time.
+
 ## How a scenario runs
 
-**Given** builds a board out of `game/puzzle/puzzle.py` `RunPuzzle` commands. A
-puzzle scene starts with no encounter deck and no player deck, so the board
-contains exactly what the scenario asks for and nothing else.
+**Given** builds a board out of `game/puzzle/puzzle.py` `RunPuzzle` commands,
+applied between `GameSetup()` and `GameLoop()`. A puzzle scene starts with no
+encounter deck and no player deck, so the board contains exactly what the
+scenario asks for and nothing else. Given is a block: it comes before the
+transcript and cannot appear in the middle of one.
 
-**When** selects an effect through the headless bot device
-(`engine/device/manager/bot/`). The scenario's action goes through
-`Controller.ChoiceOne` — validation, CRC, `replay.Push` — the same path a
-browser POST takes. There is no shortcut around it.
+**The transcript** is played by a `BotPolicy`
+(`engine/device/manager/bot/`). MARVEL-20 did not need a new engine seam — a
+spec runner *is* a policy. Decisions go back through `DeviceManager.WhenInput`,
+so `Controller.ChoiceOne` runs its normal validation, CRC and `replay.Push`
+path. Choice, target and payment are one `CommandDescriptor`, so
+`When I choose "X" targeting "Y"` is a single decision.
 
-**Then** asserts over readable state: health, damage, threat, zone, counters,
-tokens, statuses, hand size, round, phase.
+**Assertions are evaluated inside the policy**, at the decision that follows the
+action. `decision.world` is the board right after the previous decision
+resolved, and it is the only place an intermediate `Then` is observable — once
+the engine unwinds, those states are gone.
 
-After the last `When`, the harness stops at the first decision the engine offers
-that can be declined. A declinable decision means nothing is pending and the
-action has fully resolved, so that is where the board is snapshotted.
+## Naming cards
 
-A run costs about 9 ms after a 0.2 s engine boot, with a fresh world each time.
-
-## Writing a scenario
-
-Scenarios are `.feature` files under `py_src/specs/scenarios/`. Gherkin, because
-the trusted suite has to outlive the Python engine: Reqnroll (the maintained
-SpecFlow successor) binds the same step text to C# with `[Given(@"...")]`, so
-the file that validates against Python today is the file the C# engine is held
-to later.
-
-```gherkin
-Feature: Spider-Man basic actions
-
-  Background:
-    Given the scenario "rhino"
-    And the hero "spider_man"
-
-  Scenario: A basic attack deals the hero's ATK and exhausts them
-    Given "01001a" is in hero form
-    When the player attacks "Rhino in VillainArea"
-    Then "Rhino in VillainArea" has 12 health
-    And "01001a" is exhausted
-```
-
-Supported: `Feature`, `Background`, `Scenario`, `Scenario Outline` with
-`Examples`, `Given`/`When`/`Then`/`And`/`But`, `@tags`, `#` comments. Doc
-strings and data tables are not supported; a step that needs a list takes a
-comma-separated one.
-
-**A step that matches nothing is a parse error naming the line.** A scenario
-compiles completely or not at all, so a typo can never become a silently skipped
-assertion.
-
-### Naming a card
-
-Anywhere a step takes a card, it takes a *card reference*:
+Scenarios name cards by **printed name**; the runner resolves. Object ids never
+appear in a spec: `CommandDescriptor` is object-id based and `ChoiceOne` remaps
+ids through `FindNewEffectId`, so an id in a scenario would be meaningless
+across runs.
 
 | Written | Means |
 |---|---|
-| `"01094"` | by card id |
 | `"Rhino"` | by printed name |
+| `"01094"` | by card id, when the name is ambiguous |
+| `"me"` / `"I"` | the identity, whichever form it is in |
+| `"the main scheme"` | the main scheme in play |
 | `"Rhino in VillainArea"` | qualified by zone |
 | `"01005 #2"` | the second copy, in object-id order |
-| `"01005 #2 in hand"` | both |
 
-Zones are `DeckType` member names (`HandsArea`, `VillainArea`, `DiscardPile`,
-`PlayerDeck`, `MainSchemesArea`, `EngagedEnemiesArea`, …). Common aliases work
-too: `hand`, `deck`, `discard`, `play`, `encounter deck`.
+Printed names collide across packs — five cards are called "Nick Fury" — so the
+runner prefers ids from the set the scenario is playing, and honours `@card:`
+tags. When that is still ambiguous it says so and asks for an id.
 
-**A reference that matches two cards is an error, not a first match.** A
-scenario that says `"01005"` with two copies in play has not decided what it is
-testing, and the harness says so with both candidates listed. The same applies
-to an action with two legal targets and a scenario that names neither: guessing
-would make the result depend on engine ordering rather than on the card.
+**A name that matches several cards, only one of which is on the board, means
+the one on the board.** "Rhino" in a scenario about the fight is the Rhino in
+play, not the stage-2 card in the villain deck. Two Rhinos actually in play is a
+real ambiguity and is an error listing both. *(The general duplicate-name
+convention is MARVEL-42; this is the runner's current rule, not the final word.)*
 
-### Step vocabulary
+Ambiguity is never resolved by guessing — including target selection. An effect
+with two legal targets and a scenario that names neither is refused. A single
+legal target is auto-selected by the engine itself and produces no prompt, so
+naming it would be noise.
 
-The same sentence can mean different things in different clauses — `"X" has 5
-threat` sets the board under **Given** and asserts it under **Then** — so the
-Gherkin keyword decides which table is consulted. `And`/`But` continue the
-clause above them, as Gherkin defines.
+## Option labels
 
-#### Given — configuration
+The engine's option names are identifiers built from the label string in the
+Python card script — `Deal_4_damage_to_an_enemy` — not from printed text. Both
+sides are normalised (`_` → space, collapse whitespace, casefold) before
+comparison, so **a scenario never asserts a raw engine identifier**. The C#
+engine must expose the same domain-level labels; that is MARVEL-41.
 
-| Step |
-|---|
-| `the scenario "rhino"` |
-| `the hero "spider_man"` |
-| `the heroes "spider_man", "she_hulk"` |
-| `the seed is 7` |
-| `the difficulty is expert` |
+## The step vocabulary
 
-#### Given — the board
+`specs/steps.catalogue.json` is the contract. `unit_test/test_spec_validate.py`
+asserts `tools/spec/gherkin.py` implements exactly it — a form added on one side
+without the other fails the build, so step-definition drift cannot rot silently.
 
-| Step | Effect |
-|---|---|
-| `the hand contains "01005", "01007"` | generates cards into hand |
-| `the player deck contains …` | |
-| `the player discard pile contains …` | |
-| `the encounter deck contains …` | |
-| `the encounter discard pile contains …` | |
-| `the set aside deck contains …` | |
-| `"01094" has 3 damage` | |
-| `"01094" is healed 2` | |
-| `"01097b" has 5 threat` | sets the total, not a delta |
-| `"01094" has 2 "attack" counters` | |
-| `"01094" has 1 "threat" tokens` | |
-| `"01094" is stunned` / `is confused` / `is tough` | |
-| `"01001a" is exhausted` / `is ready` | |
-| `"01005" is discarded` | |
-| `"01101" is in play` / `is revealed` | may bring the card into the game |
-| `"01001a" is in hero form` / `is in alter-ego form` | |
-| `the player draws 2 cards` | |
+The same strings bind to Reqnroll in C#:
 
-Given is **declarative**. `RunPuzzle.Stun` is a toggle, so saying "is stunned"
-about an already-stunned card would un-stun it; the harness checks first and
-only acts when the board disagrees. The same for form changes.
+```csharp
+[Given(@"my hand is (.*)")]
+public void GivenMyHandIs(string cards) { ... }
+```
 
-Only `is in play` and `is revealed` may bring a *new* card into the game, and
-only from a bare card id. Every other verb must name a card already on the
-board, so a misspelled name is an error rather than a silently conjured card.
-For several copies, fill a zone (`the encounter deck contains "01101", "01101"`)
-and address them with `#1` / `#2`.
+Read the catalogue for the current list. The shape:
 
-#### When
+- **Given** — `the scenario is`, `the hero is`, `I am in hero form`,
+  `my hand is`, `my deck is`, `"<card>" is in play`,
+  `the main scheme has <n> threat`, damage/threat/counter/status setters
+- **When** — `I play`, `I choose`, `I attack`, `I thwart`, `I change form`,
+  `I pass`, each optionally `targeting "<card>"`
+- **Then** — `I am prompted to choose one` + table, `I am not prompted again`,
+  card state (`has <n> damage`, `is in the "<zone>"`, `is [not] stunned`),
+  my state (`I have <n> cards in hand`), game state (`the game is over`)
 
-| Step |
-|---|
-| `the player attacks "<card>"` |
-| `the player thwarts "<card>"` |
-| `the player defends against "<card>"` |
-| `the player changes form` |
-| `the player plays "<card>"` |
-| `the player plays "<card>" targeting "<card>"` |
-| `the player chooses "<option>"` |
-| `the player chooses "<option>" on "<card>"` |
-| `the player chooses "<option>" targeting "<card>", "<card>"` |
-| `the player chooses "<option>" on "<card>" targeting "<card>"` |
-| `the player passes` |
-
-`<option>` is the effect name the client renders — `Attack`, `Thwart`,
-`Change_Form`, `Play`, or a card's own ability name. `on "<card>"` disambiguates
-when several options share a name, which is normal for `Play`.
-
-#### Then
-
-| Step |
-|---|
-| `"<card>" has N health` / `N damage` / `N threat` |
-| `"<card>" has N "<name>" counters` / `tokens` |
-| `"<card>" is in the "<zone>"` |
-| `"<card>" is [not] in play` / `exhausted` / `ready` / `stunned` / `confused` / `tough` |
-| `"<card>" has N "<property>"` — any value in the engine's render info, e.g. `is_completed` |
-| `the player has N cards in hand` / `in the deck` / `in the discard pile` |
-| `player 2 has N cards in hand` |
-| `the player is [not] eliminated` |
-| `the game is [not] over` |
-| `the players won` / `the players lost` |
-| `it is round N` |
+A step that matches nothing is a parse error naming the line. A scenario
+compiles completely or not at all.
 
 ## Verdicts
 
-`validate.py` assigns one verdict per scenario, from what the run observed
-rather than from judgement:
-
 | Verdict | What it means | Where it goes |
 |---|---|---|
-| `PASS` | every Then held | the trusted suite |
-| `FAIL-spec-wrong` | the scenario could not be executed as written — a Given named a card that is not in the game, a When was never offered, a Then asked about something the board does not have | quarantine + triage |
-| `FAIL-engine-suspected` | the scenario ran cleanly and a Then disagreed anyway | quarantine + triage |
+| `PASS` | every assertion held | the trusted suite |
+| `FAIL-spec-wrong` | the scenario could not be executed as written — a Given named a card that is not in the game, a When was never offered, the transcript ended mid-resolution, a Then asked about something the board does not have | quarantine + triage |
+| `FAIL-engine-suspected` | the transcript ran cleanly and an assertion disagreed anyway | quarantine + triage |
 | `ERROR` | the engine raised, or logged a failure it swallowed | quarantine + triage |
 
 The split matters. **`FAIL-spec-wrong` means the engine never offered what the
-scenario describes**, so the likeliest explanation is that the author misread
-the card. **`FAIL-engine-suspected` means the engine did something** — every
-Given applied, every When matched an offered option — and it disagrees with
-printed text. That one is worth reading carefully.
+scenario describes**, so the likeliest explanation is that the author misread the
+card. **`FAIL-engine-suspected` means the engine did something** and it
+disagrees with printed text. That one is worth reading carefully.
 
 `ERROR` catches a case the engine would otherwise hide: exceptions raised while
 broadcasting a message are caught, logged and play continues. A scenario that
@@ -221,18 +227,17 @@ demotes the verdict.
 
 `specs/trusted.json` is the trusted suite. It is written **only** by
 `validate.py`, **only** from `PASS`, and every entry is pinned to the SHA-256 of
-the scenario source it was validated against.
+its scenario source.
 
 There is no flag that adds an entry by hand. Editing a scenario changes its hash
 and drops it out of the trusted suite on the next `--trusted-only` run, which
 exits non-zero. That is deliberate: a suite you can talk your way into is not an
 oracle.
 
-Everything else lands in `specs/quarantine.json` with its verdict and reason.
-
-`specs/scenarios/known_disagreements.feature` is wrong on purpose — one scenario
-per failing verdict. It is the proof the gate works. If any of it starts
-passing, the harness has stopped telling the truth.
+`specs/self-test/quarantine.feature` is wrong on purpose — one scenario per
+failing verdict, including a transcript that omits a mid-resolution choice. It
+is the proof the gate works. If any of it starts passing, the harness has
+stopped telling the truth.
 
 ## Triage
 
@@ -240,39 +245,21 @@ passing, the harness has stopped telling the truth.
 python -m tools.spec.validate --triage triage.json
 ```
 
-One record per disagreement, with what an adjudicator needs to call it: the
-scenario as authored, the decisions the policy saw and what it answered at each,
-the failing assertion with expected and actual, the board at the halt, and the
-engine's own play-by-play for the run.
+One record per disagreement: the scenario as authored, the decisions the policy
+saw and what it answered at each, the failing assertion with expected and
+actual, the board at the halt, and the engine's own play-by-play.
 
 ## Counts over time
 
 `specs/history.jsonl` gains one line per validation run: totals per verdict and
-the disagreement rate. A rising rate means the authoring process is drifting —
-scenarios are being written faster than they are being checked, or from a
-misunderstanding that is spreading.
+the disagreement rate. A rising rate means the authoring process is drifting.
 
 ```bash
 python -m tools.spec.validate --check-drift 0.05   # fail if the rate rose >5pp
 ```
 
-The timestamp in that file is a report field. It is not a gameplay input, and
-nothing in the file feeds back into a run — the engine's determinism rules are
-about what can change a game's outcome.
-
-## Notes for the C# engine
-
-The step vocabulary is the contract. Each step in the tables above maps to one
-Reqnroll binding:
-
-```csharp
-[Given(@"the hand contains (.*)")]
-public void GivenTheHandContains(string cards) { ... }
-```
-
-`SpecCase` (`tools/spec/case.py`) is the intermediate representation and is
-JSON-serialisable, so a scenario can be handed to a C# runner without a Gherkin
-parser in the loop if that turns out to be easier.
+The timestamp there is a report field, not a gameplay input — nothing in the
+file feeds back into a run.
 
 ## Two engine details worth knowing
 
@@ -281,12 +268,11 @@ call is commented out (`game/puzzle/puzzle.py:43`), so a bare
 `Puzzle.Damage("01094", 3)` against the villain in play silently creates a
 *second* Rhino in the aside deck and damages that one. The harness resolves card
 references itself (`tools/spec/resolve.py`) and hands `RunPuzzle` an
-already-resolved `CardFace`, which takes that path out of play without changing
-engine code.
+already-resolved `CardFace`. Tracked as MARVEL-51.
 
 **`PuzzleHelper.Exec` is not used.** It `exec`s each command and rebinds every
 card in the world for every command, which measured about 3× the cost of a
-direct call at ~450 cards and gets worse as the card count grows. Given steps
-call `RunPuzzle` methods directly. That is also what keeps the harness off the
-engine's `exec`-based path, which the migration is trying to remove rather than
-build on.
+direct call at ~450 cards and worsens as the card count grows. It is also the
+wrong interface, because it forces setup through strings and `c<object_id>`
+references. Called directly, `RunPuzzle` takes real `CardFace` objects and the
+object-id problem disappears.

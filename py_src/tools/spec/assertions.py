@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple
 
 from tools.spec.case import Render, ThenStep
-from tools.spec.resolve import CardRef, CardRefError
+from tools.spec.resolve import CardRef, CardRefError, IsMainScheme, IsSelf
 from tools.spec.state import CardState, PlayerState, StateView, UnknownProperty
 
 PLAYER_SUBJECT = re.compile(r"^player(?:\s+(?P<n>\d+))?$", re.IGNORECASE)
@@ -38,11 +38,23 @@ class AssertionResult:
     "the spec describes something that is not in this game", which is what the
     validation runner's verdict split turns on.
     """
+    label: str = ""
+    """How the beat read in the scenario, when it was not a plain `Then`.
+
+    Prompt and no-prompt beats are assertions too, but they are not about a
+    subject and a property, so they carry their own wording rather than being
+    forced through `ThenStep.Describe`.
+    """
+
+    def Title(self) -> str:
+        return self.label or self.step.Describe()
 
     def Describe(self) -> str:
         if self.passed:
-            return f"ok   {self.step.Describe()}"
-        return f"FAIL {self.step.Describe()}\n     {self.message}"
+            return f"ok   {self.Title()}"
+        if not self.message:
+            return f"FAIL {self.Title()}"
+        return f"FAIL {self.Title()}\n     {self.message}"
 
 
 ################################################################################
@@ -96,6 +108,20 @@ def ResolveSubject(state: StateView, subject: str) -> Tuple[str, Any, str]:
         except UnknownProperty as exc:
             return "player", None, str(exc)
 
+    # Named roles, so a scenario says "I" and "the main scheme" rather than
+    # looking up whichever card id either one is at this point in the game.
+    if IsSelf(text):
+        identities = [card for card in state.cards if card.is_identity]
+        if not identities:
+            return "card", None, "there is no identity in play"
+        return "card", identities[0], ""
+
+    if IsMainScheme(text):
+        schemes = [card for card in state.cards if card.is_main_scheme and card.in_play]
+        if not schemes:
+            return "card", None, "there is no main scheme in play"
+        return "card", schemes[0], ""
+
     try:
         ref = CardRef.Parse(text)
     except CardRefError as exc:
@@ -110,6 +136,11 @@ def ResolveSubject(state: StateView, subject: str) -> Tuple[str, Any, str]:
     if not found:
         return "card", None, DescribeMissing(state, ref)
     if len(found) > 1:
+        # Same rule the live resolver uses: a name that matches several cards,
+        # only one of which is on the board, means the one on the board.
+        in_play = [card for card in found if card.in_play]
+        if len(in_play) == 1:
+            return "card", in_play[0], ""
         listing = "; ".join(card.Describe() for card in found)
         return "card", None, (
             f"{ref.Describe()} matches {len(found)} cards ({listing}). "

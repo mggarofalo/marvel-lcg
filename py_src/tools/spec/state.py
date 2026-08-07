@@ -45,6 +45,11 @@ class CardState:
     counters: Dict[str, int] = field(default_factory=dict)
     tokens: Dict[str, int] = field(default_factory=dict)
     info: Dict[str, int] = field(default_factory=dict)
+    # Roles, so a scenario can say "I" and "the main scheme" without looking up
+    # which card id either one happens to be at this point in the game.
+    is_identity: bool = False
+    is_main_scheme: bool = False
+    is_hero_form: bool = False
 
     ############################################################################
     #
@@ -83,6 +88,10 @@ class CardState:
             return self.confused
         if key == "tough":
             return self.tough
+        if key in ("hero_form", "in_hero_form"):
+            return self.RequireIdentity(prop) and self.is_hero_form
+        if key in ("alter_ego_form", "in_alter_ego_form"):
+            return self.RequireIdentity(prop) and not self.is_hero_form
         if key.startswith("counter:"):
             return self.counters.get(key.split(":", 1)[1], 0)
         if key.startswith("token:"):
@@ -95,6 +104,12 @@ class CardState:
             f"Known: health, max_health, damage, threat, zone, in_play, exhausted, "
             f"ready, face_up, stunned, confused, tough, counter:<name>, token:<name>"
             + (f", plus {', '.join(sorted(self.info))}" if self.info else ""))
+
+    def RequireIdentity(self, prop: str) -> bool:
+        if not self.is_identity:
+            raise UnknownProperty(
+                f"{self.name} ({self.card_id}) is not an identity, so it has no {prop}")
+        return True
 
     def Require(self, value: Optional[int], prop: str) -> int:
         if value is None:
@@ -234,9 +249,14 @@ def CaptureCard(card: Any) -> CardState:
     from game.card.face.attribute.can_place_token import CanPlaceToken
     from game.card.face.attribute.can_status import CanStatus
     from game.card.face.base import Scheme2
+    from game.card.face.card_type import Hero, Identity, MainScheme
     from tools.spec.resolve import ZoneName
 
     face = card.face
+
+    is_identity = bool(Identity.IsType(face))
+    is_main_scheme = bool(MainScheme.IsType(face))
+    is_hero_form = is_identity and bool(Hero.IsType(face))
 
     health: Optional[int] = None
     max_health: Optional[int] = None
@@ -298,6 +318,9 @@ def CaptureCard(card: Any) -> CardState:
         counters=counters,
         tokens=tokens,
         info=info,
+        is_identity=is_identity,
+        is_main_scheme=is_main_scheme,
+        is_hero_form=is_hero_form,
     )
 
 

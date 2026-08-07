@@ -26,6 +26,10 @@ from tools.spec.gherkin import LoadFeatureFile, NormalisePath
 
 CASE_SUFFIXES = (".feature", ".json")
 
+# JSON files that live beside the scenarios but are not scenarios: the checked-in
+# step vocabulary and the manifests the validation runner writes.
+RESERVED_JSON = ("steps.catalogue.json", "trusted.json", "quarantine.json")
+
 
 def LoadCases(path: str) -> List[SpecCase]:
     """Every case under `path`, which may be a file or a directory."""
@@ -33,6 +37,8 @@ def LoadCases(path: str) -> List[SpecCase]:
         cases: List[SpecCase] = []
         for name in sorted(os.listdir(path)):
             child = os.path.join(path, name)
+            if name in RESERVED_JSON:
+                continue
             if os.path.isdir(child) or name.endswith(CASE_SUFFIXES):
                 cases.extend(LoadCases(child))
         return cases

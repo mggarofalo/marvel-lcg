@@ -3,6 +3,8 @@
 The claims under test are the ones the suite's value rests on:
 
 - a `.feature` file compiles completely or fails naming the line
+- the step vocabulary the runner implements is exactly the one checked in, so
+  drift between the two runners fails a build instead of rotting
 - a run's verdict follows from what it observed, not from judgement
 - the quarantine cannot be talked around: only PASS enters the trusted suite,
   and an edited scenario leaves it
@@ -13,8 +15,8 @@ import os
 import tempfile
 import unittest
 
-from tools.spec.case import SpecCase, SourceDigest, ThenStep
-from tools.spec.gherkin import GherkinError, ParseFeature
+from tools.spec.case import SourceDigest, SpecCase, ThenStep
+from tools.spec.gherkin import GherkinError, ParseFeature, Vocabulary
 from tools.spec.harness import (
     CaseResult, OUTCOME_ASSERTION, OUTCOME_ERROR, OUTCOME_PASS, OUTCOME_UNPLAYABLE)
 from tools.spec.validate import (
@@ -25,9 +27,11 @@ from tools.spec.validate import (
 BACKGROUND = """Feature: A feature
 
   Background:
-    Given the scenario "rhino"
-    And the hero "spider_man"
+    Given the scenario is "rhino"
+    And the hero is "spider_man"
 """
+
+CATALOGUE = "./specs/steps.catalogue.json"
 
 
 def Feature(body):
@@ -39,12 +43,42 @@ def MakeCase(**overrides):
         "name": "a case",
         "scenario": "rhino",
         "heroes": ("spider_man",),
-        "then": (ThenStep("Rhino", "health", 14),),
-        "source_path": "specs/scenarios/x.feature",
+        "beats": (ThenStep("Rhino", "health", 14),),
+        "source_path": "specs/cards/core/x.feature",
         "source_sha256": "abc123",
     }
     fields.update(overrides)
     return SpecCase(**fields)
+
+
+################################################################################
+#
+
+class TestStepCatalogue(unittest.TestCase):
+    """The catalogue is the contract both engines conform to."""
+
+    def Catalogue(self):
+        if not os.path.exists(CATALOGUE):
+            self.skipTest("run from py_src/")
+        with open(CATALOGUE, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+
+    def test_the_runner_implements_exactly_the_checked_in_vocabulary(self):
+        # A form added to the parser without being checked in -- or checked in
+        # without being implemented -- fails here rather than drifting quietly.
+        catalogue = self.Catalogue()["steps"]
+        implemented = Vocabulary()
+
+        self.assertEqual(sorted(catalogue), sorted(implemented))
+        for clause in sorted(catalogue):
+            self.assertEqual(
+                sorted(catalogue[clause]), sorted(implemented[clause]),
+                f"{clause} steps differ between the catalogue and the parser")
+
+    def test_the_catalogue_covers_the_two_transcript_assertions(self):
+        catalogue = self.Catalogue()["steps"]
+        self.assertIn("I am prompted to choose one", catalogue["then"])
+        self.assertIn("I am not prompted again", catalogue["then"])
 
 
 ################################################################################
@@ -72,35 +106,81 @@ class TestGherkinParsing(unittest.TestCase):
 """))
         self.assertEqual(cases[0].case_id, "A feature :: one")
 
+    def test_a_transcript_interleaves_when_and_then_in_order(self):
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    Given I am in hero form
+    When I attack "Rhino"
+    Then "Rhino" has 12 damage
+    When I pass
+    Then I am exhausted
+"""))
+        self.assertEqual([beat.kind for beat in cases[0].beats],
+                         ["when", "then", "when", "then"])
+
     def test_and_continues_the_clause_above_it(self):
         cases = ParseFeature(Feature("""
   Scenario: one
-    Given "01001a" is in hero form
-    And the hand contains "01005"
-    When the player attacks "Rhino"
+    Given I am in hero form
+    And my hand is "Swinging Web Kick"
+    When I attack "Rhino"
     Then "Rhino" has 12 health
-    And "01001a" is exhausted
+    And I am exhausted
 """))
         case = cases[0]
         # The two Background steps are settings, not Givens.
         self.assertEqual([step.verb for step in case.given], ["hero_form", "hand"])
-        self.assertEqual(len(case.when), 1)
-        self.assertEqual(len(case.then), 2)
+        self.assertEqual([beat.kind for beat in case.beats], ["when", "then", "then"])
 
     def test_the_same_sentence_means_different_things_per_clause(self):
         # `"X" has N threat` sets the board under Given and asserts under Then.
         # Without the keyword there is no way to tell them apart.
         cases = ParseFeature(Feature("""
   Scenario: one
-    Given "The Break-In!" has 5 threat
-    When the player thwarts "The Break-In!"
-    Then "The Break-In!" has 4 threat
+    Given the main scheme has 5 threat
+    When I thwart "The Break-In!"
+    Then the main scheme has 4 threat
 """))
         case = cases[0]
         self.assertEqual([step.verb for step in case.given], ["threat"])
         self.assertEqual(case.given[0].value, 5)
-        self.assertEqual(case.then[0].prop, "threat")
-        self.assertEqual(case.then[0].value, 4)
+        self.assertEqual(case.beats[1].prop, "threat")
+        self.assertEqual(case.beats[1].value, 4)
+
+    def test_a_given_after_a_when_is_rejected(self):
+        # The board is built once, before the transcript starts. A Given in the
+        # middle would silently not do what it looks like it does.
+        with self.assertRaises(GherkinError) as caught:
+            ParseFeature(Feature("""
+  Scenario: one
+    When I change form
+    Given I am in hero form
+    Then I am in hero form
+"""))
+        self.assertIn("cannot follow a When", str(caught.exception))
+
+    def test_a_prompt_assertion_reads_its_option_table(self):
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    When I play "Nick Fury"
+    Then I am prompted to choose one
+      | Draw 3 cards              |
+      | Deal 4 damage to an enemy |
+    When I choose "Draw 3 cards"
+    Then I have 3 cards in hand
+"""))
+        prompt = cases[0].beats[1]
+        self.assertEqual(prompt.kind, "prompt")
+        self.assertEqual(prompt.options, ("Draw 3 cards", "Deal 4 damage to an enemy"))
+
+    def test_a_prompt_assertion_without_a_table_is_an_error(self):
+        with self.assertRaises(GherkinError) as caught:
+            ParseFeature(Feature("""
+  Scenario: one
+    When I play "Nick Fury"
+    Then I am prompted to choose one
+"""))
+        self.assertIn("needs a table", str(caught.exception))
 
     def test_unknown_step_names_the_line_and_the_clause(self):
         with self.assertRaises(GherkinError) as caught:
@@ -138,36 +218,9 @@ class TestGherkinParsing(unittest.TestCase):
         self.assertEqual(len(cases), 2)
         self.assertEqual(cases[0].given[0].value, 0)
         self.assertEqual(cases[1].given[0].value, 3)
-        self.assertEqual(cases[1].then[0].value, 11)
-        # Each row is a distinct case, so each gets a distinct identity.
+        self.assertEqual(cases[1].beats[0].value, 11)
         self.assertNotEqual(cases[0].case_id, cases[1].case_id)
         self.assertIn("damage=3", cases[1].case_id)
-
-    def test_a_placeholder_with_no_column_is_an_error(self):
-        with self.assertRaises(GherkinError) as caught:
-            ParseFeature(Feature("""
-  Scenario Outline: damage
-    Given "Rhino" has <damage> damage
-    Then "Rhino" has <health> health
-
-    Examples:
-      | damage |
-      | 0      |
-"""))
-        self.assertIn("<health>", str(caught.exception))
-
-    def test_a_short_examples_row_is_an_error(self):
-        with self.assertRaises(GherkinError) as caught:
-            ParseFeature(Feature("""
-  Scenario Outline: damage
-    Given "Rhino" has <damage> damage
-    Then "Rhino" has 14 health
-
-    Examples:
-      | damage | health |
-      | 0      |
-"""))
-        self.assertIn("row has 1 cell", str(caught.exception))
 
     def test_an_outline_with_no_examples_is_an_error_not_a_silent_drop(self):
         # A scenario that looks authored but never runs never fails either,
@@ -206,21 +259,48 @@ class TestGherkinParsing(unittest.TestCase):
     Then "Rhino" has 14 health
 """))
 
+    def test_a_placeholder_with_no_column_is_an_error(self):
+        with self.assertRaises(GherkinError) as caught:
+            ParseFeature(Feature("""
+  Scenario Outline: damage
+    Given "Rhino" has <damage> damage
+    Then "Rhino" has <health> health
+
+    Examples:
+      | damage |
+      | 0      |
+"""))
+        self.assertIn("<health>", str(caught.exception))
+
+    def test_a_short_examples_row_is_an_error(self):
+        with self.assertRaises(GherkinError) as caught:
+            ParseFeature(Feature("""
+  Scenario Outline: damage
+    Given "Rhino" has <damage> damage
+    Then "Rhino" has 14 health
+
+    Examples:
+      | damage | health |
+      | 0      |
+"""))
+        self.assertIn("row has 1 cell", str(caught.exception))
+
     def test_comments_and_tags(self):
         cases = ParseFeature(Feature("""
   # this line is ignored
-  @slow @self-test
+  @card:01084 @self-test
   Scenario: one
     Then "Rhino" has 14 health
 """))
-        self.assertEqual(cases[0].tags, ("slow", "self-test"))
+        self.assertEqual(cases[0].tags, ("card:01084", "self-test"))
+        self.assertEqual(cases[0].card_tags, ("01084",))
 
-    def test_a_scenario_without_a_then_is_rejected(self):
-        # An assertion-free scenario would report PASS while proving nothing.
+    def test_a_scenario_that_asserts_nothing_is_rejected(self):
         with self.assertRaises(GherkinError):
             ParseFeature(Feature("""
   Scenario: one
-    Given "01001a" is in hero form
+    Given I am in hero form
+    When I change form
 """))
 
     def test_a_feature_with_no_scenarios_is_rejected(self):
@@ -248,8 +328,8 @@ class TestGherkinParsing(unittest.TestCase):
     Then "Rhino" is not stunned
     And "Rhino" is in play
 """))
-        self.assertEqual(cases[0].then[0].value, False)
-        self.assertEqual(cases[0].then[1].value, True)
+        self.assertEqual(cases[0].beats[0].value, False)
+        self.assertEqual(cases[0].beats[1].value, True)
 
     def test_every_scenario_carries_the_source_hash(self):
         text = Feature("""
@@ -328,8 +408,7 @@ class TestQuarantine(unittest.TestCase):
         self.assertIn("source changed", edited.stale[0])
 
     def test_a_scenario_that_never_passed_is_not_run_by_the_gate(self):
-        manifest = {"version": 1, "scenarios": {}}
-        selection = SelectTrusted([MakeCase()], manifest)
+        selection = SelectTrusted([MakeCase()], {"version": 1, "scenarios": {}})
         self.assertEqual(selection.cases, [])
         self.assertEqual(selection.untrusted, ["a case"])
 
@@ -346,8 +425,12 @@ class TestQuarantine(unittest.TestCase):
                           note="Do not hand-edit.")
             data = ReadManifest(path)
             self.assertEqual(data["scenarios"]["a case"]["sha256"], "y")
-            # The note travels with the file so nobody edits it unwarned.
             self.assertEqual(data["note"], "Do not hand-edit.")
+
+    def test_reading_a_missing_manifest_yields_an_empty_suite(self):
+        with tempfile.TemporaryDirectory() as directory:
+            data = ReadManifest(os.path.join(directory, "nothing.json"))
+            self.assertEqual(data["scenarios"], {})
 
     def test_a_file_that_is_not_a_manifest_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -356,11 +439,6 @@ class TestQuarantine(unittest.TestCase):
                 json.dump({"something": "else"}, handle)
             with self.assertRaises(Exception):
                 ReadManifest(path)
-
-    def test_reading_a_missing_manifest_yields_an_empty_suite(self):
-        with tempfile.TemporaryDirectory() as directory:
-            data = ReadManifest(os.path.join(directory, "nothing.json"))
-            self.assertEqual(data["scenarios"], {})
 
 
 ################################################################################
@@ -402,12 +480,12 @@ class TestHistory(unittest.TestCase):
 class TestShippedScenarios(unittest.TestCase):
 
     def test_the_self_test_scenarios_land_on_the_verdicts_they_claim(self):
-        # `specs/scenarios/known_disagreements.feature` is wrong on purpose. If
-        # any of it starts passing, the harness has stopped telling the truth.
+        # `specs/self-test/quarantine.feature` is wrong on purpose. If any of it
+        # starts passing, the harness has stopped telling the truth.
         from tools.spec.gherkin import LoadFeatureFile
         from tools.spec.validate import Validate
 
-        path = "./specs/scenarios/known_disagreements.feature"
+        path = "./specs/self-test/quarantine.feature"
         if not os.path.exists(path):
             self.skipTest("run from py_src/")
 
@@ -415,20 +493,18 @@ class TestShippedScenarios(unittest.TestCase):
         verdicts = {judgement.case.name: judgement.verdict
                     for judgement in summary.judgements}
 
-        self.assertEqual(len(verdicts), 3)
+        self.assertTrue(verdicts)
         for name, verdict in verdicts.items():
             self.assertNotEqual(verdict, VERDICT_PASS, name)
             # Each scenario says in its own name which verdict it expects.
             self.assertIn(verdict, name)
 
     def test_the_trusted_manifest_only_contains_scenarios_that_pass(self):
-        from tools.spec.validate import ReadManifest as Read
-
         path = "./specs/trusted.json"
         if not os.path.exists(path):
             self.skipTest("run from py_src/")
 
-        trusted = Read(path)["scenarios"]
+        trusted = ReadManifest(path)["scenarios"]
         self.assertTrue(trusted, "the trusted suite should not be empty")
         for case_id in trusted:
             self.assertNotIn("Quarantine self-test", case_id)

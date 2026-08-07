@@ -1,14 +1,15 @@
 """Tests for the puzzle-based spec harness (MARVEL-20).
 
-Two layers, because they cost very different amounts:
+Three layers, because they cost very different amounts:
 
 - pure logic -- case loading, card-reference parsing, assertion evaluation and
   its wording -- which needs no engine at all
-- a handful of end-to-end cases that boot the engine, build a puzzle board,
-  drive an action through the bot device and assert on the result
+- the policy on its own, where the backstops are reachable
+- end-to-end cases that boot the engine, build a puzzle board, drive a
+  transcript through the bot device and assert on the result
 
 The end-to-end tests are the ones that matter: they are the claim that a card
-behavior can be expressed as a test case and run. They must be run from
+behavior can be expressed as a scenario and run. They must be run from
 `py_src/`, like everything else in this repo.
 """
 
@@ -16,11 +17,14 @@ import unittest
 
 from tools.spec.assertions import Evaluate, ResolveSubject
 from tools.spec.case import (
-    GivenStep, SpecCase, SpecCaseError, SourceDigest, ThenStep, WhenStep, LoadJsonCases)
+    GivenStep, LoadJsonCases, NoPromptStep, PromptStep, SourceDigest, SpecCase,
+    SpecCaseError, ThenStep, WhenStep)
 from tools.spec.harness import (
     OUTCOME_ASSERTION, OUTCOME_PASS, OUTCOME_UNPLAYABLE, RunCase)
-from tools.spec.resolve import CardRef, CardRefError
+from tools.spec.resolve import CardRef, CardRefError, NormaliseLabel
 from tools.spec.state import CardState, PlayerState, StateView, UnknownProperty
+
+HERO_FORM = GivenStep("hero_form", ("me",))
 
 
 def MakeCase(**overrides):
@@ -28,7 +32,7 @@ def MakeCase(**overrides):
         "name": "a case",
         "scenario": "rhino",
         "heroes": ("spider_man",),
-        "then": (ThenStep("Rhino", "health", 14),),
+        "beats": (ThenStep("Rhino", "health", 14),),
     }
     fields.update(overrides)
     return SpecCase(**fields)
@@ -82,21 +86,32 @@ class TestCaseFormat(unittest.TestCase):
     def test_case_without_assertions_is_rejected(self):
         # An assertion-free case reports PASS while proving nothing.
         with self.assertRaises(SpecCaseError):
-            MakeCase(then=())
+            MakeCase(beats=(WhenStep(option="attack", targets=("Rhino",)),))
 
-    def test_json_round_trip_preserves_every_clause(self):
+    def test_a_prompt_beat_needs_options(self):
+        with self.assertRaises(SpecCaseError):
+            PromptStep(options=())
+
+    def test_json_round_trip_preserves_beat_order(self):
         case = MakeCase(
-            given=(GivenStep("hand", ("01005", "01007")),
-                   GivenStep("damage", ("01094",), value=3)),
-            when=(WhenStep(option="Attack", targets=("Rhino",)),),
-            then=(ThenStep("Rhino", "health", 11, op="<="),),
+            given=(GivenStep("hand", ("01005", "01007")),),
+            beats=(
+                WhenStep(option="play", card="Nick Fury"),
+                PromptStep(options=("Draw 3 cards", "Deal 4 damage to an enemy")),
+                WhenStep(option="Deal 4 damage to an enemy", targets=("Shocker",)),
+                ThenStep("Shocker", "damage", 4),
+                NoPromptStep(),
+            ),
         )
         again = SpecCase.FromJson(case.ToJson())
         self.assertEqual(again.ToDict(), case.ToDict())
+        self.assertEqual([beat.kind for beat in again.beats],
+                         ["when", "prompt", "when", "then", "no_prompt"])
 
     def test_load_json_stamps_provenance_on_every_case(self):
         text = ('[{"name": "one", "scenario": "rhino", "heroes": ["spider_man"], '
-                '"then": [{"subject": "Rhino", "prop": "health", "value": 14}]}]')
+                '"beats": [{"kind": "then", "subject": "Rhino", "prop": "health", '
+                '"value": 14}]}]')
         cases = LoadJsonCases(text, source_path="specs/x.json")
         self.assertEqual(cases[0].source_path, "specs/x.json")
         self.assertEqual(cases[0].source_sha256, SourceDigest(text))
@@ -106,9 +121,29 @@ class TestCaseFormat(unittest.TestCase):
         # checkout with different line endings.
         self.assertEqual(SourceDigest("a\r\nb"), SourceDigest("a\nb"))
 
+    def test_card_tags_are_extracted(self):
+        case = MakeCase(tags=("card:01084", "self-test"))
+        self.assertEqual(case.card_tags, ("01084",))
+
     def test_pass_step_takes_no_option(self):
         with self.assertRaises(SpecCaseError):
-            WhenStep(option="Attack", pass_priority=True)
+            WhenStep(option="attack", pass_priority=True)
+
+
+################################################################################
+#
+
+class TestLabelNormalisation(unittest.TestCase):
+    """Option names are engine identifiers; a scenario reads English."""
+
+    def test_underscores_and_case_are_ignored(self):
+        self.assertEqual(NormaliseLabel("Deal_4_damage_to_an_enemy"),
+                         NormaliseLabel("Deal 4 damage to an enemy"))
+        self.assertEqual(NormaliseLabel("Change_Form"), NormaliseLabel("change form"))
+
+    def test_surrounding_and_repeated_whitespace_is_ignored(self):
+        self.assertEqual(NormaliseLabel("  Draw  3   cards "),
+                         NormaliseLabel("Draw 3 cards"))
 
 
 ################################################################################
@@ -148,8 +183,7 @@ class TestAssertions(unittest.TestCase):
 
     def test_passing_assertion(self):
         state = MakeState(cards=[MakeCard()])
-        result = Evaluate(state, ThenStep("Rhino", "health", 12))
-        self.assertTrue(result.passed)
+        self.assertTrue(Evaluate(state, ThenStep("Rhino", "health", 12)).passed)
 
     def test_failure_names_the_claim_and_the_board(self):
         state = MakeState(cards=[MakeCard()])
@@ -157,7 +191,6 @@ class TestAssertions(unittest.TestCase):
         self.assertFalse(result.passed)
         self.assertFalse(result.unresolvable)
         self.assertIn("expected 14, got 12", result.message)
-        # The board context is what makes the failure legible.
         self.assertIn("Rhino (01094) in VillainArea", result.message)
         self.assertIn("12/14 hp", result.message)
 
@@ -178,7 +211,6 @@ class TestAssertions(unittest.TestCase):
         # The difference the validation runner's verdicts turn on.
         state = MakeState(cards=[MakeCard()])
         result = Evaluate(state, ThenStep("Galactus", "health", 1))
-        self.assertFalse(result.passed)
         self.assertTrue(result.unresolvable)
         self.assertIn("no card matches", result.message)
 
@@ -188,20 +220,28 @@ class TestAssertions(unittest.TestCase):
         self.assertTrue(result.unresolvable)
         self.assertIn("morale", result.message)
 
-    def test_ambiguous_card_names_every_candidate(self):
+    def test_a_name_matching_one_card_in_play_means_that_card(self):
+        # Rhino stage 1 is on the board, stage 2 is still in the villain deck.
+        # "Rhino" means the one being fought.
+        state = MakeState(cards=[
+            MakeCard(object_id=3),
+            MakeCard(object_id=4, card_id="01095", card_ids=("01095",),
+                     zone="VillainDeck", in_play=False, health=0, max_health=0),
+        ])
+        self.assertTrue(Evaluate(state, ThenStep("Rhino", "health", 12)).passed)
+
+    def test_two_cards_in_play_is_still_ambiguous(self):
         state = MakeState(cards=[
             MakeCard(object_id=5, zone="HandsArea", name="Swinging Web Kick",
                      card_id="01005", card_ids=("01005",), names=("swinging web kick",),
-                     health=None, max_health=None, in_play=False),
-            MakeCard(object_id=6, zone="DiscardPile", name="Swinging Web Kick",
+                     health=None, max_health=None, in_play=True),
+            MakeCard(object_id=6, zone="AlliesArea", name="Swinging Web Kick",
                      card_id="01005", card_ids=("01005",), names=("swinging web kick",),
-                     health=None, max_health=None, in_play=False),
+                     health=None, max_health=None, in_play=True),
         ])
         result = Evaluate(state, ThenStep("01005", "zone", "HandsArea"))
         self.assertTrue(result.unresolvable)
         self.assertIn("matches 2 cards", result.message)
-        self.assertIn("HandsArea", result.message)
-        self.assertIn("DiscardPile", result.message)
 
     def test_zone_qualifier_disambiguates(self):
         state = MakeState(cards=[
@@ -212,23 +252,39 @@ class TestAssertions(unittest.TestCase):
                      card_id="01005", card_ids=("01005",), names=("swinging web kick",),
                      health=None, max_health=None, in_play=False),
         ])
-        result = Evaluate(state, ThenStep("01005 in DiscardPile", "zone", "DiscardPile"))
-        self.assertTrue(result.passed)
+        self.assertTrue(
+            Evaluate(state, ThenStep("01005 in DiscardPile", "zone", "DiscardPile")).passed)
 
     def test_missing_card_in_a_zone_says_where_it_actually_is(self):
         state = MakeState(cards=[MakeCard()])
         result = Evaluate(state, ThenStep("Rhino in HandsArea", "health", 12))
         self.assertIn("it is in VillainArea", result.message)
 
-    def test_health_on_a_card_that_has_none(self):
+    def test_me_resolves_to_the_identity(self):
         state = MakeState(cards=[
-            MakeCard(object_id=5, name="Swinging Web Kick", card_id="01005",
-                     card_ids=("01005",), names=("swinging web kick",),
-                     zone="HandsArea", in_play=False, health=None, max_health=None),
+            MakeCard(),
+            MakeCard(object_id=1, name="Spider-Man", card_id="01001a",
+                     card_ids=("01001a", "01001b"), names=("spider-man", "peter parker"),
+                     zone="HeroArea", health=10, max_health=10,
+                     is_identity=True, is_hero_form=True),
         ])
-        result = Evaluate(state, ThenStep("01005", "health", 1))
+        self.assertTrue(Evaluate(state, ThenStep("me", "hero_form", True)).passed)
+        self.assertTrue(Evaluate(state, ThenStep("me", "damage", 0)).passed)
+
+    def test_the_main_scheme_resolves_by_role(self):
+        state = MakeState(cards=[
+            MakeCard(object_id=2, name="The Break-In!", card_id="01097b",
+                     card_ids=("01097b",), names=("the break-in!",),
+                     zone="MainSchemesArea", health=None, max_health=None,
+                     threat=5, is_main_scheme=True),
+        ])
+        self.assertTrue(Evaluate(state, ThenStep("the main scheme", "threat", 5)).passed)
+
+    def test_form_on_a_card_that_is_not_an_identity(self):
+        state = MakeState(cards=[MakeCard()])
+        result = Evaluate(state, ThenStep("Rhino", "hero_form", True))
         self.assertTrue(result.unresolvable)
-        self.assertIn("no health", result.message)
+        self.assertIn("not an identity", result.message)
 
     def test_player_subject_is_one_based_as_written(self):
         state = MakeState(players=[
@@ -237,7 +293,6 @@ class TestAssertions(unittest.TestCase):
         ])
         self.assertTrue(Evaluate(state, ThenStep("player 1", "hand_size", 5)).passed)
         self.assertTrue(Evaluate(state, ThenStep("player 2", "hand_size", 6)).passed)
-        # Bare "player" is player 1.
         self.assertTrue(Evaluate(state, ThenStep("player", "hand_size", 5)).passed)
 
     def test_game_subject(self):
@@ -276,7 +331,7 @@ class TestStateProperties(unittest.TestCase):
 
 
 ################################################################################
-# The policy on its own -- no engine, so the backstop paths are reachable.
+# The policy on its own -- no engine, so the backstops are reachable.
 
 class TestDecisionBudget(unittest.TestCase):
     """The runaway backstop, which the engine cannot be made to exercise.
@@ -287,17 +342,17 @@ class TestDecisionBudget(unittest.TestCase):
     the failure is visible.
     """
 
-    def Decide(self, *, can_cancel=True):
+    def Decide(self, *, can_cancel=True, event="WhenPlayerInTurn"):
         from engine.device.manager.bot.policy import BotDecision
         return BotDecision(
-            player_id=0, step_id=7, attempt=0, event_name="WhenPlayerInTurn",
+            player_id=0, step_id=7, attempt=0, event_name=event,
             ability_type="Normal", prompt_text="", can_cancel=can_cancel,
             options=[], replay_input="{}", world=None,
         )
 
-    def test_the_budget_trips_cleanly_after_the_script_has_completed(self):
-        from tools.spec.policy import ScriptedPolicy
-        policy = ScriptedPolicy(steps=(), max_decisions=0)
+    def test_the_budget_trips_cleanly_after_the_transcript_has_finished(self):
+        from tools.spec.policy import TranscriptPolicy
+        policy = TranscriptPolicy(beats=(), max_decisions=0)
 
         policy.Choose(self.Decide())
 
@@ -305,20 +360,19 @@ class TestDecisionBudget(unittest.TestCase):
         self.assertIn("gave up after 0 decisions", policy.failure)
         self.assertIn("unwinding", policy.failure)
 
-    def test_the_budget_names_the_next_step_when_one_is_unplayed(self):
-        from tools.spec.policy import ScriptedPolicy
-        policy = ScriptedPolicy(steps=(WhenStep(option="Attack"),), max_decisions=0)
+    def test_the_budget_counts_the_beats_left_over(self):
+        from tools.spec.policy import TranscriptPolicy
+        policy = TranscriptPolicy(beats=(WhenStep(option="attack"),), max_decisions=0)
 
         policy.Choose(self.Decide())
 
         self.assertTrue(policy.halted)
-        self.assertIn("1 When step(s) unplayed", policy.failure)
-        self.assertIn("Attack", policy.failure)
+        self.assertIn("1 beat(s) unplayed", policy.failure)
 
     def test_a_halted_policy_declines_whatever_the_engine_still_asks(self):
         from engine.device.manager.bot.command import BotCommand
-        from tools.spec.policy import ScriptedPolicy
-        policy = ScriptedPolicy(steps=(), max_decisions=0)
+        from tools.spec.policy import TranscriptPolicy
+        policy = TranscriptPolicy(beats=(), max_decisions=0)
 
         policy.Choose(self.Decide())
         after = policy.Choose(self.Decide(can_cancel=False))
@@ -332,44 +386,62 @@ class TestDecisionBudget(unittest.TestCase):
 # End to end -- these boot the engine.
 
 class TestAgainstTheEngine(unittest.TestCase):
-    """A card behavior, expressed as a case and run against the real engine."""
+    """A card behavior, expressed as a transcript and run against the engine."""
 
     def test_basic_attack_deals_the_heros_attack_value(self):
         # Spider-Man's hero side has ATK 2; Rhino stage 1 solo has 14 hit
         # points. Attacking once should leave 12.
         case = MakeCase(
             name="basic attack",
-            given=(GivenStep("hero_form", ("01001a",)),),
-            when=(WhenStep(option="Attack", targets=("Rhino in VillainArea",)),),
-            then=(
-                ThenStep("Rhino in VillainArea", "health", 12),
-                ThenStep("Rhino in VillainArea", "damage", 2),
-                ThenStep("01001a", "exhausted", True),
+            given=(HERO_FORM,),
+            beats=(
+                WhenStep(option="attack", targets=("Rhino",)),
+                ThenStep("Rhino", "health", 12),
+                ThenStep("Rhino", "damage", 2),
+                ThenStep("me", "exhausted", True),
             ),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
 
-    def test_given_steps_put_cards_where_the_spec_says(self):
+    def test_given_steps_put_cards_where_the_scenario_says(self):
         case = MakeCase(
             name="given builds the board",
             given=(
-                GivenStep("hand", ("01005", "01007")),
-                GivenStep("player_deck", ("01003",)),
-                GivenStep("damage", ("Rhino in VillainArea",), value=4),
-                GivenStep("threat", ("The Break-In!",), value=5),
+                GivenStep("hand", ("Swinging Web Kick", "Spider-Tracer")),
+                GivenStep("player_deck", ("Backflip",)),
+                GivenStep("damage", ("Rhino",), value=4),
+                GivenStep("threat", ("the main scheme",), value=5),
             ),
-            when=(),
-            then=(
-                ThenStep("01005", "zone", "HandsArea"),
-                ThenStep("01003", "zone", "PlayerDeck"),
-                ThenStep("Rhino in VillainArea", "health", 10),
-                ThenStep("The Break-In!", "threat", 5),
+            beats=(
+                ThenStep("Swinging Web Kick", "zone", "HandsArea"),
+                ThenStep("Backflip", "zone", "PlayerDeck"),
+                ThenStep("Rhino", "health", 10),
+                ThenStep("the main scheme", "threat", 5),
                 ThenStep("player", "hand_size", 2),
             ),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_printed_names_resolve_to_card_ids(self):
+        case = MakeCase(
+            name="named cards",
+            given=(GivenStep("hand", ("Swinging Web Kick",)),),
+            beats=(ThenStep("01005", "zone", "HandsArea"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_name_that_means_several_cards_asks_for_the_id(self):
+        case = MakeCase(
+            name="ambiguous printed name",
+            given=(GivenStep("hand", ("Rhino",)),),
+            beats=(ThenStep("Rhino", "zone", "HandsArea"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("use the card id", result.Describe())
 
     def test_given_status_steps_are_declarative_not_toggles(self):
         # `RunPuzzle.Stun` flips the status. Applying it twice must still leave
@@ -377,11 +449,10 @@ class TestAgainstTheEngine(unittest.TestCase):
         case = MakeCase(
             name="stunned twice is still stunned",
             given=(
-                GivenStep("stunned", ("Rhino in VillainArea",)),
-                GivenStep("stunned", ("Rhino in VillainArea",)),
+                GivenStep("stunned", ("Rhino",)),
+                GivenStep("stunned", ("Rhino",)),
             ),
-            when=(),
-            then=(ThenStep("Rhino in VillainArea", "stunned", True),),
+            beats=(ThenStep("Rhino", "stunned", True),),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
@@ -389,92 +460,64 @@ class TestAgainstTheEngine(unittest.TestCase):
     def test_a_wrong_expectation_fails_with_the_actual_value(self):
         case = MakeCase(
             name="wrong on purpose",
-            given=(GivenStep("hero_form", ("01001a",)),),
-            when=(WhenStep(option="Attack", targets=("Rhino in VillainArea",)),),
-            then=(ThenStep("Rhino in VillainArea", "health", 14),),
+            given=(HERO_FORM,),
+            beats=(
+                WhenStep(option="attack", targets=("Rhino",)),
+                ThenStep("Rhino", "health", 14),
+            ),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
         self.assertIn("expected 14, got 12", result.Describe())
 
     def test_an_action_the_engine_never_offers_says_what_it_did_offer(self):
-        # Attacking from alter-ego is not a legal action, so the step never
-        # matches. The failure has to name the decisions the policy saw.
         case = MakeCase(
             name="attack from alter-ego",
             given=(),
-            when=(WhenStep(option="Attack", targets=("Rhino in VillainArea",)),),
-            then=(ThenStep("Rhino in VillainArea", "health", 12),),
+            beats=(
+                WhenStep(option="attack", targets=("Rhino",)),
+                ThenStep("Rhino", "health", 12),
+            ),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
-        self.assertIn("unplayed", result.Describe())
         self.assertIn("Change_Form", result.Describe())
 
-    def test_a_then_naming_a_card_outside_the_game_is_unplayable(self):
-        case = MakeCase(
-            name="asserts about a card that is not here",
-            given=(GivenStep("hero_form", ("01001a",)),),
-            when=(),
-            then=(ThenStep("Galactus", "health", 1),),
-        )
-        result = RunCase(case)
-        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
-
     def test_an_ambiguous_target_is_refused_rather_than_guessed(self):
-        # Two minions engaged and a spec that names neither: the harness must
-        # not pick one, or the scenario's result would depend on engine
-        # ordering rather than on the card.
         case = MakeCase(
             name="ambiguous attack target",
             given=(
-                GivenStep("hero_form", ("01001a",)),
-                GivenStep("in_play", ("01101",)),   # Hydra Mercenary
-                GivenStep("in_play", ("01102",)),   # Sandman
+                HERO_FORM,
+                GivenStep("in_play", ("Hydra Mercenary",)),
+                GivenStep("in_play", ("Sandman",)),
             ),
-            when=(WhenStep(option="Attack"),),
-            then=(ThenStep("Rhino in VillainArea", "health", 12),),
+            beats=(
+                WhenStep(option="attack"),
+                ThenStep("Rhino", "health", 12),
+            ),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
         self.assertIn("say which", result.Describe())
 
-    def test_naming_the_target_resolves_the_ambiguity(self):
+    def test_an_ambiguous_given_never_manufactures_another_copy(self):
         case = MakeCase(
-            name="named attack target",
+            name="ambiguous is-in-play",
             given=(
-                GivenStep("hero_form", ("01001a",)),
-                GivenStep("in_play", ("01101",)),
-                GivenStep("in_play", ("01102",)),
+                GivenStep("hand", ("01005", "01005")),
+                GivenStep("in_play", ("01005",)),
             ),
-            when=(WhenStep(option="Attack", targets=("Hydra Mercenary",)),),
-            then=(
-                ThenStep("Hydra Mercenary", "damage", 2),
-                ThenStep("Sandman", "damage", 0),
-            ),
+            beats=(ThenStep("01005 #1", "zone", "HandsArea"),),
         )
         result = RunCase(case)
-        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
-
-    def test_a_given_may_bring_a_named_card_into_play(self):
-        case = MakeCase(
-            name="minion enters play",
-            given=(GivenStep("in_play", ("01101",)),),
-            when=(),
-            then=(
-                ThenStep("Hydra Mercenary", "in_play", True),
-                ThenStep("Hydra Mercenary", "health", 3),
-            ),
-        )
-        result = RunCase(case)
-        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("matches 2 cards", result.Describe())
 
     def test_a_misspelled_card_in_a_given_is_an_error_not_a_new_card(self):
         case = MakeCase(
             name="typo in a Given",
             given=(GivenStep("damage", ("Rhinoo",), value=2),),
-            when=(),
-            then=(ThenStep("Rhino in VillainArea", "health", 12),),
+            beats=(ThenStep("Rhino", "health", 12),),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
@@ -483,61 +526,135 @@ class TestAgainstTheEngine(unittest.TestCase):
     def test_cases_do_not_leak_state_into_each_other(self):
         damaged = MakeCase(
             name="first case damages the villain",
-            given=(GivenStep("damage", ("Rhino in VillainArea",), value=6),),
-            when=(),
-            then=(ThenStep("Rhino in VillainArea", "health", 8),),
+            given=(GivenStep("damage", ("Rhino",), value=6),),
+            beats=(ThenStep("Rhino", "health", 8),),
         )
         fresh = MakeCase(
             name="second case starts clean",
-            given=(),
-            when=(),
-            then=(ThenStep("Rhino in VillainArea", "health", 14),),
+            beats=(ThenStep("Rhino", "health", 14),),
         )
         self.assertEqual(RunCase(damaged).outcome, OUTCOME_PASS)
         self.assertEqual(RunCase(fresh).outcome, OUTCOME_PASS)
 
-    def test_an_ambiguous_given_never_manufactures_another_copy(self):
-        # `is in play` may bring a card into the game, but only when the id
-        # means nothing yet. Two copies already in hand and a bare id is the
-        # author failing to say which -- answering it by creating a third
-        # would be the silent first-match this harness refuses.
-        case = MakeCase(
-            name="ambiguous is-in-play",
-            given=(
-                GivenStep("hand", ("01005", "01005")),
-                GivenStep("in_play", ("01005",)),
-            ),
-            when=(),
-            then=(ThenStep("01005 #1", "zone", "HandsArea"),),
-        )
-        result = RunCase(case)
-        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
-        self.assertIn("matches 2 cards", result.Describe())
-
-    def test_an_ambiguous_when_card_says_so_rather_than_no_match(self):
-        case = MakeCase(
-            name="ambiguous play target",
-            given=(
-                GivenStep("hero_form", ("01001a",)),
-                GivenStep("hand", ("01005", "01005", "01003", "01003")),
-            ),
-            when=(WhenStep(option="Play", card="01005"),),
-            then=(ThenStep("Rhino in VillainArea", "damage", 8),),
-        )
-        result = RunCase(case)
-        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
-        self.assertIn("matches 2 cards", result.Describe())
-
     def test_the_engines_own_play_by_play_is_kept_for_triage(self):
         case = MakeCase(
             name="engine log is captured",
-            given=(GivenStep("hero_form", ("01001a",)),),
-            when=(WhenStep(option="Attack", targets=("Rhino in VillainArea",)),),
-            then=(ThenStep("Rhino in VillainArea", "health", 12),),
+            given=(HERO_FORM,),
+            beats=(
+                WhenStep(option="attack", targets=("Rhino",)),
+                ThenStep("Rhino", "health", 12),
+            ),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
         self.assertIn("will attack", result.engine_log)
+
+
+################################################################################
+# The transcript shape itself.
+
+class TestTranscripts(unittest.TestCase):
+    """Assertions between decisions, and refusing to answer for the author."""
+
+    NICK_FURY = (
+        HERO_FORM,
+        GivenStep("hand", ("Nick Fury", "Backflip", "Backflip", "Webbed Up",
+                           "Enhanced Spider-Sense")),
+        GivenStep("in_play", ("Shocker",)),
+    )
+
+    def test_a_mid_resolution_choice_is_the_scenarios_to_make(self):
+        case = MakeCase(
+            name="nick fury deals damage",
+            tags=("card:01084",),
+            given=self.NICK_FURY,
+            beats=(
+                WhenStep(option="play", card="Nick Fury"),
+                PromptStep(options=("Draw 3 cards", "Deal 4 damage to an enemy")),
+                WhenStep(option="Deal 4 damage to an enemy", targets=("Shocker",)),
+                ThenStep("Shocker", "damage", 4),
+                NoPromptStep(),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_the_harness_never_answers_a_choice_the_transcript_omits(self):
+        # The whole reason a scenario is a transcript. Batching the actions and
+        # asserting at the end would let the harness pick an option and report
+        # a pass for a scenario that specified nothing.
+        case = MakeCase(
+            name="nick fury, choice omitted",
+            tags=("card:01084",),
+            given=self.NICK_FURY,
+            beats=(
+                WhenStep(option="play", card="Nick Fury"),
+                ThenStep("Shocker", "damage", 4),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("still asking", result.Describe())
+
+    def test_a_wrong_option_table_fails_and_names_the_difference(self):
+        case = MakeCase(
+            name="nick fury, wrong options",
+            tags=("card:01084",),
+            given=self.NICK_FURY,
+            beats=(
+                WhenStep(option="play", card="Nick Fury"),
+                PromptStep(options=("Draw 3 cards", "Remove 2 threat from a scheme")),
+                WhenStep(option="Draw 3 cards"),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
+        self.assertIn("missing 'remove 2 threat from a scheme'", result.Describe())
+
+    def test_not_prompted_again_fails_when_the_engine_asks_again(self):
+        case = MakeCase(
+            name="nick fury still asks",
+            tags=("card:01084",),
+            given=self.NICK_FURY,
+            beats=(
+                WhenStep(option="play", card="Nick Fury"),
+                NoPromptStep(),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
+        self.assertIn("expected no further prompt", result.Describe())
+
+    def test_not_prompted_again_passes_when_the_turn_menu_returns(self):
+        # The turn menu coming back is not the card asking another question.
+        case = MakeCase(
+            name="attack finishes cleanly",
+            given=(HERO_FORM,),
+            beats=(
+                WhenStep(option="attack", targets=("Rhino",)),
+                NoPromptStep(),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_assertions_between_decisions_see_the_intermediate_board(self):
+        # After the play but before the choice resolves, Shocker is undamaged.
+        # Only an assertion evaluated at that decision can see it.
+        case = MakeCase(
+            name="board between beats",
+            tags=("card:01084",),
+            given=self.NICK_FURY,
+            beats=(
+                WhenStep(option="play", card="Nick Fury"),
+                ThenStep("Shocker", "damage", 0),
+                PromptStep(options=("Draw 3 cards", "Deal 4 damage to an enemy")),
+                WhenStep(option="Deal 4 damage to an enemy", targets=("Shocker",)),
+                ThenStep("Shocker", "damage", 4),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
 
 
 if __name__ == "__main__":

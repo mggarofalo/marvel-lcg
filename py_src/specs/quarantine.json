@@ -1,23 +1,35 @@
 {
   "note": "Scenarios that did not pass against the Python engine. They are not part of the trusted suite. Each one is either a spec bug or an engine bug; both are worth finding.",
   "scenarios": {
-    "Quarantine self-test :: A wrong expected value is FAIL-engine-suspected": {
-      "reason": "FAIL Rhino in VillainArea health == 99 expected 99, got 12 Rhino (01094) in VillainArea, 12/14 hp",
-      "sha256": "0a9fc3c3efc183dc4ef8ec9f360a06b398da93873c8d593ee1bfd3dd348b3341",
-      "source": "specs/scenarios/known_disagreements.feature",
+    "Quarantine self-test :: a mid-resolution choice the transcript does not answer is FAIL-spec-wrong": {
+      "reason": "the transcript ended while the engine was still asking 'WhenPlayerChooseAbility', offering Draw_3_cards on Nick Fury (01084) in AlliesArea; Deal_4_damage_to_an_enemy on Nick Fury (01084) in AlliesArea at 'WhenPlayerChooseAbility' (step 1) #0 WhenPlayerInTurn (Normal): Attack on Spider-Man (01001a) i...",
+      "sha256": "47381af49b64c3b9405098f724488b6274e1fc466b3420e02c555709a92efec0",
+      "source": "specs/self-test/quarantine.feature",
+      "verdict": "FAIL-spec-wrong"
+    },
+    "Quarantine self-test :: a wrong expected value is FAIL-engine-suspected": {
+      "reason": "FAIL Rhino health == 99 expected 99, got 12 Rhino (01094) in VillainArea, 12/14 hp",
+      "sha256": "47381af49b64c3b9405098f724488b6274e1fc466b3420e02c555709a92efec0",
+      "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-engine-suspected"
     },
-    "Quarantine self-test :: An action the engine never offers is FAIL-spec-wrong": {
-      "reason": "the game ended with When step 1 unplayed (Attack targeting Rhino in VillainArea) #0 WhenPlayerInTurn (Normal): Change_Form on Peter Parker (01001b) in HeroArea -> declined (no option matches Attack targeting Rhino in VillainArea)",
-      "sha256": "0a9fc3c3efc183dc4ef8ec9f360a06b398da93873c8d593ee1bfd3dd348b3341",
-      "source": "specs/scenarios/known_disagreements.feature",
+    "Quarantine self-test :: an action the engine never offers is FAIL-spec-wrong": {
+      "reason": "I choose 'attack' targeting 'Rhino' could not be played: the engine offered Change_Form on Peter Parker (01001b) in HeroArea at 'WhenPlayerInTurn' (step 0) FAIL I choose 'attack' targeting 'Rhino' the game ended before this step could be played FAIL Rhino health == 12 expected 12, got 14 Rhino (0109...",
+      "sha256": "47381af49b64c3b9405098f724488b6274e1fc466b3420e02c555709a92efec0",
+      "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-spec-wrong"
     },
-    "Quarantine self-test :: An assertion about a card outside the game is FAIL-spec-wrong": {
+    "Quarantine self-test :: an assertion about a card outside the game is FAIL-spec-wrong": {
       "reason": "FAIL Galactus health == 1 no card matches 'Galactus' anywhere in this game",
-      "sha256": "0a9fc3c3efc183dc4ef8ec9f360a06b398da93873c8d593ee1bfd3dd348b3341",
-      "source": "specs/scenarios/known_disagreements.feature",
+      "sha256": "47381af49b64c3b9405098f724488b6274e1fc466b3420e02c555709a92efec0",
+      "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-spec-wrong"
+    },
+    "Quarantine self-test :: an unexpected extra prompt is FAIL-engine-suspected": {
+      "reason": "FAIL I am not prompted again expected no further prompt, but the engine asked 'WhenPlayerChooseAbility' offering Draw_3_cards on Nick Fury (01084) in AlliesArea; Deal_4_damage_to_an_enemy on Nick Fury (01084) in AlliesArea",
+      "sha256": "47381af49b64c3b9405098f724488b6274e1fc466b3420e02c555709a92efec0",
+      "source": "specs/self-test/quarantine.feature",
+      "verdict": "FAIL-engine-suspected"
     }
   },
   "version": 1

@@ -1,31 +1,53 @@
 """Authoring scenarios in Gherkin, compiled to `SpecCase`.
 
-Scenarios are written as `.feature` files because the trusted suite has to
-outlive the Python engine. Reqnroll (the maintained SpecFlow successor) binds
-step text to C# methods with `[Given(@"...")]`, so the same file that validates
-against the Python engine today is the file the C# engine is held to later.
-Nothing here depends on Reqnroll; what it depends on is that the *step text* is
-a stable, closed vocabulary rather than free prose.
+Scenarios are native `.feature` files consumed directly by both runners, because
+the trusted suite has to outlive the Python engine. Reqnroll (the maintained
+SpecFlow successor) binds the same step text to C# with `[Given(@"...")]`, so
+the file that validates against Python today is the file the C# engine is held
+to later. Nothing here depends on Reqnroll; what it depends on is that the step
+text is a **closed vocabulary** rather than free prose.
 
-That vocabulary is `STEP_TABLE` below. A step that matches nothing is a parse
-error naming the file and line -- a scenario never half-runs, and a typo never
-becomes a silently skipped assertion.
+That vocabulary lives in `specs/steps.catalogue.json`, checked in beside the
+scenarios, and `unit_test/test_spec_validate.py` asserts this module implements
+exactly it -- no extra forms, none missing. Step-definition drift then fails a
+build instead of rotting silently.
 
-Supported: `Feature`, `Background`, `Scenario`, `Scenario Outline` with
-`Examples`, `Given`/`When`/`Then`/`And`/`But`, `@tags`, and `#` comments. Doc
-strings and data tables are not supported; a step that needs a list takes a
-comma-separated one.
+A step that matches nothing is a parse error naming the file and line. A
+scenario compiles completely or not at all, so a typo can never become a
+silently skipped assertion.
 
-    Feature: Spider-Man basics
+Scenarios are written in the **first person, as a transcript**: one `When` per
+decision, with `Then`s interleaved wherever the board is worth checking.
+
+    Feature: Nick Fury
 
       Background:
-        Given the scenario "rhino"
-        And the hero "spider_man"
+        Given the scenario is "rhino"
+        And the hero is "spider_man"
 
-      Scenario: A basic attack deals the hero's ATK
-        Given "01001a" is in hero form
-        When the player attacks "Rhino in VillainArea"
-        Then "Rhino in VillainArea" has 12 health
+      @card:01084
+      Scenario: damage is dealt to the chosen enemy, not the first one
+        Given I am in hero form
+        And my hand is "Nick Fury", "Backflip", "Backflip", "Webbed Up"
+        And "Shocker" is in play
+
+        When I play "Nick Fury"
+        Then I am prompted to choose one
+          | Draw 3 cards              |
+          | Deal 4 damage to an enemy |
+
+        When I choose "Deal 4 damage to an enemy" targeting "Shocker"
+        Then "Shocker" has 4 damage
+        And I am not prompted again
+
+Gherkin permits `When` after `Then`. One-`When`-per-scenario is a user-story BDD
+convention, not a language constraint, and it is the wrong convention for an
+interactive rules engine.
+
+Supported: `Feature`, `Background`, `Scenario`, `Scenario Outline` with
+`Examples`, `Given`/`When`/`Then`/`And`/`But`, `@tags`, `#` comments, and data
+tables (used by the prompt assertion). Doc strings are not supported; a step
+that needs a list takes a comma-separated one.
 """
 
 from __future__ import annotations
@@ -33,10 +55,11 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Pattern, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
 
 from tools.spec.case import (
-    GivenStep, SourceDigest, SpecCase, SpecCaseError, ThenStep, WhenStep)
+    GivenStep, NoPromptStep, PromptStep, SourceDigest, SpecCase, SpecCaseError,
+    ThenStep, WhenStep)
 from tools.spec.resolve import SplitRefs
 
 
@@ -47,29 +70,27 @@ class GherkinError(SpecCaseError):
 ################################################################################
 # Step vocabulary
 #
-# Each entry is (pattern, builder). A builder returns one of:
+# Each entry is (form, pattern, builder). `form` is the catalogue key: the step
+# as an author writes it, with <placeholders>. A builder returns one of:
 #   ("setting", key, value)   scenario-level configuration
 #   ("given", GivenStep)
 #   ("when", WhenStep)
-#   ("then", ThenStep)
+#   ("then", ThenStep | PromptStep | NoPromptStep | "prompt")
 #
-# `Q` is a quoted argument; quotes are required so a card called
+# Quotes are required around card and option names so a card called
 # "Hard to Keep Down" is unambiguous.
 
 Q = r'"([^"]*)"'
 N = r'(-?\d+)'
 LIST = r'(.+)'
 
+Entry = Tuple[str, Pattern[str], Callable[..., Any]]
+Table = List[Entry]
+
 
 def Rx(pattern: str) -> Pattern[str]:
     return re.compile(r"^" + pattern + r"$", re.IGNORECASE)
 
-
-def BoolOf(text: str) -> bool:
-    return text.strip().lower() not in ("no", "not", "false", "0")
-
-
-Table = List[Tuple[Pattern[str], Callable[..., Any]]]
 
 # One table per clause. They are kept apart because the same sentence means
 # different things in different clauses: `"01097b" has 3 threat` sets up the
@@ -79,140 +100,224 @@ Table = List[Tuple[Pattern[str], Callable[..., Any]]]
 GIVEN_TABLE: Table = [
 
     # -- scenario configuration -------------------------------------------
-    (Rx(r'the scenario ' + Q),
+    ('the scenario is "<name>"',
+     Rx(r'the scenario is ' + Q),
      lambda name: ("setting", "scenario", name)),
-    (Rx(r'the hero ' + Q),
+    ('the hero is "<name>"',
+     Rx(r'the hero is ' + Q),
      lambda name: ("setting", "hero", name)),
-    (Rx(r'the heroes ' + LIST),
+    ('the heroes are "<a>", "<b>"',
+     Rx(r'the heroes are ' + LIST),
      lambda names: ("setting", "heroes", SplitRefs(names))),
-    (Rx(r'the seed is ' + N),
+    ('the seed is <n>',
+     Rx(r'the seed is ' + N),
      lambda value: ("setting", "seed", int(value))),
-    (Rx(r'the difficulty is expert'),
+    ('the difficulty is expert',
+     Rx(r'the difficulty is expert'),
      lambda: ("setting", "expert", True)),
 
-    # -- Given: zone fills -------------------------------------------------
-    (Rx(r'the hand contains ' + LIST),
+    # -- zone fills --------------------------------------------------------
+    ('my hand is "<a>", "<b>"',
+     Rx(r'my hand is ' + LIST),
      lambda cards: ("given", GivenStep("hand", SplitRefs(cards)))),
-    (Rx(r'the player deck contains ' + LIST),
+    ('my deck is "<a>", "<b>"',
+     Rx(r'my deck is ' + LIST),
      lambda cards: ("given", GivenStep("player_deck", SplitRefs(cards)))),
-    (Rx(r'the player discard pile contains ' + LIST),
+    ('my discard pile is "<a>", "<b>"',
+     Rx(r'my discard pile is ' + LIST),
      lambda cards: ("given", GivenStep("player_discard", SplitRefs(cards)))),
-    (Rx(r'the encounter deck contains ' + LIST),
-     lambda cards: ("given", GivenStep("encounter_deck", SplitRefs(cards)))),
-    (Rx(r'the encounter discard pile contains ' + LIST),
-     lambda cards: ("given", GivenStep("encounter_discard", SplitRefs(cards)))),
-    (Rx(r'the set aside deck contains ' + LIST),
+    ('my set aside deck is "<a>", "<b>"',
+     Rx(r'my set aside deck is ' + LIST),
      lambda cards: ("given", GivenStep("player_set_aside", SplitRefs(cards)))),
+    ('the encounter deck is "<a>", "<b>"',
+     Rx(r'the encounter deck is ' + LIST),
+     lambda cards: ("given", GivenStep("encounter_deck", SplitRefs(cards)))),
+    ('the encounter discard pile is "<a>", "<b>"',
+     Rx(r'the encounter discard pile is ' + LIST),
+     lambda cards: ("given", GivenStep("encounter_discard", SplitRefs(cards)))),
 
-    # -- Given: magnitudes -------------------------------------------------
-    (Rx(Q + r' has ' + N + r' damage'),
+    # -- magnitudes --------------------------------------------------------
+    ('"<card>" has <n> damage',
+     Rx(Q + r' has ' + N + r' damage'),
      lambda card, value: ("given", GivenStep("damage", (card,), value=int(value)))),
-    (Rx(Q + r' is healed (?:for |by )?' + N),
+    ('"<card>" is healed <n>',
+     Rx(Q + r' is healed (?:for |by )?' + N),
      lambda card, value: ("given", GivenStep("heal", (card,), value=int(value)))),
-    (Rx(Q + r' has ' + N + r' threat'),
+    ('"<card>" has <n> threat',
+     Rx(Q + r' has ' + N + r' threat'),
      lambda card, value: ("given", GivenStep("threat", (card,), value=int(value)))),
-    (Rx(Q + r' has ' + N + r' ' + Q + r' counters?'),
+    ('the main scheme has <n> threat',
+     Rx(r'the main scheme has ' + N + r' threat'),
+     lambda value: ("given", GivenStep("threat", ("the main scheme",), value=int(value)))),
+    ('"<card>" has <n> "<name>" counters',
+     Rx(Q + r' has ' + N + r' ' + Q + r' counters?'),
      lambda card, value, name: ("given", GivenStep(
          "counters", (card,), value=int(value), name=name))),
-    (Rx(Q + r' has ' + N + r' ' + Q + r' tokens?'),
+    ('"<card>" has <n> "<name>" tokens',
+     Rx(Q + r' has ' + N + r' ' + Q + r' tokens?'),
      lambda card, value, name: ("given", GivenStep(
          "tokens", (card,), value=int(value), name=name))),
 
-    # -- Given: states -----------------------------------------------------
-    (Rx(Q + r' is stunned'),
+    # -- states ------------------------------------------------------------
+    ('I am in hero form',
+     Rx(r'i am in hero form'),
+     lambda: ("given", GivenStep("hero_form", ("me",)))),
+    ('I am in alter-ego form',
+     Rx(r'i am in alter-ego form'),
+     lambda: ("given", GivenStep("alter_ego_form", ("me",)))),
+    ('"<card>" is stunned',
+     Rx(Q + r' is stunned'),
      lambda card: ("given", GivenStep("stunned", (card,)))),
-    (Rx(Q + r' is confused'),
+    ('"<card>" is confused',
+     Rx(Q + r' is confused'),
      lambda card: ("given", GivenStep("confused", (card,)))),
-    (Rx(Q + r' is tough'),
+    ('"<card>" is tough',
+     Rx(Q + r' is tough'),
      lambda card: ("given", GivenStep("tough", (card,)))),
-    (Rx(Q + r' is exhausted'),
+    ('"<card>" is exhausted',
+     Rx(Q + r' is exhausted'),
      lambda card: ("given", GivenStep("exhausted", (card,)))),
-    (Rx(Q + r' is ready'),
+    ('"<card>" is ready',
+     Rx(Q + r' is ready'),
      lambda card: ("given", GivenStep("ready", (card,)))),
-    (Rx(Q + r' is discarded'),
+    ('"<card>" is discarded',
+     Rx(Q + r' is discarded'),
      lambda card: ("given", GivenStep("discarded", (card,)))),
-    (Rx(Q + r' is in play'),
+    ('"<card>" is in play',
+     Rx(Q + r' is in play'),
      lambda card: ("given", GivenStep("in_play", (card,)))),
-    (Rx(Q + r' is revealed'),
+    ('"<card>" is revealed',
+     Rx(Q + r' is revealed'),
      lambda card: ("given", GivenStep("revealed", (card,)))),
-    (Rx(Q + r' is in hero form'),
-     lambda card: ("given", GivenStep("hero_form", (card,)))),
-    (Rx(Q + r' is in alter-ego form'),
-     lambda card: ("given", GivenStep("alter_ego_form", (card,)))),
-    (Rx(r'the player draws ' + N + r' cards?'),
+    ('I draw <n> cards',
+     Rx(r'i draw ' + N + r' cards?'),
      lambda value: ("given", GivenStep("draw", value=int(value)))),
 ]
 
 WHEN_TABLE: Table = [
-    (Rx(r'the player attacks ' + Q),
-     lambda target: ("when", WhenStep(option="Attack", targets=(target,)))),
-    (Rx(r'the player thwarts ' + Q),
-     lambda target: ("when", WhenStep(option="Thwart", targets=(target,)))),
-    (Rx(r'the player defends against ' + Q),
-     lambda target: ("when", WhenStep(option="Defense", targets=(target,)))),
-    (Rx(r'the player changes form'),
-     lambda: ("when", WhenStep(option="Change_Form"))),
-    (Rx(r'the player plays ' + Q + r' targeting ' + Q),
+    ('I play "<card>"',
+     Rx(r'i play ' + Q),
+     lambda card: ("when", WhenStep(option="play", card=card))),
+    ('I play "<card>" targeting "<target>"',
+     Rx(r'i play ' + Q + r' targeting ' + Q),
      lambda card, target: ("when", WhenStep(
-         option="Play", card=card, targets=(target,)))),
-    (Rx(r'the player plays ' + Q),
-     lambda card: ("when", WhenStep(option="Play", card=card))),
-    (Rx(r'the player chooses ' + Q + r' on ' + Q + r' targeting ' + LIST),
-     lambda option, card, targets: ("when", WhenStep(
-         option=option, card=card, targets=SplitRefs(targets)))),
-    (Rx(r'the player chooses ' + Q + r' targeting ' + LIST),
+         option="play", card=card, targets=(target,)))),
+    ('I choose "<option>"',
+     Rx(r'i choose ' + Q),
+     lambda option: ("when", WhenStep(option=option))),
+    ('I choose "<option>" targeting "<a>", "<b>"',
+     Rx(r'i choose ' + Q + r' targeting ' + LIST),
      lambda option, targets: ("when", WhenStep(
          option=option, targets=SplitRefs(targets)))),
-    (Rx(r'the player chooses ' + Q + r' on ' + Q),
+    ('I choose "<option>" on "<card>"',
+     Rx(r'i choose ' + Q + r' on ' + Q),
      lambda option, card: ("when", WhenStep(option=option, card=card))),
-    (Rx(r'the player chooses ' + Q),
-     lambda option: ("when", WhenStep(option=option))),
-    (Rx(r'the player passes'),
+    ('I choose "<option>" on "<card>" targeting "<a>", "<b>"',
+     Rx(r'i choose ' + Q + r' on ' + Q + r' targeting ' + LIST),
+     lambda option, card, targets: ("when", WhenStep(
+         option=option, card=card, targets=SplitRefs(targets)))),
+    ('I attack "<target>"',
+     Rx(r'i attack ' + Q),
+     lambda target: ("when", WhenStep(option="attack", targets=(target,)))),
+    ('I thwart "<target>"',
+     Rx(r'i thwart ' + Q),
+     lambda target: ("when", WhenStep(option="thwart", targets=(target,)))),
+    ('I change form',
+     Rx(r'i change form'),
+     lambda: ("when", WhenStep(option="change form"))),
+    ('I pass',
+     Rx(r'i pass'),
      lambda: ("when", WhenStep(pass_priority=True))),
 ]
 
 THEN_TABLE: Table = [
-    (Rx(Q + r' has ' + N + r' health'),
+    # -- the two assertions a transcript buys ------------------------------
+    ('I am prompted to choose one',
+     Rx(r'i am prompted to choose one'),
+     lambda: ("then", "prompt")),
+    ('I am not prompted again',
+     Rx(r'i am not prompted again'),
+     lambda: ("then", NoPromptStep())),
+
+    # -- card state --------------------------------------------------------
+    ('"<card>" has <n> health',
+     Rx(Q + r' has ' + N + r' health'),
      lambda card, value: ("then", ThenStep(card, "health", int(value)))),
-    (Rx(Q + r' has ' + N + r' damage'),
+    ('"<card>" has <n> damage',
+     Rx(Q + r' has ' + N + r' damage'),
      lambda card, value: ("then", ThenStep(card, "damage", int(value)))),
-    (Rx(Q + r' has ' + N + r' threat'),
+    ('"<card>" has <n> threat',
+     Rx(Q + r' has ' + N + r' threat'),
      lambda card, value: ("then", ThenStep(card, "threat", int(value)))),
-    (Rx(Q + r' has ' + N + r' ' + Q + r' counters?'),
+    ('the main scheme has <n> threat',
+     Rx(r'the main scheme has ' + N + r' threat'),
+     lambda value: ("then", ThenStep("the main scheme", "threat", int(value)))),
+    ('"<card>" has <n> "<name>" counters',
+     Rx(Q + r' has ' + N + r' ' + Q + r' counters?'),
      lambda card, value, name: ("then", ThenStep(card, f"counter:{name}", int(value)))),
-    (Rx(Q + r' has ' + N + r' ' + Q + r' tokens?'),
+    ('"<card>" has <n> "<name>" tokens',
+     Rx(Q + r' has ' + N + r' ' + Q + r' tokens?'),
      lambda card, value, name: ("then", ThenStep(card, f"token:{name}", int(value)))),
-    (Rx(Q + r' is in the ' + Q),
+    ('"<card>" is in the "<zone>"',
+     Rx(Q + r' is in the ' + Q),
      lambda card, zone: ("then", ThenStep(card, "zone", zone))),
-    (Rx(Q + r' is (not )?in play'),
+    ('"<card>" is [not] in play',
+     Rx(Q + r' is (not )?in play'),
      lambda card, negated: ("then", ThenStep(card, "in_play", not negated))),
-    (Rx(Q + r' is (not )?exhausted'),
+    ('"<card>" is [not] exhausted',
+     Rx(Q + r' is (not )?exhausted'),
      lambda card, negated: ("then", ThenStep(card, "exhausted", not negated))),
-    (Rx(Q + r' is (not )?ready'),
+    ('"<card>" is [not] ready',
+     Rx(Q + r' is (not )?ready'),
      lambda card, negated: ("then", ThenStep(card, "ready", not negated))),
-    (Rx(Q + r' is (not )?stunned'),
+    ('"<card>" is [not] stunned',
+     Rx(Q + r' is (not )?stunned'),
      lambda card, negated: ("then", ThenStep(card, "stunned", not negated))),
-    (Rx(Q + r' is (not )?confused'),
+    ('"<card>" is [not] confused',
+     Rx(Q + r' is (not )?confused'),
      lambda card, negated: ("then", ThenStep(card, "confused", not negated))),
-    (Rx(Q + r' is (not )?tough'),
+    ('"<card>" is [not] tough',
+     Rx(Q + r' is (not )?tough'),
      lambda card, negated: ("then", ThenStep(card, "tough", not negated))),
-    (Rx(Q + r' has ' + N + r' ' + Q),
+    ('"<card>" has <n> "<property>"',
+     Rx(Q + r' has ' + N + r' ' + Q),
      lambda card, value, prop: ("then", ThenStep(card, prop, int(value)))),
-    (Rx(r'the player has ' + N + r' cards? in hand'),
+
+    # -- me ----------------------------------------------------------------
+    ('I am [not] in hero form',
+     Rx(r'i am (not )?in hero form'),
+     lambda negated: ("then", ThenStep("me", "hero_form", not negated))),
+    ('I am [not] exhausted',
+     Rx(r'i am (not )?exhausted'),
+     lambda negated: ("then", ThenStep("me", "exhausted", not negated))),
+    ('I have <n> damage',
+     Rx(r'i have ' + N + r' damage'),
+     lambda value: ("then", ThenStep("me", "damage", int(value)))),
+    ('I have <n> cards in hand',
+     Rx(r'i have ' + N + r' cards? in hand'),
      lambda value: ("then", ThenStep("player", "hand_size", int(value)))),
-    (Rx(r'player ' + N + r' has ' + N + r' cards? in hand'),
-     lambda who, value: ("then", ThenStep(f"player {who}", "hand_size", int(value)))),
-    (Rx(r'the player has ' + N + r' cards? in the deck'),
+    ('I have <n> cards in my deck',
+     Rx(r'i have ' + N + r' cards? in my deck'),
      lambda value: ("then", ThenStep("player", "deck_size", int(value)))),
-    (Rx(r'the player has ' + N + r' cards? in the discard pile'),
+    ('I have <n> cards in my discard pile',
+     Rx(r'i have ' + N + r' cards? in my discard pile'),
      lambda value: ("then", ThenStep("player", "discard_size", int(value)))),
-    (Rx(r'the player is (not )?eliminated'),
+    ('I am [not] eliminated',
+     Rx(r'i am (not )?eliminated'),
      lambda negated: ("then", ThenStep("player", "eliminated", not negated))),
-    (Rx(r'the game is (not )?over'),
+    ('player <n> has <m> cards in hand',
+     Rx(r'player ' + N + r' has ' + N + r' cards? in hand'),
+     lambda who, value: ("then", ThenStep(f"player {who}", "hand_size", int(value)))),
+
+    # -- the game ----------------------------------------------------------
+    ('the game is [not] over',
+     Rx(r'the game is (not )?over'),
      lambda negated: ("then", ThenStep("game", "game_over", not negated))),
-    (Rx(r'the players (?:have )?(lost|won)'),
+    ('the players won',
+     Rx(r'the players (?:have )?(lost|won)'),
      lambda outcome: ("then", ThenStep("game", "players_won", outcome.lower() == "won"))),
-    (Rx(r'it is round ' + N),
+    ('it is round <n>',
+     Rx(r'it is round ' + N),
      lambda value: ("then", ThenStep("game", "round", int(value)))),
 ]
 
@@ -224,16 +329,22 @@ TABLES: Dict[str, Table] = {
 
 
 def CompileStep(keyword: str, text: str) -> Any:
-    for pattern, build in TABLES[keyword]:
+    for _form, pattern, build in TABLES[keyword]:
         match = pattern.match(text.strip())
         if match:
             return build(*match.groups())
     return None
 
 
-def KnownSteps(keyword: str) -> List[str]:
-    """The patterns a clause accepts, for an error message."""
-    return [pattern.pattern.strip("^$") for pattern, _ in TABLES[keyword]]
+def Vocabulary() -> Dict[str, List[str]]:
+    """The step forms this module implements, per clause.
+
+    `unit_test/test_spec_validate.py` compares this against
+    `specs/steps.catalogue.json`, so a form added here without being checked in
+    -- or checked in without being implemented -- fails the build.
+    """
+    return {clause: [form for form, _pattern, _build in table]
+            for clause, table in TABLES.items()}
 
 
 ################################################################################
@@ -259,8 +370,8 @@ class Draft:
     name: str = ""
     line: int = 0
     tags: List[str] = field(default_factory=list)
-    steps: List[Tuple[str, str, int]] = field(default_factory=list)
-    """(clause, text, line number), clause being given / when / then."""
+    steps: List[Tuple[str, str, int, Tuple[str, ...]]] = field(default_factory=list)
+    """(clause, text, line number, data table rows)."""
 
     def Copy(self) -> "Draft":
         return Draft(name=self.name, line=self.line,
@@ -307,6 +418,11 @@ def ParseFeature(text: str, *, path: str = "") -> List[SpecCase]:
                 f"{where}:{outline.line}: Scenario Outline "
                 f"{outline.name!r} has no Examples rows, so it would never run")
         outline = None
+
+    def Target() -> Optional[Draft]:
+        if in_background:
+            return background
+        return outline if outline is not None else current
 
     for number, raw in enumerate(text.splitlines(), start=1):
         line = raw.strip()
@@ -362,22 +478,30 @@ def ParseFeature(text: str, *, path: str = "") -> List[SpecCase]:
                 examples_header = []
             continue
 
-        if in_examples:
-            if not line.startswith("|"):
-                raise GherkinError(f"{where}:{number}: expected an Examples table row")
+        if line.startswith("|"):
             cells = [cell.strip() for cell in line.strip("|").split("|")]
-            if not examples_header:
-                examples_header = cells
+
+            if in_examples:
+                if not examples_header:
+                    examples_header = cells
+                    continue
+                if len(cells) != len(examples_header):
+                    raise GherkinError(
+                        f"{where}:{number}: Examples row has {len(cells)} cell(s), "
+                        f"the header has {len(examples_header)}")
+                assert outline is not None
+                bindings = dict(zip(examples_header, cells))
+                cases.append(Build(Expand(outline, bindings, where, number),
+                                   feature_name, path, digest, where))
+                outline_rows += 1
                 continue
-            if len(cells) != len(examples_header):
-                raise GherkinError(
-                    f"{where}:{number}: Examples row has {len(cells)} cell(s), "
-                    f"the header has {len(examples_header)}")
-            assert outline is not None
-            bindings = dict(zip(examples_header, cells))
-            cases.append(Build(Expand(outline, bindings, where, number),
-                               feature_name, path, digest, where))
-            outline_rows += 1
+
+            # Otherwise it is a data table under the step above it.
+            draft = Target()
+            if draft is None or not draft.steps:
+                raise GherkinError(f"{where}:{number}: table row outside a step")
+            past_clause, past_text, past_line, rows = draft.steps[-1]
+            draft.steps[-1] = (past_clause, past_text, past_line, rows + tuple(cells))
             continue
 
         step = STEP.match(line)
@@ -389,11 +513,11 @@ def ParseFeature(text: str, *, path: str = "") -> List[SpecCase]:
             clause = word
         # And / But / * continue the clause above them, as Gherkin defines.
 
-        target = background if in_background else (outline if outline is not None else current)
-        if target is None:
+        draft = Target()
+        if draft is None:
             raise GherkinError(f"{where}:{number}: step outside a Scenario: {line!r}")
 
-        target.steps.append((clause, step.group(2), number))
+        draft.steps.append((clause, step.group(2), number, ()))
 
     Finish()
     EndOutline()
@@ -406,8 +530,8 @@ def ParseFeature(text: str, *, path: str = "") -> List[SpecCase]:
 def Expand(outline: Draft, bindings: Dict[str, str], where: str, number: int) -> Draft:
     """One row of an Examples table, as a concrete scenario."""
     draft = outline.Copy()
-    draft.steps = [(clause, Substitute(text, bindings, where, line), line)
-                   for clause, text, line in outline.steps]
+    draft.steps = [(clause, Substitute(text, bindings, where, line), line, rows)
+                   for clause, text, line, rows in outline.steps]
     label = ", ".join(f"{key}={value}" for key, value in bindings.items())
     draft.name = f"{outline.name} [{label}]"
     draft.line = number
@@ -431,10 +555,9 @@ def Build(draft: Draft, feature: str, path: str, digest: str, where: str) -> Spe
     seed = 1
     expert = False
     given: List[GivenStep] = []
-    when: List[WhenStep] = []
-    then: List[ThenStep] = []
+    beats: List[Any] = []
 
-    for clause, text, number in draft.steps:
+    for clause, text, number, rows in draft.steps:
         if PLACEHOLDER.search(text):
             raise GherkinError(
                 f"{where}:{number}: {text!r} still has a <placeholder>; "
@@ -444,7 +567,7 @@ def Build(draft: Draft, feature: str, path: str, digest: str, where: str) -> Spe
         if compiled is None:
             raise GherkinError(
                 f"{where}:{number}: no {clause.title()} step matches {text!r}. "
-                f"See docs/spec-harness.md for the step vocabulary.")
+                f"See specs/steps.catalogue.json for the step vocabulary.")
 
         try:
             kind = compiled[0]
@@ -461,11 +584,24 @@ def Build(draft: Draft, feature: str, path: str, digest: str, where: str) -> Spe
                 elif key == "expert":
                     expert = bool(value)
             elif kind == "given":
+                if beats:
+                    raise GherkinError(
+                        f"{where}:{number}: a Given cannot follow a When -- the "
+                        f"board is built once, before the transcript starts")
                 given.append(compiled[1])
             elif kind == "when":
-                when.append(compiled[1])
+                beats.append(compiled[1])
             else:
-                then.append(compiled[1])
+                payload = compiled[1]
+                if payload == "prompt":
+                    if not rows:
+                        raise GherkinError(
+                            f"{where}:{number}: 'I am prompted to choose one' needs "
+                            f"a table of the options the engine should offer")
+                    payload = PromptStep(options=tuple(rows))
+                beats.append(payload)
+        except GherkinError:
+            raise
         except SpecCaseError as exc:
             raise GherkinError(f"{where}:{number}: {exc}") from exc
 
@@ -479,8 +615,7 @@ def Build(draft: Draft, feature: str, path: str, digest: str, where: str) -> Spe
             expert=expert,
             tags=tuple(draft.tags),
             given=tuple(given),
-            when=tuple(when),
-            then=tuple(then),
+            beats=tuple(beats),
             source_path=path,
             source_sha256=digest,
         )
@@ -499,8 +634,8 @@ def LoadFeatureFile(path: str) -> List[SpecCase]:
 def NormalisePath(path: str) -> str:
     """One spelling per file, so a manifest does not churn on how it was invoked.
 
-    `validate specs/scenarios` and `validate ./specs/scenarios` must record the
-    same source path, or every run would rewrite `trusted.json`.
+    `validate specs` and `validate ./specs` must record the same source path, or
+    every run would rewrite `trusted.json`.
     """
     text = path.replace(os.sep, "/")
     while text.startswith("./"):

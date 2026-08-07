@@ -1,53 +1,57 @@
 {
   "note": "Written only by tools/spec/validate.py, only from PASS verdicts. Each entry is pinned to the hash of the scenario source it was validated against: edit the scenario and it leaves this file on the next run. Do not hand-edit.",
   "scenarios": {
-    "Rhino encounter set minions :: A tough status absorbs an attack instead of hit points": {
-      "sha256": "f2e999ecc519ec59ff42075bfe3412fdda4172a77e3e2feed7e8c9cc7a704618",
-      "source": "specs/scenarios/rhino_encounter_set.feature"
+    "Basic actions :: a basic attack deals the hero's ATK and exhausts them": {
+      "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
+      "source": "specs/rules/basic-actions.feature"
     },
-    "Rhino encounter set minions :: Hydra Mercenary enters play with no status and 3 hit points": {
-      "sha256": "f2e999ecc519ec59ff42075bfe3412fdda4172a77e3e2feed7e8c9cc7a704618",
-      "source": "specs/scenarios/rhino_encounter_set.feature"
+    "Basic actions :: a basic thwart removes the hero's THW from the main scheme": {
+      "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
+      "source": "specs/rules/basic-actions.feature"
     },
-    "Rhino encounter set minions :: Sandman enters play with a tough status card": {
-      "sha256": "f2e999ecc519ec59ff42075bfe3412fdda4172a77e3e2feed7e8c9cc7a704618",
-      "source": "specs/scenarios/rhino_encounter_set.feature"
+    "Basic actions :: an alter-ego is not offered an attack": {
+      "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
+      "source": "specs/rules/basic-actions.feature"
     },
-    "Spider-Man basic actions :: A basic attack deals the hero's ATK and exhausts them": {
-      "sha256": "616efd5267315a8e8fe81f31ba36a0e5bf9d3e9ea9e78eb8c224cd83fd53d7ca",
-      "source": "specs/scenarios/spider_man_basic_actions.feature"
+    "Basic actions :: changing form flips the identity to its hero side": {
+      "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
+      "source": "specs/rules/basic-actions.feature"
     },
-    "Spider-Man basic actions :: A basic thwart removes the hero's THW from the main scheme": {
-      "sha256": "616efd5267315a8e8fe81f31ba36a0e5bf9d3e9ea9e78eb8c224cd83fd53d7ca",
-      "source": "specs/scenarios/spider_man_basic_actions.feature"
+    "Hydra Mercenary :: guard keeps the villain off the list of attack targets": {
+      "sha256": "bd73daa9394eb24f2ea9871c642dd0177dfcaa2dbfdc897409e88fb554a6e081",
+      "source": "specs/cards/core/01101-hydra-mercenary.feature"
     },
-    "Spider-Man basic actions :: A hero in alter-ego form can change to hero form": {
-      "sha256": "616efd5267315a8e8fe81f31ba36a0e5bf9d3e9ea9e78eb8c224cd83fd53d7ca",
-      "source": "specs/scenarios/spider_man_basic_actions.feature"
+    "Hydra Mercenary :: it enters play with 3 hit points and no status": {
+      "sha256": "bd73daa9394eb24f2ea9871c642dd0177dfcaa2dbfdc897409e88fb554a6e081",
+      "source": "specs/cards/core/01101-hydra-mercenary.feature"
     },
-    "Spider-Man basic actions :: An alter-ego cannot attack": {
-      "sha256": "616efd5267315a8e8fe81f31ba36a0e5bf9d3e9ea9e78eb8c224cd83fd53d7ca",
-      "source": "specs/scenarios/spider_man_basic_actions.feature"
+    "Nick Fury :: damage is dealt to the chosen enemy, not the first one": {
+      "sha256": "6bd222e75731942c251ebfb771382225b9ad31d8a9bcb9e888d60056a107830e",
+      "source": "specs/cards/core/01084-nick-fury.feature"
     },
-    "Spider-Man player cards :: A basic attack is the same however much damage is already there [damage=0, health=12]": {
-      "sha256": "1d4f72912cb5a4d464018882f4b4ad260802b5d5bf60ad40a9e0bdbde1738b25",
-      "source": "specs/scenarios/spider_man_cards.feature"
+    "Nick Fury :: drawing puts three cards in hand": {
+      "sha256": "6bd222e75731942c251ebfb771382225b9ad31d8a9bcb9e888d60056a107830e",
+      "source": "specs/cards/core/01084-nick-fury.feature"
     },
-    "Spider-Man player cards :: A basic attack is the same however much damage is already there [damage=3, health=9]": {
-      "sha256": "1d4f72912cb5a4d464018882f4b4ad260802b5d5bf60ad40a9e0bdbde1738b25",
-      "source": "specs/scenarios/spider_man_cards.feature"
+    "Nick Fury :: the option to remove threat is not offered when no scheme has any": {
+      "sha256": "6bd222e75731942c251ebfb771382225b9ad31d8a9bcb9e888d60056a107830e",
+      "source": "specs/cards/core/01084-nick-fury.feature"
     },
-    "Spider-Man player cards :: A basic attack is the same however much damage is already there [damage=7, health=5]": {
-      "sha256": "1d4f72912cb5a4d464018882f4b4ad260802b5d5bf60ad40a9e0bdbde1738b25",
-      "source": "specs/scenarios/spider_man_cards.feature"
+    "Sandman :: it enters play with a tough status card": {
+      "sha256": "3ec3dde3460848eb46635d22908b112ee5fc5d4ba20cd98cc4744f633bd8d91f",
+      "source": "specs/cards/core/01102-sandman.feature"
     },
-    "Spider-Man player cards :: Playing a card discards the resources that paid for it": {
-      "sha256": "1d4f72912cb5a4d464018882f4b4ad260802b5d5bf60ad40a9e0bdbde1738b25",
-      "source": "specs/scenarios/spider_man_cards.feature"
+    "Sandman :: the tough status absorbs an attack instead of hit points": {
+      "sha256": "3ec3dde3460848eb46635d22908b112ee5fc5d4ba20cd98cc4744f633bd8d91f",
+      "source": "specs/cards/core/01102-sandman.feature"
     },
-    "Spider-Man player cards :: Swinging Web Kick deals 8 damage to an enemy": {
-      "sha256": "1d4f72912cb5a4d464018882f4b4ad260802b5d5bf60ad40a9e0bdbde1738b25",
-      "source": "specs/scenarios/spider_man_cards.feature"
+    "Swinging Web Kick :: it deals 8 damage to the chosen enemy": {
+      "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
+      "source": "specs/cards/core/01005-swinging-web-kick.feature"
+    },
+    "Swinging Web Kick :: playing it discards the card and the resources that paid for it": {
+      "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
+      "source": "specs/cards/core/01005-swinging-web-kick.feature"
     }
   },
   "version": 1

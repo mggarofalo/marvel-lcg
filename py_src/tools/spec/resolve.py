@@ -145,6 +145,52 @@ def MatchesKey(card: Any, key: str) -> bool:
 ################################################################################
 #
 
+################################################################################
+# Named subjects
+#
+# A spec should be able to say "I" and "the main scheme" without knowing which
+# card either one is. Card ids are printed identifiers and fine in a spec;
+# *object* ids never are, and neither is making an author look up the main
+# scheme's stage-B id to write a sentence about threat.
+
+SELF_NAMES = ("me", "i", "my identity", "my hero", "the hero", "my character")
+MAIN_SCHEME_NAMES = ("the main scheme", "main scheme")
+
+
+def IsSelf(key: str) -> bool:
+    return key.strip().lower() in SELF_NAMES
+
+
+def IsMainScheme(key: str) -> bool:
+    return key.strip().lower() in MAIN_SCHEME_NAMES
+
+
+def ResolveNamed(world: Any, key: str) -> Any:
+    """The card a named subject refers to, or None if it is not a named one."""
+    if IsSelf(key):
+        player = world.GetFirstPlayer()
+        return player.GetIdentity().card
+    if IsMainScheme(key):
+        from game.operate.worlds import Worlds
+        schemes = Worlds.GetAllMainSchemes(world)
+        if not schemes:
+            raise CardRefError("there is no main scheme in play")
+        return schemes[0].card
+    return None
+
+
+################################################################################
+# Option labels
+#
+# The engine's option names are identifiers built from the label string in the
+# Python card script -- `Deal_4_damage_to_an_enemy` -- not from printed text.
+# A spec reads English and the runner normalises, so a scenario never asserts
+# an engine identifier and the C# engine is free to spell its own the same way.
+
+def NormaliseLabel(text: str) -> str:
+    return " ".join(str(text).replace("_", " ").split()).casefold()
+
+
 def AllCards(world: Any) -> List[Any]:
     """Every card in the world, in object-id order so results are stable."""
     card_dict = world.object_manager.card_dict
@@ -166,6 +212,10 @@ def ResolveCard(world: Any, ref: "CardRef|str") -> Any:
     if isinstance(ref, str):
         ref = CardRef.Parse(ref)
 
+    named = ResolveNamed(world, ref.key)
+    if named is not None:
+        return named
+
     found = FindCards(world, ref)
 
     if ref.ordinal:
@@ -183,6 +233,14 @@ def ResolveCard(world: Any, ref: "CardRef|str") -> Any:
         raise CardRefError(f"{ref.Describe()}: no card matches {ref.key!r}{where}{hint}")
 
     if len(found) > 1:
+        # A card name that matches several cards, only one of which is on the
+        # board, means the one on the board. "Rhino" in a scenario about the
+        # fight is the Rhino in play, not the stage-2 card still in the villain
+        # deck. Two Rhinos actually in play is a real ambiguity and still errors.
+        in_play = [card for card in found if card.IsOnField()]
+        if len(in_play) == 1:
+            return in_play[0]
+
         candidates = ", ".join(Label(card) for card in found)
         raise AmbiguousCardRef(
             f"{ref.Describe()}: matches {len(found)} cards ({candidates}). "

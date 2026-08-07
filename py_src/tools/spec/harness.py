@@ -9,7 +9,7 @@ The shape of a run:
    client. A puzzle starts with no encounter deck and no player deck, so the
    board contains only what the spec asks for.
 3. `GameSetup()`, then apply the `Given` steps through `RunPuzzle`.
-4. `GameLoop()`, with `ScriptedPolicy` answering decisions. It plays the `When`
+4. `GameLoop()`, with `TranscriptPolicy` answering decisions. It plays the
    steps and halts on the first free decision afterwards.
 5. Evaluate the `Then` steps against the captured state.
 
@@ -30,9 +30,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
-from tools.spec.assertions import AssertionResult, EvaluateAll
+from tools.spec.assertions import AssertionResult
 from tools.spec.case import GIVEN_KIND, GIVEN_VERBS, GivenStep, SpecCase
-from tools.spec.policy import DecisionRecord, DescribeTrail, ScriptedPolicy
+from tools.spec.policy import DecisionRecord, DescribeTrail, TranscriptPolicy
 from tools.spec.resolve import AmbiguousCardRef, CardRefError, ResolveCard, ResolveFace
 from tools.spec.state import Capture, StateView
 
@@ -161,26 +161,66 @@ def EnsureEngine() -> None:
 ################################################################################
 # Scene
 
-def LoadScenarioJson(name: str) -> Dict[str, Any]:
+_JSON_CACHE: Dict[Tuple[str, str], Dict[str, Any]] = {}
+
+
+def LoadJson(kind: str, name: str, missing: str) -> Dict[str, Any]:
+    """A scenario or hero definition, read once per process.
+
+    A suite runs thousands of cases over a handful of scenarios; re-reading the
+    same two files for every one of them is pure overhead.
+    """
+    key = (kind, name)
+    if key in _JSON_CACHE:
+        return _JSON_CACHE[key]
+
     from engine.file import FileManager
     from engine.lib import Json
 
-    path = FileManager.FindJsonPath("Campaign", name, nullable=True)
+    path = FileManager.FindJsonPath(kind, name, nullable=True)
     if not path:
-        raise SetupError(f"scenario {name!r} not found under data/scenarios/")
+        raise SetupError(missing)
     with FileManager.OpenFile(path, read=True) as file:
-        return Json.Loads(file.Read())
+        data = Json.Loads(file.Read())
+    _JSON_CACHE[key] = data
+    return data
+
+
+def LoadScenarioJson(name: str) -> Dict[str, Any]:
+    return LoadJson("Campaign", name,
+                    f"scenario {name!r} not found under data/scenarios/")
 
 
 def LoadHeroJson(name: str) -> Dict[str, Any]:
-    from engine.file import FileManager
-    from engine.lib import Json
+    return LoadJson("Hero", name, f"hero {name!r} not found under deck/")
 
-    path = FileManager.FindJsonPath("Hero", name, nullable=True)
-    if not path:
-        raise SetupError(f"hero {name!r} not found under deck/")
-    with FileManager.OpenFile(path, read=True) as file:
-        return Json.Loads(file.Read())
+
+def PreferredPacks(case: SpecCase) -> Tuple[str, ...]:
+    """Set prefixes this scenario is plausibly about.
+
+    Printed names collide across packs -- five cards are called "Nick Fury" --
+    so a bare name needs a tie-break. The scenario already says which game it is
+    playing, and a scenario about the core-set Rhino means the core-set Shocker.
+    `@card:` tags are honoured too, for a scenario that reaches outside its set.
+    """
+    prefixes: List[str] = []
+
+    def Add(card_id: str) -> None:
+        prefix = str(card_id).strip()[:2]
+        if prefix.isdigit() and prefix not in prefixes:
+            prefixes.append(prefix)
+
+    for tag in case.card_tags:
+        Add(tag)
+    try:
+        for card_id in LoadScenarioJson(case.scenario).get("villain", []):
+            Add(card_id)
+        for hero in case.heroes:
+            for card_id in LoadHeroJson(hero).get("hero", []):
+                Add(card_id)
+    except SetupError:
+        pass
+    return tuple(prefixes)
 
 
 def BuildPuzzleScene(case: SpecCase) -> Any:
@@ -240,15 +280,16 @@ def BuildPuzzleScene(case: SpecCase) -> Any:
 ################################################################################
 # Given
 
-def ApplyGiven(world: Any, steps: Sequence[GivenStep]) -> None:
+def ApplyGiven(world: Any, case: SpecCase) -> None:
     """Apply the setup commands, in order, through `RunPuzzle`."""
     from game.puzzle.puzzle import RunPuzzle
 
     puzzle = RunPuzzle(world)
+    packs = PreferredPacks(case)
 
-    for position, step in enumerate(steps, start=1):
+    for position, step in enumerate(case.given, start=1):
         try:
-            ApplyGivenStep(world, puzzle, step)
+            ApplyGivenStep(world, puzzle, step, packs)
         except SetupError:
             raise
         except CardRefError as exc:
@@ -264,23 +305,75 @@ def ApplyGiven(world: Any, steps: Sequence[GivenStep]) -> None:
 # naming a zone to put it in.
 CREATING_VERBS = ("in_play", "revealed")
 
-CARD_ID = re.compile(r"^\d{5}[a-z]?$", re.IGNORECASE)
+CARD_ID = re.compile(r"^\d{5}[a-z]?(,\d{5}[a-z]?)*$", re.IGNORECASE)
+
+_NAME_INDEX: Dict[str, List[str]] = {}
 
 
-def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep) -> None:
+def NameIndex() -> Dict[str, List[str]]:
+    """Printed name -> the card ids that carry it.
+
+    A scenario names cards the way the card does. `CardFactory.GenerateCard`
+    wants an id, so something has to bridge the two, and that belongs in the
+    runner rather than in the scenario -- otherwise every spec would be written
+    against ids and become unreadable.
+    """
+    global _NAME_INDEX
+    if _NAME_INDEX:
+        return _NAME_INDEX
+
+    from cards.database import CardsDB
+
+    index: Dict[str, List[str]] = {}
+    for card_id, paper in CardsDB.papers.items():
+        # Unique cards are printed with a leading bullet that is not part of
+        # the name anyone would type.
+        name = str(paper.name).lstrip("* ").strip().casefold()
+        if not name:
+            continue
+        index.setdefault(name, []).append(str(card_id))
+    _NAME_INDEX = index
+    return index
+
+
+def ResolveCardId(text: str, packs: Tuple[str, ...] = ()) -> str:
+    """A card id from what the scenario wrote, which may be a printed name."""
+    written = text.strip().strip('"')
+    if CARD_ID.match(written):
+        return written
+
+    found = NameIndex().get(written.casefold())
+    if not found:
+        raise SetupError(
+            f"no card is named {written!r}; write the printed name or a card id")
+    if len(found) == 1:
+        return found[0]
+
+    narrowed = [card_id for card_id in found if card_id[:2] in packs]
+    if len(narrowed) == 1:
+        return narrowed[0]
+
+    candidates = narrowed or found
+    raise SetupError(
+        f"{written!r} is the printed name of {len(candidates)} cards "
+        f"({', '.join(sorted(candidates))}); use the card id to say which")
+
+
+def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep,
+                   packs: Tuple[str, ...] = ()) -> None:
     kind, method_name = GIVEN_VERBS[step.verb]
     method = getattr(puzzle, method_name)
 
     if kind == "create":
-        # Card ids only -- these generate new cards rather than finding them.
-        method(*step.cards)
+        # These generate new cards, so every name has to become an id first.
+        method(*[ResolveCardId(card, packs) for card in step.cards])
         return
 
     if kind == "value":
         method(step.value)
         return
 
-    face = ResolveOrCreateFace(world, puzzle, step)
+    face = ResolveOrCreateFace(world, puzzle, step, packs)
 
     if kind == "card_value":
         method(face, step.value)
@@ -306,7 +399,8 @@ def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep) -> None:
     method(face)
 
 
-def ResolveOrCreateFace(world: Any, puzzle: Any, step: GivenStep) -> Any:
+def ResolveOrCreateFace(world: Any, puzzle: Any, step: GivenStep,
+                        packs: Tuple[str, ...] = ()) -> Any:
     """The card a `Given` names, generating it when the verb is one that may.
 
     Only `in_play` and `revealed` create, and only from a bare card id that
@@ -326,9 +420,12 @@ def ResolveOrCreateFace(world: Any, puzzle: Any, step: GivenStep) -> Any:
     except AmbiguousCardRef:
         raise
     except CardRefError:
-        if step.verb not in CREATING_VERBS or not CARD_ID.match(ref.strip()):
+        if step.verb not in CREATING_VERBS:
             raise
-    return puzzle.CreateCard(ref.strip())
+        # A creating verb may name a card that is not on the board yet, by
+        # printed name or by id. Anything that is neither stays an error.
+        card_id = ResolveCardId(ref, packs)
+    return puzzle.CreateCard(card_id)
 
 
 def StatusPresent(face: Any, verb: str) -> bool:
@@ -363,7 +460,7 @@ def RunCase(case: SpecCase, *, max_decisions: int = 200) -> CaseResult:
     """Play one case. Never raises for a failing spec -- that is a result."""
     EnsureEngine()
 
-    policy = ScriptedPolicy(steps=tuple(case.when), max_decisions=max_decisions)
+    policy = TranscriptPolicy(beats=tuple(case.beats), max_decisions=max_decisions)
 
     with CaptureEngineOutput() as buffer:
         result = RunCaseInternal(case, policy)
@@ -394,7 +491,7 @@ def InternalError(engine_log: str) -> str:
     return "see the engine log"
 
 
-def RunCaseInternal(case: SpecCase, policy: ScriptedPolicy) -> CaseResult:
+def RunCaseInternal(case: SpecCase, policy: TranscriptPolicy) -> CaseResult:
     from engine import Engine
     from engine.device.manager.bot.manager import BotDeviceManager
     from game.game import Game
@@ -431,7 +528,7 @@ def RunCaseInternal(case: SpecCase, policy: ScriptedPolicy) -> CaseResult:
             return CaseResult(case=case, outcome=OUTCOME_ERROR,
                               message="the engine produced no world")
 
-        ApplyGiven(world, case.given)
+        ApplyGiven(world, case)
         game.GameLoop()
     except SetupError as exc:
         return CaseResult(case=case, outcome=OUTCOME_UNPLAYABLE, message=str(exc),
@@ -444,39 +541,37 @@ def RunCaseInternal(case: SpecCase, policy: ScriptedPolicy) -> CaseResult:
     return Judge(case, policy, game)
 
 
-def Judge(case: SpecCase, policy: ScriptedPolicy, game: Any) -> CaseResult:
-    """Turn a completed run into a result."""
+def Judge(case: SpecCase, policy: TranscriptPolicy, game: Any) -> CaseResult:
+    """Turn a completed run into a result.
+
+    The policy has already evaluated every beat as it reached it -- assertions
+    between decisions cannot be judged anywhere else -- so this only has to
+    settle anything the game ended before reaching, and decide the outcome.
+    """
+    world = game.world
+    if not policy.halted:
+        # The game ended without the policy reaching its stop, so nothing has
+        # judged the tail of the transcript yet.
+        policy.Finish(world)
+
     state = policy.state
-    if state is None:
-        # The game finished without the policy reaching a free decision. That
-        # is still a board worth asserting on -- a scenario may legitimately end
-        # the game -- so snapshot whatever the engine finished with.
-        world = game.world
-        if world is not None:
-            state = Capture(world)
+    if state is None and world is not None:
+        state = Capture(world)
 
     if policy.failure:
         return CaseResult(
             case=case, outcome=OUTCOME_UNPLAYABLE, state=state,
-            decisions=policy.records,
+            assertions=policy.results, decisions=policy.records,
             message=policy.failure + "\n" + DescribeTrail(policy.records))
 
-    if not policy.completed:
-        unplayed = policy.steps[policy.index]
-        return CaseResult(
-            case=case, outcome=OUTCOME_UNPLAYABLE, state=state,
-            decisions=policy.records,
-            message=(f"the game ended with When step {policy.index + 1} unplayed "
-                     f"({unplayed.Describe()})\n" + DescribeTrail(policy.records)))
-
-    if state is None:
-        return CaseResult(case=case, outcome=OUTCOME_ERROR, decisions=policy.records,
-                          message="no board state was captured")
-
-    results = EvaluateAll(state, case.then)
+    results = policy.results
     failures = [result for result in results if not result.passed]
 
     if not failures:
+        if not results:
+            return CaseResult(case=case, outcome=OUTCOME_ERROR,
+                              decisions=policy.records, state=state,
+                              message="the transcript asserted nothing")
         return CaseResult(case=case, outcome=OUTCOME_PASS, assertions=results,
                           decisions=policy.records, state=state)
 
@@ -484,7 +579,9 @@ def Judge(case: SpecCase, policy: ScriptedPolicy, game: Any) -> CaseResult:
     # different game, not a different outcome.
     outcome = OUTCOME_UNPLAYABLE if any(f.unresolvable for f in failures) else OUTCOME_ASSERTION
     return CaseResult(case=case, outcome=outcome, assertions=results,
-                      decisions=policy.records, state=state)
+                      decisions=policy.records, state=state,
+                      message="" if policy.halted else
+                              "the game ended before the transcript finished")
 
 
 def RunCases(cases: Sequence[SpecCase], *, max_decisions: int = 200) -> List[CaseResult]:

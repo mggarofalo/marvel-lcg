@@ -145,12 +145,25 @@ New tooling needs its own tests: test behavior not implementation, no assertion-
 
 ## Behavioral specs
 
-The replay corpus answers "did this game reproduce". It cannot answer "does Swinging Web Kick deal 8 damage". Behavioral specs do, and they are what the C# engine will be held to.
+The replay corpus answers "did this game reproduce". It cannot answer "does Swinging Web Kick deal 8 damage". Behavioral specs do, and they are what the C# engine will be held to. The format is decided in MARVEL-22 — read it before changing `tools/spec/`.
 
-Scenarios live in `py_src/specs/scenarios/` as Gherkin `.feature` files, written from printed card text. `tools/spec/` runs them: **Given** builds a board out of `RunPuzzle` commands, **When** selects an effect through the headless bot device, **Then** asserts over readable state — health, threat, zone, counters, statuses — so a failure reads as a claim about the game rather than a CRC diff.
+**A scenario is a transcript**: one `When` per engine decision, with `Then`s interleaved, in Gherkin `.feature` files under `py_src/specs/`. The engine is a fold `(state, input) -> (state, prompt)` and a scenario is a literal trace of it.
+
+```gherkin
+When I play "Nick Fury"
+Then I am prompted to choose one
+  | Draw 3 cards              |
+  | Deal 4 damage to an enemy |
+
+When I choose "Deal 4 damage to an enemy" targeting "Shocker"
+Then "Shocker" has 4 damage
+And I am not prompted again
+```
+
+The verbosity buys the two assertions a batched format cannot make: **which options the engine offered** (state-dependent behavior — Nick Fury is printed as a three-way choice but offers two when no scheme has threat) and **that the resolution ended**. And the harness **never answers a decision the transcript omits** — an unanswered mid-resolution choice is `FAIL-spec-wrong`, not a silent pick. Without that rule the other two are decoration.
 
 ```bash
-python -m tools.spec.run_case specs/scenarios/          # run scenarios, see what happened
+python -m tools.spec.run_case specs/                    # run scenarios, see what happened
 python -m tools.spec.validate                           # assign verdicts, update the manifests
 python -m tools.spec.validate --trusted-only            # the gate: every trusted spec must pass
 python -m tools.spec.validate --triage triage.json      # records for adjudicating disagreements
@@ -158,7 +171,9 @@ python -m tools.spec.validate --triage triage.json      # records for adjudicati
 
 **A scenario is not trusted until it passes.** `specs/trusted.json` is written only by the validation runner, only from `PASS`, and each entry is pinned to the hash of its scenario source — edit a scenario and it drops out on the next run. There is no way to add one by hand. Everything else is quarantined with a verdict: `FAIL-spec-wrong` (the engine never offered what the scenario describes — probably a misread card), `FAIL-engine-suspected` (it ran cleanly and disagreed anyway), or `ERROR`. A disagreement is triaged, never dismissed; both kinds are worth finding.
 
-`specs/scenarios/known_disagreements.feature` is wrong on purpose and must stay that way — it is the proof the gate works.
+`specs/steps.catalogue.json` is the closed step vocabulary; a test asserts the parser implements exactly it, so drift between the Python and C# runners fails a build. Scenarios name cards by printed name and are tagged `@card:<id>`; object ids never appear in a spec.
+
+`specs/self-test/quarantine.feature` is wrong on purpose and must stay that way — it is the proof the gate works.
 
 This only works while the Python engine still runs and is still the reference. Read [docs/spec-harness.md](docs/spec-harness.md) before authoring.
 

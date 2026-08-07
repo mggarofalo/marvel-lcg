@@ -51,7 +51,7 @@ from tools.spec.harness import (
     CaseResult, OUTCOME_ASSERTION, OUTCOME_ERROR, OUTCOME_PASS, OUTCOME_UNPLAYABLE, RunCase)
 from tools.spec.run_case import LoadCases
 
-DEFAULT_SCENARIOS = "./specs/scenarios"
+DEFAULT_SCENARIOS = "./specs"
 DEFAULT_TRUSTED = "./specs/trusted.json"
 DEFAULT_QUARANTINE = "./specs/quarantine.json"
 DEFAULT_HISTORY = "./specs/history.jsonl"
