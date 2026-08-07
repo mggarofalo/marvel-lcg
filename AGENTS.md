@@ -23,14 +23,37 @@ Anything else — refactors, cleanups, modernization of the upstream engine — 
 
 ## Quick start
 
+Python is pinned to 3.13 (`.python-version`). Dependencies are managed with [uv](https://docs.astral.sh/uv/).
+
 ```bash
-pip install -r requirements.txt   # currently FAILS - see below
-python main.py                    # serves the web client on 127.0.0.1:2345
+uv venv --python 3.13
+uv pip install -r requirements.lock   # pinned resolution
+.venv/Scripts/python.exe main.py      # serves the web client on 127.0.0.1:2345
 ```
 
-**Known blocker:** `requirements.txt` lists `PIL`, which is not an installable PyPI package (the real one, `Pillow`, is already on the next line). Install will fail as written. Tracked as `MARVEL-2`; fix that issue before relying on a clean-clone setup.
+Verify it came up:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:2345/main   # expect 200
+```
+
+Most API routes require an `app_version` cookie matching `Ver.ui_version_str` (`<version>r` in release builds, `<version>d` in debug). A **cookieless request always fails the version check** and is served `public/clean_cache.html` — see `IsVersionMatch` in `engine/network/web_server.py:88`. That is intended behavior, not a misconfiguration. To call the API directly:
+
+```bash
+curl -s --cookie "app_version=0.5.9.201r" http://127.0.0.1:2345/list_scenarios
+```
+
+`assets/` and `replays/` are absent from a clean clone and the engine runs anyway — card images come from the `image_servers` configured in `launch.json`, and missing ones are generated as placeholders by `engine/lib/image_creator.py`.
+
+The web client's TypeScript compiles to JavaScript that is **gitignored** (`/public/js/**/*.js`), so a clean clone has no compiled client — see `public/js/tsconfig.json` and `public/js/watch.bat`. The Python API works without it; the browser UI does not.
 
 Configuration comes from `launch.json` merged with command-line flags — see `engine/config.py` and the Configuration section of [docs/engine_architecture.md](docs/engine_architecture.md). Command line beats `launch.json` beats defaults.
+
+### Dependencies
+
+`requirements.txt` is the direct dependency list; `requirements.lock` is the fully pinned resolution, generated with `uv pip compile requirements.txt -o requirements.lock`. Install from the lock; regenerate it when the direct list changes.
+
+`numpy` is a **required** runtime dependency. It was missing from the original `requirements.txt` despite being the default RNG backend — see the RNG note below.
 
 ## Architecture
 
@@ -43,7 +66,7 @@ Four facts that matter more than the rest:
 - **Input blocks.** `Controller.ChoiceOne` (`engine/controller/controller.py`) blocks a thread inside `self.input.GetInput(...)` waiting for a websocket or keypress. This is why the threading, task, and job machinery exists, and it is why driving the engine from code needs a new device type rather than a function call.
 - **Replays are seed + input list.** A saved scene records the RNG seed and every player input. Replaying re-executes them. This is what makes undo, skip, and deterministic replay work.
 - **Every replay step carries a state digest.** `World.CalculateCRC()` (`game/world/world_render.py:123`) produces a per-card state dict that `engine/controller/module/replay.py` compares on every replayed step, printing a key-by-key diff on mismatch. This is the project's oracle — treat it as a wire format.
-- **The RNG is non-standard.** `engine/lib/mt19937.py` is MT19937, but `shuffle()` is not Fisher-Yates (it does `10 * len` random swaps) and `randint` truncates a float division. The quirks are part of the contract.
+- **There are two RNG backends, and the default is numpy.** `engine/lib/random.py` dispatches on the `disable_numpy_random` config flag, which **defaults to False** — so `numpy.random` is the production RNG, not the hand-written `engine/lib/mt19937.py`. The custom generator is only used when that flag is set. The two are not interchangeable: they produce different streams, and `Random.Undo()` restores prior numpy state but is a **no-op** in custom-RNG mode. Anything touching determinism must state which backend it assumes.
 
 ## Critical constraints
 

@@ -1,5 +1,7 @@
 /.vscode/**
 **/*.pyc
+__pycache__/
+/.venv/
 /public/js/**/*.js
 /public/js/**/*.js.map
 /assets

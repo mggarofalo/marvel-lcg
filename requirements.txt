@@ -1,7 +1,7 @@
+aiohttp
+colorama
+numpy
 packaging
-PIL
 Pillow
 requests
-aiohttp
 typing_extensions
-colorama
