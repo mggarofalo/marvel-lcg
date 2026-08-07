@@ -119,8 +119,11 @@ From `py_src/`:
 python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_local_effect_order unit_test.test_scene_hash \
                    unit_test.test_bot_timeout unit_test.test_card_dataset
+# spec harness: boots the engine and plays puzzle boards, still under a second
+python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
 python -m tools.determinism.check_scene_repro    # same seed -> same saved file
+python -m tools.spec.validate --trusted-only     # every trusted behavioral spec
 python main.py -bot -bot_verify                  # generate a game and replay-verify it
 ```
 
@@ -139,6 +142,40 @@ The replay suite (`game/test/test.py` → `TestRun`) re-executes a scene's input
 **`replays/` is empty and untracked**, so there is no regression suite yet. Building it is the entire point of the `Corpus and Oracle` phase — weigh changes accordingly.
 
 New tooling needs its own tests: test behavior not implementation, no assertion-free tests, coverage is an observed outcome and never a target.
+
+## Behavioral specs
+
+The replay corpus answers "did this game reproduce". It cannot answer "does Swinging Web Kick deal 8 damage". Behavioral specs do, and they are what the C# engine will be held to. The format is decided in MARVEL-22 — read it before changing `tools/spec/`.
+
+**A scenario is a transcript**: one `When` per engine decision, with `Then`s interleaved, in Gherkin `.feature` files under `py_src/specs/`. The engine is a fold `(state, input) -> (state, prompt)` and a scenario is a literal trace of it.
+
+```gherkin
+When I play "Nick Fury"
+Then I am prompted to choose one
+  | Draw 3 cards              |
+  | Deal 4 damage to an enemy |
+
+When I choose "Deal 4 damage to an enemy" targeting "Shocker"
+Then "Shocker" has 4 damage
+And I am not prompted again
+```
+
+The verbosity buys the two assertions a batched format cannot make: **which options the engine offered** (state-dependent behavior — Nick Fury is printed as a three-way choice but offers two when no scheme has threat) and **that the resolution ended**. And the harness **never answers a decision the transcript omits** — an unanswered mid-resolution choice is `FAIL-spec-wrong`, not a silent pick. Without that rule the other two are decoration.
+
+```bash
+python -m tools.spec.run_case specs/                    # run scenarios, see what happened
+python -m tools.spec.validate                           # assign verdicts, update the manifests
+python -m tools.spec.validate --trusted-only            # the gate: every trusted spec must pass
+python -m tools.spec.validate --triage triage.json      # records for adjudicating disagreements
+```
+
+**A scenario is not trusted until it passes.** `specs/trusted.json` is written only by the validation runner, only from `PASS`, and each entry is pinned to the hash of its scenario source — edit a scenario and it drops out on the next run. There is no way to add one by hand. Everything else is quarantined with a verdict: `FAIL-spec-wrong` (the engine never offered what the scenario describes — probably a misread card), `FAIL-engine-suspected` (it ran cleanly and disagreed anyway), or `ERROR`. A disagreement is triaged, never dismissed; both kinds are worth finding.
+
+`specs/steps.catalogue.json` is the closed step vocabulary; a test asserts the parser implements exactly it, so drift between the Python and C# runners fails a build. Scenarios name cards by printed name and are tagged `@card:<id>`; object ids never appear in a spec.
+
+`specs/self-test/quarantine.feature` is wrong on purpose and must stay that way — it is the proof the gate works.
+
+This only works while the Python engine still runs and is still the reference. Read [docs/spec-harness.md](docs/spec-harness.md) before authoring.
 
 ## Workflow
 
