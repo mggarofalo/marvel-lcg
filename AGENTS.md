@@ -50,7 +50,7 @@ Tooling under `py_src/tools/` must be invoked as a module so the package resolve
 
 Python is pinned to 3.13 (`py_src/.python-version`), managed with [uv](https://docs.astral.sh/uv/). `requirements.txt` is the direct list; `requirements.lock` is the pinned resolution (`uv pip compile requirements.txt -o requirements.lock`). Install from the lock.
 
-`numpy` is currently required — it is the default RNG backend, and it was missing from the original dependency list. It goes away when MARVEL-38 lands.
+`numpy` is **gone** as of MARVEL-38 — it was only ever there as the default RNG backend. Nothing imports it. Do not add it back without a reason that survives [docs/rng-contract.md](docs/rng-contract.md).
 
 ## Architecture
 
@@ -63,7 +63,7 @@ Four facts that matter more than the rest:
 - **Input blocks.** `Controller.ChoiceOne` (`py_src/engine/controller/controller.py`) blocks a thread inside `self.input.GetInput(...)` waiting for a websocket or keypress. This is why the threading, task, and job machinery exists. Removing it is a goal of the C# design.
 - **Replays are seed + input list.** A saved scene records the RNG seed and every player input; replaying re-executes them. This is what makes undo, skip, and deterministic replay work.
 - **Every replay step carries a state digest.** `World.CalculateCRC()` (`py_src/game/world/world_render.py:123`) produces a per-card state dict that `engine/controller/module/replay.py` compares on every replayed step, printing a card-by-card diff on mismatch. **This is the project's oracle — treat it as a wire format.** It is specified in [docs/state-digest-contract.md](docs/state-digest-contract.md); read that before changing anything it touches.
-- **The RNG is being replaced.** Today `engine/lib/random.py` dispatches on `disable_numpy_random`, which defaults to False, so `numpy.random` is the production RNG and the hand-written `engine/lib/mt19937.py` is dead code. Both are being replaced by one precisely-specified standard implementation shared with C# (MARVEL-38). Until then, anything touching determinism must state which backend it assumes.
+- **The RNG is a specified contract.** One MT19937 stream, seeded once per game, written down in [docs/rng-contract.md](docs/rng-contract.md) and implemented by `engine/lib/mt19937.py`. There is no backend flag any more, and no floating point anywhere in it — bounded integers come off the raw 32-bit stream by masked rejection. **Changing any of it changes every game outcome**, so treat it as a wire format: `datasets/rng/vectors.json` is the cross-language fixture the C# port is accepted against, and `unit_test/test_rng.py` fails if you move the stream without regenerating it.
 
 ## Critical constraints
 
@@ -118,7 +118,8 @@ From `py_src/`:
 # fast tests: pure logic, no engine bootstrap beyond `import engine`
 python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_local_effect_order unit_test.test_scene_hash \
-                   unit_test.test_bot_timeout unit_test.test_card_dataset
+                   unit_test.test_bot_timeout unit_test.test_card_dataset \
+                   unit_test.test_rng
 # spec harness: boots the engine and plays puzzle boards, still under a second
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
@@ -129,6 +130,13 @@ python main.py -bot -bot_verify                  # generate a game and replay-ve
 
 Name the modules explicitly. `unittest discover` picks up `unit_test/test_all.py`,
 which is the replay suite described below and does not run.
+
+Regenerate the RNG vectors after touching anything in `engine/lib/mt19937.py` or the `Random` facade — `unit_test.test_rng` fails until you do:
+
+```bash
+python -m tools.rng.emit_vectors         # write datasets/rng/vectors.json
+python -m tools.rng.emit_vectors --check  # non-zero if stale
+```
 
 Regenerate the card dataset after touching `data/cards.json`, the card scripts, or `datasets/marvelsdb/`:
 

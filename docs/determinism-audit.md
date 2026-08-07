@@ -394,6 +394,15 @@ in normal play.
 **Recommendation.** Leave it. Note it so nobody wires undo into corpus
 generation and assumes RNG state rewinds correctly.
 
+**Status: fixed (MARVEL-38).** There is one backend now, and the snapshot is
+taken by the generator itself immediately before each draw rather than by the
+facade at three call sites with different early-return paths — so pushes and
+pops are paired by construction. The history is a bounded ring
+(`UNDO_DEPTH = 32`, which also closes MARVEL-26), `SetSeed` clears it, and
+`Undo()` past the end raises instead of silently doing nothing. It is still
+debug-console-only and is explicitly outside the cross-engine contract; see
+`docs/rng-contract.md` section 7.
+
 ### F10 — The default RNG backend is an undeclared dependency (Low, but blocking)
 
 `engine/lib/random.py:5`, `requirements.txt`
@@ -428,6 +437,38 @@ the C# port targets is `MARVEL-25`; this audit's input to that decision is that
 both are reproducible, so the choice can be made on portability grounds alone.
 Reproducing numpy's legacy `RandomState` bit-exactly in C# is substantially more
 work than reproducing the 120-line `mt19937.py`.
+
+**Status: resolved by replacement (MARVEL-38).** Neither backend was declared or
+pinned, because neither survived. There is one generator, specified in
+`docs/rng-contract.md`, and `disable_numpy_random` and the numpy dependency are
+both gone — verified by uninstalling numpy and running the suite, the harness
+and a bot game.
+
+*What the replacement actually changed, measured.* Less than expected, and the
+reason is worth recording. The contract's `Shuffle` (downward Fisher-Yates) and
+single `Choice` (masked rejection on the raw 32-bit stream) turn out to be
+**bit-identical to numpy's legacy `RandomState`**, because that is what numpy's
+legacy implementation already does, over a word stream that was already the
+same. Compared directly at seeds 42, 999 and 12345:
+
+| | matches numpy legacy |
+|---|---|
+| `Shuffle` | yes |
+| `Choice` | yes |
+| `ChooseWithoutReplacement` | **no** — numpy consumes a different pattern |
+
+So the only behavioural divergence is multi-select without replacement
+(`Random.RandomChoice2`), and every wide-matrix digest is unchanged because the
+decline-only driver calls it zero times. That is a fact about the driver, not a
+guarantee about the change: a bot game does reach it.
+
+*And a confounder worth knowing about.* Three bot games at seeds 4242-4244 were
+compared across the change. Two of the saved scenes differed — but the entire
+diff was `e6`/`e7` swapping between `01001a` and `01001b` on the Change_Form
+abilities, with no gameplay difference and identical step counts. That is `F4`
+(`MARVEL-33`), not the RNG: removing the numpy import shifted allocation enough
+to reorder an identity-hashed set. Recorded on that issue, which is now High —
+the exposure is every hero, not only the multi-identity ones F4 predicted.
 
 ## Checked and cleared
 
@@ -509,7 +550,7 @@ The harness applies all of these; see `tools/determinism/pinned_env.py`.
 | `PYTHONDONTWRITEBYTECODE=1` | Keeps runs from differing in filesystem side effects. Hygiene, not correctness. |
 | `timeout = 0` on every generated game | F1. A non-zero timeout can fabricate an input. |
 | No web device during generation | F8. Keeps the aiohttp thread out of game state. |
-| Record the resolved config with the corpus | F5. `statistics`, `pause_test_statistics`, `disable_numpy_random`, and the scene rules all shift id allocation. |
+| Record the resolved config with the corpus | F5. `statistics`, `pause_test_statistics` and the scene rules all shift id allocation. (`disable_numpy_random` was on this list until MARVEL-38 deleted it.) |
 
 ### What pinning `PYTHONHASHSEED` does not fix
 
@@ -540,7 +581,7 @@ that makes them safe.
 | `check_runs.py` | Runs the same game N times in fresh processes and diffs the traces. The MARVEL-7 acceptance test | yes |
 | `check_corpus.py` | Replays the corpus N times via `main.py -test` and checks every recorded digest | needs the corpus |
 | `probe_hash_order.py` | Establishes which container orderings CPython reproduces | yes |
-| `probe_rng.py` | Checks both RNG backends for cross-process stability and prints their golden digests | yes |
+| `probe_rng.py` | Checks the RNG for cross-process stability. Compared both backends until MARVEL-38 left only one; cross-*language* agreement is `datasets/rng/vectors.json` | yes |
 
 `headless.py` drives the engine through `DeviceManager.DoGetInput`.
 `InputDevice.GetInput` is `@final`, but it delegates, so a `DeviceManager`
@@ -549,7 +590,7 @@ lands (`MARVEL-5`), replace the `decide` callback; everything else stands.
 
 ```bash
 uv venv --python 3.13
-uv pip install packaging Pillow requests aiohttp typing_extensions colorama numpy
+uv pip install -r requirements.lock   # numpy was here until MARVEL-38 removed it
 
 .venv/Scripts/python.exe -m tools.determinism.probe_hash_order
 .venv/Scripts/python.exe -m tools.determinism.probe_rng
@@ -616,5 +657,5 @@ Listed so the remaining work is explicit rather than implied.
 | Sort identity list in `register_change_form` | Medium | F4. `sorted(identities)` in both places. |
 | Normalise `sign` / `time` / `playtime` when freezing the corpus | Medium | F6. Generator-side; also stops a machine fingerprint entering the repo. |
 | Record the resolved config alongside the corpus | Medium | F5. Config drift changes id allocation; make it visible rather than silent. |
-| Declare `numpy` and pin `disable_numpy_random` explicitly | Low | F10. Feeds `MARVEL-25`. Also finishes `MARVEL-2` by removing `PIL`. |
+| ~~Declare `numpy` and pin `disable_numpy_random` explicitly~~ | Low | F10. Overtaken by `MARVEL-38`, which deleted both rather than declaring either. `PIL` in `requirements.txt` was a separate `MARVEL-2` item. |
 | Run the determinism harness on Linux in CI | Low | Closes acceptance item 2 above and keeps it closed. |
