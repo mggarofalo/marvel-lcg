@@ -616,20 +616,14 @@ class EventManager:
     ################################################################################
     #
     @staticmethod
-    def FindLocalEffects(message: 'Message2') -> List['Effect']:
-        """The on-card effects that a message triggers, in `object_id` order.
+    def GatherLocalEffects(message: 'Message2') -> List['Effect']:
+        """The on-card effects a message triggers, in the order they are found.
 
-        `Message2.related_faces` is a `Set[CardFace]` and `CardFace` defines no
-        `__hash__`, so it iterates by memory address. The list returned here
-        decides the order `ProcessForcedEffect` resolves forced abilities in,
-        the order the first player is offered the tie-break in, and the order
-        the `NoSendResolve` path runs them in -- none of which may depend on
-        the allocator.
-
-        Sorting by `object_id` is the key the optional path already uses
-        (`ProcessOptionalEffect`). It orders by when the effect was created,
-        which is what the comment on `ProcessForcedEffect` has always claimed.
-        See MARVEL-31.
+        That order comes from `Message2.related_faces`, a `Set[CardFace]`, and
+        `CardFace` defines no `__hash__` -- so it is memory-address order and
+        nothing may depend on it. Callers want `FindLocalEffects`. This is
+        separate only so `tools/determinism/probe_local_effect_order.py` can
+        measure what the sort changes without copying this loop.
         """
         from game.message import Message
 
@@ -641,7 +635,24 @@ class EventManager:
             for check_effect in face.effect.local_effects:
                 if isinstance(message, check_effect.ability.when):
                     local_effects.append(check_effect)
-        return sorted(local_effects, key=lambda effect: effect.object_id)
+        return local_effects
+
+    @staticmethod
+    def FindLocalEffects(message: 'Message2') -> List['Effect']:
+        """The on-card effects that a message triggers, in `object_id` order.
+
+        The list returned here decides the order `ProcessForcedEffect` resolves
+        forced abilities in, the order the first player is offered the
+        tie-break in, and the order the `NoSendResolve` path runs them in --
+        none of which may depend on the allocator.
+
+        Sorting by `object_id` is the key the optional path already uses
+        (`ProcessOptionalEffect`). It orders by when the effect was created,
+        which is what the comment on `ProcessForcedEffect` has always claimed.
+        See MARVEL-31.
+        """
+        return sorted(EventManager.GatherLocalEffects(message),
+                      key=lambda effect: effect.object_id)
 
     ################################################################################
     #

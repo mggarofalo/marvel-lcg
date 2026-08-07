@@ -68,23 +68,16 @@ def _child(campaign: str, heroes: List[str], seed: int, max_steps: int) -> int:
     _initialize_engine()
 
     from game.event.manager import EventManager
-    from game.message import Message
 
     counters = Counters()
+    find_local_effects = EventManager.FindLocalEffects
 
     def Instrumented(message: Any) -> List[Any]:
-        # Deliberately re-does the gather rather than calling through, so the
-        # probe can see the order before the sort. Keep in step with
-        # `EventManager.FindLocalEffects`.
-        if isinstance(message, Message.WhenPlayerPayingResources):
-            return [message.by_effect]
-
-        gathered: List[Any] = []
-        for face in message.related_faces:
-            for check_effect in face.effect.local_effects:
-                if isinstance(message, check_effect.ability.when):
-                    gathered.append(check_effect)
-        ordered = sorted(gathered, key=lambda effect: effect.object_id)
+        # Both halves are the production functions -- the probe never restates
+        # the gather, so it cannot drift away from what the engine does.
+        # `GatherLocalEffects` runs twice per message; this is a probe.
+        gathered = EventManager.GatherLocalEffects(message)
+        ordered = find_local_effects(message)
         counters.Record(gathered, ordered)
         return ordered
 
