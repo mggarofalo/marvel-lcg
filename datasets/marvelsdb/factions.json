@@ -1,0 +1,56 @@
+[
+	{
+		"code": "aggression",
+		"is_primary": true,
+		"name": "Aggression",
+		"octgn_id": null
+	},
+	{
+		"code": "justice",
+		"is_primary": true,
+		"name": "Justice",
+		"octgn_id": null
+	},
+	{
+		"code": "encounter",
+		"is_primary": false,
+		"name": "Encounter",
+		"octgn_id": null
+	},
+	{
+		"code": "hero",
+		"is_primary": false,
+		"name": "Hero",
+		"octgn_id": null
+	},
+	{
+		"code": "basic",
+		"is_primary": true,
+		"name": "Basic",
+		"octgn_id": null
+	},
+	{
+		"code": "leadership",
+		"is_primary": true,
+		"name": "Leadership",
+		"octgn_id": null
+	},
+	{
+		"code": "protection",
+		"is_primary": true,
+		"name": "Protection",
+		"octgn_id": null
+	},
+	{
+		"code": "campaign",
+		"is_primary": false,
+		"name": "Campaign",
+		"octgn_id": null
+	},
+	{
+		"code": "pool",
+		"is_primary": true,
+		"name": "'Pool",
+		"octgn_id": null
+	}
+]

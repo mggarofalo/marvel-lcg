@@ -23,13 +23,15 @@ Taken 2026-08-06. Re-measure rather than trusting these if the tree has moved su
 | Card script size | median 27 lines, p90 41, p99 57, max 187 |
 | Distinct `AbilityFactory` methods | 310 |
 | Trigger-method coverage | top 10 = 57%, top 50 = 83%, top 150 = 95% |
-| Cards with no imperative handler | 531 (15%) |
-| Cards that suspend for player choice mid-resolution | 334 (10%) |
+| Cards with no imperative handler | 531 scripts (15%) |
+| Cards that suspend for player choice mid-resolution | 440 scripts (13%) |
 | Data files (scenarios, encounter sets, decks) | 390 JSON — portable as-is |
 | Frontend | 38 TS + 16 HTML + 69 CSS — portable as-is |
 | Content matrix | 108 scenarios, 63 starter decks, 148 encounter sets, 25 challenges |
 
 The distribution is the important part: card scripts are small and mostly shaped alike, but the trigger vocabulary has a long tail, and the tail is where port bugs will hide.
+
+The last two rows are now recomputed on every run of `python -m tools.cards.extract`, each stated next to the rule that produces it — see [card-dataset.md](card-dataset.md#stratification). The 531 reproduced exactly. The player-choice figure was originally recorded here as 334 from a measurement whose rule was never written down; no principled rule reproduces it, so 440 supersedes it.
 
 ## Decisions
 
@@ -156,13 +158,13 @@ Three oracles, used for different things.
 
 **1. The replay corpus** — integration-level ground truth. Mechanically generated, covers whole games.
 
-**2. Behavioral specs authored from printed card text** — `data/cards.json` holds the text the game's designers wrote. This is authoritative in a way that the Python implementation is not.
+**2. Behavioral specs authored from printed card text** — the text the game's designers wrote, which is authoritative in a way that the Python implementation is not. It comes from the vendored MarvelSDB snapshot, not from `data/cards.json`: the engine's copy has 36 cards corrupted by an encoding round-trip and 197 that say something materially different from the printed card. See [card-dataset.md](card-dataset.md).
 
 The discipline that makes this trustworthy at scale: **a scenario is not trusted until it passes against the running Python engine.** A disagreement is triaged as either a spec bug or an engine bug; both are worth finding. That makes it differential spec extraction rather than inference — and it only works while the Python engine is still the reference, which makes it urgent.
 
 **3. The puzzle system** — `game/puzzle/puzzle.py` `RunPuzzle` is already a state-setup DSL (`CreateHandCards`, `SetThreat`, `Damage`, `Confuse`, …). It is the Gherkin `Given` clause, already built. `When` is selecting an effect; `Then` is a state assertion. This is how per-card specs execute, and it is also how cards unreachable by self-play get covered.
 
-Vary spec depth by card complexity rather than writing a fixed number per card. The 531 cards with no handler need very little; the 334 that suspend for player choice need the most.
+Vary spec depth by card complexity rather than writing a fixed number per card. The 531 scripts with no handler need very little; the 440 that suspend for player choice need the most. `datasets/cards/summary.json` carries both, recomputed.
 
 ## Sequencing
 
