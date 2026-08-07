@@ -78,7 +78,7 @@ class Saved(NamedTuple):
     file_digest: str
     payload_digest: str
     ambient: Tuple[str, ...]
-    """Which of `Scene.AMBIENT_KEYS` the file actually carries."""
+    """Which of `AMBIENT_KEYS` the file actually carries."""
 
 
 def _inspect(path: str) -> Saved:
@@ -171,7 +171,10 @@ def main(argv: List[str] | None = None) -> int:
         # second can round to the same value twice. What must hold is that the
         # ambient metadata is present -- that is what proves the deterministic
         # mode is doing something rather than the two paths being identical.
-        missing = [key for key in ("sign", "time", "playtime") if key not in a.ambient]
+        missing = sorted(
+            {key for run in runs for key in ("sign", "time", "playtime")
+             if key not in run.ambient}
+        )
         if missing:
             failures += 1
             print(f"FAIL a human-style save did not write: {', '.join(missing)}")
