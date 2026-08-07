@@ -669,7 +669,36 @@ class TestDuplicateNames(unittest.TestCase):
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("already used", result.Describe())
+
+    def test_putting_a_card_the_setup_already_played_into_play_is_refused(self):
+        # The other half of the guard: no earlier Given touched this card, so
+        # the repeat check cannot see it. The villain is on the board because
+        # scenario setup put it there, and saying so again does nothing.
+        case = MakeCase(
+            name="villain already in play",
+            given=(GivenStep("in_play", ("Rhino in VillainArea",)),),
+            beats=(ThenStep("Rhino", "health", 14),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
         self.assertIn("already in play", result.Describe())
+
+    def test_revealing_the_same_card_twice_is_refused(self):
+        # `revealed` is the other creating verb and carries the same hazard,
+        # worse: `CardFace.Reveal` has no idempotency check, so a repeat re-runs
+        # WhenCardWouldReveal / WhenPlayerRevealCard and double-fires triggers
+        # rather than quietly doing nothing.
+        case = MakeCase(
+            name="repeated is revealed",
+            given=(GivenStep("encounter_deck", ("Hydra Mercenary",)),
+                   GivenStep("revealed", ("Hydra Mercenary",)),
+                   GivenStep("revealed", ("Hydra Mercenary",))),
+            beats=(ThenStep("Hydra Mercenary", "health", 3),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("already used", result.Describe())
 
     def test_two_copies_can_both_be_put_into_play_by_ordinal(self):
         # The supported way to get two of the same minion onto the board. The

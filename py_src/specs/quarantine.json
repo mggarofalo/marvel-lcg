@@ -38,7 +38,7 @@
       "verdict": "FAIL-engine-suspected"
     },
     "Quarantine self-test :: saying a card is in play twice is FAIL-spec-wrong": {
-      "reason": "Hydra Mercenary in_play: Hydra Mercenary is already in play, so this step changes nothing. If you meant a second copy, create both and name them by ordinal \u2014 the encounter deck is \"Hydra Mercenary\", \"Hydra Mercenary\" then \"Hydra Mercenary #1\" / \"Hydra Mercenary #2\".",
+      "reason": "Hydra Mercenary in_play: an earlier Given already used Hydra Mercenary, so this step repeats it rather than adding a copy. If you meant a second copy, create both and name them by ordinal \u2014 the encounter deck is \"Hydra Mercenary\", \"Hydra Mercenary\" then \"Hydra Mercenary #1\" / \"Hydra Mercenary #2\".",
       "sha256": "b6d2674d6e5dd4d1f9ae8997b88ff0aae38d373c6ef266958801af2854b7d9dd",
       "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-spec-wrong"

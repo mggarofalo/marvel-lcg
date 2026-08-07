@@ -199,10 +199,13 @@ Two rules keep that honest:
   you to name a zone. (A redundant ordinal on an already-narrowed ref, like
   `"Rhino #1 in VillainArea"`, is fine — it has nothing to choose between.)
 
-- **`"<card>" is in play` twice is an error.** Given is declarative, so the
-  second step resolves to the card the first created and does nothing; the
-  scenario would read as two minions and run as one. Create both and use
-  ordinals instead.
+- **A creating step may not act on the same card twice.** Given is declarative,
+  so a second `"Hydra Mercenary" is in play` resolves to the card the first
+  created; the scenario would read as two minions and run as one. Create both
+  and use ordinals instead. This covers `is revealed` as well as `is in play`,
+  and matters more there: `CardFace.Reveal` has no idempotency check, so a
+  repeat re-runs the reveal pipeline and double-fires reveal triggers rather
+  than quietly doing nothing.
 
 ## Option labels
 

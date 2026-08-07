@@ -28,7 +28,7 @@ import contextlib
 import io
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Tuple
 
 from tools.spec.assertions import AssertionResult
 from tools.spec.case import GIVEN_KIND, GIVEN_VERBS, GivenStep, SpecCase
@@ -292,9 +292,13 @@ def ApplyGiven(world: Any, case: SpecCase) -> None:
     # it. That is what lets `#N` mean "the Nth copy the scenario created".
     MarkEngineBaseline(world)
 
+    # Cards a creating step has already taken, so a second step naming the same
+    # card is caught however it spells it.
+    created: Set[int] = set()
+
     for position, step in enumerate(case.given, start=1):
         try:
-            ApplyGivenStep(world, puzzle, step, packs)
+            ApplyGivenStep(world, puzzle, step, packs, created)
         except SetupError:
             raise
         except CardRefError as exc:
@@ -400,7 +404,8 @@ def ResolveCardId(text: str, packs: Tuple[str, ...] = ()) -> str:
 
 
 def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep,
-                   packs: Tuple[str, ...] = ()) -> None:
+                   packs: Tuple[str, ...] = (),
+                   created: "Set[int]|None" = None) -> None:
     kind, method_name = GIVEN_VERBS[step.verb]
     method = getattr(puzzle, method_name)
 
@@ -436,19 +441,26 @@ def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep,
         ChangeToForm(puzzle, face, step.verb)
         return
 
-    if step.verb == "in_play":
-        RejectAlreadyInPlay(face, step)
+    if step.verb in CREATING_VERBS:
+        RejectDuplicateCreation(face, step, created)
 
     method(face)
 
 
-def RejectAlreadyInPlay(face: Any, step: GivenStep) -> None:
-    """Refuse `is in play` about a card that already is (MARVEL-42).
+def RejectDuplicateCreation(face: Any, step: GivenStep,
+                            created: "Set[int]|None") -> None:
+    """Refuse a creating step that would act on a card twice (MARVEL-42).
 
-    Given is declarative, so the second `"Hydra Mercenary" is in play` resolves
-    to the card the first one created and `PutIntoPlay` does nothing. The
-    scenario then runs with **one** minion while reading as though it has two,
-    which is the silent-wrong-pass this harness exists to refuse.
+    Given is declarative, so a second `"Hydra Mercenary" is in play` resolves to
+    the card the first one created. The scenario then runs with **one** minion
+    while reading as though it has two, which is the silent-wrong-pass this
+    harness exists to refuse.
+
+    Both creating verbs need this, for different reasons. `PutIntoPlay` on a
+    card already in play quietly does nothing. `Reveal` is worse: it re-runs the
+    whole reveal pipeline -- `WhenCardWouldReveal`, `WhenPlayerRevealCard`, the
+    revealing-area move -- so a repeat double-fires reveal triggers rather than
+    no-opping.
 
     An author who writes the line twice means two copies. The way to get them is
     to create both and address them by ordinal, which stays legal after the
@@ -458,13 +470,25 @@ def RejectAlreadyInPlay(face: Any, step: GivenStep) -> None:
         And "Hydra Mercenary #1" is in play
         And "Hydra Mercenary #2" is in play
     """
-    if not face.card.IsOnField():
-        return
-    raise SetupError(
-        f"{step.Describe()}: {face.name} is already in play, so this step "
-        f"changes nothing. If you meant a second copy, create both and name "
-        f"them by ordinal — the encounter deck is \"{face.name}\", "
-        f"\"{face.name}\" then \"{face.name} #1\" / \"{face.name} #2\".")
+    def refuse(why: str) -> None:
+        raise SetupError(
+            f"{step.Describe()}: {why}. If you meant a second copy, create both "
+            f"and name them by ordinal — the encounter deck is \"{face.name}\", "
+            f"\"{face.name}\" then \"{face.name} #1\" / \"{face.name} #2\".")
+
+    object_id = face.card.object_id
+
+    if created is not None and object_id in created:
+        refuse(f"an earlier Given already used {face.name}, so this step "
+               f"repeats it rather than adding a copy")
+
+    # Catches a card the scenario setup already put on the board, which no
+    # earlier Given would have recorded.
+    if step.verb == "in_play" and face.card.IsOnField():
+        refuse(f"{face.name} is already in play, so this step changes nothing")
+
+    if created is not None:
+        created.add(object_id)
 
 
 def ResolveOrCreateFace(world: Any, puzzle: Any, step: GivenStep,
