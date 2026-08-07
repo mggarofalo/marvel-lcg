@@ -70,6 +70,9 @@ class BotRunner:
             return False
 
         total = max(1, BOT_GAMES.value)
+        # Cleared per run, so a second `Run` in one process cannot write its
+        # manifest into the folder the first one happened to use.
+        BotRunner.save_folder = ""
         if BOT_SEED.value < 0:
             Log.Warn(CATEGORY_NAME, "bot_seed is negative: the engine will pick a random seed and the run will not be reproducible")
         if not BOT_DETERMINISTIC_SAVE.value:
@@ -290,12 +293,13 @@ class BotRunner:
         folder = BOT_SAVE_FOLDER.value or BotRunner.save_folder
 
         # `SanitizeFilename` strips dots, so build the stem and add the
-        # extension afterwards. The name is derived from the run parameters
-        # only, so re-running the same generation overwrites its own manifest
-        # rather than accumulating near-duplicates.
+        # extension afterwards. The name comes from what the run was *asked*
+        # for, never from how much of it succeeded -- otherwise a run where one
+        # game failed lands beside the run where none did instead of replacing
+        # it. Which seeds actually made it is in `games`.
         stem = FileManager.SanitizeFilename(
             f"bot-manifest-{BOT_SCENARIO.value}-{'+'.join(BOT_HEROES.value)}"
-            f"-{BotRunner.GetSeed(0)}-{len(saved)}".lower())
+            f"-{BotRunner.GetSeed(0)}-{max(1, BOT_GAMES.value)}".lower())
         path = FileManager.JoinPath(folder, f"{stem}.json")
 
         Json.Save(BotRunner.BuildManifest(game, device_manager, played), path)
