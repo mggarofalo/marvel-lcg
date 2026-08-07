@@ -114,6 +114,37 @@ what the optional path already does. One line. It changes resolution order in
 cases where the order was previously arbitrary, so it needs its own issue and a
 corpus regenerated afterwards — do not land it silently.
 
+**Status: fixed (MARVEL-31).** The closure is now
+`EventManager.FindLocalEffects`, a static method that sorts by
+`Effect.object_id`, so both consumers — the forced path and the `NoSendResolve`
+path — see creation order. Covered by `unit_test/test_local_effect_order.py`.
+
+*Digest impact, measured.* All seven wide-matrix digests are unchanged
+(`97fa1611b360d813`, `9fafd7bbe3691fea`, `0d9b285879f79e09`, `625cb6235b2da284`,
+`335b13994eb44ac3`, `0f56cf5fc6bc92dc`, `9e97e7d8310a7fd5`). On its own that is
+ambiguous, so `tools/determinism/probe_local_effect_order.py` counts what the
+sort actually saw:
+
+```
+total: 81 batches, 5 with two or more effects, 0 reordered by the sort
+```
+
+So the sort was reached and agreed with the address order everywhere it could
+have disagreed — the digests are unchanged because the orders matched, not
+because the code path went unexercised. Coverage is still thin: five
+multi-effect batches, largest of size two. The decline-only driver is the limit
+here, not the fix.
+
+*Rules check.* The Rules Reference says "if two or more forced abilities would
+initiate at the same moment, the first player determines the order in which the
+abilities initiate, regardless of who controls the cards bearing those
+abilities." `ProcessForcedEffect` already implements that via
+`first_player.AskChooseFace`, so list order decides only which order the options
+are *offered* in — not who decides. Two deviations found while confirming this
+are filed separately: `MARVEL-39` (the tie-break resolves the wrong effect when
+a delay ability is in the batch) and `MARVEL-40` (abilities on one card skip the
+first-player choice entirely).
+
 ### F3 — `GetTeamUpUnits` returns a list built from a `set` (High)
 
 `game/card/face/attribute/has_teamup.py:24-36`
@@ -140,6 +171,17 @@ generated corpora would show spurious differences.
 
 **Recommendation.** `return sorted(faces)`. `CardFace.__lt__` already orders by
 card object id, so this is safe and free.
+
+**Status: fixed (MARVEL-30).** `GetTeamUpUnits` now returns
+`sorted(faces, key=lambda face: face.card.object_id)` — the explicit key rather
+than `__lt__`, so the ordering contract is readable at the call site. It is the
+same pattern the optional-effect path applies to `Effect.object_id`, over a
+different id namespace. `Card.object_id` comes from one monotonic per-category
+counter in `game/object/manager.py` and the set only ever holds faces of
+distinct cards, so the key is a total order with no ties. Covered by
+`unit_test/test_teamup_order.py`. Both smoke-matrix digests are unchanged
+(`97fa1611b360d813`, `9fafd7bbe3691fea`), which is expected: neither audited
+scenario played a team-up card.
 
 ### F4 — Change Form abilities are registered in set order (Medium)
 
@@ -211,6 +253,43 @@ data into the repository.
 **Recommendation.** The corpus generator should normalise or strip these three
 fields before the file is frozen. Doing it in the generator rather than in
 `Scene` keeps the change out of upstream code.
+
+**Status: fixed (MARVEL-27).** Answered on both sides, and the
+"keep it out of upstream code" caveat above is obsolete — we no longer track
+upstream.
+
+*What a hash may depend on.* `Scene.HashablePayload(data)` takes a scene as
+loaded from disk and returns canonical JSON of everything except
+`PROVENANCE_KEYS` (`sign`, `time`, `playtime`, `path`, `clients`, `report`, all
+defined in `game/scene/scene.py`) and the file checksum, with keys sorted so
+the result does not depend on the order `PrepareSave` emitted them in.
+MARVEL-17 and MARVEL-18 hash this, not the file.
+
+*What a generated file contains.* `Scene.Save(..., deterministic=True)` does not
+write `AMBIENT_KEYS` at all — not even values carried in from a scene loaded
+off a human save. `BotRunner` passes it, controlled by `bot_deterministic_save`
+(default on), so nothing the bot writes carries a host fingerprint into the
+repository. Every human-facing save path leaves the argument at its `False`
+default, so that behaviour is untouched.
+
+*Measured.* `tools/determinism/check_scene_repro.py` plays the same seed twice
+in fresh processes:
+
+```
+deterministic save on   payloads identical, files byte-identical, no ambient keys
+deterministic save OFF  payloads identical, sign/time/playtime written
+```
+
+The payload digest is the same value in both modes, so how a scene was saved
+does not change what it hashes to. The control deliberately does *not* assert
+that two human-style saves differ: `playtime` is written to one decimal place
+and a game finishing in under a second can round the same way twice. What it
+asserts is that the ambient metadata comes back, which is what proves the two
+modes are not the same code path.
+
+`python main.py -bot -bot_verify` still passes against a
+deterministically-saved scene, which settles "confirm nothing in replay
+verification depends on them".
 
 ### F7 — Test case ordering depends on directory listing order (Low)
 

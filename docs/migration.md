@@ -70,7 +70,9 @@ Forcing the hard tail into the DSL would warp it into a general-purpose language
 
 The single highest-leverage asset, and the reason preparation comes before any C# code.
 
-Every replay step records a state digest — `World.CalculateCRC()` (`game/world/world_render.py:123`) — which `engine/controller/module/replay.py` compares against the recorded value on replay, printing a **key-by-key diff** on mismatch. Combined with a seeded RNG, this means: replay the same corpus through both engines and get told exactly which card diverged at which step.
+Every replay step records a state digest — `World.CalculateCRC()` (`game/world/world_render.py:123`) — which `engine/controller/module/replay.py` compares against the recorded value on replay, printing a **card-by-card diff** on mismatch. Combined with a seeded RNG, this means: replay the same corpus through both engines and get told exactly which card diverged at which step.
+
+The digest is specified in full in [state-digest-contract.md](state-digest-contract.md), including what it does *not* capture — each card's value is a plain sum of its state fields, so the diff names the card but not the field, and most cards are absent from it entirely. That specification is the input to any decision about replacing the digest before the corpus is frozen.
 
 That is the difference between a rewrite that converges and one that does not.
 

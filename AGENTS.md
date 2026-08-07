@@ -62,7 +62,7 @@ Four facts that matter more than the rest:
 
 - **Input blocks.** `Controller.ChoiceOne` (`py_src/engine/controller/controller.py`) blocks a thread inside `self.input.GetInput(...)` waiting for a websocket or keypress. This is why the threading, task, and job machinery exists. Removing it is a goal of the C# design.
 - **Replays are seed + input list.** A saved scene records the RNG seed and every player input; replaying re-executes them. This is what makes undo, skip, and deterministic replay work.
-- **Every replay step carries a state digest.** `World.CalculateCRC()` (`py_src/game/world/world_render.py:123`) produces a per-card state dict that `engine/controller/module/replay.py` compares on every replayed step, printing a key-by-key diff on mismatch. **This is the project's oracle — treat it as a wire format.**
+- **Every replay step carries a state digest.** `World.CalculateCRC()` (`py_src/game/world/world_render.py:123`) produces a per-card state dict that `engine/controller/module/replay.py` compares on every replayed step, printing a card-by-card diff on mismatch. **This is the project's oracle — treat it as a wire format.** It is specified in [docs/state-digest-contract.md](docs/state-digest-contract.md); read that before changing anything it touches.
 - **The RNG is being replaced.** Today `engine/lib/random.py` dispatches on `disable_numpy_random`, which defaults to False, so `numpy.random` is the production RNG and the hand-written `engine/lib/mt19937.py` is dead code. Both are being replaced by one precisely-specified standard implementation shared with C# (MARVEL-38). Until then, anything touching determinism must state which backend it assumes.
 
 ## Critical constraints
@@ -100,6 +100,8 @@ python main.py -bot -bot_scenario klaw -bot_heroes she_hulk captain_marvel
 
 `-bot` is shorthand for `-device bot` plus quieter logging. Exit code 0 when every game finished and saved, 1 otherwise.
 
+Bot saves are **deterministic saves**: `sign`, `time`, and `playtime` are omitted, so the same seed writes a byte-identical file on any machine and no host fingerprint reaches the repo. `-no_bot_deterministic_save` restores the human save format. Human-facing saves are unaffected either way — see MARVEL-27.
+
 Decisions come from a **policy** (`BotPolicy.Choose(decision) -> CommandDescriptor`) injected into `BotDeviceManager`. The two shipped policies are deliberately trivial — they prove the device works, they do not play well. A real policy subclasses `BotPolicy` and registers in `BotPolicyFactory`.
 
 The device answers through `DeviceManager.WhenInput`, the same entry point the web server uses for a browser POST, so `Controller.ChoiceOne` runs its normal validation, CRC and `replay.Push` path. **Do not add a shortcut around `ChoiceOne`** — bot replays must be structurally indistinguishable from human ones or the corpus is worthless.
@@ -109,11 +111,17 @@ The device answers through `DeviceManager.WhenInput`, the same entry point the w
 From `py_src/`:
 
 ```bash
-python -m unittest unit_test.test_bot          # bot decision logic, no engine bootstrap
-python -m unittest unit_test.test_card_dataset # card dataset tooling, no engine bootstrap
-python -m tools.determinism.check_runs --runs 6 # digest reproduction across processes
-python main.py -bot -bot_verify                 # generate a game and replay-verify it
+# fast tests: pure logic, no engine bootstrap beyond `import engine`
+python -m unittest unit_test.test_bot unit_test.test_teamup_order \
+                   unit_test.test_local_effect_order unit_test.test_scene_hash \
+                   unit_test.test_card_dataset
+python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
+python -m tools.determinism.check_scene_repro    # same seed -> same saved file
+python main.py -bot -bot_verify                  # generate a game and replay-verify it
 ```
+
+Name the modules explicitly. `unittest discover` picks up `unit_test/test_all.py`,
+which is the replay suite described below and does not run.
 
 Regenerate the card dataset after touching `data/cards.json`, the card scripts, or `datasets/marvelsdb/`:
 

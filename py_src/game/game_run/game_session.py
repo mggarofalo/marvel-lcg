@@ -135,7 +135,7 @@ class GameSession:
         data = Json.SaveString(scene, ignore_check_sum=False)
         return data
 
-    def SaveScene(self, name: str|None=None, *, ex_save_name: str|None=None, delete_old: bool) -> str|None:
+    def SaveScene(self, name: str|None=None, *, ex_save_name: str|None=None, delete_old: bool, deterministic: bool=False) -> str|None:
         from game.test import Test
 
         scene = self.scene
@@ -161,15 +161,17 @@ class GameSession:
         else:
             file_name = name
 
-        if not Test.IsInTesting():
+        # `GetPlayTime` reads the wall clock and restarts the session timer, so
+        # a deterministic save must not call it at all.
+        if not Test.IsInTesting() and not deterministic:
             playtime = self.GetPlayTime(scene)
         else:
             playtime = None
 
-        if scene.Save(file_name, self.game, playtime=playtime):
+        if scene.Save(file_name, self.game, playtime=playtime, deterministic=deterministic):
             save_ok = True
             if ex_save_name != None:
-                scene.Save(ex_save_name, self.game, playtime=playtime)
+                scene.Save(ex_save_name, self.game, playtime=playtime, deterministic=deterministic)
 
         if save_ok:
             return file_name
