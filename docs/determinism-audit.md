@@ -70,6 +70,64 @@ generate from any scene whose timeout is non-zero. Record the value in the
 corpus metadata. In the C# engine, a timeout is a property of the transport, not
 of the fold, and should not be able to synthesise an input.
 
+**Status: fixed (MARVEL-32).** Three layers, because each one alone can be
+bypassed.
+
+*It is no longer silent.* `DoGetInput` now calls `OnInputTimedOut(player_id)`
+when the wait expires with nothing posted — the exact moment the untouched
+`"{}"` is about to be handed back. The base implementation logs a warning
+naming what is about to be recorded. Interactive play is otherwise unchanged.
+
+*Generation refuses to fabricate.* `BotDeviceManager` overrides that hook and
+raises `FabricatedInputError`. A headless run fails the game rather than
+writing an input the policy never chose.
+
+*And the refusal survives the engine's catch-alls.* Raising is not enough on
+its own, which review caught before this landed. `ChoiceOne` runs underneath
+`EffectInvoker.ResolveSelfInternal` and `Message2.Send`, and both — along with
+the cost checker, the target checker and `Engine.EngineRun` — catch broadly so
+that one broken card does not end the game. All six report through
+`Log.OnCrash`, which re-raises only when `Build.release` is false, and
+`build.py` hardcodes it true. So the first version of this fix raised, was
+swallowed, and the game carried on and saved a scene containing the fabricated
+decline. `FabricatedInputError` now derives from `core.errors.EngineIntegrityError`,
+and `Log.OnCrash` re-raises that class regardless of the build, before
+`Engine.SaveCrash` can persist the state being refused.
+
+*Belt as well as braces.* An exception can always be absorbed by a handler
+written to protect against something else, so `DeviceManager` also counts the
+fabrications — `fabricated_inputs_since_game` and `fabricated_inputs_total`.
+`BotRunner.Finish` refuses to save a game whose counter is non-zero. A counter
+cannot be swallowed, and unlike the timer it records that a timeout *happened*
+rather than that one *is happening*, which is what a disturbance that clears
+itself between samples would otherwise hide.
+
+*The guard checks the resolved value, not the request.*
+`BotRunner.CheckNoTimeout` compares both `GameSession.timeout` and
+`device_manager.timer.max_timeout` — the latter being what `DoGetInput`
+actually waits on, after `ControllerManager.Setup` has resolved it — and runs
+after `NewGame`, after `GameSetup`, and again before anything is saved.
+`BuildDescriptor` still passes `timeout = 0`, but nothing downstream trusts it.
+
+*Recorded for later audit.* Each bot run writes
+`bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` beside its scenes,
+carrying both timeout values, the policy, the engine version, and one record
+per game. It reads no clock and no host, so it is as reproducible as the scenes
+it describes. It is deliberately small; recording the fully resolved config is
+MARVEL-34.
+
+Covered by `unit_test/test_bot_timeout.py`, which drives a real `DoGetInput` to
+a genuine 50 ms timeout rather than simulating one, and by
+`tools/determinism/probe_fabricated_input.py`, which reproduces the scenario
+the issue actually describes: a loaded machine stalls one in-game decision past
+the timeout and then recovers. The unit tests check each layer in isolation,
+which is how the swallowed-exception hole got through the first time; the probe
+plays a whole game and asserts nothing was saved. Against the pre-fix code it
+saves a scene containing a literal fabricated decline and reports success.
+
+The C# note above still stands and is unaddressed here: a timeout belongs to
+the transport, not the fold.
+
 ### F2 — On-card effect ordering comes from a `set` of `CardFace` (High)
 
 `game/message/message.py:42` — `self.related_faces: Set['CardFace'] = set()`

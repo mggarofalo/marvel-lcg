@@ -50,6 +50,17 @@ class BotDeviceManager(DeviceManager):
         device = BotDevice(controller, self)
         return device, device
 
+    @override
+    def OnInputTimedOut(self, player_id: int) -> None:
+        # The base class shrugs and records a decline. A generation run cannot:
+        # the fabricated input would land in the corpus and then fail to
+        # reproduce on a machine that answered in time. `BotRunner` refuses to
+        # start with a non-zero timeout, so reaching this means the guard was
+        # bypassed. See MARVEL-32.
+        raise FabricatedInputError(
+            f"Player {player_id} input timed out after {self.timer.max_timeout}s. "
+            "A headless run must not record a decision the policy did not make.")
+
     ################################################################################
     #
     def SetPolicy(self, policy: 'BotPolicy') -> None:
@@ -61,6 +72,7 @@ class BotDeviceManager(DeviceManager):
         self.stopped_on_max_steps = False
         self.attempt_key = (-1, -1)
         self.attempt = 0
+        self.fabricated_inputs_since_game = 0
         self.policy.OnGameStart(seed)
 
     ################################################################################

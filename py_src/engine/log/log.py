@@ -229,6 +229,14 @@ class Log:
         if str(exc) == 'maximum recursion depth exceeded in comparison':
             exit()
 
+        if isinstance(exc, EngineIntegrityError):
+            # This one says the run has already produced something that must
+            # not be trusted, so absorbing it would turn a loud failure into a
+            # corrupt artefact that looks clean. Re-raise before `SaveCrash`,
+            # which would otherwise write the very state we are refusing to
+            # keep. The traceback is already logged above. See MARVEL-32.
+            raise exc
+
         Engine.SaveCrash()
 
         if not Build.release:
