@@ -143,10 +143,14 @@ card object id, so this is safe and free.
 
 **Status: fixed (MARVEL-30).** `GetTeamUpUnits` now returns
 `sorted(faces, key=lambda face: face.card.object_id)` — the explicit key rather
-than `__lt__`, so the ordering contract is readable at the call site and matches
-the optional-effect path. Covered by `unit_test/test_teamup_order.py`. Both
-smoke-matrix digests are unchanged (`97fa1611b360d813`, `9fafd7bbe3691fea`),
-which is expected: neither audited scenario played a team-up card.
+than `__lt__`, so the ordering contract is readable at the call site. It is the
+same pattern the optional-effect path applies to `Effect.object_id`, over a
+different id namespace. `Card.object_id` comes from one monotonic per-category
+counter in `game/object/manager.py` and the set only ever holds faces of
+distinct cards, so the key is a total order with no ties. Covered by
+`unit_test/test_teamup_order.py`. Both smoke-matrix digests are unchanged
+(`97fa1611b360d813`, `9fafd7bbe3691fea`), which is expected: neither audited
+scenario played a team-up card.
 
 ### F4 — Change Form abilities are registered in set order (Medium)
 
