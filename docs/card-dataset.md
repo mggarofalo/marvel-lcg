@@ -165,15 +165,20 @@ stratification below.
 
 ## How the engine's text compares
 
-`engine.text_comparison` for the 3,955 cards both sources have:
+`engine.text_comparison`, for the 3,955 cards the engine knows and that have text
+on at least one side:
 
 | | | |
 |---|---:|---|
-| `exact` | 3,114 | byte-identical |
+| `exact` | 3,086 | byte-identical |
 | `formatting` | 562 | equal once tags, entities and whitespace are normalised |
 | `wording` | 197 | **the words differ** |
 | `engine_missing` | 81 | printed text exists, engine has none |
-| `marvelsdb_missing` | 1 | engine has text, MarvelSDB does not |
+| `marvelsdb_missing` | 29 | engine has text, MarvelSDB has no such card |
+
+`marvelsdb_missing` is not agreement or disagreement — there was nothing to
+check against. An engine-only card is never reported as agreeing with the
+printed text, because no printed text exists for it.
 
 `formatting` differences are safe to ignore — mostly `<b>When Revealed:</b>`
 against `<b>When Revealed</b>:`. `wording` differences are not, and each one is

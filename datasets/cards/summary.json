@@ -11,11 +11,11 @@
   "engine_text_agreement": {
     "rule": "Engine text compared against the printed text. 'exact' is byte equality; 'formatting' means equal after HTML tags, entities and whitespace are normalised; 'wording' means the words differ.",
     "counts": {
-      "exact": 3114,
+      "exact": 3086,
       "formatting": 562,
       "wording": 197,
       "engine_missing": 81,
-      "marvelsdb_missing": 1
+      "marvelsdb_missing": 29
     }
   },
   "script_text_cross_tab": {

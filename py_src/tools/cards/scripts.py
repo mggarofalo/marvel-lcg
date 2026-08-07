@@ -104,13 +104,29 @@ def _AbilityFactories(tree: ast.AST) -> Set[str]:
     return names
 
 
+_FUNCTION_NODES = (ast.FunctionDef, ast.AsyncFunctionDef)
+
+
+def _HasNestedFunction(tree: ast.AST) -> bool:
+    """Is any function defined inside another function?
+
+    Parentage, not name matching. A nested handler that happens to share a name
+    with a top-level function is still nested, and a name-based test would call
+    such a script purely declarative -- quietly moving a card into the stratum
+    that gets the least spec attention.
+    """
+    for node in ast.walk(tree):
+        if not isinstance(node, _FUNCTION_NODES):
+            continue
+        for descendant in ast.walk(node):
+            if descendant is not node and isinstance(descendant, _FUNCTION_NODES):
+                return True
+    return False
+
+
 def Analyse(path: Path, relative: str, choice_api: Set[str]) -> ScriptFacts:
     source = path.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=relative)
-
-    top_level = {n.name for n in tree.body if isinstance(n, ast.FunctionDef)}
-    nested = [n for n in ast.walk(tree)
-              if isinstance(n, ast.FunctionDef) and n.name not in top_level]
 
     called = _CalledNames(tree)
     return ScriptFacts(
@@ -118,7 +134,7 @@ def Analyse(path: Path, relative: str, choice_api: Set[str]) -> ScriptFacts:
         lines=len(source.splitlines()),
         # A card script's module level is `GetAbilities`; anything defined
         # inside it is a handler the engine calls back into.
-        has_imperative_handler=bool(nested),
+        has_imperative_handler=_HasNestedFunction(tree),
         player_choice_calls=sorted(called & choice_api),
         ability_factories=sorted(_AbilityFactories(tree)),
     )

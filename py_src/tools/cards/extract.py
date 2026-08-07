@@ -123,6 +123,13 @@ def _Record(
     it has the card. The engine's own view lives under `engine`, so which side
     a fact came from is never a guess.
     """
+    # Kept separate from `text` on purpose. `text` is what the dataset serves,
+    # which falls back to the engine's copy when MarvelSDB has no such card;
+    # `printed_text` is what there is to check the engine against, and there is
+    # nothing when the card is engine-only. Collapsing the two would have the
+    # engine's text compared against itself and reported as agreeing.
+    printed_text = printed.text if printed is not None else ""
+
     if printed is not None:
         text = printed.text
         text_source = "marvelsdb"
@@ -198,7 +205,7 @@ def _Record(
     }
     record.update(identity)
     record["engine"] = (
-        _EngineRecord(known, index, source, text) if known is not None else None
+        _EngineRecord(known, index, source, printed_text) if known is not None else None
     )
     return record
 

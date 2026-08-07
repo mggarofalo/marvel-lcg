@@ -270,6 +270,40 @@ class TestScriptAnalysis(unittest.TestCase):
         self.assertTrue(facts.has_imperative_handler)
         self.assertEqual(facts.ability_factories, ["AfterPlayerPlayedCard"])
 
+    def test_nested_handler_sharing_a_top_level_name_is_still_nested(self):
+        # Nesting is parentage, not a name match. Getting this wrong moves a
+        # card into the stratum that receives the least spec attention.
+        index = self.Index({"core/01055.py": (
+            "def GetAbilities():\n"
+            "    def GetAbilities(effect, message):\n"
+            "        effect.this.Draw(1)\n"
+            "    return [AbilityFactory.Guard(GetAbilities)]\n"
+        )})
+        self.assertTrue(
+            index.facts["cards/pack/core/01055.py"].has_imperative_handler)
+
+    def test_deeply_nested_handler_is_detected(self):
+        index = self.Index({"core/01056.py": (
+            "def GetAbilities():\n"
+            "    def outer(effect, message):\n"
+            "        def inner(target):\n"
+            "            target.Draw(1)\n"
+            "        return inner\n"
+            "    return []\n"
+        )})
+        self.assertTrue(
+            index.facts["cards/pack/core/01056.py"].has_imperative_handler)
+
+    def test_two_top_level_functions_alone_are_not_a_handler(self):
+        index = self.Index({"core/01057.py": (
+            "def Helper():\n"
+            "    return 1\n"
+            "def GetAbilities():\n"
+            "    return [AbilityFactory.Guard('This')]\n"
+        )})
+        self.assertFalse(
+            index.facts["cards/pack/core/01057.py"].has_imperative_handler)
+
     def test_player_choice_calls_are_detected(self):
         index = self.Index({"core/01052.py": (
             "def GetAbilities():\n"
@@ -518,6 +552,26 @@ class TestRealDataset(unittest.TestCase):
         for card in self.dataset["cards"]:
             with self.subTest(card=card["card_id"]):
                 self.assertTrue(card["in_marvelsdb"] or card["in_engine"])
+
+    def test_engine_only_cards_are_never_reported_as_agreeing(self):
+        # There is nothing to agree with. Comparing the engine's text against
+        # itself and calling it 'exact' would inflate the agreement tally with
+        # cards that were never checked against anything.
+        for card in self.dataset["cards"]:
+            if card["in_marvelsdb"] or not card["engine"]:
+                continue
+            with self.subTest(card=card["card_id"]):
+                self.assertIn(card["engine"]["text_comparison"],
+                              ("marvelsdb_missing", None))
+
+    def test_agreement_tally_covers_exactly_the_comparable_cards(self):
+        summary = json.loads(self.outputs[extract.SUMMARY_FILE])
+        tallied = sum(summary["engine_text_agreement"]["counts"].values())
+        comparable = sum(
+            1 for c in self.dataset["cards"]
+            if c["engine"] and c["engine"]["text_comparison"] is not None
+        )
+        self.assertEqual(tallied, comparable)
 
     def test_printed_text_is_preferred_over_the_engine_copy(self):
         for card in self.dataset["cards"]:
