@@ -254,6 +254,43 @@ data into the repository.
 fields before the file is frozen. Doing it in the generator rather than in
 `Scene` keeps the change out of upstream code.
 
+**Status: fixed (MARVEL-27).** Answered on both sides, and the
+"keep it out of upstream code" caveat above is obsolete — we no longer track
+upstream.
+
+*What a hash may depend on.* `Scene.HashablePayload(data)` takes a scene as
+loaded from disk and returns canonical JSON of everything except
+`PROVENANCE_KEYS` (`sign`, `time`, `playtime`, `path`, `clients`, `report`, all
+defined in `game/scene/scene.py`) and the file checksum, with keys sorted so
+the result does not depend on the order `PrepareSave` emitted them in.
+MARVEL-17 and MARVEL-18 hash this, not the file.
+
+*What a generated file contains.* `Scene.Save(..., deterministic=True)` does not
+write `AMBIENT_KEYS` at all — not even values carried in from a scene loaded
+off a human save. `BotRunner` passes it, controlled by `bot_deterministic_save`
+(default on), so nothing the bot writes carries a host fingerprint into the
+repository. Every human-facing save path leaves the argument at its `False`
+default, so that behaviour is untouched.
+
+*Measured.* `tools/determinism/check_scene_repro.py` plays the same seed twice
+in fresh processes:
+
+```
+deterministic save on   payloads identical, files byte-identical, no ambient keys
+deterministic save OFF  payloads identical, sign/time/playtime written
+```
+
+The payload digest is the same value in both modes, so how a scene was saved
+does not change what it hashes to. The control deliberately does *not* assert
+that two human-style saves differ: `playtime` is written to one decimal place
+and a game finishing in under a second can round the same way twice. What it
+asserts is that the ambient metadata comes back, which is what proves the two
+modes are not the same code path.
+
+`python main.py -bot -bot_verify` still passes against a
+deterministically-saved scene, which settles "confirm nothing in replay
+verification depends on them".
+
 ### F7 — Test case ordering depends on directory listing order (Low)
 
 `game/test/test.py:15-33`
