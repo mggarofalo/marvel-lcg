@@ -61,7 +61,7 @@ Four facts that matter more than the rest:
 
 - **Input blocks.** `Controller.ChoiceOne` (`py_src/engine/controller/controller.py`) blocks a thread inside `self.input.GetInput(...)` waiting for a websocket or keypress. This is why the threading, task, and job machinery exists. Removing it is a goal of the C# design.
 - **Replays are seed + input list.** A saved scene records the RNG seed and every player input; replaying re-executes them. This is what makes undo, skip, and deterministic replay work.
-- **Every replay step carries a state digest.** `World.CalculateCRC()` (`py_src/game/world/world_render.py:123`) produces a per-card state dict that `engine/controller/module/replay.py` compares on every replayed step, printing a key-by-key diff on mismatch. **This is the project's oracle — treat it as a wire format.**
+- **Every replay step carries a state digest.** `World.CalculateCRC()` (`py_src/game/world/world_render.py:123`) produces a per-card state dict that `engine/controller/module/replay.py` compares on every replayed step, printing a card-by-card diff on mismatch. **This is the project's oracle — treat it as a wire format.** It is specified in [docs/state-digest-contract.md](docs/state-digest-contract.md); read that before changing anything it touches.
 - **The RNG is being replaced.** Today `engine/lib/random.py` dispatches on `disable_numpy_random`, which defaults to False, so `numpy.random` is the production RNG and the hand-written `engine/lib/mt19937.py` is dead code. Both are being replaced by one precisely-specified standard implementation shared with C# (MARVEL-38). Until then, anything touching determinism must state which backend it assumes.
 
 ## Critical constraints
