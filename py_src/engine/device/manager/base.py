@@ -5,6 +5,18 @@ from engine.log import Log
 
 CATEGORY_NAME = "DEVICE_MANAGER"
 
+class FabricatedInputError(Exception):
+    """A wall-clock timeout was about to be recorded as a player's decision.
+
+    When the input wait expires, `DoGetInput` returns the untouched `"{}"` and
+    `Controller.ChoiceOne` parses that as effect id 0 -- a decline. For an
+    interactive session that is a defensible fallback for a client that went
+    away. For a headless generation run it is a fabricated input written into
+    the corpus, which would then fail to reproduce on a faster machine.
+
+    Raised by device managers that must not fabricate. See MARVEL-32.
+    """
+
 @dataclass
 class AskOptionPayload:
     options_json    : str # json
@@ -116,7 +128,24 @@ class DeviceManager:
             return None
 
         input_json = self.ask_options[player_id].input_json
+        if not no_time_out and input_json == "{}":
+            # Nothing was ever posted, and this is what the step will record.
+            self.OnInputTimedOut(player_id)
         return input_json
+
+    def OnInputTimedOut(self, player_id: int) -> None:
+        """The input wait expired with nothing posted.
+
+        The caller is about to return the untouched `"{}"`, which
+        `Controller.ChoiceOne` records as a decline the player never made.
+        This is the only wall-clock value in the engine that can reach game
+        state, so it is worth saying out loud. Device managers that must not
+        fabricate an input override this and raise `FabricatedInputError`.
+        See MARVEL-32.
+        """
+        Log.Warn(CATEGORY_NAME,
+            f"Player {player_id} did not answer within {self.timer.max_timeout}s; "
+            f"recording a decline they did not make")
 
     def DoWaitSync(self, player_id: int, check: Callable[[], bool]):
         from core.lib import Time

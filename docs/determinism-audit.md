@@ -70,6 +70,38 @@ generate from any scene whose timeout is non-zero. Record the value in the
 corpus metadata. In the C# engine, a timeout is a property of the transport, not
 of the fold, and should not be able to synthesise an input.
 
+**Status: fixed (MARVEL-32).** Three layers, because each one alone can be
+bypassed.
+
+*It is no longer silent.* `DoGetInput` now calls `OnInputTimedOut(player_id)`
+when the wait expires with nothing posted — the exact moment the untouched
+`"{}"` is about to be handed back. The base implementation logs a warning
+naming what is about to be recorded. Interactive play is otherwise unchanged.
+
+*Generation refuses to fabricate.* `BotDeviceManager` overrides that hook and
+raises `FabricatedInputError`. A headless run fails the game rather than
+writing an input the policy never chose.
+
+*The guard checks the resolved value, not the request.*
+`BotRunner.CheckNoTimeout` compares both `GameSession.timeout` and
+`device_manager.timer.max_timeout` — the latter being what `DoGetInput`
+actually waits on, after `ControllerManager.Setup` has resolved it — and runs
+after `NewGame`, after `GameSetup`, and again before anything is saved.
+`BuildDescriptor` still passes `timeout = 0`, but nothing downstream trusts it.
+
+*Recorded for later audit.* Each bot run writes
+`bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` beside its scenes,
+carrying both timeout values, the policy, the engine version, and one record
+per game. It reads no clock and no host, so it is as reproducible as the scenes
+it describes. It is deliberately small; recording the fully resolved config is
+MARVEL-34.
+
+Covered by `unit_test/test_bot_timeout.py`, which drives a real `DoGetInput` to
+a genuine 50 ms timeout rather than simulating one.
+
+The C# note above still stands and is unaddressed here: a timeout belongs to
+the transport, not the fold.
+
 ### F2 — On-card effect ordering comes from a `set` of `CardFace` (High)
 
 `game/message/message.py:42` — `self.related_faces: Set['CardFace'] = set()`
