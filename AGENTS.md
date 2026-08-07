@@ -104,9 +104,31 @@ All work is tracked in Plane, project `MARVEL`. Every issue belongs to a module 
 
 Conventional Commits: `<type>(<scope>): <description>`.
 
+## Headless bot
+
+`python main.py -device bot` plays games with no client attached — no websocket, no HTTP server, no keyboard. Lives in `engine/device/manager/bot/`. `-bot` is shorthand that also quiets the noisier log categories.
+
+```bash
+python main.py -device bot                              # one game, seed 1, saved to replays/
+python main.py -bot -bot_games 50 -bot_seed 1000        # 50 games, seeds 1000..1049
+python main.py -bot -bot_verify                         # replay each saved scene and check the digest
+python main.py -bot -bot_scenario klaw -bot_heroes she_hulk captain_marvel
+```
+
+Decisions come from a **policy** object (`BotPolicy.Choose(decision) -> CommandDescriptor`) injected into `BotDeviceManager`. The two shipped policies are deliberately trivial — they exist to prove the device works, not to play well. A real policy subclasses `BotPolicy` and is registered in `BotPolicyFactory`; nothing else needs to change.
+
+The device answers through `DeviceManager.WhenInput`, the same entry point the web server uses for a browser POST, so `Controller.ChoiceOne` runs its normal validation, CRC and `replay.Push` path. **Do not add a shortcut around `ChoiceOne`** — bot replays have to be structurally indistinguishable from human ones or the corpus is worthless.
+
+Exit code is 0 when every game finished and saved, 1 otherwise.
+
 ## Testing
 
-`python main.py -test` replays every file in the configured replay folders and asserts per-step digest equality (`game/test/test.py` → `TestRun`).
+`python -m unittest unit_test.test_bot` covers the bot's decision logic (no engine bootstrap needed).
+
+The replay suite (`game/test/test.py` → `TestRun`) re-executes a scene's recorded inputs and asserts per-step digest equality. **There is no working command-line flag for it.** `-test` only expands to `-device -no_editor …`; nothing sets the `InTesting` start state, so the process blocks in `WaitUntilGameStart()`. The `-test_all` and `-profile_folder` branches in `Engine.EngineRun` are unreachable because `build.py` hardcodes `Build.release = True`. Two ways in:
+
+- `python main.py -bot -bot_verify` — replays each scene the bot just generated
+- the `/T` debug command from the web client
 
 **`replays/` is currently empty and not tracked in git**, so the suite has nothing to run. Generating that corpus is the entire point of the `Corpus and Oracle` phase. Until it exists, there is no regression suite — weigh changes accordingly.
 

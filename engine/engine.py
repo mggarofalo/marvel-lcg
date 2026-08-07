@@ -25,6 +25,7 @@ TEST_ALL            = ConfigVariables.Bool('test_all', False)
 EDITOR              = ConfigVariables.Bool('editor', True)
 
 ConfigVariables.SetGroupArgs('test', "-device -no_editor -no_statistics -test_result_file test_results.txt -hidden_log_categories CONTROLLER WEB VERSION STATISTICS")
+ConfigVariables.SetGroupArgs('bot', "-device bot -no_editor -hidden_log_categories CONTROLLER WEB VERSION STATISTICS")
 
 class Engine:
 
@@ -35,6 +36,10 @@ class Engine:
 
     has_crashed = False
     in_unit_test = False
+
+    # Process exit code. Stays 0 for the interactive devices; the headless bot
+    # sets it so CI can tell a failed run from a successful one.
+    exit_code = 0
 
     @staticmethod
     def Initialize() -> bool:
@@ -74,7 +79,7 @@ class Engine:
             from cards.database import CardsDB
             CardsDB.Initialize()
 
-            if Build.release:
+            if Build.release or DEVICE.value == "bot":
                 EDITOR.value = False
 
             if EDITOR.value:
@@ -96,6 +101,9 @@ class Engine:
             if DEVICE.value == "web":
                 from engine.device.manager.web.manager import WebDeviceManager
                 device = WebDeviceManager
+            elif DEVICE.value == "bot":
+                from engine.device.manager.bot.manager import BotDeviceManager
+                device = BotDeviceManager
             else:
                 from engine.device.manager.key.manager import KeyDeviceManager
                 device = KeyDeviceManager
@@ -115,6 +123,11 @@ class Engine:
 
     @staticmethod
     def EngineRun() -> None:
+        if DEVICE.value == "bot":
+            from engine.device.manager.bot.runner import BotRunner
+            Engine.exit_code = 0 if BotRunner.Run(Engine.game) else 1
+            return
+
         if Build.release:
             try:
                 Engine.game.GameRun()
