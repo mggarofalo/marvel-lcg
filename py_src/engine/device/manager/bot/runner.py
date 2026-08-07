@@ -20,7 +20,8 @@ from core import *
 from engine.config import ConfigVariables
 from engine.file import FileManager
 from engine.log import Log
-from engine.device.manager.bot.manager import BotDeviceManager
+from engine.device.manager.base import FabricatedInputError
+from engine.device.manager.bot.manager import BOT_MAX_STEPS, BotDeviceManager
 from engine.device.manager.bot.policy import BotStuck
 from game.game_run.game_new import NewGameDescriptor
 
@@ -53,6 +54,11 @@ MAX_GAME_OVER_RETRIES = 8
 
 class BotRunner:
 
+    # Directory the last scene was written to. The run manifest goes beside the
+    # scenes it describes, and `GameSession.SaveScene` is the thing that knows
+    # where that is when `bot_save_folder` is unset.
+    save_folder: str = ""
+
     ################################################################################
     #
     @staticmethod
@@ -64,24 +70,34 @@ class BotRunner:
             return False
 
         total = max(1, BOT_GAMES.value)
+        # Cleared per run, so a second `Run` in one process cannot write its
+        # manifest into the folder the first one happened to use.
+        BotRunner.save_folder = ""
         if BOT_SEED.value < 0:
             Log.Warn(CATEGORY_NAME, "bot_seed is negative: the engine will pick a random seed and the run will not be reproducible")
         if not BOT_DETERMINISTIC_SAVE.value:
             Log.Warn(CATEGORY_NAME, "bot_deterministic_save is off: saved scenes will carry wall-clock and machine metadata and will not be byte-reproducible")
 
         all_ok = True
+        played: List[Dict[str, Any]] = []
         for index in range(total):
-            if not BotRunner.RunOne(game, device_manager, index, total):
+            record = BotRunner.RunOne(game, device_manager, index, total)
+            if record is None:
                 all_ok = False
                 if not BOT_CONTINUE_ON_ERROR.value:
                     break
+            else:
+                played.append(record)
+
+        BotRunner.WriteManifest(game, device_manager, played)
 
         return all_ok
 
     ################################################################################
     #
     @staticmethod
-    def RunOne(game: 'Game', device_manager: 'BotDeviceManager', index: int, total: int) -> bool:
+    def RunOne(game: 'Game', device_manager: 'BotDeviceManager', index: int, total: int) -> 'Dict[str, Any]|None':
+        """Play one game. Returns its manifest record, or None if it failed."""
         seed = BotRunner.GetSeed(index)
 
         Log.Info(CATEGORY_NAME,
@@ -91,27 +107,34 @@ class BotRunner:
         try:
             device_manager.BeginGame(seed)
             game.NewGame(BotRunner.BuildDescriptor(seed))
+            if not BotRunner.CheckNoTimeout(game, device_manager, "after NewGame"):
+                return None
 
             for _ in range(MAX_GAME_OVER_RETRIES):
                 if game.GameSetup():
+                    if not BotRunner.CheckNoTimeout(game, device_manager, "after GameSetup"):
+                        return None
                     game.GameLoop()
                 if game.SetGameOver():
                     break
             else:
                 Log.Assert(CATEGORY_NAME, "Game did not finish after repeated restarts")
-                return False
+                return None
 
+        except FabricatedInputError as exc:
+            Log.Assert(CATEGORY_NAME, f"Refusing to record a fabricated input: {exc}")
+            return None
         except BotStuck as exc:
             Log.Assert(CATEGORY_NAME, f"Policy is stuck: {exc}")
-            return False
+            return None
         except Exception as exc:
             Log.FailedTrace(CATEGORY_NAME, exc)
-            return False
+            return None
 
-        return BotRunner.Finish(game, device_manager)
+        return BotRunner.Finish(game, device_manager, seed)
 
     @staticmethod
-    def Finish(game: 'Game', device_manager: 'BotDeviceManager') -> bool:
+    def Finish(game: 'Game', device_manager: 'BotDeviceManager', seed: int) -> 'Dict[str, Any]|None':
         world = game.world
         steps = game.controller_manager.replay.current_step_id
 
@@ -124,20 +147,73 @@ class BotRunner:
 
         if device_manager.stopped_on_max_steps:
             Log.Assert(CATEGORY_NAME, "Game was cut short by bot_max_steps")
-            return False
+            return None
+
+        # The timeout that was in force while the inputs were being recorded is
+        # the one that matters, so check it again before anything is written.
+        if not BotRunner.CheckNoTimeout(game, device_manager, "before saving"):
+            return None
+
+        # `CheckNoTimeout` samples the timer at three moments. A timeout that
+        # appeared and cleared again between them would leave every sample at
+        # zero and the fabricated decline still in the replay, so trust the
+        # counter over the sample: it records that it happened, not that it is
+        # happening. See MARVEL-32.
+        if device_manager.fabricated_inputs_since_game:
+            Log.Assert(CATEGORY_NAME,
+                f"{device_manager.fabricated_inputs_since_game} input(s) in this game were "
+                "recorded from a timed-out wait rather than from the policy. "
+                "The replay is corrupt and will not be saved.")
+            return None
+
+        record: Dict[str, Any] = {
+            "seed": seed,
+            "steps": steps,
+            "decisions": device_manager.decision_count,
+            "outcome": outcome,
+            "file": "",
+        }
 
         if not BOT_SAVE.value:
-            return True
+            return record
 
         path = BotRunner.SaveScene(game)
         if not path:
             Log.Assert(CATEGORY_NAME, "Failed to save the scene")
-            return False
+            return None
+        record["file"] = FileManager.GetBaseName(path)
 
-        if BOT_VERIFY.value:
-            return BotRunner.Verify(game, path)
+        if BOT_VERIFY.value and not BotRunner.Verify(game, path):
+            return None
 
-        return True
+        return record
+
+    ################################################################################
+    #
+    @staticmethod
+    def CheckNoTimeout(game: 'Game', device_manager: 'BotDeviceManager', when: str) -> bool:
+        """Refuse to generate under a wall-clock input timeout.
+
+        `BuildDescriptor` sets `timeout = 0`, but the value that actually
+        reaches `DoGetInput` is `device_manager.timer.max_timeout`, resolved
+        through `GameSession.GameSetup` and `ControllerManager.Setup`. Check the
+        resolved value rather than trusting the descriptor, the config file, or
+        the layering between them. See MARVEL-32.
+        """
+        requested, resolved = BotRunner.GetTimeouts(game, device_manager)
+        if requested == 0 and resolved == 0:
+            return True
+
+        Log.Assert(CATEGORY_NAME,
+            f"Input timeout is not 0 ({when}): requested={requested} resolved={resolved}. "
+            "A timeout returns an untouched input that the replay records as a "
+            "decline nobody made, so generation is refused.")
+        return False
+
+    @staticmethod
+    def GetTimeouts(game: 'Game', device_manager: 'BotDeviceManager') -> Tuple[float, float]:
+        """(what the session was asked for, what the input wait will use)."""
+        return float(game.session.timeout), float(device_manager.timer.max_timeout)
 
     @staticmethod
     def Verify(game: 'Game', path: str) -> bool:
@@ -167,13 +243,80 @@ class BotRunner:
         return passed
 
     @staticmethod
+    def BuildManifest(game: 'Game', device_manager: 'BotDeviceManager',
+                      played: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """What a corpus file was generated under, so it can be audited later.
+
+        Deliberately small. The resolved input timeout is the load-bearing
+        field (MARVEL-32): a corpus generated under a non-zero timeout can
+        contain fabricated declines and would not reproduce elsewhere, and
+        after the fact the scene file alone cannot tell you. Recording the full
+        resolved config is MARVEL-34.
+
+        Nothing here reads the clock or the host, so the manifest is as
+        reproducible as the scenes it describes.
+        """
+        from engine.lib import Ver
+
+        requested, resolved = BotRunner.GetTimeouts(game, device_manager)
+        return {
+            "generator": "bot",
+            "engine_version": str(Ver.version),
+            "scenario": BOT_SCENARIO.value,
+            "heroes": list(BOT_HEROES.value),
+            "encounter_sets": list(BOT_ENCOUNTER_SETS.value),
+            "rules": list(BOT_RULES.value),
+            "policy": device_manager.policy.name,
+            "timeout": {"requested": requested, "resolved": resolved},
+            "deterministic_save": BOT_DETERMINISTIC_SAVE.value,
+            "max_steps": BOT_MAX_STEPS.value,
+            # Across the whole run, including games that were discarded for it.
+            # A non-zero value here means the timeout guard was bypassed and
+            # every file in this run deserves suspicion, not just the dropped
+            # ones -- the resolved timeout alone cannot say that, because it
+            # only reports the value at the moment it was read.
+            "fabricated_inputs": device_manager.fabricated_inputs_total,
+            "games": played,
+        }
+
+    @staticmethod
+    def WriteManifest(game: 'Game', device_manager: 'BotDeviceManager',
+                      played: List[Dict[str, Any]]) -> str|None:
+        """Write the run manifest beside the scenes this run saved."""
+        from engine.lib import Json
+
+        saved = [record["file"] for record in played if record.get("file")]
+        if not saved:
+            # Nothing was written, so there is no corpus to describe.
+            return None
+
+        folder = BOT_SAVE_FOLDER.value or BotRunner.save_folder
+
+        # `SanitizeFilename` strips dots, so build the stem and add the
+        # extension afterwards. The name comes from what the run was *asked*
+        # for, never from how much of it succeeded -- otherwise a run where one
+        # game failed lands beside the run where none did instead of replacing
+        # it. Which seeds actually made it is in `games`.
+        stem = FileManager.SanitizeFilename(
+            f"bot-manifest-{BOT_SCENARIO.value}-{'+'.join(BOT_HEROES.value)}"
+            f"-{BotRunner.GetSeed(0)}-{max(1, BOT_GAMES.value)}".lower())
+        path = FileManager.JoinPath(folder, f"{stem}.json")
+
+        Json.Save(BotRunner.BuildManifest(game, device_manager, played), path)
+        Log.Info(CATEGORY_NAME, f"Manifest: {path}")
+        return path
+
+    @staticmethod
     def SaveScene(game: 'Game') -> str|None:
         name = None
         folder = BOT_SAVE_FOLDER.value
         if folder:
             name = FileManager.JoinPath(folder, f'{game.scene.GetSaveFileName()}.json')
-        return game.session.SaveScene(name, delete_old=False,
+        path = game.session.SaveScene(name, delete_old=False,
                                       deterministic=BOT_DETERMINISTIC_SAVE.value)
+        if path:
+            BotRunner.save_folder = FileManager.GetDirName(path)
+        return path
 
     ################################################################################
     #

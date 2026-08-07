@@ -68,6 +68,9 @@ Unused(deprecated)
 # from typing_extensions import NotRequired
 # Unused(NotRequired)
 
+from core.errors import EngineIntegrityError
+Unused(EngineIntegrityError)
+
 from core.utility.types import Types
 Unused(Types)
 # Rotate, UnionTypeExtract, LiteralToList, LiteralToDict, RemoveDuplicates, StrListToList, ListToStrList

@@ -63,7 +63,9 @@ def _run_bot(folder: str, scenario: str, heroes: List[str], seed: int,
         cwd=os.getcwd(),
         errors="replace",
     )
-    saved = [name for name in sorted(os.listdir(folder)) if name.endswith(".json")]
+    # The bot also writes a run manifest into the save folder (MARVEL-32).
+    saved = [name for name in sorted(os.listdir(folder))
+             if name.endswith(".json") and not name.startswith("bot-manifest-")]
     if len(saved) != 1:
         raise RuntimeError(
             f"expected one saved scene in {folder}, found {saved}\n"
