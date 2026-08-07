@@ -9,6 +9,7 @@ A digital implementation of the Marvel Champions LCG, mid-migration from Python 
 ```
 py_src/     Python reference engine (the game as it exists today) + preparation tooling
 src/        C# engine (empty until the Engine Core phase)
+datasets/   generated and vendored data both engines consume
 docs/       project documentation, decisions, and audits
 ```
 
@@ -75,6 +76,8 @@ Four facts that matter more than the rest:
 
 The engine has been audited against all four — see [docs/determinism-audit.md](docs/determinism-audit.md) for what was found, what the harness must pin, and which sets are already known harmless. **Check there before re-deriving anything.** Run `python -m tools.determinism.check_runs` after any change to a gameplay path.
 
+**Do not author specs from `data/cards.json`.** The engine's card text has 36 cards corrupted by an encoding round-trip and 197 that differ materially from the printed card — `03025` is missing an entire rules line. Printed text lives in `datasets/cards/`, built from a vendored MarvelSDB snapshot. See [docs/card-dataset.md](docs/card-dataset.md).
+
 **The corpus is immutable once frozen.** Changing engine behavior after generation invalidates it. That is a decision to raise, not to make silently. It is also why the RNG replacement must land *before* corpus generation.
 
 ## Security
@@ -107,8 +110,16 @@ From `py_src/`:
 
 ```bash
 python -m unittest unit_test.test_bot          # bot decision logic, no engine bootstrap
+python -m unittest unit_test.test_card_dataset # card dataset tooling, no engine bootstrap
 python -m tools.determinism.check_runs --runs 6 # digest reproduction across processes
 python main.py -bot -bot_verify                 # generate a game and replay-verify it
+```
+
+Regenerate the card dataset after touching `data/cards.json`, the card scripts, or `datasets/marvelsdb/`:
+
+```bash
+python -m tools.cards.extract           # write datasets/cards/
+python -m tools.cards.extract --check    # exit 1 if the checked-in copy is stale
 ```
 
 The replay suite (`game/test/test.py` → `TestRun`) re-executes a scene's inputs and asserts per-step digest equality. **There is no working command-line flag for it** — `-test` only expands to `-device -no_editor …`, nothing sets the `InTesting` start state, and the process blocks in `WaitUntilGameStart()`. The `-test_all` and `-profile_folder` branches are unreachable because `build.py` hardcodes `Build.release = True`. Tracked as MARVEL-28. Until then, use `-bot_verify` or the `/T` debug command from the web client.

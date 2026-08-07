@@ -1,0 +1,42 @@
+[
+	{
+		"code": "villain",
+		"name": "Villain"
+	},
+	{
+		"code": "hero",
+		"name": "Hero"
+	},
+	{
+		"code": "nemesis",
+		"name": "Nemesis"
+	},
+	{
+		"code": "modular",
+		"name": "Modular"
+	},
+	{
+		"code": "standard",
+		"name": "Standard"
+	},
+	{
+		"code": "expert",
+		"name": "Expert"
+	},
+	{
+		"code": "evidence",
+		"name": "Evidence"
+	},
+	{
+		"code": "leader",
+		"name": "Leader"
+	},
+	{
+		"code": "main_scheme",
+		"name": "Main Scheme"
+	},
+	{
+		"code": "hero_special",
+		"name": "Hero Special"
+	}
+]
