@@ -310,6 +310,9 @@ CARD_ID = re.compile(r"^\d{5}[a-z]?(,\d{5}[a-z]?)*$", re.IGNORECASE)
 _NAME_INDEX: Dict[str, List[str]] = {}
 
 
+CARD_DATASET = "../datasets/cards/cards.json"
+
+
 def NameIndex() -> Dict[str, List[str]]:
     """Printed name -> the card ids that carry it.
 
@@ -317,6 +320,17 @@ def NameIndex() -> Dict[str, List[str]]:
     wants an id, so something has to bridge the two, and that belongs in the
     runner rather than in the scenario -- otherwise every spec would be written
     against ids and become unreadable.
+
+    Names come from `datasets/cards/`, not from the engine's own
+    `data/cards.json`. The two disagree about 51 names: some are engine typos
+    ("Sinister Synchonization"), and 21141/21142 have each other's names
+    outright. Indexing the engine's copy would quietly resolve a correctly
+    spelled scenario to the wrong card, which is exactly what MARVEL-19 built
+    the dataset to prevent.
+
+    The index is restricted to cards the engine can actually generate, so a name
+    the dataset knows but the engine does not fails as "no card is named that"
+    rather than at `CardFactory`.
     """
     global _NAME_INDEX
     if _NAME_INDEX:
@@ -325,15 +339,36 @@ def NameIndex() -> Dict[str, List[str]]:
     from cards.database import CardsDB
 
     index: Dict[str, List[str]] = {}
-    for card_id, paper in CardsDB.papers.items():
-        # Unique cards are printed with a leading bullet that is not part of
-        # the name anyone would type.
-        name = str(paper.name).lstrip("* ").strip().casefold()
-        if not name:
+    for card_id, name in PrintedNames().items():
+        if card_id not in CardsDB.papers:
             continue
-        index.setdefault(name, []).append(str(card_id))
+        index.setdefault(name.casefold(), []).append(card_id)
     _NAME_INDEX = index
     return index
+
+
+def PrintedNames() -> Dict[str, str]:
+    """card id -> printed name, from the spec-authoring dataset."""
+    import json
+    import os
+
+    if not os.path.exists(CARD_DATASET):
+        raise SetupError(
+            f"{CARD_DATASET} is missing; run `python -m tools.cards.extract` "
+            f"from py_src/ to build the card dataset")
+
+    with open(CARD_DATASET, "r", encoding="utf-8") as handle:
+        data = json.load(handle)
+
+    names: Dict[str, str] = {}
+    for card in data.get("cards", []):
+        # Unique cards are printed with a leading bullet that is not part of the
+        # name anyone would type.
+        name = str(card.get("name", "")).lstrip("* ").strip()
+        card_id = str(card.get("card_id", ""))
+        if name and card_id:
+            names[card_id] = name
+    return names
 
 
 def ResolveCardId(text: str, packs: Tuple[str, ...] = ()) -> str:

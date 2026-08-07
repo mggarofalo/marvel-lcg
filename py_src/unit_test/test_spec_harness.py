@@ -424,6 +424,28 @@ class TestAgainstTheEngine(unittest.TestCase):
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
 
+    def test_names_come_from_the_printed_dataset_not_the_engine(self):
+        # The engine's `data/cards.json` has 21141 and 21142 holding each
+        # other's names. Resolving a correctly spelled scenario against it would
+        # silently produce the wrong card -- the failure MARVEL-19 exists to
+        # prevent, and why AGENTS.md forbids authoring from that file.
+        from cards.database import CardsDB
+        from tools.spec.harness import EnsureEngine, ResolveCardId
+
+        EnsureEngine()
+        self.assertEqual(ResolveCardId("Hall of Nastrond"), "21141")
+        self.assertEqual(ResolveCardId("Gjallerbru"), "21142")
+        # The engine disagrees, which is the point of not asking it.
+        self.assertEqual(str(CardsDB.papers["21141"].name), "Gjallerbru")
+
+    def test_a_name_only_the_engine_uses_does_not_resolve(self):
+        from tools.spec.harness import EnsureEngine, ResolveCardId, SetupError
+
+        EnsureEngine()
+        with self.assertRaises(SetupError):
+            # The engine's spelling of 27100b; the card says "Synchronization".
+            ResolveCardId("Sinister Synchonization")
+
     def test_printed_names_resolve_to_card_ids(self):
         case = MakeCase(
             name="named cards",
