@@ -33,7 +33,8 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 from tools.spec.assertions import AssertionResult
 from tools.spec.case import GIVEN_KIND, GIVEN_VERBS, GivenStep, SpecCase
 from tools.spec.policy import DecisionRecord, DescribeTrail, TranscriptPolicy
-from tools.spec.resolve import AmbiguousCardRef, CardRefError, ResolveCard, ResolveFace
+from tools.spec.resolve import (AmbiguousCardRef, CardRefError, MarkEngineBaseline,
+                                ResolveCard, ResolveFace)
 from tools.spec.state import Capture, StateView
 
 CATEGORY_NAME = "SPEC"
@@ -287,6 +288,10 @@ def ApplyGiven(world: Any, case: SpecCase) -> None:
     puzzle = RunPuzzle(world)
     packs = PreferredPacks(case)
 
+    # Everything allocated from here on exists because the scenario asked for
+    # it. That is what lets `#N` mean "the Nth copy the scenario created".
+    MarkEngineBaseline(world)
+
     for position, step in enumerate(case.given, start=1):
         try:
             ApplyGivenStep(world, puzzle, step, packs)
@@ -431,7 +436,35 @@ def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep,
         ChangeToForm(puzzle, face, step.verb)
         return
 
+    if step.verb == "in_play":
+        RejectAlreadyInPlay(face, step)
+
     method(face)
+
+
+def RejectAlreadyInPlay(face: Any, step: GivenStep) -> None:
+    """Refuse `is in play` about a card that already is (MARVEL-42).
+
+    Given is declarative, so the second `"Hydra Mercenary" is in play` resolves
+    to the card the first one created and `PutIntoPlay` does nothing. The
+    scenario then runs with **one** minion while reading as though it has two,
+    which is the silent-wrong-pass this harness exists to refuse.
+
+    An author who writes the line twice means two copies. The way to get them is
+    to create both and address them by ordinal, which stays legal after the
+    first one moves because ordinals track provenance, not zone:
+
+        Given the encounter deck is "Hydra Mercenary", "Hydra Mercenary"
+        And "Hydra Mercenary #1" is in play
+        And "Hydra Mercenary #2" is in play
+    """
+    if not face.card.IsOnField():
+        return
+    raise SetupError(
+        f"{step.Describe()}: {face.name} is already in play, so this step "
+        f"changes nothing. If you meant a second copy, create both and name "
+        f"them by ordinal — the encounter deck is \"{face.name}\", "
+        f"\"{face.name}\" then \"{face.name} #1\" / \"{face.name} #2\".")
 
 
 def ResolveOrCreateFace(world: Any, puzzle: Any, step: GivenStep,
@@ -526,7 +559,13 @@ def InternalError(engine_log: str) -> str:
     return "see the engine log"
 
 
-def RunCaseInternal(case: SpecCase, policy: TranscriptPolicy) -> CaseResult:
+def NewGameForCase(case: SpecCase, policy: TranscriptPolicy) -> Any:
+    """A `Game` wired to `policy`, with the case's puzzle scene loaded.
+
+    Stops short of `GameSetup()` so callers that want the world without playing
+    the transcript -- the harness itself, and tests that inspect setup -- share
+    one definition of how a case becomes a game.
+    """
     from engine import Engine
     from engine.device.manager.bot.manager import BotDeviceManager
     from game.game import Game
@@ -542,13 +581,17 @@ def RunCaseInternal(case: SpecCase, policy: TranscriptPolicy) -> CaseResult:
     game = Game(statistics, device_manager)
     Engine.game = game
 
-    try:
-        scene = BuildPuzzleScene(case)
-    except SetupError as exc:
-        return CaseResult(case=case, outcome=OUTCOME_UNPLAYABLE, message=str(exc))
-
+    scene = BuildPuzzleScene(case)
     game.session.SetScene(scene, "Replay")
     game.controller_manager.skip.SetSkipTo(0)
+    return game
+
+
+def RunCaseInternal(case: SpecCase, policy: TranscriptPolicy) -> CaseResult:
+    try:
+        game = NewGameForCase(case, policy)
+    except SetupError as exc:
+        return CaseResult(case=case, outcome=OUTCOME_UNPLAYABLE, message=str(exc))
 
     try:
         if not game.GameSetup():

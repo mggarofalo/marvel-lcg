@@ -152,7 +152,7 @@ across runs.
 | `"me"` / `"I"` | the identity, whichever form it is in |
 | `"the main scheme"` | the main scheme in play |
 | `"Rhino in VillainArea"` | qualified by zone |
-| `"01005 #2"` | the second copy, in object-id order |
+| `"01005 #2"` | the second copy the scenario created |
 
 Printed names collide across packs — five cards are called "Nick Fury" — so the
 runner prefers ids from the set the scenario is playing, and honours `@card:`
@@ -161,13 +161,48 @@ tags. When that is still ambiguous it says so and asks for an id.
 **A name that matches several cards, only one of which is on the board, means
 the one on the board.** "Rhino" in a scenario about the fight is the Rhino in
 play, not the stage-2 card in the villain deck. Two Rhinos actually in play is a
-real ambiguity and is an error listing both. *(The general duplicate-name
-convention is MARVEL-42; this is the runner's current rule, not the final word.)*
+real ambiguity and is an error listing both.
 
 Ambiguity is never resolved by guessing — including target selection. An effect
 with two legal targets and a scenario that names neither is refused. A single
 legal target is auto-selected by the engine itself and produces no prompt, so
 naming it would be noise.
+
+### Two copies of the same card
+
+`#N` counts the matching copies **in the order the scenario created them** — the
+order the `Given` lists them. Create both, then address them:
+
+```gherkin
+Given the encounter deck is "Hydra Mercenary", "Hydra Mercenary"
+And "Hydra Mercenary #1" is in play
+And "Hydra Mercenary #2" is in play
+
+When I attack "Hydra Mercenary #2"
+Then "Hydra Mercenary #2" has 2 damage
+And "Hydra Mercenary #1" has 0 damage
+```
+
+Creation order rather than position in a zone, because **position moves under a
+shuffle and creation order does not**: measured on a four-card player deck,
+`Deck2.Shuffle` moved two copies from positions [0, 2] to [2, 1] while their
+object ids stayed [5, 7]. Shuffles are RNG-driven and the two engines do not
+share an RNG yet (MARVEL-38), so a position-based ordinal would name a different
+card in C# than in Python. Creation order also survives a card changing zones,
+which is what lets `#1` and `#2` stay meaningful after both minions enter play.
+
+Two rules keep that honest:
+
+- **An ordinal may not index cards the scenario did not create.** The two cards
+  named "Rhino" in a Rhino setup were both allocated by the engine, so `"Rhino
+  #2"` would mean whichever the allocator reached second. It is an error telling
+  you to name a zone. (A redundant ordinal on an already-narrowed ref, like
+  `"Rhino #1 in VillainArea"`, is fine — it has nothing to choose between.)
+
+- **`"<card>" is in play` twice is an error.** Given is declarative, so the
+  second step resolves to the card the first created and does nothing; the
+  scenario would read as two minions and run as one. Create both and use
+  ordinals instead.
 
 ## Option labels
 

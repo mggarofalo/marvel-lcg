@@ -132,6 +132,16 @@ def ResolveSubject(state: StateView, subject: str) -> Tuple[str, Any, str]:
         if len(found) < ref.ordinal:
             return "card", None, (
                 f"wanted copy #{ref.ordinal} of {ref.key!r} but the game has {len(found)}")
+        # Same rule the live resolver enforces (MARVEL-42): `#N` counts the
+        # copies the scenario created. Over cards the engine allocated during
+        # setup there is no such order, so the ref has to name a zone instead.
+        if len(found) > 1 and any(card.engine_allocated for card in found):
+            listing = "; ".join(card.Describe() for card in found)
+            return "card", None, (
+                f"{ref.Describe()} would index cards the scenario did not create, "
+                f"so which one it names is the engine's allocation order rather "
+                f"than anything the scenario says. Name the zone instead. "
+                f"Candidates: {listing}")
         return "card", found[ref.ordinal - 1], ""
     if not found:
         return "card", None, DescribeMissing(state, ref)
