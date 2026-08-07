@@ -15,14 +15,15 @@ import os
 import tempfile
 import unittest
 
-from tools.spec.case import SourceDigest, SpecCase, ThenStep
+from tools.spec.case import (
+    GivenStep, NoPromptStep, PromptStep, SourceDigest, SpecCase, ThenStep, WhenStep)
 from tools.spec.gherkin import GherkinError, ParseFeature, Vocabulary
 from tools.spec.harness import (
     CaseResult, OUTCOME_ASSERTION, OUTCOME_ERROR, OUTCOME_PASS, OUTCOME_UNPLAYABLE)
 from tools.spec.validate import (
     AppendHistory, BuildManifests, CheckDrift, Judge, ReadHistory, ReadManifest,
     SelectTrusted, Summary, VERDICT_ENGINE_SUSPECTED, VERDICT_ERROR, VERDICT_PASS,
-    VERDICT_SPEC_WRONG, WriteManifest)
+    VERDICT_SPEC_WRONG, WriteManifest, WriteTriage)
 
 BACKGROUND = """Feature: A feature
 
@@ -439,6 +440,63 @@ class TestQuarantine(unittest.TestCase):
                 json.dump({"something": "else"}, handle)
             with self.assertRaises(Exception):
                 ReadManifest(path)
+
+
+################################################################################
+#
+
+class TestTriageQueue(unittest.TestCase):
+    """The record an adjudicator reads to call it a spec bug or an engine bug."""
+
+    def Judgement(self, outcome=OUTCOME_ASSERTION):
+        case = MakeCase(
+            name="a disagreement",
+            tags=("card:01084",),
+            given=(GivenStep("hand", ("Nick Fury",)),),
+            beats=(
+                WhenStep(option="play", card="Nick Fury"),
+                PromptStep(options=("Draw 3 cards", "Deal 4 damage to an enemy")),
+                WhenStep(option="Draw 3 cards"),
+                ThenStep("Shocker", "damage", 4),
+                NoPromptStep(),
+            ),
+        )
+        return Judge(CaseResult(case=case, outcome=outcome, message="it disagreed",
+                                engine_log="> 41: something happened"))
+
+    def test_a_record_can_be_built_for_every_failing_verdict(self):
+        # This is the whole of `--triage`; a stale field here crashes the
+        # documented workflow on the first disagreement.
+        for outcome in (OUTCOME_ASSERTION, OUTCOME_UNPLAYABLE, OUTCOME_ERROR):
+            record = self.Judgement(outcome).TriageRecord()
+            self.assertEqual(record["case"], "a disagreement")
+            self.assertEqual(record["reason"], "it disagreed")
+
+    def test_the_record_keeps_the_transcript_in_order(self):
+        # Splitting it back into when/then lists would throw away the
+        # interleaving, which is the thing worth reading.
+        record = self.Judgement().TriageRecord()
+        self.assertEqual([entry.split(":", 1)[0] for entry in record["transcript"]],
+                         ["when", "prompt", "when", "then", "no_prompt"])
+        self.assertEqual(record["given"], ["hand is Nick Fury"])
+        self.assertEqual(record["tags"], ["card:01084"])
+
+    def test_the_record_carries_the_engine_log(self):
+        self.assertIn("something happened", self.Judgement().TriageRecord()["engine_log"])
+
+    def test_writing_the_queue_covers_only_the_disagreements(self):
+        summary = Summary()
+        summary.Add(Judge(CaseResult(case=MakeCase(name="fine"), outcome=OUTCOME_PASS)))
+        summary.Add(self.Judgement())
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "triage.json")
+            WriteTriage(path, summary)
+            with open(path, "r", encoding="utf-8") as handle:
+                data = json.load(handle)
+
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["records"][0]["case"], "a disagreement")
 
 
 ################################################################################

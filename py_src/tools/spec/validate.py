@@ -109,11 +109,14 @@ class Judgement:
             "heroes": list(self.case.heroes),
             "seed": self.case.seed,
             "given": [step.Describe() for step in self.case.given],
-            "when": [step.Describe() for step in self.case.when],
-            "then": [step.Describe() for step in self.case.then],
+            "tags": list(self.case.tags),
+            # The transcript in order. Flattening it into separate when/then
+            # lists would throw away the interleaving, which is the one thing
+            # an adjudicator most needs to see.
+            "transcript": [f"{beat.kind}: {beat.Describe()}" for beat in self.case.beats],
             "reason": self.reason,
             "failed_assertions": [
-                {"then": failure.step.Describe(), "actual": failure.actual,
+                {"assertion": failure.Title(), "actual": failure.actual,
                  "detail": failure.message}
                 for failure in self.result.Failures()
             ],
