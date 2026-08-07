@@ -4,31 +4,27 @@ Guidance for AI agents working in this repository.
 
 ## What this repo is
 
-A **fork of [irefrixs/marvel-lcg](https://github.com/irefrixs/marvel-lcg)** — a Python implementation of the Marvel Champions LCG, playable in a browser.
+A digital implementation of the Marvel Champions LCG, mid-migration from Python to C#. Work is tracked in the Plane project `MARVEL` — see [docs/plane.md](docs/plane.md).
 
-It is now also the **reference engine** for a planned rewrite in C#, tracked in the Plane project `MARVEL`. That gives the code here a specific job: it is the source of truth for how the game currently behaves, and the thing a new engine will be validated against.
+```
+py_src/     Python reference engine (the game as it exists today) + preparation tooling
+src/        C# engine (empty until the Engine Core phase)
+docs/       project documentation, decisions, and audits
+```
 
-Two kinds of work happen here:
+`py_src/` began as a fork of [irefrixs/marvel-lcg](https://github.com/irefrixs/marvel-lcg). **We no longer track upstream**, so there is no fork hygiene to preserve — refactor it freely where a Plane issue justifies it.
 
-1. **Preparation tooling** — a self-play bot, a replay corpus harness, and a spec-validation harness. New code, ours.
-2. **Targeted fixes** to make the above possible.
+Its job now is to be the **behavioral source of truth**: the definition of how the game currently behaves, and the thing the C# engine is validated against. Read [docs/migration.md](docs/migration.md) for why the migration is happening and what has been decided.
 
-Anything else — refactors, cleanups, modernization of the upstream engine — is out of scope. See [docs/migration.md](docs/migration.md) for why.
+## Run everything from `py_src/`
 
-## Fork hygiene
-
-- The `upstream` remote is `irefrixs/marvel-lcg`. Every file we add is permanent diff against upstream, so keep additions **additive** and confined to new files where practical.
-- Do not reformat, rename, or refactor upstream files without a reason tied to a Plane issue.
-- `docs/install_guide.md`, `docs/card_scripting_guide.md`, `docs/engine_architecture.md`, `docs/debug_guide.md`, and `docs/editor_guide.md` are upstream-authored. Treat them as reference material — read them, do not rewrite them.
-
-## Quick start
-
-Python is pinned to 3.13 (`.python-version`). Dependencies are managed with [uv](https://docs.astral.sh/uv/).
+**This is the single easiest thing to get wrong.** All Python paths are relative to the working directory — `launch.json` points at `./data/`, `./replays/`, `./assets/`, and `engine/config.py` resolves config files the same way. Run from the repo root and the engine will not find its data.
 
 ```bash
+cd py_src
 uv venv --python 3.13
-uv pip install -r requirements.lock   # pinned resolution
-.venv/Scripts/python.exe main.py      # serves the web client on 127.0.0.1:2345
+uv pip install -r requirements.lock     # pinned resolution
+.venv/Scripts/python.exe main.py        # serves the web client on 127.0.0.1:2345
 ```
 
 Verify it came up:
@@ -37,36 +33,36 @@ Verify it came up:
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:2345/main   # expect 200
 ```
 
-Most API routes require an `app_version` cookie matching `Ver.ui_version_str` (`<version>r` in release builds, `<version>d` in debug). A **cookieless request always fails the version check** and is served `public/clean_cache.html` — see `IsVersionMatch` in `engine/network/web_server.py:88`. That is intended behavior, not a misconfiguration. To call the API directly:
+Tooling under `py_src/tools/` must be invoked as a module so the package resolves:
 
 ```bash
-curl -s --cookie "app_version=0.5.9.201r" http://127.0.0.1:2345/list_scenarios
+.venv/Scripts/python.exe -m tools.determinism.check_runs --runs 6
 ```
 
-`assets/` and `replays/` are absent from a clean clone and the engine runs anyway — card images come from the `image_servers` configured in `launch.json`, and missing ones are generated as placeholders by `engine/lib/image_creator.py`.
+### Things that look broken but aren't
 
-The web client's TypeScript compiles to JavaScript that is **gitignored** (`/public/js/**/*.js`), so a clean clone has no compiled client — see `public/js/tsconfig.json` and `public/js/watch.bat`. The Python API works without it; the browser UI does not.
-
-Configuration comes from `launch.json` merged with command-line flags — see `engine/config.py` and the Configuration section of [docs/engine_architecture.md](docs/engine_architecture.md). Command line beats `launch.json` beats defaults.
+- Most API routes require an `app_version` cookie matching `Ver.ui_version_str` (`<version>r` release, `<version>d` debug). A **cookieless request always fails the version check** and is served `public/clean_cache.html` — see `IsVersionMatch` in `py_src/engine/network/web_server.py:88`. To call the API directly: `curl -s --cookie "app_version=0.5.9.201r" http://127.0.0.1:2345/list_scenarios`
+- `assets/` and `replays/` are absent from a clean clone and the engine runs anyway — card images come from the `image_servers` in `launch.json`, and missing ones are generated as placeholders by `engine/lib/image_creator.py`.
+- The web client's TypeScript compiles to **gitignored** JavaScript, so a clean clone has no compiled client. See `py_src/public/js/tsconfig.json`. The API works without it; the browser UI does not.
 
 ### Dependencies
 
-`requirements.txt` is the direct dependency list; `requirements.lock` is the fully pinned resolution, generated with `uv pip compile requirements.txt -o requirements.lock`. Install from the lock; regenerate it when the direct list changes.
+Python is pinned to 3.13 (`py_src/.python-version`), managed with [uv](https://docs.astral.sh/uv/). `requirements.txt` is the direct list; `requirements.lock` is the pinned resolution (`uv pip compile requirements.txt -o requirements.lock`). Install from the lock.
 
-`numpy` is a **required** runtime dependency. It was missing from the original `requirements.txt` despite being the default RNG backend — see the RNG note below.
+`numpy` is currently required — it is the default RNG backend, and it was missing from the original dependency list. It goes away when MARVEL-38 lands.
 
 ## Architecture
 
-Three layers: `core/` (utilities) → `engine/` (platform: devices, controllers, web server, config) → `game/` (rules, cards, abilities). Card definitions live in `cards/pack/`, data in `data/`, the web client in `public/`.
+Three layers inside `py_src/`: `core/` (utilities) → `engine/` (devices, controllers, web server, config) → `game/` (rules, cards, abilities). Card definitions in `cards/pack/`, data in `data/`, web client in `public/`.
 
-Read [docs/engine_architecture.md](docs/engine_architecture.md) before making structural changes.
+Read [docs/engine_architecture.md](docs/engine_architecture.md) before structural changes.
 
 Four facts that matter more than the rest:
 
-- **Input blocks.** `Controller.ChoiceOne` (`engine/controller/controller.py`) blocks a thread inside `self.input.GetInput(...)` waiting for a websocket or keypress. This is why the threading, task, and job machinery exists, and it is why driving the engine from code needs a new device type rather than a function call.
-- **Replays are seed + input list.** A saved scene records the RNG seed and every player input. Replaying re-executes them. This is what makes undo, skip, and deterministic replay work.
-- **Every replay step carries a state digest.** `World.CalculateCRC()` (`game/world/world_render.py:123`) produces a per-card state dict that `engine/controller/module/replay.py` compares on every replayed step, printing a key-by-key diff on mismatch. This is the project's oracle — treat it as a wire format.
-- **There are two RNG backends, and the default is numpy.** `engine/lib/random.py` dispatches on the `disable_numpy_random` config flag, which **defaults to False** — so `numpy.random` is the production RNG, not the hand-written `engine/lib/mt19937.py`. The custom generator is only used when that flag is set. The two are not interchangeable: they produce different streams, and `Random.Undo()` restores prior numpy state but is a **no-op** in custom-RNG mode. Anything touching determinism must state which backend it assumes.
+- **Input blocks.** `Controller.ChoiceOne` (`py_src/engine/controller/controller.py`) blocks a thread inside `self.input.GetInput(...)` waiting for a websocket or keypress. This is why the threading, task, and job machinery exists. Removing it is a goal of the C# design.
+- **Replays are seed + input list.** A saved scene records the RNG seed and every player input; replaying re-executes them. This is what makes undo, skip, and deterministic replay work.
+- **Every replay step carries a state digest.** `World.CalculateCRC()` (`py_src/game/world/world_render.py:123`) produces a per-card state dict that `engine/controller/module/replay.py` compares on every replayed step, printing a key-by-key diff on mismatch. **This is the project's oracle — treat it as a wire format.**
+- **The RNG is being replaced.** Today `engine/lib/random.py` dispatches on `disable_numpy_random`, which defaults to False, so `numpy.random` is the production RNG and the hand-written `engine/lib/mt19937.py` is dead code. Both are being replaced by one precisely-specified standard implementation shared with C# (MARVEL-38). Until then, anything touching determinism must state which backend it assumes.
 
 ## Critical constraints
 
@@ -77,18 +73,49 @@ Four facts that matter more than the rest:
 - iteration over unordered `set`/`dict` where the order can affect game state
 - threading or async that touches game state
 
-The engine has been audited against all four — see [docs/determinism-audit.md](docs/determinism-audit.md) for what was found, which environment variables the harness must pin, and which sets are already known to be harmless. Check there before re-deriving anything. The verification harness lives in `tools/determinism/`; run `python -m tools.determinism.check_runs` after any change to a gameplay path.
+The engine has been audited against all four — see [docs/determinism-audit.md](docs/determinism-audit.md) for what was found, what the harness must pin, and which sets are already known harmless. **Check there before re-deriving anything.** Run `python -m tools.determinism.check_runs` after any change to a gameplay path.
 
-**The corpus is immutable once frozen.** Changing engine behavior after the corpus is generated invalidates it. If a change is genuinely required, that is a decision to raise, not to make silently.
+**The corpus is immutable once frozen.** Changing engine behavior after generation invalidates it. That is a decision to raise, not to make silently. It is also why the RNG replacement must land *before* corpus generation.
 
 ## Security
 
-Card scripts are **executed as Python**. `cards/database.py` calls `exec()` on custom card modules with no sandboxing. The AST denylist in `engine/security/command_validation.py` is wired only into the cheat console (`game/world/cheat/cheat_cmd_helper.py`), not into card loading — and a denylist over import names would not be sufficient there anyway.
+Card scripts are **executed as Python**. `py_src/cards/database.py` calls `exec()` on custom card modules with no sandboxing. The AST denylist in `engine/security/command_validation.py` is wired only into the cheat console, not into card loading — and a denylist over import names would not be sufficient anyway.
 
-Consequences for agents:
-
-- Never load or execute a card script from an untrusted source, including as part of testing.
+- Never load or execute a card script from an untrusted source, including in tests.
 - Do not extend the `exec`-based loading path. Removing it is a goal of the migration, not something to build on.
+
+## Headless bot
+
+Plays games with no client attached — no websocket, no HTTP server, no keyboard. Lives in `py_src/engine/device/manager/bot/`. Run from `py_src/`:
+
+```bash
+python main.py -device bot                              # one game, seed 1, saved to replays/
+python main.py -bot -bot_games 50 -bot_seed 1000        # 50 games, seeds 1000..1049
+python main.py -bot -bot_verify                         # replay each saved scene, check the digest
+python main.py -bot -bot_scenario klaw -bot_heroes she_hulk captain_marvel
+```
+
+`-bot` is shorthand for `-device bot` plus quieter logging. Exit code 0 when every game finished and saved, 1 otherwise.
+
+Decisions come from a **policy** (`BotPolicy.Choose(decision) -> CommandDescriptor`) injected into `BotDeviceManager`. The two shipped policies are deliberately trivial — they prove the device works, they do not play well. A real policy subclasses `BotPolicy` and registers in `BotPolicyFactory`.
+
+The device answers through `DeviceManager.WhenInput`, the same entry point the web server uses for a browser POST, so `Controller.ChoiceOne` runs its normal validation, CRC and `replay.Push` path. **Do not add a shortcut around `ChoiceOne`** — bot replays must be structurally indistinguishable from human ones or the corpus is worthless.
+
+## Testing
+
+From `py_src/`:
+
+```bash
+python -m unittest unit_test.test_bot          # bot decision logic, no engine bootstrap
+python -m tools.determinism.check_runs --runs 6 # digest reproduction across processes
+python main.py -bot -bot_verify                 # generate a game and replay-verify it
+```
+
+The replay suite (`game/test/test.py` → `TestRun`) re-executes a scene's inputs and asserts per-step digest equality. **There is no working command-line flag for it** — `-test` only expands to `-device -no_editor …`, nothing sets the `InTesting` start state, and the process blocks in `WaitUntilGameStart()`. The `-test_all` and `-profile_folder` branches are unreachable because `build.py` hardcodes `Build.release = True`. Tracked as MARVEL-28. Until then, use `-bot_verify` or the `/T` debug command from the web client.
+
+**`replays/` is empty and untracked**, so there is no regression suite yet. Building it is the entire point of the `Corpus and Oracle` phase — weigh changes accordingly.
+
+New tooling needs its own tests: test behavior not implementation, no assertion-free tests, coverage is an observed outcome and never a target.
 
 ## Workflow
 
@@ -98,40 +125,10 @@ All work is tracked in Plane, project `MARVEL`. Every issue belongs to a module 
 
 ### Branching
 
-`master` is the long-lived branch (inherited from upstream). Cut a short-lived `<type>/marvel-<id>-<slug>` branch off `master`, open a PR, and squash-merge.
+`master` is the long-lived branch. Cut a short-lived `<type>/marvel-<id>-<slug>` branch off `master`, open a PR, and squash-merge.
 
 **Never close or merge a pull request you did not open in the current session.** If a PR looks like a blocker, report it and stop.
 
 ### Commits
 
-Conventional Commits: `<type>(<scope>): <description>`.
-
-## Headless bot
-
-`python main.py -device bot` plays games with no client attached — no websocket, no HTTP server, no keyboard. Lives in `engine/device/manager/bot/`. `-bot` is shorthand that also quiets the noisier log categories.
-
-```bash
-python main.py -device bot                              # one game, seed 1, saved to replays/
-python main.py -bot -bot_games 50 -bot_seed 1000        # 50 games, seeds 1000..1049
-python main.py -bot -bot_verify                         # replay each saved scene and check the digest
-python main.py -bot -bot_scenario klaw -bot_heroes she_hulk captain_marvel
-```
-
-Decisions come from a **policy** object (`BotPolicy.Choose(decision) -> CommandDescriptor`) injected into `BotDeviceManager`. The two shipped policies are deliberately trivial — they exist to prove the device works, not to play well. A real policy subclasses `BotPolicy` and is registered in `BotPolicyFactory`; nothing else needs to change.
-
-The device answers through `DeviceManager.WhenInput`, the same entry point the web server uses for a browser POST, so `Controller.ChoiceOne` runs its normal validation, CRC and `replay.Push` path. **Do not add a shortcut around `ChoiceOne`** — bot replays have to be structurally indistinguishable from human ones or the corpus is worthless.
-
-Exit code is 0 when every game finished and saved, 1 otherwise.
-
-## Testing
-
-`python -m unittest unit_test.test_bot` covers the bot's decision logic (no engine bootstrap needed).
-
-The replay suite (`game/test/test.py` → `TestRun`) re-executes a scene's recorded inputs and asserts per-step digest equality. **There is no working command-line flag for it.** `-test` only expands to `-device -no_editor …`; nothing sets the `InTesting` start state, so the process blocks in `WaitUntilGameStart()`. The `-test_all` and `-profile_folder` branches in `Engine.EngineRun` are unreachable because `build.py` hardcodes `Build.release = True`. Two ways in:
-
-- `python main.py -bot -bot_verify` — replays each scene the bot just generated
-- the `/T` debug command from the web client
-
-**`replays/` is currently empty and not tracked in git**, so the suite has nothing to run. Generating that corpus is the entire point of the `Corpus and Oracle` phase. Until it exists, there is no regression suite — weigh changes accordingly.
-
-New tooling written in this repo needs its own tests. Follow the principles in the receipts repo's `docs/agentic-testing.md`: test behavior not implementation, no assertion-free tests, coverage is an observed outcome and never a target.
+Conventional Commits: `<type>(<scope>): <description>`. Use `py` scope for `py_src/` changes and `engine` for `src/`.

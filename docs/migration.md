@@ -94,7 +94,7 @@ Under-specifying any of these reintroduces divergence, so the spec must pin all 
 - **Fisher-Yates direction** — downward vs upward yields different permutations from the same stream
 - **State save/restore** — `Random.Undo()` currently leans on `numpy.random.get_state()`; MARVEL-7 found it unsound in both current backends, so fix rather than reproduce
 
-This is a deliberate **behavior change to upstream code**, not an additive one — the one place we knowingly break fork hygiene, because it is a precondition for the migration.
+This is a genuine behavior change to the reference engine, not an additive one. That is fine — we no longer track upstream, so `py_src/` can be changed wherever a Plane issue justifies it.
 
 ### Other portability hazards
 
@@ -117,30 +117,36 @@ The decisive property is that **the corpus is immutable and write-once**. Git's 
 
 Re-measure once the heuristic policy exists; these games came from a random policy that loses in ~20 steps, so per-game size is a lower bound.
 
-### Repo layout: a separate repo for the C# engine (MARVEL-3)
+### Repo layout: one repo, `src/` and `py_src/` (MARVEL-3)
 
-**Recommended, pending confirmation** — creating the repository is the owner's call.
-
-This repository is a fork with a live `upstream` remote at `irefrixs/marvel-lcg`, and it needs to stay cheap to pull from. A large C# tree living here would make every upstream merge painful, permanently, in exchange for co-location benefits that barely materialize — the two codebases share no build, no toolchain, and no source.
-
-So:
-
-- **`marvel-lcg` (this fork)** — the Python reference engine, plus preparation tooling: the bot, the corpus harness, the determinism harness, the spec harness. Stays pullable from upstream.
-- **A new repo for the C# engine** — its own solution, CI, and history.
-- **A corpus repo** — per the storage decision above, pinned by SHA from both sides.
-
-Agents doing the port check out both. In practice that is a non-issue.
-
-Suggested solution layout, following the conventions already in use in the receipts repo:
+**Decided.** A single repository holding both engines:
 
 ```
-Directory.Build.props / Directory.Packages.props   central package management
+py_src/     Python reference engine + preparation tooling
+src/        C# engine
+docs/       shared documentation, decisions, audits
+```
+
+The earlier recommendation was a separate repo, on the grounds that this was a fork needing to stay cheap to pull from upstream. **That constraint is gone — we no longer track upstream.** With it removed, the decisive factor is that agents work poorly across two repositories: cross-referencing the Python reference while porting is constant, and every split introduces coordination the work doesn't need.
+
+Consequences:
+
+- `py_src/` can be refactored freely where a Plane issue justifies it. There is no upstream diff to preserve.
+- **All Python commands run from `py_src/`.** Paths in `launch.json` and `engine/config.py` are relative to the working directory.
+- The corpus still lives in its own repo, pinned by SHA — that is about immutable bulk data, not about code organization, so the MARVEL-4 decision is unaffected.
+
+Planned C# layout, following the conventions already in use in the receipts repo:
+
+```
+src/Directory.Build.props / Directory.Packages.props   central package management
 src/Marvel.Engine        core rules; no I/O, no RNG state
 src/Marvel.Cards         card DSL and card data
-src/Marvel.Server        ASP.NET Core; serves the existing TS client
-tests/Marvel.Engine.Tests    xUnit
-tests/Marvel.Specs           Reqnroll
+src/Marvel.Server        ASP.NET Core; serves the web client
+src/tests/Marvel.Engine.Tests    xUnit
+src/tests/Marvel.Specs           Reqnroll
 ```
+
+The web client currently lives at `py_src/public/` because the Python server serves it over relative paths. Whether it moves to a shared top-level location is deferred to the Client and Integration phase.
 
 ## Testing strategy
 

@@ -1,12 +1,22 @@
 /.vscode/**
+
+# Python reference engine (py_src/)
 **/*.pyc
 __pycache__/
-/.venv/
-/public/js/**/*.js
-/public/js/**/*.js.map
-/assets
-/save_*.json
-/crash.json
-/crash.log
-/statistics.json
-/deck/*.json
+/py_src/.venv/
+/py_src/public/js/**/*.js
+/py_src/public/js/**/*.js.map
+/py_src/assets
+/py_src/save_*.json
+/py_src/crash.json
+/py_src/crash.log
+/py_src/statistics.json
+/py_src/deck/*.json
+/py_src/replays/
+/py_src/replays_*/
+
+# C# engine (src/)
+[Bb]in/
+[Oo]bj/
+*.user
+.vs/
