@@ -1,0 +1,54 @@
+{
+  "note": "Written only by tools/spec/validate.py, only from PASS verdicts. Each entry is pinned to the hash of the scenario source it was validated against: edit the scenario and it leaves this file on the next run. Do not hand-edit.",
+  "scenarios": {
+    "Rhino encounter set minions :: A tough status absorbs an attack instead of hit points": {
+      "sha256": "f2e999ecc519ec59ff42075bfe3412fdda4172a77e3e2feed7e8c9cc7a704618",
+      "source": "specs/scenarios/rhino_encounter_set.feature"
+    },
+    "Rhino encounter set minions :: Hydra Mercenary enters play with no status and 3 hit points": {
+      "sha256": "f2e999ecc519ec59ff42075bfe3412fdda4172a77e3e2feed7e8c9cc7a704618",
+      "source": "specs/scenarios/rhino_encounter_set.feature"
+    },
+    "Rhino encounter set minions :: Sandman enters play with a tough status card": {
+      "sha256": "f2e999ecc519ec59ff42075bfe3412fdda4172a77e3e2feed7e8c9cc7a704618",
+      "source": "specs/scenarios/rhino_encounter_set.feature"
+    },
+    "Spider-Man basic actions :: A basic attack deals the hero's ATK and exhausts them": {
+      "sha256": "616efd5267315a8e8fe81f31ba36a0e5bf9d3e9ea9e78eb8c224cd83fd53d7ca",
+      "source": "specs/scenarios/spider_man_basic_actions.feature"
+    },
+    "Spider-Man basic actions :: A basic thwart removes the hero's THW from the main scheme": {
+      "sha256": "616efd5267315a8e8fe81f31ba36a0e5bf9d3e9ea9e78eb8c224cd83fd53d7ca",
+      "source": "specs/scenarios/spider_man_basic_actions.feature"
+    },
+    "Spider-Man basic actions :: A hero in alter-ego form can change to hero form": {
+      "sha256": "616efd5267315a8e8fe81f31ba36a0e5bf9d3e9ea9e78eb8c224cd83fd53d7ca",
+      "source": "specs/scenarios/spider_man_basic_actions.feature"
+    },
+    "Spider-Man basic actions :: An alter-ego cannot attack": {
+      "sha256": "616efd5267315a8e8fe81f31ba36a0e5bf9d3e9ea9e78eb8c224cd83fd53d7ca",
+      "source": "specs/scenarios/spider_man_basic_actions.feature"
+    },
+    "Spider-Man player cards :: A basic attack is the same however much damage is already there [damage=0, health=12]": {
+      "sha256": "1d4f72912cb5a4d464018882f4b4ad260802b5d5bf60ad40a9e0bdbde1738b25",
+      "source": "specs/scenarios/spider_man_cards.feature"
+    },
+    "Spider-Man player cards :: A basic attack is the same however much damage is already there [damage=3, health=9]": {
+      "sha256": "1d4f72912cb5a4d464018882f4b4ad260802b5d5bf60ad40a9e0bdbde1738b25",
+      "source": "specs/scenarios/spider_man_cards.feature"
+    },
+    "Spider-Man player cards :: A basic attack is the same however much damage is already there [damage=7, health=5]": {
+      "sha256": "1d4f72912cb5a4d464018882f4b4ad260802b5d5bf60ad40a9e0bdbde1738b25",
+      "source": "specs/scenarios/spider_man_cards.feature"
+    },
+    "Spider-Man player cards :: Playing a card discards the resources that paid for it": {
+      "sha256": "1d4f72912cb5a4d464018882f4b4ad260802b5d5bf60ad40a9e0bdbde1738b25",
+      "source": "specs/scenarios/spider_man_cards.feature"
+    },
+    "Spider-Man player cards :: Swinging Web Kick deals 8 damage to an enemy": {
+      "sha256": "1d4f72912cb5a4d464018882f4b4ad260802b5d5bf60ad40a9e0bdbde1738b25",
+      "source": "specs/scenarios/spider_man_cards.feature"
+    }
+  },
+  "version": 1
+}

@@ -1,0 +1,24 @@
+{
+  "note": "Scenarios that did not pass against the Python engine. They are not part of the trusted suite. Each one is either a spec bug or an engine bug; both are worth finding.",
+  "scenarios": {
+    "Quarantine self-test :: A wrong expected value is FAIL-engine-suspected": {
+      "reason": "FAIL Rhino in VillainArea health == 99 expected 99, got 12 Rhino (01094) in VillainArea, 12/14 hp",
+      "sha256": "0a9fc3c3efc183dc4ef8ec9f360a06b398da93873c8d593ee1bfd3dd348b3341",
+      "source": "specs/scenarios/known_disagreements.feature",
+      "verdict": "FAIL-engine-suspected"
+    },
+    "Quarantine self-test :: An action the engine never offers is FAIL-spec-wrong": {
+      "reason": "the game ended with When step 1 unplayed (Attack targeting Rhino in VillainArea) #0 WhenPlayerInTurn (Normal): Change_Form on Peter Parker (01001b) in HeroArea -> declined (no option matches Attack targeting Rhino in VillainArea)",
+      "sha256": "0a9fc3c3efc183dc4ef8ec9f360a06b398da93873c8d593ee1bfd3dd348b3341",
+      "source": "specs/scenarios/known_disagreements.feature",
+      "verdict": "FAIL-spec-wrong"
+    },
+    "Quarantine self-test :: An assertion about a card outside the game is FAIL-spec-wrong": {
+      "reason": "FAIL Galactus health == 1 no card matches 'Galactus' anywhere in this game",
+      "sha256": "0a9fc3c3efc183dc4ef8ec9f360a06b398da93873c8d593ee1bfd3dd348b3341",
+      "source": "specs/scenarios/known_disagreements.feature",
+      "verdict": "FAIL-spec-wrong"
+    }
+  },
+  "version": 1
+}

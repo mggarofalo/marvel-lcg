@@ -1,6 +1,6 @@
 """Run spec cases against the Python engine and print what happened.
 
-    python -m tools.spec.run_case specs/scenarios/spider_man.json
+    python -m tools.spec.run_case specs/scenarios/spider_man_basic_actions.feature
     python -m tools.spec.run_case specs/scenarios/
     python -m tools.spec.run_case specs/scenarios/ --json
 
@@ -22,7 +22,9 @@ from typing import List, Sequence
 from tools.spec.case import LoadJsonCases, SpecCase, SpecCaseError
 from tools.spec.harness import CaseResult, OUTCOME_PASS, RunCase
 
-CASE_SUFFIXES = (".json",)
+from tools.spec.gherkin import LoadFeatureFile, NormalisePath
+
+CASE_SUFFIXES = (".feature", ".json")
 
 
 def LoadCases(path: str) -> List[SpecCase]:
@@ -35,9 +37,12 @@ def LoadCases(path: str) -> List[SpecCase]:
                 cases.extend(LoadCases(child))
         return cases
 
-    if path.endswith(CASE_SUFFIXES):
+    if path.endswith(".feature"):
+        return LoadFeatureFile(path)
+
+    if path.endswith(".json"):
         with open(path, "r", encoding="utf-8") as handle:
-            return LoadJsonCases(handle.read(), source_path=path)
+            return LoadJsonCases(handle.read(), source_path=NormalisePath(path))
 
     raise SpecCaseError(f"{path}: not a case file ({', '.join(CASE_SUFFIXES)})")
 

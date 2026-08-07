@@ -119,8 +119,11 @@ From `py_src/`:
 python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_local_effect_order unit_test.test_scene_hash \
                    unit_test.test_bot_timeout unit_test.test_card_dataset
+# spec harness: boots the engine and plays puzzle boards, still under a second
+python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
 python -m tools.determinism.check_scene_repro    # same seed -> same saved file
+python -m tools.spec.validate --trusted-only     # every trusted behavioral spec
 python main.py -bot -bot_verify                  # generate a game and replay-verify it
 ```
 
@@ -139,6 +142,25 @@ The replay suite (`game/test/test.py` → `TestRun`) re-executes a scene's input
 **`replays/` is empty and untracked**, so there is no regression suite yet. Building it is the entire point of the `Corpus and Oracle` phase — weigh changes accordingly.
 
 New tooling needs its own tests: test behavior not implementation, no assertion-free tests, coverage is an observed outcome and never a target.
+
+## Behavioral specs
+
+The replay corpus answers "did this game reproduce". It cannot answer "does Swinging Web Kick deal 8 damage". Behavioral specs do, and they are what the C# engine will be held to.
+
+Scenarios live in `py_src/specs/scenarios/` as Gherkin `.feature` files, written from printed card text. `tools/spec/` runs them: **Given** builds a board out of `RunPuzzle` commands, **When** selects an effect through the headless bot device, **Then** asserts over readable state — health, threat, zone, counters, statuses — so a failure reads as a claim about the game rather than a CRC diff.
+
+```bash
+python -m tools.spec.run_case specs/scenarios/          # run scenarios, see what happened
+python -m tools.spec.validate                           # assign verdicts, update the manifests
+python -m tools.spec.validate --trusted-only            # the gate: every trusted spec must pass
+python -m tools.spec.validate --triage triage.json      # records for adjudicating disagreements
+```
+
+**A scenario is not trusted until it passes.** `specs/trusted.json` is written only by the validation runner, only from `PASS`, and each entry is pinned to the hash of its scenario source — edit a scenario and it drops out on the next run. There is no way to add one by hand. Everything else is quarantined with a verdict: `FAIL-spec-wrong` (the engine never offered what the scenario describes — probably a misread card), `FAIL-engine-suspected` (it ran cleanly and disagreed anyway), or `ERROR`. A disagreement is triaged, never dismissed; both kinds are worth finding.
+
+`specs/scenarios/known_disagreements.feature` is wrong on purpose and must stay that way — it is the proof the gate works.
+
+This only works while the Python engine still runs and is still the reference. Read [docs/spec-harness.md](docs/spec-harness.md) before authoring.
 
 ## Workflow
 
