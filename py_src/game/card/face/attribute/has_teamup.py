@@ -33,5 +33,11 @@ class HasTeamUp(HasAttribute):
                         break
             if not found:
                 return []
-        return list(faces)
+        # `CardFace` defines no `__hash__`, so `faces` is hashed by memory
+        # address and iterates in allocation order. This list becomes the
+        # target list of a select effect, which is recorded verbatim in the
+        # replay command, so that order has to be a property of the game state
+        # and not of the allocator. Sort by `object_id`, the same key the
+        # optional-effect path uses in `game/event/manager.py`. See MARVEL-30.
+        return sorted(faces, key=lambda face: face.card.object_id)
 

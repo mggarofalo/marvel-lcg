@@ -107,6 +107,7 @@ From `py_src/`:
 
 ```bash
 python -m unittest unit_test.test_bot          # bot decision logic, no engine bootstrap
+python -m unittest unit_test.test_teamup_order  # team-up target ordering contract
 python -m tools.determinism.check_runs --runs 6 # digest reproduction across processes
 python main.py -bot -bot_verify                 # generate a game and replay-verify it
 ```
