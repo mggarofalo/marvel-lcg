@@ -276,6 +276,59 @@ class TestStateProperties(unittest.TestCase):
 
 
 ################################################################################
+# The policy on its own -- no engine, so the backstop paths are reachable.
+
+class TestDecisionBudget(unittest.TestCase):
+    """The runaway backstop, which the engine cannot be made to exercise.
+
+    An exception raised inside `Choose` does not propagate: the engine catches
+    it while broadcasting a message, logs it and keeps playing. So a backstop
+    that raises is a backstop that does nothing, and it has to be tested where
+    the failure is visible.
+    """
+
+    def Decide(self, *, can_cancel=True):
+        from engine.device.manager.bot.policy import BotDecision
+        return BotDecision(
+            player_id=0, step_id=7, attempt=0, event_name="WhenPlayerInTurn",
+            ability_type="Normal", prompt_text="", can_cancel=can_cancel,
+            options=[], replay_input="{}", world=None,
+        )
+
+    def test_the_budget_trips_cleanly_after_the_script_has_completed(self):
+        from tools.spec.policy import ScriptedPolicy
+        policy = ScriptedPolicy(steps=(), max_decisions=0)
+
+        policy.Choose(self.Decide())
+
+        self.assertTrue(policy.halted)
+        self.assertIn("gave up after 0 decisions", policy.failure)
+        self.assertIn("unwinding", policy.failure)
+
+    def test_the_budget_names_the_next_step_when_one_is_unplayed(self):
+        from tools.spec.policy import ScriptedPolicy
+        policy = ScriptedPolicy(steps=(WhenStep(option="Attack"),), max_decisions=0)
+
+        policy.Choose(self.Decide())
+
+        self.assertTrue(policy.halted)
+        self.assertIn("1 When step(s) unplayed", policy.failure)
+        self.assertIn("Attack", policy.failure)
+
+    def test_a_halted_policy_declines_whatever_the_engine_still_asks(self):
+        from engine.device.manager.bot.command import BotCommand
+        from tools.spec.policy import ScriptedPolicy
+        policy = ScriptedPolicy(steps=(), max_decisions=0)
+
+        policy.Choose(self.Decide())
+        after = policy.Choose(self.Decide(can_cancel=False))
+
+        self.assertTrue(BotCommand.IsCancel(after))
+        # The failure is recorded once, not re-reported per unwinding decision.
+        self.assertEqual(policy.failure.count("gave up"), 1)
+
+
+################################################################################
 # End to end -- these boot the engine.
 
 class TestAgainstTheEngine(unittest.TestCase):
@@ -442,6 +495,38 @@ class TestAgainstTheEngine(unittest.TestCase):
         )
         self.assertEqual(RunCase(damaged).outcome, OUTCOME_PASS)
         self.assertEqual(RunCase(fresh).outcome, OUTCOME_PASS)
+
+    def test_an_ambiguous_given_never_manufactures_another_copy(self):
+        # `is in play` may bring a card into the game, but only when the id
+        # means nothing yet. Two copies already in hand and a bare id is the
+        # author failing to say which -- answering it by creating a third
+        # would be the silent first-match this harness refuses.
+        case = MakeCase(
+            name="ambiguous is-in-play",
+            given=(
+                GivenStep("hand", ("01005", "01005")),
+                GivenStep("in_play", ("01005",)),
+            ),
+            when=(),
+            then=(ThenStep("01005 #1", "zone", "HandsArea"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("matches 2 cards", result.Describe())
+
+    def test_an_ambiguous_when_card_says_so_rather_than_no_match(self):
+        case = MakeCase(
+            name="ambiguous play target",
+            given=(
+                GivenStep("hero_form", ("01001a",)),
+                GivenStep("hand", ("01005", "01005", "01003", "01003")),
+            ),
+            when=(WhenStep(option="Play", card="01005"),),
+            then=(ThenStep("Rhino in VillainArea", "damage", 8),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("matches 2 cards", result.Describe())
 
     def test_the_engines_own_play_by_play_is_kept_for_triage(self):
         case = MakeCase(

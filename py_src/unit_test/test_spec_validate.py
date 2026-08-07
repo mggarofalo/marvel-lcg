@@ -169,6 +169,43 @@ class TestGherkinParsing(unittest.TestCase):
 """))
         self.assertIn("row has 1 cell", str(caught.exception))
 
+    def test_an_outline_with_no_examples_is_an_error_not_a_silent_drop(self):
+        # A scenario that looks authored but never runs never fails either,
+        # which is the one thing this parser promises not to allow.
+        with self.assertRaises(GherkinError) as caught:
+            ParseFeature(Feature("""
+  Scenario Outline: never runs
+    Given "Rhino" has <damage> damage
+    Then "Rhino" has 14 health
+
+  Scenario: this one runs
+    Then "Rhino" has 14 health
+"""))
+        self.assertIn("no Examples rows", str(caught.exception))
+
+    def test_an_outline_with_only_a_header_row_is_an_error(self):
+        with self.assertRaises(GherkinError) as caught:
+            ParseFeature(Feature("""
+  Scenario Outline: never runs
+    Given "Rhino" has <damage> damage
+    Then "Rhino" has 14 health
+
+    Examples:
+      | damage |
+"""))
+        self.assertIn("no Examples rows", str(caught.exception))
+
+    def test_a_trailing_outline_with_no_examples_is_caught_at_end_of_file(self):
+        with self.assertRaises(GherkinError):
+            ParseFeature(Feature("""
+  Scenario: fine
+    Then "Rhino" has 14 health
+
+  Scenario Outline: never runs
+    Given "Rhino" has <damage> damage
+    Then "Rhino" has 14 health
+"""))
+
     def test_comments_and_tags(self):
         cases = ParseFeature(Feature("""
   # this line is ignored

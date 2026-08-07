@@ -33,7 +33,7 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 from tools.spec.assertions import AssertionResult, EvaluateAll
 from tools.spec.case import GIVEN_KIND, GIVEN_VERBS, GivenStep, SpecCase
 from tools.spec.policy import DecisionRecord, DescribeTrail, ScriptedPolicy
-from tools.spec.resolve import CardRefError, ResolveCard, ResolveFace
+from tools.spec.resolve import AmbiguousCardRef, CardRefError, ResolveCard, ResolveFace
 from tools.spec.state import Capture, StateView
 
 CATEGORY_NAME = "SPEC"
@@ -309,14 +309,22 @@ def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep) -> None:
 def ResolveOrCreateFace(world: Any, puzzle: Any, step: GivenStep) -> Any:
     """The card a `Given` names, generating it when the verb is one that may.
 
-    Only `in_play` and `revealed` create, and only from a bare card id. Every
-    other verb must name a card already on the board, so a typo'd name is an
-    error rather than a silently conjured card sitting in the aside deck --
-    which is what `RunPuzzle.FindOrCreateFace` does today.
+    Only `in_play` and `revealed` create, and only from a bare card id that
+    matches nothing yet. Every other verb must name a card already on the
+    board, so a typo'd name is an error rather than a silently conjured card
+    sitting in the aside deck -- which is what `RunPuzzle.FindOrCreateFace`
+    does today.
+
+    An *ambiguous* ref never creates. "This id already means two cards" and
+    "this id means nothing yet" are opposite problems, and answering the first
+    one by manufacturing a third copy would be the silent first-match this
+    module exists to refuse.
     """
     ref = step.cards[0]
     try:
         return ResolveFace(world, ref)
+    except AmbiguousCardRef:
+        raise
     except CardRefError:
         if step.verb not in CREATING_VERBS or not CARD_ID.match(ref.strip()):
             raise

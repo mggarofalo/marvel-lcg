@@ -99,11 +99,17 @@ class ScriptedPolicy(BotPolicy):
             return BotCommand.Cancel()
 
         if len(self.records) >= self.max_decisions:
-            self.Fail(
-                f"gave up after {self.max_decisions} decisions with "
-                f"{len(self.steps) - self.index} When step(s) unplayed "
-                f"(next: {self.steps[self.index].Describe()})",
-                decision)
+            # The budget can trip in either phase, including while unwinding
+            # after the last When step -- so the message must not assume there
+            # is a next step to name. An IndexError here would be swallowed by
+            # the engine's message-broadcast error handling and the game would
+            # simply keep playing, defeating the backstop entirely.
+            if self.completed:
+                detail = "while unwinding after the last When step"
+            else:
+                detail = (f"with {len(self.steps) - self.index} When step(s) unplayed "
+                          f"(next: {self.steps[self.index].Describe()})")
+            self.Fail(f"gave up after {self.max_decisions} decisions {detail}", decision)
             return self.Halt(decision)
 
         if self.completed:
@@ -142,6 +148,15 @@ class ScriptedPolicy(BotPolicy):
     def BuildFor(self, step: WhenStep, decision: Any) -> Tuple[Any, str]:
         """The command for `step`, or (None, why not)."""
         from game.scene.replay.operation import CommandDescriptor
+
+        # Resolve the bound card once, up front. Doing it inside the filter
+        # would turn "this name means two cards" into a bare "no option
+        # matches", hiding the one failure the author can actually act on.
+        if step.card and decision.world is not None:
+            try:
+                ResolveCard(decision.world, step.card)
+            except CardRefError as exc:
+                return None, str(exc)
 
         matched = [option for option in decision.selectable_options
                    if self.Matches(step, option, decision.world)]

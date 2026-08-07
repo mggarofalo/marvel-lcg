@@ -387,15 +387,19 @@ def main(argv: "List[str]|None" = None) -> int:
 
     exit_code = 0
 
+    # Drift is a check on this run, not a side effect of writing. Reporting it
+    # only when the manifests are updated would make `--no-write --check-drift`
+    # silently pass, which is the wrong way round for a gate.
+    if args.check_drift >= 0:
+        drift = CheckDrift(ReadHistory(args.history), summary.disagreement_rate,
+                           args.check_drift)
+        if drift:
+            print(f"DRIFT: {drift}")
+            exit_code = 1
+
     if not args.no_write:
         WriteManifest(args.trusted, trusted, note=TRUSTED_NOTE)
         WriteManifest(args.quarantine, quarantine, note=QUARANTINE_NOTE)
-        history = ReadHistory(args.history)
-        if args.check_drift >= 0:
-            drift = CheckDrift(history, summary.disagreement_rate, args.check_drift)
-            if drift:
-                print(f"DRIFT: {drift}")
-                exit_code = 1
         AppendHistory(args.history, summary, label="validate")
 
     return exit_code

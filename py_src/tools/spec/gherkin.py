@@ -285,6 +285,7 @@ def ParseFeature(text: str, *, path: str = "") -> List[SpecCase]:
     in_background = False
     in_examples = False
     clause = "given"
+    outline_rows = 0
     cases: List[SpecCase] = []
 
     def Finish() -> None:
@@ -292,6 +293,20 @@ def ParseFeature(text: str, *, path: str = "") -> List[SpecCase]:
         if current is not None:
             cases.append(Build(current, feature_name, path, digest, where))
             current = None
+
+    def EndOutline() -> None:
+        """An outline with no Examples rows produces nothing and must not pass.
+
+        Silently dropping it would be the one thing this parser promises never
+        to do: a scenario that looks authored but never runs, and so never
+        fails either.
+        """
+        nonlocal outline
+        if outline is not None and outline_rows == 0:
+            raise GherkinError(
+                f"{where}:{outline.line}: Scenario Outline "
+                f"{outline.name!r} has no Examples rows, so it would never run")
+        outline = None
 
     for number, raw in enumerate(text.splitlines(), start=1):
         line = raw.strip()
@@ -312,30 +327,32 @@ def ParseFeature(text: str, *, path: str = "") -> List[SpecCase]:
 
             if word == "feature":
                 Finish()
+                EndOutline()
                 feature_name = title
                 background = Draft()
-                outline = None
             elif word == "background":
                 Finish()
+                EndOutline()
                 background = Draft()
-                outline = None
                 in_background = True
             elif word in ("scenario outline", "scenario template"):
                 Finish()
+                EndOutline()
                 outline = background.Copy()
                 outline.name = title
                 outline.line = number
                 outline.tags = list(pending_tags)
+                outline_rows = 0
                 # An outline is only ever realised through its Examples rows.
                 current = None
                 pending_tags = []
             elif word == "scenario":
                 Finish()
+                EndOutline()
                 current = background.Copy()
                 current.name = title
                 current.line = number
                 current.tags = list(pending_tags)
-                outline = None
                 pending_tags = []
             else:  # Examples / Scenarios
                 if outline is None:
@@ -360,6 +377,7 @@ def ParseFeature(text: str, *, path: str = "") -> List[SpecCase]:
             bindings = dict(zip(examples_header, cells))
             cases.append(Build(Expand(outline, bindings, where, number),
                                feature_name, path, digest, where))
+            outline_rows += 1
             continue
 
         step = STEP.match(line)
@@ -378,6 +396,7 @@ def ParseFeature(text: str, *, path: str = "") -> List[SpecCase]:
         target.steps.append((clause, step.group(2), number))
 
     Finish()
+    EndOutline()
 
     if not cases:
         raise GherkinError(f"{where}: no scenarios found")

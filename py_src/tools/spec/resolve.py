@@ -36,6 +36,15 @@ class CardRefError(Exception):
     """A ref that names no card, or more than one."""
 
 
+class AmbiguousCardRef(CardRefError):
+    """A ref that names more than one card.
+
+    Kept distinct from "names nothing" because callers react differently: a ref
+    that finds nothing may legitimately mean "put this card into the game", but
+    a ref that finds several is always the author failing to say which.
+    """
+
+
 # Friendly names for the `DeckType` members an author is likely to write.
 ZONE_ALIASES: Dict[str, str] = {
     "hand": "HandsArea",
@@ -175,7 +184,7 @@ def ResolveCard(world: Any, ref: "CardRef|str") -> Any:
 
     if len(found) > 1:
         candidates = ", ".join(Label(card) for card in found)
-        raise CardRefError(
+        raise AmbiguousCardRef(
             f"{ref.Describe()}: matches {len(found)} cards ({candidates}). "
             f"Add a zone (\"{ref.key} in HandsArea\") or an ordinal "
             f"(\"{ref.key} #1\") to say which one.")
