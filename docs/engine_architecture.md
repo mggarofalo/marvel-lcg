@@ -58,7 +58,6 @@ The engine follows a **3-layer architecture**:
 marvel-lcg/
 ├── main.py                # Entry point: Initialize → EngineRun → Shutdown
 ├── build.py               # Build configuration
-├── build_marvel.py        # Marvel-specific build script
 │
 ├── core/                  # Foundational utilities
 │   ├── lib/               # Math, Time
@@ -131,6 +130,12 @@ marvel-lcg/
 ├── docs/                  # Documentation
 ├── editor/                # Card editor
 ├── public/                # Web frontend (HTML/CSS/JS)
+├── tools/                 # Preparation tooling, run as `python -m tools.<pkg>.<cmd>`
+│   ├── cards/             # Card-text dataset extraction
+│   ├── determinism/       # Determinism verification harness
+│   ├── package/           # Build-number bump, card zip (mutate the repo)
+│   ├── rng/               # RNG test-vector generation
+│   └── spec/              # Behavioral spec harness and runner
 └── unit_test/             # Unit tests
 ```
 
