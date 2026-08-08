@@ -51,7 +51,7 @@ class Controller:
         #     DeviceManager.play_json_crc = CRC(str(play_json))
         # else:
         #     DeviceManager.play_json_crc = Render.last_render_crc
-        controller_manager.replay.calculated_crc = message.world.render.CalculateCRC()
+        controller_manager.replay.calculated_digest = message.world.render.CalculateDigest()
 
         effect_descriptors = [effect.Render(by_effect, self.player_id) for effect in effect_list]
 
@@ -337,7 +337,7 @@ class Controller:
             controller_manager.replay.current_step_id,
             message.GetReplayText(),
             select_cmd,
-            controller_manager.replay.calculated_crc[0])
+            controller_manager.replay.calculated_digest)
         controller_manager.replay.Push(operation)
 
         self.game.statistics.RecordValue("operation", 1)

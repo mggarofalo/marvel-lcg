@@ -6,7 +6,7 @@ nobody to ask, so the runner takes the place of that outer loop: it builds a
 setup/loop/game-over sequence `GameRun` runs, and saves the scene.
 
 Everything below the `NewGameDescriptor` — scene construction, the phase loop,
-`Controller.ChoiceOne`, CRC recording, `replay.Push` — is untouched engine code.
+`Controller.ChoiceOne`, digest recording, `replay.Push` — is untouched engine code.
 The saved file is an ordinary replay and loads through the ordinary replay path.
 
 Usage:
@@ -220,8 +220,9 @@ class BotRunner:
         """Replay a saved scene through the engine's own replay/oracle path.
 
         This is the same `TestRun` the `/T` debug command drives: every recorded
-        input is re-executed and `World.CalculateCRC()` is compared against the
-        digest stored with that step, printing a key-by-key diff on mismatch.
+        input is re-executed and `World.CalculateDigest()` is compared against
+        the digest stored with that step, printing a card-by-card, field-by-field
+        diff on mismatch.
         """
         from game.test import Test
         from game.test.test_run import TestRun

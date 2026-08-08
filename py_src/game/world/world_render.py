@@ -120,14 +120,13 @@ class WorldRender:
         # Log.DebugSilent(CATEGORY_NAME, f"Render time: {elapsed_time:.3}")
         Log.DebugSilent("SYNC", f"Render end")
 
-    def CalculateCRC(self) -> List[str]:
-        world = self.world
-        infosets: List[Dict[int, int]] = [{}, {}, {}]
-        for id in world.object_manager.card_dict:
-            if id != 0:
-                card = world.object_manager.card_dict[id]
-                info = card.GetCRC(recalculate=True)
-                if info != -1:
-                    infosets[0] |= {id: info}
-        return [str(x).replace(' ', '') for x in infosets]
+    def CalculateDigest(self) -> str:
+        """The v2 state digest of the current world. **Wire format.**
+
+        One string, not the three slots v1 returned -- two of which were always
+        the empty dict, so a recorded `{}` matched whatever the engine computed.
+        Specified in `docs/state-digest-v2.md`, built by `game/world/digest.py`.
+        """
+        from game.world.digest import Calculate
+        return Calculate(self.world)
 

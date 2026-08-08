@@ -83,8 +83,8 @@ def first_divergent_step(a: Dict, b: Dict) -> str:
         if steps_a[i] != steps_b[i]:
             return (
                 f"step {i} ({steps_a[i]['e']})\n"
-                f"      run A: {steps_a[i]['crc']}\n"
-                f"      run B: {steps_b[i]['crc']}"
+                f"      run A: {steps_a[i]['digest']}\n"
+                f"      run B: {steps_b[i]['digest']}"
             )
     if len(steps_a) != len(steps_b):
         return f"step counts differ: {len(steps_a)} vs {len(steps_b)}"

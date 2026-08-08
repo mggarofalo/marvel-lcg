@@ -34,7 +34,7 @@ class Step:
     index: int
     player_id: int
     event_name: str
-    crc: str
+    digest: str
 
 
 @dataclass
@@ -49,7 +49,7 @@ class RunResult:
 
     def digest(self) -> str:
         """One hash covering every per-step digest, in order."""
-        blob = "\n".join(f"{s.index}|{s.player_id}|{s.event_name}|{s.crc}" for s in self.steps)
+        blob = "\n".join(f"{s.index}|{s.player_id}|{s.event_name}|{s.digest}" for s in self.steps)
         blob += "\n#objects " + json.dumps(self.object_index, sort_keys=True)
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
@@ -65,7 +65,7 @@ class RunResult:
                 "game_over": self.game_over,
                 "error": self.error,
                 "steps": [
-                    {"i": s.index, "p": s.player_id, "e": s.event_name, "crc": s.crc}
+                    {"i": s.index, "p": s.player_id, "e": s.event_name, "digest": s.digest}
                     for s in self.steps
                 ],
             },
@@ -174,13 +174,13 @@ def run_headless(
 
     def on_step(player_id: int, payload: Any) -> str:
         world = Engine.game.world
-        crc = world.render.CalculateCRC()[0] if world else ""
+        digest = world.render.CalculateDigest() if world else ""
         result.steps.append(
             Step(
                 index=len(result.steps),
                 player_id=player_id,
                 event_name=payload.event_name,
-                crc=crc,
+                digest=digest,
             )
         )
         if len(result.steps) >= max_steps:

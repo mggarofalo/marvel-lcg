@@ -6,7 +6,7 @@ is a policy object that answers `Controller.ChoiceOne` in place of a human.
 
 Decisions are delivered through `DeviceManager.WhenInput` — the same entry point
 `GameServerSync.handle_post` uses for a browser client — so `ChoiceOne` runs its
-normal validation, CRC and `replay.Push` path and bot replays come out
+normal validation, digest and `replay.Push` path and bot replays come out
 structurally identical to human ones.
 """
 

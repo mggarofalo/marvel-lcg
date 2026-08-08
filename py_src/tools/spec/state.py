@@ -1,8 +1,8 @@
 """A readable snapshot of the world, and the properties a spec may assert on.
 
-Assertions run against this, not against `World.CalculateCRC()`. The CRC is the
-right oracle for "did this replay reproduce"; it is the wrong one for "does
-Swinging Web Kick deal 5 damage", because a mismatch is a hex diff rather than a
+Assertions run against this, not against `World.CalculateDigest()`. The digest is
+the right oracle for "did this replay reproduce"; it is the wrong one for "does
+Swinging Web Kick deal 5 damage", because a mismatch is a card dump rather than a
 sentence. Everything here is named the way a rulebook names it -- health,
 damage, threat, zone, counters, statuses -- so a failure reads as a claim about
 the game.

@@ -61,6 +61,9 @@ class Ver:
     def IsChecksum(self) -> bool:
         return self >= Versions.check_sum
 
+    def IsDigestV2(self) -> bool:
+        return self >= Versions.digest_v2
+
     def IsCreateHeroDeckFirst(self):
         return self >= Versions.hero_deck_first
 
@@ -84,5 +87,6 @@ class Versions:
     deadpools_encounter     = Ver(f'0.5.8.227') # Enable "1crisis_of_infinite_deadpools" by default
     fix_surge               = Ver(f'0.5.9.142') # Enable "fix_surge" by default
     fix_treachery           = Ver(f'0.5.9.148') # Enable "fix_treachery" by default
+    digest_v2               = Ver(f'0.5.9.205') # Replace the v1 `crc` sum with the v2 state digest
     puzzle                  = Ver(f'0.5.8')
 

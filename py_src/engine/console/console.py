@@ -93,7 +93,7 @@ class Console:
             replay.current_step_id,
             message_str,
             CommandDescriptor.FromDebugCommand(debug_cmd_text),
-            replay.calculated_crc[0])
+            replay.calculated_digest)
         replay.Push(action)
 
         debug_cmds = self.debug_cmds
