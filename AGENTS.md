@@ -119,7 +119,7 @@ From `py_src/`:
 python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_local_effect_order unit_test.test_scene_hash \
                    unit_test.test_bot_timeout unit_test.test_card_dataset \
-                   unit_test.test_rng
+                   unit_test.test_rng unit_test.test_package_tools
 # spec harness and puzzle commands: boot the engine and play puzzle boards,
 # still under a second
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
@@ -132,6 +132,23 @@ python main.py -bot -bot_verify                  # generate a game and replay-ve
 
 Name the modules explicitly. `unittest discover` picks up `unit_test/test_all.py`,
 which is the replay suite described below and does not run.
+
+**The suite does not touch the repository.** Running it leaves `git status` clean
+and creates no commits. Packaging is a separate, deliberate step:
+
+```bash
+python -m tools.package.bump              # bump BUILD in build.py and commit it
+python -m tools.package.bump --no-commit  # bump only
+python -m tools.package.zip_cards         # write cards-<version>.zip (gitignored)
+```
+
+Both of these mutate the working tree, and `bump` commits — never wire them into
+a test, a hook, or CI. They used to be `test_IncreaseVersion` and `test_zip_cards`
+in `unit_test/test_task.py`, so every run of the suite bumped the version and
+left a commit on whatever branch was checked out; with agents in parallel
+worktrees, two suites editing the same `BUILD` line collide at merge. That is
+MARVEL-55, and `unit_test/test_package_tools.py` guards against it coming back.
+The card zip is known incomplete (MARVEL-56) and not byte-reproducible (MARVEL-57).
 
 Regenerate the RNG vectors after touching anything in `engine/lib/mt19937.py` or the `Random` facade — `unit_test.test_rng` fails until you do:
 

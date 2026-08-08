@@ -329,6 +329,15 @@ python -m tools.rng.emit_vectors
 
 It writes only if the content changed, so a no-op run leaves the file alone.
 
+The fixture carries **no timestamp and no version stamp**, deliberately. It is
+compared whole, so anything in it that churns for a reason unrelated to the
+generator turns the staleness check into noise — which is what happened when it
+recorded `engine_build`: bumping the package version was enough to fail the
+suite (`MARVEL-58`). A diff to this file therefore means the generator's output
+changed, and a C# implementation that reproduced the old vectors needs looking
+at. Provenance lives where it cannot go stale: the header of this document
+records the commit the spec was written against, and `git log` records the rest.
+
 ## 9. Deliberate divergences from upstream
 
 Recorded here and in `docs/migration.md` because these change game outcomes,
