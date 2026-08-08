@@ -12,6 +12,7 @@ __pycache__/
 /py_src/crash.log
 /py_src/statistics.json
 /py_src/deck/*.json
+/py_src/cards-*.zip
 /py_src/replays/
 /py_src/replays_*/
 
