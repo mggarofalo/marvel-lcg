@@ -10,10 +10,15 @@ A `CardRef` is written the way an author thinks about a card:
 
 Resolution walks `world.object_manager.card_dict`, so it sees every zone and
 every card. `RunPuzzle.FindFaceByName` now walks it too and is zone-complete as
-well, ordered board first (MARVEL-51 -- before that it never searched the board
+well, ordered board first (MARVEL-51 -- before that it never looked at the board
 at all, and `Puzzle.Damage("01094", 3)` against the villain in play created a
 *second* Rhino in the aside deck and damaged that one -- then MARVEL-61 for the
 zones that fix did not reach).
+
+Neither this nor `FindFaceByName` is a **Search** in the rules sense; that term
+belongs to `game.operate.search.Search`, which is what card text compiles to.
+Both of these resolve a name someone wrote to the card they meant, outside the
+game and without touching it.
 
 The harness still resolves refs here and hands `RunPuzzle` an already-resolved
 `CardFace`, because a spec asks for more than a name lookup: zone qualifiers,

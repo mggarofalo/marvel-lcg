@@ -1,16 +1,21 @@
 """Tests for `RunPuzzle` card resolution (MARVEL-51, MARVEL-61).
 
 `FindOrCreateFace` is the front door for every `Puzzle.*` command that takes a
-name, and it used to search everywhere except the board. A command naming a card
+name, and it used to look everywhere except the board. A command naming a card
 in play therefore built a *second* copy in the aside deck and acted on that, so
 the visible board never moved and a stray card was left behind. The cheat console
 and the web puzzle loader both go through this path.
 
 MARVEL-51 fixed the board and left the rest: the aside deck, the set-aside decks,
-the victory display and the removed-from-game area were all still unsearched, so
+the victory display and the removed-from-game area were all still unreachable, so
 the same silent duplicate came back for any card sitting in one of them. The
 resolver is now zone-complete, driven off `ZONE_GROUP_BY_DECK_TYPE`, and
 `TestEveryZoneIsAccountedFor` is what keeps it that way.
+
+None of this is a **Search** in the rules sense -- that is
+`game.operate.search.Search`, which is what card text compiles to and which a
+player performs. These tests are about resolving a name a puzzle author typed,
+which touches nothing in the game (MARVEL-63).
 
 These boot the engine, so they must be run from `py_src/` like everything else in
 this repo. Boards are built with the `Puzzle.Create*` helpers and `CardFactory`,
@@ -139,7 +144,7 @@ class TestNamingACardInPlay(unittest.TestCase):
         self.assertEqual(CardCount(world), before)
 
     def test_a_card_in_the_encounter_deck_still_resolves(self):
-        # The one group that was already searched. It must keep working.
+        # The one group that was already covered. It must keep working.
         world = NewWorld()
         puzzle = RunPuzzle(world)
         puzzle.CreateEncounterDeck(HYDRA_MERCENARY)
@@ -188,7 +193,7 @@ class TestAmbiguousNames(unittest.TestCase):
         self.assertIn("Swinging Web Kick", str(caught.exception))
 
     def test_a_copy_in_hand_and_a_copy_in_the_deck_are_refused(self):
-        # Hand, deck and discard are searched as one group precisely so this is
+        # Hand, deck and discard are one group precisely so this is
         # an error: an ordering between them would be the only thing deciding
         # which copy the command meant.
         world = NewWorld()
@@ -227,7 +232,7 @@ class TestAmbiguousNames(unittest.TestCase):
 
     def test_a_name_matching_one_card_in_play_and_one_in_the_villain_deck_is_fine(self):
         # "Rhino" is both stage 1 in play and stage 2 in the villain deck. Both
-        # are searched, but not together: the villain deck is a staging zone and
+        # are covered, but not together: the villain deck is a staging zone and
         # sits in the `set aside` group, which is only reached when the board
         # has no candidate. So there is one candidate rather than two.
         world = NewWorld()
@@ -260,7 +265,7 @@ class TestCreatingWhatIsNotThere(unittest.TestCase):
         self.assertEqual(CardCount(world), before + 1)
 
     def test_an_already_resolved_face_is_passed_straight_through(self):
-        # The path the spec harness uses. It must not go near the name search.
+        # The path the spec harness uses. It must not go near name resolution.
         world = NewWorld()
         puzzle = RunPuzzle(world)
         rhino = world.GetScenario().area_villain.Get()[0]
@@ -273,7 +278,7 @@ class TestCreatingWhatIsNotThere(unittest.TestCase):
 
 
 ################################################################################
-# The zones MARVEL-51 left unsearched.
+# The zones MARVEL-51 left unreachable.
 
 class TestEveryZoneIsAccountedFor(unittest.TestCase):
     """The guard that keeps the resolver zone-complete.
@@ -281,7 +286,7 @@ class TestEveryZoneIsAccountedFor(unittest.TestCase):
     MARVEL-51 hand-listed three zone groups and MARVEL-61 was everything they
     missed. Hand-listing is the defect, so this asserts the map covers
     `DeckType` exactly -- a zone added to the engine fails here rather than
-    going quietly unsearched.
+    going quietly unreachable.
     """
 
     def test_the_map_covers_every_deck_type(self):
@@ -332,7 +337,7 @@ class TestSetAsideZones(unittest.TestCase):
         self.assertEqual(CardCount(world), before)
 
     def test_a_card_in_play_still_wins_over_a_set_aside_copy(self):
-        # Ordering: widening the search must not cost the board its precedence.
+        # Ordering: widening the resolver must not cost the board its precedence.
         world = NewWorld()
         puzzle = RunPuzzle(world)
         CardFactory.GenerateCard(HYDRA_MERCENARY, world.aside_deck, world)
@@ -349,7 +354,7 @@ class TestSetAsideZones(unittest.TestCase):
 class TestOutOfTheGameZones(unittest.TestCase):
     """A card that has left the game is named, not silently rebuilt.
 
-    Searched last, so anything still in the game wins. Resolving to the real
+    Tried last, so anything still in the game wins. Resolving to the real
     card is the point: the alternative is a fresh copy in the aside deck and a
     command that appears to have done nothing.
     """
@@ -382,7 +387,7 @@ class TestTheEnginesOwnBookkeeping(unittest.TestCase):
 
     `World.Initialize` registers the play rule before anything else and parks it
     in the removed area, so it is always object id 0 and it is always in a zone
-    this resolver now searches. Without the guard, `Puzzle.Damage("rule", 3)`
+    this resolver now reaches. Without the guard, `Puzzle.Damage("rule", 3)`
     resolves against the engine's own bookkeeping and silently does nothing --
     exactly the "runs against a board its author did not write" failure
     `PuzzleCardError` exists to prevent.
@@ -503,7 +508,7 @@ class TestMultipleVillains(unittest.TestCase):
 # Deduplication.
 
 class TestUniqueFaces(unittest.TestCase):
-    """A field search unions board areas with the decks hanging off them.
+    """A field lookup unions board areas with the decks hanging off them.
 
     The same card can be reached twice that way. Counting area memberships
     instead of cards would report an ambiguity that is not one.

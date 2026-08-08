@@ -21,6 +21,20 @@ class PuzzleCardError(Exception):
 
 ################################################################################
 # Where a puzzle command looks for the card it named.
+#
+# Nothing here is a Search. **Search** is a Marvel Champions rules term that this
+# engine already implements, in `game.operate.search.Search`, over the same zones
+# and with the same vocabulary -- `include_discard_pile`, `include_set_aside`.
+# That is what card text compiles to: Rhino (II) reads "Search the encounter deck
+# and discard pile for the Breakin' & Takin' side scheme" and `01095.py` calls
+# `Search.EncounterCard(effect, include_discard_pile=True, ...)`.
+#
+# What follows resolves a *name a puzzle author typed* to the card they meant. It
+# is performed by nobody, emits no game event, shuffles nothing, and is not
+# visible to the game. So it is described here as resolving a name against zones,
+# or looking in them, and never as searching them -- the two are close enough to
+# be mistaken for each other, and widening this resolver to the set-aside area
+# (MARVEL-61) reads exactly like adding a card effect if the word slips.
 
 # The play-rule sentinel, printed name "rule". `ObjectManager` starts the card
 # counter at -1 and `World.Initialize` registers the play rule first, so this is
@@ -53,7 +67,7 @@ OUT_OF_THE_GAME = "out of the game"
 #   `StatusArea`. `StatusArea` is the per-card status component.
 # - `EvidenceArea` and `RuleArea` are `is_in_play` but are *not* among the areas
 #   `WorldFind.FindCardsOnField` walks. That is why `FindFaceByName` unions this
-#   map's `IN_PLAY` bucket with the board search rather than deferring to it.
+#   map's `IN_PLAY` bucket with that lookup rather than deferring to it.
 ZONE_GROUP_BY_DECK_TYPE: 'Dict[DeckType, str]' = {
     # On the board, or hanging off something on it.
     DeckType.PlaceCardArea:             IN_PLAY,
@@ -89,7 +103,7 @@ ZONE_GROUP_BY_DECK_TYPE: 'Dict[DeckType, str]' = {
     DeckType.ResourcesArea:             SET_ASIDE,
     DeckType.MainSchemesDeck:           SET_ASIDE,
     DeckType.VillainDeck:               SET_ASIDE,
-    # Gone. Searched last, and only so that naming one of these cards acts on it
+    # Gone. Tried last, and only so that naming one of these cards acts on it
     # rather than quietly building a fresh copy.
     DeckType.RemovedArea:               OUT_OF_THE_GAME,
     DeckType.VictoryDisplay:            OUT_OF_THE_GAME,
@@ -122,14 +136,16 @@ class RunPuzzle:
     def FindFaceByName(self, name: str) -> 'CardFace|None':
         """The one card `name` means, or None if the game does not hold it yet.
 
-        Every zone the game holds is searched, in the order the groups are
-        listed below. That completeness is not a convenience: each zone left
-        out is a `Puzzle.*` command that silently acts on a duplicate instead
-        of the card the author named, which is what `Puzzle.Damage("01094", 3)`
-        did against the villain in play before MARVEL-51 -- left it at full
-        health and put a damaged second Rhino in the aside deck. MARVEL-61 was
-        the same failure in the zones MARVEL-51 did not reach. So the groups
-        are derived from `ZONE_GROUP_BY_DECK_TYPE` rather than hand-listed.
+        The name is resolved against every zone the game holds, group by group
+        in the order listed below. (Against, not by searching them -- see the
+        note above `PLAY_RULE_OBJECT_ID` for why that word is reserved.) That
+        completeness is not a convenience: each zone left out is a `Puzzle.*`
+        command that silently acts on a duplicate instead of the card the
+        author named, which is what `Puzzle.Damage("01094", 3)` did against the
+        villain in play before MARVEL-51 -- left it at full health and put a
+        damaged second Rhino in the aside deck. MARVEL-61 was the same failure
+        in the zones MARVEL-51 did not reach. So the groups are derived from
+        `ZONE_GROUP_BY_DECK_TYPE` rather than hand-listed.
 
         **Board first**: a command that names a card in play means that card.
         Then the player's own zones, then the encounter deck, then what is set
@@ -152,19 +168,19 @@ class RunPuzzle:
 
         No match at all is still not an error. `FindOrCreateFace` generates the
         card, which is how a puzzle puts something on a board that does not
-        hold it yet. What it generates lands in `world.aside_deck`, which this
-        search now covers, so a second command naming the same card finds the
-        copy the first one made instead of building another.
+        hold it yet. What it generates lands in `world.aside_deck`, which the
+        `set aside` group now covers, so a second command naming the same card
+        gets the copy the first one made instead of building another.
         """
         player = self.world.GetCurrentPlayer()
         encounter = Worlds.GetEncounterDeckCards(self.world) + \
                     Worlds.GetEncounterDiscardPileCards(self.world)
         held = self.FacesByZoneGroup(name)
 
-        # The first three groups keep their own searches. They are what
+        # The first three groups keep their own lookups. They are what
         # MARVEL-51 settled, and `FindCardsOnField` reaches upgrades and tucked
         # cards through the decks hanging off a board card. `held` adds what
-        # those searches do not reach; `UniqueFaces` absorbs the overlap.
+        # those lookups do not reach; `UniqueFaces` absorbs the overlap.
         #
         # `held` is not scoped to the current player, so in a multiplayer game
         # the second group is every player's hand, deck and discard rather than
@@ -212,7 +228,7 @@ class RunPuzzle:
         Object id 0 is the engine's play-rule sentinel, printed name "rule",
         created by `World.Initialize` before anything else and parked in the
         removed area -- `RunPuzzle.__init__` builds `self.debug_rule` out of it.
-        Searching the removed area is new here, so without this guard
+        The removed area is newly reachable here, so without this guard
         `Puzzle.Damage("rule", 3)` would silently resolve against the engine's
         own bookkeeping instead of building a card. `resolve.py` excludes the
         same id for the same reason.
@@ -268,7 +284,7 @@ class RunPuzzle:
     def UniqueFaces(faces: Sequence['CardFace']) -> List['CardFace']:
         """One entry per card, in the order first seen.
 
-        A field search unions board areas with the inventory and placed-card
+        A field lookup unions board areas with the inventory and placed-card
         decks hanging off them, so the same card can be reached twice. Counting
         area memberships instead of cards would report an ambiguity that is not
         one.
