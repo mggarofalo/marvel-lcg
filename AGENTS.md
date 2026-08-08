@@ -123,7 +123,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
 # spec harness and puzzle commands: boot the engine and play puzzle boards,
 # still under a second
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
-                   unit_test.test_puzzle
+                   unit_test.test_puzzle unit_test.test_worlds_encounter
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
 python -m tools.determinism.check_scene_repro    # same seed -> same saved file
 python -m tools.spec.validate --trusted-only     # every trusted behavioral spec

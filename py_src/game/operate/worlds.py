@@ -351,24 +351,46 @@ class Worlds:
     ################################################################################
     # Cards
     @staticmethod
+    def CollectFromDistinctDecks(decks: Sequence['Deck']) -> List['CardFace']:
+        """Every deck's cards, top first, reading a repeated deck only once.
+
+        The two encounter accessors below both need this, and each half of it
+        covers a case the other misses. Villains do not necessarily share a
+        deck: `twc/07001a.py` hands three of its four simultaneous villains
+        their own via `SetEncounterDeck`, so a loop that keeps only the last
+        villain's reports one deck out of four (MARVEL-60). But sharing is the
+        normal case -- `Villain.PutIntoPlay` points every villain at
+        `scenario.encounter_deck` -- so accumulating without the identity check
+        reports that one deck's cards once per villain instead.
+
+        Identity rather than a `set`: set iteration order is a determinism
+        hazard this engine deliberately does not take on, and the deck count
+        here is the number of villains in play.
+        """
+        faces: List['CardFace'] = []
+        seen: List['Deck'] = []
+        for deck in decks:
+            if not any(deck is x for x in seen):
+                seen.append(deck)
+                faces += deck.Get(True)
+        return faces
+
+    @staticmethod
     def GetEncounterDeckCards(by_effect: 'Effect|World') -> List['CardFace']:
         world = Worlds.CastWorld(by_effect)
-        faces: List['CardFace'] = []
         villains = Worlds.GetAllVillains(by_effect)
-        for villain in villains:
-            faces += villain.encounter_deck.Get(True)
         if villains == []:
             return world.scenario.encounter_deck.Get()
-        return faces
+        return Worlds.CollectFromDistinctDecks([x.encounter_deck for x in villains])
     @staticmethod
     def GetEncounterDiscardPileCards(by_effect: 'Effect|World', finder: 'CardFinder|None'=None) -> List['CardFace']:
         world = Worlds.CastWorld(by_effect)
-        faces: List['CardFace'] = []
         villains = Worlds.GetAllVillains(by_effect)
-        for villain in villains:
-            faces = villain.encounter_discard_pile.Get(True)
         if villains == []:
             faces = world.scenario.encounter_discard_pile.Get()
+        else:
+            faces = Worlds.CollectFromDistinctDecks(
+                [x.encounter_discard_pile for x in villains])
         if finder:
             return finder.Checks(faces)
         else:
