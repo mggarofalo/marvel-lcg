@@ -17,14 +17,24 @@ from pathlib import Path
 
 DEFAULT_BUILD_FILE = Path("build.py")
 
-# Anchored to the whole line so a bare `BUILD = <n>` assignment is the only
-# thing that can match -- MAJOR, MINOR and PATCH sit beside it in the file.
-BUILD_LINE = re.compile(r"^(?P<prefix>\s*BUILD\s*=\s*)(?P<value>\d+)\s*$", re.MULTILINE)
+# Anchored to a whole line so a bare `BUILD = <n>` assignment is the only thing
+# that can match -- MAJOR, MINOR and PATCH sit beside it in the file.
+#
+# Two details are load-bearing. The trailing context is a *lookahead*, so the
+# match never extends past the digits and nothing after them can be lost: an
+# earlier version ended in `\s*$`, and because `\s` matches newlines and
+# MULTILINE `$` also matches at end of string, it swallowed the file's trailing
+# blank line on every bump. And the horizontal-whitespace classes are `[ \t]`
+# rather than `\s` for the same reason, with `\r?` so the pattern still matches
+# on a CRLF checkout (the file is read with newlines preserved).
+LINE_END = r"[ \t]*\r?$"
+BUILD_LINE = re.compile(rf"^(?P<prefix>[ \t]*BUILD[ \t]*=[ \t]*)(?P<value>\d+)(?={LINE_END})",
+                        re.MULTILINE)
 
 
 def ReadField(text: str, name: str) -> int:
     """The integer assigned to `name` at the top level of a build file."""
-    match = re.search(rf"^\s*{name}\s*=\s*(\d+)\s*$", text, re.MULTILINE)
+    match = re.search(rf"^[ \t]*{name}[ \t]*=[ \t]*(\d+){LINE_END}", text, re.MULTILINE)
     if match is None:
         raise ValueError(f"no `{name} = <int>` assignment found")
     return int(match.group(1))
@@ -36,7 +46,10 @@ def Bump(build_file: Path = DEFAULT_BUILD_FILE, *, commit: bool = True) -> str:
     With `commit`, stages the file and commits it. Git failures propagate:
     a rewritten `build.py` that was never committed is not a successful bump.
     """
-    text = build_file.read_text(encoding="utf-8")
+    # `newline=""` both ways: the default translates every line ending in the
+    # file to the platform's on write, which on Windows rewrites an LF checkout
+    # to CRLF. The edit is one number -- the other bytes go back untouched.
+    text = build_file.read_text(encoding="utf-8", newline="")
 
     build = ReadField(text, "BUILD") + 1
     version = f"{ReadField(text, 'MAJOR')}.{ReadField(text, 'MINOR')}.{ReadField(text, 'PATCH')}.{build}"
@@ -44,7 +57,7 @@ def Bump(build_file: Path = DEFAULT_BUILD_FILE, *, commit: bool = True) -> str:
     rewritten, count = BUILD_LINE.subn(rf"\g<prefix>{build}", text, count=1)
     if count != 1:
         raise ValueError(f"no `BUILD = <int>` line to rewrite in {build_file}")
-    build_file.write_text(rewritten, encoding="utf-8")
+    build_file.write_text(rewritten, encoding="utf-8", newline="")
 
     if commit:
         cwd = build_file.resolve().parent

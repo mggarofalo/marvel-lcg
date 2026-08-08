@@ -26,24 +26,35 @@ from tools.package.zip_cards import ZipCards
 
 UNIT_TEST_DIR = Path("unit_test")
 
-BUILD_FILE = """\
-import os
+# Mirrors `py_src/build.py` byte for byte, trailing blank line included. That
+# blank line matters: the first version of `BUILD_LINE` ended in `\s*$`, which
+# swallowed everything after the digits, and a fixture ending in a single
+# newline is not enough to notice.
+BUILD_FILE = (
+    "import os\n"
+    "\n"
+    "class Build:\n"
+    '    release = "RELEASE" in os.environ\n'
+    "    release = True\n"
+    "\n"
+    "    # Version\n"
+    "    MAJOR = 0\n"
+    "    MINOR = 5\n"
+    "    PATCH = 9\n"
+    "    BUILD = 204\n"
+    "\n"
+)
 
-class Build:
-    release = "RELEASE" in os.environ
-    release = True
 
-    # Version
-    MAJOR = 0
-    MINOR = 5
-    PATCH = 9
-    BUILD = 204
-"""
+def WriteBuildFile(directory: Path, text: str = BUILD_FILE, *, newline: str = "\n") -> Path:
+    """Write the fixture as exact bytes.
 
-
-def WriteBuildFile(directory: Path, text: str = BUILD_FILE) -> Path:
+    Deliberately not `write_text`: its default translates line endings, which is
+    the same translation that hid a defect here. Tests assert on `read_bytes`
+    for the same reason.
+    """
     path = directory / "build.py"
-    path.write_text(text, encoding="utf-8")
+    path.write_bytes(text.replace("\n", newline).encode("utf-8"))
     return path
 
 
@@ -89,16 +100,50 @@ class TestBump(unittest.TestCase):
             self.assertEqual(ReadField(text, "MINOR"), 5)
             self.assertEqual(ReadField(text, "PATCH"), 9)
 
-    def test_rewrites_only_the_build_line(self):
+    def test_changes_nothing_in_the_file_but_the_number(self):
+        """Byte-exact, because that is the only way to see this class of defect.
+
+        Comparing `splitlines()` cannot distinguish a file ending in one newline
+        from one ending in none, and reading through `read_text` normalises the
+        line endings it would need to be checking.
+        """
         with tempfile.TemporaryDirectory() as tmp:
             build_file = WriteBuildFile(Path(tmp))
 
             Bump(build_file, commit=False)
 
-            before = BUILD_FILE.splitlines()
-            after = build_file.read_text(encoding="utf-8").splitlines()
-            differing = [(b, a) for b, a in zip(before, after) if b != a]
-            self.assertEqual(differing, [("    BUILD = 204", "    BUILD = 205")])
+            self.assertEqual(build_file.read_bytes(),
+                             BUILD_FILE.replace("BUILD = 204", "BUILD = 205").encode("utf-8"))
+
+    def test_keeps_the_trailing_blank_line(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            build_file = WriteBuildFile(Path(tmp))
+
+            Bump(build_file, commit=False)
+
+            # Stated separately from the byte-exact test above so a failure says
+            # which property broke.
+            self.assertTrue(build_file.read_bytes().endswith(b"BUILD = 205\n\n"))
+
+    def test_preserves_crlf_line_endings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            build_file = WriteBuildFile(Path(tmp), newline="\r\n")
+
+            version = Bump(build_file, commit=False)
+
+            self.assertEqual(version, "0.5.9.205")
+            self.assertEqual(build_file.read_bytes(),
+                             BUILD_FILE.replace("BUILD = 204", "BUILD = 205")
+                                       .replace("\n", "\r\n").encode("utf-8"))
+
+    def test_preserves_lf_line_endings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            build_file = WriteBuildFile(Path(tmp))
+
+            Bump(build_file, commit=False)
+
+            # The default `write_text` would rewrite these to CRLF on Windows.
+            self.assertNotIn(b"\r\n", build_file.read_bytes())
 
     def test_refuses_a_file_with_no_build_line(self):
         with tempfile.TemporaryDirectory() as tmp:
