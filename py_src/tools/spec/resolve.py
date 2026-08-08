@@ -8,13 +8,18 @@ A `CardRef` is written the way an author thinks about a card:
     "Rhino in VillainArea"      qualified by zone
     "01005 in hand"             zone aliases are accepted
 
-Resolution walks `world.object_manager.card_dict`, so it finds cards **on the
-field**. `RunPuzzle.FindOrCreateFace` does not -- its `FindCardOnField` call is
-commented out (`game/puzzle/puzzle.py:43`), so a bare `Puzzle.Damage("01094", 3)`
-against the villain in play silently creates a *second* Rhino in the aside deck
-and damages that one instead. The harness resolves refs here and hands
-`RunPuzzle` an already-resolved `CardFace`, which takes that path out of play
-without changing engine code.
+Resolution walks `world.object_manager.card_dict`, so it sees every zone and
+every card. `RunPuzzle.FindFaceByName` searches the board first and then a
+handful of zones (MARVEL-51 -- before that it never searched the board at all,
+and `Puzzle.Damage("01094", 3)` against the villain in play created a *second*
+Rhino in the aside deck and damaged that one).
+
+The harness still resolves refs here and hands `RunPuzzle` an already-resolved
+`CardFace`, because a spec asks for more than a name lookup: zone qualifiers,
+`#N` over creation order, named subjects like "me" and "the main scheme",
+matching that ignores "considered as" aliases, and failure messages that name
+candidates and near misses. None of that belongs in the engine's puzzle
+resolver, and a spec must never be answered by a card the engine invented.
 
 Matching is deliberately narrower than `CardFace.IsName`: card id or printed
 name, over every printed face of the card, case-insensitively. "Considered as"
