@@ -468,6 +468,34 @@ class TestTheCrossLanguageFixture(RngTestCase):
             on_disk, Serialise(Build()),
             "datasets/rng/vectors.json is stale; run: python -m tools.rng.emit_vectors")
 
+    def test_a_version_bump_does_not_make_the_fixture_stale(self):
+        """MARVEL-58.
+
+        The fixture used to carry `engine_build`, and the test above compares the
+        whole serialised file, so every `python -m tools.package.bump` reddened
+        the suite -- the vectors pin the RNG algorithm, which a package counter
+        does not change. Asserted against an actual bump of `Build.BUILD` rather
+        than against the absence of a named field, so it still fails if a stamp
+        returns under a different name.
+        """
+        from build import Build as BuildConfig
+        from engine.lib.version import Ver
+        from tools.rng.emit_vectors import Build, Serialise
+
+        before = Serialise(Build())
+
+        original = BuildConfig.BUILD
+        try:
+            BuildConfig.BUILD = original + 17
+            Ver.Initialize()
+            after = Serialise(Build())
+        finally:
+            BuildConfig.BUILD = original
+            Ver.Initialize()
+
+        self.assertEqual(before, after,
+                         "the fixture changed when only the build number did")
+
 
 if __name__ == "__main__":
     unittest.main()

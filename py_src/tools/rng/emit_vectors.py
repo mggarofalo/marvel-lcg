@@ -15,7 +15,10 @@ Run:
     python -m tools.rng.emit_vectors
     python -m tools.rng.emit_vectors --check   # non-zero if the file is stale
 
-The output is byte-stable: same code, same file, no timestamps.
+The output is byte-stable: same code, same file. Nothing that changes for a
+reason unrelated to the generator goes in -- no timestamps, and no version stamp
+(MARVEL-58). The file is compared whole, so anything that churns on its own turns
+the staleness check into noise.
 """
 
 from __future__ import annotations
@@ -225,13 +228,15 @@ def _mixed() -> Dict[str, Any]:
 
 
 def Build() -> Dict[str, Any]:
-    from engine.lib import Ver
-
-    Ver.Initialize()
+    # No build or version stamp here, deliberately (MARVEL-58). These vectors pin
+    # the RNG algorithm, which does not change when a package counter does, and
+    # the staleness check compares the whole serialised file -- so a stamp made
+    # every `tools.package.bump` redden the suite. Provenance lives where it
+    # cannot go stale: `docs/rng-contract.md` records the commit the spec was
+    # written against, and git history records the rest.
     return {
         "contract": "docs/rng-contract.md",
         "generated_by": "py_src/tools/rng/emit_vectors.py",
-        "engine_build": str(Ver.version),
         "note": "Sequence inputs are always [0, 1, ..., length - 1].",
         "cases": {
             "next_uint32": _next_uint32(),
