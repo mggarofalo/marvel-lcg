@@ -184,8 +184,33 @@ class TestSerialisation(unittest.TestCase):
         self.assertEqual(digest.Parse(text), json.loads(text))
 
     def test_parse_refuses_something_that_is_not_a_digest(self):
-        with self.assertRaises(ValueError):
-            digest.Parse('{"1":27,"9":-2}')  # a v1 value
+        """Everything unreadable must be `ValueError`, because that is what the
+        replay comparison catches -- a corrupt corpus file has to come back as a
+        rejected step rather than as an exception through the replay loop."""
+        for bad in (
+            '{"1":27,"9":-2}',              # a v1 value
+            'not json at all',             # not JSON
+            '[]',                          # not an object
+            '{"v":2}',                     # no cards
+            '{"v":2,"cards":{}}',          # cards is not an array
+            '{"v":2,"cards":[3]}',         # a record is not an object
+            '{"v":2,"cards":[{"card":"01094"}]}',   # a record has no id
+            '{"v":2,"cards":[{"id":"49"}]}',        # id is not an integer
+        ):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    digest.Parse(bad)
+
+    def test_diff_reports_a_truncated_record_rather_than_failing_on_it(self):
+        area = FakeArea("VillainArea", flags=FakeFlags(in_play=True))
+        card = FakeCard(49, "01094", area, fields={"health": 14})
+        area.cards.append(card)
+
+        ids, report = digest.Diff('{"v":2,"cards":[{"id":49}]}',
+                                  digest.Serialize(Document([card])))
+
+        self.assertEqual(ids, [49])
+        self.assertIn("c49", report)
 
     def test_fingerprint_follows_the_text(self):
         self.assertEqual(digest.Fingerprint("a"), digest.Fingerprint("a"))

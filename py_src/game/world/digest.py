@@ -96,10 +96,28 @@ def Serialize(document: Dict[str, Any]) -> str:
 
 
 def Parse(serialized: str) -> Dict[str, Any]:
-    """Inverse of `Serialize`. Raises `ValueError` on anything unreadable."""
+    """Inverse of `Serialize`. Raises `ValueError` on anything unreadable.
+
+    Checks the shape rather than only that the text is JSON, because the caller
+    is `Diff`, and `Diff` runs on a value read out of a corpus file that may be
+    truncated or from another format. A corrupt recording has to come back as a
+    rejected step, not as an exception through the replay loop -- so everything
+    unreadable is `ValueError`, which is what `OnDigestMismatch` catches.
+    """
+    def refuse(why: str) -> ValueError:
+        return ValueError(f"not a v{DIGEST_VERSION} digest ({why}): {serialized[:80]!r}")
+
     document = json.loads(serialized)
-    if not isinstance(document, dict) or "cards" not in document:
-        raise ValueError(f"not a v{DIGEST_VERSION} digest: {serialized[:80]!r}")
+    if not isinstance(document, dict):
+        raise refuse("not an object")
+    cards = document.get("cards")
+    if not isinstance(cards, list):
+        raise refuse("no 'cards' array")
+    for record in cards:
+        if not isinstance(record, dict):
+            raise refuse("a card record is not an object")
+        if not isinstance(record.get("id"), int):
+            raise refuse("a card record has no integer 'id'")
     return document
 
 
@@ -217,20 +235,22 @@ def _ById(document: Dict[str, Any]) -> Dict[int, Dict[str, Any]]:
 
 
 def _RecordDiff(object_id: int, a: Dict[str, Any] | None, b: Dict[str, Any] | None) -> List[str]:
+    # Read with `.get` throughout: `a` came out of a corpus file, and a report
+    # about a divergence must not fail on a record that is missing a key.
     if a is None:
         assert b is not None
-        return [f"c{object_id} {b['card']}  only in the current state ({b['zone']})"]
+        return [f"c{object_id} {b.get('card')}  only in the current state ({b.get('zone')})"]
     if b is None:
-        return [f"c{object_id} {a['card']}  only in the recording ({a['zone']})"]
+        return [f"c{object_id} {a.get('card')}  only in the recording ({a.get('zone')})"]
 
-    lines = [f"c{object_id} {a['card']}"]
+    lines = [f"c{object_id} {a.get('card')}"]
     for key in CARD_KEYS:
         if key in ("id", "fields") or a.get(key) == b.get(key):
             continue
         lines.append(f"    {key:<22}{a.get(key)} -> {b.get(key)}")
 
-    fields_a: Dict[str, int] = a.get("fields", {})
-    fields_b: Dict[str, int] = b.get("fields", {})
+    fields_a: Dict[str, int] = a.get("fields") or {}
+    fields_b: Dict[str, int] = b.get("fields") or {}
     for key in sorted(set(fields_a) | set(fields_b)):
         if fields_a.get(key) == fields_b.get(key):
             continue

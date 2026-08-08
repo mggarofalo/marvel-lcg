@@ -129,7 +129,7 @@ This is a genuine behavior change to the reference engine, not an additive one. 
 ### Other portability hazards
 
 - ~~`Random.states` grows without bound~~ — fixed by MARVEL-38. Snapshots now live in a bounded ring (`UNDO_DEPTH`), so a long game no longer grows one per draw, and undo no longer depends on total call history.
-- Card `object_id` allocation order determines the digest's dict keys, so allocation order is part of the cross-engine contract.
+- Card `object_id` allocation order determines each card's `id` and its position in the digest's `cards` array, so allocation order is part of the cross-engine contract. (Under v1 it determined the digest's dict keys; the coupling is the same, the shape is not.)
 - Two collections whose iteration order can reach recorded replays: `GetTeamUpUnits` returns `list(set(...))`, and forced-effect resolution order derives from an identity-hashed set. **`PYTHONHASHSEED=0` does not fix these** — it hides them. They must be fixed at the source.
 
 ### Corpus storage: gzipped, in a separate pinned repo (MARVEL-4)
