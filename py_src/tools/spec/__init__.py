@@ -6,7 +6,7 @@ engine:
 - **Given** builds a board state out of `game.puzzle.puzzle.RunPuzzle` commands
 - **When** selects an effect through the headless bot device
 - **Then** asserts over readable game state -- health, threat, zone, counters,
-  statuses -- not over the replay CRC
+  statuses -- not over the replay state digest
 
 See `docs/spec-harness.md` for the authoring vocabulary.
 """

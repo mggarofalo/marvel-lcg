@@ -5,9 +5,9 @@ a corpus exists (MARVEL-5 generates it; `replays/` is empty and untracked
 today). Everything here is written and ready; it needs input, not code.
 
 How the check works. Each recorded step in a replay file carries the
-`World.CalculateCRC()` value that was current when the input was taken.
+`World.CalculateDigest()` value that was current when the input was taken.
 `engine/controller/module/replay.py` recomputes that digest on replay and
-compares it, printing a key-by-key diff on mismatch. So the recorded values are
+compares it, printing a card-by-card, field-by-field diff on mismatch. So the recorded values are
 a fixed reference: if all N runs agree with the recording, all N agree with each
 other, which is exactly the property the oracle needs.
 

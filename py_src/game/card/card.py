@@ -1,3 +1,4 @@
+import zlib
 from typing import Final
 from core import *
 from game.card.states import CardIsStates, CardCanStates
@@ -170,20 +171,24 @@ class Card(Object):
     #     assert component, f"{self=} {component_type=}"
     #     return component
 
-    def GetCRC(self, *, recalculate: bool=False) -> int:
-        if self.IsInHand():
-            crc = -2
-        elif self.IsInDeck() and self.area.GetAll()[-1] == self.face:
-            crc = -3
-        elif self.IsInDeck() and self.area.GetAll()[0] == self.face:
-            crc = -4
-        elif self.IsOnField() or self.area.flags.is_status_area:
-            if recalculate:
-                self.face.GetRenderInfo() # Calc crc here
-            crc = self.face.crc_value
-        else:
-            crc = -1
-        return crc
+    def GetRenderRevision(self, info: Dict[str, int]) -> int:
+        """A value that changes when this card's *rendered* appearance changes.
+
+        The client compares it to decide whether to redraw a card
+        (`CardDescriptorUI.equals`), which is all the old `crc` field on the
+        descriptor was ever used for -- despite being the same number the oracle
+        compared. Those two jobs are now separate: the oracle reads
+        `game/world/digest.py`, and this reads the face-up guarded `info` a
+        client is allowed to see, so a face-down card no longer ships its real
+        attributes to every connected browser.
+        """
+        payload = "|".join([
+            self.area.deck_type.name,
+            str(int(self.IsFaceUp())),
+            str(int(self.IsReady())),
+            ",".join(f"{key}={info[key]}" for key in sorted(info)),
+        ])
+        return zlib.crc32(payload.encode("utf-8"))
 
     ################################################################################
     #
@@ -857,6 +862,8 @@ class Card(Object):
 
         assert isinstance(self.face, FinalType)
 
+        render_info = self.face.GetRenderInfo()
+
         return CardDescriptor(
             id                  = self.object_id,
             is_ready            = self.IsReady(),
@@ -867,7 +874,7 @@ class Card(Object):
             effect_to_cards     = [x.card.object_id for x in self.face.card.ui.GetEffectToFaces()],
             game_area           = self.game_area.object_id,
             name                = self.face.name,
-            info                = self.face.GetRenderInfo(), # Calc crc here
+            info                = render_info,
             traits              = self.face.GetInfoTraits(),
             buffs               = self.face.GetBuffsText(),
             card_id             = self.face.paper.card_id,
@@ -877,7 +884,7 @@ class Card(Object):
             resources           = [x.object_id for x in get_resources()],
             card_type           = self.face.type_name,
             cost                = self.face.printed_cost.val if HasCost.IsType(self.face) else 0,
-            crc                 = self.GetCRC(),
+            revision            = self.GetRenderRevision(render_info),
             is_new              = Engine.statistics.IsNew(self.face.paper.card_id),
             is_action           = any(x for x in self.face.effects if x.ability.flags.is_action) #  or x.ability.type.is_resource
         )

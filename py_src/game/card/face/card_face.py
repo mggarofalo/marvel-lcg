@@ -175,16 +175,7 @@ class CardFace(ModelName, ModelTrait, ModelAction, ModelOnEvent, ModelGain, Mode
         self.SetName(paper.name)
         self.SetSubtitle(paper.subtitle)
 
-        self.crc: Dict[str, int] = {}
         super().__init__()
-
-    @property
-    def crc_value(self) -> int:
-        return sum(self.crc.values())
-
-    @property
-    def crc_dict(self):
-        return self.crc
 
     @final
     def Initialize(self, player_num: int):
@@ -310,18 +301,44 @@ class CardFace(ModelName, ModelTrait, ModelAction, ModelOnEvent, ModelGain, Mode
     ################################################################################
     #
     @final
-    def GetRenderInfo(self) -> Dict[str, int]:
-        info = self.GetInfoDict()
-        self.crc = {
-            'is_exhaust': int(not self.card.state.is_ready),
-            'traits': self.GetTraitsTotalCount(),
-        } | info
-        self.crc = {key: value for key, value in self.crc.items() if value != 0 and key != 'curr_ally_limit' and key != 'curr_restricted_limit'}
+    def GetStateFields(self) -> Dict[str, int]:
+        """Named live state for the digest. **Wire format** -- see `game/world/digest.py`.
 
+        Deliberately *not* face-up guarded, unlike `GetRenderInfo` below. A
+        differential oracle that cannot see hidden state cannot catch a
+        divergence at the step it happens, only at the step it surfaces; the
+        digest records the true state and labels it with `face_up` instead. What
+        makes that safe is that the digest never reaches a client -- the card
+        descriptor carries `revision`, which is built from the face-up guarded
+        render info.
+
+        Two departures from the v1 field set:
+
+        - `traits` was a *count of sources*, so losing trait A while gaining
+          trait B did not move it. `GetInfoTraits` names each trait instead.
+        - `curr_ally_limit` and `curr_restricted_limit` stay excluded, as they
+          were from v1's sum, but for a stated reason: `AllyLimit.CheckLimit`
+          writes them at particular moments, so they pin when an engine
+          refreshes a cache rather than what the state is.
+
+        `with_player` is dropped because the digest carries the owning player as
+        a field of its own; it stays in `GetInfoDict` because the debug render
+        panel shows it.
+        """
+        fields = {
+            'is_exhaust': int(not self.card.state.is_ready),
+        } | self.GetInfoTraits() | self.GetInfoDict()
+        for key in ('with_player', 'curr_ally_limit', 'curr_restricted_limit'):
+            fields.pop(key, None)
+        return fields
+
+    @final
+    def GetRenderInfo(self) -> Dict[str, int]:
+        """What a client may see. Face-down cards and cards out of play show nothing."""
         if not self.IsFaceUp():
             return {}
         elif self.IsInPlay() or self.card.area.flags.is_boost_area:
-            return info
+            return self.GetInfoDict()
         else:
             return {}
 

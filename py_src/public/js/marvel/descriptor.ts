@@ -41,13 +41,16 @@ function toCardCardDescriptorList(obj: any[], parent_div_id: string|null, option
 class CardDescriptorUI {
     effect_by_cards     : number[];
     effect_to_cards     : number[];
-    crc                 : number;
+    // Changes when the card's rendered appearance changes. Was `crc`, the same
+    // number the replay oracle compared; those two jobs are now separate and
+    // this one is built only from state a client may see.
+    revision            : number;
     is_obligation       : boolean;
 
-    constructor(effect_by_cards: number[], effect_to_cards: number[], crc: number, is_obligation: boolean) {
+    constructor(effect_by_cards: number[], effect_to_cards: number[], revision: number, is_obligation: boolean) {
         this.effect_by_cards = effect_by_cards;
         this.effect_to_cards = effect_to_cards;
-        this.crc = crc
+        this.revision = revision
         this.is_obligation = is_obligation
     }
 
@@ -55,7 +58,7 @@ class CardDescriptorUI {
     equals(other: CardDescriptorUI): boolean {
         return Lib.array.equals(this.effect_by_cards, other.effect_by_cards) &&
                 Lib.array.equals(this.effect_to_cards, other.effect_to_cards) &&
-                this.crc === other.crc
+                this.revision === other.revision
                 ;
     }
 }
@@ -152,7 +155,7 @@ export class CardDescriptor {
         this.is_face_up             = obj['is_face_up'];
         this.visible_for_players    = obj['visible_for_players'];
         this.bind_object_id         = obj['bind_object_id'];
-        this.ui                     = new CardDescriptorUI(obj['effect_by_cards'], obj['effect_to_cards'], obj['crc'], is_obligation);
+        this.ui                     = new CardDescriptorUI(obj['effect_by_cards'], obj['effect_to_cards'], obj['revision'], is_obligation);
         this.game_area              = obj['game_area'];
         this.name                   = obj['name'];
         this.card_type              = obj['card_type'];

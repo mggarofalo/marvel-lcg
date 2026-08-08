@@ -22,6 +22,6 @@ class CardDescriptor:
     resources           : List[int]         # link `EffectState.id`, only resources
     card_type           : str
     cost                : int
-    crc                 : int
+    revision            : int          # changes when the rendered card changes
     is_new              : bool
     is_action           : bool

@@ -83,7 +83,9 @@ class OperationDescriptor:
     step: int = field(default=-1)
     event: str = field(default="")
     effect: CommandDescriptor = field(default_factory=lambda:CommandDescriptor())
-    crc: str = field(default="")
-    # Version 5
-    # hash: str = field(default="")
+    # The v2 state digest of the world as it stood when this input was
+    # solicited. Empty on a scene saved before `Versions.digest_v2`, whose
+    # `crc` key held the v1 value and is dropped on load -- see
+    # `docs/state-digest-v2.md`.
+    digest: str = field(default="")
 

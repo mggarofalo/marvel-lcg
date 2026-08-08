@@ -1083,7 +1083,7 @@ class CardRender {
             // <br/>effects:[${card.effects}]
             // <br/>res:[${card.resources}]
             // <br/>
-            // <br/>crc:[${card.crc}]
+            // <br/>rev:[${card.revision}]
             // <br/>by:[${card.effect_by_cards}]
             // <br/>to:[${card.effect_to_cards}]</div>`
 
@@ -1094,7 +1094,7 @@ class CardRender {
             <p>effects:<br/>[${card.effects.join(", ")}]</p>
             <p style='color: orange'>res:<br/>[${card.resources.join(", ")}]</p>
             <br/>
-            <p>crc: [${card.ui.crc}]</p>
+            <p>rev: [${card.ui.revision}]</p>
             <p>by: [${card.ui.effect_by_cards.join(", ")}]</p>
             <p>to: [${card.ui.effect_to_cards.join(", ")}]</p></div>
             `

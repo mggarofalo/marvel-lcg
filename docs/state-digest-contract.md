@@ -1,4 +1,13 @@
-# The state-digest (CRC) cross-engine contract
+# The state-digest (CRC) cross-engine contract — v1
+
+> **Superseded by [state-digest-v2.md](state-digest-v2.md) at engine build
+> `0.5.9.205` (`MARVEL-44`).** The engine no longer computes anything described
+> below. This document is kept for three reasons: it is what a reader of a scene
+> saved before `0.5.9.205` needs, it is the argument the v2 design answers, and
+> its findings `D1`–`D12` are cited by name from the v2 specification, which
+> records how each one is settled.
+>
+> Nothing here should be ported. Read it to understand what v2 replaced.
 
 Tracked as `MARVEL-9`. Specified against commit `ee130e9` on 2026-08-06, engine
 build `0.5.9.201`, CPython 3.13 on Windows 11. Every claim below was either read
@@ -396,7 +405,8 @@ of the current format, and flag it as the first thing a v2 should fix.
 
 **Fixed in `MARVEL-43`.** Recorded as measured; the verdict now lives in
 `IsIgnorableMismatch` (`py_src/engine/controller/module/replay.py`), covered by
-`py_src/unit_test/test_replay_crc.py`.
+`py_src/unit_test/test_digest.py` (the cases moved there with the rest of the
+digest suite when `MARVEL-44` replaced the format the verdict is asked about).
 
 The code was:
 
@@ -584,6 +594,14 @@ existing diff table can name the field instead of printing a net delta. That is 
 larger and better-typed payload; the corpus storage decision in
 `docs/migration.md` already assumes gzip, which absorbs most of the cost.
 
+> That is close to what `MARVEL-44` decided, with two departures worth noting.
+> The position became a zone name plus an **index**, which puts the whole of every
+> pile's order in the digest rather than only its ends. And printed constants
+> were **kept**: the objection to them was an objection to summing, and once
+> fields are named a constant cannot collide with anything, while still holding
+> both engines to parsing the card data the same way. See
+> [state-digest-v2.md](state-digest-v2.md).
+
 ## Reimplementation checklist
 
 For a C# port targeting byte-identical output against the frozen corpus, in
@@ -609,18 +627,24 @@ dependency order:
 
 ## Follow-up issues
 
-All filed. `D11` needs no issue — it is a fact a port must honour, not a defect.
+All filed, and all but two closed by `MARVEL-44`, which replaced the format
+rather than repairing it. The "settled by" column says how; the reasoning for
+each is in [state-digest-v2.md](state-digest-v2.md).
 
-| Issue | Finding | Summary |
+| Issue | Finding | Settled by |
 |---|---|---|
-| `MARVEL-43` | `D4` | **Fixed.** `all(x for x in diff_ids if x in CRC_IGNORE_IDS)` accepted every mismatch when the ignore list was empty, so live play and non-test replay passed on divergence. The membership test moved outside the comprehension. |
-| `MARVEL-44` | `D2` `D3` `D8` `D12` | Design a v2 digest: per-field values instead of a sum, an explicit position enum instead of negative sentinels, no hidden information. Must be decided before the corpus is frozen or it is a regeneration. |
-| `MARVEL-45` | `D1` | Remove the always-empty slots 1 and 2 and the `0.5.9.4` special case, or establish what that case was for. |
-| `MARVEL-46` | `D5` | Boost cards change attack outcomes and are invisible to the oracle. Fixing it changes recorded digests, so it needs corpus regeneration. |
-| `MARVEL-47` | `D6` | Read the deck list without `removed_cards` in `GetCRC`. Latent today; also settles what a detached attachment should contribute. |
-| `MARVEL-48` | `D9` | Exclude the rules card by identity rather than by id 0, removing a silent coupling between the digest and allocation order. |
-| `MARVEL-49` | `D7` | Normalise the `GetInfoDict` merge direction — eight overrides, two of which merge the other way round. |
-| `MARVEL-50` | `D10` | Destroyed cards keep a stale area pointer in `card_dict`. Not on a live path, but a trap for the port. |
+| `MARVEL-43` | `D4` | **Fixed** before v2 landed, in `IsIgnorableMismatch`: the membership test moved outside the comprehension. The rule carried over to v2's comparison unchanged, with one addition — a mismatch that names no differing card is a difference in the envelope, which no card id can excuse, so it rejects. |
+| `MARVEL-44` | `D2` `D3` `D8` `D12` | **The v2 digest.** Named fields instead of a sum; a zone name and an index instead of negative sentinels; hidden state recorded on purpose, labelled, and kept out of client payloads; constants kept, because named fields cannot collide. |
+| `MARVEL-45` | `D1` | **Subsumed.** v2 emits one digest. The slot list and the `0.5.9.4` branch are gone. |
+| `MARVEL-46` | `D5` | **Subsumed.** v2 populates `fields` for boost areas, so a revealed boost card is in the digest. |
+| `MARVEL-47` | `D6` | **Subsumed.** v2 never computes a pile top or bottom. It reads `cards` and `removed_cards` separately, and a detached attachment gets the `/removed` zone suffix. |
+| `MARVEL-48` | `D9` | **Subsumed.** v2 excludes nothing, so there is no id-0 guard to reword. |
+| `MARVEL-49` | `D7` | **Still open, and now worth more.** A key collision between `GetInfoDict` overrides used to change a sum; under v2 it silently drops a named field from the wire. |
+| `MARVEL-50` | `D10` | **Still open.** v2 reports a destroyed card in whatever area still holds it, which makes the stale pointer visible without fixing it. |
+
+`D11` never needed an issue — it was a fact a port had to honour, and under v2 it
+stops being a trap: every card carries a full record, so there is no
+presence-only encoding to lose.
 
 ## How the measurements were taken
 

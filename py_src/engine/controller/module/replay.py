@@ -6,27 +6,37 @@ from engine.config import ConfigVariables
 from engine.controller import *
 
 CATEGORY_NAME = "REPLAY"
-DISABLE_CRC_ERROR_ASSERT    = ConfigVariables.Bool('disable_crc_error_assert', False)
-CRC_IGNORE_IDS              = ConfigVariables.ListInt('crc_ignore_ids', [])
+DISABLE_DIGEST_ERROR_ASSERT = ConfigVariables.Bool('disable_digest_error_assert', False)
+DIGEST_IGNORE_IDS           = ConfigVariables.ListInt('digest_ignore_ids', [])
 
-
-def IsIgnorableMismatch(diff_ids: List[int]) -> bool:
+def IsIgnorableMismatch(diff_ids: Sequence[int], ignore: Sequence[int]) -> bool:
     """Whether every card id that differs is one the run was told to ignore.
 
-    A digest mismatch is tolerable only if nothing outside `crc_ignore_ids`
+    A digest mismatch is tolerable only if nothing outside `digest_ignore_ids`
     moved. Anything else is a divergence and the replay must stop.
 
-    This used to read `all(x for x in diff_ids if x in CRC_IGNORE_IDS.value)`,
-    which filters to the ignorable ids and then tests those for truthiness --
-    three different wrong answers (MARVEL-43, `docs/state-digest-contract.md` D4):
+    MARVEL-43 fixed this under the v1 digest, and the reasoning carries over
+    unchanged. The original read `all(x for x in diff_ids if x in ignore)`,
+    which filters to the ignorable ids and then tests *those* for truthiness --
+    three different wrong answers:
 
-    - `crc_ignore_ids` defaults to `[]`, so the filtered sequence was empty and
+    - the ignore list defaults to `[]`, so the filtered sequence was empty and
       `all(<empty>)` was `True`. **Every mismatch was accepted.**
-    - With a populated list, one ignorable id differing made the whole mismatch
+    - with a populated list, one ignorable id differing made the whole mismatch
       pass, however many non-ignorable ids differed alongside it.
-    - Card id 0 is falsy, so an ignorable id 0 was rejected rather than ignored.
+    - card id 0 is falsy, so an ignorable id 0 was rejected rather than ignored.
+
+    The v2 digest adds a fourth case the v1 shape could not produce. Its
+    comparison is byte equality over a whole document, so the two strings can
+    differ while no card record does -- the difference is then in the envelope,
+    and no card id can explain it. That is a divergence, not an ignorable one.
+
+    The ignore list is a parameter rather than a module global so the rule can be
+    exercised without standing up a replay; the caller reads the config.
     """
-    return all(x in CRC_IGNORE_IDS.value for x in diff_ids)
+    if not diff_ids:
+        return False
+    return all(object_id in ignore for object_id in diff_ids)
 
 class InputModule:
 
@@ -39,7 +49,7 @@ class InputModule:
 
         self.is_updated = False
 
-        self.calculated_crc: List[str] = []
+        self.calculated_digest: str = ""
 
         self.is_replay: bool = False
 
@@ -54,7 +64,7 @@ class InputModule:
         self.current_step_id = 0
         self.replay_step_id = 0
         self.is_updated = False
-        self.calculated_crc = []
+        self.calculated_digest = ""
 
     def Clear(self):
         self.break_on = []
@@ -93,102 +103,77 @@ class InputModule:
         from engine import Engine
         self.is_updated = False
 
-        if self.GetReplayOperationLen() > self.replay_step_id:
-            replay_input = self.replay_inputs[self.replay_step_id]
-            if is_puzzle or not check_crc:
-                return replay_input, True
-            # return replay_input
-
-            # Check crc
-            if replay_input.crc == "":
-                Log.Warn(CATEGORY_NAME, "Miss CRC")
-            if replay_input.crc and \
-                self.calculated_crc[0] != replay_input.crc and \
-                self.calculated_crc[1] != replay_input.crc and \
-                self.calculated_crc[2] != replay_input.crc and \
-                not Engine.game.controller_manager.console.debug_cmds:
-
-                disable_assert = DISABLE_CRC_ERROR_ASSERT.value
-
-                import ast
-                da = ast.literal_eval(replay_input.crc)
-                if self.manager.game.scene.version == '0.5.9.4':
-                    db = ast.literal_eval(self.calculated_crc[1])
-                else:
-                    db = ast.literal_eval(self.calculated_crc[0])
-
-                # Get the union of keys from both dictionaries
-                all_keys = sorted(set(da) | set(db))
-
-                diff_text = ""
-                diff_ids: List[int] = []
-                # Compare and print
-                def get_text(num: int|None) -> str:
-                    if num == None:
-                        return '-'
-                    # if num == 0:
-                    #     return '0'
-                    if num >= 0:
-                        return str(num)
-                    if num == -2:
-                        return 'Hand'
-                    if num == -3:
-                        return 'Top'
-                    if num == -4:
-                        return 'Btm'
-                    # This happens when a unit has negative health
-                    # assert False
-                    return str(num)
-                def get_diff_text(a: int|None, b: int|None) -> str:
-                    if a == None:
-                        a = 0
-                    if b == None:
-                        b = 0
-                    if a < 0 or b < 0:
-                        return ''
-                    if a == b:
-                        return ''
-                    return "{:+}".format(b-a)
-
-                for key in all_keys:
-                    a_value = da.get(key, None)
-                    b_value = db.get(key, None)
-                    if a_value != b_value:
-                        diff_ids.append(key)
-                        diff_text += "c{:<4}| {:<4} | {:<4} | {:<3}\n".format(
-                            key,
-                            get_text(a_value),
-                            get_text(b_value),
-                            get_diff_text(a_value, b_value),
-                        )
-
-                if not disable_assert:
-#                     tip_info = """
-#  N : player id + exhaust + health + states + atk + thw + def + rec + counter + scheme + ...
-# -2 : in hand
-# -3 : deck top
-# -4 : deck bottom
-
-#  Key | Read\t| Curr
-# """
-                    tip_info = f""" Key | Read | Curr | (#{self.current_step_id} / {len(self.replay_inputs)})
-"""
-                    Log.Assert(CATEGORY_NAME, f'{tip_info}{diff_text}')
-
-                from game.test import Test
-                if Engine.in_unit_test:
-                    Engine.SaveCrash()
-                if Test.IsInTesting():
-                    # DebugBreak()
-                    if not disable_assert:
-                        from core.lib.beep import Beep
-                        Beep.Warning()
-                        return replay_input, False
-                    pass
-                return replay_input, IsIgnorableMismatch(diff_ids)
-            return replay_input, True
-        else:
+        if self.GetReplayOperationLen() <= self.replay_step_id:
             return None, True
+
+        replay_input = self.replay_inputs[self.replay_step_id]
+        if is_puzzle or not check_crc:
+            return replay_input, True
+        if Engine.game.controller_manager.console.debug_cmds:
+            return replay_input, True
+
+        recorded = replay_input.digest
+        if not recorded:
+            # A scene saved before `Versions.digest_v2` carried the v1 sum under
+            # a different key, which `Json.ConvertDictToDataclass` drops. There
+            # is nothing comparable, so the step replays on its inputs alone.
+            Log.Warn(CATEGORY_NAME, self.MissingDigestReason())
+            return replay_input, True
+        if recorded == self.calculated_digest:
+            return replay_input, True
+
+        return replay_input, self.OnDigestMismatch(recorded)
+
+    def MissingDigestReason(self) -> str:
+        """Why this step has nothing to compare. Never raises -- it only explains."""
+        from engine.lib.version import Ver, Versions
+        version = self.manager.game.scene.version
+        try:
+            predates = bool(version) and Ver(version) < Versions.digest_v2
+        except Exception:
+            # `packaging.version.Version` rejects anything it does not recognise,
+            # and the string came out of a file.
+            return f"No digest recorded for this step (unreadable scene version {version!r})"
+        if predates:
+            return f"No comparable digest: scene version {version} predates the v2 digest"
+        return "No digest recorded for this step"
+
+    def OnDigestMismatch(self, recorded: str) -> bool:
+        """Report a divergence and decide whether the replay may continue.
+
+        The report is the point of the v2 format: it names the card, the zone
+        and the field. v1 could only print a net delta per card id, so a change
+        that added *n* to one field and subtracted *n* from another produced no
+        row at all.
+        """
+        from engine import Engine
+        from game.test import Test
+        from game.world import digest
+
+        disable_assert = DISABLE_DIGEST_ERROR_ASSERT.value
+
+        try:
+            diff_ids, report = digest.Diff(recorded, self.calculated_digest)
+        except ValueError as exc:
+            # Unreadable, so no ids to weigh against the ignore list. That lands
+            # on `IsIgnorableMismatch`'s empty-`diff_ids` rule, which rejects --
+            # an ignore list is a statement about cards and cannot excuse a
+            # recording nothing can be read out of.
+            diff_ids, report = [], f"unreadable digest: {exc}"
+
+        if not disable_assert:
+            header = f"Digest mismatch (#{self.current_step_id} / {len(self.replay_inputs)})\n"
+            Log.Assert(CATEGORY_NAME, header + report)
+
+        if Engine.in_unit_test:
+            Engine.SaveCrash()
+        if Test.IsInTesting():
+            if not disable_assert:
+                from core.lib.beep import Beep
+                Beep.Warning()
+                return False
+
+        return IsIgnorableMismatch(diff_ids, DIGEST_IGNORE_IDS.value)
 
     def GetReplayOperationLen(self) -> int:
         return len(self.replay_inputs)

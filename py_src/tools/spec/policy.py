@@ -3,7 +3,7 @@
 The policy is the whole of the `When`/`Then` interleaving. It sees the same
 `AskOptionPayload` a browser client sees and answers with the same
 `CommandDescriptor` a browser client posts, so a spec run goes down the ordinary
-`Controller.ChoiceOne` path -- validation, CRC, `replay.Push` -- exactly like a
+`Controller.ChoiceOne` path -- validation, digest, `replay.Push` -- exactly like a
 human game. No new engine seam.
 
 **Assertions live here, not after the run.** `decision.world` is the state right

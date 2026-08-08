@@ -135,7 +135,7 @@ class Scene:
             for input in data.inputs:
                 delattr(input, 'step')
                 delattr(input, 'event')
-                delattr(input, 'crc')
+                delattr(input, 'digest')
 
         if playtime:
             self.SetMetadataFloat("playtime", playtime)
