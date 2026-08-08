@@ -897,7 +897,6 @@
     ]
   },
   "contract": "docs/rng-contract.md",
-  "engine_build": "0.5.9.201",
   "generated_by": "py_src/tools/rng/emit_vectors.py",
   "note": "Sequence inputs are always [0, 1, ..., length - 1]."
 }
