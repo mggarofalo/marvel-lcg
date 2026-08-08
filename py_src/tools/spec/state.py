@@ -50,6 +50,10 @@ class CardState:
     is_identity: bool = False
     is_main_scheme: bool = False
     is_hero_form: bool = False
+    # Was this card put there by scenario setup rather than by a Given? An
+    # ordinal over engine-allocated cards means allocation order, which a spec
+    # may not depend on -- see `resolve.RejectEngineOrdinal` (MARVEL-42).
+    engine_allocated: bool = False
 
     ############################################################################
     #
@@ -243,7 +247,7 @@ class StateView:
 ################################################################################
 # Capture
 
-def CaptureCard(card: Any) -> CardState:
+def CaptureCard(card: Any, engine_allocated: bool = False) -> CardState:
     from game.card.face.attribute.can_health import CanHealth
     from game.card.face.attribute.can_place_counter import CanPlaceCounter
     from game.card.face.attribute.can_place_token import CanPlaceToken
@@ -321,6 +325,7 @@ def CaptureCard(card: Any) -> CardState:
         is_identity=is_identity,
         is_main_scheme=is_main_scheme,
         is_hero_form=is_hero_form,
+        engine_allocated=engine_allocated,
     )
 
 
@@ -343,7 +348,7 @@ def CapturePlayer(player: Any) -> PlayerState:
 
 def Capture(world: Any) -> StateView:
     """Snapshot `world`. Reads only -- never mutates game state."""
-    from tools.spec.resolve import AllCards
+    from tools.spec.resolve import AllCards, IsEngineAllocated
 
     players_won: Optional[bool] = None
     reason = world.game_over.reason or ""
@@ -368,6 +373,7 @@ def Capture(world: Any) -> StateView:
         game_over=genuinely_over,
         game_over_reason="" if reason in ("Exit", "Undo") else reason,
         players_won=players_won,
-        cards=tuple(CaptureCard(card) for card in AllCards(world)),
+        cards=tuple(CaptureCard(card, IsEngineAllocated(world, card))
+                    for card in AllCards(world)),
         players=tuple(CapturePlayer(p) for p in world.const_seat_order_players),
     )

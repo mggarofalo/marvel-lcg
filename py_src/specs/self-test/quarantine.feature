@@ -53,3 +53,23 @@ Feature: Quarantine self-test
 
     When I play "Nick Fury"
     Then I am not prompted again
+
+  @self-test
+  Scenario: an ordinal over cards the scenario did not create is FAIL-spec-wrong
+    # Both cards named "Rhino" -- the stage-1 villain and the stage-2 card in
+    # the villain deck -- were allocated by the engine during setup, so "#2"
+    # would mean whichever the allocator reached second. Naming a zone is the
+    # only honest way to say which one (MARVEL-42).
+    Given I am in hero form
+    Then "Rhino #2" has 0 damage
+
+  @self-test
+  Scenario: saying a card is in play twice is FAIL-spec-wrong
+    # Given is declarative, so the second step resolves to the card the first
+    # created and changes nothing. Left alone this reads as two minions and
+    # runs as one, which is a spec that passes while proving the wrong thing.
+    Given I am in hero form
+    And "Hydra Mercenary" is in play
+    And "Hydra Mercenary" is in play
+
+    Then "Hydra Mercenary #2" has 3 health

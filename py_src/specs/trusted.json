@@ -17,12 +17,20 @@
       "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
       "source": "specs/rules/basic-actions.feature"
     },
+    "Hydra Mercenary :: damage lands on the copy the transcript named": {
+      "sha256": "b08f81ed57c08f62321735d08be4dc324ba2fbca2e3faa1a4af50ef4f9637f22",
+      "source": "specs/cards/core/01101-hydra-mercenary.feature"
+    },
     "Hydra Mercenary :: guard keeps the villain off the list of attack targets": {
-      "sha256": "bd73daa9394eb24f2ea9871c642dd0177dfcaa2dbfdc897409e88fb554a6e081",
+      "sha256": "b08f81ed57c08f62321735d08be4dc324ba2fbca2e3faa1a4af50ef4f9637f22",
       "source": "specs/cards/core/01101-hydra-mercenary.feature"
     },
     "Hydra Mercenary :: it enters play with 3 hit points and no status": {
-      "sha256": "bd73daa9394eb24f2ea9871c642dd0177dfcaa2dbfdc897409e88fb554a6e081",
+      "sha256": "b08f81ed57c08f62321735d08be4dc324ba2fbca2e3faa1a4af50ef4f9637f22",
+      "source": "specs/cards/core/01101-hydra-mercenary.feature"
+    },
+    "Hydra Mercenary :: two copies are told apart by the order the scenario created them": {
+      "sha256": "b08f81ed57c08f62321735d08be4dc324ba2fbca2e3faa1a4af50ef4f9637f22",
       "source": "specs/cards/core/01101-hydra-mercenary.feature"
     },
     "Nick Fury :: damage is dealt to the chosen enemy, not the first one": {

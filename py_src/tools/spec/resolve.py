@@ -4,7 +4,7 @@ A `CardRef` is written the way an author thinks about a card:
 
     "01094"                     card id
     "Rhino"                     printed name
-    "Swinging Web Kick #2"      the second copy, in object-id order
+    "Swinging Web Kick #2"      the second copy the scenario created
     "Rhino in VillainArea"      qualified by zone
     "01005 in hand"             zone aliases are accepted
 
@@ -23,6 +23,37 @@ aliases are not honoured, because a spec should mean the card it names.
 An ambiguous ref is an error that lists every candidate. It is never a silent
 first match -- a spec that says "Rhino" when two Rhinos are in play is a spec
 that has not decided what it is testing.
+
+## What `#N` counts (MARVEL-42)
+
+`#N` indexes the matching copies **in the order the scenario created them**.
+Concretely that is ascending object id, because `CardFactory` allocates ids in
+call order and `ApplyGiven` calls it in the order the Given lists cards. The
+*guarantee* is creation order; object id is only how it is implemented.
+
+The distinction matters because `docs/migration.md` lists object-id allocation
+order as part of the cross-engine contract -- something the two engines must be
+made to agree on, not something a spec may quietly lean on. A spec that means
+"the second card I put in my hand" is portable. A spec that means "whichever
+card the allocator happened to reach second" is not.
+
+Two consequences:
+
+- **Position within a zone is not used, deliberately.** It looks like the more
+  physical choice, but it is perturbed by any shuffle: measured on a four-card
+  player deck, `Deck2.Shuffle` moved two copies from positions [0, 2] to [2, 1]
+  while their object ids stayed [5, 7]. Shuffles are RNG-driven, and the two
+  engines do not share an RNG yet (MARVEL-38), so a zone-position ordinal would
+  name a different card in C# than in Python.
+
+- **An ordinal is only allowed over cards the scenario created.** The two cards
+  named "Rhino" in a bare Rhino setup are the stage-1 villain in play and the
+  stage-2 card in the villain deck; both were allocated by the engine and
+  nothing in the scenario decides which is `#1`. Those refs must name a zone.
+  Cards a Given created are ordered by the Given that created them, which the
+  author wrote and can see. `MarkEngineBaseline` draws the line, and it is
+  provenance rather than zone: two copies stay `#1` and `#2` after one of them
+  moves into play, which is what makes "put both minions into play" writable.
 """
 
 from __future__ import annotations
@@ -207,6 +238,58 @@ def FindCards(world: Any, ref: "CardRef|str") -> List[Any]:
     return found
 
 
+BASELINE_ATTR = "spec_engine_allocated_ids"
+
+
+def MarkEngineBaseline(world: Any) -> None:
+    """Record which cards the engine made, before the scenario makes any.
+
+    Called once between `GameSetup` and `ApplyGiven`. Everything allocated after
+    this point exists because the scenario asked for it, which is what makes an
+    ordinal over those cards mean something the scenario can see.
+    """
+    setattr(world, BASELINE_ATTR, frozenset(world.object_manager.card_dict))
+
+
+def IsEngineAllocated(world: Any, card: Any) -> bool:
+    """Was this card put there by scenario setup rather than by a Given?
+
+    Absent a baseline -- a world built by something other than the harness --
+    nothing is treated as engine-allocated, so ordinals keep working for callers
+    that never set one.
+    """
+    return card.object_id in getattr(world, BASELINE_ATTR, frozenset())
+
+
+def RejectEngineOrdinal(world: Any, found: Sequence[Any], ref: "CardRef") -> None:
+    """Refuse an ordinal over cards the scenario did not create (MARVEL-42).
+
+    `#N` promises "the Nth copy the scenario created". Over cards the engine
+    allocated during setup there is no such order to appeal to: the two cards
+    named "Rhino" in a Rhino setup are the stage-1 villain and the stage-2 card
+    in the villain deck, and nothing in the scenario decides which is first.
+    Those refs have to name a zone instead.
+
+    Only applies once the ordinal actually has to choose. `"Rhino #1 in
+    VillainArea"` has already narrowed to one card, so the ordinal is redundant
+    rather than unsafe and is left alone.
+    """
+    if len(found) <= 1:
+        return
+
+    engine_made = [card for card in found if IsEngineAllocated(world, card)]
+    if not engine_made:
+        return
+
+    zones = sorted({ZoneName(card) for card in engine_made})
+    candidates = ", ".join(Label(card) for card in found)
+    raise AmbiguousCardRef(
+        f"{ref.Describe()}: #{ref.ordinal} would index cards the scenario did "
+        f"not create, so which one it names is the engine's allocation order "
+        f"rather than anything the scenario says. Name the zone instead — "
+        f"\"{ref.key} in {zones[0]}\". Candidates: {candidates}")
+
+
 def ResolveCard(world: Any, ref: "CardRef|str") -> Any:
     """Exactly one card, or a `CardRefError` naming every candidate."""
     if isinstance(ref, str):
@@ -224,6 +307,7 @@ def ResolveCard(world: Any, ref: "CardRef|str") -> Any:
                 f"{ref.Describe()}: wanted copy #{ref.ordinal} but found "
                 f"{len(found)} card(s) matching {ref.key!r}"
                 + (f" in {ref.zone}" if ref.zone else ""))
+        RejectEngineOrdinal(world, found, ref)
         return found[ref.ordinal - 1]
 
     if not found:

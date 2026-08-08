@@ -28,12 +28,13 @@ import contextlib
 import io
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Tuple
 
 from tools.spec.assertions import AssertionResult
 from tools.spec.case import GIVEN_KIND, GIVEN_VERBS, GivenStep, SpecCase
 from tools.spec.policy import DecisionRecord, DescribeTrail, TranscriptPolicy
-from tools.spec.resolve import AmbiguousCardRef, CardRefError, ResolveCard, ResolveFace
+from tools.spec.resolve import (AmbiguousCardRef, CardRefError, MarkEngineBaseline,
+                                ResolveCard, ResolveFace)
 from tools.spec.state import Capture, StateView
 
 CATEGORY_NAME = "SPEC"
@@ -287,9 +288,17 @@ def ApplyGiven(world: Any, case: SpecCase) -> None:
     puzzle = RunPuzzle(world)
     packs = PreferredPacks(case)
 
+    # Everything allocated from here on exists because the scenario asked for
+    # it. That is what lets `#N` mean "the Nth copy the scenario created".
+    MarkEngineBaseline(world)
+
+    # Cards a creating step has already taken, so a second step naming the same
+    # card is caught however it spells it.
+    created: Set[int] = set()
+
     for position, step in enumerate(case.given, start=1):
         try:
-            ApplyGivenStep(world, puzzle, step, packs)
+            ApplyGivenStep(world, puzzle, step, packs, created)
         except SetupError:
             raise
         except CardRefError as exc:
@@ -395,7 +404,8 @@ def ResolveCardId(text: str, packs: Tuple[str, ...] = ()) -> str:
 
 
 def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep,
-                   packs: Tuple[str, ...] = ()) -> None:
+                   packs: Tuple[str, ...] = (),
+                   created: "Set[int]|None" = None) -> None:
     kind, method_name = GIVEN_VERBS[step.verb]
     method = getattr(puzzle, method_name)
 
@@ -431,7 +441,54 @@ def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep,
         ChangeToForm(puzzle, face, step.verb)
         return
 
+    if step.verb in CREATING_VERBS:
+        RejectDuplicateCreation(face, step, created)
+
     method(face)
+
+
+def RejectDuplicateCreation(face: Any, step: GivenStep,
+                            created: "Set[int]|None") -> None:
+    """Refuse a creating step that would act on a card twice (MARVEL-42).
+
+    Given is declarative, so a second `"Hydra Mercenary" is in play` resolves to
+    the card the first one created. The scenario then runs with **one** minion
+    while reading as though it has two, which is the silent-wrong-pass this
+    harness exists to refuse.
+
+    Both creating verbs need this, for different reasons. `PutIntoPlay` on a
+    card already in play quietly does nothing. `Reveal` is worse: it re-runs the
+    whole reveal pipeline -- `WhenCardWouldReveal`, `WhenPlayerRevealCard`, the
+    revealing-area move -- so a repeat double-fires reveal triggers rather than
+    no-opping.
+
+    An author who writes the line twice means two copies. The way to get them is
+    to create both and address them by ordinal, which stays legal after the
+    first one moves because ordinals track provenance, not zone:
+
+        Given the encounter deck is "Hydra Mercenary", "Hydra Mercenary"
+        And "Hydra Mercenary #1" is in play
+        And "Hydra Mercenary #2" is in play
+    """
+    def refuse(why: str) -> None:
+        raise SetupError(
+            f"{step.Describe()}: {why}. If you meant a second copy, create both "
+            f"and name them by ordinal — the encounter deck is \"{face.name}\", "
+            f"\"{face.name}\" then \"{face.name} #1\" / \"{face.name} #2\".")
+
+    object_id = face.card.object_id
+
+    if created is not None and object_id in created:
+        refuse(f"an earlier Given already used {face.name}, so this step "
+               f"repeats it rather than adding a copy")
+
+    # Catches a card the scenario setup already put on the board, which no
+    # earlier Given would have recorded.
+    if step.verb == "in_play" and face.card.IsOnField():
+        refuse(f"{face.name} is already in play, so this step changes nothing")
+
+    if created is not None:
+        created.add(object_id)
 
 
 def ResolveOrCreateFace(world: Any, puzzle: Any, step: GivenStep,
@@ -526,7 +583,13 @@ def InternalError(engine_log: str) -> str:
     return "see the engine log"
 
 
-def RunCaseInternal(case: SpecCase, policy: TranscriptPolicy) -> CaseResult:
+def NewGameForCase(case: SpecCase, policy: TranscriptPolicy) -> Any:
+    """A `Game` wired to `policy`, with the case's puzzle scene loaded.
+
+    Stops short of `GameSetup()` so callers that want the world without playing
+    the transcript -- the harness itself, and tests that inspect setup -- share
+    one definition of how a case becomes a game.
+    """
     from engine import Engine
     from engine.device.manager.bot.manager import BotDeviceManager
     from game.game import Game
@@ -542,13 +605,17 @@ def RunCaseInternal(case: SpecCase, policy: TranscriptPolicy) -> CaseResult:
     game = Game(statistics, device_manager)
     Engine.game = game
 
-    try:
-        scene = BuildPuzzleScene(case)
-    except SetupError as exc:
-        return CaseResult(case=case, outcome=OUTCOME_UNPLAYABLE, message=str(exc))
-
+    scene = BuildPuzzleScene(case)
     game.session.SetScene(scene, "Replay")
     game.controller_manager.skip.SetSkipTo(0)
+    return game
+
+
+def RunCaseInternal(case: SpecCase, policy: TranscriptPolicy) -> CaseResult:
+    try:
+        game = NewGameForCase(case, policy)
+    except SetupError as exc:
+        return CaseResult(case=case, outcome=OUTCOME_UNPLAYABLE, message=str(exc))
 
     try:
         if not game.GameSetup():

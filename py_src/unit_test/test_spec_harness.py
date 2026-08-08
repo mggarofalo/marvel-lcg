@@ -573,6 +573,170 @@ class TestAgainstTheEngine(unittest.TestCase):
 
 
 ################################################################################
+# Duplicate card names (MARVEL-42).
+
+class TestDuplicateNames(unittest.TestCase):
+    """What `#N` counts, and what it refuses to count.
+
+    The contract is "the Nth copy the scenario created". These tests pin the
+    two halves of that: ordinals work over cards a Given made, and are refused
+    over cards the engine made, where the order is allocation order and nothing
+    in the scenario decides it.
+    """
+
+    def test_two_copies_in_one_zone_are_addressable_by_ordinal(self):
+        case = MakeCase(
+            name="two copies in hand",
+            given=(GivenStep("hand", ("Backflip", "Backflip")),),
+            beats=(
+                ThenStep("Backflip #1", "zone", "HandsArea"),
+                ThenStep("Backflip #2", "zone", "HandsArea"),
+                ThenStep("player", "hand_size", 2),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_an_ordinal_past_the_last_copy_is_unplayable(self):
+        case = MakeCase(
+            name="ordinal overruns",
+            given=(GivenStep("hand", ("Backflip", "Backflip")),),
+            beats=(ThenStep("Backflip #3", "zone", "HandsArea"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("wanted copy #3", result.Describe())
+
+    def test_an_ordinal_over_engine_made_cards_is_refused(self):
+        # Rhino stage 1 is in play and stage 2 sits in the villain deck. Both
+        # were allocated during setup, so "#1" would mean whichever the
+        # allocator reached first -- not something the scenario says.
+        case = MakeCase(
+            name="ordinal over the villain stages",
+            beats=(ThenStep("Rhino #2", "zone", "VillainDeck"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("the scenario did not create", result.Describe())
+
+    def test_a_redundant_ordinal_on_a_narrowed_ref_is_allowed(self):
+        # Once the zone has narrowed the match to one card the ordinal has
+        # nothing to choose between, so it is redundant rather than unsafe.
+        case = MakeCase(
+            name="ordinal after a zone qualifier",
+            beats=(ThenStep("Rhino #1 in VillainArea", "health", 14),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_shuffle_does_not_change_which_card_an_ordinal_names(self):
+        # Position within a zone moves under a shuffle; creation order does not.
+        # This is why the ordinal counts creation order and not deck position --
+        # shuffles are RNG-driven and the engines do not share an RNG yet.
+        from tools.spec.harness import ApplyGiven, EnsureEngine, NewGameForCase
+        from tools.spec.policy import TranscriptPolicy
+        from tools.spec.resolve import ResolveCard
+
+        EnsureEngine()
+        case = MakeCase(
+            name="shuffle stability",
+            given=(GivenStep("player_deck",
+                             ("Backflip", "Enhanced Spider-Sense", "Backflip")),),
+        )
+        game = NewGameForCase(case, TranscriptPolicy())
+        self.assertTrue(game.GameSetup())
+        world = game.world
+        ApplyGiven(world, case)
+
+        before = [ResolveCard(world, f"Backflip #{n}").object_id for n in (1, 2)]
+
+        from game.effect.rule import DebugRule
+        player = world.GetFirstPlayer()
+        player.player_deck.Shuffle(DebugRule(player.GetIdentity()))
+
+        after = [ResolveCard(world, f"Backflip #{n}").object_id for n in (1, 2)]
+        self.assertEqual(before, after)
+
+    def test_saying_a_card_is_in_play_twice_is_refused(self):
+        # Given is declarative, so the second step resolves to the card the
+        # first created and does nothing. The scenario would run with one
+        # minion while reading as though it had two.
+        case = MakeCase(
+            name="repeated is in play",
+            given=(GivenStep("in_play", ("Hydra Mercenary",)),
+                   GivenStep("in_play", ("Hydra Mercenary",))),
+            beats=(ThenStep("Hydra Mercenary #2", "health", 3),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("already used", result.Describe())
+
+    def test_putting_a_card_the_setup_already_played_into_play_is_refused(self):
+        # The other half of the guard: no earlier Given touched this card, so
+        # the repeat check cannot see it. The villain is on the board because
+        # scenario setup put it there, and saying so again does nothing.
+        case = MakeCase(
+            name="villain already in play",
+            given=(GivenStep("in_play", ("Rhino in VillainArea",)),),
+            beats=(ThenStep("Rhino", "health", 14),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("already in play", result.Describe())
+
+    def test_revealing_the_same_card_twice_is_refused(self):
+        # `revealed` is the other creating verb and carries the same hazard,
+        # worse: `CardFace.Reveal` has no idempotency check, so a repeat re-runs
+        # WhenCardWouldReveal / WhenPlayerRevealCard and double-fires triggers
+        # rather than quietly doing nothing.
+        case = MakeCase(
+            name="repeated is revealed",
+            given=(GivenStep("encounter_deck", ("Hydra Mercenary",)),
+                   GivenStep("revealed", ("Hydra Mercenary",)),
+                   GivenStep("revealed", ("Hydra Mercenary",))),
+            beats=(ThenStep("Hydra Mercenary", "health", 3),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("already used", result.Describe())
+
+    def test_two_copies_can_both_be_put_into_play_by_ordinal(self):
+        # The supported way to get two of the same minion onto the board. The
+        # ordinals stay valid after the first copy moves zones, because they
+        # track which cards the scenario created rather than where they are.
+        case = MakeCase(
+            name="two minions in play",
+            given=(
+                GivenStep("encounter_deck", ("Hydra Mercenary", "Hydra Mercenary")),
+                GivenStep("in_play", ("Hydra Mercenary #1",)),
+                GivenStep("in_play", ("Hydra Mercenary #2",)),
+            ),
+            beats=(
+                ThenStep("Hydra Mercenary #1", "zone", "EngagedEnemiesArea"),
+                ThenStep("Hydra Mercenary #2", "zone", "EngagedEnemiesArea"),
+                ThenStep("Hydra Mercenary #1", "health", 3),
+                ThenStep("Hydra Mercenary #2", "health", 3),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_bare_name_with_two_copies_in_play_is_still_ambiguous(self):
+        case = MakeCase(
+            name="bare name, two copies",
+            given=(
+                GivenStep("encounter_deck", ("Hydra Mercenary", "Hydra Mercenary")),
+                GivenStep("in_play", ("Hydra Mercenary #1",)),
+                GivenStep("in_play", ("Hydra Mercenary #2",)),
+            ),
+            beats=(ThenStep("Hydra Mercenary", "health", 3),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("matches 2 cards", result.Describe())
+
+
+################################################################################
 # The transcript shape itself.
 
 class TestTranscripts(unittest.TestCase):
