@@ -119,7 +119,8 @@ From `py_src/`:
 python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_local_effect_order unit_test.test_scene_hash \
                    unit_test.test_bot_timeout unit_test.test_card_dataset \
-                   unit_test.test_rng unit_test.test_package_tools
+                   unit_test.test_rng unit_test.test_package_tools \
+                   unit_test.test_replay_crc
 # spec harness: boots the engine and plays puzzle boards, still under a second
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
