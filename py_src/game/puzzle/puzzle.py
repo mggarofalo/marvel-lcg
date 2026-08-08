@@ -10,6 +10,14 @@ from game.operate.worlds import Worlds
 
 CATEGORY_NAME = "PUZZLE"
 
+class PuzzleCardError(Exception):
+    """A puzzle command named a card that does not mean exactly one card.
+
+    Raised rather than resolved, because the alternative is a puzzle that runs
+    against a board its author did not write. Every assertion made afterwards is
+    then about the wrong card, and nothing says so.
+    """
+
 class RunPuzzle:
 
     def __init__(self, world: 'World') -> None:
@@ -26,27 +34,95 @@ class RunPuzzle:
         elif type(card) is int:
             return self.world.object_manager.card_dict[card].face
         elif type(card) is str:
-            found_card: CardFace|None = None
-
-            player = self.world.GetCurrentPlayer()
-            if not found_card:
-                found_card = player.player_deck.FindCard(name=card)
-            if not found_card:
-                found_card = player.discard_pile.FindCard(name=card)
-
-            if found_card:
-                return found_card
-
-            for face in Worlds.GetEncounterDeckCards(self.world) + Worlds.GetEncounterDiscardPileCards(self.world):
-                if face.IsName(card):
-                    return face
-            # found_card = self.world.FindCardOnField(name=card)
-
+            found_card = self.FindFaceByName(card)
             if found_card:
                 return found_card
         else:
             assert False, f"{card=}"
         return self.CreateCard(card)
+
+    def FindFaceByName(self, name: str) -> 'CardFace|None':
+        """The one card `name` means, or None if the game does not hold it yet.
+
+        Zone groups are searched **board first**: a puzzle command that names a
+        card in play means that card. Anything else duplicates it -- the field
+        used to go unsearched entirely, so `Puzzle.Damage("01094", 3)` against
+        the villain in play left it at full health and put a damaged second
+        Rhino in the aside deck (MARVEL-51).
+
+        Within a group, more than one match is an error naming every candidate.
+        The groups are deliberately coarse for the same reason: a sub-ordering
+        between the hand and the deck would be the only thing deciding which
+        copy a bare name meant, and nothing the author wrote would say.
+
+        No match at all is not an error. `FindOrCreateFace` still generates the
+        card, which is how a puzzle puts something on a board that does not hold
+        it yet.
+        """
+        player = self.world.GetCurrentPlayer()
+        encounter = Worlds.GetEncounterDeckCards(self.world) + \
+                    Worlds.GetEncounterDiscardPileCards(self.world)
+
+        groups: List[Tuple[str, List['CardFace']]] = [
+            ("in play",
+             self.world.FindCardsOnField(name=name)),
+            ("in the player's hand, deck or discard pile",
+             player.hand_cards.FindCards(name=name)
+             + player.player_deck.FindCards(name=name)
+             + player.discard_pile.FindCards(name=name)),
+            ("in the encounter deck or discard pile",
+             [face for face in encounter if face.IsName(name)]),
+        ]
+
+        for where, matched in groups:
+            found = self.UniqueFaces(matched)
+            if len(found) > 1:
+                raise PuzzleCardError(self.AmbiguityMessage(name, where, found))
+            if found:
+                return found[0]
+        return None
+
+    @staticmethod
+    def AmbiguityMessage(name: str, where: str, found: Sequence['CardFace']) -> str:
+        """Name every candidate, and the object id that would pick one.
+
+        `PuzzleHelper.Exec` binds `c<N>` for every card in the game before it
+        runs a command, so the object id is an escape hatch the author already
+        has -- worth saying, since the alternative reading of this error is that
+        the command cannot be written at all.
+
+        Candidates are listed by object id rather than in the order the zones
+        yielded them: deck order puts the most recently created card on top and
+        moves under a shuffle, and an error message should not be the one thing
+        in the engine that a shuffle rewords.
+        """
+        ordered = sorted(found, key=lambda face: face.card.object_id)
+        # `no_hidden` because the author is being told which cards their own
+        # puzzle put there; whether the client may see one is a different
+        # question from which one they meant.
+        candidates = ", ".join(
+            face.GetDisplayName(no_hidden=True) for face in ordered)
+        ids = ", ".join(f"c{face.card.object_id}" for face in ordered)
+        return (f"{name!r} matches {len(ordered)} cards {where}: {candidates}. "
+                f"Name one by object id ({ids}) instead.")
+
+    @staticmethod
+    def UniqueFaces(faces: Sequence['CardFace']) -> List['CardFace']:
+        """One entry per card, in the order first seen.
+
+        A field search unions board areas with the inventory and placed-card
+        decks hanging off them, so the same card can be reached twice. Counting
+        area memberships instead of cards would report an ambiguity that is not
+        one.
+        """
+        found: List['CardFace'] = []
+        seen: Set[int] = set()
+        for face in faces:
+            object_id = face.card.object_id
+            if object_id not in seen:
+                seen.add(object_id)
+                found.append(face)
+        return found
 
     def CreateCard(self, card_name: str) -> 'CardFace':
         from game.card.factory import CardFactory
