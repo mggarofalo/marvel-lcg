@@ -9,6 +9,25 @@ CATEGORY_NAME = "REPLAY"
 DISABLE_CRC_ERROR_ASSERT    = ConfigVariables.Bool('disable_crc_error_assert', False)
 CRC_IGNORE_IDS              = ConfigVariables.ListInt('crc_ignore_ids', [])
 
+
+def IsIgnorableMismatch(diff_ids: List[int]) -> bool:
+    """Whether every card id that differs is one the run was told to ignore.
+
+    A digest mismatch is tolerable only if nothing outside `crc_ignore_ids`
+    moved. Anything else is a divergence and the replay must stop.
+
+    This used to read `all(x for x in diff_ids if x in CRC_IGNORE_IDS.value)`,
+    which filters to the ignorable ids and then tests those for truthiness --
+    three different wrong answers (MARVEL-43, `docs/state-digest-contract.md` D4):
+
+    - `crc_ignore_ids` defaults to `[]`, so the filtered sequence was empty and
+      `all(<empty>)` was `True`. **Every mismatch was accepted.**
+    - With a populated list, one ignorable id differing made the whole mismatch
+      pass, however many non-ignorable ids differed alongside it.
+    - Card id 0 is falsy, so an ignorable id 0 was rejected rather than ignored.
+    """
+    return all(x in CRC_IGNORE_IDS.value for x in diff_ids)
+
 class InputModule:
 
     def __init__(self, manager: 'ControllerManager') -> None:
@@ -166,10 +185,7 @@ class InputModule:
                         Beep.Warning()
                         return replay_input, False
                     pass
-                if all(x for x in diff_ids if x in CRC_IGNORE_IDS.value):
-                    return replay_input, True
-                else:
-                    return replay_input, False
+                return replay_input, IsIgnorableMismatch(diff_ids)
             return replay_input, True
         else:
             return None, True

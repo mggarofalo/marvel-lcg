@@ -394,7 +394,11 @@ of the current format, and flag it as the first thing a v2 should fix.
 
 ### D4 — The mismatch verdict is inverted outside test mode
 
-`py_src/engine/controller/module/replay.py:169-172`
+**Fixed in `MARVEL-43`.** Recorded as measured; the verdict now lives in
+`IsIgnorableMismatch` (`py_src/engine/controller/module/replay.py`), covered by
+`py_src/unit_test/test_replay_crc.py`.
+
+The code was:
 
 ```python
 if all(x for x in diff_ids if x in CRC_IGNORE_IDS.value):
@@ -403,21 +407,30 @@ else:
     return replay_input, False  # rejected
 ```
 
-The generator filters `diff_ids` down to those *in* the ignore list.
-`crc_ignore_ids` defaults to `[]` (`replay.py:10`), so the filtered sequence is
-empty, and `all(<empty>)` is `True`. **A digest mismatch is accepted by default.**
+The generator filters `diff_ids` down to those *in* the ignore list and then
+tests those for truthiness, which is not the question being asked. It gave three
+different wrong answers:
+
+- `crc_ignore_ids` defaults to `[]`, so the filtered sequence was empty and
+  `all(<empty>)` was `True`. **A digest mismatch was accepted by default.**
+- With a populated list, one ignorable id differing carried the whole mismatch,
+  however many non-ignorable ids had moved alongside it.
+- Card id 0 is falsy, so an explicitly ignored id 0 was rejected rather than
+  ignored.
+
 The intended reading — "accept only if every differing id is ignorable" — needs
-the membership test outside the comprehension.
+the membership test outside the comprehension:
 
-The oracle is not currently broken by this, because the paths that matter never
-reach the faulty line: when `Test.IsInTesting()` is true the function has already
-returned a rejection at `replay.py:167`, and `-bot_verify` sets
-`Test.is_in_test = True` before replaying
-(`py_src/engine/device/manager/bot/runner.py:148`). Live play and any non-test
-replay path do fall through to it.
+```python
+return all(x in CRC_IGNORE_IDS.value for x in diff_ids)
+```
 
-**Follow-up issue.** Small fix, but it changes behaviour on a path the corpus
-work will eventually use.
+The oracle was not broken by this, because the paths that matter never reached
+the faulty line: when `Test.IsInTesting()` is true the function has already
+returned a rejection, and `-bot_verify` sets `Test.is_in_test = True` before
+replaying (`py_src/engine/device/manager/bot/runner.py:148`). Live play and any
+non-test replay path did fall through to it. That path now rejects, and the
+`IsInTesting` behaviour is unchanged.
 
 ### D5 — Boost cards are excluded, despite a branch that exists to include them
 
@@ -600,7 +613,7 @@ All filed. `D11` needs no issue — it is a fact a port must honour, not a defec
 
 | Issue | Finding | Summary |
 |---|---|---|
-| `MARVEL-43` | `D4` | `all(x for x in diff_ids if x in CRC_IGNORE_IDS)` accepts every mismatch when the ignore list is empty. Live play and non-test replay currently pass on divergence. |
+| `MARVEL-43` | `D4` | **Fixed.** `all(x for x in diff_ids if x in CRC_IGNORE_IDS)` accepted every mismatch when the ignore list was empty, so live play and non-test replay passed on divergence. The membership test moved outside the comprehension. |
 | `MARVEL-44` | `D2` `D3` `D8` `D12` | Design a v2 digest: per-field values instead of a sum, an explicit position enum instead of negative sentinels, no hidden information. Must be decided before the corpus is frozen or it is a regeneration. |
 | `MARVEL-45` | `D1` | Remove the always-empty slots 1 and 2 and the `0.5.9.4` special case, or establish what that case was for. |
 | `MARVEL-46` | `D5` | Boost cards change attack outcomes and are invisible to the oracle. Fixing it changes recorded digests, so it needs corpus regeneration. |
