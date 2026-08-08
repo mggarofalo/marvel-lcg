@@ -9,10 +9,11 @@ A `CardRef` is written the way an author thinks about a card:
     "01005 in hand"             zone aliases are accepted
 
 Resolution walks `world.object_manager.card_dict`, so it sees every zone and
-every card. `RunPuzzle.FindFaceByName` searches the board first and then a
-handful of zones (MARVEL-51 -- before that it never searched the board at all,
-and `Puzzle.Damage("01094", 3)` against the villain in play created a *second*
-Rhino in the aside deck and damaged that one).
+every card. `RunPuzzle.FindFaceByName` now walks it too and is zone-complete as
+well, ordered board first (MARVEL-51 -- before that it never searched the board
+at all, and `Puzzle.Damage("01094", 3)` against the villain in play created a
+*second* Rhino in the aside deck and damaged that one -- then MARVEL-61 for the
+zones that fix did not reach).
 
 The harness still resolves refs here and hands `RunPuzzle` an already-resolved
 `CardFace`, because a spec asks for more than a name lookup: zone qualifiers,

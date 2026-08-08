@@ -1,6 +1,7 @@
 from core import *
 from game.card.face import *
 from game.card import *
+from game.deck import DeckType
 from game.effect.rule import DebugRule
 from game.world import *
 from game.card.face.card_type import Identity
@@ -17,6 +18,77 @@ class PuzzleCardError(Exception):
     against a board its author did not write. Every assertion made afterwards is
     then about the wrong card, and nothing says so.
     """
+
+################################################################################
+# Where a puzzle command looks for the card it named.
+
+IN_PLAY         = "in play"
+PLAYER          = "in a player's hand, deck or discard pile"
+ENCOUNTER       = "in the encounter deck or discard pile"
+SET_ASIDE       = "set aside"
+OUT_OF_THE_GAME = "out of the game"
+
+# Every `DeckType` the engine has, assigned to exactly one group.
+#
+# The map is the point, not a convenience. MARVEL-51 gave the resolver three
+# hand-written zone groups and MARVEL-61 was everything they missed -- the aside
+# deck, the set-aside decks, the victory display, the removed-from-game area.
+# Listing zones by hand is what let those be missed silently, so the zones are
+# derived from `DeckType` instead and `unit_test.test_puzzle` asserts this map
+# covers it exhaustively. A zone added later cannot go unconsidered: a new
+# `DeckType` fails that test, and a new `Deck2` built from an existing one is
+# already placed.
+#
+# Three things about this table are not guessable from the attribute names:
+#
+# - `player.set_aside_deck` *is* `player.additional_discard_pile` (`player.py`),
+#   one object under two names, so `AdditionalDiscardPile` covers both.
+# - `world.area_status_cards` is declared `DeckType.RemovedArea`, not
+#   `StatusArea`. `StatusArea` is the per-card status component.
+# - `EvidenceArea` and `RuleArea` are `is_in_play` but are *not* among the areas
+#   `WorldFind.FindCardsOnField` walks. That is why `FindFaceByName` unions this
+#   map's `IN_PLAY` bucket with the board search rather than deferring to it.
+ZONE_GROUP_BY_DECK_TYPE: 'Dict[DeckType, str]' = {
+    # On the board, or hanging off something on it.
+    DeckType.PlaceCardArea:             IN_PLAY,
+    DeckType.UpgradesArea:              IN_PLAY,
+    DeckType.AlliesArea:                IN_PLAY,
+    DeckType.SupportsArea:              IN_PLAY,
+    DeckType.EngagedEnemiesArea:        IN_PLAY,
+    DeckType.HeroArea:                  IN_PLAY,
+    DeckType.ObligationsArea:           IN_PLAY,
+    DeckType.MainSchemesArea:           IN_PLAY,
+    DeckType.SideSchemesArea:           IN_PLAY,
+    DeckType.VillainArea:               IN_PLAY,
+    DeckType.EnvironmentArea:           IN_PLAY,
+    DeckType.EvidenceArea:              IN_PLAY,
+    DeckType.RuleArea:                  IN_PLAY,
+    # The player's own three.
+    DeckType.HandsArea:                 PLAYER,
+    DeckType.PlayerDeck:                PLAYER,
+    DeckType.DiscardPile:               PLAYER,
+    # The encounter deck and what has been through it.
+    DeckType.EncounterDeck:             ENCOUNTER,
+    DeckType.EncounterDiscardPile:      ENCOUNTER,
+    # Held by the game but not in play: set aside at setup, staged for later,
+    # or passing through mid-resolution.
+    DeckType.AsideDeck:                 SET_ASIDE,
+    DeckType.AdditionalDeck:            SET_ASIDE,
+    DeckType.AdditionalDiscardPile:     SET_ASIDE,
+    DeckType.DealtEncounterCardsDeck:   SET_ASIDE,
+    DeckType.BoostingArea:              SET_ASIDE,
+    DeckType.BoostCardsDeck:            SET_ASIDE,
+    DeckType.ProcessingArea:            SET_ASIDE,
+    DeckType.RevealingArea:             SET_ASIDE,
+    DeckType.ResourcesArea:             SET_ASIDE,
+    DeckType.MainSchemesDeck:           SET_ASIDE,
+    DeckType.VillainDeck:               SET_ASIDE,
+    # Gone. Searched last, and only so that naming one of these cards acts on it
+    # rather than quietly building a fresh copy.
+    DeckType.RemovedArea:               OUT_OF_THE_GAME,
+    DeckType.VictoryDisplay:            OUT_OF_THE_GAME,
+    DeckType.StatusArea:                OUT_OF_THE_GAME,
+}
 
 class RunPuzzle:
 
@@ -44,34 +116,73 @@ class RunPuzzle:
     def FindFaceByName(self, name: str) -> 'CardFace|None':
         """The one card `name` means, or None if the game does not hold it yet.
 
-        Zone groups are searched **board first**: a puzzle command that names a
-        card in play means that card. Anything else duplicates it -- the field
-        used to go unsearched entirely, so `Puzzle.Damage("01094", 3)` against
-        the villain in play left it at full health and put a damaged second
-        Rhino in the aside deck (MARVEL-51).
+        Every zone the game holds is searched, in the order the groups are
+        listed below. That completeness is not a convenience: each zone left
+        out is a `Puzzle.*` command that silently acts on a duplicate instead
+        of the card the author named, which is what `Puzzle.Damage("01094", 3)`
+        did against the villain in play before MARVEL-51 -- left it at full
+        health and put a damaged second Rhino in the aside deck. MARVEL-61 was
+        the same failure in the zones MARVEL-51 did not reach. So the groups
+        are derived from `ZONE_GROUP_BY_DECK_TYPE` rather than hand-listed.
+
+        **Board first**: a command that names a card in play means that card.
+        Then the player's own zones, then the encounter deck, then what is set
+        aside, and last what has left the game.
 
         Within a group, more than one match is an error naming every candidate.
-        The groups are deliberately coarse for the same reason: a sub-ordering
+        The groups are deliberately coarse for that reason: a sub-ordering
         between the hand and the deck would be the only thing deciding which
-        copy a bare name meant, and nothing the author wrote would say.
+        copy a bare name meant, and nothing the author wrote would say. Set
+        aside and out of the game are two groups rather than one *because*
+        something does say -- a card in the victory display or removed from the
+        game is gone, a set-aside card is still in the game and can come back.
 
-        No match at all is not an error. `FindOrCreateFace` still generates the
-        card, which is how a puzzle puts something on a board that does not hold
-        it yet.
+        The widening has a consequence worth stating: `Gain`, `Reveal`,
+        `PutIntoPlay` and `Deal` want a card that is not in play, and they now
+        resolve to a set-aside copy where they used to build one. That is the
+        better reading -- a puzzle naming a card the scenario set aside means
+        that card -- and it is the same trade MARVEL-51 already made for the
+        board, the hand and the encounter deck.
+
+        No match at all is still not an error. `FindOrCreateFace` generates the
+        card, which is how a puzzle puts something on a board that does not
+        hold it yet. What it generates lands in `world.aside_deck`, which this
+        search now covers, so a second command naming the same card finds the
+        copy the first one made instead of building another.
         """
         player = self.world.GetCurrentPlayer()
         encounter = Worlds.GetEncounterDeckCards(self.world) + \
                     Worlds.GetEncounterDiscardPileCards(self.world)
+        held = self.FacesByZoneGroup(name)
 
+        # The first three groups keep their own searches. They are what
+        # MARVEL-51 settled, and `FindCardsOnField` reaches upgrades and tucked
+        # cards through the decks hanging off a board card. `held` adds what
+        # those searches do not reach; `UniqueFaces` absorbs the overlap.
+        #
+        # `held` is not scoped to the current player, so in a multiplayer game
+        # the second group is every player's hand, deck and discard rather than
+        # only the current player's. Deliberate: a card another player holds is
+        # a card the game holds, and the alternative is the same silent
+        # duplicate this resolver exists to stop. Two players holding a copy is
+        # then an ambiguity, which is the honest answer -- a bare name does not
+        # say whose.
         groups: List[Tuple[str, List['CardFace']]] = [
-            ("in play",
-             self.world.FindCardsOnField(name=name)),
-            ("in the player's hand, deck or discard pile",
+            (IN_PLAY,
+             self.world.FindCardsOnField(name=name)
+             + held[IN_PLAY]),
+            (PLAYER,
              player.hand_cards.FindCards(name=name)
              + player.player_deck.FindCards(name=name)
-             + player.discard_pile.FindCards(name=name)),
-            ("in the encounter deck or discard pile",
-             [face for face in encounter if face.IsName(name)]),
+             + player.discard_pile.FindCards(name=name)
+             + held[PLAYER]),
+            (ENCOUNTER,
+             [face for face in encounter if face.IsName(name)]
+             + held[ENCOUNTER]),
+            (SET_ASIDE,
+             held[SET_ASIDE]),
+            (OUT_OF_THE_GAME,
+             held[OUT_OF_THE_GAME]),
         ]
 
         for where, matched in groups:
@@ -81,6 +192,35 @@ class RunPuzzle:
             if found:
                 return found[0]
         return None
+
+    def FacesByZoneGroup(self, name: str) -> 'Dict[str, List[CardFace]]':
+        """Cards matching `name`, bucketed by the zone group holding them.
+
+        Walks `world.object_manager.card_dict`, which holds every card the game
+        has made, and reads `card.area` for where each one is now. That is the
+        same completeness `tools/spec/resolve.py` relies on, and the reason a
+        zone cannot be missed here: there is no list of zones to fall behind.
+
+        Cards sitting in `area.removed_cards` are skipped. That list is where a
+        detaching card waits (`CanAttach.DetachFrom2`), not a zone, and
+        `Deck.FindCards` does not return them either.
+
+        Iteration is over `card_dict`, so bucket order is card creation order --
+        which is what `AmbiguityMessage` re-sorts by object id anyway, and not
+        a `set`, so nothing here depends on hash order.
+        """
+        held: 'Dict[str, List[CardFace]]' = {
+            IN_PLAY: [], PLAYER: [], ENCOUNTER: [],
+            SET_ASIDE: [], OUT_OF_THE_GAME: [],
+        }
+        for card in self.world.object_manager.card_dict.values():
+            area = getattr(card, "area", None)
+            if area is None or card in area.removed_cards:
+                continue
+            face = card.face
+            if face.IsName(name):
+                held[ZONE_GROUP_BY_DECK_TYPE[area.deck_type]].append(face)
+        return held
 
     @staticmethod
     def AmbiguityMessage(name: str, where: str, found: Sequence['CardFace']) -> str:
