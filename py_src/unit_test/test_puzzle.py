@@ -29,7 +29,7 @@ from game.card.factory import CardFactory
 from game.deck import DeckType
 from game.operate.worlds import Worlds
 from game.puzzle.puzzle import (
-    ZONE_GROUP_BY_DECK_TYPE, PuzzleCardError, RunPuzzle)
+    PLAY_RULE_OBJECT_ID, ZONE_GROUP_BY_DECK_TYPE, PuzzleCardError, RunPuzzle)
 from tools.spec.case import SpecCase, ThenStep
 from tools.spec.harness import EnsureEngine, NewGameForCase
 from tools.spec.policy import TranscriptPolicy
@@ -375,6 +375,36 @@ class TestOutOfTheGameZones(unittest.TestCase):
 
         self.assertEqual(face.card.area.deck_type.name, "RemovedArea")
         self.assertEqual(CardCount(world), before)
+
+
+class TestTheEnginesOwnBookkeeping(unittest.TestCase):
+    """Card 0 is the play-rule sentinel, not a card a puzzle may name.
+
+    `World.Initialize` registers the play rule before anything else and parks it
+    in the removed area, so it is always object id 0 and it is always in a zone
+    this resolver now searches. Without the guard, `Puzzle.Damage("rule", 3)`
+    resolves against the engine's own bookkeeping and silently does nothing --
+    exactly the "runs against a board its author did not write" failure
+    `PuzzleCardError` exists to prevent.
+    """
+
+    def test_card_zero_is_the_play_rule_sentinel(self):
+        world = NewWorld()
+        sentinel = CardById(world, PLAY_RULE_OBJECT_ID)
+
+        self.assertEqual(sentinel.face.name, "rule")
+        self.assertEqual(sentinel.area.deck_type.name, "RemovedArea")
+
+    def test_naming_the_play_rule_builds_a_card_instead_of_finding_it(self):
+        world = NewWorld()
+        puzzle = RunPuzzle(world)
+        sentinel = CardById(world, PLAY_RULE_OBJECT_ID)
+        before = CardCount(world)
+
+        face = puzzle.FindOrCreateFace("rule")
+
+        self.assertIsNot(face.card, sentinel)
+        self.assertEqual(CardCount(world), before + 1)
 
 
 class TestDuplicatesDoNotCompound(unittest.TestCase):

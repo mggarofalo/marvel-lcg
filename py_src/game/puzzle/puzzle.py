@@ -22,6 +22,12 @@ class PuzzleCardError(Exception):
 ################################################################################
 # Where a puzzle command looks for the card it named.
 
+# The play-rule sentinel, printed name "rule". `ObjectManager` starts the card
+# counter at -1 and `World.Initialize` registers the play rule first, so this is
+# always the first card allocated and always id 0. It is engine bookkeeping, not
+# a card anyone may name; `tools/spec/resolve.py` excludes the same id.
+PLAY_RULE_OBJECT_ID = 0
+
 IN_PLAY         = "in play"
 PLAYER          = "in a player's hand, deck or discard pile"
 ENCOUNTER       = "in the encounter deck or discard pile"
@@ -201,8 +207,18 @@ class RunPuzzle:
         same completeness `tools/spec/resolve.py` relies on, and the reason a
         zone cannot be missed here: there is no list of zones to fall behind.
 
-        Cards sitting in `area.removed_cards` are skipped. That list is where a
-        detaching card waits (`CanAttach.DetachFrom2`), not a zone, and
+        Two things in `card_dict` are not cards a puzzle may name.
+
+        Object id 0 is the engine's play-rule sentinel, printed name "rule",
+        created by `World.Initialize` before anything else and parked in the
+        removed area -- `RunPuzzle.__init__` builds `self.debug_rule` out of it.
+        Searching the removed area is new here, so without this guard
+        `Puzzle.Damage("rule", 3)` would silently resolve against the engine's
+        own bookkeeping instead of building a card. `resolve.py` excludes the
+        same id for the same reason.
+
+        Cards sitting in `area.removed_cards` are skipped too. That list is
+        where a detaching card waits (`CanAttach.DetachFrom2`), not a zone, and
         `Deck.FindCards` does not return them either.
 
         Iteration is over `card_dict`, so bucket order is card creation order --
@@ -213,7 +229,9 @@ class RunPuzzle:
             IN_PLAY: [], PLAYER: [], ENCOUNTER: [],
             SET_ASIDE: [], OUT_OF_THE_GAME: [],
         }
-        for card in self.world.object_manager.card_dict.values():
+        for object_id, card in self.world.object_manager.card_dict.items():
+            if object_id == PLAY_RULE_OBJECT_ID:
+                continue
             area = getattr(card, "area", None)
             if area is None or card in area.removed_cards:
                 continue
