@@ -16,6 +16,7 @@ __pycache__/
 /py_src/replays/
 /py_src/replays_*/
 /py_src/crashes/
+/py_src/invariants/
 
 # C# engine (src/)
 [Bb]in/

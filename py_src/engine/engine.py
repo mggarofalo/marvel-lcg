@@ -12,6 +12,7 @@ from engine.job import JobManager
 from engine.device.manager.base import DeviceManager
 from engine.lib.check_new_version import CheckForNewVersion
 from engine.config import ConfigVariables
+from engine.controller.module.invariants import CHECK_INVARIANTS
 
 CATEGORY_NAME = "ENGINE"
 
@@ -81,6 +82,22 @@ class Engine:
 
             if Build.release or DEVICE.value == "bot":
                 EDITOR.value = False
+
+            # Self-play watches itself unless told otherwise: a headless run
+            # with nothing checking the state is the case MARVEL-11 exists to
+            # fix. It costs roughly 40% of a bot game's wall time, so corpus
+            # generation turns it off with `-no_check_invariants`.
+            #
+            # Forced here rather than by putting `-check_invariants` in the
+            # `bot` arg group, which looks equivalent and is not: expanding a
+            # group calls `ConfigVariables.InitVariable` for each of its keys
+            # immediately, stamping `set_from = "CommandLine"`. The real command
+            # line is applied after that loop, and `SetValue` returns early when
+            # `set_from` already matches -- so `-no_check_invariants` was
+            # silently discarded and the switch could not be turned off. The
+            # root cause is MARVEL-64; this is the workaround.
+            if DEVICE.value == "bot" and CHECK_INVARIANTS.set_from == "DefaultValue":
+                CHECK_INVARIANTS.value = True
 
             if EDITOR.value:
                 from editor.editor import Editor

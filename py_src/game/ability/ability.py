@@ -33,6 +33,12 @@ class Ability:
         self.name = ""
         self.func_names: Set["Ability.FUNCTION_NAME"] = set()
 
+        # Which `AbilityFactory` method built this, once `CardCoverage.Instrument`
+        # has wrapped the factory; "" otherwise, and "" for the rule and
+        # statistics abilities that are constructed here directly. Read only by
+        # coverage -- nothing in the game reads it and nothing may start.
+        self.factory: str = ""
+
         from game.ability.ability_ignore import AbilityIgnore
 
         self.type: Final = ability_type

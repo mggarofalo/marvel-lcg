@@ -59,9 +59,20 @@ class FakeSession:
         self.timeout = timeout
 
 
+class FakeInvariants:
+    def __init__(self, enabled=False):
+        self.is_enabled = enabled
+
+
+class FakeControllerManager:
+    def __init__(self, check_invariants=False):
+        self.invariants = FakeInvariants(check_invariants)
+
+
 class FakeGame:
-    def __init__(self, timeout=0):
+    def __init__(self, timeout=0, check_invariants=False):
         self.session = FakeSession(timeout)
+        self.controller_manager = FakeControllerManager(check_invariants)
 
 
 class FakeTimer:
@@ -238,6 +249,18 @@ class TestRunManifest(unittest.TestCase):
         other = BotRunner.BuildManifest(FakeGame(0), FakeDeviceManager(0), [])
 
         self.assertEqual(one, other)
+
+    def test_whether_anything_was_watching_is_recorded(self):
+        # A corpus generated with the invariant checker off is not wrong, but
+        # less has been said about it, and the scene files cannot tell you after
+        # the fact. See MARVEL-11.
+        watched = BotRunner.BuildManifest(
+            FakeGame(0, check_invariants=True), FakeDeviceManager(0), [])
+        unwatched = BotRunner.BuildManifest(
+            FakeGame(0, check_invariants=False), FakeDeviceManager(0), [])
+
+        self.assertTrue(watched["check_invariants"])
+        self.assertFalse(unwatched["check_invariants"])
 
 
 if __name__ == "__main__":
