@@ -121,13 +121,33 @@ Because those handlers swallow, most of what self-play trips would otherwise be 
 - **One bug is one file.** Failures group by a signature over the exception type and the frames it travelled through, so ten thousand recurrences produce one scene, not ten thousand. The exception *message* is deliberately not part of it — it carries card names and would split one bug per game.
 - **The minimal repro is the shortest one.** Whichever occurrence reached the failure in the fewest steps replaces the stored scene, so the artefact you get is the cheapest way back to the bug.
 - **Four classes**, in resolution order: `invariant-violation` (`EngineIntegrityError` and the runner's own refusals), `engine-assert`, `timeout-stall` (`BotStuck`, `bot_max_steps`, restart exhaustion), `unhandled-exception`.
-- **An invariant violation gets no scene**, only a sidecar. Its recorded inputs are the thing being refused, and writing them would put a replay of an untrusted run on disk (MARVEL-32). The seed reproduces it.
+- **An invariant violation gets no scene *from crash capture*** — only a sidecar. That rule was written for the runner's own refusals, where the recorded inputs are the thing being refused and writing them would put a replay of an untrusted run on disk (MARVEL-32). It reads as too broad now that the invariant checker shares the class: a checker violation's inputs were all genuinely made by the policy, only the state computed from them is wrong, so they *do* replay — and the checker writes that repro itself to `invariants/` (see **Runtime invariants** below, and MARVEL-66 for narrowing the class).
 - Artefacts read no clock and no host: traceback paths are relative, like the scenes they sit beside.
 - **A captured crash does not fail the run.** Most of what self-play finds is a pre-existing bug in this engine, and those are to be logged, not to block corpus generation. `-bot_fail_on_crash` gates on them when you want that; `-no_bot_capture_crashes` turns collection off.
 
 Decisions come from a **policy** (`BotPolicy.Choose(decision) -> CommandDescriptor`) injected into `BotDeviceManager`. The two shipped policies are deliberately trivial — they prove the device works, they do not play well. A real policy subclasses `BotPolicy` and registers in `BotPolicyFactory`.
 
 The device answers through `DeviceManager.WhenInput`, the same entry point the web server uses for a browser POST, so `Controller.ChoiceOne` runs its normal validation, CRC and `replay.Push` path. **Do not add a shortcut around `ChoiceOne`** — bot replays must be structurally indistinguishable from human ones or the corpus is worthless.
+
+### Runtime invariants
+
+Self-play only finds bugs if something is watching, so the bot device runs with the invariant checker on. It asserts a set of rules about the world at every decision — a card is in one zone, counters and threat are not negative, nothing out of play is exhausted, the step counter and the replay history agree — and on a violation it **aborts the game**: it dumps a loadable repro to `py_src/invariants/`, logs the step and the rule, and raises `InvariantViolation`. The run exits non-zero and nothing is saved.
+
+```bash
+python main.py -bot                        # on
+python main.py -bot -no_check_invariants   # off, for corpus generation
+python main.py -check_invariants           # on for a web session, for debugging
+```
+
+It costs about **0.8ms per decision** — 1.86× the wall time of a 20000-decision game, and invisible on a short one because engine startup dominates. That is the number to weigh before turning it off for a corpus run.
+
+The flag is forced from the device in `Engine.Initialize` rather than added to the `bot` arg group. **Do not "simplify" it into the group**: expanding a group calls `InitVariable` for each key immediately, stamping `set_from = "CommandLine"`, and `SetValue` then early-returns when the real command line is applied — so `-no_check_invariants` is silently discarded and the switch cannot be turned off. Any flag put in a group inherits that; the root cause is MARVEL-64.
+
+The rules and — more importantly — the states that *look* like violations and are not live in [docs/invariants.md](docs/invariants.md). **Read it before adding a rule.** Two of them were tried and removed because they fire on ordinary play: there is no lower bound on health anywhere, and no upper bound on threat. A rule that cries wolf aborts a game that was fine and teaches everyone to switch the checker off.
+
+Every rule is read-only. Nothing in `game/world/invariants.py` may send a `Message`, allocate an `Effect`, or touch the RNG — a checker that perturbs the game breaks the determinism the corpus rests on.
+
+`InvariantViolation` derives from `EngineIntegrityError`, so **crash capture also sees it** and files it under `invariant-violation`. Two artefacts therefore describe one event: the checker's repro in `invariants/`, which replays to the failing step, and crash capture's sidecar in `crashes/`, which says the scene was withheld. The sidecar's advice is wrong for this case and right for the refusal it was written for — MARVEL-66.
 
 ## Testing
 
@@ -140,7 +160,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_bot_timeout unit_test.test_bot_crash \
                    unit_test.test_card_dataset unit_test.test_rng \
                    unit_test.test_package_tools unit_test.test_digest \
-                   unit_test.test_card_coverage
+                   unit_test.test_card_coverage unit_test.test_invariants
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
@@ -150,6 +170,7 @@ python -m tools.determinism.check_runs --runs 6  # digest reproduction across pr
 python -m tools.determinism.check_scene_repro    # same seed -> same saved file
 python -m tools.spec.validate --trusted-only     # every trusted behavioral spec
 python -m tools.digest.emit_vectors --check      # digest fixture not stale
+python -m tools.invariants.probe_repro           # an injected violation aborts and its repro reproduces
 python main.py -bot -bot_verify                  # generate a game and replay-verify it
 ```
 
