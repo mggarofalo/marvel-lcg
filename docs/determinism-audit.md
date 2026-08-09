@@ -193,6 +193,24 @@ because the code path went unexercised. Coverage is still thin: five
 multi-effect batches, largest of size two. The decline-only driver is the limit
 here, not the fix.
 
+*And thinner than that downstream.* `probe_local_effect_order` counts effects at
+the point they are **gathered**. `tools/determinism/probe_forced_selection.py`
+counts them where they are **chosen between**, after `FilterAvailableEffects`
+has run and the global effects have been appended, and across the whole wide
+matrix that is:
+
+```
+total: 60 batches, 0 with two or more candidates (largest 1)
+```
+
+**The tie-break is never reached.** No batch in any audited game offers the
+first player a choice at all, so MARVEL-39 and MARVEL-40 — both defects inside
+that choice — cannot move a per-step digest here, and `check_runs` staying green
+across either fix is evidence of nothing. Their gate is
+`unit_test/test_forced_effect_selection.py`, which drives the selection
+directly. Closing this properly needs a driver that plays cards; it is item 4
+under "What still has to be run", and MARVEL-69 tracks it.
+
 *Rules check.* The Rules Reference says "if two or more forced abilities would
 initiate at the same moment, the first player determines the order in which the
 abilities initiate, regardless of who controls the cards bearing those
@@ -627,6 +645,7 @@ that makes them safe.
 | `probe_hash_order.py` | Establishes which container orderings CPython reproduces | yes |
 | `probe_rng.py` | Checks the RNG for cross-process stability. Compared both backends until MARVEL-38 left only one; cross-*language* agreement is `datasets/rng/vectors.json` | yes |
 | `probe_change_form_order.py` | Boots under varying pre-boot allocation and compares the Change Form effect ids. F4's instrument, because `check_runs` cannot see effect-id drift | yes |
+| `probe_forced_selection.py` | Counts the shapes of forced-ability batch that reach the first-player tie-break. Says whether a run exercises MARVEL-39 / MARVEL-40 at all | yes |
 
 `headless.py` drives the engine through `DeviceManager.DoGetInput`.
 `InputDevice.GetInput` is `@final`, but it delegates, so a `DeviceManager`

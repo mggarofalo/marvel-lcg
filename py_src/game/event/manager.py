@@ -328,6 +328,48 @@ class EventManager:
 
         return self.world.is_game_over
 
+    @staticmethod
+    def SelectForcedEffect(forced_effects: List['Effect'], ask_first_player: 'Callable[[List[CardFace]], CardFace|None]') -> 'Effect':
+        """Which of several simultaneous forced abilities initiates next.
+
+        The Rules Reference: *"If two or more forced abilities would initiate at
+        the same moment, the first player determines the order in which the
+        abilities initiate, regardless of who controls the cards bearing those
+        abilities."*
+
+        A seam rather than an inline block because the caller needs a live world
+        and a real player to reach it, and the rule above is worth testing on its
+        own. `ask_first_player` is the prompt; it returns `None` when the player
+        declines.
+
+        **Select over effects, never over faces re-derived by index.** Delay
+        abilities are excluded from the choice, so an index into `faces` is an
+        index into the *filtered* list. Reading the unfiltered `forced_effects`
+        with it resolved a different ability than the one chosen -- and for a
+        batch of `[normal, delay, normal]`, choosing the second normal ability
+        resolved the delay ability that had just been excluded. That is
+        MARVEL-39, and it is why `candidates` and `faces` are built together and
+        stay index-aligned.
+        """
+        candidates = [x for x in forced_effects if not x.ability.flags.is_delay_ability]
+        # The caller only enters this path when `forced_effects[0]` is not a
+        # delay ability, so there is always at least one candidate. Assert it
+        # rather than inherit it: this method is reachable on its own.
+        assert candidates, f"{forced_effects=}"
+
+        faces = [x.this for x in candidates]
+        if all(face.card == faces[0].card for face in faces):
+            return candidates[0]
+
+        face = ask_first_player(faces)
+        if face == None:
+            return candidates[0]
+        # `index` matches by identity, and one card can carry several forced
+        # abilities, so this resolves to the first ability on the chosen card.
+        # Choosing *between* two abilities of one card needs a prompt over
+        # effects rather than over faces -- MARVEL-40.
+        return candidates[faces.index(face)]
+
     def ProcessForcedEffect(self, message: 'Message2', forced_effects: List['Effect'], priority: 'TimingPriority', undo_handle: 'FastUndoHandle') -> 'GAME_OVER':
         from game.message.sender.sender import CanBeInstead
         from game.effect.rule import Ties
@@ -368,16 +410,14 @@ class EventManager:
                 not check_is_resources(first_effect) and \
                 not first_effect.ability.flags.is_delay_ability:
                 first_player = self.world.GetFirstPlayer()
-                faces = [x.this for x in forced_effects if not x.ability.flags.is_delay_ability]
-                is_on_the_same_card = all(x.card == faces[0].card for x in faces)
-                if is_on_the_same_card:
-                    face = faces[0]
-                else:
-                    face = first_player.AskChooseFace(faces, Ties("Forced abilities would initiate at the same moment", world=self.world), forced=True)
-                    if face == None:
-                        face = faces[0]
-                assert face
-                effect = forced_effects[faces.index(face)]
+                effect = EventManager.SelectForcedEffect(
+                    forced_effects,
+                    lambda faces: first_player.AskChooseFace(
+                        faces,
+                        Ties("Forced abilities would initiate at the same moment", world=self.world),
+                        forced=True,
+                    ),
+                )
             else:
                 effect = first_effect
 
