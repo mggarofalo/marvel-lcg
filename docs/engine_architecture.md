@@ -730,8 +730,8 @@ python main.py -port 8080
 # Disable editor
 python main.py -no_editor
 
-# Run tests
-python main.py -test
+# Replay every saved scene and check its per-step digests (MARVEL-28)
+python main.py -verify_replays -verify_folders ./replays/
 
 # Load specific scenario
 python main.py -on_startup_load_save_file save.json
@@ -754,13 +754,16 @@ Create `launch.json` in the project root:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `device` | `"web"` | Input device (`"web"` or `"key"`) |
+| `device` | `"web"` | Input device (`"web"`, `"bot"`, `"verify"`, anything else is the keyboard) |
 | `port` | `2345` | Web server port |
 | `editor` | `true` | Enable card editor |
 | `ip` | `""` | Bind IP address |
 | `check_for_new_version_on_startup` | `false` | Check for updates |
 | `on_startup_load_save_file` | `""` | Auto-load save file |
-| `test_all` | `false` | Run all tests |
+| `verify_replays` | `false` | Replay every saved scene and check its digests |
+| `verify_folders` | `[]` | Folders to verify; defaults to `replay_folders` |
+| `verify_report_file` | `""` | Where to write the machine-readable result |
+| `verify_allow_incomplete` | `false` | Accept a recording that ends before its game does |
 | `translate_file` | `""` | Translation JSON file |
 | `font` | `"cour.ttf"` | Font for placeholder images |
 

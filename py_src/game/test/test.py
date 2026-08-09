@@ -12,12 +12,21 @@ class Test:
     test_cases: List[str] = []
 
     @staticmethod
-    def GetTestCases(category: str|None=None) -> List[str]:
+    def GetTestCases(category: str|None=None, folders: Sequence[str]|None=None) -> List[str]:
+        """Every case file, in version order. `folders` defaults to `replay_folders`.
+
+        Taking the folders as an argument is what lets `-verify_replays` point
+        at an arbitrary directory without a second copy of the enumeration --
+        the `_`-prefix exclusion and the version sort are part of what "a case"
+        means here, not incidental to this caller. See MARVEL-28.
+        """
         # We can't save the `all_cases` because it will change after we save a new scene
         all_cases: List[str] = []
         def not_start_with(f: str):
             return not f.startswith("_")
-        for replays_folder in REPLAY_FOLDERS.value:
+        if folders == None:
+            folders = REPLAY_FOLDERS.value
+        for replays_folder in folders:
             all_cases += FileManager.ListFiles(replays_folder, ext=".json", check_file_name=not_start_with)
 
         def extract_version(s: str):

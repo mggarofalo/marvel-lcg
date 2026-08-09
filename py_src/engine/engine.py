@@ -21,11 +21,17 @@ PRINT_MY_USER_FINGERPRINT           = ConfigVariables.Bool('print_my_user_finger
 
 DEVICE              = ConfigVariables.Str('device', "web")
 
-PROFILE_FOLDER      = ConfigVariables.Folder('profile_folder')
-TEST_ALL            = ConfigVariables.Bool('test_all', False)
 EDITOR              = ConfigVariables.Bool('editor', True)
 
-ConfigVariables.SetGroupArgs('test', "-device -no_editor -no_statistics -test_result_file test_results.txt -hidden_log_categories CONTROLLER WEB VERSION STATISTICS")
+# Replay a folder of saved scenes and check every recorded step digest. A mode
+# rather than a device: it picks its own device, because the only thing it needs
+# from one is that it never blocks. See `game/test/verify.py` and MARVEL-28.
+VERIFY_REPLAYS          = ConfigVariables.Bool('verify_replays', False)
+VERIFY_FOLDERS          = ConfigVariables.Folders('verify_folders', [])
+VERIFY_REPORT_FILE      = ConfigVariables.File('verify_report_file', "")
+VERIFY_ALLOW_INCOMPLETE = ConfigVariables.Bool('verify_allow_incomplete', False)
+
+ConfigVariables.SetGroupArgs('test', "-verify_replays -no_editor -no_statistics -hidden_log_categories CONTROLLER WEB VERSION STATISTICS")
 ConfigVariables.SetGroupArgs('bot', "-device bot -no_editor -hidden_log_categories CONTROLLER WEB VERSION STATISTICS")
 
 class Engine:
@@ -80,7 +86,15 @@ class Engine:
             from cards.database import CardsDB
             CardsDB.Initialize()
 
-            if Build.release or DEVICE.value == "bot":
+            # `-verify_replays` names a job, not a device. Resolve it to one
+            # here so a verification run cannot be started against a device that
+            # blocks: `-test` used to expand to a bare `-device`, which landed
+            # on `KeyDeviceManager` and waited for a keypress nobody was there
+            # to make. See MARVEL-28.
+            if Engine.IsVerifyingReplays():
+                DEVICE.value = "verify"
+
+            if Build.release or DEVICE.value in ("bot", "verify"):
                 EDITOR.value = False
 
             # Self-play watches itself unless told otherwise: a headless run
@@ -121,6 +135,9 @@ class Engine:
             elif DEVICE.value == "bot":
                 from engine.device.manager.bot.manager import BotDeviceManager
                 device = BotDeviceManager
+            elif DEVICE.value == "verify":
+                from engine.device.manager.verify.manager import VerifyDeviceManager
+                device = VerifyDeviceManager
             else:
                 from engine.device.manager.key.manager import KeyDeviceManager
                 device = KeyDeviceManager
@@ -139,10 +156,24 @@ class Engine:
             return initialize()
 
     @staticmethod
+    def IsVerifyingReplays() -> bool:
+        """Whether this process was asked to replay a folder rather than play."""
+        return bool(VERIFY_REPLAYS.value or [x for x in VERIFY_FOLDERS.value if x])
+
+    @staticmethod
     def EngineRun() -> None:
         if DEVICE.value == "bot":
             from engine.device.manager.bot.runner import BotRunner
             Engine.exit_code = 0 if BotRunner.Run(Engine.game) else 1
+            return
+
+        if Engine.IsVerifyingReplays():
+            from game.test.verify import ReplayVerifier
+            ok = ReplayVerifier.Run(
+                Engine.game, VERIFY_FOLDERS.value,
+                report_path=VERIFY_REPORT_FILE.value,
+                allow_incomplete=VERIFY_ALLOW_INCOMPLETE.value)
+            Engine.exit_code = 0 if ok else 1
             return
 
         if Build.release:
@@ -152,17 +183,6 @@ class Engine:
                 Log.OnCrash(CATEGORY_NAME, exc, "", None)
                 Log.SaveCrashLog()
         else:
-            if TEST_ALL.value:
-                from unit_test.entry import TestEntry
-                from unit_test.runner import TestRunner
-                TestRunner.Execute(TestEntry.Test, True)
-                return
-            elif PROFILE_FOLDER.is_initialized and PROFILE_FOLDER.value:
-                from unit_test.entry import TestEntry
-                from unit_test.runner import TestRunner
-                TestRunner.Execute(TestEntry.Test, PROFILE_FOLDER.value, True)
-                return
-
             if EDITOR.value:
                 from editor.editor import Editor
                 Editor.EditorRun()

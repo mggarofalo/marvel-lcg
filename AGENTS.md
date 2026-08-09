@@ -163,7 +163,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_card_dataset unit_test.test_rng \
                    unit_test.test_package_tools unit_test.test_digest \
                    unit_test.test_log_errors unit_test.test_card_coverage \
-                   unit_test.test_invariants
+                   unit_test.test_invariants unit_test.test_verify_replays
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
@@ -174,11 +174,14 @@ python -m tools.determinism.check_scene_repro    # same seed -> same saved file
 python -m tools.spec.validate --trusted-only     # every trusted behavioral spec
 python -m tools.digest.emit_vectors --check      # digest fixture not stale
 python -m tools.invariants.probe_repro           # an injected violation aborts and its repro reproduces
+python -m tools.replay.probe_verify              # the verification gate accepts and rejects the right corpora
 python main.py -bot -bot_verify                  # generate a game and replay-verify it
 ```
 
 Name the modules explicitly. `unittest discover` picks up `unit_test/test_all.py`,
-which is the replay suite described below and does not run.
+which is an old harness around the replay suite — it mutates `Build.release`,
+appends to `sys.argv` and writes result files into the working directory. Use
+`-verify_replays` (below) instead.
 
 **The suite does not touch the repository.** Running it leaves `git status` clean
 and creates no commits. Packaging is a separate, deliberate step:
@@ -218,11 +221,37 @@ python -m tools.cards.extract           # write datasets/cards/
 python -m tools.cards.extract --check    # exit 1 if the checked-in copy is stale
 ```
 
-The replay suite (`game/test/test.py` → `TestRun`) re-executes a scene's inputs and asserts per-step digest equality. **There is no working command-line flag for it** — `-test` only expands to `-device -no_editor …`, nothing sets the `InTesting` start state, and the process blocks in `WaitUntilGameStart()`. The `-test_all` and `-profile_folder` branches are unreachable because `build.py` hardcodes `Build.release = True`. Tracked as MARVEL-28. Until then, use `-bot_verify` or the `/T` debug command from the web client.
-
 **`replays/` is empty and untracked**, so there is no regression suite yet. Building it is the entire point of the `Corpus and Oracle` phase — weigh changes accordingly.
 
 New tooling needs its own tests: test behavior not implementation, no assertion-free tests, coverage is an observed outcome and never a target.
+
+## Replay verification
+
+The replay suite (`game/test/test.py` → `TestRun`) re-executes a scene's inputs and asserts per-step digest equality. `-verify_replays` is how a process runs it (MARVEL-28); `-bot_verify` and the web client's `/T` command drive the same `TestRun` for the scenes a bot run just generated and for one scene interactively.
+
+```bash
+python main.py -verify_replays                              # every folder in replay_folders
+python main.py -verify_replays -verify_folders ./corpus/    # point it somewhere
+python main.py -verify_replays -verify_report_file r.json   # machine-readable, for CI
+python main.py -verify_replays -verify_allow_incomplete     # accept truncated recordings
+python -m tools.determinism.check_corpus --runs 100         # the same, N fresh processes
+```
+
+Exit code 0 when every scene reproduced, 1 otherwise. Three outcomes, in `game/test/verify.py`:
+
+- **pass** — every recorded step reproduced its digest.
+- **fail** — a step diverged, or the replay raised.
+- **incomplete** — the recording ran out while the game was still going. Every step it held reproduced, but the file describes less than a game, so it fails the run unless `-verify_allow_incomplete`.
+
+Three things about it are load-bearing:
+
+- **A corpus folder is not all scenes.** `bot-manifest-*.json` and `bot-coverage-*.json` sit beside the scenes they describe, and every field of `Scene` has a default — so loading a manifest as a scene *succeeds* and yields an empty game rather than an error. `ReplayVerifier.IsSceneDocument` filters before the load, not through it.
+- **The device must never block.** `-verify_replays` forces `-device verify`, whose only job is to end the game when the recording runs out instead of waiting for a decision. This is what `-test` got wrong: it expanded to a bare `-device`, which set the device *name* to the string `"True"`, fell through to the interactive keyboard device, and blocked in `WaitUntilGameStart()` forever. Any arg group that names a valued variable with no value repeats that; `unit_test/test_verify_replays.py` fails if one does.
+- **Verifying nothing is a failure.** An empty folder exits non-zero, because "the gate found no divergence" and "the gate never ran" must not look the same to CI.
+
+`python -m tools.replay.probe_verify` is the end-to-end proof: it generates a game, verifies it, corrupts one recorded digest, truncates another copy, and checks the gate accepts and rejects the right ones.
+
+**`Build.release` is hardcoded true and stays that way.** It is read at around sixty sites and decides far more than log formatting: `Log.OnCrash` re-raises only when it is false, the editor only initialises when it is false, and `Ver.ui_version_str` gains the `r`/`d` suffix every API route's `app_version` cookie is checked against. The headless bot's crash capture exists *because* a release build absorbs — flipping the flag would turn every absorbed card bug into a run-ending exception and change what a corpus run means. What MARVEL-28 removed was the line above it, `release = "RELEASE" in os.environ`, which read as an override and was dead: the hardcode overwrote it unconditionally. Nothing in the verification path reads the flag either way.
 
 ## Behavioral specs
 
