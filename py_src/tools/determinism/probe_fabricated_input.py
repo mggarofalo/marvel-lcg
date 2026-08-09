@@ -96,6 +96,11 @@ def _run(folder: str, seed: int, event_name: str) -> Outcome:
     for name in sorted(os.listdir(folder)):
         if name.startswith("bot-manifest-"):
             outcome.manifests.append(name)
+        elif name.startswith("bot-coverage-"):
+            # A per-run artefact, not a scene. The probe asserts that a refused
+            # run saves nothing, so a coverage report landing in `saved` would
+            # read as a corrupt scene the guard let through.
+            continue
         elif name.endswith(".json"):
             outcome.saved.append(name)
 

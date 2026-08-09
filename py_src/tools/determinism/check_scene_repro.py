@@ -63,9 +63,12 @@ def _run_bot(folder: str, scenario: str, heroes: List[str], seed: int,
         cwd=os.getcwd(),
         errors="replace",
     )
-    # The bot also writes a run manifest into the save folder (MARVEL-32).
+    # The bot writes its own per-run artefacts into the save folder beside the
+    # scenes they describe: a manifest (MARVEL-32) and a coverage report
+    # (MARVEL-13). Neither is a scene and neither is compared here.
+    RUN_ARTEFACTS = ("bot-manifest-", "bot-coverage-")
     saved = [name for name in sorted(os.listdir(folder))
-             if name.endswith(".json") and not name.startswith("bot-manifest-")]
+             if name.endswith(".json") and not name.startswith(RUN_ARTEFACTS)]
     if len(saved) != 1:
         raise RuntimeError(
             f"expected one saved scene in {folder}, found {saved}\n"

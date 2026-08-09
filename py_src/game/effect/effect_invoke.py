@@ -5,7 +5,7 @@ from game.effect import *
 from game.message import *
 from game.player import *
 from engine.log import Log
-from engine.profile import Coverage
+from engine.profile import CardCoverage, Coverage
 from game.world import *
 
 CATEGORY_NAME = "EFFECT"
@@ -34,6 +34,13 @@ class EffectInvoker:
 
         if Coverage.is_enable:
             Coverage.TrackCallable(effect.ability.operation)
+
+        # The one place that can say an ability *resolved* rather than merely
+        # being registered, offered, or paid for. Reaching here means the
+        # operation ran to completion -- the only exception the `try` above
+        # swallows is one raised after the game was already over.
+        if CardCoverage.is_recording:
+            CardCoverage.RecordAbilityResolved(effect.ability)
 
         ################################################################################
         if effect.context.end_attack_messages:
