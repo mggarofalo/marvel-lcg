@@ -106,6 +106,8 @@ Each run also writes `bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` besi
 
 **Do not let an exception you raise for integrity get swallowed.** `EffectInvoker`, `Message2.Send`, the cost and target checkers, and `Engine.EngineRun` all catch broadly so one bad card cannot end the game, and all report through `Log.OnCrash` — which re-raises only when `Build.release` is false, and `build.py` hardcodes it true. If continuing would produce a *wrong artefact* rather than a wrong frame, derive from `core.errors.EngineIntegrityError`: `Log.OnCrash` re-raises that class regardless of the build.
 
+**`Log.HasError` is a correctness signal, not a debug convenience.** It is how `-bot_verify` decides a replay diverged (`TestRun.Run` returns True unconditionally and reports a failed case by *logging* it) and how the spec harness catches a case that passed over a swallowed exception. It reads the counts `LogHelper.StatLog` writes, so anything that stops those being written silently turns both gates into always-pass — which is exactly what MARVEL-65 was, in two places at once: `StatLog` skipped recording on a release build, and `PrintLog` skipped it for a hidden category. Recording now happens before every display filter. **Never gate it on a presentation concern** — whether a line is printed and whether an error is detectable are different questions.
+
 ### Crash capture
 
 Because those handlers swallow, most of what self-play trips would otherwise be a traceback on stdout and nothing else. `engine/device/manager/bot/crash.py` turns each one into an artefact instead, written to `crashes/` (gitignored, `-bot_crash_folder`) — the run installs `Log.crash_observer` for the duration and takes it back down afterwards. See MARVEL-12.
@@ -137,7 +139,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_local_effect_order unit_test.test_scene_hash \
                    unit_test.test_bot_timeout unit_test.test_bot_crash \
                    unit_test.test_card_dataset unit_test.test_rng \
-                   unit_test.test_package_tools unit_test.test_digest
+                   unit_test.test_package_tools unit_test.test_digest \
+                   unit_test.test_log_errors
 # spec harness and puzzle commands: boot the engine and play puzzle boards,
 # still under a second
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
