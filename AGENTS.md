@@ -104,6 +104,8 @@ Bot saves are **deterministic saves**: `sign`, `time`, and `playtime` are omitte
 
 Each run also writes `bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` beside its scenes, recording the resolved input timeout, the policy, the fabricated-input count, and one entry per game. **The input timeout must be 0**: a non-zero one lets `DoGetInput` return an untouched `"{}"` that the replay records as a decline nobody made. Generation refuses to start or save if it is not, and the bot device raises `FabricatedInputError` rather than let one through — see MARVEL-32.
 
+Beside that goes `bot-coverage-<scenario>-<heroes>-<seed>-<games>.json`: **what the run actually exercised**, which is the number that says whether the corpus is worth generating more of. It separates *present* from *entered play* from *ability resolved*, and its primary measure is which of the 303 `AbilityFactory` methods a card script names actually fired — the tail is where port bugs will hide. Two ranked lists come out, of never-fired triggers and never-exercised cards, and they are the input to coverage-directed generation. On by default (`-no_bot_coverage` to disable), merged across runs by `python -m tools.coverage.report replays/`. Read [docs/card-coverage.md](docs/card-coverage.md) before changing anything it touches — particularly before renaming an `AbilityFactory` method, which moves the denominator.
+
 **Do not let an exception you raise for integrity get swallowed.** `EffectInvoker`, `Message2.Send`, the cost and target checkers, and `Engine.EngineRun` all catch broadly so one bad card cannot end the game, and all report through `Log.OnCrash` — which re-raises only when `Build.release` is false, and `build.py` hardcodes it true. If continuing would produce a *wrong artefact* rather than a wrong frame, derive from `core.errors.EngineIntegrityError`: `Log.OnCrash` re-raises that class regardless of the build.
 
 Decisions come from a **policy** (`BotPolicy.Choose(decision) -> CommandDescriptor`) injected into `BotDeviceManager`. The two shipped policies are deliberately trivial — they prove the device works, they do not play well. A real policy subclasses `BotPolicy` and registers in `BotPolicyFactory`.
@@ -120,11 +122,12 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_local_effect_order unit_test.test_scene_hash \
                    unit_test.test_bot_timeout unit_test.test_card_dataset \
                    unit_test.test_rng unit_test.test_package_tools \
-                   unit_test.test_digest
-# spec harness and puzzle commands: boot the engine and play puzzle boards,
-# still under a second
+                   unit_test.test_digest unit_test.test_card_coverage
+# spec harness, puzzle commands and card coverage: boot the engine and play,
+# still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
-                   unit_test.test_puzzle unit_test.test_worlds_encounter
+                   unit_test.test_puzzle unit_test.test_worlds_encounter \
+                   unit_test.test_card_coverage_play
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
 python -m tools.determinism.check_scene_repro    # same seed -> same saved file
 python -m tools.spec.validate --trusted-only     # every trusted behavioral spec

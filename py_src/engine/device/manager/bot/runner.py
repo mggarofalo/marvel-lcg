@@ -23,6 +23,7 @@ from engine.log import Log
 from engine.device.manager.base import FabricatedInputError
 from engine.device.manager.bot.manager import BOT_MAX_STEPS, BotDeviceManager
 from engine.device.manager.bot.policy import BotStuck
+from engine.profile import CardCoverage
 from game.game_run.game_new import NewGameDescriptor
 
 CATEGORY_NAME = "BOT"
@@ -49,6 +50,15 @@ BOT_DETERMINISTIC_SAVE  = ConfigVariables.Bool('bot_deterministic_save', True)
 # assert the per-step state digest matches. Doubles the run time.
 BOT_VERIFY              = ConfigVariables.Bool('bot_verify', False)
 
+# Measure what the run actually exercised and write the report beside the
+# scenes. On by default -- an unmeasured corpus cannot say which part of the
+# port it validates, which is the whole reason it is generated. See MARVEL-13.
+BOT_COVERAGE            = ConfigVariables.Bool('bot_coverage', True)
+
+# The card dataset the report subtracts from, to name what was never reached.
+CARD_COVERAGE_DATASET_FILE = ConfigVariables.File(
+    'card_coverage_dataset_file', "../datasets/cards/cards.json")
+
 # Guard against `SetGameOver()` looping (it returns False to re-run after undo).
 MAX_GAME_OVER_RETRIES = 8
 
@@ -58,6 +68,12 @@ class BotRunner:
     # scenes it describes, and `GameSession.SaveScene` is the thing that knows
     # where that is when `bot_save_folder` is unset.
     save_folder: str = ""
+
+    # Coverage for the game currently being played. It is set aside rather than
+    # returned because it is only kept for games that survive `Finish` -- a game
+    # that was discarded is not in the corpus, so counting what it reached would
+    # credit the corpus with coverage no saved scene can reproduce.
+    pending_coverage: 'Dict[str, Any]|None' = None
 
     ################################################################################
     #
@@ -73,6 +89,17 @@ class BotRunner:
         # Cleared per run, so a second `Run` in one process cannot write its
         # manifest into the folder the first one happened to use.
         BotRunner.save_folder = ""
+        BotRunner.pending_coverage = None
+
+        # Before the first game, because `CardsDB.ability_cache` builds a card's
+        # abilities once per process and hands the same objects to every later
+        # copy -- instrument after that and the first scenario's cards carry no
+        # attribution for the whole run.
+        if BOT_COVERAGE.value:
+            CardCoverage.Enable()
+        else:
+            CardCoverage.Disable()
+
         if BOT_SEED.value < 0:
             Log.Warn(CATEGORY_NAME, "bot_seed is negative: the engine will pick a random seed and the run will not be reproducible")
         if not BOT_DETERMINISTIC_SAVE.value:
@@ -80,6 +107,7 @@ class BotRunner:
 
         all_ok = True
         played: List[Dict[str, Any]] = []
+        coverage: List[Dict[str, Any]] = []
         for index in range(total):
             record = BotRunner.RunOne(game, device_manager, index, total)
             if record is None:
@@ -88,8 +116,11 @@ class BotRunner:
                     break
             else:
                 played.append(record)
+                if BotRunner.pending_coverage is not None:
+                    coverage.append(BotRunner.pending_coverage)
 
         BotRunner.WriteManifest(game, device_manager, played)
+        BotRunner.WriteCoverage(coverage)
 
         return all_ok
 
@@ -104,7 +135,10 @@ class BotRunner:
             f"Game {index + 1}/{total}: scenario={BOT_SCENARIO.value} "
             f"heroes={BOT_HEROES.value} seed={seed} policy={device_manager.policy.name}")
 
+        BotRunner.pending_coverage = None
+
         try:
+            CardCoverage.BeginGame()
             device_manager.BeginGame(seed)
             game.NewGame(BotRunner.BuildDescriptor(seed))
             if not BotRunner.CheckNoTimeout(game, device_manager, "after NewGame"):
@@ -142,6 +176,19 @@ class BotRunner:
             outcome = world.game_over.reason
         else:
             outcome = "Unknown"
+
+        # First, before anything else here can return early, because
+        # `BOT_VERIFY` replays the finished game back through the same engine
+        # paths a few lines below. Leaving the recording window open would count
+        # every verified game twice.
+        if world is not None and CardCoverage.is_recording:
+            BotRunner.pending_coverage = CardCoverage.EndGame(
+                world,
+                seed=seed,
+                scenario=BOT_SCENARIO.value,
+                heroes=BOT_HEROES.value,
+                outcome=outcome,
+            )
 
         Log.Info(CATEGORY_NAME, f"Finished after {steps} steps ({device_manager.decision_count} decisions): {outcome}")
 
@@ -291,20 +338,88 @@ class BotRunner:
             # Nothing was written, so there is no corpus to describe.
             return None
 
-        folder = BOT_SAVE_FOLDER.value or BotRunner.save_folder
-
-        # `SanitizeFilename` strips dots, so build the stem and add the
-        # extension afterwards. The name comes from what the run was *asked*
-        # for, never from how much of it succeeded -- otherwise a run where one
-        # game failed lands beside the run where none did instead of replacing
-        # it. Which seeds actually made it is in `games`.
-        stem = FileManager.SanitizeFilename(
-            f"bot-manifest-{BOT_SCENARIO.value}-{'+'.join(BOT_HEROES.value)}"
-            f"-{BotRunner.GetSeed(0)}-{max(1, BOT_GAMES.value)}".lower())
-        path = FileManager.JoinPath(folder, f"{stem}.json")
+        path = BotRunner.RunFilePath("bot-manifest")
+        if path is None:
+            return None
 
         Json.Save(BotRunner.BuildManifest(game, device_manager, played), path)
         Log.Info(CATEGORY_NAME, f"Manifest: {path}")
+        return path
+
+    @staticmethod
+    def RunFilePath(kind: str) -> str|None:
+        """Where a per-run artefact goes: beside the scenes it describes.
+
+        None when this run saved no scene -- under `-no_bot_save`, or when every
+        game was discarded. `BotRunner.save_folder` is set by `SaveScene` and by
+        nothing else, so it is the one honest signal that a scene reached disk.
+        Without the guard the artefact falls back to a bare filename and lands in
+        the working directory, which for a repository checkout is the repository.
+
+        `SanitizeFilename` strips dots, so the stem is built first and the
+        extension added afterwards. The name comes from what the run was *asked*
+        for, never from how much of it succeeded -- otherwise a run where one
+        game failed lands beside the run where none did instead of replacing it.
+        Which seeds actually made it is inside the file.
+        """
+        if not BotRunner.save_folder:
+            return None
+        folder = BOT_SAVE_FOLDER.value or BotRunner.save_folder
+        stem = FileManager.SanitizeFilename(
+            f"{kind}-{BOT_SCENARIO.value}-{'+'.join(BOT_HEROES.value)}"
+            f"-{BotRunner.GetSeed(0)}-{max(1, BOT_GAMES.value)}".lower())
+        return FileManager.JoinPath(folder, f"{stem}.json")
+
+    @staticmethod
+    def WriteCoverage(coverage: List[Dict[str, Any]]) -> str|None:
+        """Write the run's coverage report beside the scenes it describes.
+
+        Produced automatically at the end of every corpus run, because a report
+        you have to remember to ask for is a report nobody has when the corpus
+        turns out to be thin. See `docs/card-coverage.md`.
+        """
+        from engine.lib import Json, Ver
+        from engine.profile import coverage_report
+
+        if not coverage:
+            # Either coverage is off or no game survived. Neither is something
+            # to write a report about.
+            return None
+
+        path = BotRunner.RunFilePath("bot-coverage")
+        if path is None:
+            # `-no_bot_save`: the games were played but no corpus came out of
+            # them, so there is nothing for a report to describe and nowhere
+            # beside the scenes to put it.
+            Log.Info(CATEGORY_NAME,
+                "No scene was saved, so no coverage report was written")
+            return None
+
+        universe = None
+        universe_error = ""
+        try:
+            universe = coverage_report.LoadUniverse(CARD_COVERAGE_DATASET_FILE.value)
+        except coverage_report.DatasetMissing as exc:
+            # Loud, but not fatal: the observations are the expensive half and
+            # they are still worth keeping. What is lost is the ability to name
+            # what was *missed*, and the report says so rather than emitting
+            # empty lists that would read as "nothing was missed".
+            universe_error = str(exc)
+            Log.Assert(CATEGORY_NAME,
+                f"Coverage report has no universe to measure against: {exc}")
+
+        document = coverage_report.Build(
+            coverage,
+            generator="bot",
+            engine_version=str(Ver.version),
+            universe=universe,
+            universe_error=universe_error,
+        )
+
+        Json.Save(document, path)
+        Log.Info(CATEGORY_NAME, f"Coverage: {path}")
+        for line in coverage_report.Summarize(document).splitlines():
+            Log.Info(CATEGORY_NAME, line)
         return path
 
     @staticmethod
