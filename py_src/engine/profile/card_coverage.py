@@ -74,14 +74,39 @@ class CardCoverage:
 
     @staticmethod
     def Enable() -> int:
-        """Turn recording on and install the factory wrappers.
+        """Turn recording on, install the factory wrappers, and say what it found.
 
-        Returns how many factory methods are instrumented, which is the only
-        honest way to tell "coverage is on" from "coverage is on and attributing
-        nothing" -- a zero here means the wrapping found no factory to wrap.
+        Returns how many factory methods are instrumented. The count is also
+        reported here rather than left to the caller, because it is the only
+        thing that separates "coverage is on" from "coverage is on and
+        attributing nothing", and a signal every caller has to remember to check
+        is one no caller checks.
         """
         CardCoverage.is_enable = True
-        return CardCoverage.Instrument()
+        count = CardCoverage.Instrument()
+        CardCoverage.ReportInstrumented(count)
+        return count
+
+    @staticmethod
+    def ReportInstrumented(count: int) -> None:
+        """Announce the wrapping, loudly when it wrapped nothing.
+
+        Zero means every ability will carry an empty `factory` and the report
+        will show no factory reached -- which is indistinguishable, in the
+        artefact, from a corpus that genuinely exercised nothing. That has to
+        arrive as an error during the run, not as a puzzling report afterwards.
+
+        `Log.Info`, not `Log.Debug`: `build.py` hardcodes `Build.release = True`
+        and `Log.Debug` is `PrintNull` under it, so a debug-level trace here
+        would never print at all.
+        """
+        if count > 0:
+            Log.Info(CATEGORY_NAME, f"Instrumented {count} AbilityFactory methods")
+            return
+        Log.Assert(CATEGORY_NAME,
+            "Card coverage instrumented 0 AbilityFactory methods. Every ability "
+            "will be unattributed and the report will show no trigger reached, "
+            "which is not the same thing as a corpus that reached none.")
 
     @staticmethod
     def Disable() -> None:
@@ -99,7 +124,6 @@ class CardCoverage:
 
         count = CardCoverage.InstrumentClass(AbilityFactory, Ability)
         CardCoverage.is_instrumented = True
-        Log.Debug(CATEGORY_NAME, f"Instrumented {count} AbilityFactory methods")
         return count
 
     @staticmethod

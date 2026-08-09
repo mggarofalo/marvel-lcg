@@ -17,11 +17,13 @@ import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 # The `game.*` packages import each other circularly and only resolve once the
 # `engine` package has been imported.
 import engine  # noqa: F401  pylint: disable=unused-import
 
+from engine.log import Log
 from engine.profile import coverage_report
 from engine.profile.card_coverage import FACTORY_MARK, CardCoverage
 from tools.coverage import report as report_cli
@@ -344,6 +346,30 @@ class TestInstrumentation(unittest.TestCase):
 
         self.assertEqual(first, second)
         self.assertIs(self.factory.Direct, wrapped)
+
+    def test_wrapping_nothing_is_reported_as_an_error(self):
+        """Zero wrapped methods leaves every ability unattributed, and the
+        report then shows no trigger reached -- which reads exactly like a
+        corpus that reached none. It has to be loud during the run.
+
+        `Log.Assert`, not `Log.Debug`: `build.py` hardcodes `Build.release`, and
+        `Log.Debug` is `PrintNull` under it, so a debug trace never prints.
+        """
+        with mock.patch.object(Log, "Assert") as complained:
+            CardCoverage.ReportInstrumented(0)
+
+        self.assertEqual(complained.call_count, 1)
+
+    def test_wrapping_something_is_reported_where_it_will_be_seen(self):
+        with mock.patch.object(Log, "Assert") as complained, \
+             mock.patch.object(Log, "Info") as announced:
+            CardCoverage.ReportInstrumented(346)
+
+        complained.assert_not_called()
+        self.assertEqual(announced.call_count, 1)
+
+    def test_a_class_with_no_static_methods_wraps_nothing(self):
+        self.assertEqual(CardCoverage.InstrumentClass(type("Empty", (), {}), Stamped), 0)
 
     def test_find_static_method_walks_the_mro_and_rejects_the_rest(self):
         self.assertIsNotNone(CardCoverage.FindStaticMethod(self.factory, "Shared"))
