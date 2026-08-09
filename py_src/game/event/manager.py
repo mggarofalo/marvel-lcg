@@ -329,27 +329,35 @@ class EventManager:
         return self.world.is_game_over
 
     @staticmethod
-    def SelectForcedEffect(forced_effects: List['Effect'], ask_first_player: 'Callable[[List[CardFace]], CardFace|None]') -> 'Effect':
+    def SelectForcedEffect(forced_effects: List['Effect'], ask_first_player: 'Callable[[List[Effect]], Effect|None]') -> 'Effect':
         """Which of several simultaneous forced abilities initiates next.
 
         The Rules Reference: *"If two or more forced abilities would initiate at
         the same moment, the first player determines the order in which the
-        abilities initiate, regardless of who controls the cards bearing those
-        abilities."*
+        abilities initiate, **regardless of who controls the cards bearing those
+        abilities**."*
 
         A seam rather than an inline block because the caller needs a live world
         and a real player to reach it, and the rule above is worth testing on its
         own. `ask_first_player` is the prompt; it returns `None` when the player
-        declines.
+        declines, and the fallback is list order -- which is `Effect.object_id`
+        order after MARVEL-31, so creation order rather than the allocator's.
 
-        **Select over effects, never over faces re-derived by index.** Delay
-        abilities are excluded from the choice, so an index into `faces` is an
-        index into the *filtered* list. Reading the unfiltered `forced_effects`
-        with it resolved a different ability than the one chosen -- and for a
-        batch of `[normal, delay, normal]`, choosing the second normal ability
-        resolved the delay ability that had just been excluded. That is
-        MARVEL-39, and it is why `candidates` and `faces` are built together and
-        stay index-aligned.
+        **The choice is over effects, never over faces.** Two earlier defects
+        both came from selecting over faces and re-deriving the effect:
+
+        - Delay abilities are excluded from the choice, so an index into the
+          faces was an index into the *filtered* list. Reading the unfiltered
+          `forced_effects` with it resolved a different ability than the one
+          chosen -- for `[normal, delay, normal]`, picking the second normal
+          ability resolved the excluded delay ability. That was MARVEL-39.
+        - A face cannot name *which* of a card's abilities was picked, so a
+          batch that was all on one card was never put to the first player at
+          all; the engine took the first entry. The rule above draws no such
+          distinction. That was MARVEL-40, and it is why there is no longer an
+          `is_on_the_same_card` branch here.
+
+        Only the count decides whether to ask now. One candidate is not a tie.
         """
         candidates = [x for x in forced_effects if not x.ability.flags.is_delay_ability]
         # The caller only enters this path when `forced_effects[0]` is not a
@@ -357,22 +365,87 @@ class EventManager:
         # rather than inherit it: this method is reachable on its own.
         assert candidates, f"{forced_effects=}"
 
-        faces = [x.this for x in candidates]
-        if all(face.card == faces[0].card for face in faces):
+        if len(candidates) == 1:
             return candidates[0]
 
-        face = ask_first_player(faces)
-        if face == None:
+        chosen = ask_first_player(candidates)
+        if chosen == None:
             return candidates[0]
-        # `index` matches by identity, and one card can carry several forced
-        # abilities, so this resolves to the first ability on the chosen card.
-        # Choosing *between* two abilities of one card needs a prompt over
-        # effects rather than over faces -- MARVEL-40.
-        return candidates[faces.index(face)]
+        assert chosen in candidates, f"{chosen=} {candidates=}"
+        return chosen
+
+    @staticmethod
+    def ForcedOrderLabels(candidates: List['Effect']) -> List[str]:
+        """One prompt label per candidate, all distinct. **Replay-visible.**
+
+        The label is what the recorded command carries, and replay re-resolves a
+        recorded effect through `CommandDescriptor.FindNewEffectIdInternal`,
+        which narrows by the *card* the effect sits on and then, only if that
+        left more than one, by display name. Every option here is built on the
+        first player's identity, so they all share one card and the display name
+        is the only thing separating them.
+
+        That is fine until two forced abilities on one card share a display name
+        -- exactly the case MARVEL-40 makes selectable. Both options would then
+        be indistinguishable in the recording and replay would take the first,
+        silently resolving the other ability.
+
+        So a duplicated name gets a 1-based ordinal in candidate order, which is
+        `Effect.object_id` order. A name that is already unique is left alone, so
+        prompts and recordings do not churn where there was never an ambiguity.
+        The rule is a function of the batch, not of global allocation, so a port
+        reproduces it without reproducing an id counter.
+        """
+        names = [effect.GetDisplayName() for effect in candidates]
+        labels: List[str] = []
+        seen: Dict[str, int] = {}
+        for name in names:
+            if names.count(name) == 1:
+                labels.append(name)
+            else:
+                seen[name] = seen.get(name, 0) + 1
+                labels.append(f"{name} #{seen[name]}")
+        return labels
+
+    def AskForcedOrder(self, first_player: 'Player', candidates: List['Effect']) -> 'Effect|None':
+        """Ask the first player which forced ability initiates next.
+
+        Built on `ChooseAbilities`, which is the same machinery `AskChooseFace`
+        reaches through `AskChooseSelect` -- one `ForChoiceAbility` per option
+        rather than one selector over faces. That is the whole reason this can
+        express a choice between two abilities on a single card, which a face
+        selector cannot.
+
+        `Ties` is carried as the `by_effect` so the prompt keeps naming the rule
+        it is applying, which `AskChooseOneText` would have dropped in favour of
+        a bare `GameRule`.
+        """
+        from game.ability.factory import AbilityFactory
+        from game.effect.rule import Ties
+
+        labels = EventManager.ForcedOrderLabels(candidates)
+        abilities = [AbilityFactory.ForChoiceAbility(label) for label in labels]
+
+        effects = first_player.ChooseAbilities(
+            Ties("Forced abilities would initiate at the same moment", world=self.world),
+            *abilities,
+        )
+        if not effects:
+            return None
+
+        # `ChooseAbilitiesHelper` wraps each ability we passed in an `Effect`, so
+        # the chosen effect's `ability` *is* one of `abilities` -- mapping back is
+        # a position lookup rather than a callback. Compared by identity because
+        # `Ability` does not define `__eq__` and two options may carry equal
+        # content.
+        chosen_ability = effects[0].ability
+        for index, ability in enumerate(abilities):
+            if ability is chosen_ability:
+                return candidates[index]
+        return None
 
     def ProcessForcedEffect(self, message: 'Message2', forced_effects: List['Effect'], priority: 'TimingPriority', undo_handle: 'FastUndoHandle') -> 'GAME_OVER':
         from game.message.sender.sender import CanBeInstead
-        from game.effect.rule import Ties
         from game.ability.ability import TimingPriority
         from game.message import Message
 
@@ -412,11 +485,7 @@ class EventManager:
                 first_player = self.world.GetFirstPlayer()
                 effect = EventManager.SelectForcedEffect(
                     forced_effects,
-                    lambda faces: first_player.AskChooseFace(
-                        faces,
-                        Ties("Forced abilities would initiate at the same moment", world=self.world),
-                        forced=True,
-                    ),
+                    lambda candidates: self.AskForcedOrder(first_player, candidates),
                 )
             else:
                 effect = first_effect
