@@ -102,11 +102,28 @@ python main.py -bot -bot_scenario klaw -bot_heroes she_hulk captain_marvel
 
 Bot saves are **deterministic saves**: `sign`, `time`, and `playtime` are omitted, so the same seed writes a byte-identical file on any machine and no host fingerprint reaches the repo. `-no_bot_deterministic_save` restores the human save format. Human-facing saves are unaffected either way — see MARVEL-27.
 
-Each run also writes `bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` beside its scenes, recording the resolved input timeout, the policy, the fabricated-input count, and one entry per game. **The input timeout must be 0**: a non-zero one lets `DoGetInput` return an untouched `"{}"` that the replay records as a decline nobody made. Generation refuses to start or save if it is not, and the bot device raises `FabricatedInputError` rather than let one through — see MARVEL-32.
+Each run also writes `bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` beside its scenes, recording the resolved input timeout, the policy, the fabricated-input count, how much went wrong (`crashes`), and one entry per game. **The input timeout must be 0**: a non-zero one lets `DoGetInput` return an untouched `"{}"` that the replay records as a decline nobody made. Generation refuses to start or save if it is not, and the bot device raises `FabricatedInputError` rather than let one through — see MARVEL-32.
 
 Beside that goes `bot-coverage-<scenario>-<heroes>-<seed>-<games>.json`: **what the run actually exercised**, which is the number that says whether the corpus is worth generating more of. It separates *present* from *entered play* from *ability resolved*, and its primary measure is which of the 303 `AbilityFactory` methods a card script names actually fired — the tail is where port bugs will hide. Two ranked lists come out, of never-fired triggers and never-exercised cards, and they are the input to coverage-directed generation. On by default (`-no_bot_coverage` to disable), merged across runs by `python -m tools.coverage.report replays/`. Read [docs/card-coverage.md](docs/card-coverage.md) before changing anything it touches — particularly before renaming an `AbilityFactory` method, which moves the denominator.
 
 **Do not let an exception you raise for integrity get swallowed.** `EffectInvoker`, `Message2.Send`, the cost and target checkers, and `Engine.EngineRun` all catch broadly so one bad card cannot end the game, and all report through `Log.OnCrash` — which re-raises only when `Build.release` is false, and `build.py` hardcodes it true. If continuing would produce a *wrong artefact* rather than a wrong frame, derive from `core.errors.EngineIntegrityError`: `Log.OnCrash` re-raises that class regardless of the build.
+
+### Crash capture
+
+Because those handlers swallow, most of what self-play trips would otherwise be a traceback on stdout and nothing else. `engine/device/manager/bot/crash.py` turns each one into an artefact instead, written to `crashes/` (gitignored, `-bot_crash_folder`) — the run installs `Log.crash_observer` for the duration and takes it back down afterwards. See MARVEL-12.
+
+| File | What it is |
+|---|---|
+| `bot-crash-<class>-<signature>.json` | the scene: seed plus every input up to the failure, an ordinary replay |
+| `bot-crash-<class>-<signature>.crash.json` | the sidecar: class, traceback, step, state digest, seed, and the exact command that regenerates the game |
+| `bot-crashes-<scenario>-<heroes>-<seed>-<games>.json` | the run report: distinct signatures with occurrence counts and a minimal repro for each |
+
+- **One bug is one file.** Failures group by a signature over the exception type and the frames it travelled through, so ten thousand recurrences produce one scene, not ten thousand. The exception *message* is deliberately not part of it — it carries card names and would split one bug per game.
+- **The minimal repro is the shortest one.** Whichever occurrence reached the failure in the fewest steps replaces the stored scene, so the artefact you get is the cheapest way back to the bug.
+- **Four classes**, in resolution order: `invariant-violation` (`EngineIntegrityError` and the runner's own refusals), `engine-assert`, `timeout-stall` (`BotStuck`, `bot_max_steps`, restart exhaustion), `unhandled-exception`.
+- **An invariant violation gets no scene**, only a sidecar. Its recorded inputs are the thing being refused, and writing them would put a replay of an untrusted run on disk (MARVEL-32). The seed reproduces it.
+- Artefacts read no clock and no host: traceback paths are relative, like the scenes they sit beside.
+- **A captured crash does not fail the run.** Most of what self-play finds is a pre-existing bug in this engine, and those are to be logged, not to block corpus generation. `-bot_fail_on_crash` gates on them when you want that; `-no_bot_capture_crashes` turns collection off.
 
 Decisions come from a **policy** (`BotPolicy.Choose(decision) -> CommandDescriptor`) injected into `BotDeviceManager`. The two shipped policies are deliberately trivial — they prove the device works, they do not play well. A real policy subclasses `BotPolicy` and registers in `BotPolicyFactory`.
 
@@ -120,9 +137,10 @@ From `py_src/`:
 # fast tests: pure logic, no engine bootstrap beyond `import engine`
 python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_local_effect_order unit_test.test_scene_hash \
-                   unit_test.test_bot_timeout unit_test.test_card_dataset \
-                   unit_test.test_rng unit_test.test_package_tools \
-                   unit_test.test_digest unit_test.test_card_coverage
+                   unit_test.test_bot_timeout unit_test.test_bot_crash \
+                   unit_test.test_card_dataset unit_test.test_rng \
+                   unit_test.test_package_tools unit_test.test_digest \
+                   unit_test.test_card_coverage
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
