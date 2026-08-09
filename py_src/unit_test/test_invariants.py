@@ -650,8 +650,10 @@ class TestModuleWiring(unittest.TestCase):
 
         manager = mock.Mock()
         manager.replay.current_step_id = 12
-        manager.game.scene.is_puzzle = is_puzzle
-        manager.game.scene.GetSaveFileName.return_value = "spider-man-rhino-(47)-(1)"
+        # Read off the session, not `Game.scene`: that property asserts rather
+        # than returning None, and `TestRun.Run` deletes it between cases.
+        manager.game.session.scene.is_puzzle = is_puzzle
+        manager.game.session.scene.GetSaveFileName.return_value = "spider-man-rhino-(47)-(1)"
         manager.game.session.SaveScene.return_value = save_path
 
         invariant_module = module.InvariantModule(manager)
@@ -674,6 +676,14 @@ class TestModuleWiring(unittest.TestCase):
             except InvariantViolation as exc:
                 raised = exc
         return raised, log
+
+    def RunRaising(self, exc):
+        """A rule that blows up rather than returning violations."""
+        from engine.controller.module import invariants as module
+
+        _, invariant_module, manager, patches = self.Module()
+        patches[4] = mock.patch.object(invariants, "Check", side_effect=exc)
+        return self.Run(invariant_module, patches) + (manager,)
 
     def test_nothing_runs_when_the_flag_is_off(self):
         module, invariant_module, _, patches = self.Module(
@@ -763,6 +773,46 @@ class TestModuleWiring(unittest.TestCase):
 
         self.assertIn("zone/duplicate", str(raised))
         self.assertIn("c1 01100", str(raised))
+
+    def test_a_rule_that_raises_fails_the_run_rather_than_going_quiet(self):
+        """The sharp edge. `Log.OnCrash` re-raises `EngineIntegrityError` and
+        swallows everything else, and `build.py` hardcodes `Build.release`, so a
+        plain `AttributeError` out of a rule would be absorbed, play would carry
+        on, and the run manifest would still say `check_invariants: true`. A run
+        that cannot check must not be able to claim it did."""
+        raised, _, _ = self.RunRaising(AttributeError("'Card' object has no attribute 'area'"))
+
+        self.assertIsInstance(raised, InvariantViolation)
+        self.assertIn("checker itself failed", str(raised))
+        self.assertIn("AttributeError", str(raised))
+
+    def test_a_broken_rule_does_not_pretend_to_have_a_repro(self):
+        raised, _, manager = self.RunRaising(AttributeError("boom"))
+
+        self.assertIsNotNone(raised)
+        manager.game.session.SaveScene.assert_not_called()
+
+    def test_a_violation_raised_from_inside_the_rules_passes_straight_through(self):
+        """Not re-wrapped as a checker failure -- it is the ordinary result."""
+        from game.world.invariants import InvariantViolation as Violation_
+
+        raised, _, _ = self.RunRaising(Violation_("zone/duplicate at step 3"))
+
+        self.assertIn("zone/duplicate", str(raised))
+        self.assertNotIn("checker itself failed", str(raised))
+
+    def test_a_deleted_scene_costs_the_repro_not_the_violation(self):
+        """`TestRun.Run` does `del game.session.scene` between cases, and
+        `Game.scene` asserts rather than returning None."""
+        _, invariant_module, manager, patches = self.Module(
+            violations=[Violation("zone/duplicate", "c1 01100", "in 2 places")])
+        del manager.game.session.scene
+
+        raised, log = self.Run(invariant_module, patches)
+
+        self.assertIsNotNone(raised)
+        self.assertIn("zone/duplicate", str(raised))
+        self.assertIn("No repro", log.Assert.call_args[0][1])
 
     def test_clean_forgets_the_previous_game(self):
         _, invariant_module, _, _ = self.Module()

@@ -58,13 +58,30 @@ class InvariantModule:
         is broken every later decision is taken on a state already known to be
         wrong, so the reports that follow describe the wreckage rather than the
         crash. One clean repro is worth more than a list of consequences.
+
+        A rule that *raises* is treated the same way, and for a sharper reason.
+        `Log.OnCrash` re-raises `EngineIntegrityError` and swallows everything
+        else, and `build.py` hardcodes `Build.release = True` -- so a plain
+        `AttributeError` out of a rule would be absorbed, the game would carry
+        on, and the run manifest would still record `check_invariants: true`.
+        A run that cannot check must not be able to claim it did.
         """
         from game.world import invariants
 
         if not self.is_enabled or world is None:
             return
 
-        violations = invariants.Check(world, self.progress)
+        try:
+            violations = invariants.Check(world, self.progress)
+        except invariants.InvariantViolation:
+            raise
+        except Exception as exc:
+            Log.FailedTrace(CATEGORY_NAME, exc)
+            raise invariants.InvariantViolation(
+                f"the invariant checker itself failed at step "
+                f"{self.manager.replay.current_step_id}: "
+                f"{type(exc).__name__}: {exc}") from exc
+
         if not violations:
             return
 
@@ -96,26 +113,31 @@ class InvariantModule:
         a repro that carries a host fingerprint and a timestamp is not one that
         can be committed, compared, or handed to someone else. Nothing here
         reads the clock.
+
+        Everything runs inside one `try`, and the scene comes off the session
+        rather than through `Game.scene`. The property asserts instead of
+        returning `None`, and `TestRun.Run` does `del game.session.scene`
+        between cases -- so both a missing scene and a deleted one raise, and an
+        `AssertionError` escaping here would replace the violation with a stack
+        trace about bookkeeping. The violation is the news.
         """
         session = self.manager.game.session
-        scene = self.manager.game.scene
-
-        if scene is None or scene.is_puzzle:
-            # `Scene.Save` refuses a puzzle board, and a puzzle is authored
-            # rather than generated, so there is nothing to reproduce from.
-            return ""
-
-        stem = FileManager.SanitizeFilename(
-            f"invariant-{scene.GetSaveFileName()}-step{step_id}-{first.rule}".lower())
-        folder = INVARIANT_FOLDER.value
-        FileManager.MakeDir(folder)
 
         try:
+            scene = getattr(session, "scene", None)
+            if scene is None or scene.is_puzzle:
+                # `Scene.Save` refuses a puzzle board, and a puzzle is authored
+                # rather than generated, so there is nothing to reproduce from.
+                return ""
+
+            stem = FileManager.SanitizeFilename(
+                f"invariant-{scene.GetSaveFileName()}-step{step_id}-{first.rule}".lower())
+            folder = INVARIANT_FOLDER.value
+            FileManager.MakeDir(folder)
+
             path = session.SaveScene(FileManager.JoinPath(folder, f"{stem}.json"),
                                      delete_old=False, deterministic=True)
         except Exception as exc:
-            # The violation is the news; a failure to write the repro must not
-            # replace it with a stack trace about the filesystem.
             Log.FailedTrace(CATEGORY_NAME, exc, no_take_as_error=True)
             return ""
 
