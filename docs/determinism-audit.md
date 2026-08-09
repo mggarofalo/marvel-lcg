@@ -263,6 +263,50 @@ two identity faces are the exposure.
 
 **Recommendation.** `sorted(identities)` in both places. Trivial and safe.
 
+**Status: fixed (MARVEL-33) — but not by the recommendation above, which is
+wrong.** `sorted(identities)` does not order this set. `CardFace.__lt__`
+delegates to `Card.__lt__`, which compares `card.object_id` — and an identity's
+two faces are two faces *of one card*. Neither is less than the other, Python's
+sort is stable, and the tie keeps whatever order the set produced. Measured on
+`klaw / captain_marvel+she_hulk / 999`, plain `sorted()` returns `01010b`
+before `01010a`: address order, intact.
+
+That also explains the shape of the confounder recorded under F10 below — the
+diff there was `01001a`/`01001b`, an `a`/`b` swap *within* one card, which is
+precisely the pair the recommended sort cannot separate. The exposure was never
+the multi-identity heroes this finding predicted; it is every hero, and the
+remedy had to be a total order rather than a sort.
+
+`PlayerSetup.IdentityOrder` is now `(card.object_id, paper.card_id)`, and both
+the registration loop and the list handed to `add_change_form_effect` use it.
+The tiebreak is printed data, so a port reproduces it from the card data rather
+than from an allocator. Covered by `unit_test/test_change_form_order.py`, which
+asserts the tie exists before asserting the key breaks it.
+
+*Digest impact, measured.* **None.** All seven wide-matrix per-step digests are
+byte-identical across the change (`4213adb52bcaef38`, `7d6533f039a46133`,
+`241292e4a39af7b4`, `1ecb03f408d44600`, `5dd4d5c932933669`, `e50999c6117e9a54`,
+`af05eb3cff2d0317`). That is expected rather than reassuring, and it is F5's
+point: the digest is keyed on card object ids, which come off a separate
+counter, so effect-id drift cannot reach it. `check_runs` is the wrong
+instrument for this finding.
+
+`tools/determinism/probe_change_form_order.py` is the right one. It boots the
+engine at four different amounts of incidental pre-boot allocation and compares
+the `(effect id, printed card id)` pairs the Change Form abilities received:
+
+```
+after the fix     all 7 cases stable across 4 perturbations
+                  e.g. rhino / spider_man   e6=01001a e7=01001b
+
+before the fix    crossbones reordered      e7=08001a e8=08001b
+                                        ->  e7=08001b e8=08001a
+with sorted()     crossbones still reordered
+```
+
+The third row is the calibration that matters: the recommendation as written
+leaves the defect in place.
+
 ### F5 — Configuration flags shift object id allocation (Medium)
 
 `game/event/manager.py:139-146`, `game/statistics/game_statistics.py:255-256`
@@ -582,6 +626,7 @@ that makes them safe.
 | `check_corpus.py` | Replays the corpus N times via `main.py -test` and checks every recorded digest | needs the corpus |
 | `probe_hash_order.py` | Establishes which container orderings CPython reproduces | yes |
 | `probe_rng.py` | Checks the RNG for cross-process stability. Compared both backends until MARVEL-38 left only one; cross-*language* agreement is `datasets/rng/vectors.json` | yes |
+| `probe_change_form_order.py` | Boots under varying pre-boot allocation and compares the Change Form effect ids. F4's instrument, because `check_runs` cannot see effect-id drift | yes |
 
 `headless.py` drives the engine through `DeviceManager.DoGetInput`.
 `InputDevice.GetInput` is `@final`, but it delegates, so a `DeviceManager`
@@ -654,7 +699,7 @@ Listed so the remaining work is explicit rather than implied.
 | Sort local effects before forced resolution | High | F2. One-line sort in `find_local_effects`; changes resolution order in previously arbitrary cases, so it needs a corpus regeneration and its own review. |
 | Sort `GetTeamUpUnits` output | High | F3. `return sorted(faces)`. Removes set order from recorded target lists. |
 | Force `timeout = 0` in the corpus generator | High | F1. Generator-side guard plus a refusal on non-zero timeout scenes. |
-| Sort identity list in `register_change_form` | Medium | F4. `sorted(identities)` in both places. |
+| ~~Sort identity list in `register_change_form`~~ | High | F4. Done in `MARVEL-33`. Raised from Medium: the exposure is every hero, and `sorted(identities)` was not enough — see the status note on F4. |
 | Normalise `sign` / `time` / `playtime` when freezing the corpus | Medium | F6. Generator-side; also stops a machine fingerprint entering the repo. |
 | Record the resolved config alongside the corpus | Medium | F5. Config drift changes id allocation; make it visible rather than silent. |
 | ~~Declare `numpy` and pin `disable_numpy_random` explicitly~~ | Low | F10. Overtaken by `MARVEL-38`, which deleted both rather than declaring either. `PIL` in `requirements.txt` was a separate `MARVEL-2` item. |
