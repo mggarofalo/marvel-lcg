@@ -7,6 +7,31 @@ from game.player import *
 
 HACK_HERO_ID = '3100'
 
+
+def IdentityOrder(face: 'AlterEgo|Hero') -> tuple[int, str]:
+    """A total order over identity faces. **Allocation-visible** -- see MARVEL-33.
+
+    `register_change_form` gathers identities into a `set`, which iterates by
+    memory address, and the order it settles on decides the order Change Form
+    abilities are registered in -- and so the order their `Effect` object ids are
+    allocated. Those ids reach saved scenes, which is what the corpus cannot
+    tolerate.
+
+    Sorting by `CardFace.__lt__` is **not** enough, which is why this key exists.
+    That comparison delegates to `Card.__lt__` and so orders by `card.object_id`,
+    but an identity's two faces are two faces *of one card*: neither is less than
+    the other, the sort is stable, and the tie keeps whatever order the set
+    produced. Measured on `klaw / captain_marvel+she_hulk / 999`, plain
+    `sorted()` yields `01010b` before `01010a` -- address order, intact. It is
+    the same `a`/`b` swap `docs/determinism-audit.md` records under F4 as a
+    confounder while measuring MARVEL-38.
+
+    `paper.card_id` breaks the tie because it is printed data: distinct per face,
+    identical in every process, and reproducible by a port from the card data
+    rather than from an allocator.
+    """
+    return (face.card.object_id, face.paper.card_id)
+
 class PlayerSetup:
 
     def __init__(self, player: 'Player') -> None:
@@ -72,8 +97,9 @@ class PlayerSetup:
                 for identity in [face] + face.card.back_faces:
                     if isinstance(identity, AlterEgo|Hero):
                         identities.add(identity)
-            for identity in sorted(identities):
-                add_change_form_effect(identity, list(identities))
+            ordered_identities = sorted(identities, key=IdentityOrder)
+            for identity in ordered_identities:
+                add_change_form_effect(identity, ordered_identities)
 
         def register_ask_effect():
             if player.world.GetPlayerNum() > 1:
