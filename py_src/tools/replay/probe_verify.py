@@ -1,0 +1,222 @@
+"""Probe: does `-verify_replays` actually accept a good corpus and reject a bad one?
+
+A gate that cannot fail is not a gate, and this project has already shipped two
+that could not (MARVEL-43, MARVEL-65). Both looked correct in unit tests: what
+was wrong was the path between the check and the process that runs it. So this
+probe asks the question end to end, through the real command line, in fresh
+processes -- the only way to see the exit code, the report and the engine's
+device selection at the same time.
+
+It plays one bot game and then puts four corpora past the verifier:
+
+  clean       the scene as saved                       -> accepted, exit 0
+  corrupt     one recorded step digest overwritten     -> rejected, exit 1
+  truncated   the tail of the recording removed        -> incomplete, exit 1
+  truncated   the same corpus, with -verify_allow_incomplete -> accepted, exit 0
+
+The truncated pair is the one that hangs if the verify device is ever swapped
+for an interactive one: a recording that ends before the game does makes the
+engine ask for a decision nobody is there to make. That was MARVEL-28's original
+symptom, so it is worth a probe rather than a comment.
+
+Run:  python -m tools.replay.probe_verify
+      python -m tools.replay.probe_verify --seed 7
+
+Exit code 0 means the gate accepted what it should and rejected what it should.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+from typing import Any, Dict, List, NamedTuple
+
+from tools.determinism.pinned_env import build_env
+
+# Written into the save folder beside the scenes they describe. Neither is a
+# scene, and the verifier is expected to skip both without being told to.
+RUN_ARTEFACTS = ("bot-manifest-", "bot-coverage-")
+
+# Long enough into the game that the corruption lands in ordinary play rather
+# than setup, and short enough that a small game still reaches it.
+CORRUPT_AT = 10
+
+
+class Result(NamedTuple):
+    exit_code: int
+    report: Dict[str, Any]
+    tail: str
+
+    @property
+    def ok(self) -> bool:
+        return bool(self.report.get("ok"))
+
+    @property
+    def statuses(self) -> List[str]:
+        return [str(case.get("status")) for case in self.report.get("cases", [])]
+
+
+def Generate(folder: str, seed: int) -> str:
+    """Play one bot game into `folder` and return the scene it saved."""
+    os.makedirs(folder, exist_ok=True)
+    proc = subprocess.run(
+        [
+            sys.executable, "main.py", "-bot",
+            "-bot_seed", str(seed),
+            "-bot_save_folder", folder.replace("\\", "/") + "/",
+        ],
+        capture_output=True, text=True, errors="replace",
+        env=build_env(), cwd=os.getcwd(),
+    )
+    saved = [name for name in sorted(os.listdir(folder))
+             if name.endswith(".json") and not name.startswith(RUN_ARTEFACTS)]
+    if len(saved) != 1:
+        raise RuntimeError(
+            f"expected one saved scene in {folder}, found {saved}\n"
+            f"exit {proc.returncode}\nstdout tail: {proc.stdout[-1200:]}")
+    return os.path.join(folder, saved[0])
+
+
+def Verify(folder: str, report_path: str, *, allow_incomplete: bool=False) -> Result:
+    """Run the real command over `folder` and read what it said."""
+    command = [
+        sys.executable, "main.py", "-verify_replays",
+        "-verify_folders", folder.replace("\\", "/") + "/",
+        "-verify_report_file", report_path.replace("\\", "/"),
+    ]
+    if allow_incomplete:
+        command.append("-verify_allow_incomplete")
+
+    proc = subprocess.run(command, capture_output=True, text=True,
+                          errors="replace", env=build_env(), cwd=os.getcwd())
+
+    report: Dict[str, Any] = {}
+    if os.path.isfile(report_path):
+        with open(report_path, encoding="utf-8") as handle:
+            report = json.load(handle)
+
+    return Result(proc.returncode, report, (proc.stdout + proc.stderr)[-900:])
+
+
+def CopyCorpus(source_scene: str, folder: str) -> str:
+    os.makedirs(folder, exist_ok=True)
+    target = os.path.join(folder, os.path.basename(source_scene))
+    shutil.copyfile(source_scene, target)
+    return target
+
+
+def Corrupt(path: str, step: int) -> bool:
+    """Overwrite one recorded step digest. The replay must notice."""
+    with open(path, encoding="utf-8") as handle:
+        scene = json.load(handle)
+    inputs = scene.get("inputs") or []
+    if len(inputs) <= step:
+        return False
+    inputs[step]["digest"] = "0" * 8
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(scene, handle)
+    return True
+
+
+def Truncate(path: str, keep: int) -> bool:
+    """Drop the tail of the recording, so the game outlives its inputs."""
+    with open(path, encoding="utf-8") as handle:
+        scene = json.load(handle)
+    inputs = scene.get("inputs") or []
+    if len(inputs) <= keep:
+        return False
+    scene["inputs"] = inputs[:keep]
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(scene, handle)
+    return True
+
+
+def Check(label: str, holds: bool, detail: str="") -> int:
+    print(f"{'PASS' if holds else 'FAIL'} {label}" + (f" -- {detail}" if detail and not holds else ""))
+    return 0 if holds else 1
+
+
+def main(argv: List[str] | None=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--seed", type=int, default=4242)
+    parser.add_argument("--corrupt-at", type=int, default=CORRUPT_AT)
+    args = parser.parse_args(argv)
+
+    root = tempfile.mkdtemp(prefix="verify-probe-")
+    failures = 0
+    try:
+        scene = Generate(os.path.join(root, "clean"), args.seed)
+        with open(scene, encoding="utf-8") as handle:
+            recorded = len(json.load(handle).get("inputs") or [])
+        print(f"generated {os.path.basename(scene)} ({recorded} recorded steps)\n")
+
+        # --- clean -------------------------------------------------------
+        clean = Verify(os.path.join(root, "clean"),
+                       os.path.join(root, "clean.json"))
+        print(f"clean      exit {clean.exit_code}  ok={clean.report.get('ok')}  "
+              f"total={clean.report.get('total')}  {clean.statuses}")
+        failures += Check("a clean corpus is accepted",
+                          clean.ok and clean.exit_code == 0, clean.tail)
+        failures += Check("the run artefacts beside it were not counted as scenes",
+                          clean.report.get("total") == 1,
+                          f"total={clean.report.get('total')}")
+
+        # --- corrupt -----------------------------------------------------
+        corrupt_folder = os.path.join(root, "corrupt")
+        corrupted = CopyCorpus(scene, corrupt_folder)
+        step = min(args.corrupt_at, max(0, recorded - 1))
+        if not Corrupt(corrupted, step):
+            print(f"FAIL the generated scene has too few steps to corrupt ({recorded})")
+            return 1
+        bad = Verify(corrupt_folder, os.path.join(root, "corrupt.json"))
+        print(f"corrupt    exit {bad.exit_code}  ok={bad.report.get('ok')}  {bad.statuses}")
+        failures += Check(f"a digest corrupted at step {step} is rejected",
+                          not bad.ok and bad.exit_code == 1, bad.tail)
+        failures += Check("the corrupted scene is reported as a failure, not as incomplete",
+                          bad.statuses == ["fail"], str(bad.statuses))
+
+        # --- truncated ---------------------------------------------------
+        short_folder = os.path.join(root, "short")
+        shortened = CopyCorpus(scene, short_folder)
+        keep = max(1, recorded // 2)
+        if not Truncate(shortened, keep):
+            print(f"FAIL the generated scene has too few steps to truncate ({recorded})")
+            return 1
+        short = Verify(short_folder, os.path.join(root, "short.json"))
+        print(f"truncated  exit {short.exit_code}  ok={short.report.get('ok')}  {short.statuses}")
+        failures += Check("a truncated recording does not hang the process",
+                          short.exit_code in (0, 1), f"exit {short.exit_code}")
+        failures += Check("a truncated recording is reported as incomplete",
+                          short.statuses == ["incomplete"], str(short.statuses) + "\n" + short.tail)
+        failures += Check("a truncated recording fails the run by default",
+                          not short.ok and short.exit_code == 1, short.tail)
+
+        allowed = Verify(short_folder, os.path.join(root, "allowed.json"),
+                         allow_incomplete=True)
+        print(f"allowed    exit {allowed.exit_code}  ok={allowed.report.get('ok')}  "
+              f"{allowed.statuses}")
+        failures += Check("-verify_allow_incomplete accepts it",
+                          allowed.ok and allowed.exit_code == 0, allowed.tail)
+
+        # --- empty -------------------------------------------------------
+        empty_folder = os.path.join(root, "empty")
+        os.makedirs(empty_folder, exist_ok=True)
+        empty = Verify(empty_folder, os.path.join(root, "empty.json"))
+        print(f"empty      exit {empty.exit_code}  ok={empty.report.get('ok')}  "
+              f"total={empty.report.get('total')}")
+        failures += Check("verifying nothing is not the same as verifying everything",
+                          not empty.ok and empty.exit_code == 1, empty.tail)
+
+        print()
+        return 1 if failures else 0
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

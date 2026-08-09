@@ -623,7 +623,7 @@ that makes them safe.
 | `pinned_env.py` | The single definition of the pinned environment | n/a |
 | `headless.py` | Boots the engine with a null device manager and returns a per-step digest trace. Answers every prompt with "decline" | yes |
 | `check_runs.py` | Runs the same game N times in fresh processes and diffs the traces. The MARVEL-7 acceptance test | yes |
-| `check_corpus.py` | Replays the corpus N times via `main.py -test` and checks every recorded digest | needs the corpus |
+| `check_corpus.py` | Replays the corpus N times via `main.py -verify_replays` and compares the JSON reports. Drove `main.py -test` until MARVEL-28, which did not replay anything | needs the corpus |
 | `probe_hash_order.py` | Establishes which container orderings CPython reproduces | yes |
 | `probe_rng.py` | Checks the RNG for cross-process stability. Compared both backends until MARVEL-38 left only one; cross-*language* agreement is `datasets/rng/vectors.json` | yes |
 | `probe_change_form_order.py` | Boots under varying pre-boot allocation and compares the Change Form effect ids. F4's instrument, because `check_runs` cannot see effect-id drift | yes |
