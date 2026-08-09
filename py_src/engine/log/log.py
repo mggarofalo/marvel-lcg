@@ -116,7 +116,7 @@ class LogHelper:
 
 class Log:
 
-    CATEGORY = Literal["UPLOAD", "GAME", "WEB", "ENGINE", "STATISTICS", "SCENE", "TEST", "CHEAT", "EDITOR", "CONTROLLER", "CACHE", "EFFECT", "SELECTOR", "REPLAY", "PLAYER", "SENDER", "RENDER", "VERSION", "THREADS", "LOG", "NOTIFY", "LOAD", "DEVICE_MANAGER", "WEB_DEVICE_MANAGER", "JSON", "CONTROLLER_MANAGER", "TASK", "COMMAND", "PUZZLE", "ALL", "SERVER_CONFIG", "SYNC", "NEW", "RANDOM", "CHECK_NEW_VERSION", "UNIT_TEST", "FILE", "CONSOLE", "JOB", "GAME_STATE", "SKIP", "SESSION", "FAST_UNDO", "MESSAGE", "UNDO_HANDLE", "BOT", "INVARIANT"]
+    CATEGORY = Literal["UPLOAD", "GAME", "WEB", "ENGINE", "STATISTICS", "SCENE", "TEST", "CHEAT", "EDITOR", "CONTROLLER", "CACHE", "EFFECT", "SELECTOR", "REPLAY", "PLAYER", "SENDER", "RENDER", "VERSION", "THREADS", "LOG", "NOTIFY", "LOAD", "DEVICE_MANAGER", "WEB_DEVICE_MANAGER", "JSON", "CONTROLLER_MANAGER", "TASK", "COMMAND", "PUZZLE", "ALL", "SERVER_CONFIG", "SYNC", "NEW", "RANDOM", "CHECK_NEW_VERSION", "UNIT_TEST", "FILE", "CONSOLE", "JOB", "GAME_STATE", "SKIP", "SESSION", "FAST_UNDO", "MESSAGE", "UNDO_HANDLE", "BOT", "COVERAGE", "INVARIANT"]
 
     LEVELS = Literal['Warn', 'Error', 'Info', 'Debug', 'DebugInfo', 'Failed', 'Hack']
 
@@ -124,6 +124,12 @@ class Log:
 
     all_log_text: str = ""
     start_time: float = 0
+
+    # Notified for every exception `OnCrash` handles, absorbed or not. Nothing
+    # in the engine sets it; the headless bot installs one so a self-play run
+    # turns an absorbed exception into a replayable artefact instead of a
+    # traceback nobody can act on. See `bot/crash.py` and MARVEL-12.
+    crash_observer: 'Callable[[Log.CATEGORY, Exception], None]|None' = None
 
     ################################################################################
     #
@@ -237,12 +243,39 @@ class Log:
             # keep. The traceback is already logged above. See MARVEL-32.
             raise exc
 
+        # Everything from here down is the absorbing path: the exception stops
+        # here and the game carries on. That is the case a self-play run cannot
+        # see any other way, so tell the observer before the frame is gone. It
+        # runs after the integrity check on purpose -- an integrity error is
+        # re-raised and its caller captures it, and observing it here would
+        # write the state that branch exists to refuse. See MARVEL-12.
+        Log.NotifyCrashObserver(category, exc)
+
         Engine.SaveCrash()
 
         if not Build.release:
             raise
         else:
             return info
+
+    @staticmethod
+    def NotifyCrashObserver(category: 'Log.CATEGORY', exc: Exception) -> None:
+        """Hand the exception to whoever is collecting them, if anyone is.
+
+        A crash reporter must never become the crash: this runs inside an
+        `except` block in the middle of a game, so an observer that raises
+        would replace a bug we can diagnose with one we cannot.
+        """
+        observer = Log.crash_observer
+        if observer == None:
+            return
+        try:
+            observer(category, exc)
+        except Exception as observer_exc:
+            Log.crash_observer = None
+            Log.Warn(CATEGORY_NAME,
+                f"Crash observer raised {type(observer_exc).__name__}: {observer_exc}. "
+                "Uninstalled it; crashes will no longer be collected this run.")
 
     ################################################################################
     #

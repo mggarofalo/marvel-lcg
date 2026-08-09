@@ -8,6 +8,7 @@ from game.deck import *
 from game.card.face.model.base import ModelBase
 from game.element.damage_property import DamageProperty
 from game.world.game_area import *
+from engine.profile import CardCoverage
 
 # Actions
 class ModelOnEvent(ModelBase):
@@ -369,6 +370,12 @@ class ModelOnEvent(ModelBase):
         enter_play_message = Message.WhenCardEnterPlay(this, by_effect, is_flip=is_flip)
         if not this.OnWhenCardEnterPlay(enter_play_message):
             return
+
+        # Past the guard above the card is genuinely in play, which is the
+        # claim coverage records -- an enter-play that was replaced or countered
+        # returns early and is not coverage the game had.
+        if CardCoverage.is_recording:
+            CardCoverage.RecordCardEnteredPlay(this)
 
         # "32088b"
         # assert this.card.area == into_area, f"{this.card.area=} {into_area=}"
