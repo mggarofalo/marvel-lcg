@@ -120,7 +120,13 @@ def RelativeFrame(file_path: str) -> str:
 
     if relative.startswith(os.pardir):
         return os.path.basename(file_path)
-    return relative.replace(os.sep, "/")
+
+    # Normalise this host's separators only. Replacing backslashes outright
+    # would corrupt a POSIX filename that legitimately contains one.
+    normalised = relative.replace(os.sep, "/")
+    if os.altsep:
+        normalised = normalised.replace(os.altsep, "/")
+    return normalised
 
 def FrameKeys(exc: BaseException) -> List[str]:
     """`<path>:<function>:<lineno>` for every frame, outermost first."""
@@ -304,7 +310,10 @@ class CrashCollector:
         # Failure events seen, including the ones past `max_signatures` that
         # got no group of their own.
         self.captured = 0
-        self.dropped_signatures = 0
+        # The signatures that got no group, held as a set: one bug that fires
+        # ten thousand times past the cap is one signature the report is not
+        # showing, not ten thousand.
+        self.dropped: 'Set[str]' = set()
 
         self.seed = -1
 
@@ -365,7 +374,7 @@ class CrashCollector:
                 # Counted above but given no group, so the report can say how
                 # much it is not showing rather than looking complete. Still a
                 # recorded sighting: the caller must not offer it again.
-                self.dropped_signatures += 1
+                self.dropped.add(failure.signature)
                 return True
             group = CrashGroup(failure=failure)
             self.groups[failure.signature] = group
@@ -430,14 +439,19 @@ class CrashCollector:
                       if group.failure.kind == kind)
             for kind in FAILURE_CLASSES
         }
+        recorded = sum(group.occurrences for group in self.groups.values())
         return {
             "captured": self.captured,
             "signatures": len(self.groups),
             "by_class": {kind: count for kind, count in by_class.items() if count},
             # True when `max_signatures` stopped new signatures being recorded.
             # A report that silently drops findings reads as a clean run.
-            "truncated": self.dropped_signatures > 0,
-            "dropped_signatures": self.dropped_signatures,
+            "truncated": len(self.dropped) > 0,
+            # Distinct bugs the report is not showing, and what they cost in
+            # sightings. Both, because either alone reads as the other: "12
+            # dropped" is very different news if it is 12 bugs or 12 hits on one.
+            "dropped_signatures": len(self.dropped),
+            "dropped_occurrences": self.captured - recorded,
         }
 
 ################################################################################
@@ -551,8 +565,9 @@ def FormatSummary(collector: 'CrashCollector') -> List[str]:
     ]
     if summary["truncated"]:
         lines.append(
-            f"{summary['dropped_signatures']} further signature(s) were counted "
-            f"but not recorded (bot_max_crash_signatures={collector.max_signatures})")
+            f"{summary['dropped_signatures']} further signature(s) "
+            f"({summary['dropped_occurrences']} occurrence(s)) were counted but "
+            f"not recorded (bot_max_crash_signatures={collector.max_signatures})")
 
     for group in collector.Groups():
         minimal = group.minimal

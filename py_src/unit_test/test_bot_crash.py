@@ -203,15 +203,22 @@ class TestFramePaths(unittest.TestCase):
         self.assertIn("direct cause", text)
         self.assertIn("ValueError: could not resolve card", text)
 
-    def test_the_signature_does_not_depend_on_the_separator(self):
-        with mock.patch.object(crash.os.path, "relpath",
-                               staticmethod(lambda path, start: "game\\effect\\effect.py")):
-            windows = crash.RelativeFrame("ignored")
-        with mock.patch.object(crash.os.path, "relpath",
-                               staticmethod(lambda path, start: "game/effect/effect.py")):
-            posix = crash.RelativeFrame("ignored")
+    def test_the_two_hosts_agree_on_the_same_frame(self):
+        # `os.path.relpath` answers in the host's separator, so a Windows run
+        # and a Linux run see the same file differently. Simulate each host
+        # fully -- separator and all -- or this passes on one and fails on the
+        # other, which is the very thing it exists to rule out.
+        def AsHost(separator, relative):
+            with mock.patch.object(crash.os, "sep", separator):
+                with mock.patch.object(crash.os.path, "relpath",
+                                       staticmethod(lambda path, start: relative)):
+                    return crash.RelativeFrame("ignored")
+
+        windows = AsHost("\\", "game\\effect\\effect.py")
+        posix = AsHost("/", "game/effect/effect.py")
 
         self.assertEqual(windows, posix)
+        self.assertEqual(windows, "game/effect/effect.py")
 
 
 class TestClassification(unittest.TestCase):
@@ -475,6 +482,21 @@ class TestSignatureCap(unittest.TestCase):
         self.assertEqual(summary["signatures"], 1)
         self.assertTrue(summary["truncated"])
         self.assertEqual(summary["dropped_signatures"], 1)
+        self.assertEqual(summary["dropped_occurrences"], 1)
+
+    def test_one_dropped_bug_firing_often_is_still_one_dropped_bug(self):
+        # "12 dropped" is very different news if it is 12 bugs or 12 hits on
+        # one, so the two are counted separately.
+        collector = MakeCollector(max_signatures=1)
+        collector.CaptureException(Raise(ValueError("a")), Occurrence(seed=1, step=1))
+
+        for step in range(9):
+            collector.CaptureException(RaiseElsewhere(TypeError("b")),
+                                       Occurrence(seed=1, step=step))
+
+        summary = collector.Summary()
+        self.assertEqual(summary["dropped_signatures"], 1)
+        self.assertEqual(summary["dropped_occurrences"], 9)
 
     def test_an_exception_the_cap_dropped_is_not_offered_twice(self):
         # It was counted, so the second sighting -- the observer's and the
@@ -664,6 +686,33 @@ class TestTheObserverCannotBecomeTheCrash(unittest.TestCase):
 
         self.assertEqual(len(calls), 1)
         self.assertIsNone(Log.crash_observer)
+
+
+class TestReportingNeverEndsTheRun(unittest.TestCase):
+    """`Finish` runs outside `RunOne`'s try, so a raising reporter escapes."""
+
+    def test_a_failing_capture_is_absorbed(self):
+        from engine.device.manager.bot.runner import BotRunner
+
+        def Explode():
+            raise RuntimeError("the collector is broken")
+
+        BotRunner.Guarded("capture this crash", Explode)
+
+    def test_the_guard_does_not_swallow_success(self):
+        from engine.device.manager.bot.runner import BotRunner
+
+        done = []
+        BotRunner.Guarded("do the thing", lambda: done.append(True))
+
+        self.assertEqual(done, [True])
+
+    def test_capture_with_no_collector_installed_is_a_no_op(self):
+        from engine.device.manager.bot.runner import BotRunner
+
+        self.assertIsNone(BotRunner.collector)
+        BotRunner.CaptureException(None, None, 1, Raise(ValueError("boom")))
+        BotRunner.CaptureReason(None, None, 1, "timeout-stall", "bot_max_steps", "x")
 
 
 if __name__ == "__main__":

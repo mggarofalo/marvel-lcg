@@ -116,7 +116,10 @@ class BotRunner:
             BotRunner.StopCapture()
 
         BotRunner.WriteManifest(game, device_manager, played, collector)
-        BotRunner.ReportCrashes(collector, device_manager)
+        # The scenes and the manifest are already on disk. A report that cannot
+        # be written is worth a warning, not the run.
+        BotRunner.Guarded("write the crash report",
+                          lambda: BotRunner.ReportCrashes(collector, device_manager))
 
         if collector != None and collector.has_failures and BOT_FAIL_ON_CRASH.value:
             all_ok = False
@@ -181,12 +184,28 @@ class BotRunner:
         )
 
     @staticmethod
+    def Guarded(what: str, action: 'Callable[[], Any]') -> None:
+        """Run a reporting step, absorbing anything it raises.
+
+        Every caller below is already on a failure path, and `Finish` runs
+        *outside* `RunOne`'s try block -- so an exception raised while
+        describing one failed game would end the whole run and lose the games
+        that succeeded. Reporting is never worth that.
+        """
+        try:
+            action()
+        except Exception as exc:
+            Log.Warn(CATEGORY_NAME,
+                f"Could not {what}: {type(exc).__name__}: {exc}")
+
+    @staticmethod
     def CaptureException(game: 'Game', device_manager: 'BotDeviceManager',
                          seed: int, exc: BaseException) -> None:
         collector = BotRunner.collector
         if collector == None:
             return
-        collector.CaptureException(exc, BotRunner.GetOccurrence(game, device_manager, seed))
+        BotRunner.Guarded("capture this crash", lambda: collector.CaptureException(
+            exc, BotRunner.GetOccurrence(game, device_manager, seed)))
 
     @staticmethod
     def CaptureReason(game: 'Game', device_manager: 'BotDeviceManager', seed: int,
@@ -195,8 +214,9 @@ class BotRunner:
         collector = BotRunner.collector
         if collector == None:
             return
-        collector.Capture(Failure.FromReason(kind, reason_key, detail),
-                          BotRunner.GetOccurrence(game, device_manager, seed))
+        BotRunner.Guarded(f"capture {reason_key}", lambda: collector.Capture(
+            Failure.FromReason(kind, reason_key, detail),
+            BotRunner.GetOccurrence(game, device_manager, seed)))
 
     ################################################################################
     #
@@ -396,8 +416,8 @@ class BotRunner:
         # one where none did, and the scene files cannot say which they are.
         # The findings themselves are in the crash report; this is the pointer.
         crashes = collector.Summary() if collector != None else {
-            "captured": 0, "signatures": 0, "by_class": {},
-            "truncated": False, "dropped_signatures": 0,
+            "captured": 0, "signatures": 0, "by_class": {}, "truncated": False,
+            "dropped_signatures": 0, "dropped_occurrences": 0,
         }
         return {
             "generator": "bot",
