@@ -42,6 +42,25 @@ class TaskManager:
             return all(task.is_finished for task in tasks)
 
         TaskManager.condition.Wait(check)
+        TaskManager.RaiseIfAnyFailed(tasks)
+
+    @staticmethod
+    def RaiseIfAnyFailed(tasks: List[Task]) -> None:
+        """Hand the waiting thread the first integrity error among `tasks`.
+
+        The `Job` equivalent, for the same reason: a thread cannot raise at the
+        code that started it, so the error is held and surfaces here. Ordinary
+        exceptions stay absorbed. See `JobManager.RaiseIfAnyFailed` and
+        MARVEL-54.
+        """
+        from engine.log import Log
+
+        failed = [task for task in tasks if task.integrity_error != None]
+        for task in failed[1:]:
+            Log.Assert(CATEGORY_NAME,
+                f"a task also failed: {type(task.integrity_error).__name__}: {task.integrity_error}")
+        if failed:
+            failed[0].RaiseIfFailed()
 
     @staticmethod
     def Shutdown():
