@@ -44,8 +44,20 @@ class LogHelper:
 
     @staticmethod
     def StatLog(category: 'Log.CATEGORY', level: 'Log.LEVELS', text: str):
-        if Build.release:
-            return
+        """Count one log line. Runs on every build.
+
+        `Log.HasError` is the only reader, and it is a correctness signal
+        rather than a debug report: `BotRunner.Verify` uses it to decide whether
+        a generated scene may enter the corpus, and `tools/spec/harness.py` uses
+        it to catch a spec case that "passed" over an exception the engine
+        swallowed. Gating this on `Build.release` -- which `build.py` hardcodes
+        true -- made both of those always pass. See MARVEL-65.
+
+        In a release build `text` is "" because no caller stack is collected, so
+        the counts degenerate to one entry per category and level. That is all
+        `HasError` reads. `ReportStats`, which wants the per-call-site detail,
+        is only ever called under `not Build.release`.
+        """
         def save(c: 'Log.CATEGORY'):
             if c not in Log.log_statistics:
                 Log.log_statistics[c] = {}
@@ -90,10 +102,6 @@ class LogHelper:
 
     @staticmethod
     def PrintLog(category: 'Log.CATEGORY', level: 'Log.LEVELS', *info: object) -> None:
-        # Hide debug info in release version
-        if category in HIDDEN_LOG_CATEGORIES.value:
-            return
-
         if Build.release:
             show_caller = False
         elif level in ['Hack'] + LogHelper.LEVELS_FOR_STATISTICS:
@@ -105,8 +113,18 @@ class LogHelper:
         if show_caller:
             line = GetCallStack(3)
 
+        # Count before the display filters, not after. Whether a category is
+        # hidden is a presentation choice, and it must not decide whether an
+        # error is *detectable* -- `-bot` expands to `-hidden_log_categories
+        # CONTROLLER WEB VERSION STATISTICS`, so an error logged in any of those
+        # was invisible to `Log.HasError` and therefore to the corpus
+        # verification gate. See MARVEL-65.
         if level in LogHelper.LEVELS_FOR_STATISTICS:
             LogHelper.StatLog(category, level, line)
+
+        # Hide debug info in release version
+        if category in HIDDEN_LOG_CATEGORIES.value:
+            return
 
         infos = " ".join(str(x) for x in info)
         if line:
