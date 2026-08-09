@@ -8,6 +8,7 @@ from game.world import *
 from game.scene import *
 from game.game_run.game_state import GameState
 from game import *
+from engine.controller.module.invariants import InvariantModule
 from engine.controller.module.replay import InputModule
 from engine.controller.module.skip import SkipModule
 from engine.controller.module.undo import UndoModule
@@ -23,6 +24,7 @@ class ControllerManager:
         self.skip       = SkipModule()
         self.undo       = UndoModule(self)
         self.replay     = InputModule(self)
+        self.invariants = InvariantModule(self)
         self.console    = Console(self)
 
         self.device_manager = device_manager
@@ -47,6 +49,10 @@ class ControllerManager:
         self.controllers = self.controllers[:total_players]
 
         self.replay.Clean()
+        # Reset here rather than per game: a load, a replay and an undo all
+        # come back through `Setup` with a step counter that starts again, and
+        # the invariants that remember the previous decision must start with it.
+        self.invariants.Clean()
 
         if scene:
             inputs = scene.inputs

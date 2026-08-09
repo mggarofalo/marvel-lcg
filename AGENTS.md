@@ -110,6 +110,24 @@ Decisions come from a **policy** (`BotPolicy.Choose(decision) -> CommandDescript
 
 The device answers through `DeviceManager.WhenInput`, the same entry point the web server uses for a browser POST, so `Controller.ChoiceOne` runs its normal validation, CRC and `replay.Push` path. **Do not add a shortcut around `ChoiceOne`** — bot replays must be structurally indistinguishable from human ones or the corpus is worthless.
 
+### Runtime invariants
+
+Self-play only finds bugs if something is watching, so the bot device runs with the invariant checker on. It asserts a set of rules about the world at every decision — a card is in one zone, counters and threat are not negative, nothing out of play is exhausted, the step counter and the replay history agree — and on a violation it **aborts the game**: it dumps a loadable repro to `py_src/invariants/`, logs the step and the rule, and raises `InvariantViolation`. The run exits non-zero and nothing is saved.
+
+```bash
+python main.py -bot                        # on
+python main.py -bot -no_check_invariants   # off, for corpus generation
+python main.py -check_invariants           # on for a web session, for debugging
+```
+
+It costs about **0.8ms per decision** — 1.86× the wall time of a 20000-decision game, and invisible on a short one because engine startup dominates. That is the number to weigh before turning it off for a corpus run.
+
+The flag is forced from the device in `Engine.Initialize` rather than added to the `bot` arg group. **Do not "simplify" it into the group**: expanding a group calls `InitVariable` for each key immediately, stamping `set_from = "CommandLine"`, and `SetValue` then early-returns when the real command line is applied — so `-no_check_invariants` is silently discarded and the switch cannot be turned off. Any flag put in a group inherits that; the root cause is MARVEL-64.
+
+The rules and — more importantly — the states that *look* like violations and are not live in [docs/invariants.md](docs/invariants.md). **Read it before adding a rule.** Two of them were tried and removed because they fire on ordinary play: there is no lower bound on health anywhere, and no upper bound on threat. A rule that cries wolf aborts a game that was fine and teaches everyone to switch the checker off.
+
+Every rule is read-only. Nothing in `game/world/invariants.py` may send a `Message`, allocate an `Effect`, or touch the RNG — a checker that perturbs the game breaks the determinism the corpus rests on.
+
 ## Testing
 
 From `py_src/`:
@@ -120,7 +138,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_local_effect_order unit_test.test_scene_hash \
                    unit_test.test_bot_timeout unit_test.test_card_dataset \
                    unit_test.test_rng unit_test.test_package_tools \
-                   unit_test.test_digest
+                   unit_test.test_digest unit_test.test_invariants
 # spec harness and puzzle commands: boot the engine and play puzzle boards,
 # still under a second
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
@@ -129,6 +147,7 @@ python -m tools.determinism.check_runs --runs 6  # digest reproduction across pr
 python -m tools.determinism.check_scene_repro    # same seed -> same saved file
 python -m tools.spec.validate --trusted-only     # every trusted behavioral spec
 python -m tools.digest.emit_vectors --check      # digest fixture not stale
+python -m tools.invariants.probe_repro           # an injected violation aborts and its repro reproduces
 python main.py -bot -bot_verify                  # generate a game and replay-verify it
 ```
 

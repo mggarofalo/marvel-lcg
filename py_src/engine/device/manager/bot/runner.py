@@ -17,6 +17,7 @@ Usage:
 """
 
 from core import *
+from core.errors import EngineIntegrityError
 from engine.config import ConfigVariables
 from engine.file import FileManager
 from engine.log import Log
@@ -236,6 +237,13 @@ class BotRunner:
             # value, so a clean run is "it completed AND logged no error".
             completed = TestRun.Run(game, [path], do_save=False)
             passed = completed and not Log.HasError(error=True)
+        except EngineIntegrityError as exc:
+            # The invariant checker runs on the replay too, and it aborts rather
+            # than returning. Catching it here turns "the replay reached an
+            # illegal state" into a failed verification instead of a traceback
+            # out of `Engine.EngineRun`. See MARVEL-11.
+            Log.Assert(CATEGORY_NAME, f"Replay verification aborted: {exc}")
+            passed = False
         finally:
             TestRun.RunEnd(game, False, True)
 
@@ -271,6 +279,10 @@ class BotRunner:
             "timeout": {"requested": requested, "resolved": resolved},
             "deterministic_save": BOT_DETERMINISTIC_SAVE.value,
             "max_steps": BOT_MAX_STEPS.value,
+            # Whether anything was watching the state while these games played.
+            # A corpus generated with it off is not wrong, but it has had less
+            # said about it, and after the fact the scene files cannot tell you.
+            "check_invariants": game.controller_manager.invariants.is_enabled,
             # Across the whole run, including games that were discarded for it.
             # A non-zero value here means the timeout guard was bypassed and
             # every file in this run deserves suspicion, not just the dropped

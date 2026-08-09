@@ -53,6 +53,11 @@ class Controller:
         #     DeviceManager.play_json_crc = Render.last_render_crc
         controller_manager.replay.calculated_digest = message.world.render.CalculateDigest()
 
+        # Same moment the digest describes, so a violation reported here names
+        # the step a replay can be wound to. Off unless `check_invariants` is
+        # set; raises `InvariantViolation` rather than returning. See MARVEL-11.
+        controller_manager.invariants.Check(message.world)
+
         effect_descriptors = [effect.Render(by_effect, self.player_id) for effect in effect_list]
 
         # Load replay
