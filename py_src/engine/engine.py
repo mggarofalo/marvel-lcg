@@ -102,14 +102,14 @@ class Engine:
             # fix. It costs roughly 40% of a bot game's wall time, so corpus
             # generation turns it off with `-no_check_invariants`.
             #
-            # Forced here rather than by putting `-check_invariants` in the
-            # `bot` arg group, which looks equivalent and is not: expanding a
-            # group calls `ConfigVariables.InitVariable` for each of its keys
-            # immediately, stamping `set_from = "CommandLine"`. The real command
-            # line is applied after that loop, and `SetValue` returns early when
-            # `set_from` already matches -- so `-no_check_invariants` was
-            # silently discarded and the switch could not be turned off. The
-            # root cause is MARVEL-64; this is the workaround.
+            # Forced from the resolved device rather than by putting
+            # `-check_invariants` in the `bot` arg group. That started as a
+            # workaround -- a flag inside a group could not be turned off again
+            # -- and MARVEL-64 has fixed that, so the group would work now.
+            # It is kept because the two are not equivalent: `-device bot` is a
+            # documented way to run the bot and expands no group, so a group
+            # entry would leave that spelling unwatched. Keying off the device
+            # covers every way of selecting it.
             if DEVICE.value == "bot" and CHECK_INVARIANTS.set_from == "DefaultValue":
                 CHECK_INVARIANTS.value = True
 

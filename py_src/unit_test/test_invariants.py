@@ -588,26 +588,25 @@ class TestFlagWiring(unittest.TestCase):
 
     `Engine.Initialize` forces it, next to the line that forces `EDITOR` off for
     the same device. The obvious alternative -- adding `-check_invariants` to the
-    `bot` arg group beside `-device bot` and `-no_editor` -- looks equivalent,
-    reads better, and silently breaks the off switch, so it is worth a test
-    rather than a comment.
+    `bot` arg group beside `-device bot` and `-no_editor` -- used to silently
+    break the off switch. MARVEL-64 fixed that, and the flag stays out of the
+    group anyway for a different reason, which is what this pins.
     """
 
     def test_the_flag_is_not_in_the_bot_arg_group(self):
-        """Expanding a group calls `ConfigVariables.InitVariable` for each of its
-        keys immediately, stamping `set_from = "CommandLine"`. The real command
-        line is applied after that loop, and `SetValue` returns early when
-        `set_from` already matches -- so `-bot -no_check_invariants` would set the
-        variable to True and then discard the False. Verified by hand: with the
-        flag in the group, the run manifest reported `check_invariants: true`
-        even with `-no_check_invariants` on the command line."""
+        """`-device bot` is a documented way to run the bot and expands no
+        group, so a group entry would leave that spelling unwatched. Forcing it
+        from the resolved device covers every way of selecting the bot."""
         from engine.config import ConfigVariables
 
         self.assertNotIn("check_invariants", ConfigVariables.group.get("bot", ""))
 
-    def test_a_bool_in_an_arg_group_really_cannot_be_turned_off_again(self):
-        """The trap itself, on a throwaway variable, so the reason above is not
-        just a story. Any flag put in any group inherits this."""
+    def test_a_bool_in_an_arg_group_can_now_be_turned_off_again(self):
+        """The trap this arrangement was originally chosen to dodge, on a
+        throwaway variable. It used to resolve to True; MARVEL-64 made the
+        explicit flag win, so the group is no longer the reason to avoid.
+
+        The rule and every other type live in `unit_test/test_config.py`."""
         from engine.config import ConfigVariables
 
         name = "invariant_probe_flag"
@@ -619,13 +618,13 @@ class TestFlagWiring(unittest.TestCase):
             ConfigVariables.ParseArguments([f"-{group}", f"-no_{name}"])
             ConfigVariables.SetupVariables([name])
 
-            # What the caller asked for is False. What they get is True.
             self.assertIs(ConfigVariables.instance_command[name], False)
-            self.assertTrue(flag.value)
+            self.assertFalse(flag.value)
         finally:
             ConfigVariables.variable_dict.pop(name, None)
             ConfigVariables.group.pop(group, None)
             ConfigVariables.instance_command.pop(name, None)
+            ConfigVariables.instance_group.pop(name, None)
 
 
 class TestViolationIsNotSwallowed(unittest.TestCase):
