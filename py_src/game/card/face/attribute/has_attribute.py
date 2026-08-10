@@ -63,5 +63,5 @@ class HasAttribute(CardFace):
             if value == None:
                 value = 0
             dic |= {key: int(value)}
-        return dic | super().GetInfoDict()
+        return self.MergeInfo(super().GetInfoDict(), dic)
 

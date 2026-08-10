@@ -68,5 +68,5 @@ class HasUses(CanPlaceCounter, HasAttribute):
             if self.uses_counters > 0 and self.uses_counter_name == key:
                 key_name = 'c_' + key
                 the_dict |= {key_name + '_printed': self.uses_counters}
-        return the_dict | super().GetInfoDict()
+        return self.MergeInfo(super().GetInfoDict(), the_dict)
 

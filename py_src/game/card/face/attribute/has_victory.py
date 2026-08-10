@@ -12,9 +12,9 @@ class HasVictory(HasAttribute):
 
     @override
     def GetInfoDict(self) -> Dict[str, int]:
-        return {
+        return self.MergeInfo(super().GetInfoDict(), {
             'victory': self.printed_victory if self.printed_victory != None else 0,
-        } | super().GetInfoDict()
+        })
 
     @override
     def OnBeDefeated(self, would_defeated_message: 'Message.WhenSchemeWouldBeDefeated|Message.WhenUnitWouldBeDefeated', *, as_asset: bool, ignore_when_defeated: bool):

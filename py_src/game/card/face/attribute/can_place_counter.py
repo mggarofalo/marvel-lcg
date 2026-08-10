@@ -107,7 +107,7 @@ class CanPlaceCounter(CardFace):
             counter = self.GetCounters(key)
             key_name = 'c_' + key
             the_dict |= {key_name: counter}
-        return the_dict | super().GetInfoDict()
+        return self.MergeInfo(super().GetInfoDict(), the_dict)
 
     # @override
     # def OnAfterCardLeavePlay(self, message: 'Message.AfterCardLeavePlay') -> None:

@@ -25,9 +25,9 @@ class Minion(Enemy, CanQuickstrike, CanTeamwork, HasGuard, HasPatrol, HasVillain
             engaged_with = self.GetEngagedPlayer().player_id + 1
         else:
             engaged_with = 0
-        return super().GetInfoDict() | {
+        return self.MergeInfo(super().GetInfoDict(), {
             'engaged_with': engaged_with,
-        }
+        })
 
     ################################################################################
     #

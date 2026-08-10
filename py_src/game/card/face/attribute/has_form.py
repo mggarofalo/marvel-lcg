@@ -14,5 +14,5 @@ class HasForm(HasAttribute):
         info: Dict[str, int] = {}
         if self.form:
             info |= {f'f_{self.form}': 1}
-        return info | super().GetInfoDict()
+        return self.MergeInfo(super().GetInfoDict(), info)
 

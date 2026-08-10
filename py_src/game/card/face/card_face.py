@@ -325,9 +325,14 @@ class CardFace(ModelName, ModelTrait, ModelAction, ModelOnEvent, ModelGain, Mode
         a field of its own; it stays in `GetInfoDict` because the debug render
         panel shows it.
         """
-        fields = {
-            'is_exhaust': int(not self.card.state.is_ready),
-        } | self.GetInfoTraits() | self.GetInfoDict()
+        # Three namespaces, merged through the same guard the `GetInfoDict`
+        # chain uses (MARVEL-49): a trait named `is_exhaust`, or a registered
+        # attribute colliding with a `t_` key, would silently drop a field from
+        # the digest rather than show up as a change.
+        fields = CardFace.MergeInfo(
+            {'is_exhaust': int(not self.card.state.is_ready)},
+            CardFace.MergeInfo(self.GetInfoTraits(), self.GetInfoDict()),
+        )
         for key in ('with_player', 'curr_ally_limit', 'curr_restricted_limit'):
             fields.pop(key, None)
         return fields
@@ -341,6 +346,44 @@ class CardFace(ModelName, ModelTrait, ModelAction, ModelOnEvent, ModelGain, Mode
             return self.GetInfoDict()
         else:
             return {}
+
+    @final
+    @staticmethod
+    def MergeInfo(inherited: Dict[str, int], local: Dict[str, int]) -> Dict[str, int]:
+        """Combine one class's own info keys with everything below it in the MRO.
+
+        **Every `GetInfoDict` override must merge through this**, as
+        `MergeInfo(super().GetInfoDict(), {...})`. There are nine definitions of
+        `GetInfoDict` and they used to disagree about which side won a
+        collision: six returned `local | super()`, so the *base* won, while
+        `Identity` and `Minion` returned `super() | local`, so the *subclass*
+        did. Nothing chose that; it was nine independent expressions that
+        happened to differ. See MARVEL-49.
+
+        The direction here is **the more derived class wins**, matching normal
+        override semantics and what `Identity` and `Minion` already did.
+
+        More usefully, a collision is refused rather than resolved. These
+        dictionaries feed the state digest (`game/world/digest.py`), where two
+        classes claiming one key would silently drop a named field from the
+        wire -- a state change that looks like no change at all. The key sets are
+        disjoint today across all thirty-six registered keys plus the directly
+        added ones, and this is what keeps them that way: a future collision
+        fails loudly at the moment it is introduced instead of resolving by MRO
+        accident and diverging between two engines.
+
+        `EngineIntegrityError` rather than an assertion, because a dropped digest
+        field is a wrong *artefact* rather than a wrong frame, and the engine's
+        catch-alls swallow everything else -- see `core/errors.py`.
+        """
+        collisions = inherited.keys() & local.keys()
+        if collisions:
+            from core.errors import EngineIntegrityError
+            raise EngineIntegrityError(
+                f"two GetInfoDict definitions claim {sorted(collisions)}; "
+                f"one of them must be renamed -- see MARVEL-49"
+            )
+        return inherited | local
 
     def GetInfoDict(self) -> Dict[str, int]:
         info: Dict[str, int] = {}
