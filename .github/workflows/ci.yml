@@ -1,0 +1,110 @@
+name: CI
+
+# Every gate in this workflow is verified green on BOTH windows-latest and
+# ubuntu-latest. Anything that is not cross-OS clean belongs in
+# determinism.yml, not here — a red master must mean "something broke", never
+# "that gate has never worked on Linux".
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # bash on both runners: one syntax for line continuations and conditionals.
+    shell: bash
+    # All Python paths are relative to py_src/ — see AGENTS.md, "Run everything
+    # from py_src/". Running from the repo root makes the engine miss its data.
+    working-directory: py_src
+
+env:
+  # MARVEL-36: the Windows console encoding drops log lines containing game
+  # symbols. Pin UTF-8 so a run's logs are readable and identical on both OSes.
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  test:
+    name: tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Both legs always run: which OS failed is the whole point of the matrix.
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Single source of truth for the pin — the same file uv reads locally.
+          python-version-file: py_src/.python-version
+          cache: pip
+          cache-dependency-path: py_src/requirements.lock
+
+      - name: Install pinned dependencies
+        run: pip install -r requirements.lock
+
+      # unittest discover is deliberately not used: it picks up
+      # unit_test/test_all.py, an old harness that mutates Build.release,
+      # appends to sys.argv and writes result files into the working directory.
+      # Name the modules explicitly. See AGENTS.md, "Testing".
+      - name: Unit suite — fast tier
+        run: |
+          python -m unittest \
+            unit_test.test_bot unit_test.test_teamup_order \
+            unit_test.test_local_effect_order unit_test.test_scene_hash \
+            unit_test.test_bot_timeout unit_test.test_bot_crash \
+            unit_test.test_card_dataset unit_test.test_rng \
+            unit_test.test_package_tools unit_test.test_digest \
+            unit_test.test_log_errors unit_test.test_card_coverage \
+            unit_test.test_invariants unit_test.test_verify_replays \
+            unit_test.test_integrity_errors unit_test.test_config
+
+      - name: Unit suite — engine-booting tier
+        run: |
+          python -m unittest \
+            unit_test.test_spec_harness unit_test.test_spec_validate \
+            unit_test.test_puzzle unit_test.test_worlds_encounter \
+            unit_test.test_card_coverage_play
+
+      # MARVEL-55: the suite used to bump the version and leave a commit on
+      # whatever branch was checked out. unit_test/test_package_tools.py guards
+      # the unit level; this guards the whole run.
+      - name: The suite left the repository untouched
+        working-directory: .
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::The test suite modified the working tree:"
+            git status --porcelain
+            exit 1
+          fi
+
+      # Cross-language fixtures the C# port will be accepted against. Each is a
+      # regenerate-or-fail check, so a stale fixture is caught at the commit
+      # that staled it rather than at the port.
+      - name: Fixture staleness — RNG vectors
+        run: python -m tools.rng.emit_vectors --check
+
+      - name: Fixture staleness — state digest vectors
+        run: python -m tools.digest.emit_vectors --check
+
+      - name: Fixture staleness — card dataset
+        run: python -m tools.cards.extract --check
+
+      - name: Trusted behavioral specs
+        run: python -m tools.spec.validate --trusted-only
+
+      # Generates one game and replay-verifies it per-step against the digest.
+      # This is the cheap end of the oracle; the expensive end is determinism.yml.
+      - name: Generate and replay-verify one game
+        run: python main.py -bot -bot_verify

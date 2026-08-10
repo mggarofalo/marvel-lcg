@@ -192,6 +192,9 @@ python -m tools.replay.probe_verify              # the verification gate accepts
 python main.py -bot -bot_verify                  # generate a game and replay-verify it
 ```
 
+CI runs these, split across two workflows by cost — see [CI](#ci) for which gate
+runs where, and why four of them are Windows-only.
+
 Name the modules explicitly. `unittest discover` picks up `unit_test/test_all.py`,
 which is an old harness around the replay suite — it mutates `Build.release`,
 appends to `sys.argv` and writes result files into the working directory. Use
@@ -316,3 +319,23 @@ All work is tracked in Plane, project `MARVEL`. Every issue belongs to a module 
 ### Commits
 
 Conventional Commits: `<type>(<scope>): <description>`. Use `py` scope for `py_src/` changes and `engine` for `src/`.
+
+### CI
+
+Two workflows, split by cost. Both pin Python from `py_src/.python-version`, install from `requirements.lock`, and set `PYTHONIOENCODING=utf-8` (MARVEL-36).
+
+| Workflow | Runs | What |
+|---|---|---|
+| `.github/workflows/ci.yml` | every push to `master`, every PR | both unit tiers, the three fixture staleness checks, the trusted specs, one generated-and-verified game |
+| `.github/workflows/determinism.yml` | nightly 06:00 UTC, or manually | `check_runs` across fresh processes, plus the replay and invariant probes |
+
+`ci.yml` also asserts `git status` is clean after the suite. That is MARVEL-55 at the run level — the suite used to bump the version and leave a commit on whatever branch was checked out.
+
+**Everything in `ci.yml` is verified green on Windows and Linux.** Keep it that way: a gate that has never passed on one OS belongs in `determinism.yml` behind an explicit `runs-on`, not in the push path. A red `master` must mean something broke.
+
+The `probes` job in `determinism.yml` is **windows-only on purpose**. Its four gates all use `tempfile.mkdtemp()`, and absolute POSIX paths are currently parsed as flags (`engine/config.py:169`), so on Linux the save folder silently resolves to the string `True` — MARVEL-72, the same failure mode as MARVEL-28. The unit suite is unaffected and passes identically on both OSes.
+
+Where the remaining corpus-phase jobs attach:
+
+- **MARVEL-35** (Linux determinism) — raise `--runs` on `cross-os`, and switch `probes` from `runs-on: windows-latest` to the same matrix once MARVEL-72 lands. No other change.
+- **MARVEL-18** (manifest hash) — a new job in `determinism.yml`. It needs the corpus to exist (MARVEL-15), so it is named in a comment rather than stubbed; an empty job that always passes is worse than no job.
