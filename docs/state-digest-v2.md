@@ -241,8 +241,17 @@ guards on `IsInPlay()` — and widening the guard means auditing all nine
 overrides for out-of-play safety first. Tracked as `MARVEL-59`, which must land
 before the corpus is generated or not at all.
 
-The field set is `is_exhaust`, plus `GetInfoTraits()`, plus `GetInfoDict()`,
-which is v1's set with three changes:
+The field set is `is_exhaust`, plus `GetInfoTraits()`, plus `GetInfoDict()`.
+
+`GetInfoDict` is built by nine definitions down the class hierarchy, and they
+are merged in one direction — **the more derived class wins** — by
+`CardFace.MergeInfo`, which **refuses a key claimed by two of them** rather than
+letting one silently win. A port needs the refusal more than the direction: two
+classes owning one key would drop a field from the wire, and a missing field is
+invisible in a diff in a way a changed one is not. The three namespaces in
+`GetStateFields` are merged through the same guard. See `MARVEL-49`.
+
+That set is v1's with three changes:
 
 - **`traits` becomes `t_<TRAIT>` keys.** v1 recorded `GetTraitsTotalCount()`, a
   count of *sources*, so losing trait A while gaining trait B did not move it.
@@ -396,6 +405,9 @@ For a C# port targeting byte-identical output, in dependency order:
 7. **Populate `fields`** only for in-play, status and boost areas: `is_exhaust`,
    the `t_<TRAIT>` map, and the face's info dict, minus `with_player`,
    `curr_ally_limit` and `curr_restricted_limit`. Keep zeros. Keep constants.
+   Merge the info dict down the hierarchy with the more derived class winning,
+   and **treat a key claimed by two levels as a fault rather than resolving it**
+   — the sets are disjoint today and a collision would silently drop a field.
 8. **Serialise** exactly as specified above — key order, code-point-sorted
    fields, no whitespace, ASCII escapes.
 9. **Compare as strings**, and diff structurally only when they differ.
@@ -453,12 +465,28 @@ since v2 removes the possibility of either rather than reducing its likelihood.
 | `D11` status cards are presence-only | every card carries a full record |
 | `D12` constants are dead weight | true of a sum, not of named fields; kept for the parse check |
 
-Two are not settled here and stay open:
+One is settled since, and one stays open:
 
-- `D7` (`MARVEL-49`) — the nine `GetInfoDict` definitions merge in two different
-  directions. Harmless while the key sets are disjoint, and **more** important
-  under v2 than under v1: a collision used to change a sum, and would now
-  silently drop a named field from the wire.
+- `D7` (`MARVEL-49`) — **settled.** The nine `GetInfoDict` definitions merged in
+  two different directions: six returned `local | super()`, so the base won,
+  while `Identity` and `Minion` returned `super() | local`, so the subclass did.
+  Nothing chose that, which is why there was no rule to port.
+
+  Every definition now merges through `CardFace.MergeInfo(super().GetInfoDict(),
+  {...})`. The stated direction is **the more derived class wins**, and a
+  collision raises `EngineIntegrityError` rather than resolving — so the
+  direction is documented but never actually load-bearing. `GetStateFields`
+  merges its three namespaces (`is_exhaust`, the `t_` traits, the info dict)
+  through the same guard.
+
+  Refusing rather than resolving is the point. Under v1 a collision changed a
+  sum; under v2 it drops a named field from the wire, which is a state change
+  that looks like no change at all. The key sets are disjoint today across all
+  thirty-six registered keys plus the directly added ones — verified by
+  `unit_test/test_info_dict_merge.py`, which sweeps every card the digest reads
+  on two boards and separately refuses any override that merges by hand. **No
+  digest value moved**, which is the proof the sets were disjoint: had they not
+  been, flipping the direction would have changed the fixture.
 - `D10` (`MARVEL-50`) — `Card.Destroy` leaves the card in `card_dict` with a
   stale `area` pointer. v2 makes the consequence visible rather than fixing it:
   the card is reported in whatever area still holds it.

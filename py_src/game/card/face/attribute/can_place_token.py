@@ -84,7 +84,7 @@ class CanPlaceToken(CardFace):
             token = self.GetTokens(key)
             key_name = 'k_' + key
             the_dict |= {key_name: token}
-        return the_dict | super().GetInfoDict()
+        return self.MergeInfo(super().GetInfoDict(), the_dict)
 
     # @override
     # def OnAfterCardLeavePlay(self, message: 'Message.AfterCardLeavePlay') -> None:

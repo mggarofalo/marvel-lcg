@@ -34,12 +34,12 @@ class Identity(Friend, HasHandSize, PlayerCard):
     @override
     def GetInfoDict(self) -> Dict[str, int]:
         player = self.GetControlByPlayer()
-        return super().GetInfoDict() | {
+        return self.MergeInfo(super().GetInfoDict(), {
             'ally_limit': player.limit_ally.Get(),
             'curr_ally_limit': player.limit_ally.curr_ally,
             'restricted_limit': player.limit_restricted.Get(),
             'curr_restricted_limit': player.limit_restricted.curr_restricted,
-        }
+        })
 
     @override
     def OnPutIntoPlay(self, message: 'Message.WhenCardPutIntoPlay') -> 'bool':
