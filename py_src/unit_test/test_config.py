@@ -151,6 +151,31 @@ class TestAGroupStillSetsWhatNothingElseDoes(ConfigTestCase):
 
         self.assertTrue(self.Resolve(flag, ["-probe_group"]))
 
+    def test_two_groups_disagreeing_is_settled_by_the_later_one(self):
+        # Nothing outranks anything here -- both values come from the same
+        # source -- so the one written further right wins, which is the only
+        # answer that reads off the command line. Neither shipped group
+        # overlaps with the other, but the rule should not be a surprise.
+        flag = ConfigVariables.Bool("probe_flag", False)
+        ConfigVariables.SetGroupArgs("probe_on", "-probe_flag")
+        ConfigVariables.SetGroupArgs("probe_off", "-no_probe_flag")
+
+        self.assertFalse(self.Resolve(flag, ["-probe_on", "-probe_off"]))
+
+    def test_and_the_other_way_round(self):
+        flag = ConfigVariables.Bool("probe_flag", False)
+        ConfigVariables.SetGroupArgs("probe_on", "-probe_flag")
+        ConfigVariables.SetGroupArgs("probe_off", "-no_probe_flag")
+
+        self.assertTrue(self.Resolve(flag, ["-probe_off", "-probe_on"]))
+
+    def test_an_explicit_flag_still_beats_both_of_them(self):
+        flag = ConfigVariables.Bool("probe_flag", False)
+        ConfigVariables.SetGroupArgs("probe_on", "-probe_flag")
+        ConfigVariables.SetGroupArgs("probe_off", "-no_probe_flag")
+
+        self.assertTrue(self.Resolve(flag, ["-probe_on", "-probe_off", "-probe_flag"]))
+
     def test_a_nested_group_still_loses_to_an_explicit_flag(self):
         # However deep the expansion went, it is still a group value.
         flag = ConfigVariables.Bool("probe_flag", False)
