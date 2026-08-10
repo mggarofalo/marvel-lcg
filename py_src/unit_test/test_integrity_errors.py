@@ -261,16 +261,44 @@ def HandlerTypes(handler):
     return names
 
 
+def Absorbs(handler):
+    """Whether this handler stops the exception here.
+
+    A handler that re-raises does not, and neither does one that reports
+    through `Log.OnCrash` -- which re-raises `EngineIntegrityError` itself.
+
+    Deliberately coarse: any `raise` anywhere in the handler counts, including
+    one on a branch that may not be taken. This is a tripwire for handlers
+    written without the rule in mind, not a proof that every path re-raises.
+    """
+    if any(isinstance(inner, ast.Raise) for inner in ast.walk(handler)):
+        return False
+    return not any(isinstance(inner, ast.Call)
+                   and isinstance(inner.func, ast.Attribute)
+                   and inner.func.attr == "OnCrash"
+                   for inner in ast.walk(handler))
+
+
 class AbsorberScan(ast.NodeVisitor):
-    """Broad `except` clauses that swallow whatever they caught.
+    """`except` clauses where an `EngineIntegrityError` could stop.
 
-    A handler is fine -- and not reported -- when any of these hold:
+    Two kinds are reported:
 
-    - the same `try` has an earlier `except EngineIntegrityError`, so the broad
-      clause can never see one;
-    - the handler re-raises;
-    - the handler reports through `Log.OnCrash`, which re-raises integrity
-      errors itself.
+    - a **broad** clause (`except Exception`, `except BaseException`, bare
+      `except`) that absorbs, and that no earlier clause in the same `try` has
+      already taken the integrity error away from;
+    - a clause naming `EngineIntegrityError` that absorbs it outright.
+
+    Order matters and is honoured. `except Exception` written *before* `except
+    EngineIntegrityError` catches the integrity error first, which makes the
+    second clause dead code -- so the broad one is still reported. And an
+    `except EngineIntegrityError` that never re-raises is itself the swallow
+    this whole issue is about, so it is reported wherever it appears.
+
+    Narrower named subclasses (`except FabricatedInputError`, `except
+    BotStuck`) are out of scope. The rule is about absorbing an integrity error
+    *by accident*; naming one of its subclasses is a decision the author made
+    on purpose, and requiring every such site to be listed would be noise.
     """
 
     def __init__(self):
@@ -287,20 +315,24 @@ class AbsorberScan(ast.NodeVisitor):
     visit_ClassDef = PushScope
 
     def visit_Try(self, node):
-        guarded = any(INTEGRITY in HandlerTypes(handler) for handler in node.handlers)
+        # Set once an earlier clause has claimed `EngineIntegrityError`, which
+        # is what makes a later broad clause unable to see one. Whether that
+        # earlier clause was *right* to claim it is judged separately, on its
+        # own line.
+        taken = False
         for handler in node.handlers:
-            if guarded:
+            names = HandlerTypes(handler)
+            broad = handler.type == None or bool(names & BROAD)
+            catches_integrity = INTEGRITY in names
+            if not broad and not catches_integrity:
                 continue
-            if handler.type != None and not HandlerTypes(handler) & BROAD:
-                continue
-            if any(isinstance(inner, ast.Raise) for inner in ast.walk(handler)):
-                continue
-            if any(isinstance(inner, ast.Call)
-                   and isinstance(inner.func, ast.Attribute)
-                   and inner.func.attr == "OnCrash"
-                   for inner in ast.walk(handler)):
-                continue
-            self.found.append(".".join(self.scope) or "<module>")
+
+            reachable = catches_integrity or not taken
+            if reachable and Absorbs(handler):
+                self.found.append(".".join(self.scope) or "<module>")
+
+            if catches_integrity:
+                taken = True
         self.generic_visit(node)
 
 
@@ -326,6 +358,20 @@ def FindAbsorbers():
 # ahead of the broad clause instead -- the scan stops reporting it either way,
 # and only one of the two is correct.
 REVIEWED_ABSORBERS = {
+    # The two this issue is about. They catch `EngineIntegrityError` and do not
+    # re-raise, which is the scan's definition of absorbing -- and here it is
+    # deferral, not absorption: a worker thread cannot raise at its caller, so
+    # the error is held on the job and `RaiseIfFailed` gives it to whoever
+    # waits. If either of these ever stops storing it, the deferral becomes the
+    # swallow again, and no other check would notice.
+    ("engine/job/job.py", "Job.__init__.run_job"): 1,
+    ("engine/task/task.py", "Task.__init__.run"): 1,
+    # Per-scene boundaries. Both replay one recorded scene and report a verdict
+    # on it; the invariant checker aborting mid-replay is a *result* for that
+    # scene, not a reason to end the folder. Both record it as a failure, and
+    # neither writes anything on that path.
+    ("engine/device/manager/bot/runner.py", "BotRunner.Verify"): 1,
+    ("game/test/verify.py", "ReplayVerifier.RunOne"): 1,
     # Best-effort remap of a recorded input onto this run's effect ids. It calls
     # `CommandDescriptor` helpers only; failing means the step replays on its
     # raw recorded input, which is the intended fallback.
@@ -421,7 +467,52 @@ class TestNoNewSiteAbsorbsAnIntegrityError(unittest.TestCase):
             try:
                 Work()
             except EngineIntegrityError:
+                raise
+            except Exception:
+                Absorb()
+        """)
+
+        self.assertEqual(scan, [])
+
+    def test_a_guard_that_never_re_raises_is_reported(self):
+        # It is the swallow, dressed as the fix. The broad clause below it is
+        # genuinely unreachable, so only the guard is named.
+        scan = self.Scan("""
+            try:
+                Work()
+            except EngineIntegrityError:
+                pass
+            except Exception:
+                Absorb()
+        """)
+
+        self.assertEqual(scan, ["<module>"])
+
+    def test_a_guard_written_after_the_broad_clause_is_dead_code(self):
+        # Python takes the first matching clause, so `except Exception` catches
+        # the integrity error and the guard below it never runs. Both are
+        # reported: the broad one absorbs, and the guard is not doing the job
+        # its presence claims.
+        scan = self.Scan("""
+            try:
+                Work()
+            except Exception:
+                Absorb()
+            except EngineIntegrityError:
                 Hold()
+        """)
+
+        self.assertEqual(scan, ["<module>", "<module>"])
+
+    def test_a_guard_that_re_raises_after_recording_is_not_reported(self):
+        # The shape `Log.OnCrash` uses, and the one a boundary that wants to
+        # log first should use.
+        scan = self.Scan("""
+            try:
+                Work()
+            except EngineIntegrityError as exc:
+                Record(exc)
+                raise
             except Exception:
                 Absorb()
         """)
