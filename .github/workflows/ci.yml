@@ -51,9 +51,9 @@ jobs:
         os: [windows-latest, ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           # Single source of truth for the pin — the same file uv reads locally.
           python-version-file: py_src/.python-version
