@@ -298,15 +298,46 @@ class TestCoverage(unittest.TestCase):
 
         self.assertEqual(Records([card])[72]["fields"], {"boost_const": 2})
 
-    def test_a_card_out_of_play_is_located_but_not_interrogated(self):
+    def test_a_card_out_of_play_carries_its_fields_too(self):
+        # MARVEL-59. v1 interrogated only cards in play, v2 kept that boundary
+        # and added boost areas, and this removes it: the zone a card is in no
+        # longer decides whether the oracle can see its state. Otherwise a card
+        # modified on its way into a deck is invisible until it comes back.
         area = FakeArea("PlayerDeck")
         card = FakeCard(1, "01100", area, fields={"attack": 3})
         area.cards.append(card)
 
         record = Records([card])[1]
 
-        self.assertEqual(record["fields"], {})
+        self.assertEqual(record["fields"], {"attack": 3})
         self.assertEqual(record["zone"], "PlayerDeck")
+
+    def test_every_zone_is_interrogated_alike(self):
+        # The rule is now "every card", so no zone may be special-cased.
+        for zone, flags in (
+            ("PlayerDeck", FakeFlags()),
+            ("HandsArea", FakeFlags()),
+            ("EncounterDiscardPile", FakeFlags()),
+            ("VictoryDisplay", FakeFlags()),
+            ("RemovedArea", FakeFlags()),
+            ("VillainArea", FakeFlags(in_play=True)),
+            ("StatusArea", FakeFlags(status=True)),
+            ("BoostingArea", FakeFlags(boost=True)),
+        ):
+            area = FakeArea(zone, flags=flags)
+            card = FakeCard(1, "01100", area, fields={"attack": 3})
+            area.cards.append(card)
+
+            self.assertEqual(Records([card])[1]["fields"], {"attack": 3}, zone)
+
+    def test_a_card_with_no_state_still_reports_an_empty_object(self):
+        # `{}` now means "this card has no registered fields", not "the digest
+        # declined to look". A port must not conflate them.
+        area = FakeArea("PlayerDeck")
+        card = FakeCard(1, "rule_a", area, fields={})
+        area.cards.append(card)
+
+        self.assertEqual(Records([card])[1]["fields"], {})
 
     def test_a_face_down_card_is_labelled_rather_than_hidden(self):
         """The digest is an engine-internal oracle, never a client payload, so

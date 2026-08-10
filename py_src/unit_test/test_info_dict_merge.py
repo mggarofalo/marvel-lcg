@@ -117,10 +117,8 @@ class TestNoCollisionInRealPlay(unittest.TestCase):
             cls.worlds.append(game.world)
 
     def DigestReadableCards(self, world):
-        for card in world.object_manager.card_dict.values():
-            flags = card.area.flags
-            if flags.is_in_play or flags.is_status_area or flags.is_boost_area:
-                yield card
+        # Every card, in every zone, since MARVEL-59 removed the in-play guard.
+        return world.object_manager.card_dict.values()
 
     def test_no_card_the_digest_reads_hits_a_collision(self):
         seen = 0
