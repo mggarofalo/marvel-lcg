@@ -82,7 +82,14 @@ class Deck2(Generic[TC], Object):
         from game.operate.faces import Faces
         Faces.RemoveAllFromGame(self.Get(), GameRule(self.GetOwner().GetRoleCharacter()))
     def Destroy(self):
-        for card in self.cards:
+        # Over a copy: `Card.Destroy` calls `area.Remove(self)`, which mutates
+        # this very list, and iterating a list while removing from it skips
+        # every second entry. The `self.cards = []` afterwards hid the damage
+        # here -- the deck ended up empty either way -- but the skipped cards
+        # were never destroyed, so they kept their effects registered and, since
+        # MARVEL-50, would have stayed in `card_dict` too. Found while fixing
+        # that; this method has no callers, so it has never fired.
+        for card in self.cards[:]:
             card.Destroy()
         self.cards = []
     def MarkAsRemoved(self, card: 'Card') -> None:
