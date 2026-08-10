@@ -62,19 +62,21 @@ jobs:
         run: python -m tools.determinism.check_runs --runs 6
 
   probes:
-    # windows-latest ONLY, on purpose.
+    # windows-latest for now, but the reason has expired.
     #
-    # All four gates below build a scratch directory with tempfile.mkdtemp(),
-    # which is absolute on every platform. engine/config.py:169 normalises an
-    # argument prefix with arg.startswith(('/', '-')), so on Linux an absolute
-    # path is read as a flag: the valued variable in front of it never gets its
-    # value and resolves to the string "True". That is MARVEL-72, and it is the
-    # same failure mode as MARVEL-28.
+    # These four gates used to fail on Linux. All four build a scratch
+    # directory with tempfile.mkdtemp(), and two separate bugs ate the
+    # absolute path it returns: engine/config.py read a leading `/` as a flag
+    # prefix, so the valued variable never received the path and resolved to
+    # the string "True"; and FileManager.FormatPath treated only a Windows
+    # drive letter as absolute, so `/tmp/x` came back anchored as `./tmp/x`.
+    # Both are fixed in MARVEL-72, and all four gates are verified green on
+    # Ubuntu 26.04 / CPython 3.13.
     #
-    # Do not add ubuntu-latest here to "see if it works" — it does not, and a
-    # permanently red leg trains everyone to ignore the workflow. MARVEL-72
-    # fixes the parser; MARVEL-35 then changes runs-on to the same matrix as
-    # cross-os above, and nothing else in this job needs to change.
+    # This job is left on windows-latest only so that MARVEL-35 owns the
+    # change: switch runs-on to the same matrix as cross-os above and delete
+    # this comment. Nothing else in the job needs to change, and there is no
+    # longer a known reason for it to fail.
     name: replay and invariant probes (windows)
     runs-on: windows-latest
     timeout-minutes: 30
