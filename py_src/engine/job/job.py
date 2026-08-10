@@ -28,6 +28,10 @@ class Job:
         self.return_value: Any = None
         self.future: Future[Any]|None = None
 
+        # An `EngineIntegrityError` this job died of, held until a waiter can be
+        # given it. See `RaiseIfFailed`.
+        self.integrity_error: 'EngineIntegrityError|None' = None
+
         def run_job() -> None:
             try:
                 if self.is_coroutine:
@@ -38,7 +42,19 @@ class Job:
                 else:
                     """Run the job function and mark it as done."""
                     self.return_value = func(*args, **kwargs)
+            except EngineIntegrityError as exc:
+                # Not absorbed -- deferred. This is a worker thread, so raising
+                # here would only set the future's exception, which nothing
+                # reads. Hold it instead and let whoever waits for the job raise
+                # it on their own thread. See MARVEL-54.
+                self.integrity_error = exc
+                Log.FailedTrace(CATEGORY_NAME, exc)
             except Exception as exc:
+                # Everything else stays absorbed on purpose: a job that fails
+                # must not take the process down. That is the right call for a
+                # broken card and the wrong one for an error that says the
+                # recorded output is already corrupt, which is the whole
+                # distinction `EngineIntegrityError` exists to draw.
                 Log.FailedTrace(CATEGORY_NAME, exc)
             finally:
                 self.is_done = True
@@ -55,9 +71,21 @@ class Job:
         """Check if the job is done."""
         return self.is_done
 
+    def RaiseIfFailed(self) -> None:
+        """Re-raise an `EngineIntegrityError` the job died of, on this thread.
+
+        Deliberately not cleared afterwards: every waiter for this job gets it.
+        An integrity error means something has already been produced that must
+        not be trusted, so "one caller has heard about it" is not a reason for
+        the next one to carry on. See MARVEL-54.
+        """
+        if self.integrity_error != None:
+            raise self.integrity_error
+
     def WaitFinished(self) -> None:
         """Wait until the job is finished without blocking the main thread."""
         self.condition.Wait(lambda: self.CheckDone())
+        self.RaiseIfFailed()
 
     def __repr__(self) -> str:
         return f"({self.job_id}) {self.name}{' (Async)' if self.is_coroutine else ''}"

@@ -108,6 +108,10 @@ Beside that goes `bot-coverage-<scenario>-<heroes>-<seed>-<games>.json`: **what 
 
 **Do not let an exception you raise for integrity get swallowed.** `EffectInvoker`, `Message2.Send`, the cost and target checkers, and `Engine.EngineRun` all catch broadly so one bad card cannot end the game, and all report through `Log.OnCrash` — which re-raises only when `Build.release` is false, and `build.py` hardcodes it true. If continuing would produce a *wrong artefact* rather than a wrong frame, derive from `core.errors.EngineIntegrityError`: `Log.OnCrash` re-raises that class regardless of the build.
 
+`unit_test/test_integrity_errors.py` enforces that rule rather than restating it. It walks `engine/` and `game/` and fails on any `except` an integrity error could stop at: a broad clause that swallows, or an `except EngineIntegrityError` that never re-raises. Clause **order** counts — `except Exception` written above `except EngineIntegrityError` catches it first and makes the guard dead code, so the broad clause is still reported. Everything that legitimately absorbs is listed in `REVIEWED_ABSORBERS` with the reason. **Adding an entry is a decision:** if an integrity error can reach the `try`, put `except EngineIntegrityError: raise` ahead of the broad clause instead — the scan goes quiet either way and only one of the two is correct.
+
+Threads are the case the convention alone missed. `Job.run_job` and `Task.run` wrap their work in `except Exception`, and a worker thread cannot raise at its caller, so an integrity error there was logged and dropped (MARVEL-54). Both now hold it and re-raise on whoever waits — `JobManager.WaitForAllJobsToComplete` / `WaitForAnyJobToComplete` / `Job.WaitFinished`, and `TaskManager.WaitTasksFinished` / `Task.WaitFinished`. It is deliberately not cleared once raised: every waiter gets it. Ordinary exceptions stay absorbed, which `python -m tools.determinism.probe_threaded_integrity` checks in the same run as the integrity case — it injects both on the real `WaitConnect` job path in a real game.
+
 **`Log.HasError` is a correctness signal, not a debug convenience.** It is how `-bot_verify` decides a replay diverged (`TestRun.Run` returns True unconditionally and reports a failed case by *logging* it) and how the spec harness catches a case that passed over a swallowed exception. It reads the counts `LogHelper.StatLog` writes, so anything that stops those being written silently turns both gates into always-pass — which is exactly what MARVEL-65 was, in two places at once: `StatLog` skipped recording on a release build, and `PrintLog` skipped it for a hidden category. Recording now happens before every display filter. **Never gate it on a presentation concern** — whether a line is printed and whether an error is detectable are different questions.
 
 ### Crash capture
@@ -163,7 +167,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_card_dataset unit_test.test_rng \
                    unit_test.test_package_tools unit_test.test_digest \
                    unit_test.test_log_errors unit_test.test_card_coverage \
-                   unit_test.test_invariants unit_test.test_verify_replays
+                   unit_test.test_invariants unit_test.test_verify_replays \
+                   unit_test.test_integrity_errors
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
@@ -174,6 +179,7 @@ python -m tools.determinism.check_scene_repro    # same seed -> same saved file
 python -m tools.spec.validate --trusted-only     # every trusted behavioral spec
 python -m tools.digest.emit_vectors --check      # digest fixture not stale
 python -m tools.invariants.probe_repro           # an injected violation aborts and its repro reproduces
+python -m tools.determinism.probe_threaded_integrity  # an integrity error on a job thread still stops the run
 python -m tools.replay.probe_verify              # the verification gate accepts and rejects the right corpora
 python main.py -bot -bot_verify                  # generate a game and replay-verify it
 ```

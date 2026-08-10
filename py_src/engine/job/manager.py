@@ -53,6 +53,7 @@ class JobManager:
         def check():
             return all(job.is_done for job in jobs)
         JobManager.condition.Wait(check)
+        JobManager.RaiseIfAnyFailed(*jobs)
 
     @staticmethod
     def WaitForAnyJobToComplete(*jobs: Job) -> None:
@@ -62,6 +63,27 @@ class JobManager:
                     return True
             return False
         JobManager.condition.Wait(check)
+        JobManager.RaiseIfAnyFailed(*jobs)
+
+    @staticmethod
+    def RaiseIfAnyFailed(*jobs: Job) -> None:
+        """Hand the waiting thread the first integrity error among `jobs`.
+
+        A worker thread cannot raise at its caller, so `Job.run_job` holds the
+        error and this is where it lands. Ordinary exceptions are not re-raised:
+        a job that failed for an ordinary reason is still just a failed job.
+        See MARVEL-54.
+
+        Later ones are logged rather than lost -- with `RunProcesses` every
+        controller runs the same code, so all of them failing the same way is
+        one finding, and only the first is worth a traceback.
+        """
+        failed = [job for job in jobs if job.integrity_error != None]
+        for job in failed[1:]:
+            Log.Assert(CATEGORY_NAME,
+                f"{job} also failed: {type(job.integrity_error).__name__}: {job.integrity_error}")
+        if failed:
+            failed[0].RaiseIfFailed()
 
     @staticmethod
     def Shutdown() -> None:
