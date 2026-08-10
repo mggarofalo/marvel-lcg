@@ -2,8 +2,8 @@
 
 ## Prepare
 
-1. Edit `build.py` file, replace `release = True` to `release = False`
-1. Start the game as normal
+1. Edit [`py_src/build.py`](../py_src/build.py), replace `release = True` with `release = False`
+1. Start the game as normal — see the [Install Guide](install_guide.md)
 1. Goto http://localhost:2340 to open the editor
 
 ## In the editor
