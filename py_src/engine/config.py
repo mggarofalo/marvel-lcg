@@ -5,6 +5,17 @@ class ConfigVariable:
 
     SET_FROM: TypeAlias = Literal["DefaultValue", "CommandLine", "LaunchJson", ""]
 
+    # Which source wins when two of them name the same variable. A value is
+    # replaced by one of equal or higher standing and never by a weaker one, so
+    # the answer does not depend on the order `InitVariable` happens to be
+    # called in -- which is what it used to depend on. See MARVEL-64.
+    PRECEDENCE: Dict['ConfigVariable.SET_FROM', int] = {
+        "": 0,
+        "DefaultValue": 1,
+        "LaunchJson": 2,
+        "CommandLine": 3,
+    }
+
     class Base:
         def __init__(self, var_name: 'str') -> None:
             self.name = var_name
@@ -30,11 +41,22 @@ class ConfigVariable:
                 self.set_from = "DefaultValue"
 
         def SetValue(self, value: List[str]|str|int|bool, set_from: 'ConfigVariable.SET_FROM'):
-            if self.set_from == set_from:
-                return
+            """Apply `value` unless a stronger source already decided this one.
 
-            if self.is_initialized:
-                assert self.set_from == "DefaultValue"
+            This used to return early whenever `set_from` matched what was
+            already recorded, which read as an idempotence guard and was a
+            precedence rule in disguise: two writes from the same nominal
+            source meant the *first* one won. Expanding an arg group stamps
+            `"CommandLine"` on every key it names, before the real command line
+            has been applied -- so a flag inside a group could never be
+            overridden by the flag the user actually typed. See MARVEL-64.
+
+            Equal standing now replaces, which is what makes `InitVariable`
+            safe to call more than once: it re-derives the winner from the same
+            dictionaries and lands on the same answer.
+            """
+            if ConfigVariable.PRECEDENCE[set_from] < ConfigVariable.PRECEDENCE[self.set_from]:
+                return
 
             self.SetValueInternal(value)
             self.set_from = set_from
@@ -116,20 +138,29 @@ class ConfigVariables:
     variable_dict: Dict[str, ALLOW_TYPE] = {}
     instance_launch: Dict[str, List[str]|str|int|bool] = {}
     instance_command: Dict[str, List[str]|str|int|bool] = {}
+    # What an arg group expanded to. Kept apart from `instance_command` so the
+    # flag a user typed beats the one a group they also typed implies, whichever
+    # order the two appear in. See MARVEL-64.
+    instance_group: Dict[str, List[str]|str|int|bool] = {}
     is_initialized = False
 
     group: Dict[str, str] = {}
 
     @staticmethod
-    def ParseString(arg_string: str):
+    def ParseString(arg_string: str, *, from_group: bool=False):
         import re
         # Split the string into arguments while handling quoted values
         args = re.findall(r'\"(.*?)\"|(\S+)', arg_string)
         flattened_args = [match[0] if match[0] else match[1] for match in args]
-        ConfigVariables.ParseArguments(flattened_args)
+        ConfigVariables.ParseArguments(flattened_args, from_group=from_group)
 
     @staticmethod
-    def ParseArguments(args: List[str]):
+    def ParseArguments(args: List[str], *, from_group: bool=False):
+        # Where this level's values land. A group's expansion is a weaker
+        # source than the command line that named it, so the two write to
+        # different dictionaries instead of racing for the same key.
+        target = ConfigVariables.instance_group if from_group else ConfigVariables.instance_command
+
         current_key: str = ""
         result: Dict[str, List[str]] = {}
 
@@ -140,27 +171,40 @@ class ConfigVariables:
                 key = arg[1:].lower()
                 current_key = key
                 if current_key in ConfigVariables.group:
-                    ConfigVariables.ParseString(ConfigVariables.group[current_key])
+                    # Expanded here so a group can name another group. Anything
+                    # reached this way is a group value however deep it was.
+                    ConfigVariables.ParseString(ConfigVariables.group[current_key],
+                                                from_group=True)
                 else:
                     result[key] = []
-            else:
-                if current_key:
-                    result[current_key].append(arg)
+            elif current_key in result:
+                result[current_key].append(arg)
+            # Otherwise: a bare value where no flag is open, or one written
+            # after a group name. Groups take no arguments, and there is no
+            # sensible variable to attach it to -- this used to be a `KeyError`
+            # out of argument parsing, which is a worse answer than ignoring it.
 
         # Convert single values to their respective types
         for key, value in result.items():
+            name = key
             if len(value) == 0:
                 if key.startswith("no_"):
-                    ConfigVariables.instance_command[key[3:]] = False
+                    name = key[3:]
+                    target[name] = False
                 else:
-                    ConfigVariables.instance_command[key] = True
+                    target[key] = True
             elif len(value) == 1:
-                ConfigVariables.instance_command[key] = value[0]
+                target[key] = value[0]
             else:
-                ConfigVariables.instance_command[key] = value
+                target[key] = value
 
-            if key in ConfigVariables.variable_dict:
-                ConfigVariables.InitVariable(key)
+            # Applied now rather than left to `Initialize`, because
+            # `Initialize` reads `config_files` the moment parsing returns in
+            # order to find launch.json. Re-deriving is safe: `InitVariable`
+            # picks the winner from the dictionaries as they stand, and running
+            # it again later can only reach the same or a stronger source.
+            if name in ConfigVariables.variable_dict:
+                ConfigVariables.InitVariable(name)
 
     @staticmethod
     def LoadConfig(file_name: str):
@@ -169,20 +213,25 @@ class ConfigVariables:
 
     @staticmethod
     def InitVariable(var_name: str) -> bool:
-        variable: 'ConfigVariable.Base' = ConfigVariables.variable_dict[var_name]
-        if var_name in ConfigVariables.instance_command:
-            value = ConfigVariables.instance_command[var_name]
-            variable.SetValue(value, "CommandLine")
-            return True
-        if var_name in ConfigVariables.instance_launch:
-            value = ConfigVariables.instance_launch[var_name]
-            variable.SetValue(value, "LaunchJson")
-            return True
-        return False
+        """Resolve one variable from the strongest source that names it.
 
-        # if f"no_{var_name}" in ConfigVariables.instance and \
-        #     isinstance(variable, ConfigVariables._Bool):
-        #     variable.SetValue(False)
+        Order is the whole contract: what the user typed, then what an arg
+        group they typed expanded to, then launch.json. A group value still
+        reports as `"CommandLine"` -- `-bot` implying `-device bot` is a
+        command-line decision -- it just loses to an explicit flag rather than
+        beating it by arriving first. See MARVEL-64.
+        """
+        variable: 'ConfigVariable.Base' = ConfigVariables.variable_dict[var_name]
+        sources: List[Tuple[Dict[str, List[str]|str|int|bool], 'ConfigVariable.SET_FROM']] = [
+            (ConfigVariables.instance_command, "CommandLine"),
+            (ConfigVariables.instance_group,   "CommandLine"),
+            (ConfigVariables.instance_launch,  "LaunchJson"),
+        ]
+        for values, set_from in sources:
+            if var_name in values:
+                variable.SetValue(values[var_name], set_from)
+                return True
+        return False
 
     @staticmethod
     def SetupVariables(var_names: List[str]):
