@@ -395,16 +395,49 @@ class EventManager:
         prompts and recordings do not churn where there was never an ambiguity.
         The rule is a function of the batch, not of global allocation, so a port
         reproduces it without reproducing an id counter.
+
+        **An ordinal can collide with a real name**, which is the part that is
+        easy to get wrong: for display names `["Attack", "Attack", "Attack #2"]`,
+        numbering the two `Attack`s naively produces `Attack #2` twice -- once
+        synthesised, once genuine -- and hands replay the very ambiguity this
+        function exists to remove. Ordinals therefore skip any label already
+        claimed, whether by a name that was unique or by an earlier ordinal.
         """
         names = [effect.GetDisplayName() for effect in candidates]
-        labels: List[str] = []
-        seen: Dict[str, int] = {}
+
+        counts: Dict[str, int] = {}
         for name in names:
-            if names.count(name) == 1:
+            counts[name] = counts.get(name, 0) + 1
+
+        # A name that occurs once keeps it, so those are claimed up front and an
+        # ordinal has to route around them.
+        taken = {name for name in names if counts[name] == 1}
+
+        labels: List[str] = []
+        ordinals: Dict[str, int] = {}
+        for name in names:
+            if counts[name] == 1:
                 labels.append(name)
-            else:
-                seen[name] = seen.get(name, 0) + 1
-                labels.append(f"{name} #{seen[name]}")
+                continue
+            ordinal = ordinals.get(name, 0)
+            while True:
+                ordinal += 1
+                label = f"{name} #{ordinal}"
+                if label not in taken:
+                    break
+            ordinals[name] = ordinal
+            taken.add(label)
+            labels.append(label)
+
+        if len(set(labels)) != len(labels):
+            # Unreachable by the construction above, and checked anyway: a
+            # duplicate here is not a wrong frame, it is a recorded command that
+            # replays as a different ability. `EngineIntegrityError` survives the
+            # engine's catch-alls -- see `core/errors.py`.
+            from core.errors import EngineIntegrityError
+            raise EngineIntegrityError(
+                f"forced-order labels are not distinct: {labels}"
+            )
         return labels
 
     def AskForcedOrder(self, first_player: 'Player', candidates: List['Effect']) -> 'Effect|None':

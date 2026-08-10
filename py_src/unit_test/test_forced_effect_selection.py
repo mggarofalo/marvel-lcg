@@ -265,6 +265,27 @@ class TestForcedOrderLabels(unittest.TestCase):
         ])
         self.assertEqual(labels, ["Surge #1", "Draw a card", "Surge #2"])
 
+    def test_an_ordinal_does_not_collide_with_a_genuine_name(self):
+        # The naive rule numbers the two "Attack"s 1 and 2 and leaves the third
+        # name alone, emitting "Attack #2" twice -- once synthesised, once
+        # genuine. That hands replay the exact ambiguity this function removes.
+        labels = EventManager.ForcedOrderLabels([
+            FakeEffect("a", self.face, display_name="Attack"),
+            FakeEffect("b", self.face, display_name="Attack"),
+            FakeEffect("c", self.face, display_name="Attack #2"),
+        ])
+        self.assertEqual(labels, ["Attack #1", "Attack #3", "Attack #2"])
+
+    def test_an_ordinal_does_not_collide_with_an_earlier_ordinal(self):
+        # Two duplicated groups whose ordinals could land on each other.
+        labels = EventManager.ForcedOrderLabels([
+            FakeEffect("a", self.face, display_name="A"),
+            FakeEffect("b", self.face, display_name="A"),
+            FakeEffect("c", self.face, display_name="A #1"),
+            FakeEffect("d", self.face, display_name="A #1"),
+        ])
+        self.assertEqual(len(set(labels)), len(labels), labels)
+
     def test_labels_are_always_distinct(self):
         # The property the replay format actually depends on.
         for names in (
@@ -272,11 +293,17 @@ class TestForcedOrderLabels(unittest.TestCase):
             ["X", "Y", "X", "Y"],
             ["A", "B", "C"],
             ["", ""],
+            # Adversarial: genuine names shaped like the ordinals we synthesise.
+            ["Attack", "Attack", "Attack #2"],
+            ["Attack", "Attack", "Attack #1", "Attack #2"],
+            ["A #1", "A", "A", "A #2", "A #3"],
+            ["Z #1", "Z #1", "Z"],
         ):
             labels = EventManager.ForcedOrderLabels(
                 [FakeEffect(n or "blank", self.face, display_name=n) for n in names]
             )
             self.assertEqual(len(set(labels)), len(labels), names)
+            self.assertEqual(len(labels), len(names), names)
 
     def test_one_label_per_candidate_in_order(self):
         candidates = [
