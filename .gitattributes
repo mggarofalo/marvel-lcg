@@ -1,0 +1,27 @@
+# Line endings are a correctness concern in this repo, not a style one.
+#
+# datasets/ holds generated files that a --check gate regenerates and compares
+# against the checked-in copy. With no policy here, the working tree's line
+# endings depend on whoever cloned it: git's core.autocrlf defaults to true on
+# Windows, which rewrites every LF to CRLF on checkout, and the regenerated
+# file then differs from the committed one. That is invisible to anyone whose
+# git is set to input or false, and it made the Windows CI leg fail while the
+# Linux leg passed (MARVEL-67).
+#
+# Normalise to LF in the working tree on every platform.
+* text=auto eol=lf
+
+# Except where the tool genuinely requires CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary: never convert, never diff as text.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.ttf  binary
+*.woff binary
+*.eot  binary
+*.zip  binary
