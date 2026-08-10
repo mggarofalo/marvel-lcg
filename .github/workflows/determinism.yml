@@ -1,0 +1,108 @@
+name: Determinism
+
+# The slow half of the gate set. These re-run the engine in many fresh
+# processes, so they are scheduled rather than run on every commit — a push
+# gate that takes minutes stops being read.
+#
+# Split by OS deliberately, and the split is evidence, not caution:
+#   cross-os  gates verified green on windows-latest AND ubuntu-latest
+#   probes    gates that currently fail on Linux for a known, filed reason
+#
+# See AGENTS.md, "CI", for where MARVEL-35 and MARVEL-18 attach.
+
+on:
+  schedule:
+    # 06:00 UTC nightly. Runs against master only.
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: determinism-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+    working-directory: py_src
+
+env:
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  cross-os:
+    name: digest reproduction (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    # See the note in ci.yml: a blocked device hangs rather than fails. This
+    # job spawns many fresh processes, so it gets a wider budget than ci.yml.
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: py_src/.python-version
+          cache: pip
+          cache-dependency-path: py_src/requirements.lock
+
+      - name: Install pinned dependencies
+        run: pip install -r requirements.lock
+
+      # Verified green on both runners. MARVEL-35 owns raising --runs and
+      # deciding what a Linux-vs-Windows digest divergence means; this job is
+      # only the place it lands.
+      - name: Digest reproduces across fresh processes
+        run: python -m tools.determinism.check_runs --runs 6
+
+  probes:
+    # windows-latest ONLY, on purpose.
+    #
+    # All four gates below build a scratch directory with tempfile.mkdtemp(),
+    # which is absolute on every platform. engine/config.py:169 normalises an
+    # argument prefix with arg.startswith(('/', '-')), so on Linux an absolute
+    # path is read as a flag: the valued variable in front of it never gets its
+    # value and resolves to the string "True". That is MARVEL-72, and it is the
+    # same failure mode as MARVEL-28.
+    #
+    # Do not add ubuntu-latest here to "see if it works" — it does not, and a
+    # permanently red leg trains everyone to ignore the workflow. MARVEL-72
+    # fixes the parser; MARVEL-35 then changes runs-on to the same matrix as
+    # cross-os above, and nothing else in this job needs to change.
+    name: replay and invariant probes (windows)
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: py_src/.python-version
+          cache: pip
+          cache-dependency-path: py_src/requirements.lock
+
+      - name: Install pinned dependencies
+        run: pip install -r requirements.lock
+
+      - name: Same seed writes the same saved file
+        run: python -m tools.determinism.check_scene_repro
+
+      - name: The verification gate accepts and rejects the right corpora
+        run: python -m tools.replay.probe_verify
+
+      - name: An injected invariant violation aborts and its repro reproduces
+        run: python -m tools.invariants.probe_repro
+
+      - name: An integrity error on a job thread still stops the run
+        run: python -m tools.determinism.probe_threaded_integrity
+
+  # MARVEL-18 attaches here: a job that verifies the frozen corpus manifest
+  # hash. It needs the corpus to exist first (MARVEL-15), so it is named but
+  # not stubbed — an empty job that always passes is worse than no job.
