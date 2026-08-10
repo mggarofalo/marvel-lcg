@@ -247,16 +247,26 @@ INTEGRITY = "EngineIntegrityError"
 
 
 def HandlerTypes(handler):
-    """The bare names an `except` clause catches. `x.Y` counts as `x`."""
+    """The class names an `except` clause catches.
+
+    The rightmost component, so a qualified reference resolves the same as an
+    imported one: `except core.errors.EngineIntegrityError` is the same catch
+    as `except EngineIntegrityError`, and reading it as the module name `core`
+    would make the clause invisible to the scan. Nothing in `engine/` or
+    `game/` writes it that way today -- but `except invariants.InvariantViolation`
+    and `except coverage_report.DatasetMissing` show the style is in use, and a
+    scan that only sees one spelling of the rule is a scan that stops working
+    the first time someone uses the other.
+    """
     node = handler.type
     if node is None:
         return set()
     parts = node.elts if isinstance(node, ast.Tuple) else [node]
     names = set()
     for part in parts:
-        while isinstance(part, ast.Attribute):
-            part = part.value
-        if isinstance(part, ast.Name):
+        if isinstance(part, ast.Attribute):
+            names.add(part.attr)
+        elif isinstance(part, ast.Name):
             names.add(part.id)
     return names
 
@@ -555,6 +565,43 @@ class TestNoNewSiteAbsorbsAnIntegrityError(unittest.TestCase):
             try:
                 Work()
             except:
+                pass
+        """)
+
+        self.assertEqual(scan, ["<module>"])
+
+    def test_a_qualified_guard_counts_as_a_guard(self):
+        # `except core.errors.EngineIntegrityError` is the same catch as the
+        # imported spelling, and a scan that reads it as the module name `core`
+        # would see no guard at all.
+        scan = self.Scan("""
+            try:
+                Work()
+            except core.errors.EngineIntegrityError:
+                raise
+            except Exception:
+                Absorb()
+        """)
+
+        self.assertEqual(scan, [])
+
+    def test_a_qualified_guard_that_swallows_is_still_reported(self):
+        scan = self.Scan("""
+            try:
+                Work()
+            except core.errors.EngineIntegrityError:
+                pass
+            except Exception:
+                Absorb()
+        """)
+
+        self.assertEqual(scan, ["<module>"])
+
+    def test_a_tuple_of_types_is_read_whole(self):
+        scan = self.Scan("""
+            try:
+                Work()
+            except (ValueError, Exception):
                 pass
         """)
 
