@@ -16,7 +16,10 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Supersede a PR's own earlier runs, but never cancel a master run: the point
+  # of this workflow is that a red master is visible, and a cancelled run
+  # leaves the commit that broke it with no verdict at all.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 defaults:
   run:
@@ -35,6 +38,12 @@ jobs:
   test:
     name: tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # A hang is a realistic failure here, not a hypothetical one:
+    # Controller.ChoiceOne blocks a thread waiting for input, and -test once
+    # fell through to the interactive keyboard device and blocked in
+    # WaitUntilGameStart() forever (MARVEL-28). The whole matrix runs in ~1
+    # minute, so anything past 15 is stuck, not slow.
+    timeout-minutes: 15
     strategy:
       # Both legs always run: which OS failed is the whole point of the matrix.
       fail-fast: false
