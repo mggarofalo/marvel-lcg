@@ -182,24 +182,38 @@ def _OwnerId(card: Any) -> int:
 
 
 def _Fields(card: Any) -> Dict[str, int]:
-    """Named live state, code-point ordered. Empty for cards out of play.
+    """Named live state, code-point ordered. **Every card, in every zone.**
 
-    The guard is the same one v1 used to decide whether to compute a value at
-    all, plus boost areas: `GetRenderInfo` has always had an `is_boost_area`
-    branch, but `GetCRC` returned `-1` before it could be reached, so a boost
-    card revealed during a villain activation never entered the digest even
-    though its icons changed the outcome of the attack.
+    v1 computed a value only for cards in play or in a status area. v2 kept that
+    boundary and added boost areas, and MARVEL-59 removed it: a card carries its
+    fields in a deck, in hand, in a discard pile and in the victory display, the
+    same as on the board.
 
-    It stops there rather than covering every zone because several
-    `GetInfoDict` overrides read state that only exists in play --
-    `Identity.GetInfoDict` goes through `GetControlByPlayer`, `Minion` guards on
-    `IsInPlay()` -- and an oracle that can raise while computing itself is worse
-    than one with a documented edge. Widening it means auditing those overrides
-    first.
+    The boundary was never principled -- it was inherited from v1 and held
+    because several `GetInfoDict` overrides looked unsafe out of play, and an
+    oracle that can raise while computing itself is worse than one with a
+    documented edge. MARVEL-59 audited all nine definitions and found them
+    total:
+
+    - `Identity` reads `GetControlByPlayer`, whose `isinstance(owner, Player)`
+      assertion was the stated reason for the guard. It is satisfied out of
+      play: the method only consults the controller `if self.IsInPlay()`, and
+      otherwise falls back to `GetOwner()` -- and an identity card is always
+      owned by a player. Measured by moving Peter Parker's hero side into the
+      player deck: 16 fields, `ally_limit` 3.
+    - `Minion` already guards itself on `IsInPlay()` and reports `engaged_with`
+      as 0 out of play, so its key set does not change with the zone.
+    - The base and the six attribute mixins read printed values, registered
+      attributes, tokens, counters and form -- none of which consult a player.
+
+    Empirically: 1,003 out-of-play cards across the seven wide-matrix games, in
+    nine distinct zones, computed without raising.
+
+    What it buys is that a card modified before it leaves play -- or while in a
+    deck or set aside -- is visible to the oracle at the step it changes rather
+    than at the step it comes back. What it costs is 1.87x the raw bytes and
+    **1.33x gzipped**, because the added records are highly repetitive.
     """
-    flags = card.area.flags
-    if not (flags.is_in_play or flags.is_status_area or flags.is_boost_area):
-        return {}
     fields = card.face.GetStateFields()
     return {key: fields[key] for key in sorted(fields)}
 

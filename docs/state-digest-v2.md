@@ -227,19 +227,38 @@ every input, from which the whole hidden state is derivable.
 
 Named live state, keys sorted by Unicode code point.
 
-Populated for cards in an area flagged `is_in_play`, `is_status_area` or
-`is_boost_area`; `{}` for every other card. The first two are exactly the cases
-v1 computed a value for. **Boost areas are new** — `GetRenderInfo` always had an
+Populated for **every card, in every zone**. `{}` means the card has no
+registered fields, never that the digest declined to look — a port must not
+conflate the two.
+
+v1 computed a value only for cards in play or in a status area. v2 first kept
+that boundary and added boost areas — `GetRenderInfo` always had an
 `is_boost_area` branch, but `GetCRC` returned `-1` before it could be reached,
 so a boost card revealed during a villain activation never entered the digest
 even though its icons changed the outcome of the attack.
 
-It stops at those three rather than covering every zone because several
-`GetInfoDict` overrides read state that only exists in play —
-`Identity.GetInfoDict` goes through `GetControlByPlayer`, `Minion.GetInfoDict`
-guards on `IsInPlay()` — and widening the guard means auditing all nine
-overrides for out-of-play safety first. Tracked as `MARVEL-59`, which must land
-before the corpus is generated or not at all.
+`MARVEL-59` then removed the boundary entirely. It was inherited from v1 rather
+than chosen, and it held because several `GetInfoDict` overrides *looked* unsafe
+out of play. The audit found all nine total:
+
+- **`Identity`** reads `GetControlByPlayer`, whose `isinstance(owner, Player)`
+  assertion was the stated reason for the guard. It is satisfied out of play:
+  the method consults the controller only `if self.IsInPlay()` and otherwise
+  falls back to `GetOwner()` — and an identity card is always owned by a player.
+  Measured by moving Peter Parker's hero side into the player deck: 16 fields,
+  `ally_limit` 3.
+- **`Minion`** already guarded itself on `IsInPlay()` and reports `engaged_with`
+  as 0 out of play, so its key set does not change with the zone.
+- **The base and the six attribute mixins** read printed values, registered
+  attributes, tokens, counters and form. None consults a player.
+
+Empirically, 1,003 out-of-play cards across the seven wide-matrix games, in nine
+distinct zones, computed without raising.
+
+What it buys is that a card modified before it leaves play — or while sitting in
+a deck or set aside — is visible at the step it changes rather than at the step
+it returns. **Every per-step digest changed**, which is why this had to land
+before the corpus and not after.
 
 The field set is `is_exhaust`, plus `GetInfoTraits()`, plus `GetInfoDict()`.
 
@@ -382,10 +401,26 @@ what a dedicated, write-once repository holds. The `MARVEL-4` decisions — gzip
 separate repo pinned by SHA, hash manifest here, shard by scenario — all still
 apply and none of them change.
 
-Most of that cost is coverage rather than detail: only five of eighty-two cards
-carry a `fields` object, so roughly two thirds of the payload is the
-seventy-seven position-only records. If the corpus ever needs to shrink, the
-lever is `Fingerprint()` above, not trimming fields.
+### What `MARVEL-59` added to that
+
+The figures above were measured while `fields` was populated only for cards in
+play. Removing that boundary puts a `fields` object on every card. Measured
+across the seven wide-matrix games, one document per game at the same step:
+
+| | in-play only | every zone | factor |
+|---|---|---|---|
+| raw bytes | 128,404 | 239,735 | **1.87×** |
+| gzip -9 bytes | 13,284 | 17,649 | **1.33×** |
+
+Raw payload nearly doubles; compressed it grows by a third, because the added
+records are overwhelmingly printed constants and zeros repeated across a deck,
+which is exactly what gzip removes. On the corpus extrapolation above that moves
+**~0.53 GB to ~0.71 GB gzipped**, which does not change any `MARVEL-4` decision.
+
+That is the trade the boundary was hiding: a third more compressed bytes for an
+oracle that can see a card change while it is in a deck instead of only when it
+comes back. If the corpus ever does need to shrink, the lever is `Fingerprint()`
+above, not narrowing the zones again.
 
 ## Reimplementation checklist
 
@@ -402,12 +437,14 @@ For a C# port targeting byte-identical output, in dependency order:
 4. **Index within the zone list**, from 0.
 5. **Resolve `owner`** as controller-then-owner, `-1` for the scenario.
 6. **Resolve `host`** from the area's bound card, `-1` when there is none.
-7. **Populate `fields`** only for in-play, status and boost areas: `is_exhaust`,
+7. **Populate `fields` for every card, whatever zone it is in**: `is_exhaust`,
    the `t_<TRAIT>` map, and the face's info dict, minus `with_player`,
    `curr_ally_limit` and `curr_restricted_limit`. Keep zeros. Keep constants.
    Merge the info dict down the hierarchy with the more derived class winning,
    and **treat a key claimed by two levels as a fault rather than resolving it**
    — the sets are disjoint today and a collision would silently drop a field.
+   An empty `fields` means the card registers none, not that the zone was
+   skipped.
 8. **Serialise** exactly as specified above — key order, code-point-sorted
    fields, no whitespace, ASCII escapes.
 9. **Compare as strings**, and diff structurally only when they differ.
@@ -458,14 +495,14 @@ since v2 removes the possibility of either rather than reducing its likelihood.
 | `D2` the per-card value is a sum | named fields, never summed |
 | `D3` negatives collide with sentinels | positions are a zone name and an index |
 | `D4` mismatch accepted by default | fixed in `MARVEL-43`; `IsIgnorableMismatch` carries over unchanged |
-| `D5` boost cards invisible | boost areas carry `fields` |
+| `D5` boost cards invisible | boost areas carry `fields`; since `MARVEL-59`, so does every other zone |
 | `D6` `GetAll()` appends removed cards | the two lists are read separately, `/removed` |
 | `D8` face-down cards leak | recorded on purpose, labelled, never sent to a client |
 | `D9` id 0 excluded by number | nothing is excluded |
 | `D11` status cards are presence-only | every card carries a full record |
 | `D12` constants are dead weight | true of a sum, not of named fields; kept for the parse check |
 
-One is settled since, and one stays open:
+Both are settled since:
 
 - `D7` (`MARVEL-49`) — **settled.** The nine `GetInfoDict` definitions merged in
   two different directions: six returned `local | super()`, so the base won,
