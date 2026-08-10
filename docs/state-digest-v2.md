@@ -524,6 +524,25 @@ Both are settled since:
   on two boards and separately refuses any override that merges by hand. **No
   digest value moved**, which is the proof the sets were disjoint: had they not
   been, flipping the direction would have changed the fixture.
-- `D10` (`MARVEL-50`) — `Card.Destroy` leaves the card in `card_dict` with a
-  stale `area` pointer. v2 makes the consequence visible rather than fixing it:
-  the card is reported in whatever area still holds it.
+- `D10` (`MARVEL-50`) — **settled.** `Card.Destroy` left the card in `card_dict`
+  with a stale `area` pointer, so the digest went on describing a destroyed card
+  in the zone it had just been taken out of. v2 made the consequence visible
+  rather than fixing it; `MARVEL-50` fixed it.
+
+  `Destroy` now ends with `object_manager.RemoveCard(self.object_id)`, so
+  destroying a card is the one and only way a card stops being described. **The
+  id is not released** — `index_dict` only ever increments, so no later card can
+  be allocated a destroyed card's number, and the allocation contract above is
+  unchanged.
+
+  This is distinct from *removed from the game*: a removed card still exists,
+  still sits in an area, and still carries a full record. A destroyed one stops
+  existing.
+
+  **No digest moved**, because the path is dead: `Deck2.Destroy` is the only
+  caller of `Card.Destroy`, and nothing calls `Deck2.Destroy`. It was settled
+  anyway because "destroyed" modelled as "still present with a stale pointer" is
+  something a port would either reproduce faithfully, inheriting the bug, or
+  quietly fix, diverging on the digest. Two further defects on that same dead
+  path were fixed to make the fix demonstrable — see `MARVEL-50` — and whether
+  the path should exist at all is `MARVEL-70`.

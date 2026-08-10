@@ -116,12 +116,22 @@ class EventManager:
         #     return
         events = Types.UnionTypeExtract(effect.ability.when)
         for event in events:
-            self.registered_message_type[event] -= 1
             category = self.GetEffectCategory(effect, event)
             effects_list = self.FindEffectsList(category, event, effect.ability.priority)
             if effect.is_local:
+                # `RegisterEffect` takes the other branch for a local effect: it
+                # checks the category and stops, without counting the event or
+                # adding to an effects list. So there is nothing here to undo,
+                # and the decrement below used to raise `KeyError` for any local
+                # effect whose event no global effect had also registered.
+                #
+                # The live caller (`Effect.UnRegisterSelf`) only reaches here for
+                # global effects, so this never fired in play -- `Card.Destroy`
+                # is the path that hands over local effects, and it has no
+                # callers. Found while fixing MARVEL-50.
                 assert effect not in effects_list
             else:
+                self.registered_message_type[event] -= 1
                 effects_list.remove(effect)
 
     ################################################################################
