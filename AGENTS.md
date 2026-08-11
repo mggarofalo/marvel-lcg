@@ -177,13 +177,15 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_log_errors unit_test.test_card_coverage \
                    unit_test.test_invariants unit_test.test_verify_replays \
                    unit_test.test_integrity_errors unit_test.test_config \
-                   unit_test.test_file_paths
+                   unit_test.test_file_paths unit_test.test_cross_os
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
                    unit_test.test_puzzle unit_test.test_worlds_encounter \
                    unit_test.test_card_coverage_play
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
+python -m tools.determinism.cross_os emit --out trace.json --label $(uname -s)  # this platform's trace
+python -m tools.determinism.cross_os compare a.json b.json  # do two platforms agree?
 python -m tools.determinism.check_scene_repro    # same seed -> same saved file
 python -m tools.spec.validate --trusted-only     # every trusted behavioral spec
 python -m tools.digest.emit_vectors --check      # digest fixture not stale
@@ -328,15 +330,23 @@ Two workflows, split by cost. Both pin Python from `py_src/.python-version`, ins
 | Workflow | Runs | What |
 |---|---|---|
 | `.github/workflows/ci.yml` | every push to `master`, every PR | both unit tiers, the three fixture staleness checks, the trusted specs, one generated-and-verified game |
-| `.github/workflows/determinism.yml` | nightly 06:00 UTC, or manually | `check_runs` across fresh processes, plus the replay and invariant probes |
+| `.github/workflows/determinism.yml` | nightly 06:00 UTC, or manually | `check_runs` across fresh processes, the cross-OS digest comparison, and the replay and invariant probes |
 
 `ci.yml` also asserts `git status` is clean after the suite. That is MARVEL-55 at the run level — the suite used to bump the version and leave a commit on whatever branch was checked out.
 
 **Everything in `ci.yml` is verified green on Windows and Linux.** Keep it that way: a gate that has never passed on one OS belongs in `determinism.yml` behind an explicit `runs-on`, not in the push path. A red `master` must mean something broke.
 
-The `probes` job in `determinism.yml` is still `windows-latest`, but only so MARVEL-35 owns the switch. Its four gates used to fail on Linux for two reasons, both fixed by MARVEL-72: absolute POSIX paths were parsed as flags (`engine/config.py`), and `FileManager.FormatPath` treated only a Windows drive letter as absolute, so `/tmp/x` came back anchored as `./tmp/x`. All four are now verified green on Linux.
+**Every job in `determinism.yml` now runs on both operating systems** (MARVEL-35). The `probes` job was `windows-latest` only because its four gates failed on Linux for two reasons, both fixed by MARVEL-72: absolute POSIX paths were parsed as flags (`engine/config.py`), and `FileManager.FormatPath` treated only a Windows drive letter as absolute, so `/tmp/x` came back anchored as `./tmp/x`.
+
+### Cross-OS digest agreement
+
+`check_runs` proves each platform reproduces *itself* across fresh processes. That is a weaker claim than it looks: an ordering hazard can resolve one way in every process on one machine and the other way on the other machine, and no single process ever sees both. `tools/determinism/cross_os.py` closes that gap in two halves, because CI cannot do it in one — each leg of the `cross-os` matrix runs `emit` and uploads its trace, then `cross-os-compare` downloads both and diffs them per step.
+
+What is compared is pinned in `COMPARED_FIELDS` and guarded by `unit_test/test_cross_os.py`: the run digest, the step count, `object_index`, `game_over`, and `error`. The platform block — OS, release, machine, Python version — is recorded for the report and deliberately never compared, since it is *expected* to differ. Narrowing that set is the one edit that would make this gate pass on a real divergence, so the test pins the set itself.
+
+A divergence here means **the corpus is only valid on the platform that produced it**, which constrains the whole C# validation strategy. File it and stop; do not work around it. The audit names the identity-hash orderings (team-up units, forced-effect resolution) as the likeliest to differ under another allocator, and the decline-only driver walks both.
 
 Where the remaining corpus-phase jobs attach:
 
-- **MARVEL-35** (Linux determinism) — raise `--runs` on `cross-os`, and switch `probes` from `runs-on: windows-latest` to the same matrix. MARVEL-72 removed the blocker; there is no longer a known reason for it to fail.
 - **MARVEL-18** (manifest hash) — a new job in `determinism.yml`. It needs the corpus to exist (MARVEL-15), so it is named in a comment rather than stubbed; an empty job that always passes is worse than no job.
+- **MARVEL-17** (corpus self-consistency) — wire `tools/determinism/check_corpus.py` into `cross-os` once a corpus exists. Its cross-OS requirement is what the comparison above was built for.
