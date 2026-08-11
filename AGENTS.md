@@ -120,6 +120,19 @@ Each run also writes `bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` besi
 
 Beside that goes `bot-coverage-<scenario>-<heroes>-<seed>-<games>.json`: **what the run actually exercised**, which is the number that says whether the corpus is worth generating more of. It separates *present* from *entered play* from *ability resolved*, and its primary measure is which of the 303 `AbilityFactory` methods a card script names actually fired — the tail is where port bugs will hide. Two ranked lists come out, of never-fired triggers and never-exercised cards, and they are the input to coverage-directed generation. On by default (`-no_bot_coverage` to disable), merged across runs by `python -m tools.coverage.report replays/`. Read [docs/card-coverage.md](docs/card-coverage.md) before changing anything it touches — particularly before renaming an `AbilityFactory` method, which moves the denominator.
 
+### No-op decisions and the progress guard
+
+Some abilities are offered, recorded as a replay step, and legally resolve to **nothing**. The alter-ego `Ask` action — offer a teammate a chance to act, do nothing if they decline — is 621 of the 711 measured cases. A policy that always answers the same way rides one forever while the step counter climbs.
+
+Two guards, working on different things:
+
+- `RepeatGuard` (`bot/policies.py`) works on **the question**. When a decision signature recurs inside a sliding window, `FirstLegalPolicy` moves further down the option list. Disabled for forced decisions, because "End Turn" legitimately recurs every turn with one legal answer. A window rather than "same as last time" because the loops are two-player *cycles*.
+- `NoProgressGuard` (`bot/progress.py`) works on **the answer**. The digest is the engine's own account of what changed, so a run of decisions that all leave it identical has made no progress — whatever ability was offered, and whether or not anyone has enumerated it. Raises `NoProgressError`, an `EngineIntegrityError`.
+
+The structural check is the backstop because **the enumeration cannot be completed**: the corpus behind the inventory fired 98 of 303 `AbilityFactory` methods, so any ability list drawn from it is a lower bound. `bot_no_progress_limit` defaults to 32 against a measured maximum legitimate run of **4** over 4759 decisions. On the naive policy (`-bot_repeat_window 0`) it stops the run at step 37 instead of the 3000-step cap.
+
+Regenerate the inventory against any corpus with `python -m tools.noop.scan replays/`. Read [docs/no-op-decisions.md](docs/no-op-decisions.md) before changing either guard — including why the web client's `AutoActivate.isHasAutoActivate` exclusion list is **not** the same set and should not be used to seed this one.
+
 **Do not let an exception you raise for integrity get swallowed.** `EffectInvoker`, `Message2.Send`, the cost and target checkers, and `Engine.EngineRun` all catch broadly so one bad card cannot end the game, and all report through `Log.OnCrash` — which re-raises only when `Build.release` is false, and `build.py` hardcodes it true. If continuing would produce a *wrong artefact* rather than a wrong frame, derive from `core.errors.EngineIntegrityError`: `Log.OnCrash` re-raises that class regardless of the build.
 
 `unit_test/test_integrity_errors.py` enforces that rule rather than restating it. It walks `engine/` and `game/` and fails on any `except` an integrity error could stop at: a broad clause that swallows, or an `except EngineIntegrityError` that never re-raises. Clause **order** counts — `except Exception` written above `except EngineIntegrityError` catches it first and makes the guard dead code, so the broad clause is still reported. Everything that legitimately absorbs is listed in `REVIEWED_ABSORBERS` with the reason. **Adding an entry is a decision:** if an integrity error can reach the `try`, put `except EngineIntegrityError: raise` ahead of the broad clause instead — the scan goes quiet either way and only one of the two is correct.
@@ -184,7 +197,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_invariants unit_test.test_verify_replays \
                    unit_test.test_integrity_errors unit_test.test_config \
                    unit_test.test_file_paths unit_test.test_cross_os \
-                   unit_test.test_render_skip
+                   unit_test.test_render_skip unit_test.test_no_progress
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \

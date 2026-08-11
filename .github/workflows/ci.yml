@@ -79,7 +79,7 @@ jobs:
             unit_test.test_invariants unit_test.test_verify_replays \
             unit_test.test_integrity_errors unit_test.test_config \
             unit_test.test_file_paths unit_test.test_cross_os \
-            unit_test.test_render_skip
+            unit_test.test_render_skip unit_test.test_no_progress
 
       - name: Unit suite — engine-booting tier
         run: |

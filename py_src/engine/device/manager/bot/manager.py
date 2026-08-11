@@ -19,6 +19,7 @@ from engine.device.manager.bot.command import BotCommand
 from engine.device.manager.bot.device import BotDevice
 from engine.device.manager.bot.policies import BotPolicyFactory
 from engine.device.manager.bot.policy import BotDecision, BotOptionParser, BotPolicy
+from engine.device.manager.bot.progress import NoProgressGuard
 
 CATEGORY_NAME = "BOT"
 
@@ -40,6 +41,10 @@ class BotDeviceManager(DeviceManager):
         # many answers the engine has already rejected for it.
         self.attempt_key: Tuple[int, int] = (-1, -1)
         self.attempt = 0
+
+        # Backstop for a policy riding a no-op ability. `RepeatGuard` in the
+        # policy works on the question; this works on the digest. See MARVEL-37.
+        self.progress = NoProgressGuard()
 
         Log.Info(CATEGORY_NAME, f"Using bot device (policy: {self.policy.name})")
 
@@ -83,6 +88,7 @@ class BotDeviceManager(DeviceManager):
         self.attempt_key = (-1, -1)
         self.attempt = 0
         self.fabricated_inputs_since_game = 0
+        self.progress.Reset()
         self.policy.OnGameStart(seed)
 
     ################################################################################
@@ -104,6 +110,15 @@ class BotDeviceManager(DeviceManager):
         if key != self.attempt_key:
             self.attempt_key = key
             self.attempt = 0
+            # Only on a fresh decision. A rejected answer has not yet had its
+            # chance to change anything, so counting retries would make the
+            # guard fire on a policy that is being corrected rather than one
+            # that is spinning. `replay.calculated_digest` was computed by
+            # `Controller.ChoiceOne` for this step.
+            self.progress.Observe(
+                replay.calculated_digest, step_id,
+                f"p{player_id} #{step_id} {ask_option.event_name} "
+                f"({ask_option.ability_type})")
         else:
             self.attempt += 1
 
