@@ -417,58 +417,31 @@ class TestReadyState(unittest.TestCase):
         self.assertEqual(invariants.Check(Board(card)), [])
 
 
-class TestHandSize(unittest.TestCase):
-    """Checked at `PlaceThreat` and nowhere else: that is the first named moment
-    after `PlayerPhase.EndPhase` has run the discard step, and no encounter card
-    has been dealt yet."""
+class TestHandSizeIsNoLongerARule(unittest.TestCase):
+    """It moved to a post-condition, and must not come back here.
 
-    def Board(self, hand_size, hand, *, phase, eliminated=False):
-        cards = [FakeCard(index + 1, **card) for index, card in enumerate(hand)]
-        area = FakeArea("HandsArea").Hold(*cards)
-        player = FakePlayer(0, area, hand_size, eliminated=eliminated)
-        return FakeWorld(cards, players=[player], phase=phase)
+    `_CheckHandSize` rejected an over-limit hand during `Phase.State.PlaceThreat`.
+    Thor's printed "Have at thee!" -- draw 2 cards after a minion engages you --
+    fired it on a legal state, because any card that draws outside the end phase
+    puts a hand over its limit until the next end phase discards it down. No
+    decision point in a round satisfies the bound. See MARVEL-76.
+    """
 
-    def Phase(self, name):
+    def test_an_over_limit_hand_is_not_a_violation_at_any_phase(self):
         from game.world.phase import Phase
-        return getattr(Phase.State, name)
 
-    def test_a_hand_over_the_limit_at_place_threat_is_rejected(self):
-        world = self.Board(5, [{}] * 6, phase=self.Phase("PlaceThreat"))
+        for state in Phase.State:
+            cards = [FakeCard(index + 1) for index in range(9)]
+            area = FakeArea("HandsArea").Hold(*cards)
+            player = FakePlayer(0, area, 5)
+            world = FakeWorld(cards, players=[player], phase=state)
 
-        violations = invariants.Check(world)
+            self.assertEqual(invariants.Check(world), [], f"fired during {state}")
 
-        self.assertEqual(Rules(violations), ["hand/over-limit"])
-        self.assertIn("6 cards", violations[0].detail)
-        self.assertIn("hand size of 5", violations[0].detail)
-
-    def test_a_hand_at_the_limit_is_accepted(self):
-        world = self.Board(5, [{}] * 5, phase=self.Phase("PlaceThreat"))
-
-        self.assertEqual(invariants.Check(world), [])
-
-    def test_the_same_hand_mid_turn_is_not_checked(self):
-        """Hand size is a limit at particular moments, not a continuous bound --
-        a hero draws past it and plays back down."""
-        world = self.Board(5, [{}] * 9, phase=self.Phase("PlayerTurn"))
-
-        self.assertEqual(invariants.Check(world), [])
-
-    def test_a_card_that_opts_out_does_not_count(self):
-        """"28007" Connection to the Worldmind. The engine asks by sending
-        `CheckIfFaceCountHandSize`; a read-only checker reads the trigger class
-        off the ability instead."""
-        from game.message import Message
-        opt_out = {"card_id": "28007",
-                   "abilities": [FakeAbility(Message.CheckIfFaceCountHandSize)]}
-        world = self.Board(5, [{}] * 5 + [opt_out], phase=self.Phase("PlaceThreat"))
-
-        self.assertEqual(invariants.Check(world), [])
-
-    def test_an_eliminated_player_is_not_checked(self):
-        world = self.Board(5, [{}] * 9, phase=self.Phase("PlaceThreat"),
-                           eliminated=True)
-
-        self.assertEqual(invariants.Check(world), [])
+    def test_the_rule_is_gone_rather_than_disabled(self):
+        # A rule left in place behind a condition that never fires is dead code
+        # that reads like a guarantee.
+        self.assertFalse(hasattr(invariants, "_CheckHandSize"))
 
 
 class TestReplayAgreement(unittest.TestCase):

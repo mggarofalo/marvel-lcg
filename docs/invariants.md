@@ -171,23 +171,44 @@ carry an exhausted state into a deck and back out again. An exhausted card in a 
 a discard pile means something moved it without going through that path — and the digest
 records `is_exhaust` for status and boost areas, so the wrong value reproduces.
 
-### Hand size
+### Hand size — tried and removed
 
 | rule | statement |
 |---|---|
-| `hand/over-limit` | at `Phase.State.PlaceThreat`, each live player's counted hand ≤ `player.hand_size` |
+| ~~`hand/over-limit`~~ | ~~at `Phase.State.PlaceThreat`, each live player's counted hand ≤ `player.hand_size`~~ |
 
-Hand size is a limit **at particular moments**, not a continuous bound: a hero draws past
-it, plays down from it, and is only required to be at or under it after the discard step.
-That step is `PlayerPhase.EndPhase`, which runs `MayDiscardHandCardsAndDrawUpToMax` for
-every player. `PlaceThreat` — villain phase step one — is the first named moment after it,
-before a single encounter card has been dealt. Checking anywhere else is checking a hand
-mid-transaction.
+**Removed under MARVEL-76.** It joins the health floor and the threat ceiling above: a
+rule that fired on ordinary play.
 
-Cards that opt out do not count. The engine asks by sending `CheckIfFaceCountHandSize`
-per card; a checker cannot send anything, so the rule reads the ability's trigger class
-off `face.ability.abilities` instead. Today the only card that opts out is `28007`
-Connection to the Worldmind.
+The reasoning it was built on was that hand size is a limit **at particular moments**,
+not a continuous bound — a hero draws past it, plays down from it, and is only required
+to be at or under it after the discard step in `PlayerPhase.EndPhase`. `PlaceThreat`,
+villain phase step one, looked like the first named moment after that and before a
+single encounter card had been dealt.
+
+Two things were wrong with it, and one game of four-hero Ultron found both:
+
+- **`PlaceThreat` is a span, not an instant.** Encounter cards are dealt, minions engage,
+  and every forced effect and response they trigger resolves while the phase state is
+  still `PlaceThreat`. The checker runs from `ChoiceOne`, so it is looking straight at
+  those mid-resolution states.
+- **Any card that draws outside the end phase legitimately breaks the bound.** Thor's
+  printed *"Have at thee!" — Response: After you engage a minion, draw 2 cards* took a
+  legal hand of 4 against a hand size of 4 up to 6, and it stays there until the next
+  end phase discards it down. There is no decision point in a round where the bound
+  reliably holds.
+
+The property itself is real — `MayDiscardHandCardsAndDrawUpToMax` computes the excess
+and passes it as the *minimum* to `AskDiscardFaces`. But it is a **post-condition of that
+operation**, not an invariant of the world, so that is where it now lives, asserted
+directly after the discard and the draw. `unit_test/test_hand_size.py` covers it, and
+`unit_test/test_invariants.py` fails if the rule reappears here.
+
+This is also why the opt-out reading is gone. The engine asks whether a card counts by
+sending `CheckIfFaceCountHandSize` per card, which a read-only checker cannot do, so the
+rule had to read the ability's trigger class off `face.ability.abilities` and approximate
+the answer. In its new home the engine's own `GetCountHandSizeFaces()` is available and
+the approximation is unnecessary.
 
 ### Step and phase counters
 
@@ -218,8 +239,11 @@ checker that perturbs the game changes the thing it is measuring and breaks the
 determinism the corpus rests on — see [determinism-audit.md](determinism-audit.md).
 
 That rules out some inviting engine helpers. `Player.GetCountHandSizeFaces` sends
-`CheckIfFaceCountHandSize` once per card, so the hand-size rule reads the ability list
-directly. When adding a rule, check that every accessor it calls is a plain read.
+`CheckIfFaceCountHandSize` once per card, so no rule here may call it — the hand-size
+rule worked around that by reading the ability list directly, and the awkwardness was an
+early sign it did not belong here (MARVEL-76). When adding a rule, check that every
+accessor it calls is a plain read; if the natural accessor is not, that is evidence the
+property is a post-condition of an operation rather than an invariant of the world.
 
 ## Adding a rule
 

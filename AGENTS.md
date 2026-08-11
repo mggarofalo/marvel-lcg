@@ -176,7 +176,9 @@ It costs about **0.8ms per decision** — 1.86× the wall time of a 20000-decisi
 
 The flag is forced from the resolved device in `Engine.Initialize` rather than added to the `bot` arg group. That started as a workaround for MARVEL-64 — a flag inside a group could not be turned off again — and survives it for a different reason: `-device bot` is a documented way to run the bot and expands no group, so a group entry would leave that spelling unwatched.
 
-The rules and — more importantly — the states that *look* like violations and are not live in [docs/invariants.md](docs/invariants.md). **Read it before adding a rule.** Two of them were tried and removed because they fire on ordinary play: there is no lower bound on health anywhere, and no upper bound on threat. A rule that cries wolf aborts a game that was fine and teaches everyone to switch the checker off.
+The rules and — more importantly — the states that *look* like violations and are not live in [docs/invariants.md](docs/invariants.md). **Read it before adding a rule.** Three of them were tried and removed because they fire on ordinary play: there is no lower bound on health anywhere, no upper bound on threat, and no upper bound on hand size. A rule that cries wolf aborts a game that was fine and teaches everyone to switch the checker off.
+
+The hand-size removal (MARVEL-76) is the one worth reading before adding a rule, because it failed in a way that looked safe. It only checked during `Phase.State.PlaceThreat`, reasoning that the villain phase begins right after the end-phase discard step — but that state is a *span*, not an instant, and every effect an encounter card triggers resolves under it. Underneath that, **any card that draws outside the end phase legitimately breaks the bound**: Thor's printed "Have at thee!" takes a legal hand of 4 to 6 and it stays there until the next end phase. The property was real but it is a post-condition of `PlayerPhase.MayDiscardHandCardsAndDrawUpToMax`, which is where it is asserted now. **If the natural accessor for a rule is not a plain read** — the hand-size rule had to approximate `GetCountHandSizeFaces` by reading ability trigger classes — that is evidence the property belongs to an operation rather than to the world.
 
 Every rule is read-only. Nothing in `game/world/invariants.py` may send a `Message`, allocate an `Effect`, or touch the RNG — a checker that perturbs the game breaks the determinism the corpus rests on.
 
@@ -197,7 +199,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_invariants unit_test.test_verify_replays \
                    unit_test.test_integrity_errors unit_test.test_config \
                    unit_test.test_file_paths unit_test.test_cross_os \
-                   unit_test.test_render_skip unit_test.test_no_progress
+                   unit_test.test_render_skip unit_test.test_no_progress \
+                   unit_test.test_hand_size
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
