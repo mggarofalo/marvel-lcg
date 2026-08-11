@@ -337,7 +337,7 @@ class BotRunner:
         # The timeout that was in force while the inputs were being recorded is
         # the one that matters, so check it again before anything is written.
         if not BotRunner.CheckNoTimeout(game, device_manager, "before saving"):
-            BotRunner.CaptureReason(game, device_manager, seed, "invariant-violation",
+            BotRunner.CaptureReason(game, device_manager, seed, "fabricated-input",
                 "input_timeout_not_zero",
                 "The resolved input timeout was not 0 while inputs were being recorded")
             return None
@@ -352,7 +352,7 @@ class BotRunner:
                 f"{device_manager.fabricated_inputs_since_game} input(s) in this game were "
                 "recorded from a timed-out wait rather than from the policy. "
                 "The replay is corrupt and will not be saved.")
-            BotRunner.CaptureReason(game, device_manager, seed, "invariant-violation",
+            BotRunner.CaptureReason(game, device_manager, seed, "fabricated-input",
                 "fabricated_inputs_recorded",
                 "Input(s) in this game came from a timed-out wait, not from the policy")
             return None

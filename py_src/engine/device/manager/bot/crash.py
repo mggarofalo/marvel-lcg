@@ -22,21 +22,33 @@ decision to make later. See MARVEL-12.
 Classification
 --------------
 
-Four kinds, resolved in this order:
+Five kinds, resolved in this order:
 
-    invariant-violation   `EngineIntegrityError` and its subclasses, plus the
-                          runner's own integrity refusals (a fabricated input
-                          was recorded, the resolved timeout was not 0, replay
-                          verification disagreed, the scene would not save)
+    fabricated-input      an input in the recorded list was never made by the
+                          policy: `FabricatedInputError`, and the runner's
+                          refusals for a non-zero resolved timeout or a
+                          fabricated input counted during the game
+    invariant-violation   the state the engine computed is wrong, but every
+                          input that produced it is genuine: the MARVEL-11
+                          checker's `InvariantViolation`, replay verification
+                          disagreeing, a scene that would not save
     engine-assert         `AssertionError` -- an `assert` in engine code fired
     timeout-stall         the game stopped making progress: `BotStuck`,
-                          `bot_max_steps`, `SetGameOver` retry exhaustion
+                          `NoProgressError`, `bot_max_steps`, `SetGameOver`
+                          retry exhaustion
     unhandled-exception   everything else
 
-`FabricatedInputError` is a timeout and lands under invariant-violation anyway:
-the class exists to say the run has already produced something that must not be
-trusted, and that is the more useful thing to know when triaging. The stall
-bucket is for the failures where nothing was corrupted, the game just stopped.
+The first two were one class until MARVEL-66, and the split is the whole reason
+this classification is worth anything: **it decides whether the scene is
+written**. `FabricatedInputError` is a timeout, and it is deliberately not a
+stall, because what matters when triaging it is that the run has already
+produced something untrustworthy.
+
+`NoProgressError` is an `EngineIntegrityError` for propagation -- the handlers
+between the bot and the runner catch broadly -- and not because anything is
+corrupt. Its inputs are genuine and its scene is exactly what a reader wants,
+so it belongs with the stalls, where nothing was corrupted and the game just
+stopped.
 
 Signatures
 ----------
@@ -64,15 +76,17 @@ CATEGORY_NAME = "BOT"
 
 FAILURE_CLASS = Literal[
     "engine-assert",
+    "fabricated-input",
     "invariant-violation",
     "timeout-stall",
     "unhandled-exception",
 ]
 
 # Every class the report can contain, in the order a summary lists them:
-# integrity first because it invalidates artefacts, stalls last because they
-# usually only cost a game.
+# fabricated input first because it invalidates the artefacts themselves, then
+# integrity, stalls last because they usually only cost a game.
 FAILURE_CLASSES: Tuple[FAILURE_CLASS, ...] = (
+    "fabricated-input",
     "invariant-violation",
     "engine-assert",
     "unhandled-exception",
@@ -88,17 +102,26 @@ CAPTURED_ATTR = "_bot_crash_captured"
 
 SIGNATURE_LENGTH = 8
 
-# An integrity failure says the recorded inputs are already untrustworthy --
-# that a decision in the list was never made by the policy. `Log.OnCrash`
-# re-raises those *before* `Engine.SaveCrash` for exactly that reason: writing
-# the scene would put the state we are refusing to keep on disk, where the next
-# reader sees a replay rather than a refusal. So this class of failure gets a
-# sidecar and no scene. Nothing is lost -- the bot is deterministic, so the
-# recorded seed and command regenerate the game. See MARVEL-32.
-SCENE_WITHHELD_CLASSES: Tuple[FAILURE_CLASS, ...] = ("invariant-violation",)
+# A fabricated input means a decision in the recorded list was never made by
+# the policy -- it was returned by a timed-out wait. `Log.OnCrash` re-raises
+# those *before* `Engine.SaveCrash` for exactly that reason: writing the scene
+# would put the state we are refusing to keep on disk, where the next reader
+# sees a replay rather than a refusal. So this class gets a sidecar and no
+# scene. Nothing is lost -- the bot is deterministic, so the recorded seed and
+# command regenerate the game. See MARVEL-32.
+#
+# **Only this class.** Until MARVEL-66 the rule covered every
+# `EngineIntegrityError`, which swept in the MARVEL-11 checker: there every
+# recorded input *was* made by the policy and only the state computed from them
+# is wrong, so the scene replays faithfully -- `tools/invariants/probe_repro.py`
+# asserts precisely that. Withholding it produced two artefacts that disagreed,
+# one of them telling the reader to re-run a whole game from a seed when a
+# step-indexed repro was sitting in the next directory.
+SCENE_WITHHELD_CLASSES: Tuple[FAILURE_CLASS, ...] = ("fabricated-input",)
 SCENE_WITHHELD_REASON = (
-    "withheld: the recorded inputs are already untrustworthy, so writing them "
-    "would look like a replay. Reproduce from the seed with `repro.command`. "
+    "withheld: an input in this game was recorded from a timed-out wait rather "
+    "than made by the policy, so writing the scene would look like a replay of "
+    "a decision nobody made. Reproduce from the seed with `repro.command`. "
     "See MARVEL-32.")
 
 ################################################################################
@@ -190,9 +213,24 @@ def HashSignature(*parts: str) -> str:
     return hashlib.sha256(payload).hexdigest()[:SIGNATURE_LENGTH]
 
 def Classify(exc: BaseException) -> FAILURE_CLASS:
-    """Which bucket an exception belongs in. Order matters -- see the docstring."""
-    from engine.device.manager.bot.policy import BotStuck
+    """Which bucket an exception belongs in. Order matters -- see the docstring.
 
+    The three `EngineIntegrityError` subclasses land in three different buckets,
+    because the base class is about *propagation* -- surviving the broad handlers
+    between the raise and the runner -- and says nothing about whether the
+    recorded inputs can be trusted, which is what decides the artefact.
+    """
+    from engine.device.manager.bot.policy import BotStuck
+    from engine.device.manager.bot.progress import NoProgressError
+    from engine.device.manager.base import FabricatedInputError
+
+    if isinstance(exc, FabricatedInputError):
+        # Checked before the base class: this is the one that corrupts the
+        # recorded inputs, and the only one whose scene is withheld.
+        return "fabricated-input"
+    if isinstance(exc, NoProgressError):
+        # Genuine inputs, uncorrupted state, a game that stopped advancing.
+        return "timeout-stall"
     if isinstance(exc, EngineIntegrityError):
         return "invariant-violation"
     if isinstance(exc, AssertionError):
