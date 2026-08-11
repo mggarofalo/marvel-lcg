@@ -80,7 +80,7 @@ jobs:
             unit_test.test_integrity_errors unit_test.test_config \
             unit_test.test_file_paths unit_test.test_cross_os \
             unit_test.test_render_skip unit_test.test_no_progress \
-            unit_test.test_hand_size
+            unit_test.test_hand_size unit_test.test_policy_driver
 
       - name: Unit suite — engine-booting tier
         run: |

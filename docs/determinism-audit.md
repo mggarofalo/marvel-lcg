@@ -203,13 +203,39 @@ matrix that is:
 total: 60 batches, 0 with two or more candidates (largest 1)
 ```
 
-**The tie-break is never reached.** No batch in any audited game offers the
+**The tie-break was never reached.** No batch in any audited game offered the
 first player a choice at all, so MARVEL-39 and MARVEL-40 — both defects inside
-that choice — cannot move a per-step digest here, and `check_runs` staying green
-across either fix is evidence of nothing. Their gate is
-`unit_test/test_forced_effect_selection.py`, which drives the selection
-directly. Closing this properly needs a driver that plays cards; it is item 4
-under "What still has to be run", and MARVEL-69 tracks it.
+that choice — could not move a per-step digest here, and `check_runs` staying
+green across either fix was evidence of nothing.
+
+The cause was the driver, not the engine: `headless.py` answered every prompt
+with a decline, so it never played a card and never opened a response window
+where two forced abilities meet. MARVEL-69 gave it `PolicyDriver`, which answers
+from a real `BotPolicy`, and the same probe on the same wide matrix now reports:
+
+```
+total: 323 batches, 3 with two or more candidates (largest 2)
+       0 carried a delay ability, of which 0 would have resolved the wrong effect (MARVEL-39)
+       3 were all on one card, skipping the first-player choice (MARVEL-40)
+```
+
+So the choice **is** reached in play, and **MARVEL-40's trigger is reached with
+it** — three same-card batches that the pre-fix engine would have resolved
+without asking anyone. The genuinely multi-card case is reached too, though not
+on every seed: `--policy random --policy-seed 42` gives `2 multi, 0 same_card`,
+which is two batches spanning different cards and therefore a real first-player
+ordering choice.
+
+**MARVEL-39's trigger is still not reached.** `with_delay` is zero under every
+policy and seed tried — a delay ability has never shared a batch with a
+candidate in self-play. That half still rests on
+`unit_test/test_forced_effect_selection.py`, and closing it needs a constructed
+fixture rather than a seed; it stays as item 4 under "What still has to be run".
+
+`probe_forced_selection` now defaults to the wide matrix and the `first` policy,
+and runs nightly in `determinism.yml` — it exits non-zero when no multi-candidate
+batch is reached, so losing this coverage again fails a gate instead of going
+quiet.
 
 *Rules check.* The Rules Reference says "if two or more forced abilities would
 initiate at the same moment, the first player determines the order in which the
@@ -698,13 +724,33 @@ Listed so the remaining work is explicit rather than implied.
    produces a corpus, `check_corpus.py --runs 100` closes the "same seed plus
    same inputs" half of the acceptance criterion against the engine's own
    replay path rather than a proxy.
-2. **Run on Linux.** No Linux host was available. Both halves of the acceptance
-   criterion say "both OSes". The identity-hash findings (F2, F3, F4) are the
-   ones most likely to differ, since allocator behaviour differs.
-3. **Drive with the real bot.** The decline-only driver never plays a card, so
-   it never reaches the ability-cost machinery, most response windows, or any
-   card that requires a target. Re-run `check_runs.py` with the bot's `decide`
-   once it exists.
+2. ~~**Run on Linux.**~~ **Done — MARVEL-35.** Every job in `determinism.yml`
+   runs on both operating systems, and `tools/determinism/cross_os.py` compares
+   the two per step rather than trusting each to reproduce itself. All seven
+   wide-matrix cases agree between `ubuntu-latest` and `windows-latest`,
+   including the identity-hash findings (F2, F3, F4) that were expected to be
+   the most fragile. The two runners were even on different Python patch
+   versions, and the digests still matched.
+3. ~~**Drive with the real bot.**~~ **Done — MARVEL-69.** `headless.PolicyDriver`
+   answers from any `BotPolicy`, so the harness plays cards instead of declining,
+   and `check_runs --policy first|random` re-runs the acceptance criterion
+   against those deeper games. Both reproduce byte-identically across fresh
+   processes on the whole wide matrix:
+
+   | policy | steps (klaw / ultron) | result |
+   |---|---|---|
+   | `decline` | 400 / 405 (step-capped) | reproduced |
+   | `first` | 156 / 220 | **reproduced**, 4 runs × 7 cases |
+   | `random` (seed 4242) | 73 / 126 | **reproduced**, 3 runs × 7 cases |
+
+   These games play cards, so they reach the ability-cost machinery and the
+   response windows a decline-only run never opens — `probe_forced_selection`
+   reaches the tie-break it never could before (F2 above). `--policy` defaults
+   to `decline` so the nightly gate and the cross-OS trace baselines are
+   unchanged; the deeper runs are opt-in.
+
+   What this does *not* cover is a policy that pays costs deliberately rather
+   than taking the first legal option. That arrives with MARVEL-14.
 4. **Exercise F2 and F3 deliberately.** None of the seven scenarios put two
    forced local abilities on one message, and none of the decks contain a TeamUp
    card. Build a puzzle (`game/puzzle/`) for each and confirm the digest is
