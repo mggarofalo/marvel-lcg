@@ -176,7 +176,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_package_tools unit_test.test_digest \
                    unit_test.test_log_errors unit_test.test_card_coverage \
                    unit_test.test_invariants unit_test.test_verify_replays \
-                   unit_test.test_integrity_errors unit_test.test_config
+                   unit_test.test_integrity_errors unit_test.test_config \
+                   unit_test.test_file_paths
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
@@ -333,9 +334,9 @@ Two workflows, split by cost. Both pin Python from `py_src/.python-version`, ins
 
 **Everything in `ci.yml` is verified green on Windows and Linux.** Keep it that way: a gate that has never passed on one OS belongs in `determinism.yml` behind an explicit `runs-on`, not in the push path. A red `master` must mean something broke.
 
-The `probes` job in `determinism.yml` is **windows-only on purpose**. Its four gates all use `tempfile.mkdtemp()`, and absolute POSIX paths are currently parsed as flags (`engine/config.py:169`), so on Linux the save folder silently resolves to the string `True` — MARVEL-72, the same failure mode as MARVEL-28. The unit suite is unaffected and passes identically on both OSes.
+The `probes` job in `determinism.yml` is still `windows-latest`, but only so MARVEL-35 owns the switch. Its four gates used to fail on Linux for two reasons, both fixed by MARVEL-72: absolute POSIX paths were parsed as flags (`engine/config.py`), and `FileManager.FormatPath` treated only a Windows drive letter as absolute, so `/tmp/x` came back anchored as `./tmp/x`. All four are now verified green on Linux.
 
 Where the remaining corpus-phase jobs attach:
 
-- **MARVEL-35** (Linux determinism) — raise `--runs` on `cross-os`, and switch `probes` from `runs-on: windows-latest` to the same matrix once MARVEL-72 lands. No other change.
+- **MARVEL-35** (Linux determinism) — raise `--runs` on `cross-os`, and switch `probes` from `runs-on: windows-latest` to the same matrix. MARVEL-72 removed the blocker; there is no longer a known reason for it to fail.
 - **MARVEL-18** (manifest hash) — a new job in `determinism.yml`. It needs the corpus to exist (MARVEL-15), so it is named in a comment rather than stubbed; an empty job that always passes is worse than no job.

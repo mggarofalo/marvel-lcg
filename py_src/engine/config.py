@@ -1,6 +1,16 @@
 from core import *
 from typing import TypeAlias
 
+
+class ConfigError(Exception):
+    """A command line or launch.json the engine will not guess at.
+
+    Raised while resolving config, which is before `Log` is up and long before
+    the broad `except Exception` handlers in the play path exist -- so this
+    propagates to the top and stops the process, which is the point.
+    """
+
+
 class ConfigVariable:
 
     SET_FROM: TypeAlias = Literal["DefaultValue", "CommandLine", "LaunchJson", ""]
@@ -64,6 +74,38 @@ class ConfigVariable:
         def SetValueInternal(self, value: List[str]|List[int]|str|int|bool):
             self.value = value
 
+        def RequireValue(self, value: List[str]|List[int]|str|int|bool):
+            """Refuse a bool on a variable that is not one.
+
+            `ParseArguments` turns a flag written with no value into `True`,
+            which is right for a bool and silently wrong for everything else:
+            `Str` coerces it to the string `"True"` and `Int` to `1`. Neither
+            is an error further down -- `"True"` is a perfectly good device
+            name, folder name or file name -- so the mistake surfaces as a
+            directory called `True` appearing next to the engine, a long way
+            from the flag that caused it.
+
+            That is how MARVEL-28 spent its time (`-device` bare, inside the
+            `-test` group) and how MARVEL-72 hid on Linux (an absolute path
+            eaten as a flag, leaving `-bot_save_folder` valueless). The group
+            case is pinned by `unit_test/test_verify_replays.py`; this covers
+            the command line and launch.json, where nothing was watching.
+
+            Deliberately louder than the rest of this parser, which ignores a
+            stray value or an unknown flag. Those are ambiguous and harmless.
+            This one has exactly one meaning and produces a wrong artefact.
+            """
+            # bool is a subclass of int, so this has to come before any
+            # numeric check rather than after it.
+            if isinstance(value, bool):
+                raise ConfigError(
+                    f"-{self.name} takes a value and was given none. "
+                    f"A flag with no value means True, which is not a "
+                    f"{type(self).__name__.lower()}. "
+                    f"If a path followed it, check the path did not start with "
+                    f"a character the parser reads as a flag."
+                )
+
     class Str(Base):
         def __init__(self, var_name: 'str') -> None:
             self.value: str
@@ -74,6 +116,7 @@ class ConfigVariable:
 
         @override
         def SetValueInternal(self, value: List[str]|List[int]|str|int|bool):
+            self.RequireValue(value)
             assert not isinstance(value, list), f"{self.name=}"
             if not isinstance(value, str):
                 value = str(value)
@@ -89,6 +132,7 @@ class ConfigVariable:
 
         @override
         def SetValueInternal(self, value: List[str]|List[int]|str|int|bool):
+            self.RequireValue(value)
             assert not isinstance(value, list)
             if not isinstance(value, int):
                 value = int(value)
@@ -115,6 +159,7 @@ class ConfigVariable:
 
         @override
         def SetValueInternal(self, value: List[str]|List[int]|str|int|bool):
+            self.RequireValue(value)
             if not isinstance(value, list):
                 value = [str(value)]
             return super().SetValueInternal(value)
@@ -126,6 +171,7 @@ class ConfigVariable:
 
         @override
         def SetValueInternal(self, value: List[str]|List[int]|str|int|bool):
+            self.RequireValue(value)
             if not isinstance(value, list):
                 value = [int(value)]
             else:
@@ -165,8 +211,16 @@ class ConfigVariables:
         result: Dict[str, List[str]] = {}
 
         for arg in args:
-            # Normalize the argument prefix
-            if arg.startswith(('/', '-')):
+            # `-` only. `/` used to be accepted here as a Windows-style switch
+            # prefix, which made every absolute POSIX path a flag: the value in
+            # `-bot_save_folder /tmp/x/` was read as the flag `tmp/x/`, the
+            # folder variable was left valueless, and it resolved to the string
+            # "True". Nothing on Linux could pass an absolute path to any
+            # valued variable. No flag anywhere in this repo is written with a
+            # slash -- the cheat console's `/step` and the web routes have
+            # their own parsers -- so the spelling cost a platform and bought
+            # nothing. See MARVEL-72.
+            if arg.startswith('-'):
                 # Remove the prefix and convert to lowercase
                 key = arg[1:].lower()
                 current_key = key
@@ -241,7 +295,7 @@ class ConfigVariables:
     @staticmethod
     def Initialize() -> None:
         # Example string input
-        # example_string = '/a "a_value" /b "b_value still in b value" /c xxx -d -e -f f_value f_value2 -g 1'
+        # example_string = '-a "a_value" -b "b_value still in b value" -c xxx -d -e -f f_value f_value2 -g 1'
         # CommandArguments.ParseString(example_string)
         CONFIG_FILES = ConfigVariables.Files('config_files', ['launch.json'])
 

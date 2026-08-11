@@ -163,10 +163,24 @@ class FileManager:
 
     @staticmethod
     def FormatPath(path: str) -> str:
+        # An already-absolute path is returned untouched; only a relative one
+        # is anchored with './'.
+        #
+        # "Absolute" used to mean `path[1] == ":"`, a Windows drive letter and
+        # nothing else, so every POSIX absolute path took the relative branch:
+        # `/tmp/x` came back as `./tmp/x`, which resolves against the working
+        # directory and does not exist. That is what left the replay and
+        # invariant probes failing on Linux after the argument parser had been
+        # fixed -- they hand the engine a `tempfile.mkdtemp()` path, and it
+        # quietly looked for it under `py_src/`. See MARVEL-72.
+        #
+        # `os.path.isabs` is the same test on Windows (`C:/x` is absolute) and
+        # correct on Linux. Indexing `[1]` also raised IndexError on a
+        # one-character path such as "/" or ".".
         normalized_path = os.path.normpath(path)
-        if normalized_path[1] == ":":
-            pass
-        elif not normalized_path.startswith('.'):
+        if os.path.isabs(normalized_path):
+            return normalized_path
+        if not normalized_path.startswith('.'):
             # Ensure the path starts with './'
             normalized_path = './' + normalized_path
         return normalized_path

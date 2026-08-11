@@ -28,7 +28,7 @@ import unittest
 import engine  # noqa: F401  pylint: disable=unused-import
 from engine.engine import Engine  # noqa: F401  pylint: disable=unused-import
 
-from engine.config import ConfigVariable, ConfigVariables
+from engine.config import ConfigError, ConfigVariable, ConfigVariables
 
 
 class ConfigTestCase(unittest.TestCase):
@@ -260,6 +260,114 @@ class TestVariablesDeclaredAfterParsing(ConfigTestCase):
         flag = ConfigVariables.Bool("probe_flag", False)
 
         self.assertFalse(flag.value)
+
+
+class TestAbsolutePathsAreValuesNotFlags(ConfigTestCase):
+    """MARVEL-72.
+
+    `/` was accepted as a Windows-style switch prefix alongside `-`, so on
+    Linux every absolute path was read as a flag. `-bot_save_folder /tmp/x/`
+    parsed as the flag `bot_save_folder` with no value followed by the flag
+    `tmp/x/`, and the folder resolved to the string "True" -- the engine wrote
+    its scenes to a directory literally called `True`.
+
+    These run identically on every platform: the parser is a string function
+    and never asks what OS it is on, which is the property worth pinning.
+    """
+
+    def test_an_absolute_posix_path_is_a_value(self):
+        folder = ConfigVariables.Str("probe_folder", "default/")
+
+        self.assertEqual(self.Resolve(folder, ["-probe_folder", "/tmp/savetest/"]),
+                         "/tmp/savetest/")
+
+    def test_a_windows_path_is_still_a_value(self):
+        folder = ConfigVariables.Str("probe_folder", "default/")
+
+        self.assertEqual(self.Resolve(folder, ["-probe_folder", "C:/Temp/x/"]),
+                         "C:/Temp/x/")
+
+    def test_a_relative_path_is_unchanged(self):
+        # This is the spelling that always worked, and the contrast that
+        # isolated the bug to the leading slash.
+        folder = ConfigVariables.Str("probe_folder", "default/")
+
+        self.assertEqual(self.Resolve(folder, ["-probe_folder", "./relsave/"]),
+                         "./relsave/")
+
+    def test_several_absolute_paths_collect_into_a_list(self):
+        folders = ConfigVariables.ListStr("probe_folders", [])
+
+        self.assertEqual(
+            self.Resolve(folders, ["-probe_folders", "/tmp/a/", "/tmp/b/"]),
+            ["/tmp/a/", "/tmp/b/"])
+
+    def test_a_slash_no_longer_opens_a_flag(self):
+        # The other half of the same change: `/probe_flag` was a way to write
+        # `-probe_flag`. Nothing in this repo used it, and keeping it is what
+        # made a path indistinguishable from a switch.
+        flag = ConfigVariables.Bool("probe_flag", False)
+
+        self.assertFalse(self.Resolve(flag, ["/probe_flag"]))
+
+
+class TestAValuedFlagGivenNoValueIsFatal(ConfigTestCase):
+    """MARVEL-72, and MARVEL-28 before it.
+
+    A flag with nothing after it means True. That is right for a bool and
+    silently wrong for everything else -- `Str` coerced it to the string
+    "True", which is a valid device name, folder name and file name, so the
+    mistake never failed where it was made.
+
+    `unit_test/test_verify_replays.py` pins the arg-group case. This is the
+    command line and launch.json, where nothing was watching.
+    """
+
+    def test_a_bare_string_flag_raises(self):
+        ConfigVariables.Str("probe_str", "default")
+
+        with self.assertRaises(ConfigError):
+            ConfigVariables.ParseArguments(["-probe_str"])
+
+    def test_the_message_names_the_flag(self):
+        ConfigVariables.Str("probe_str", "default")
+
+        with self.assertRaises(ConfigError) as caught:
+            ConfigVariables.ParseArguments(["-probe_str"])
+
+        self.assertIn("-probe_str", str(caught.exception))
+
+    def test_a_bare_int_flag_raises(self):
+        # bool is a subclass of int, so a guard written after the numeric
+        # coercion would let this one through as 1.
+        ConfigVariables.Int("probe_int", 7)
+
+        with self.assertRaises(ConfigError):
+            ConfigVariables.ParseArguments(["-probe_int"])
+
+    def test_a_bare_list_flag_raises(self):
+        ConfigVariables.ListStr("probe_list", [])
+
+        with self.assertRaises(ConfigError):
+            ConfigVariables.ParseArguments(["-probe_list"])
+
+    def test_launch_json_cannot_smuggle_one_in_either(self):
+        text = ConfigVariables.Str("probe_str", "default")
+        ConfigVariables.instance_launch["probe_str"] = True
+
+        with self.assertRaises(ConfigError):
+            ConfigVariables.SetupVariables([text.name])
+
+    def test_a_bare_bool_flag_is_still_fine(self):
+        # The whole point of a bool flag. This must not become collateral.
+        flag = ConfigVariables.Bool("probe_flag", False)
+
+        self.assertTrue(self.Resolve(flag, ["-probe_flag"]))
+
+    def test_no_prefix_on_a_bool_is_still_fine(self):
+        flag = ConfigVariables.Bool("probe_flag", True)
+
+        self.assertFalse(self.Resolve(flag, ["-no_probe_flag"]))
 
 
 class TestMalformedInput(ConfigTestCase):

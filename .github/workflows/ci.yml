@@ -77,7 +77,8 @@ jobs:
             unit_test.test_package_tools unit_test.test_digest \
             unit_test.test_log_errors unit_test.test_card_coverage \
             unit_test.test_invariants unit_test.test_verify_replays \
-            unit_test.test_integrity_errors unit_test.test_config
+            unit_test.test_integrity_errors unit_test.test_config \
+            unit_test.test_file_paths
 
       - name: Unit suite — engine-booting tier
         run: |
