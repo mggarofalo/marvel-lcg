@@ -55,31 +55,97 @@ jobs:
       - name: Install pinned dependencies
         run: pip install -r requirements.lock
 
-      # Verified green on both runners. MARVEL-35 owns raising --runs and
-      # deciding what a Linux-vs-Windows digest divergence means; this job is
-      # only the place it lands.
+      # 12 runs over the wide matrix is 84 fresh processes per runner, about
+      # 4 minutes of the 45 budgeted. The number is chosen to be affordable
+      # nightly rather than to hit a confidence threshold: a hazard that
+      # survives 12 identical runs is not one more run away from showing
+      # itself, it is one that needs a different *case*. Widen the matrix in
+      # check_runs.py before raising this again.
       - name: Digest reproduces across fresh processes
-        run: python -m tools.determinism.check_runs --runs 6
+        run: python -m tools.determinism.check_runs --runs 12 --matrix wide
+
+      # This job cannot compare operating systems -- it only ever sees its own.
+      # Each runner writes its trace here and cross-os-compare diffs them once
+      # both have finished.
+      - name: Record this platform's digest trace
+        run: |
+          python -m tools.determinism.cross_os emit \
+            --out trace.json --label ${{ matrix.os }} --matrix wide
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: trace-${{ matrix.os }}
+          path: py_src/trace.json
+          if-no-files-found: error
+
+  cross-os-compare:
+    # The actual MARVEL-35 question: do Windows and Linux agree?
+    #
+    # `check_runs` above proves each platform reproduces itself, which is a
+    # different and weaker claim -- an ordering hazard that resolves the same
+    # way in every process on one machine can still resolve the other way on
+    # the other machine. The audit flags the identity-hash orderings (team-up
+    # units, forced-effect resolution) as the likeliest to differ under a
+    # different allocator, and the decline-only driver walks both.
+    #
+    # A divergence here means a corpus is only valid on the platform that
+    # produced it, which constrains the whole C# validation strategy. That is a
+    # finding to file and stop on, not to work around.
+    name: windows and linux agree
+    needs: cross-os
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: py_src/.python-version
+          cache: pip
+          cache-dependency-path: py_src/requirements.lock
+
+      # The comparison is pure data, but rendering a divergence calls the
+      # engine's own digest differ -- see `describe_digests`. Without the
+      # dependencies the report degrades to two truncated blobs exactly when it
+      # matters most.
+      - name: Install pinned dependencies
+        run: pip install -r requirements.lock
+
+      # Downloaded by explicit name rather than by pattern: if one leg of the
+      # matrix failed to upload, this step must fail rather than leave `compare`
+      # with a single file to call green.
+      - uses: actions/download-artifact@v8
+        with:
+          name: trace-ubuntu-latest
+          path: py_src/traces/ubuntu-latest
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: trace-windows-latest
+          path: py_src/traces/windows-latest
+
+      - name: Per-step digests agree across operating systems
+        run: |
+          python -m tools.determinism.cross_os compare \
+            traces/ubuntu-latest/trace.json \
+            traces/windows-latest/trace.json
 
   probes:
-    # windows-latest for now, but the reason has expired.
-    #
-    # These four gates used to fail on Linux. All four build a scratch
-    # directory with tempfile.mkdtemp(), and two separate bugs ate the
-    # absolute path it returns: engine/config.py read a leading `/` as a flag
-    # prefix, so the valued variable never received the path and resolved to
-    # the string "True"; and FileManager.FormatPath treated only a Windows
-    # drive letter as absolute, so `/tmp/x` came back anchored as `./tmp/x`.
-    # Both are fixed in MARVEL-72, and all four gates are verified green on
-    # Ubuntu 26.04 / CPython 3.13.
-    #
-    # This job is left on windows-latest only so that MARVEL-35 owns the
-    # change: switch runs-on to the same matrix as cross-os above and delete
-    # this comment. Nothing else in the job needs to change, and there is no
-    # longer a known reason for it to fail.
-    name: replay and invariant probes (windows)
-    runs-on: windows-latest
+    # Cross-OS as of MARVEL-35. These four gates were windows-only because all
+    # four build a scratch directory with tempfile.mkdtemp(), and two separate
+    # bugs ate the absolute path it returns: engine/config.py read a leading
+    # `/` as a flag prefix, so the valued variable never received the path and
+    # resolved to the string "True"; and FileManager.FormatPath treated only a
+    # Windows drive letter as absolute, so `/tmp/x` came back anchored as
+    # `./tmp/x`. MARVEL-72 fixed both.
+    name: replay and invariant probes (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v7
