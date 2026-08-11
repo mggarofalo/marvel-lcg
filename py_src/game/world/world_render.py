@@ -93,10 +93,22 @@ class WorldRender:
             self.prompt = ""
 
         world = self.world
-        self.descriptor = ToDescriptor.World(world, event_name, sound_name)
 
         from engine import Engine
         game = Engine.game
+
+        # Everything above this line is bookkeeping the rest of the engine can
+        # observe -- the prompt, the round id, the game log. Only the
+        # descriptor is built purely for a client, so only the descriptor is
+        # skipped when there is no client to read it. Keeping the bookkeeping
+        # is what makes a headless run's recorded steps and log identical to a
+        # rendered one's rather than merely similar. See MARVEL-29.
+        # Asked of the controller manager's device manager rather than
+        # `Engine.device_manager`: the global is a bare annotation until
+        # `Engine.Initialize` assigns it, while this one is handed to `Game` at
+        # construction and is therefore set for anything with a world to render.
+        if game.controller_manager.device_manager.IsRenderNeeded():
+            self.descriptor = ToDescriptor.World(world, event_name, sound_name)
 
         if not Build.release:
             self.debug_message = f"""<div id='debug-render'>Render: {self.last_render_id}, Step: {game.controller_manager.replay.current_step_id}</div>

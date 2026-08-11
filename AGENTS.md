@@ -108,6 +108,12 @@ python main.py -bot -bot_scenario klaw -bot_heroes she_hulk captain_marvel
 
 `-bot` is shorthand for `-device bot` plus quieter logging. Exit code 0 when every game finished and saved, 1 otherwise.
 
+**A headless run builds no `WorldDescriptor`.** `WorldRender.PresentInternal` serialises the whole board on every present, and one thing reads it — the browser sync in `GameServerSync.handle_post`. `DeviceManager.IsRenderNeeded()` answers whether anything will; `BotDeviceManager` and the determinism harness's `NullDeviceManager` say no, everything else inherits `True`. Measured at 2.6x end-to-end on twelve games (7.41s → 2.87s), and 61% of profiled runtime, because a present happens on *every message* rather than only at a decision — 2317 presents against 192 digests in one six-game run.
+
+Only the descriptor is conditional. The prompt, round id, render id, game log and `WaitSync` all still happen, because the rest of the engine reads them and a headless run's recorded steps have to be identical to a rendered one's rather than merely similar. `unit_test/test_render_skip.py` pins that split. Verified end to end by generating the same twelve seeds both ways: every saved scene byte-identical, every per-step digest byte-identical. See MARVEL-29.
+
+One thing that is *not* identical: `object_manager.index_dict["check_message"]`. Building a descriptor asks the game questions, and those allocate `check_message` objects, so a rendered run ends with a higher count than a headless one on the same seed and inputs. Nothing persists it — saves and per-step digests are unaffected — but `tools/determinism/headless.py` folds the whole index into its aggregate run digest, so harness run digests changed once when this landed. See MARVEL-75.
+
 Bot saves are **deterministic saves**: `sign`, `time`, and `playtime` are omitted, so the same seed writes a byte-identical file on any machine and no host fingerprint reaches the repo. `-no_bot_deterministic_save` restores the human save format. Human-facing saves are unaffected either way — see MARVEL-27.
 
 Each run also writes `bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` beside its scenes, recording the resolved input timeout, the policy, the fabricated-input count, how much went wrong (`crashes`), and one entry per game. **The input timeout must be 0**: a non-zero one lets `DoGetInput` return an untouched `"{}"` that the replay records as a decline nobody made. Generation refuses to start or save if it is not, and the bot device raises `FabricatedInputError` rather than let one through — see MARVEL-32.
@@ -177,7 +183,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_log_errors unit_test.test_card_coverage \
                    unit_test.test_invariants unit_test.test_verify_replays \
                    unit_test.test_integrity_errors unit_test.test_config \
-                   unit_test.test_file_paths unit_test.test_cross_os
+                   unit_test.test_file_paths unit_test.test_cross_os \
+                   unit_test.test_render_skip
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \

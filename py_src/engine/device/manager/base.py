@@ -62,6 +62,26 @@ class DeviceManager:
     def AddController(self, controller: 'Controller'):
         self.controllers.append(controller)
 
+    def IsRenderNeeded(self) -> bool:
+        """Whether anything will read the `WorldDescriptor` this step builds.
+
+        `WorldRender.PresentInternal` serialises the entire board into a
+        descriptor on every present, and exactly one thing consumes it:
+        `GameServerSync.handle_post` hands it to a browser. A manager with no
+        client attached answers False and the engine skips the construction.
+
+        Default True, and deliberately so -- a device that renders and forgets
+        to say so is a blank screen, while one that does not render and forgets
+        is only slow. Overriding this is a claim that nothing, now or later,
+        reads `world.render.descriptor` under this manager.
+
+        It is not a correctness switch. Nothing the descriptor touches reaches
+        game state or the digest (`game/world/digest.py` reads the world), so
+        answering False must leave every recorded step byte-identical. See
+        MARVEL-29.
+        """
+        return True
+
     ################################################################################
     #
     def OnNewGame(self):
