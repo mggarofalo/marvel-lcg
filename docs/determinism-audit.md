@@ -807,3 +807,38 @@ Listed so the remaining work is explicit rather than implied.
 | Record the resolved config alongside the corpus | Medium | F5. Config drift changes id allocation; make it visible rather than silent. |
 | ~~Declare `numpy` and pin `disable_numpy_random` explicitly~~ | Low | F10. Overtaken by `MARVEL-38`, which deleted both rather than declaring either. `PIL` in `requirements.txt` was a separate `MARVEL-2` item. |
 | Run the determinism harness on Linux in CI | Low | Closes acceptance item 2 above and keeps it closed. |
+
+## What the harness digest covers
+
+`RunResult.digest()` in `tools/determinism/headless.py` hashes every per-step
+digest plus the object-id counters. The counters belong there because allocation
+order is part of the digest contract a port has to reproduce — a card handed a
+different id is a real divergence even when every field matches.
+
+**Only the counters whose ids reach something anyone keeps.** `card`, `effect`
+and `message`, named in `PERSISTED_ID_CATEGORIES`. That is measured, not chosen:
+`m`, `e` and `c` are the only id prefixes that appear anywhere in a saved scene
+(the event name, the effect id, targets, resources), and `card` is the only one
+on the v2 digest wire — `owner` there is a seat index, not the `player` counter.
+
+`ObjectManager.index_dict` also counts `check_message`, `forced_effect`,
+`paying_effect`, `choose_effect`, `game_area`, `deck`, `player` and `scenario`.
+None of those ids is ever written down, and folding them in made the harness
+assert something stronger than "the engine is deterministic": it asserted "the
+engine allocated the same number of internal query objects", which moves
+whenever anything asks the engine a question rather than when behaviour changes.
+
+That was not theoretical. It fired twice in one day, both benign, and cost an
+investigation each time:
+
+| change | `check_message` (klaw seed 999) | per-step digests | saved scenes |
+|---|---|---|---|
+| MARVEL-29 — headless runs stop building a `WorldDescriptor` | 751 → 642 | identical | byte-identical |
+| MARVEL-76 — hand-size post-condition asks `GetCountHandSizeFaces()` once more | 642 → 678 | identical | byte-identical |
+
+Under the narrowed rule both compare equal, which is the correct answer in both
+cases. `unit_test/test_run_digest.py` pins both directions — a query-path change
+must not move the digest, and a card allocated a different id still must — and
+`cross_os.py` compares `persisted_index` for the same reason. The full index
+still travels in the trace file, because it is genuinely useful when diagnosing
+a divergence; it just does not decide one. Fixed under MARVEL-75.
