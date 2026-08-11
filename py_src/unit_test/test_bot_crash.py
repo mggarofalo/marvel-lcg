@@ -226,9 +226,12 @@ class TestClassification(unittest.TestCase):
     def test_an_assert_is_an_engine_assert(self):
         self.assertEqual(crash.Classify(AssertionError("card not found")), "engine-assert")
 
-    def test_an_integrity_error_is_an_invariant_violation(self):
+    def test_a_fabricated_input_is_its_own_class(self):
+        # It is the only failure whose recorded inputs are untrustworthy, and
+        # therefore the only one whose scene is withheld. Sharing a class with
+        # the checker was MARVEL-66.
         self.assertEqual(crash.Classify(FabricatedInputError("timed out")),
-                         "invariant-violation")
+                         "fabricated-input")
 
     def test_integrity_wins_over_the_timeout_that_caused_it(self):
         # `FabricatedInputError` *is* a timeout, but the class exists to say the
@@ -236,6 +239,21 @@ class TestClassification(unittest.TestCase):
         # decides how the finding is triaged.
         self.assertNotEqual(crash.Classify(FabricatedInputError("timed out")),
                             "timeout-stall")
+
+    def test_a_checker_violation_is_an_invariant_violation(self):
+        from game.world.invariants import InvariantViolation
+
+        self.assertEqual(crash.Classify(InvariantViolation("hand/over-limit")),
+                         "invariant-violation")
+
+    def test_a_stalled_policy_is_a_stall_despite_being_an_integrity_error(self):
+        # `NoProgressError` derives from `EngineIntegrityError` so it survives
+        # the broad handlers, not because anything is corrupt. Its inputs are
+        # genuine and its scene is the artefact you want. See MARVEL-37.
+        from engine.device.manager.bot.progress import NoProgressError
+
+        self.assertEqual(crash.Classify(NoProgressError("no progress for 32")),
+                         "timeout-stall")
 
     def test_a_stuck_policy_is_a_stall(self):
         self.assertEqual(crash.Classify(BotStuck("no answer left")), "timeout-stall")
@@ -424,20 +442,42 @@ class TestSceneArtefacts(unittest.TestCase):
         self.assertEqual(group.scene_file,
                          f"bot-crash-unhandled-exception-{group.failure.signature}.json")
 
-    def test_an_integrity_failure_gets_no_scene(self):
+    def test_a_fabricated_input_gets_no_scene(self):
         # Writing the recorded inputs would put a replay of a run we are
         # refusing to trust on disk. The seed reproduces it instead. MARVEL-32.
         saver = RecordingSaver()
         collector = MakeCollector(saver)
 
         collector.Capture(
-            Failure.FromReason("invariant-violation", "fabricated_inputs_recorded", "x"),
+            Failure.FromReason("fabricated-input", "fabricated_inputs_recorded", "x"),
             Occurrence(seed=1, step=10))
 
         group = collector.Groups()[0]
         self.assertEqual(saver.calls, [])
         self.assertEqual(group.scene_file, "")
         self.assertIn("MARVEL-32", group.scene_note)
+
+    def test_a_checker_violation_keeps_its_scene(self):
+        # The inputs were all made by the policy; only the state computed from
+        # them is wrong, so they replay. Withholding this scene told the reader
+        # to re-run a whole game from a seed when a step-indexed repro existed.
+        # See MARVEL-66.
+        saver = RecordingSaver()
+        collector = MakeCollector(saver)
+
+        collector.Capture(
+            Failure.FromReason("invariant-violation", "replay_verification_failed", "x"),
+            Occurrence(seed=1, step=10))
+
+        group = collector.Groups()[0]
+        self.assertEqual(len(saver.calls), 1)
+        self.assertNotEqual(group.scene_file, "")
+        self.assertEqual(group.scene_note, "")
+
+    def test_only_a_fabricated_input_withholds(self):
+        # Pins the set itself: widening it again is the exact edit that caused
+        # MARVEL-66, and it is a one-word change.
+        self.assertEqual(set(crash.SCENE_WITHHELD_CLASSES), {"fabricated-input"})
 
     def test_a_save_that_raises_does_not_lose_the_finding(self):
         def Explode(name):
