@@ -16,7 +16,7 @@ run can be caught in the act.
 thing it is measuring and break the determinism the corpus rests on
 (`docs/determinism-audit.md`). That rules out some inviting engine helpers --
 `Player.GetCountHandSizeFaces` sends `CheckIfFaceCountHandSize` once per card,
-so `_CheckHandSize` reads the ability list directly instead.
+so a rule that needs it cannot live here at all.
 
 Each rule is written with its sentinel: the state that looks like a violation
 and is not. A rule with no honest sentinel is not a rule, it is a false alarm
@@ -93,7 +93,6 @@ def Check(world: Any, progress: 'Progress|None'=None) -> List[Violation]:
     violations += _CheckZones(world, areas)
     violations += _CheckIdentity(world, areas)
     violations += _CheckCards(world)
-    violations += _CheckHandSize(world)
     violations += _CheckReplay(world)
     if progress is not None:
         violations += progress.Advance(
@@ -381,48 +380,23 @@ def _CheckReadyState(subject: str, card: Any, in_play: bool) -> List[Violation]:
 
 
 ################################################################################
-# Rules: hand size, at the point the rules require it
-
-
-def _CheckHandSize(world: Any) -> List[Violation]:
-    """Hands are legal when the villain phase begins.
-
-    Hand size is a limit at particular moments, not a continuous bound: a hero
-    draws past it, plays down from it, and is only required to be at or under
-    it after the discard step. That step is `PlayerPhase.EndPhase`, which runs
-    `MayDiscardHandCardsAndDrawUpToMax` for every player. The first decision
-    after it that has a name of its own is `Phase.State.PlaceThreat` -- villain
-    phase step one, before a single encounter card has been dealt. Checking
-    anywhere else would be checking a hand mid-transaction.
-
-    The count excludes cards that opt out (`ThisDoesNotCountTowardHandSize`,
-    which today is only "28007" Connection to the Worldmind). The engine asks
-    that question by sending `CheckIfFaceCountHandSize` per card; a checker
-    cannot send anything, so it reads the ability's trigger class instead.
-    """
-    from game.message import Message
-    from game.world.phase import Phase
-
-    if world.phase.state != Phase.State.PlaceThreat:
-        return []
-
-    violations: List[Violation] = []
-    for player in _Players(world):
-        if player.is_eliminated:
-            continue
-        counted = [card for card in player.hand_cards.cards
-                   if not _OptsOutOfHandSize(card, Message.CheckIfFaceCountHandSize)]
-        limit = player.hand_size
-        if len(counted) > limit:
-            violations.append(Violation(
-                "hand/over-limit", f"p{player.player_id}",
-                f"{len(counted)} cards counted against a hand size of {limit}"))
-
-    return violations
-
-
-def _OptsOutOfHandSize(card: Any, trigger: Any) -> bool:
-    return any(ability.when is trigger for ability in card.face.ability.abilities)
+# Rules: hand size -- removed, see docs/invariants.md
+#
+# `_CheckHandSize` rejected a hand larger than its owner's hand size during
+# `Phase.State.PlaceThreat`, on the reasoning that the villain phase begins
+# immediately after `PlayerPhase.EndPhase` has run the discard step. Two things
+# were wrong with it, and MARVEL-76 caught both on Thor's printed
+# "Have at thee!" -- draw 2 cards after a minion engages you:
+#
+#   1. `PlaceThreat` is a span, not an instant. Encounter cards are dealt,
+#      minions engage, and every effect they trigger resolves under it.
+#   2. More fundamentally, *any* card that draws outside the end phase puts a
+#      hand legitimately over its limit until the next end phase discards it
+#      down. No decision point in a round satisfies the bound.
+#
+# The property is real but it is a post-condition of
+# `PlayerPhase.MayDiscardHandCardsAndDrawUpToMax`, which is where it is now
+# asserted. Do not bring it back here.
 
 
 ################################################################################
