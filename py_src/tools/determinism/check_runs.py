@@ -48,7 +48,8 @@ MATRIX_WIDE: List[Case] = MATRIX_SMOKE + [
 ]
 
 
-def run_once(case: Case, max_steps: int, pin: bool) -> Dict:
+def run_once(case: Case, max_steps: int, pin: bool, policy: str="decline",
+             policy_seed: int=0) -> Dict:
     campaign, heroes, seed = case
     env = build_env() if pin else dict(os.environ)
     proc = subprocess.run(
@@ -60,6 +61,8 @@ def run_once(case: Case, max_steps: int, pin: bool) -> Dict:
             ",".join(heroes),
             str(seed),
             str(max_steps),
+            policy,
+            str(policy_seed),
         ],
         capture_output=True,
         text=True,
@@ -99,12 +102,20 @@ def main(argv: List[str] | None = None) -> int:
     parser.add_argument("--max-steps", type=int, default=400)
     parser.add_argument("--no-pin", action="store_true",
                         help="run without the pinned environment (diagnostic)")
+    # `decline` is the default so the nightly gate and the cross-OS trace
+    # baselines stay where they are. `first` or `random` plays cards, which
+    # roughly doubles the step count and reaches the ability-cost machinery and
+    # the response windows a decline-only run never opens. See MARVEL-69.
+    parser.add_argument("--policy", default="decline",
+                        choices=("decline", "first", "random"))
+    parser.add_argument("--policy-seed", type=int, default=0)
     args = parser.parse_args(argv)
 
     cases = MATRIX_SMOKE if args.matrix == "smoke" else MATRIX_WIDE
     pin = not args.no_pin
 
     print(f"{args.runs} run(s) per case, {len(cases)} case(s), "
+          f"policy {args.policy}, "
           f"environment {'pinned' if pin else 'NOT pinned'}\n")
 
     failures = 0
@@ -116,7 +127,8 @@ def main(argv: List[str] | None = None) -> int:
 
         for _ in range(args.runs):
             try:
-                result = run_once(case, args.max_steps, pin)
+                result = run_once(case, args.max_steps, pin,
+                                  args.policy, args.policy_seed)
             except RuntimeError as exc:
                 errors.append(str(exc))
                 continue

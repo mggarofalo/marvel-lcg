@@ -5,15 +5,24 @@ websocket or a keypress. `InputDevice.GetInput` is `@final`, but it delegates
 to `DeviceManager.DoGetInput`, so a `DeviceManager` subclass is the supported
 seam for driving the engine from code.
 
-`NullDeviceManager` answers every prompt with the empty command -- "decline" /
-"do nothing". That is not a bot and makes no attempt to play well; it exists so
-the determinism harness has a driver today. When the real bot lands
-(MARVEL-5), swap the `decide` callback and everything else here still applies.
+`NullDeviceManager` supplies the device; `decide` supplies the answers. Two are
+available and the difference is not a detail:
 
-The value of running at all is that a decline-only game still exercises setup
-(deck shuffles, object id allocation, encounter deck construction), the whole
-villain phase, and every forced ability -- which is where the ordering hazards
-identified in `docs/determinism-audit.md` live.
+  `decline_everything`  the empty command for every prompt. Still exercises
+                        setup (deck shuffles, object id allocation, encounter
+                        deck construction), the whole villain phase and every
+                        forced ability -- where the ordering hazards in
+                        `docs/determinism-audit.md` live.
+  `PolicyDriver`        answers from a real `BotPolicy`, so the harness plays
+                        cards. Roughly doubles the step count and opens the
+                        response windows a decline-only game never reaches.
+
+The decline-only driver was the only one for a while, and it quietly bounded
+what the harness could prove: `probe_forced_selection` found 60 forced-ability
+batches and not one with a second candidate, so the first-player tie-break --
+where MARVEL-39 and MARVEL-40 both live -- was never reached, and no digest
+evidence about either fix meant anything. `build_decide("first")` reaches it.
+See MARVEL-69.
 """
 
 from __future__ import annotations
@@ -79,6 +88,72 @@ DecideFn = Callable[[int, Any], str]
 
 def decline_everything(player_id: int, payload: Any) -> str:
     return "{}"
+
+
+class PolicyDriver:
+    """Answer decisions from a `BotPolicy` instead of declining them.
+
+    This module shipped with `decline_everything` because no bot existed yet,
+    and said to swap the callback once one did. This is that swap, and it is
+    not cosmetic: a decline-only game never plays a card, so it never opens the
+    response windows where two forced abilities meet on one message. That is why
+    `probe_forced_selection` reported 60 batches and zero with more than one
+    candidate -- the tie-break MARVEL-39 and MARVEL-40 both live inside was
+    never reached, and every digest-based argument about them was vacuous. See
+    MARVEL-69.
+
+    The policy sees exactly what it sees under the real bot device: an
+    `AskOptionPayload` parsed into a `BotDecision`. `attempt` is tracked here
+    the same way `BotDeviceManager.SupplyInput` tracks it, because a policy that
+    is being corrected must be told so -- `FirstLegalPolicy` walks down its
+    option list on `attempt` alone.
+    """
+
+    def __init__(self, policy: Any) -> None:
+        self.policy = policy
+        self.attempt_key: Tuple[int, int] = (-1, -1)
+        self.attempt = 0
+
+    def __call__(self, player_id: int, payload: Any) -> str:
+        from engine import Engine
+        from engine.device.manager.bot.command import BotCommand
+        from engine.device.manager.bot.policy import BotDecision, BotOptionParser
+
+        game = Engine.game
+        step_id = game.controller_manager.replay.current_step_id
+
+        key = (player_id, step_id)
+        if key != self.attempt_key:
+            self.attempt_key = key
+            self.attempt = 0
+        else:
+            self.attempt += 1
+
+        decision = BotDecision(
+            player_id    = player_id,
+            step_id      = step_id,
+            attempt      = self.attempt,
+            event_name   = payload.event_name,
+            ability_type = payload.ability_type,
+            prompt_text  = payload.prompt_text,
+            can_cancel   = payload.show_cancel,
+            options      = BotOptionParser.Parse(payload.options_json),
+            replay_input = payload.replay_input,
+            world        = game.world,
+        )
+        return BotCommand.ToJson(self.policy.Choose(decision))
+
+
+def build_decide(policy_name: str, policy_seed: int=0) -> DecideFn:
+    """`decline`, or any name `BotPolicyFactory` knows (`first`, `random`)."""
+    if policy_name == "decline":
+        return decline_everything
+
+    from engine.device.manager.bot.policies import BotPolicyFactory
+
+    policy = BotPolicyFactory.Create(policy_name, policy_seed)
+    policy.OnGameStart(policy_seed)
+    return PolicyDriver(policy)
 
 
 def _initialize_engine() -> None:
@@ -236,8 +311,11 @@ def _main(argv: List[str]) -> int:
     heroes = argv[2].split(",")
     seed = int(argv[3])
     max_steps = int(argv[4]) if len(argv) > 4 else 2000
+    policy = argv[5] if len(argv) > 5 else "decline"
+    policy_seed = int(argv[6]) if len(argv) > 6 else 0
 
-    result = run_headless(campaign, heroes, seed, max_steps=max_steps)
+    result = run_headless(campaign, heroes, seed, max_steps=max_steps,
+                          decide=build_decide(policy, policy_seed))
     print("<<<RESULT>>>" + result.to_json())
     return 0
 

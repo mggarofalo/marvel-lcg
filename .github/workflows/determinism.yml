@@ -171,6 +171,15 @@ jobs:
       - name: An integrity error on a job thread still stops the run
         run: python -m tools.determinism.probe_threaded_integrity
 
+      # Guards coverage rather than behaviour, which is why it is here rather
+      # than in ci.yml: it exits non-zero when no forced-ability batch reached
+      # the first-player tie-break, the path MARVEL-39 and MARVEL-40 both live
+      # inside. Self-play could not reach it at all until MARVEL-69 gave the
+      # harness a card-playing policy, and a future change to that policy could
+      # take it away again without failing anything else.
+      - name: Self-play still reaches the forced-ability tie-break
+        run: python -m tools.determinism.probe_forced_selection
+
   # MARVEL-18 attaches here: a job that verifies the frozen corpus manifest
   # hash. It needs the corpus to exist first (MARVEL-15), so it is named but
   # not stubbed — an empty job that always passes is worse than no job.

@@ -200,13 +200,15 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_integrity_errors unit_test.test_config \
                    unit_test.test_file_paths unit_test.test_cross_os \
                    unit_test.test_render_skip unit_test.test_no_progress \
-                   unit_test.test_hand_size
+                   unit_test.test_hand_size unit_test.test_policy_driver
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
                    unit_test.test_puzzle unit_test.test_worlds_encounter \
                    unit_test.test_card_coverage_play
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
+python -m tools.determinism.check_runs --runs 4 --matrix wide --policy first  # ...on games that play cards
+python -m tools.determinism.probe_forced_selection  # self-play still reaches the forced-ability tie-break
 python -m tools.determinism.cross_os emit --out trace.json --label $(uname -s)  # this platform's trace
 python -m tools.determinism.cross_os compare a.json b.json  # do two platforms agree?
 python -m tools.determinism.check_scene_repro    # same seed -> same saved file
@@ -367,7 +369,9 @@ Two workflows, split by cost. Both pin Python from `py_src/.python-version`, ins
 
 What is compared is pinned in `COMPARED_FIELDS` and guarded by `unit_test/test_cross_os.py`: the run digest, the step count, `object_index`, `game_over`, and `error`. The platform block — OS, release, machine, Python version — is recorded for the report and deliberately never compared, since it is *expected* to differ. Narrowing that set is the one edit that would make this gate pass on a real divergence, so the test pins the set itself.
 
-A divergence here means **the corpus is only valid on the platform that produced it**, which constrains the whole C# validation strategy. File it and stop; do not work around it. The audit names the identity-hash orderings (team-up units, forced-effect resolution) as the likeliest to differ under another allocator, and the decline-only driver walks both.
+A divergence here means **the corpus is only valid on the platform that produced it**, which constrains the whole C# validation strategy. File it and stop; do not work around it. The audit names the identity-hash orderings (team-up units, forced-effect resolution) as the likeliest to differ under another allocator, and the driver walks both.
+
+The harness can drive the engine two ways. `decline_everything` answers every prompt with the empty command; `PolicyDriver` answers from a real `BotPolicy`, so the game plays cards, runs roughly twice as long, and opens response windows a decline-only run never reaches — `check_runs --policy first|random`, and the default for `probe_forced_selection`. Both reproduce byte-identically across fresh processes. `--policy` defaults to `decline` on `check_runs` so the nightly gate and the cross-OS baselines are unchanged. Which driver a measurement used is load-bearing: a decline-only run reaches no forced-ability tie-break at all, so digest evidence from one says nothing about MARVEL-39 or MARVEL-40 (MARVEL-69).
 
 Where the remaining corpus-phase jobs attach:
 

@@ -82,8 +82,10 @@ class Counters:
         return dict(self.counts)
 
 
-def _child(campaign: str, heroes: List[str], seed: int, max_steps: int) -> int:
-    from tools.determinism.headless import _initialize_engine, run_headless
+def _child(campaign: str, heroes: List[str], seed: int, max_steps: int,
+           policy: str, policy_seed: int) -> int:
+    from tools.determinism.headless import (_initialize_engine, build_decide,
+                                            run_headless)
 
     _initialize_engine()
 
@@ -109,7 +111,8 @@ def _child(campaign: str, heroes: List[str], seed: int, max_steps: int) -> int:
 
     EventManager.SelectForcedEffect = staticmethod(Instrumented)  # type: ignore[assignment]
 
-    result = run_headless(campaign, heroes, seed, max_steps=max_steps)
+    result = run_headless(campaign, heroes, seed, max_steps=max_steps,
+                          decide=build_decide(policy, policy_seed))
 
     payload = counters.AsDict()
     payload["steps"] = len(result.steps)
@@ -118,7 +121,8 @@ def _child(campaign: str, heroes: List[str], seed: int, max_steps: int) -> int:
     return 0
 
 
-def _spawn(campaign: str, heroes: List[str], seed: int, max_steps: int) -> Dict[str, Any]:
+def _spawn(campaign: str, heroes: List[str], seed: int, max_steps: int,
+           policy: str, policy_seed: int) -> Dict[str, Any]:
     proc = subprocess.run(
         [
             sys.executable,
@@ -129,6 +133,8 @@ def _spawn(campaign: str, heroes: List[str], seed: int, max_steps: int) -> Dict[
             ",".join(heroes),
             str(seed),
             str(max_steps),
+            policy,
+            str(policy_seed),
         ],
         capture_output=True,
         text=True,
@@ -147,15 +153,25 @@ def _spawn(campaign: str, heroes: List[str], seed: int, max_steps: int) -> Dict[
 
 def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--matrix", choices=("smoke", "wide"), default="smoke")
+    # Wide by default, unlike the other probes: the smoke pair provably cannot
+    # reach a multi-candidate batch even with a card-playing policy (measured
+    # at 59 batches, largest 1), so a bare run of this probe on smoke would
+    # always report that it exercises neither fix. See MARVEL-69.
+    parser.add_argument("--matrix", choices=("smoke", "wide"), default="wide")
     parser.add_argument("--max-steps", type=int, default=400)
+    # A decline-only driver never plays a card, so it never opens a response
+    # window where two forced abilities meet. See MARVEL-69.
+    parser.add_argument("--policy", default="first",
+                        choices=("decline", "first", "random"))
+    parser.add_argument("--policy-seed", type=int, default=0)
     args = parser.parse_args(argv)
 
     cases = MATRIX_SMOKE if args.matrix == "smoke" else MATRIX_WIDE
 
     totals = Counters()
     for campaign, heroes, seed in cases:
-        stats = _spawn(campaign, list(heroes), seed, args.max_steps)
+        stats = _spawn(campaign, list(heroes), seed, args.max_steps,
+                       args.policy, args.policy_seed)
         for name in FIELDS:
             if name == "largest":
                 totals.counts[name] = max(totals.counts[name], stats[name])
@@ -193,6 +209,7 @@ def main(argv: List[str] | None = None) -> int:
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[1] == "--child":
         raise SystemExit(
-            _child(sys.argv[2], sys.argv[3].split(","), int(sys.argv[4]), int(sys.argv[5]))
+            _child(sys.argv[2], sys.argv[3].split(","), int(sys.argv[4]),
+                   int(sys.argv[5]), sys.argv[6], int(sys.argv[7]))
         )
     raise SystemExit(main())
