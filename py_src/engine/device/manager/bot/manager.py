@@ -51,6 +51,16 @@ class BotDeviceManager(DeviceManager):
         return device, device
 
     @override
+    def IsRenderNeeded(self) -> bool:
+        # No client, so nobody reads the descriptor -- `BotDevice.Render` is
+        # already a no-op for the same reason. Measured on six games: building
+        # it was 5.9s of a 9.6s run, because a present happens on every message
+        # and not only at a decision (2317 presents against 192 digests).
+        # Generation runs thousands of games, so this is the difference between
+        # an overnight corpus and a multi-day one. See MARVEL-29.
+        return False
+
+    @override
     def OnInputTimedOut(self, player_id: int) -> None:
         # The base class shrugs and records a decline. A generation run cannot:
         # the fabricated input would land in the corpus and then fail to

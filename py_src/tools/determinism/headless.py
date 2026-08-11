@@ -146,6 +146,14 @@ def _build_device_manager(on_step: Callable[[int, Any], str]):
         def DoGetInput(self, data, player_id, check):  # type: ignore[override]
             return on_step(player_id, data)
 
+        # Same reason `NullOutput.Render` is empty: there is no client, so the
+        # WorldDescriptor built on every present is thrown away. The harness
+        # runs the engine in hundreds of fresh processes, and the digests it
+        # compares are built from the world rather than from render state, so
+        # skipping the construction cannot move them. See MARVEL-29.
+        def IsRenderNeeded(self):  # type: ignore[override]
+            return False
+
     return NullDeviceManager()
 
 
