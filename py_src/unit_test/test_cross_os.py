@@ -37,7 +37,7 @@ def make_trace(label, system, *, cases=None, matrix="wide"):
     }
 
 
-def make_case(*, digest="a" * 64, steps=None, object_index=None, error="",
+def make_case(*, digest="a" * 64, steps=None, persisted_index=None, error="",
               game_over=False):
     steps = steps if steps is not None else [
         {"i": 0, "p": 0, "e": "GameSetup", "digest": "d0"},
@@ -49,7 +49,7 @@ def make_case(*, digest="a" * 64, steps=None, object_index=None, error="",
         "seed": 12345,
         "digest": digest,
         "step_count": len(steps),
-        "object_index": object_index if object_index is not None else {"card": 7},
+        "persisted_index": persisted_index if persisted_index is not None else {"card": 7},
         "game_over": game_over,
         "error": error,
         "steps": steps,
@@ -163,11 +163,11 @@ class TestADivergenceFails(CompareTestCase):
         self.assertEqual(code, 1)
         self.assertIn("error differs", out)
 
-    def test_a_differing_object_index_fails(self):
+    def test_a_differing_persisted_index_fails(self):
         # Card id allocation order is part of the digest contract, so two
         # platforms allocating differently is a finding even if every step
         # digest matches.
-        reallocated = make_case(object_index={"card": 9})
+        reallocated = make_case(persisted_index={"card": 9})
 
         code, out = self.run_compare(
             make_trace("ubuntu-latest", "Linux"),
@@ -176,7 +176,7 @@ class TestADivergenceFails(CompareTestCase):
         )
 
         self.assertEqual(code, 1)
-        self.assertIn("object_index differs", out)
+        self.assertIn("persisted_index differs", out)
 
 
 def digest_document(health):
@@ -279,7 +279,7 @@ class TestTheComparedFieldSet(unittest.TestCase):
         # exact edit that would make this gate pass on a real divergence.
         self.assertEqual(
             set(COMPARED_FIELDS),
-            {"digest", "step_count", "object_index", "game_over", "error"},
+            {"digest", "step_count", "persisted_index", "game_over", "error"},
         )
 
 

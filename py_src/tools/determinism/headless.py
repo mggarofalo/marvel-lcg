@@ -46,6 +46,28 @@ class Step:
     digest: str
 
 
+# The object-id counters whose values reach an artefact somebody keeps, and so
+# the only ones a determinism verdict may depend on. Measured rather than
+# assumed -- these are the three id prefixes that appear anywhere in a saved
+# scene (`m` in the event name, `e` and `c` in the effect id, targets and
+# resources), and `card` is the only one on the wire in a v2 digest. `owner`
+# there is a seat index, not the `player` counter.
+#
+# `ObjectManager.index_dict` also counts `check_message`, `forced_effect`,
+# `paying_effect`, `choose_effect`, `game_area`, `deck`, `player` and
+# `scenario`, and none of those ids is ever written down. Folding them into the
+# run digest made this harness assert something stronger than "the engine is
+# deterministic": it asserted "the engine allocated the same number of internal
+# query objects", which depends on who was watching and what they asked.
+#
+# That fired twice in one day and cost an investigation each time, both benign:
+# MARVEL-29 stopped headless runs building a `WorldDescriptor`, and MARVEL-76
+# added a post-condition that asks `GetCountHandSizeFaces()` once more. Both
+# move `check_message`; neither moves a per-step digest or a saved byte. See
+# MARVEL-75.
+PERSISTED_ID_CATEGORIES = ("card", "effect", "message")
+
+
 @dataclass
 class RunResult:
     campaign: str
@@ -56,10 +78,23 @@ class RunResult:
     game_over: bool = False
     error: str = ""
 
+    @property
+    def persisted_index(self) -> dict[str, int]:
+        """The counters a divergence in would reach a recording."""
+        return {name: count for name, count in self.object_index.items()
+                if name in PERSISTED_ID_CATEGORIES}
+
     def digest(self) -> str:
-        """One hash covering every per-step digest, in order."""
+        """One hash covering every per-step digest, in order.
+
+        Plus the persisted id counters, because allocation order is part of the
+        digest contract a port has to reproduce -- a card allocated a different
+        id is a real divergence even when every field matches. The counters
+        nothing records are deliberately *not* here; see
+        `PERSISTED_ID_CATEGORIES`.
+        """
         blob = "\n".join(f"{s.index}|{s.player_id}|{s.event_name}|{s.digest}" for s in self.steps)
-        blob += "\n#objects " + json.dumps(self.object_index, sort_keys=True)
+        blob += "\n#objects " + json.dumps(self.persisted_index, sort_keys=True)
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
     def to_json(self) -> str:
@@ -70,6 +105,10 @@ class RunResult:
                 "seed": self.seed,
                 "step_count": len(self.steps),
                 "digest": self.digest(),
+                # Both: the persisted subset is what a verdict rests on, the
+                # full index is kept because it is genuinely useful when
+                # diagnosing one and costs nothing to carry.
+                "persisted_index": self.persisted_index,
                 "object_index": self.object_index,
                 "game_over": self.game_over,
                 "error": self.error,

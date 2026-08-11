@@ -28,11 +28,17 @@ from typing import Dict, List, Tuple
 
 from tools.determinism.check_runs import MATRIX_SMOKE, MATRIX_WIDE, Case, run_once
 
-# The fields of a run that must match across operating systems. `object_index`
-# is in here because card id allocation order is part of the digest contract,
-# and `error` is because an engine that raises on one OS and not the other has
-# diverged even when both traces are otherwise equal.
-COMPARED_FIELDS = ("digest", "step_count", "object_index", "game_over", "error")
+# The fields of a run that must match across operating systems.
+# `persisted_index` is in here because id allocation order is part of the digest
+# contract, and `error` is because an engine that raises on one OS and not the
+# other has diverged even when both traces are otherwise equal.
+#
+# `persisted_index` rather than the whole `object_index`: the full index counts
+# transient query objects whose ids are never written down, so it moves whenever
+# anything asks the engine a question -- twice in one day, both times benign.
+# See `headless.PERSISTED_ID_CATEGORIES` and MARVEL-75. The full index still
+# travels in the trace file for diagnosis, it just does not decide a verdict.
+COMPARED_FIELDS = ("digest", "step_count", "persisted_index", "game_over", "error")
 
 # Recorded for the failure report, never compared -- these are *expected* to
 # differ between runners. Keeping them out of COMPARED_FIELDS is the whole

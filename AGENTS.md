@@ -200,7 +200,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_integrity_errors unit_test.test_config \
                    unit_test.test_file_paths unit_test.test_cross_os \
                    unit_test.test_render_skip unit_test.test_no_progress \
-                   unit_test.test_hand_size unit_test.test_policy_driver
+                   unit_test.test_hand_size unit_test.test_policy_driver \
+                   unit_test.test_run_digest
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
@@ -367,7 +368,9 @@ Two workflows, split by cost. Both pin Python from `py_src/.python-version`, ins
 
 `check_runs` proves each platform reproduces *itself* across fresh processes. That is a weaker claim than it looks: an ordering hazard can resolve one way in every process on one machine and the other way on the other machine, and no single process ever sees both. `tools/determinism/cross_os.py` closes that gap in two halves, because CI cannot do it in one — each leg of the `cross-os` matrix runs `emit` and uploads its trace, then `cross-os-compare` downloads both and diffs them per step.
 
-What is compared is pinned in `COMPARED_FIELDS` and guarded by `unit_test/test_cross_os.py`: the run digest, the step count, `object_index`, `game_over`, and `error`. The platform block — OS, release, machine, Python version — is recorded for the report and deliberately never compared, since it is *expected* to differ. Narrowing that set is the one edit that would make this gate pass on a real divergence, so the test pins the set itself.
+What is compared is pinned in `COMPARED_FIELDS` and guarded by `unit_test/test_cross_os.py`: the run digest, the step count, `persisted_index`, `game_over`, and `error`. The platform block — OS, release, machine, Python version — is recorded for the report and deliberately never compared, since it is *expected* to differ. Narrowing that set is the one edit that would make this gate pass on a real divergence, so the test pins the set itself.
+
+**`persisted_index`, not the whole `object_index`** (MARVEL-75). `ObjectManager.index_dict` counts every allocated object; only three of those counters — `card`, `effect`, `message` — have ids that reach something anyone keeps. That is measured, not chosen: `m`, `e` and `c` are the only id prefixes anywhere in a saved scene, and `card` is the only one on the v2 digest wire (`owner` there is a seat index, not the `player` counter). Folding the rest in made the harness assert that the engine allocated the same number of *internal query objects*, which moves whenever anything asks the engine a question — twice in one day, both benign, an investigation each time. `headless.PERSISTED_ID_CATEGORIES` is the set and `unit_test/test_run_digest.py` pins both directions: a query-path change must not move the digest, and a card allocated a different id still must.
 
 A divergence here means **the corpus is only valid on the platform that produced it**, which constrains the whole C# validation strategy. File it and stop; do not work around it. The audit names the identity-hash orderings (team-up units, forced-effect resolution) as the likeliest to differ under another allocator, and the driver walks both.
 
