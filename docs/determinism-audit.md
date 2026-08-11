@@ -226,11 +226,37 @@ on every seed: `--policy random --policy-seed 42` gives `2 multi, 0 same_card`,
 which is two batches spanning different cards and therefore a real first-player
 ordering choice.
 
-**MARVEL-39's trigger is still not reached.** `with_delay` is zero under every
-policy and seed tried — a delay ability has never shared a batch with a
-candidate in self-play. That half still rests on
-`unit_test/test_forced_effect_selection.py`, and closing it needs a constructed
-fixture rather than a seed; it stays as item 4 under "What still has to be run".
+**MARVEL-39's trigger is still not reached, and cannot be.** `with_delay` is
+zero under every policy and seed tried. That could mean the driver is still too
+shallow or that the shape does not exist, so
+`tools/determinism/scan_forced_shapes.py` settles it by reading every card the
+engine can load rather than by playing.
+
+The defect needs a delay ability sharing a batch with **two** non-delay
+candidates — `SelectForcedEffect` filters delay abilities out and asks the first
+player only when two or more remain. A batch is one message at one
+`TimingPriority`, and every delay ability is `TimingPriority.Rule`
+(`ability_type.py`, "Fix 50068"), so a co-batched ability must be Rule priority
+and forced. Across 3992 cards:
+
+| message | delay abilities | non-delay Rule-priority forced candidates |
+|---|---|---|
+| `WhenUnitWouldAttackUnit` | 49 | 0 |
+| `WhenUnitWouldBeDefeated` | 18 | **1** — `2412_wrath_of_the_mad_titan` |
+| `WhenFaceWouldDealDamage` | 11 | 0 |
+| `WhenCardWouldDiscard` | 3 | 0 |
+| `WhenUnitWouldChangeForm` | 2 | 0 |
+| `WhenUnitWouldThwart` | 2 | 0 |
+
+One, where the defect needs two. **The shape is not reachable from the shipped
+pool** — not by a seed, and not by a puzzle built out of real cards, which is
+why MARVEL-69 did not build one. Its coverage is
+`unit_test/test_forced_effect_selection.py`, which constructs the batch directly
+and already pins the `[normal, delay, normal]` regression.
+
+Re-run the scan when a pack lands. A second `Challenge`-typed forced ability on
+any of those six messages would make it reachable, and a puzzle would then be
+worth building.
 
 `probe_forced_selection` now defaults to the wide matrix and the `first` policy,
 and runs nightly in `determinism.yml` — it exits non-zero when no multi-candidate
@@ -671,7 +697,8 @@ that makes them safe.
 | `probe_hash_order.py` | Establishes which container orderings CPython reproduces | yes |
 | `probe_rng.py` | Checks the RNG for cross-process stability. Compared both backends until MARVEL-38 left only one; cross-*language* agreement is `datasets/rng/vectors.json` | yes |
 | `probe_change_form_order.py` | Boots under varying pre-boot allocation and compares the Change Form effect ids. F4's instrument, because `check_runs` cannot see effect-id drift | yes |
-| `probe_forced_selection.py` | Counts the shapes of forced-ability batch that reach the first-player tie-break. Says whether a run exercises MARVEL-39 / MARVEL-40 at all | yes |
+| `probe_forced_selection.py` | Counts the shapes of forced-ability batch that reach the first-player tie-break. Says whether a run exercises MARVEL-39 / MARVEL-40 at all. Wide matrix and `--policy first` by default; exits non-zero when nothing reaches the tie-break | yes |
+| `scan_forced_shapes.py` | Reads every card the engine can load and asks which batch shapes are *possible*, rather than which a run reached. Distinguishes "the driver is too shallow" from "the shape does not exist" | yes |
 
 `headless.py` drives the engine through `DeviceManager.DoGetInput`.
 `InputDevice.GetInput` is `@final`, but it delegates, so a `DeviceManager`
@@ -751,11 +778,22 @@ Listed so the remaining work is explicit rather than implied.
 
    What this does *not* cover is a policy that pays costs deliberately rather
    than taking the first legal option. That arrives with MARVEL-14.
-4. **Exercise F2 and F3 deliberately.** None of the seven scenarios put two
-   forced local abilities on one message, and none of the decks contain a TeamUp
-   card. Build a puzzle (`game/puzzle/`) for each and confirm the digest is
-   stable — or, better, fix them first and confirm the puzzle then passes under
-   allocator perturbation.
+4. **Exercise F2 and F3 deliberately.** Partly answered by MARVEL-69, and the
+   remaining part is smaller and better understood than it was.
+
+   - **F2, the tie-break itself** — *done*. A card-playing driver reaches it:
+     3 multi-candidate batches on the wide matrix, including MARVEL-40's
+     same-card shape, and a genuinely multi-card choice on
+     `--policy random --policy-seed 42`. `probe_forced_selection` guards it
+     nightly.
+   - **F2, the delay-ability variant (MARVEL-39)** — *not buildable, and that
+     is now a measured result rather than a gap*. `scan_forced_shapes.py` shows
+     the shipped pool cannot produce the shape at all (see F2 above), so a
+     puzzle would have to invent an ability. `unit_test/test_forced_effect_selection.py`
+     is the coverage, deliberately.
+   - **F3, TeamUp** — *still open*. No deck in the matrix contains a TeamUp
+     card, so `GetTeamUpUnits` is still never exercised in play. This is the
+     part of item 4 that a puzzle or a deck change would actually close.
 
 ## Candidate follow-up issues
 
