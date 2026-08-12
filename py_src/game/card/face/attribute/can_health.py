@@ -490,6 +490,20 @@ class CanHealth(HasHealth):
     #
     @final
     def UpdateMaxHealth(self, value: int, by_effect: 'Effect'):
+        # The same in-play guard `UpdateHealth` applies, and for the same reason:
+        # `components.health` belongs to the *card*, not to this face, and a card
+        # that leaves play may have had it zeroed -- `Card.Reset` runs
+        # `Health.OnParentReset`, and a facedown Ultron drone reverting to the
+        # player card it was made from does exactly that.
+        #
+        # Without this, the two halves of `GainHealthAndMaxHealth` can disagree
+        # about which object they are editing. Removing a +1 HP grant from a
+        # drone sitting at 1 HP runs `GainOnlyHealth(-1)` first, which drops it
+        # to 0, kills it, and reverts the card to its printed face with the
+        # component reset to 0; `GainOnlyMaxHealth(-1)` then subtracts from the
+        # *fresh* component and leaves `max_health = -1`. See MARVEL-77.
+        if not self.IsInPlay():
+            return
         self.components.health.AddMaxHealth(value)
 
     @final

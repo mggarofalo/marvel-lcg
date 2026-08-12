@@ -201,7 +201,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_file_paths unit_test.test_cross_os \
                    unit_test.test_render_skip unit_test.test_no_progress \
                    unit_test.test_hand_size unit_test.test_policy_driver \
-                   unit_test.test_run_digest unit_test.test_heuristic_policy
+                   unit_test.test_run_digest unit_test.test_heuristic_policy \
+                   unit_test.test_max_health_guard
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
