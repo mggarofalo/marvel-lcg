@@ -411,13 +411,18 @@ class TestTheShippedGroupsAreUnchanged(ConfigTestCase):
             "hidden_log_categories": ["CONTROLLER", "WEB", "VERSION", "STATISTICS"],
         })
 
-    def test_test_expands_to_what_it_always_did(self):
+    def test_test_verifies_under_the_configuration_it_verifies(self):
         # `-test` was repointed at `-verify_replays` by MARVEL-28; before that
         # it expanded to a bare `-device`, which is the bug that issue fixed.
+        #
+        # It also carried `-no_statistics` until MARVEL-78. `statistics` shifts
+        # forced_effect id allocation, so a corpus generated under `-bot` and
+        # verified through `-test` failed on config drift -- the group turned
+        # off a flag the corpus was recorded with. Absence of `statistics` here
+        # is the assertion.
         self.assertEqual(self.Expand("-test"), {
             "verify_replays": True,
             "editor": False,
-            "statistics": False,
             "hidden_log_categories": ["CONTROLLER", "WEB", "VERSION", "STATISTICS"],
         })
 
