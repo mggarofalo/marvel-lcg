@@ -35,23 +35,33 @@
 #
 # The remaining pairs are covered as follows:
 #
+#     Constant -> Status             proven below, decisively
 #     Status -> ForcedInterrupt      proven below, decisively
 #     ForcedResponse -> Response     proven below, decisively
 #     ForcedInterrupt -> Interrupt   not observable in the core set: no board
 #                                    makes 01098 and 01003 simultaneous.
 #                                    21 events elsewhere carry both; see
 #                                    MARVEL-83
-#     Constant -> Status             candidates on WhenUnitWouldAttack and
-#                                    WhenUnitWouldTakeDamage, not yet authored
-#     Interrupt -> Boost             candidates on WhenSchemeBeDefeated and
-#                                    WhenUnitBeDefeated, not yet authored
-#     Boost -> ForcedResponse        one candidate event (AfterPhaseBegin)
+#     Interrupt -> Boost             one board exists and it is blocked by an
+#                                    engine defect, not by the rule. See the
+#                                    section at the end of this file.
+#     Boost -> ForcedResponse        not observable: the single candidate is a
+#                                    mistyped card. See the end of this file.
 #
-# The candidate lists come from grouping `AbilityFactory.X(AbilityType.Y` by
-# factory across every pack and keeping the factories that carry two adjacent
-# priorities. Sharing an event is necessary and not sufficient -- the two
-# abilities also have to bear on the same *subject*, which is what rules out the
-# core-set ForcedInterrupt/Interrupt pair.
+# The candidate lists come from an index of (event, priority, card) rows built
+# by resolving every `AbilityFactory.*` call site in all 64 packs through the
+# factory definitions -- 4,172 of 5,788 sites resolved into 4,332 rows over 141
+# distinct `Message` classes. The remaining 1,616 sites belong to 51 factories
+# that were audited separately and introduce no new overlap for any open pair.
+#
+# `Message` class is the right axis because `EventManager.BroadcastInternal`
+# runs `for priority in list(TimingPriority)` *within a single broadcast*
+# (game/event/manager.py:970). Two abilities on different `Message` classes can
+# never race, whatever their priorities.
+#
+# Sharing an event is necessary and not sufficient -- the two abilities also
+# have to bear on the same *subject*, which is what rules out the core-set
+# ForcedInterrupt/Interrupt pair.
 #
 # ---------------------------------------------------------------------------
 # A note on how the ordering shows up at all.
@@ -69,6 +79,59 @@ Feature: Timing priority
     Given the scenario is "rhino"
     And the hero is "spider_man"
     And I am in hero form
+
+  # --------------------------------------------------------------------------
+  # Constant (2) before Status (3)
+  #
+  # A tough status card and a "cannot take damage" constant both want the same
+  # `WhenUnitWouldTakeDamage` message, on the same character:
+  #
+  #   Dragnet (39039)   Constant, "The villain cannot take damage." Registered
+  #                     as AbilityFactory.UnitCannotTakeDamageWhile with no
+  #                     `while` clause at all, so it is unconditional while the
+  #                     side scheme is in play. It calls PreventDamage("All").
+  #   the tough card    Status, cancels the damage and is discarded doing it.
+  #
+  # Whichever fires first consumes the damage. What makes this observable is
+  # that the tough ability is *gated* on the damage still being there:
+  # game/ability/factory/damage.py registers it under
+  #
+  #     not message.IsBePrevent() and message.will_take_damage >= 1
+  #
+  # and `ProcessForcedEffect` re-runs the filter at each priority level. So a
+  # Constant that has already prevented the damage makes the tough ability drop
+  # out rather than resolve, and the status card is never spent.
+  #
+  # Both orders leave Rhino on 0 damage. The whole reading is in the status
+  # card, which is why the second scenario asserts it.
+  #
+  # This section needs two controls and only writes one. The other -- a tough
+  # card alone being spent -- is the first scenario of the next section, "a tough
+  # status card cancels an attack and is discarded", which is the identical
+  # transcript. Writing it twice would put one transcript in the trusted suite
+  # under two names.
+
+  Scenario: a constant alone prevents the damage
+    Given "Dragnet" is in play
+
+    When I attack "Rhino"
+    Then "Rhino" has 0 damage
+
+  Scenario: the constant resolves first and leaves the tough card unspent
+    # The decisive one. If Status had gone first, the tough card would have
+    # cancelled the damage and been discarded, and Rhino would end not tough.
+    # He ends still tough, so the Constant consumed the damage before the status
+    # card was offered it.
+    #
+    # Verified decisive by mutation: remapping AbilityType.Status to a priority
+    # ahead of Constant flips this assertion to "not tough" while both scenarios
+    # above continue to pass.
+    Given "Dragnet" is in play
+    And "Rhino" is tough
+
+    When I attack "Rhino"
+    Then "Rhino" has 0 damage
+    And "Rhino" is tough
 
   # --------------------------------------------------------------------------
   # Status (3) before ForcedInterrupt (4)
@@ -255,3 +318,63 @@ Feature: Timing priority
     Then "Hydra Mercenary #1" has 0 damage
     And "Hydra Mercenary #1" is not tough
     And "Hawkeye" has 3 "arrow" counters
+
+  # --------------------------------------------------------------------------
+  # Interrupt (5) before Boost (6) -- BLOCKED, not unprovable
+  #
+  # A board exists and it is the only one in the corpus. Both abilities fire on
+  # the same `WhenUnitBeDefeated` message for the same minion, and both write the
+  # same counter -- threat on the main scheme:
+  #
+  #   Gatekeeper (32044)  Interrupt, attached to a minion. "When attached minion
+  #                       is defeated, remove 4 threat from the main scheme."
+  #   Jolt (50133)        Boost, via AbilityType.WhenDefeated. "When Defeated:
+  #                       Place 3 threat on the main scheme."
+  #
+  # Starting from 2 threat: Interrupt first removes 4 (clamped to 0) and Jolt
+  # then places 3, ending at 3. Boost first places 3 to make 5, and the removal
+  # takes it to 1. The orders are three apart, so nothing subtle turns on the
+  # clamp.
+  #
+  # What blocks it is not the rule. Playing Gatekeeper onto a minion stops the
+  # game with a two-option prompt whose options have no names -- `_#1` and `_#2`
+  # -- and both answers produce an identical board. The only way to write the
+  # transcript today is `When I choose "_#1"`, which asserts an engine-internal
+  # ordinal, would bind to the wrong ability if registration order changed, and
+  # is exactly what MARVEL-87 wants the harness to reject. See MARVEL-91; this
+  # section becomes four scenarios the moment those options are named.
+  #
+  # It is worth saying which of these is which. MARVEL-91 is a defect in the
+  # engine. The pair being unproven is a consequence of that defect, not a
+  # finding about timing priority -- so it must not be read as evidence that the
+  # two levels never race.
+  #
+  # --------------------------------------------------------------------------
+  # Boost (6) before ForcedResponse (7) -- NOT OBSERVABLE
+  #
+  # Exactly one event in all 64 packs carries both priorities, and it is a
+  # mistyped card rather than a race.
+  #
+  #   AfterPhaseBegin   Boost:          18025 Sibling Rivalry
+  #                     ForcedResponse: 16026, 38001a, 43012
+  #
+  # Sibling Rivalry prints "Forced Response: After the villain phase begins, deal
+  # 1 facedown encounter card to Gamora" and is scripted `AbilityType.WhenDefeated`,
+  # which maps to Boost. Nothing about the card is a When Defeated, a When
+  # Revealed or a boost. A scenario built on it would pin the typo as the rule.
+  # Filed as MARVEL-89.
+  #
+  # The three ForcedResponse partners fail independently of that. Rogue (38001a)
+  # and Puncture Wound (43012) fire when the *player* phase begins, so they can
+  # never be simultaneous with it. Blazing Inferno (16026) does share the event,
+  # but deals indirect damage to each identity while 18025 deals Gamora an
+  # encounter card -- different subjects, neither consuming what the other wants.
+  #
+  # The structural reason there is nothing else: Boost priority is reached by
+  # only five events in the whole corpus (AfterPhaseBegin, WhenCardBecomeBoost,
+  # WhenCardRevealed, WhenSchemeBeDefeated, WhenUnitBeDefeated), and the engine
+  # consistently splits "When X" messages from "After X" messages. Boost-priority
+  # abilities live on the "When" windows and Forced Responses on the "After"
+  # ones, so the two populations barely touch. This pair becomes provable only if
+  # 18025 is retyped *and* a genuine Boost ability is added to a message that
+  # also carries a Forced Response.
