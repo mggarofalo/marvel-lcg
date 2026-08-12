@@ -442,6 +442,11 @@ REVIEWED_ABSORBERS = {
     # Deciding whether a file in a corpus folder is a scene at all. An
     # unreadable file is not a scene; that is the answer, not an error.
     ("game/test/verify.py", "ReplayVerifier.IsSceneDocument"): 1,
+    # Reading a run manifest to find out what config produced a corpus. The
+    # same reasoning: nothing but `json.loads` runs inside, so no engine code
+    # is there to raise an integrity error, and a manifest that will not parse
+    # is reported as an unchecked corpus rather than as a crash.
+    ("game/test/verify.py", "ReplayVerifier.ReadJson"): 1,
 }
 
 

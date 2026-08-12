@@ -30,6 +30,7 @@ VERIFY_REPLAYS          = ConfigVariables.Bool('verify_replays', False)
 VERIFY_FOLDERS          = ConfigVariables.Folders('verify_folders', [])
 VERIFY_REPORT_FILE      = ConfigVariables.File('verify_report_file', "")
 VERIFY_ALLOW_INCOMPLETE = ConfigVariables.Bool('verify_allow_incomplete', False)
+VERIFY_ALLOW_CONFIG_DRIFT = ConfigVariables.Bool('verify_allow_config_drift', False)
 
 ConfigVariables.SetGroupArgs('test', "-verify_replays -no_editor -no_statistics -hidden_log_categories CONTROLLER WEB VERSION STATISTICS")
 ConfigVariables.SetGroupArgs('bot', "-device bot -no_editor -hidden_log_categories CONTROLLER WEB VERSION STATISTICS")
@@ -172,7 +173,8 @@ class Engine:
             ok = ReplayVerifier.Run(
                 Engine.game, VERIFY_FOLDERS.value,
                 report_path=VERIFY_REPORT_FILE.value,
-                allow_incomplete=VERIFY_ALLOW_INCOMPLETE.value)
+                allow_incomplete=VERIFY_ALLOW_INCOMPLETE.value,
+                allow_config_drift=VERIFY_ALLOW_CONFIG_DRIFT.value)
             Engine.exit_code = 0 if ok else 1
             return
 

@@ -82,7 +82,7 @@ jobs:
             unit_test.test_render_skip unit_test.test_no_progress \
             unit_test.test_hand_size unit_test.test_policy_driver \
             unit_test.test_run_digest unit_test.test_heuristic_policy \
-            unit_test.test_max_health_guard
+            unit_test.test_max_health_guard unit_test.test_config_record
 
       - name: Unit suite — engine-booting tier
         run: |
