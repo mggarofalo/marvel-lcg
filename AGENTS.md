@@ -120,6 +120,14 @@ Each run also writes `bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` besi
 
 **The manifest also carries the fully resolved config and the commit that produced it**, because the engine is deterministic *for a given configuration* and not across configurations — the audit measured 158 against 183 forced effects under different flags, with per-card digests unchanged. `engine/config_record.py` snapshots every registered `ConfigVariables` entry with the source that decided it, and `-verify_replays` compares each manifest it finds against the running process and **fails the run on drift** (`-verify_allow_config_drift` waives it). Read that module's docstring before touching the comparison: what is compared is a denylist, so a new gameplay flag is compared by default, and the exclusions each stand for a reason. Two of them were calibration results rather than guesses — `check_invariants` is forced on by the resolved device and so can never agree between a generator and a verifier, and a variable only one side *registered* is not drift at all, because a config variable exists only once the module declaring it has been imported. `tools/replay/probe_verify.py` pins that the gate rejects real drift and accepts the honest path. See MARVEL-34.
 
+### Turning that into a corpus
+
+`python -m tools.corpus.generate --games 200 --out ./corpus/` plans a stratified sample, plays it across processes, and resumes if it dies. **The sampling strategy is the deliverable** — 108 scenarios against 63 heroes against four player counts cannot be enumerated — and it lives in `tools/corpus/plan.py`, which is a pure function of `(seed, sizes, inventory)`: `--dry-run` prints the plan and its digest without playing anything, and two runs of one plan produce byte-identical scenes.
+
+The floor is a **guarantee, not a target**: every scenario and hero appears at least `--floor` times even when that costs more games than `--games` asked for, and the plan says so rather than quietly dropping coverage. Heroes are drawn least-used-first because a uniform draw over 63 of them leaves the tail — where port bugs hide — badly under-sampled. Read [docs/corpus.md](docs/corpus.md) before changing any of it, particularly the phase split: the coverage phases play one game per case on purpose, and batching them would multiply the floor by the batch size.
+
+A corpus is a **tree**, one folder per case, because the engine is not thread-safe and every case is its own process. `-verify_replays` walks it (`ReplayVerifier.ExpandTree`), so one command verifies a whole corpus and a flat folder still expands to itself.
+
 Beside that goes `bot-coverage-<scenario>-<heroes>-<seed>-<games>.json`: **what the run actually exercised**, which is the number that says whether the corpus is worth generating more of. It separates *present* from *entered play* from *ability resolved*, and its primary measure is which of the 303 `AbilityFactory` methods a card script names actually fired — the tail is where port bugs will hide. Two ranked lists come out, of never-fired triggers and never-exercised cards, and they are the input to coverage-directed generation. On by default (`-no_bot_coverage` to disable), merged across runs by `python -m tools.coverage.report replays/`. Read [docs/card-coverage.md](docs/card-coverage.md) before changing anything it touches — particularly before renaming an `AbilityFactory` method, which moves the denominator.
 
 ### No-op decisions and the progress guard
@@ -204,7 +212,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_render_skip unit_test.test_no_progress \
                    unit_test.test_hand_size unit_test.test_policy_driver \
                    unit_test.test_run_digest unit_test.test_heuristic_policy \
-                   unit_test.test_max_health_guard unit_test.test_config_record
+                   unit_test.test_max_health_guard unit_test.test_config_record \
+                   unit_test.test_corpus_plan
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
