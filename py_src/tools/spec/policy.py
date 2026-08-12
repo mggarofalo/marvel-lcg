@@ -210,9 +210,15 @@ class TranscriptPolicy(BotPolicy):
     def Act(self, beat: WhenStep, decision: Any) -> Any:
         if beat.pass_priority:
             if not decision.can_cancel:
+                # Name the options. Every other refusal in this class says what
+                # the engine offered, and this one did not: it reported that a
+                # choice was forced without saying which, so the author's only
+                # way forward was to instrument the harness. A message that
+                # cannot be acted on is the same cost as no message.
                 self.Fail(
                     f"the transcript says {beat.Describe()!r}, but the engine is "
-                    f"forcing a choice at '{decision.event_name}'", decision)
+                    f"forcing a choice at '{decision.event_name}': it offers "
+                    f"{self.Offered(decision)} and will not take a pass", decision)
                 return self.Halt(decision)
             self.index += 1
             return self.Answer(decision, BotCommand.Cancel(), beat.Describe())

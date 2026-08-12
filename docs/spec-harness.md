@@ -237,10 +237,48 @@ Read the catalogue for the current list. The shape:
   `I pass`, each optionally `targeting "<card>"`
 - **Then** — `I am prompted to choose one` + table, `I am not prompted again`,
   card state (`has <n> damage`, `is in the "<zone>"`, `is [not] stunned`),
-  my state (`I have <n> cards in hand`), game state (`the game is over`)
+  my state (`I have <n> cards in hand`), game state (`the game is over`,
+  `it is round <n>`, `it is the villain phase`, `it is the "<phase>" phase`)
 
 A step that matches nothing is a parse error naming the line. A scenario
 compiles completely or not at all.
+
+### Phases come at two grains
+
+The rulebook has three phases and the engine walks twelve `Phase.State`s, so
+both are assertable and they mean different things:
+
+| Written | Means |
+|---|---|
+| `it is the villain phase` | the rulebook's phase — `player`, `villain` or `end` |
+| `it is the "Enemy Activation" phase` | one engine state, by name |
+
+Reach for the rulebook grain by default. Reach for the quoted one to pin a
+*transition*: "the villain phase" cannot tell threat placement from enemy
+activation, and the order of those two is exactly the sort of thing a port gets
+wrong. The mapping between them is `PHASE_GROUPS` in `tools/spec/state.py`, and
+a `Phase.State` nobody classified raises rather than answering "no" — a
+scenario must not fail for a reason that has nothing to do with the scenario.
+
+## Two things about puzzle scenes that cost an hour each
+
+**A scene has no decks, so a round cannot finish without them.** The board holds
+exactly what the scenario asks for, which is the point — but the end of a turn
+draws up to hand size and the villain phase deals an encounter card. A scenario
+that ends a turn without stocking both does not walk the phases, it ends the
+game: the hero is eliminated for an empty deck in round 1, or the run stops with
+"There were no cards in either the encounter deck or the encounter discard
+pile". Both are the real rule applied to an artificial board. Any scenario that
+reaches the villain phase stocks `my deck is` and `the encounter deck is` first;
+`specs/rules/phase-structure.feature` shows the shape.
+
+**`the encounter deck is "A", "B", "C"` puts C on top.** The cards are appended
+in order and the deck is drawn from its end, so the *last* one written is the
+first one dealt — the opposite of how the line reads. It matters most during a
+villain activation, which takes two cards off the top: the boost card first,
+then the encounter card that is dealt and revealed. In a three-card list the
+third boosts, the second is revealed, and the first is what a surge reaches.
+Tracked as MARVEL-82.
 
 ## Verdicts
 
