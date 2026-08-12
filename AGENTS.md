@@ -266,7 +266,10 @@ in `unit_test/test_task.py`, so every run of the suite bumped the version and
 left a commit on whatever branch was checked out; with agents in parallel
 worktrees, two suites editing the same `BUILD` line collide at merge. That is
 MARVEL-55, and `unit_test/test_package_tools.py` guards against it coming back.
-The card zip is known incomplete (MARVEL-56) and not byte-reproducible (MARVEL-57).
+The card zip covers every folder under `cards/pack/` holding a card script — derived
+by walking the tree, not from a list (MARVEL-56) — and is byte-reproducible across
+checkouts (MARVEL-57). Arcnames are flat, so `ZipCards` refuses a duplicate basename
+rather than silently overwriting.
 
 Regenerate the RNG vectors after touching anything in `engine/lib/mt19937.py` or the `Random` facade — `unit_test.test_rng` fails until you do:
 
