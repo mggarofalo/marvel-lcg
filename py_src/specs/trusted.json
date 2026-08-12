@@ -18,39 +18,71 @@
       "source": "specs/rules/basic-actions.feature"
     },
     "Damage and threat :: a completed main scheme ends the game": {
-      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: a crisis icon stops threat coming off the main scheme": {
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: a second crisis scheme behaves the same way": {
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: a side scheme without the icon does not stop it": {
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: an ally is stopped by the icon as well": {
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: an ally that attacks takes consequential damage": {
-      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: an ally that thwarts takes consequential damage too": {
-      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: damage stays on the enemy it was dealt to": {
-      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: excess damage is lost rather than carried to another enemy": {
-      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: one short of the threshold does not end the game": {
-      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: the action is still taken and still costs the exhaust": {
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: the crisis scheme itself can still be thwarted": {
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: the hero takes no consequential damage for the same actions": {
-      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: the same ally thwart lands with no crisis in play": {
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: threat accelerates once per round while the villain attacks": {
-      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: thwarting removes threat from the scheme it names": {
-      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: two side schemes without the icon still do not stop it": {
+      "sha256": "88cda7c7e1d439ac7c5d77178c7deacb548bb76cde0617193e614bb3b8098085",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Hulk :: a mental top card discards Hulk": {
