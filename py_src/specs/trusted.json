@@ -225,32 +225,40 @@
       "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
       "source": "specs/cards/core/01005-swinging-web-kick.feature"
     },
+    "Timing priority :: a forced response has already resolved when the optional one is offered": {
+      "sha256": "cd7c939fe5f59ae5c424f527501ed2b18d917d109d6f3a735bb6be64f3ffb895",
+      "source": "specs/rules/timing-priority.feature"
+    },
     "Timing priority :: a tough status card cancels an attack and is discarded": {
-      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "sha256": "cd7c939fe5f59ae5c424f527501ed2b18d917d109d6f3a735bb6be64f3ffb895",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: a villain attack opens three windows in order": {
-      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "sha256": "cd7c939fe5f59ae5c424f527501ed2b18d917d109d6f3a735bb6be64f3ffb895",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: an interrupt at the damage window prevents the whole attack": {
-      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "sha256": "cd7c939fe5f59ae5c424f527501ed2b18d917d109d6f3a735bb6be64f3ffb895",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: an interrupt at the initiation window resolves before the attack lands": {
-      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "sha256": "cd7c939fe5f59ae5c424f527501ed2b18d917d109d6f3a735bb6be64f3ffb895",
+      "source": "specs/rules/timing-priority.feature"
+    },
+    "Timing priority :: an optional response deals its damage when nothing intervenes": {
+      "sha256": "cd7c939fe5f59ae5c424f527501ed2b18d917d109d6f3a735bb6be64f3ffb895",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: declining every window leaves the hand at hand size": {
-      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "sha256": "cd7c939fe5f59ae5c424f527501ed2b18d917d109d6f3a735bb6be64f3ffb895",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: the Armored Rhino Suit takes damage that would have gone to Rhino": {
-      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "sha256": "cd7c939fe5f59ae5c424f527501ed2b18d917d109d6f3a735bb6be64f3ffb895",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: toughness resolves first and leaves the Suit nothing to absorb": {
-      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "sha256": "cd7c939fe5f59ae5c424f527501ed2b18d917d109d6f3a735bb6be64f3ffb895",
       "source": "specs/rules/timing-priority.feature"
     }
   },

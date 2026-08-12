@@ -36,11 +36,22 @@
 # The remaining pairs are covered as follows:
 #
 #     Status -> ForcedInterrupt      proven below, decisively
+#     ForcedResponse -> Response     proven below, decisively
 #     ForcedInterrupt -> Interrupt   not observable in the core set: no board
-#                                    makes 01098 and 01003 simultaneous
-#     Interrupt -> Boost             not yet authored
-#     Boost -> ForcedResponse        not yet authored
-#     ForcedResponse -> Response     not yet authored
+#                                    makes 01098 and 01003 simultaneous.
+#                                    21 events elsewhere carry both; see
+#                                    MARVEL-83
+#     Constant -> Status             candidates on WhenUnitWouldAttack and
+#                                    WhenUnitWouldTakeDamage, not yet authored
+#     Interrupt -> Boost             candidates on WhenSchemeBeDefeated and
+#                                    WhenUnitBeDefeated, not yet authored
+#     Boost -> ForcedResponse        one candidate event (AfterPhaseBegin)
+#
+# The candidate lists come from grouping `AbilityFactory.X(AbilityType.Y` by
+# factory across every pack and keeping the factories that carry two adjacent
+# priorities. Sharing an event is necessary and not sufficient -- the two
+# abilities also have to bear on the same *subject*, which is what rules out the
+# core-set ForcedInterrupt/Interrupt pair.
 #
 # ---------------------------------------------------------------------------
 # A note on how the ordering shows up at all.
@@ -192,3 +203,55 @@ Feature: Timing priority
     When I pass
     Then I have 3 damage
     And I have 5 cards in hand
+
+  # --------------------------------------------------------------------------
+  # ForcedResponse (7) before Response (8)
+  #
+  # A minion entering play triggers both, on the same minion:
+  #
+  #   Taskmaster's Training Camp   Forced Response, "After a minion enters play,
+  #                                give it a tough status card"
+  #   Hawkeye                      Response, "After a minion enters play, remove
+  #                                1 arrow counter from Hawkeye -> deal 2 damage
+  #                                to that minion"
+  #
+  # The order decides whether the damage lands, because a tough status card
+  # cancels the next damage entirely. Forced first: the minion is tough before
+  # Hawkeye is even offered, and his 2 damage is eaten by the status. Response
+  # first: 2 damage lands and the minion is tough afterwards.
+  #
+  # The two scenarios differ by one Given.
+
+  Scenario: an optional response deals its damage when nothing intervenes
+    # Hawkeye is printed to enter play with 4 arrow counters and spends one to
+    # do this. Hydra Mercenary is printed 3 hit points, so 2 damage leaves it
+    # standing and the reading is unambiguous.
+    Given the encounter deck is "Hydra Mercenary", "Hydra Mercenary"
+    And "Hawkeye" is in play
+    And "Hydra Mercenary #1" is in play
+
+    When I choose "Response" on "Hawkeye"
+    Then "Hydra Mercenary #1" has 2 damage
+    And "Hawkeye" has 3 "arrow" counters
+
+  Scenario: a forced response has already resolved when the optional one is offered
+    # The decisive one, and it is decisive twice over.
+    #
+    # The `Then` before the `When` is evaluated at the decision where Hawkeye is
+    # offered, and the minion is *already tough* there -- so the Forced Response
+    # resolved before the engine asked about the Response at all. Then the
+    # damage confirms it: 0 rather than 2, because toughness cancelled it.
+    #
+    # Reverse the order and both assertions flip: the minion would not yet be
+    # tough when Hawkeye is offered, and would end on 2 damage and tough.
+    Given the encounter deck is "Hydra Mercenary", "Hydra Mercenary"
+    And "04108" is in play
+    And "Hawkeye" is in play
+    And "Hydra Mercenary #1" is in play
+
+    Then "Hydra Mercenary #1" is tough
+
+    When I choose "Response" on "Hawkeye"
+    Then "Hydra Mercenary #1" has 0 damage
+    And "Hydra Mercenary #1" is not tough
+    And "Hawkeye" has 3 "arrow" counters
