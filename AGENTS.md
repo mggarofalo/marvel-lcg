@@ -222,7 +222,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_run_digest unit_test.test_heuristic_policy \
                    unit_test.test_max_health_guard unit_test.test_config_record \
                    unit_test.test_corpus_plan unit_test.test_coverage_reach \
-                   unit_test.test_corpus_freeze unit_test.test_spec_coverage
+                   unit_test.test_corpus_freeze unit_test.test_spec_coverage \
+                   unit_test.test_decks
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
