@@ -41,6 +41,20 @@ class FileManager:
         return os.path.isdir(file_path)
 
     @staticmethod
+    def IsAbsolute(file_path: str) -> bool:
+        """Should this path be used as given, rather than searched for?
+
+        Replaces `IsDrivePath`, which tested for a Windows drive letter and
+        nothing else (MARVEL-74). No caller ever wanted to know about drive
+        letters -- both were asking this question, and the drive-letter
+        spelling was a fork-era Windows-ism from when the two were the same
+        thing. `os.path.isabs` is a strict superset on Windows, where `C:/x`
+        and `C:\\x` are both absolute, and correct on POSIX where the old test
+        answered False for every absolute path there is.
+        """
+        return os.path.isabs(file_path)
+
+    @staticmethod
     def MakeDir(file_path: str) -> bool:
         if file_path:
             os.makedirs(file_path, exist_ok=True)
@@ -52,16 +66,27 @@ class FileManager:
 
     @staticmethod
     def ListFiles(*folders: str, ext: str|None=None, check_file_name: Callable[[str], bool]|None=None) -> List[str]:
+        # Every clause is one `and`. The layout used to claim that and the
+        # precedence did not: `and` binds tighter than `or`, so
+        #
+        #     IsFile(...) and ext == None or ext == GetExtension(f) and (...)
+        #
+        # parsed as `(IsFile and ext is None) or (ext matches and ...)`. With
+        # the default `ext=None` that reduced to `IsFile` alone and dropped
+        # `check_file_name` entirely; with an `ext` given it dropped the
+        # `IsFile` test, so a *directory* named `foo.json` came back as a file.
+        # See MARVEL-79.
+        def keep(folder: str, name: str) -> bool:
+            if not FileManager.IsFile(FileManager.JoinPath(folder, name)):
+                return False
+            if ext != None and ext != FileManager.GetExtension(name):
+                return False
+            return check_file_name == None or check_file_name(name)
+
         def do_list(folder: str) -> List[str]:
             if FileManager.Exists(folder):
-                return [FileManager.JoinPath(folder, f) for f in FileManager.ListDir(folder) if \
-                    FileManager.IsFile(FileManager.JoinPath(folder, f)) and \
-                    ext == None or ext == FileManager.GetExtension(f) and \
-                        (
-                            check_file_name == None or \
-                            check_file_name(f)
-                        )
-                    ]
+                return [FileManager.JoinPath(folder, f)
+                        for f in FileManager.ListDir(folder) if keep(folder, f)]
             else:
                 return []
         files: List[str] = []
@@ -153,15 +178,6 @@ class FileManager:
         return name.lstrip('*').strip().lower().replace(" - ", "_").replace(" & ", "_").replace(' ', '_').replace("'", "").replace("-", "_").replace("!", "").replace("?", "").replace("(", "").replace(")", "").replace(".", "").replace(",", "").replace("\"", "").replace("&", "_").replace("#", "").replace("/", "")
 
     @staticmethod
-    def IsDrivePath(file_name: str) -> bool:
-        # Check if the file name starts with a drive letter followed by a colon and a backslash or forward slash
-        if len(file_name) >= 3 and file_name[1:3] == ':\\':
-            return file_name[0].isalpha()
-        elif len(file_name) >= 3 and file_name[1:3] == ':/':
-            return file_name[0].isalpha()
-        return False
-
-    @staticmethod
     def FormatPath(path: str) -> str:
         # An already-absolute path is returned untouched; only a relative one
         # is anchored with './'.
@@ -210,7 +226,11 @@ class FileManager:
         path_list = get_type_path_list()
 
         for file_name in file_names:
-            if FileManager.IsDrivePath(file_name):
+            # An already-absolute path is used as given rather than searched
+            # for. This asked `IsDrivePath` until MARVEL-74, so `/data/x.json`
+            # was not recognised as absolute and got joined onto every folder
+            # in the search list. Same correction as `FormatPath` (MARVEL-72).
+            if FileManager.IsAbsolute(file_name):
                 return file_name
             if not file_name.endswith(".json"):
                 file_name += ".json"
