@@ -8,18 +8,17 @@
 # scenarios from those packs, which is a different job; see MARVEL-23.
 #
 # ---------------------------------------------------------------------------
-# `the encounter deck is "A", "B", "C"` puts C on top.
+# `the encounter deck is "A", "B", "C"` puts A on top.
 #
-# The list is appended in order and the deck is drawn from its end, so the
-# *last* card written is the first one dealt. That is the opposite of how the
-# line reads, and it matters here more than anywhere else because the villain's
-# activation takes two cards off the top: the boost card first, then the
-# encounter card that is dealt and revealed. So in a three-card list, the third
-# is the boost card, the second is the one revealed, and the first is what a
-# surge would reach.
+# A deck literal is written top-first, so the first card named is the next one
+# dealt. It matters here more than anywhere else because a villain activation
+# takes two cards off the top: the boost card first, then the encounter card
+# that is dealt and revealed. So in a three-card list the first is the boost
+# card, the second is the one revealed, and the third is what a surge reaches.
 #
-# Written down because it cost an hour to work out from behaviour, and because
-# every scenario below depends on it.
+# It read the other way round until MARVEL-82 and cost an hour of MARVEL-23 to
+# work out from behaviour, so it is worth stating wherever scenarios depend on
+# it -- which every one below does.
 
 Feature: Keywords
 
@@ -119,8 +118,8 @@ Feature: Keywords
   #
   # Weapons Runner is the revealed card in both scenarios and the only
   # difference is whether it surges, so the extra minion in play is the surge
-  # and nothing else. Remember the ordering note above: the third card listed is
-  # the boost card, the second is revealed, and the first is what surge reaches.
+  # and nothing else. Per the ordering note above: the first card listed is the
+  # boost card, the second is revealed, and the third is what surge reaches.
 
   Scenario: surge reveals one more encounter card
     Given the hero is "iron_man"
@@ -130,12 +129,12 @@ Feature: Keywords
     When I pass
     When I pass
     Then "Weapons Runner" is in play
-    And "Hydra Mercenary #1" is in play
-    And "Hydra Mercenary #2" is not in play
+    And "Hydra Mercenary #2" is in play
+    And "Hydra Mercenary #1" is not in play
 
   Scenario: a card without surge reveals nothing more
-    # The control. Three identical minions, the third boosts, the second is
-    # revealed and enters play, and the first is never reached.
+    # The control. Three identical minions: the first boosts, the second is
+    # revealed and enters play, and the third is never reached.
     Given the hero is "iron_man"
     And my deck is "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
     And the encounter deck is "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary"

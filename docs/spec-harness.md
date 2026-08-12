@@ -260,25 +260,51 @@ wrong. The mapping between them is `PHASE_GROUPS` in `tools/spec/state.py`, and
 a `Phase.State` nobody classified raises rather than answering "no" — a
 scenario must not fail for a reason that has nothing to do with the scenario.
 
-## Two things about puzzle scenes that cost an hour each
+## A scene has no decks, so a round cannot finish without them
 
-**A scene has no decks, so a round cannot finish without them.** The board holds
-exactly what the scenario asks for, which is the point — but the end of a turn
-draws up to hand size and the villain phase deals an encounter card. A scenario
-that ends a turn without stocking both does not walk the phases, it ends the
-game: the hero is eliminated for an empty deck in round 1, or the run stops with
-"There were no cards in either the encounter deck or the encounter discard
-pile". Both are the real rule applied to an artificial board. Any scenario that
-reaches the villain phase stocks `my deck is` and `the encounter deck is` first;
-`specs/rules/phase-structure.feature` shows the shape.
+The board holds exactly what the scenario asks for, which is the point — but the
+end of a turn draws up to hand size and the villain phase deals an encounter
+card. A scenario that ends a turn without stocking both does not walk the
+phases, it ends the game: the hero is eliminated for an empty deck in round 1,
+or the run stops with "There were no cards in either the encounter deck or the
+encounter discard pile". Both are the real rule applied to an artificial board.
+Any scenario that reaches the villain phase stocks `my deck is` and `the
+encounter deck is` first; `specs/rules/phase-structure.feature` shows the shape.
 
-**`the encounter deck is "A", "B", "C"` puts C on top.** The cards are appended
-in order and the deck is drawn from its end, so the *last* one written is the
-first one dealt — the opposite of how the line reads. It matters most during a
-villain activation, which takes two cards off the top: the boost card first,
-then the encounter card that is dealt and revealed. In a three-card list the
-third boosts, the second is revealed, and the first is what a surge reaches.
-Tracked as MARVEL-82.
+## Decks are written top-first
+
+`the encounter deck is "A", "B", "C"` puts **A** on top: the first card named is
+the next one dealt, revealed or looked at.
+
+The top is the only end the game has a name for. Effects say "look at the top
+card of the encounter deck", "put this card on top of your deck", "reveal the
+top card"; nothing addresses the bottom, and a deck is shuffled before play
+anyway, so the bottom is not a position a scenario has any reason to describe.
+
+This matters most during a villain activation, which takes two cards off the
+top: the boost card first, then the encounter card that is dealt and revealed.
+In a three-card list the first boosts, the second is revealed, and the third is
+what a surge reaches.
+
+Applies to `my deck is`, `my discard pile is`, `my set aside deck is`, `the
+encounter deck is` and `the encounter discard pile is`. **Not** `my hand is` — a
+hand has no top, and its order decides nothing but which copy is `#1`.
+
+Two things follow that are worth keeping straight:
+
+**Order does not survive a shuffle.** These stack a scene; they do not pin the
+deck for the rest of the game. An encounter deck that runs out is reshuffled
+from its discard pile, and after that the order is the RNG's. A scenario that
+plays past a reshuffle must not depend on what comes next.
+
+**`#N` is unaffected.** It still counts the copies in the order the scenario
+*wrote* them, which is also the order they were created. The engine's list runs
+the other way — `Deck.GetTop` is `cards[-1]` — so the harness creates the cards
+in written order and restacks them afterwards (`StackTopFirst`). Reversing the
+list handed to `RunPuzzle` instead would fix the draw order and silently
+redefine `#1` as the last card written, which is why it does not do that.
+
+It read bottom-first until MARVEL-82.
 
 ## Verdicts
 
