@@ -53,6 +53,26 @@
       "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
       "source": "specs/rules/damage-and-threat.feature"
     },
+    "Hulk :: a mental top card discards Hulk": {
+      "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
+      "source": "specs/cards/core/01050-hulk.feature"
+    },
+    "Hulk :: a physical top card adds 2 damage to an enemy": {
+      "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
+      "source": "specs/cards/core/01050-hulk.feature"
+    },
+    "Hulk :: a wild top card does all of it": {
+      "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
+      "source": "specs/cards/core/01050-hulk.feature"
+    },
+    "Hulk :: an energy top card asks before dealing 1 to each character": {
+      "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
+      "source": "specs/cards/core/01050-hulk.feature"
+    },
+    "Hulk :: the forced response fires on every attack, not only the first": {
+      "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
+      "source": "specs/cards/core/01050-hulk.feature"
+    },
     "Hydra Mercenary :: damage lands on the copy the transcript named": {
       "sha256": "b08f81ed57c08f62321735d08be4dc324ba2fbca2e3faa1a4af50ef4f9637f22",
       "source": "specs/cards/core/01101-hydra-mercenary.feature"
