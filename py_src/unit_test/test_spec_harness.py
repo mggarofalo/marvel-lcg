@@ -480,6 +480,78 @@ class TestAgainstTheEngine(unittest.TestCase):
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
 
+    def test_a_deck_literal_is_written_top_first(self):
+        """The first card named is the next one drawn (MARVEL-82).
+
+        Pinned against the engine rather than against `Deck.cards`, because the
+        claim is about what a scenario *sees*: the boost card of a villain
+        activation is the top of the encounter deck, and Sandman's printed 2
+        boost icons make it tell itself apart from Hydra Mercenary's 1.
+
+        Rhino stage 1 is printed ATK 2, so the hero takes 4 when Sandman boosts
+        and 3 when the Mercenary does. Two scenarios differing only in which
+        card is written first, so nothing but the orientation can explain it.
+        """
+        def Round(*encounter):
+            return MakeCase(
+                name="deck order",
+                heroes=("iron_man",),
+                given=(
+                    GivenStep("hero_form", ("me",)),
+                    GivenStep("player_deck", ("Pepper Potts",) * 6),
+                    GivenStep("encounter_deck", encounter),
+                ),
+                beats=(
+                    WhenStep(pass_priority=True),
+                    WhenStep(pass_priority=True),
+                    ThenStep("me", "damage", 4 if encounter[0] == "Sandman" else 3),
+                ),
+            )
+
+        top = RunCase(Round("Sandman", "Hydra Mercenary", "Hydra Mercenary"))
+        self.assertEqual(top.outcome, OUTCOME_PASS, top.Describe())
+
+        bottom = RunCase(Round("Hydra Mercenary", "Hydra Mercenary", "Sandman"))
+        self.assertEqual(bottom.outcome, OUTCOME_PASS, bottom.Describe())
+
+    def test_restacking_a_deck_leaves_the_ordinals_alone(self):
+        """`#N` still counts written order after the restack (MARVEL-82).
+
+        The two orderings run opposite ways in the engine's list, so the
+        tempting fix -- reverse the list handed to `RunPuzzle` -- would correct
+        the draw order and silently redefine `#1` as the *last* card written.
+        Scenarios would keep passing while meaning something else, which is
+        worse than the bug being fixed. This is the check that says they didn't.
+
+        Sandman is written second, so it is second by creation order and second
+        from the top. Both readings agree, and only one of them would survive
+        the wrong fix.
+        """
+        case = MakeCase(
+            name="ordinals after restack",
+            heroes=("iron_man",),
+            given=(
+                GivenStep("hero_form", ("me",)),
+                GivenStep("player_deck", ("Pepper Potts",) * 6),
+                GivenStep("encounter_deck",
+                          ("Hydra Mercenary", "Hydra Mercenary", "Sandman")),
+            ),
+            beats=(
+                WhenStep(pass_priority=True),
+                WhenStep(pass_priority=True),
+                # `#1` is written first, so it is the top of the deck and gets
+                # spent as the boost card. `#2` is the one dealt and revealed.
+                # Reversing the list handed to `RunPuzzle` would swap these two
+                # while every other assertion in the suite still held.
+                ThenStep("Hydra Mercenary #1", "in_play", False),
+                ThenStep("Hydra Mercenary #2", "in_play", True),
+                # Written third and never reached.
+                ThenStep("Sandman", "zone", "EncounterDeck"),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
     def test_names_come_from_the_printed_dataset_not_the_engine(self):
         # The engine's `data/cards.json` has 21141 and 21142 holding each
         # other's names. Resolving a correctly spelled scenario against it would

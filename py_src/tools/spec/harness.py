@@ -403,6 +403,69 @@ def ResolveCardId(text: str, packs: Tuple[str, ...] = ()) -> str:
         f"({', '.join(sorted(candidates))}); use the card id to say which")
 
 
+# Zones a scenario writes top-first: the first card named is the top of the
+# pile, and so the next one drawn, revealed or looked at.
+#
+# The top is the only end the game has a name for. Effects say "look at the top
+# card of the encounter deck", "put this card on top of your deck", "reveal the
+# top card"; nothing in the game addresses the bottom, and a deck is shuffled
+# before play anyway, so the bottom is not a position a scenario has any reason
+# to describe. A literal read bottom-first would make an author reverse the line
+# in their head to answer the only question the rules ever ask of a deck.
+#
+# `my hand is` is deliberately absent. A hand has no top -- its order decides
+# nothing but which copy is `#1`, and that is creation order, which is written
+# order either way.
+#
+# **Order does not survive a shuffle.** These stack a scene, they do not pin the
+# deck for the rest of the game: an encounter deck that runs out is reshuffled
+# from its discard pile, and after that the order is the RNG's. A scenario that
+# reaches a reshuffle must not depend on what comes next.
+TOP_FIRST_ZONES = frozenset({
+    "player_deck", "player_discard", "player_set_aside",
+    "encounter_deck", "encounter_discard",
+})
+
+
+def StackTopFirst(world: Any, before: "frozenset[int]") -> None:
+    """Restack the cards a creating step just made, first-written on top.
+
+    Two orderings have to run the same way here and the engine's list runs them
+    opposite ways, which is the whole reason this function exists:
+
+      **Creation order** decides `#N` -- `FindCards` returns matches in
+      object-id order, so `"Hydra Mercenary #1"` is the first one the scenario
+      *wrote*. That is a promise the format makes (MARVEL-42) and it has to
+      keep, so the cards are created in written order and left that way.
+
+      **Deck position** decides what is drawn -- `Deck.GetTop` is `cards[-1]`,
+      so the engine's top is the *end* of its list, and creating in written
+      order puts the first card written at the bottom.
+
+    So the cards are made in written order and then restacked. Reversing the
+    list handed to `RunPuzzle` instead would fix the draw order and silently
+    redefine `#1` as the last card written, which is a worse bug than the one it
+    fixes: a scenario would keep passing while meaning something else.
+
+    Each card is moved to the bottom in written order, so the first one written
+    ends up on top. `Insert` is the supported move -- it takes the card out of
+    the list before putting it back -- and every side effect it has is a no-op
+    for a card already sitting in this deck.
+
+    See MARVEL-82.
+    """
+    made = [world.object_manager.card_dict[object_id]
+            for object_id in sorted(set(world.object_manager.card_dict) - before)]
+    for card in made:
+        area = card.area
+        if area is None:
+            # A creating step whose cards did not land in a zone is not
+            # something to paper over silently -- but it is also not this
+            # function's business to diagnose, and the run will fail on its own.
+            continue
+        area.Insert(0, card)
+
+
 def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep,
                    packs: Tuple[str, ...] = (),
                    created: "Set[int]|None" = None) -> None:
@@ -411,7 +474,10 @@ def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep,
 
     if kind == "create":
         # These generate new cards, so every name has to become an id first.
+        before = frozenset(world.object_manager.card_dict)
         method(*[ResolveCardId(card, packs) for card in step.cards])
+        if step.verb in TOP_FIRST_ZONES:
+            StackTopFirst(world, before)
         return
 
     if kind == "value":
