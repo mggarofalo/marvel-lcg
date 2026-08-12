@@ -295,6 +295,119 @@ def Report(manifest: Dict[str, Any]) -> List[str]:
     return lines
 
 
+def Resolved(root: str) -> set:
+    """Which cards the corpus under `root` has actually resolved an ability of.
+
+    Read back from the artefacts rather than tracked in memory, so a resumed run
+    and a fresh one see the same thing, and so a corpus assembled from several
+    runs still answers the question.
+    """
+    from engine.profile import coverage_report
+    from tools.coverage import report as report_module
+
+    if not os.path.isdir(root):
+        # Before the first round there is no corpus. Checked here rather than
+        # left to `Expand`, which deliberately passes an unmatched argument
+        # through so a mistyped path is reported by name.
+        return set()
+
+    paths = report_module.Expand([root])
+    if not paths:
+        # No artefacts yet -- the first round, or coverage was turned off.
+        return set()
+
+    document = report_module.Merge(paths,
+                                   dataset=coverage_report.DEFAULT_DATASET)
+    # `cards_resolved`, not `cards_present`: a card that was in the game but
+    # never had an ability resolve has not been exercised, and aiming the next
+    # round at it is the whole point.
+    return set((document.get("counts") or {}).get("cards_resolved") or {})
+
+
+def Targets(root: str, universe: Sequence[str]) -> List[str]:
+    """Cards in the universe this corpus has never resolved an ability of."""
+    return sorted(set(universe) - Resolved(root))
+
+
+def ResolvedInUniverse(root: str, universe: Sequence[str]) -> int:
+    """How many *of the universe* this corpus has resolved.
+
+    `Resolved` returns whatever the artefacts recorded, which includes ids the
+    dataset does not carry -- scenario cards named like
+    `2411_whose_show_is_it_anyway`. Reporting that raw count against the
+    universe size prints a ratio whose numerator is not a subset of its
+    denominator, and overstates coverage by a few hundred cards.
+    """
+    return len(Resolved(root) & set(universe))
+
+
+def Rounds(inventory_, root: str, *, rounds: int, plateau: int,
+           workers: int, timeout: float, extra: Sequence[str],
+           plan_kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate, measure, re-aim, repeat -- until coverage stops moving.
+
+    Each round plans against the cards the corpus has *not* resolved yet, so
+    the aim moves as the corpus fills. It stops when a round adds fewer than
+    `plateau` newly-resolved cards, which is what "coverage plateau" means
+    operationally: more games are still games, they are just no longer buying
+    coverage.
+
+    Rounds are separate folders and separate plans, so a round can be re-run
+    or thrown away without disturbing the ones before it.
+    """
+    from engine.profile import coverage_report
+    from tools.coverage import reach as reach_module
+
+    universe = coverage_report.LoadUniverse().cards
+    reach = reach_module.Build()
+
+    history: List[Dict[str, Any]] = []
+    before = ResolvedInUniverse(root, universe)
+
+    for number in range(1, rounds + 1):
+        targets = Targets(root, universe)
+        folder = os.path.join(root, f"round-{number:02d}")
+        plan = Build(inventory_, targets=targets, reach=reach,
+                     **dict(plan_kwargs,
+                            seed=int(plan_kwargs["seed"]) + number - 1))
+
+        directed = sum(case.games for case in plan.cases
+                       if case.phase == "coverage-directed")
+        print(f"\n=== round {number}/{rounds}: {len(targets)} card(s) unreached, "
+              f"{plan.games} game(s) planned ({directed} directed) ===")
+
+        Generate(plan, folder, workers=workers, timeout=timeout, extra=extra)
+
+        after = ResolvedInUniverse(root, universe)
+        gained = after - before
+        history.append({
+            "round": number,
+            "folder": os.path.relpath(folder, root).replace("\\", "/"),
+            "targets": len(targets),
+            "games": plan.games,
+            "directed_games": directed,
+            "resolved_before": before,
+            "resolved_after": after,
+            "gained": gained,
+        })
+        print(f"round {number}: resolved {before} -> {after} (+{gained} card(s))")
+        before = after
+
+        if gained < plateau:
+            print(f"plateau: round {number} added {gained} card(s), "
+                  f"below the threshold of {plateau}")
+            break
+
+    return {
+        "tool": "corpus-rounds",
+        "plateau_threshold": plateau,
+        "rounds": history,
+        "resolved": before,
+        "universe": len(universe),
+        "unreachable": len(reach.Unreachable(universe)),
+    }
+
+
 def main(argv: List[str] | None=None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -325,6 +438,12 @@ def main(argv: List[str] | None=None) -> int:
                         help="print the plan and play nothing")
     parser.add_argument("--bot-arg", action="append", default=[],
                         help="extra flag passed to every worker; repeatable")
+    parser.add_argument("--rounds", type=int, default=0,
+                        help="generate, measure coverage, re-aim, repeat "
+                             "(0 = one undirected run)")
+    parser.add_argument("--plateau", type=int, default=1,
+                        help="stop when a round resolves fewer than this many "
+                             "cards it had not resolved before")
     args = parser.parse_args(argv)
 
     def Names(text: str) -> List[str]:
@@ -340,15 +459,16 @@ def main(argv: List[str] | None=None) -> int:
 
     print(chosen.Describe())
 
+    plan_kwargs: Dict[str, Any] = {
+        "seed": args.seed,
+        "games": args.games,
+        "floor": args.floor,
+        "games_per_case": args.games_per_case,
+        "player_counts": [int(part) for part in Names(args.players)],
+    }
+
     try:
-        plan = Build(
-            chosen,
-            seed=args.seed,
-            games=args.games,
-            floor=args.floor,
-            games_per_case=args.games_per_case,
-            player_counts=[int(part) for part in Names(args.players)],
-        )
+        plan = Build(chosen, **plan_kwargs)
     except ValueError as exc:
         print(f"error: {exc}")
         return 2
@@ -360,6 +480,21 @@ def main(argv: List[str] | None=None) -> int:
         return 0
 
     workers = args.workers if args.workers > 0 else DefaultWorkers()
+
+    if args.rounds > 0:
+        summary = Rounds(chosen, args.out, rounds=args.rounds,
+                         plateau=args.plateau, workers=workers,
+                         timeout=args.case_timeout, extra=args.bot_arg,
+                         plan_kwargs=plan_kwargs)
+        path = os.path.join(args.out, "corpus-rounds.json")
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(summary, handle, indent=2, sort_keys=True)
+        print(f"\nresolved {summary['resolved']}/{summary['universe']} card(s); "
+              f"{summary['unreachable']} are unreachable by any shipped setup "
+              f"(see `python -m tools.coverage.reach`)")
+        print(f"wrote {path}")
+        return 0 if summary["rounds"] else 1
+
     manifest = Generate(plan, args.out, workers=workers,
                         timeout=args.case_timeout, extra=args.bot_arg,
                         fail_fast=args.fail_fast)

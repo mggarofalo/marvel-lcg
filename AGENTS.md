@@ -126,7 +126,11 @@ Each run also writes `bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` besi
 
 The floor is a **guarantee, not a target**: every scenario and hero appears at least `--floor` times even when that costs more games than `--games` asked for, and the plan says so rather than quietly dropping coverage. Heroes are drawn least-used-first because a uniform draw over 63 of them leaves the tail — where port bugs hide — badly under-sampled. Read [docs/corpus.md](docs/corpus.md) before changing any of it, particularly the phase split: the coverage phases play one game per case on purpose, and batching them would multiply the floor by the batch size.
 
-A corpus is a **tree**, one folder per case, because the engine is not thread-safe and every case is its own process. `-verify_replays` walks it (`ReplayVerifier.ExpandTree`), so one command verifies a whole corpus and a flat folder still expands to itself.
+A corpus is a **tree**, one folder per case, because the engine is not thread-safe and every case is its own process. `-verify_replays` walks it (`ReplayVerifier.ExpandTree`) and so does `tools.coverage.report`, so one command verifies or measures a whole corpus and a flat folder still expands to itself.
+
+`--rounds N` makes generation a loop: play, merge coverage, aim the next round at cards that have still never resolved an ability, stop when a round adds fewer than `--plateau` of them. Aiming is greedy set cover over `tools/coverage/reach.py`, a pure data join answering *which setups contain this card*. **Covering a card is not playing it** — a scenario that contains one still has to draw it — so the plan only steers and the next round's measurement is what says whether it worked.
+
+**Self-play coverage is bounded at 91.2%.** `python -m tools.coverage.reach` measures it: of 3781 scripted cards, **334 are named by no starter deck, encounter set or scenario**, so no corpus of any size reaches them — they are input to hand-authored puzzle tests. A measured run reached 2897 (84.0% of what is reachable) in 960 games, with the yield curve flat after round 9. **The map is a lower bound and must be cross-checked** (`--corpus`): its first version omitted `player_deck` and reported a confident 71%, because a missed key does not look like a bug, it looks like a smaller universe. See [docs/corpus.md](docs/corpus.md).
 
 Beside that goes `bot-coverage-<scenario>-<heroes>-<seed>-<games>.json`: **what the run actually exercised**, which is the number that says whether the corpus is worth generating more of. It separates *present* from *entered play* from *ability resolved*, and its primary measure is which of the 303 `AbilityFactory` methods a card script names actually fired — the tail is where port bugs will hide. Two ranked lists come out, of never-fired triggers and never-exercised cards, and they are the input to coverage-directed generation. On by default (`-no_bot_coverage` to disable), merged across runs by `python -m tools.coverage.report replays/`. Read [docs/card-coverage.md](docs/card-coverage.md) before changing anything it touches — particularly before renaming an `AbilityFactory` method, which moves the denominator.
 
@@ -213,7 +217,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_hand_size unit_test.test_policy_driver \
                    unit_test.test_run_digest unit_test.test_heuristic_policy \
                    unit_test.test_max_health_guard unit_test.test_config_record \
-                   unit_test.test_corpus_plan
+                   unit_test.test_corpus_plan unit_test.test_coverage_reach
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \

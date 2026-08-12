@@ -22,12 +22,13 @@ touches the network. That is what makes "regenerate the identical corpus" a chec
 `--dry-run` prints the plan and its digest without playing anything, and two runs of the same
 plan produce byte-identical scenes.
 
-## Three phases
+## Four phases
 
 | phase | what it does | games per case |
 |---|---|---|
 | `scenario-coverage` | `floor` passes over every scenario, each a fresh shuffle | 1 |
 | `hero-coverage` | finishes the hero floor when the sweep above was too small to seat everyone | 1 |
+| `coverage-directed` | greedy set cover over cards nothing has played yet (MARVEL-16) | 1 |
 | `random` | uniform fill to the game budget | `--games-per-case` |
 
 **The floor is a guarantee, not a target.** If covering every scenario and hero `floor` times
@@ -56,6 +57,91 @@ the distribution exact.
 encounter decks with different cards, so covering "every scenario" covers both. Every expert
 file has a standard counterpart; four standard scenarios have no expert form
 (`captain_america`, `captain_marvel`, `iron_man`, `spider_woman`).
+
+## Coverage-directed generation
+
+```bash
+python -m tools.coverage.reach --unreachable          # what nothing can reach
+python -m tools.corpus.generate --out ./corpus/ --games 200 --rounds 8 --plateau 5
+```
+
+`--rounds` turns generation into a loop: play, merge the coverage artefacts, aim the next
+round at the cards that have still never had an ability resolve, repeat. It stops when a round
+adds fewer than `--plateau` newly-resolved cards — which is what "coverage plateau" means
+operationally: more games are still games, they are just no longer buying coverage.
+
+Aiming is greedy set cover over `tools/coverage/reach.py`, a pure data join that answers *which
+setups contain this card*. Pick the scenario carrying the most still-wanted cards, seat the
+heroes carrying the most of what is left, strike those cards off, repeat.
+
+Two things about that are easy to get wrong, and both were:
+
+- **The scenario must not gate the case.** An early version stopped as soon as no scenario
+  carried a wanted card — so a target carried only by a *hero deck* could never be aimed at.
+  Player cards, which are most of what a corpus misses, are carried only by hero decks, so it
+  failed exactly at the tail where directed generation is the whole point. A case now proceeds
+  when *either* half yields something.
+- **A zero-yield rank is alphabetical.** When nothing is left for a seat to bring in, falling
+  back to "best by yield" seats `adam_warlock` in every remaining game. Measured before the
+  fix: one hero in 36 of 60 games. Both fallbacks now draw for variety instead.
+
+**Covering a card is not playing it.** A scenario that *contains* a card still has to draw it.
+So the plan only steers, and whether it worked is a question for the next round's coverage
+report — which is why the loop re-plans from a fresh measurement rather than trusting the
+previous plan to have succeeded.
+
+## The ceiling: 334 cards no setup reaches
+
+```
+universe          3781 card(s) with an engine script
+reachable         3447 (91.2%)
+unreachable        334
+```
+
+`python -m tools.coverage.reach` joins every `deck/starter/*.json`, `data/encounter_sets/*.json`,
+`data/nemesis/*.json`, `data/scenarios/*.json` and `data/challenges/*.json` against the card
+dataset. **334 scripted cards are named by none of them.** No corpus of any size reaches them,
+so they are input to hand-authored puzzle tests in the Spec Extraction phase rather than a
+sampling failure.
+
+`--out` writes the full map, including `unreachable_by_pack` — where the gap is concentrated.
+
+### The map is a lower bound, and cross-checking it is not optional
+
+A file-based map only sees what a file names, and two things escape it: cards the engine
+creates (`tough`, `stunned`, `confused`), and decks assembled from card metadata rather than
+from a set file — `the_wrecking_crew.json` has an empty `villain` and `encounters`, and 26 of
+its cards appear in no deck or set file at all.
+
+```bash
+python -m tools.coverage.reach --corpus ./corpus/
+```
+
+compares the map against what a corpus really resolved and lists everything played despite
+being called unreachable. **This check is load-bearing.** The first version of this map omitted
+`player_deck` — the aspect-and-basic half of a starter deck, 25 of its 40 cards — and reported a
+confident **71%** with 1097 unreachable. Nothing failed; a missed key does not look like a bug,
+it looks like a smaller universe. What gave it away was a corpus resolving 756 cards the map
+said were out of reach. `unit_test/test_coverage_reach.py` now fails if any source file grows an
+id-bearing key that nothing reads.
+
+## Measured plateau
+
+960 games over 16 rounds of 60, `--plateau 6`, eight workers:
+
+| round | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| cards gained | 2029 | 460 | 186 | 94 | 70 | 56 | 34 | 34 | 10 | 17 | 10 | 12 | 6 | 9 | 12 | 6 |
+
+Ending at **2897 of 3781 cards resolved — 76.6% of the universe, 84.0% of what is reachable.**
+
+The curve is the finding. The first round buys two thirds of the total; by round 9 a round of 60
+games buys ten cards, and the last seven rounds together buy 72. Coverage-directed generation is
+worth a great deal early and very little late, so the useful lever after that is not more games
+of the same shape — it is decks built to carry the cards nothing plays.
+
+Note that the directed phase itself starts running out first: from round 10 it can no longer
+fill all 60 games (56, 55, 55, 54, 54, 53, 53) and hands the remainder to the random fill.
 
 ## Why a case is a run of seeds
 
