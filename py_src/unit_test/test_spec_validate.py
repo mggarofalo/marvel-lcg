@@ -332,6 +332,30 @@ class TestGherkinParsing(unittest.TestCase):
         self.assertEqual(cases[0].beats[0].value, False)
         self.assertEqual(cases[0].beats[1].value, True)
 
+    def test_a_restriction_compiles_to_its_action_and_card(self):
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    Then I cannot attack "Rhino"
+    And I cannot thwart "The Break-In!"
+"""))
+        attack, thwart = cases[0].beats
+        self.assertEqual((attack.kind, attack.option, attack.card),
+                         ("cannot", "attack", "Rhino"))
+        self.assertEqual((thwart.kind, thwart.option, thwart.card),
+                         ("cannot", "thwart", "The Break-In!"))
+
+    def test_a_restriction_counts_as_an_assertion(self):
+        """Otherwise a Guard scenario is rejected for asserting nothing.
+
+        `ASSERTION_KINDS` is what the "this case proves nothing" guard reads,
+        and a `cannot` is the only assertion some restriction scenarios make.
+        """
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then I cannot attack "Rhino"
+"""))[0]
+        self.assertEqual(len(case.Assertions()), 1)
+
     def test_the_two_phase_forms_compile_to_different_properties(self):
         """`the villain phase` and `"Enemy Activation"` are not the same claim.
 

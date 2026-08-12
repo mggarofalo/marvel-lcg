@@ -73,3 +73,20 @@ Feature: Quarantine self-test
     And "Hydra Mercenary" is in play
 
     Then "Hydra Mercenary #2" has 3 health
+
+  @self-test
+  Scenario: a restriction the engine does not impose is FAIL-engine-suspected
+    # `I cannot attack` has to be capable of failing, or every Guard, stun and
+    # confuse scenario in specs/rules/ establishes nothing. Nothing here blocks
+    # the hero, so the engine offers Rhino as a legal target and the claim is
+    # refused with the targets it would have allowed.
+    Given I am in hero form
+    Then I cannot attack "Rhino"
+
+  @self-test
+  Scenario: a restriction about a card outside the game is FAIL-spec-wrong
+    # "You cannot attack a card that is not in this game" is true and worthless.
+    # An unresolvable subject is the one way a `cannot` could pass while saying
+    # nothing at all, so it is refused rather than granted.
+    Given I am in hero form
+    Then I cannot attack "Galactus"

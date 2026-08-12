@@ -58,8 +58,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
 
 from tools.spec.case import (
-    GivenStep, NoPromptStep, PromptStep, SourceDigest, SpecCase, SpecCaseError,
-    ThenStep, WhenStep)
+    CannotStep, GivenStep, NoPromptStep, PromptStep, SourceDigest, SpecCase,
+    SpecCaseError, ThenStep, WhenStep)
 from tools.spec.resolve import SplitRefs
 from tools.spec.state import PHASE_NAMES
 
@@ -239,6 +239,18 @@ THEN_TABLE: Table = [
     ('I am not prompted again',
      Rx(r'i am not prompted again'),
      lambda: ("then", NoPromptStep())),
+
+    # The third assertion: something the engine will not let you do. A
+    # restriction that filters an option's *targets* rather than removing the
+    # option is invisible to the two above -- the option set is unchanged and no
+    # card's state has changed -- and Guard is exactly that shape. See
+    # `CannotStep`.
+    ('I cannot attack "<card>"',
+     Rx(r'i cannot attack ' + Q),
+     lambda card: ("then", CannotStep(option="attack", card=card))),
+    ('I cannot thwart "<card>"',
+     Rx(r'i cannot thwart ' + Q),
+     lambda card: ("then", CannotStep(option="thwart", card=card))),
 
     # -- card state --------------------------------------------------------
     ('"<card>" has <n> health',

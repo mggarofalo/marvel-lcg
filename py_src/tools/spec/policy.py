@@ -43,7 +43,8 @@ from typing import Any, List, Optional, Tuple
 from engine.device.manager.bot.command import BotCommand
 from engine.device.manager.bot.policy import BotPolicy
 from tools.spec.assertions import AssertionResult, Evaluate
-from tools.spec.case import Beat, NoPromptStep, PromptStep, ThenStep, WhenStep
+from tools.spec.case import (
+    Beat, CannotStep, NoPromptStep, PromptStep, ThenStep, WhenStep)
 from tools.spec.resolve import (
     CardRefError, DescribeOption, NormaliseLabel, ResolveCard)
 from tools.spec.state import Capture, StateView
@@ -160,13 +161,17 @@ class TranscriptPolicy(BotPolicy):
         if isinstance(beat, PromptStep):
             self.CheckPrompt(beat, decision)
             self.index += 1
+            # Drain again: assertions written *after* the prompt table describe
+            # this same decision, and "these options, and this one will not take
+            # that target" is the natural way to write a restriction down.
+            self.DrainAssertions(decision)
             beat = self.Peek()
             if beat is None:
                 return self.Halt(decision)
 
         if not isinstance(beat, WhenStep):
-            # A `Then` cannot survive DrainAssertions; anything else here is a
-            # beat kind this method does not know about.
+            # An assertion cannot survive DrainAssertions; anything else here is
+            # a beat kind this method does not know about.
             self.Fail(f"unexpected beat {beat.Describe()!r} at a decision", decision)
             return self.Halt(decision)
 
@@ -175,20 +180,73 @@ class TranscriptPolicy(BotPolicy):
     ############################################################################
     #
     def DrainAssertions(self, decision: Any) -> None:
-        """Evaluate every `Then` queued before the next action or prompt.
+        """Evaluate every assertion queued before the next action or prompt.
 
-        `decision.world` is the board as it stands after the previous decision
-        resolved. Nothing else in the run can see it.
+        Two kinds, and they read against different things. A `Then` describes
+        the board, so it is evaluated against a snapshot of `decision.world` --
+        the state as it stands after the previous decision resolved, which
+        nothing else in the run can see. A `cannot` describes the *decision*,
+        so it is checked against the live options and never sees the snapshot.
+
+        They drain together because a scenario interleaves them freely and the
+        order it writes them in should not change what they mean.
         """
-        if decision.world is None or not isinstance(self.Peek(), ThenStep):
-            return
-        # One snapshot for the whole run of assertions: they all describe the
-        # same moment, and capturing per assertion would walk every card in the
-        # world once per `Then`.
-        board = Capture(decision.world)
-        while isinstance(self.Peek(), ThenStep):
-            self.results.append(Evaluate(board, self.beats[self.index]))
+        board: Optional[StateView] = None
+        while isinstance(self.Peek(), (ThenStep, CannotStep)):
+            beat = self.beats[self.index]
+            if isinstance(beat, CannotStep):
+                self.CheckCannot(beat, decision)
+            else:
+                if decision.world is None:
+                    # No board to read. Leave it queued rather than passing it:
+                    # `Finish` judges the leftovers against the final state.
+                    return
+                if board is None:
+                    # One snapshot for the whole run: they all describe the same
+                    # moment, and capturing per assertion would walk every card
+                    # in the world once per `Then`.
+                    board = Capture(decision.world)
+                self.results.append(Evaluate(board, beat))
             self.index += 1
+
+    def CheckCannot(self, beat: CannotStep, decision: Any) -> None:
+        """Check that no offered option performs `beat.option` on `beat.card`.
+
+        Passes two ways, because the engine expresses the same restriction two
+        ways. Guard and stun both leave the option in place and empty its legal
+        targets -- a stunned hero is still offered `Attack`, it just has nothing
+        it may attack. An alter-ego is offered no `Attack` at all. Both are "I
+        cannot attack Rhino", so both satisfy the claim.
+
+        A card the scenario cannot resolve fails as unresolvable rather than
+        passing. "You cannot attack a card that is not in this game" is true and
+        worthless, and a spec that quietly rests on it is the silent-wrong-pass
+        this harness exists to refuse.
+        """
+        world = decision.world
+        if world is None:
+            self.Record(beat, False,
+                        "no board to check the restriction against", unresolvable=True)
+            return
+
+        try:
+            card = ResolveCard(world, beat.card)
+        except CardRefError as exc:
+            self.Record(beat, False, str(exc), unresolvable=True)
+            return
+
+        wanted = NormaliseLabel(beat.option)
+        object_id = int(card.object_id)
+        for option in decision.selectable_options:
+            if NormaliseLabel(option.name) != wanted:
+                continue
+            if object_id in [int(x) for x in option.all_legal_targets]:
+                listing = ", ".join(self.LabelTargets(world, option)) or "nothing"
+                self.Record(beat, False,
+                            f"{beat.card} is a legal target for {option.name}; "
+                            f"the engine would allow it alongside {listing}")
+                return
+        self.Record(beat, True)
 
     def CheckPrompt(self, beat: PromptStep, decision: Any) -> None:
         expected = sorted(NormaliseLabel(option) for option in beat.options)
@@ -364,6 +422,14 @@ class TranscriptPolicy(BotPolicy):
             elif isinstance(beat, PromptStep):
                 self.Record(beat, False,
                             "the game ended before the engine asked this")
+            elif isinstance(beat, CannotStep):
+                # A restriction is a claim about a decision, so with no decision
+                # left there is nothing to check. It does not pass by default:
+                # "the engine never offered the chance" and "the engine offered
+                # it and refused the target" are different findings.
+                self.Record(beat, False,
+                            "the game ended before there was a decision to "
+                            "check this restriction against", unresolvable=True)
             else:
                 self.Record(beat, False,
                             "the game ended before this step could be played")
@@ -390,11 +456,13 @@ class TranscriptPolicy(BotPolicy):
         ))
         return command
 
-    def Record(self, beat: Beat, passed: bool, message: str = "") -> None:
+    def Record(self, beat: Beat, passed: bool, message: str = "",
+               *, unresolvable: bool = False) -> None:
         self.results.append(AssertionResult(
             step=ThenStep("transcript", "beat", beat.Describe()),
             passed=passed,
             message=message,
+            unresolvable=unresolvable,
             label=beat.Describe(),
         ))
 

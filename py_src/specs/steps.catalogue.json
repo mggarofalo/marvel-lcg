@@ -34,6 +34,8 @@
     "then": [
       "I am prompted to choose one",
       "I am not prompted again",
+      "I cannot attack \"<card>\"",
+      "I cannot thwart \"<card>\"",
       "\"<card>\" has <n> health",
       "\"<card>\" has <n> damage",
       "\"<card>\" has <n> threat",
