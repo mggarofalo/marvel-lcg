@@ -84,35 +84,62 @@ Feature: Damage and threat
   # --------------------------------------------------------------------------
   # The crisis icon
   #
-  # While a scheme bearing a crisis icon is in play, threat cannot be removed
-  # from the main scheme. It is printed as an icon rather than as text, so no
-  # card's `text_plain` says so and nothing in a transcript names it: the icon is
-  # `stats.scheme_crisis` in the dataset and `Crisis` in the engine's attributes.
+  # While a card bearing a crisis icon is in play, threat cannot be removed from
+  # the main scheme -- unless the effect removing it says it ignores the icon.
+  # Both halves of that sentence are load-bearing; see below.
   #
-  # Four of the eighteen core side schemes carry it -- Crowd Control (01108),
+  # "A card", not "a scheme". 65 cards in the dataset carry the icon and four of
+  # them are not schemes: Team Leader (27105, attachment), Ambush (44051) and
+  # Distraction (44054, upgrades attaching to a minion), and Live Dangerously
+  # (44024, a player side scheme). `Worlds.GetCrisisFaces` filters on the
+  # `CanCrisis` mixin, which Attachment, Upgrade, EncounterSideScheme and
+  # PlayerSideScheme all carry -- not on scheme-ness. The scenarios below use
+  # side schemes only, so they do not establish the wider rule; it is written
+  # here because stating it narrowly would be stating it wrongly.
+  #
+  # The icon is `stats.scheme_crisis` in the dataset and `Crisis` in the engine's
+  # attributes, and no step in the catalogue can name it. It is printed as an
+  # icon rather than as text -- with exactly one exception in 4,344 cards: Crowd
+  # Control (01108), whose entire printed text is the reminder,
+  #
+  #     "(Crisis Icon: While this scheme is in play, you cannot remove threat
+  #      from the main scheme.)"
+  #
+  # which is why it is the second card measured below. Its `engine.script` is
+  # null -- it has no card script at all -- so whatever it does comes from the
+  # attribute and not from an ability. That, rather than an absence of text, is
+  # what makes it a clean second measurement of the icon.
+  #
+  # Four of the eighteen core side schemes carry it: Crowd Control (01108),
   # Defense Network (01125), Under Attack (01151) and Personal Challenge (01161).
-  # The other fourteen do not, which is what makes the pair of controls below
-  # worth having: a scenario that only showed the thwart failing would be
+  # The other fourteen do not, which is what makes the four controls below worth
+  # having -- a scenario that only showed the thwart failing would be equally
   # consistent with "a side scheme in play breaks thwarting", which is false.
   #
-  # This section exists because that false reading was filed as an engine bug
-  # (MARVEL-86) on exactly this board. The engine was right. What the report
-  # actually established was that the harness sends the correct target -- it
-  # never asked whether the engine was correct to ignore it.
+  # NOT COVERED HERE: 21 cards print an effect that ignores the icon (Cable Arrow
+  # 04008, 'Pool Inspection 44023, Shadowcat 32002 and so on), and the engine
+  # implements the bypass -- `scheme_main.py` guards the crisis branch with
+  # `by_effect.IsIgnoreKeyword('Crisis', ...)`. No scenario below exercises that
+  # branch, because no core-set card reaches it; it needs a board from pack 04 or
+  # later. See MARVEL-90.
+  #
+  # This section exists because a false reading of this board was filed as an
+  # engine bug (MARVEL-86). The engine was right. What that report established
+  # was that the harness sends the correct target -- it never asked whether the
+  # engine was correct to ignore it.
 
-  Scenario: a crisis icon stops threat coming off the main scheme
-    Given the main scheme has 5 threat
-    And "Under Attack" is in play
-
-    When I thwart "The Break-In!"
-    Then the main scheme has 5 threat
-
-  Scenario: the action is still taken and still costs the exhaust
-    # The part that is easy to get wrong, and the reason this is not modelled as
-    # a target restriction. The crisis icon does not remove the option or filter
-    # the main scheme out of its legal targets -- `Then I cannot thwart` fails
-    # here, because the engine will let you do it. It takes the exhaust and
-    # removes nothing. A player can spend their whole turn on it.
+  Scenario: a crisis icon stops threat coming off the main scheme, and still costs the exhaust
+    # The exhaust is the part that is easy to get wrong, and it is why this is
+    # not modelled as a target restriction. The icon does not remove the option
+    # or filter the main scheme out of its legal targets -- `Then I cannot
+    # thwart` fails on this board, because the engine will let you do it. It
+    # takes the exhaust and removes nothing; a player can spend a whole turn on
+    # it.
+    #
+    # The printed reminders draw the same distinction. Patrol reads "you cannot
+    # thwart the main scheme" and lives in `MainScheme.CanBeThwartBy`, which
+    # removes the target. Crisis reads "you cannot remove threat from the main
+    # scheme" and lives in `RemoveThreatInternal`, which removes nothing.
     Given the main scheme has 5 threat
     And "Under Attack" is in play
 
@@ -121,13 +148,35 @@ Feature: Damage and threat
     And I am exhausted
 
   Scenario: a second crisis scheme behaves the same way
-    # Under Attack is not special. Crowd Control carries the same icon and no
-    # relevant printed text, so what is being measured is the icon.
+    # Under Attack is not special -- and Crowd Control has no card script, so
+    # this measures the icon and nothing else.
     Given the main scheme has 5 threat
     And "Crowd Control" is in play
 
     When I thwart "The Break-In!"
     Then the main scheme has 5 threat
+
+  Scenario: a card effect is stopped by the icon too, and is still spent
+    # The rule is about *removing threat*, not about thwarting, and the six
+    # scenarios either side of this one all go through a basic or ally thwart.
+    # For Justice! (01060) is printed "Hero Action (thwart): Remove 3 threat from
+    # a scheme" -- an event, not a power. It removes nothing and still leaves
+    # play, so the card is spent for no effect exactly as the exhaust is.
+    Given the main scheme has 5 threat
+    And "Under Attack" is in play
+    And my hand is "For Justice!", "Energy"
+
+    When I play "For Justice!" targeting "The Break-In!"
+    Then the main scheme has 5 threat
+    And "For Justice!" is in the "DiscardPile"
+
+  Scenario: the same card effect lands with no crisis in play
+    # The control for the scenario above: 3 threat, as printed.
+    Given the main scheme has 5 threat
+    And my hand is "For Justice!", "Energy"
+
+    When I play "For Justice!" targeting "The Break-In!"
+    Then the main scheme has 2 threat
 
   Scenario: a side scheme without the icon does not stop it
     # The control that makes the three above mean something. Bomb Scare is a
