@@ -94,13 +94,15 @@ def Generate(folder: str, seed: int, extra: List[str] | None=None) -> str:
 
 
 def Verify(folder: str, report_path: str, *, allow_incomplete: bool=False,
-           extra: List[str] | None=None) -> Result:
+           extra: List[str] | None=None, quarantine: str="") -> Result:
     """Run the real command over `folder` and read what it said."""
     command = [
         sys.executable, "main.py", "-verify_replays",
         "-verify_folders", folder.replace("\\", "/") + "/",
         "-verify_report_file", report_path.replace("\\", "/"),
     ]
+    if quarantine:
+        command += ["-verify_quarantine_folder", quarantine.replace("\\", "/") + "/"]
     if allow_incomplete:
         command.append("-verify_allow_incomplete")
     command += list(extra or [])
@@ -221,6 +223,43 @@ def main(argv: List[str] | None=None) -> int:
               f"{allowed.statuses}")
         failures += Check("-verify_allow_incomplete accepts it",
                           allowed.ok and allowed.exit_code == 0, allowed.tail)
+
+        # --- quarantine --------------------------------------------------
+        # MARVEL-17: a replay that does not reproduce must leave an artefact
+        # saying so. One that is silently dropped gets rediscovered as a C#
+        # port bug months later.
+        quarantine = os.path.join(root, "quarantine")
+        held = Verify(corrupt_folder, os.path.join(root, "held.json"),
+                      quarantine=quarantine)
+        index_path = os.path.join(quarantine, "quarantine.json")
+        index: Dict[str, Any] = {}
+        if os.path.isfile(index_path):
+            with open(index_path, encoding="utf-8") as handle:
+                index = json.load(handle)
+        print(f"quarantine exit {held.exit_code}  held={index.get('count')}")
+        failures += Check("the corrupted scene is set aside with a reason",
+                          index.get("count") == 1
+                          and bool((index.get("cases") or [{}])[0].get("detail")),
+                          json.dumps(index, indent=2)[:600])
+        failures += Check("and a copy of it goes with the record",
+                          (index.get("cases") or [{}])[0].get("copied") is True
+                          and os.path.isfile(os.path.join(
+                              quarantine, os.path.basename(corrupted))),
+                          str(sorted(os.listdir(quarantine))))
+        failures += Check("quarantining does not forgive the run",
+                          not held.ok and held.exit_code == 1, held.tail)
+        failures += Check("the corpus it was read from is left alone",
+                          os.path.isfile(corrupted),
+                          "the verifier moved its own input")
+
+        clean_quarantine = os.path.join(root, "quarantine-clean")
+        Verify(os.path.join(root, "clean"), os.path.join(root, "cq.json"),
+               quarantine=clean_quarantine)
+        clean_index_path = os.path.join(clean_quarantine, "quarantine.json")
+        # "Nothing was quarantined" and "quarantining never ran" must not look
+        # the same to whoever freezes the corpus.
+        failures += Check("an empty quarantine is still written",
+                          os.path.isfile(clean_index_path), clean_quarantine)
 
         # --- config drift ------------------------------------------------
         # A real second run under a real gameplay flag, rather than an edited
