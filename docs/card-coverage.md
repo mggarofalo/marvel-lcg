@@ -174,3 +174,46 @@ saved scene can reproduce.
 Not to be confused with `py_src/engine/profile/coverage.py`, which counts
 executions of card-script source locations, is disabled in a release build, and
 measures something else.
+
+## Which policy to generate with
+
+Measured under MARVEL-14: 23 games per policy over five scenarios at one, two,
+three and four heroes, identical seeds, `tools/coverage/depth.py` for depth and
+the merged coverage report for breadth.
+
+| policy | cards resolved | new vs `first` | reached villain stage 2 |
+|---|---|---|---|
+| `random` | 406 | 10 | 0/23 |
+| `first` | 429 | — | 6/23 |
+| `heuristic` | **436** | **20** | 6/19 † |
+| all three (union) | **453** | — | — |
+
+† `heuristic` aborts all four Ultron games on MARVEL-77, a genuine engine bug it
+is the first policy to reach. The rate is over the games that completed.
+
+**No single policy dominates.** `heuristic` resolves 20 cards `first` never
+does; `first` resolves 13 that `heuristic` never does; `random` contributes 10
+of its own. The union reaches 453 against 436 for the best single policy, which
+is why `mixed` exists — it rotates one policy per game, so a run of N games
+covers all three evenly and reproducibly.
+
+**Generate a corpus with `-bot_policy mixed`** unless you are measuring a policy.
+
+### What did not work
+
+`heuristic` began as the greedy heuristic MARVEL-14 describes — prefer attacking,
+thwart when the main scheme nears its threshold, prefer cheap cards. Every part
+of that measured *worse* than leaving the engine's own option order alone:
+
+- **Verb preferences** reached 424 cards against 436 for no preferences at all.
+  The engine offers an identity's basic actions before anything in hand, so its
+  order is already a reasonable policy, and overriding it with a guess was worse
+  than not.
+- **Threat-aware thwarting** made no difference at thresholds 0.5, 0.9 or 1.1 —
+  which includes "never".
+- **Penalising attacks while thwarting** was actively harmful: attacks fell 190
+  to 149 and stage 2 fell 26.1% to 8.7%. A villain is only defeated by damage.
+
+What survived is one change: options whose ability resolves to nothing go last.
+`Ask` alone was 737 of the reference corpus's choices and does nothing
+(`docs/no-op-decisions.md`). That single demotion is the whole of the gain.
