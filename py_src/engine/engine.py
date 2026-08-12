@@ -33,7 +33,19 @@ VERIFY_ALLOW_INCOMPLETE = ConfigVariables.Bool('verify_allow_incomplete', False)
 VERIFY_ALLOW_CONFIG_DRIFT = ConfigVariables.Bool('verify_allow_config_drift', False)
 VERIFY_QUARANTINE_FOLDER  = ConfigVariables.Folder('verify_quarantine_folder', "")
 
-ConfigVariables.SetGroupArgs('test', "-verify_replays -no_editor -no_statistics -hidden_log_categories CONTROLLER WEB VERSION STATISTICS")
+# No `-no_statistics` here, deliberately. Since MARVEL-34 `-verify_replays`
+# compares a corpus manifest's recorded config against the running process, and
+# `statistics` is one of the two flags the determinism audit measured shifting
+# forced_effect id allocation -- 158 ids against 183 -- because
+# `GameStatistics.CanRegisterAbility()` decides whether the statistics and
+# achievement abilities are registered at all. A corpus generated under `-bot`
+# (statistics on) verified through a `-test` that turned it off therefore failed
+# on config drift, correctly: the two runs are not the same configuration. See
+# MARVEL-78.
+#
+# Verification never writes `statistics.json`. The save is on the normal-exit
+# path in `Game.SetGameOver`, which a verify run does not reach.
+ConfigVariables.SetGroupArgs('test', "-verify_replays -no_editor -hidden_log_categories CONTROLLER WEB VERSION STATISTICS")
 ConfigVariables.SetGroupArgs('bot', "-device bot -no_editor -hidden_log_categories CONTROLLER WEB VERSION STATISTICS")
 
 class Engine:

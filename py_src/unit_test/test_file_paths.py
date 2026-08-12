@@ -101,3 +101,88 @@ class TestShortPaths(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestIsAbsolute(unittest.TestCase):
+    """`FileManager.IsAbsolute`, which replaced `IsDrivePath` (MARVEL-74).
+
+    The old test asked whether a path began with a Windows drive letter. Both
+    of its callers were asking whether the path should be used as given rather
+    than searched for, and on POSIX the answer was always False -- so
+    `FindJsonPath` joined an absolute path onto every folder in its search list
+    instead of returning it.
+    """
+
+    def test_a_native_absolute_path_is_absolute(self):
+        self.assertTrue(FileManager.IsAbsolute(tempfile.gettempdir()))
+
+    def test_a_relative_path_is_not(self):
+        self.assertFalse(FileManager.IsAbsolute("data/x.json"))
+        self.assertFalse(FileManager.IsAbsolute("./data/x.json"))
+
+    def test_a_windows_drive_path_is_still_recognised_on_windows(self):
+        """The replacement is a superset, not a swap.
+
+        `IsDrivePath` answered True for these; `os.path.isabs` does too, on the
+        platform where they mean anything. Asserting them on POSIX would be
+        asserting the wrong platform's answer -- there, `C:/x` is a relative
+        path naming a directory called `C:`.
+        """
+        if sys.platform != "win32":
+            self.skipTest("drive letters are only absolute on Windows")
+        self.assertTrue(FileManager.IsAbsolute("C:/x"))
+        self.assertTrue(FileManager.IsAbsolute("C:\\x"))
+
+    def test_a_short_path_does_not_raise(self):
+        # `IsDrivePath` indexed [1:3] behind a length guard; the point here is
+        # that the replacement has no length precondition at all.
+        for path in ("", ".", "/", "a"):
+            with self.subTest(path=path):
+                FileManager.IsAbsolute(path)
+
+
+class TestListFiles(unittest.TestCase):
+    """`FileManager.ListFiles`, whose condition did not parse as it was laid out.
+
+    `and` binds tighter than `or`, so
+
+        IsFile(...) and ext == None or ext == GetExtension(f) and (...)
+
+    meant `(IsFile and ext is None) or (ext matches and ...)`. With the default
+    `ext=None` that dropped `check_file_name` entirely; with an `ext` given it
+    dropped the `IsFile` test, so a directory named `foo.json` was returned as
+    a file. See MARVEL-79.
+    """
+
+    def setUp(self):
+        self.folder = tempfile.mkdtemp()
+        for name in ("a.json", "b.json", "c.txt"):
+            with open(os.path.join(self.folder, name), "w", encoding="utf-8") as handle:
+                handle.write("{}")
+        # A *directory* that ends in the extension being filtered for. This is
+        # the one the old precedence returned as a file.
+        os.mkdir(os.path.join(self.folder, "decoy.json"))
+
+    def Names(self, **kwargs):
+        return sorted(os.path.basename(p)
+                      for p in FileManager.ListFiles(self.folder, **kwargs))
+
+    def test_a_directory_ending_in_the_extension_is_not_a_file(self):
+        self.assertEqual(self.Names(ext=".json"), ["a.json", "b.json"])
+
+    def test_check_file_name_runs_when_no_extension_is_given(self):
+        # Silently ignored before the fix: every file came back.
+        self.assertEqual(self.Names(check_file_name=lambda n: n.startswith("a")),
+                         ["a.json"])
+
+    def test_check_file_name_and_extension_apply_together(self):
+        self.assertEqual(
+            self.Names(ext=".json", check_file_name=lambda n: n.startswith("b")),
+            ["b.json"])
+
+    def test_no_filters_returns_every_file_but_no_directory(self):
+        self.assertEqual(self.Names(), ["a.json", "b.json", "c.txt"])
+
+    def test_a_missing_folder_contributes_nothing(self):
+        self.assertEqual(
+            FileManager.ListFiles(os.path.join(self.folder, "nope"), ext=".json"), [])

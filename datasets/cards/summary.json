@@ -63,7 +63,7 @@
     "files": 3457,
     "claimed_by_a_card": 3453,
     "unclaimed": 4,
-    "total_lines": 98020,
+    "total_lines": 98027,
     "distinct_ability_factories": 303,
     "ability_factories": {
       "WhenThisRevealed": 683,

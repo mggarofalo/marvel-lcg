@@ -110,7 +110,11 @@ class GameServerGet(GameServerBase):
         return self.ReadJsonFile(file)
 
     async def get_sets_custom_scenario(self, request: web.Request) -> web.Response:
-        files = FileManager.ListFiles(CUSTOM_SCENARIOS_FOLDER.value, ".json")
+        # `ext` is keyword-only. Passed positionally, ".json" became a second
+        # *folder* -- which does not exist, so it contributed nothing -- and the
+        # extension filter never ran, returning every file in the folder
+        # whatever its type. See MARVEL-79.
+        files = FileManager.ListFiles(CUSTOM_SCENARIOS_FOLDER.value, ext=".json")
         return web.json_response(files)
 
     async def get_cards_json(self, request: web.Request) -> web.Response:

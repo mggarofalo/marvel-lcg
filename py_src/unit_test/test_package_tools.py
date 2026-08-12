@@ -18,11 +18,13 @@ import ast
 import subprocess
 import tempfile
 import unittest
+import os
+import struct
 import zipfile
 from pathlib import Path
 
 from tools.package.bump import Bump, ReadField
-from tools.package.zip_cards import ZipCards
+from tools.package.zip_cards import CardFolders, ZipCards
 
 UNIT_TEST_DIR = Path("unit_test")
 
@@ -210,8 +212,10 @@ class TestZipCards(unittest.TestCase):
             self.MakePack(root, "pack/core/nested", ["01002.py"])
             output = root / "cards.zip"
 
-            # Each folder is listed explicitly; a listed folder contributes its
-            # own files only. This is what makes MARVEL-56 possible.
+            # A folder contributes its own files only; nesting is reached by
+            # `CardFolders` listing the subfolder separately, not by recursing
+            # here. That split is what let the hand-maintained list drift
+            # (MARVEL-56) and is why the list is now derived.
             written = ZipCards(output, [f"{root.as_posix()}/pack/core/"])
 
             self.assertEqual(written, 1)
@@ -239,12 +243,8 @@ class TestZipCards(unittest.TestCase):
             ZipCards(root / "a.zip", folders)
             ZipCards(root / "b.zip", folders)
 
-            # Same process, same mtimes: the entry lists must agree. Byte
-            # equality is a stronger claim that MARVEL-57 blocks.
-            with zipfile.ZipFile(root / "a.zip") as a, zipfile.ZipFile(root / "b.zip") as b:
-                self.assertEqual(a.namelist(), b.namelist())
-                self.assertEqual([i.date_time for i in a.infolist()],
-                                 [i.date_time for i in b.infolist()])
+            self.assertEqual((root / "a.zip").read_bytes(),
+                             (root / "b.zip").read_bytes())
 
 
 class TestSuiteDoesNotPackage(unittest.TestCase):
@@ -292,3 +292,146 @@ class TestSuiteDoesNotPackage(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestZipCardsIsReproducible(unittest.TestCase):
+    """MARVEL-57. The uniform timestamp has to reach the *local file headers*.
+
+    `ZipFile.write()` emits the local header before it returns, using the file's
+    mtime. The `ZipInfo` that `getinfo()` hands back afterwards is the one in
+    `filelist`, which is only re-serialised into the central directory at close.
+    So assigning `date_time` after `write()` left every entry carrying two
+    different timestamps -- and because most readers show the central-directory
+    value, the archive *looked* uniform while not being reproducible.
+
+    These tests read the local headers by hand rather than through `zipfile`,
+    because going through `zipfile` is exactly how the defect stayed invisible.
+    """
+
+    @staticmethod
+    def LocalHeaderTimes(raw: bytes) -> list[tuple]:
+        """Decode the MS-DOS date/time out of every local file header."""
+        times, offset = [], 0
+        while raw[offset:offset + 4] == b"PK\x03\x04":
+            name_len, extra_len = struct.unpack("<HH", raw[offset + 26:offset + 30])
+            time_field, date_field = struct.unpack("<HH", raw[offset + 10:offset + 14])
+            compressed = struct.unpack("<I", raw[offset + 18:offset + 22])[0]
+            times.append((
+                ((date_field >> 9) & 0x7F) + 1980, (date_field >> 5) & 0xF,
+                date_field & 0x1F, (time_field >> 11) & 0x1F,
+                (time_field >> 5) & 0x3F, (time_field & 0x1F) * 2))
+            offset += 30 + name_len + extra_len + compressed
+        return times
+
+    def Pack(self, root: Path, names: list[str], mtime: float | None = None) -> list[str]:
+        path = root / "pack" / "core"
+        path.mkdir(parents=True, exist_ok=True)
+        for name in names:
+            target = path / name
+            target.write_text("# card\n", encoding="utf-8")
+            if mtime is not None:
+                os.utime(target, (mtime, mtime))
+        return [f"{root.as_posix()}/pack/core/"]
+
+    def test_the_local_headers_carry_the_uniform_timestamp(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            folders = self.Pack(root, ["01001.py", "01002.py"])
+            output = root / "cards.zip"
+
+            ZipCards(output, folders)
+
+            self.assertEqual(set(self.LocalHeaderTimes(output.read_bytes())),
+                             {(2022, 1, 1, 0, 0, 0)})
+
+    def test_two_trees_with_different_mtimes_produce_the_same_bytes(self):
+        """The claim that matters, and the one the old order could not make.
+
+        Two checkouts on different days are the realistic case: the files are
+        identical and their mtimes are not.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            first, second = Path(tmp) / "first", Path(tmp) / "second"
+            first.mkdir(), second.mkdir()
+            a = self.Pack(first, ["01001.py", "01002.py"], mtime=1_600_000_000)
+            b = self.Pack(second, ["01001.py", "01002.py"], mtime=1_700_000_000)
+
+            ZipCards(first / "a.zip", a)
+            ZipCards(second / "b.zip", b)
+
+            self.assertEqual((first / "a.zip").read_bytes(),
+                             (second / "b.zip").read_bytes())
+
+    def test_the_file_mode_does_not_reach_the_archive(self):
+        # `write()` copies each file's mode into `external_attr`, so the archive
+        # otherwise varied with the umask of whoever built it.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            folders = self.Pack(root, ["01001.py", "01002.py"])
+            os.chmod(root / "pack" / "core" / "01001.py", 0o600)
+            os.chmod(root / "pack" / "core" / "01002.py", 0o755)
+            output = root / "cards.zip"
+
+            ZipCards(output, folders)
+
+            with zipfile.ZipFile(output) as zf:
+                self.assertEqual({i.external_attr for i in zf.infolist()},
+                                 {0o644 << 16})
+
+
+class TestCardFolders(unittest.TestCase):
+    """MARVEL-56. The folder set is derived from the tree, not maintained by hand."""
+
+    def test_every_folder_holding_a_card_script_is_found(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for folder in ("core", "aoa/apocalypse", "gam/gamora_nemesis"):
+                path = root / folder
+                path.mkdir(parents=True)
+                (path / "01001.py").write_text("# card\n", encoding="utf-8")
+
+            self.assertEqual(
+                CardFolders(root),
+                [f"./{root.as_posix()}/aoa/apocalypse/",
+                 f"./{root.as_posix()}/core/",
+                 f"./{root.as_posix()}/gam/gamora_nemesis/"])
+
+    def test_a_folder_holding_only_scaffolding_is_not_a_card_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "empty").mkdir(parents=True)
+            (root / "empty" / "__init__.py").write_text("", encoding="utf-8")
+            (root / "empty" / "campaign.py").write_text("", encoding="utf-8")
+
+            self.assertEqual(CardFolders(root), [])
+
+    def test_the_real_tree_yields_far_more_than_the_list_it_replaced(self):
+        """The regression this exists to prevent.
+
+        The hand-maintained list named 69 folders; walking the tree finds 396.
+        Pinning a floor rather than the exact number keeps this from failing
+        every time a pack is added, while still failing if the derivation
+        breaks and silently returns a subset again.
+        """
+        if not Path("cards/pack").is_dir():
+            self.skipTest("run from py_src/")
+        self.assertGreater(len(CardFolders()), 300)
+
+    def test_a_duplicate_arcname_is_refused(self):
+        """Arcnames are flat, so a repeated basename would silently overwrite.
+
+        Not reachable today -- 3,455 files, zero collisions -- but it became a
+        real risk rather than a theoretical one when the folder set went from 69
+        folders to 396.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for folder in ("pack/core", "pack/wsp"):
+                path = root / folder
+                path.mkdir(parents=True)
+                (path / "01001.py").write_text("# card\n", encoding="utf-8")
+
+            with self.assertRaises(ValueError) as caught:
+                ZipCards(root / "cards.zip",
+                         [f"{root.as_posix()}/pack/core/", f"{root.as_posix()}/pack/wsp/"])
+            self.assertIn("01001.py", str(caught.exception))

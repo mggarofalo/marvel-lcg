@@ -653,3 +653,65 @@ class TestRealDataset(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestAbilityTypeMatchesItsEvent(unittest.TestCase):
+    """A Boost-priority ability type may only sit on a defeat event.
+
+    `AbilityType` carries two things at once: the words the UI prints, and the
+    `TimingPriority` the ability resolves at. `WhenDefeated`, `WhenRevealed` and
+    `Boost` all map to `TimingPriority.Boost`, which is the engine's encoding of
+    the Rules Reference bundling those three at one level.
+
+    Sibling Rivalry (18025) registered `AbilityType.WhenDefeated` on
+    `AfterPhaseBegin`, a phase event that has nothing to do with being defeated.
+    The card prints "Forced Response", so it resolved a priority level early and
+    the UI named it wrongly (MARVEL-89).
+
+    Nothing caught it. The dataset records each script's `ability_factories` but
+    not the `AbilityType` passed to them, so the mistyping was invisible to
+    every gate in the repo -- it was found by hand-building an (event, priority)
+    index for MARVEL-83, and only because that pair had no other candidate.
+
+    This is deliberately a narrow guard rather than a general trigger-word
+    check. It asserts the one thing that can be read off the call site without
+    resolving printed text, and today the corpus satisfies it exactly.
+    """
+
+    # `ResolveAbility` is a generic dispatcher rather than an event, so the
+    # ability type there says what is being resolved, not when.
+    DEFEAT_EVENTS = {"WhenUnitBeDefeated", "WhenSchemeBeDefeated", "ResolveAbility"}
+    BOOST_PRIORITY_TYPES = {"WhenDefeated", "WhenRevealed", "Boost"}
+
+    def test_no_boost_priority_type_sits_on_a_non_defeat_event(self):
+        import ast
+
+        root = Path(__file__).resolve().parents[1] / "cards"
+        if not root.is_dir():
+            self.skipTest("run from py_src/")
+
+        offenders = []
+        for path in sorted(root.rglob("*.py")):
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"))
+            except SyntaxError:
+                continue
+            for node in ast.walk(tree):
+                if not (isinstance(node, ast.Call)
+                        and isinstance(node.func, ast.Attribute)):
+                    continue
+                factory = node.func.attr
+                if factory in self.DEFEAT_EVENTS:
+                    continue
+                for arg in node.args:
+                    if (isinstance(arg, ast.Attribute)
+                            and isinstance(arg.value, ast.Name)
+                            and arg.value.id == "AbilityType"
+                            and arg.attr in self.BOOST_PRIORITY_TYPES):
+                        offenders.append(f"{path.name}: {arg.attr} on {factory}")
+
+        self.assertEqual(
+            offenders, [],
+            "a Boost-priority AbilityType is registered on an event that is not "
+            "about being defeated. Either the ability type is wrong (as in "
+            "MARVEL-89) or this guard needs widening -- check the printed card.")

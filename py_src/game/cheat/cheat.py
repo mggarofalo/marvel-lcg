@@ -44,7 +44,10 @@ class Cheat:
         # Load scene
         # Start with version [0.5.7.104]
         if not command.startswith("/"):
-            if FileManager.IsDrivePath(command):
+            # MARVEL-74: was `IsDrivePath`, which only recognised a Windows
+            # drive letter, so a POSIX absolute path fell through to the
+            # prefix tests below and was not treated as a scene to load.
+            if FileManager.IsAbsolute(command):
                 game.session.Load(command, None, "Load")
                 return True
             elif command.startswith('debug') or \
