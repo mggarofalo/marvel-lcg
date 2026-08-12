@@ -18,8 +18,15 @@ def GetAbilities() -> Sequence['Ability']:
             PlayerFinder(non_name="Gamora"),
             "This"
         ),
+        # The card prints "Forced Response: After the villain phase begins".
+        # This said `AbilityType.WhenDefeated` until MARVEL-89, which maps to
+        # TimingPriority.Boost (6) rather than ForcedResponse (7) -- so it
+        # resolved a level early and the UI labelled it "When Defeated".
+        # Nothing about this card is a When Defeated, a When Revealed or a
+        # boost, and no other ability in any pack registers WhenDefeated on
+        # AfterPhaseBegin.
         AbilityFactory.AfterPhaseBegin(
-            AbilityType.WhenDefeated,
+            AbilityType.ForcedResponse,
             "Villain",
             sibling_rivalry,
         ),

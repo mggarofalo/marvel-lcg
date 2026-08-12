@@ -352,17 +352,22 @@ Feature: Timing priority
   # --------------------------------------------------------------------------
   # Boost (6) before ForcedResponse (7) -- NOT OBSERVABLE
   #
-  # Exactly one event in all 64 packs carries both priorities, and it is a
+  # Exactly one event in all 64 packs carried both priorities, and it was a
   # mistyped card rather than a race.
   #
   #   AfterPhaseBegin   Boost:          18025 Sibling Rivalry
   #                     ForcedResponse: 16026, 38001a, 43012
   #
   # Sibling Rivalry prints "Forced Response: After the villain phase begins, deal
-  # 1 facedown encounter card to Gamora" and is scripted `AbilityType.WhenDefeated`,
-  # which maps to Boost. Nothing about the card is a When Defeated, a When
-  # Revealed or a boost. A scenario built on it would pin the typo as the rule.
-  # Filed as MARVEL-89.
+  # 1 facedown encounter card to Gamora" and was scripted
+  # `AbilityType.WhenDefeated`, which maps to Boost. Nothing about the card is a
+  # When Defeated, a When Revealed or a boost, so a scenario built on it would
+  # have pinned the typo as the rule.
+  #
+  # MARVEL-89 has since retyped it to `ForcedResponse`, so no event carries both
+  # priorities at all now and the pair is not merely unobserved but structurally
+  # unreachable. `test_card_dataset.py` guards the class of mistake: a
+  # Boost-priority ability type may only be registered on a defeat event.
   #
   # The three ForcedResponse partners fail independently of that. Rogue (38001a)
   # and Puncture Wound (43012) fire when the *player* phase begins, so they can
