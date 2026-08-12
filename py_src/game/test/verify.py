@@ -116,11 +116,43 @@ class ReplayVerifier:
         from game.test.test import REPLAY_FOLDERS
 
         chosen = [folder for folder in folders if folder]
-        if chosen:
-            return chosen
-        if REPLAY_FOLDERS.is_initialized:
-            return list(REPLAY_FOLDERS.value)
-        return []
+        if not chosen and REPLAY_FOLDERS.is_initialized:
+            chosen = list(REPLAY_FOLDERS.value)
+        return ReplayVerifier.ExpandTree(chosen)
+
+    @staticmethod
+    def ExpandTree(folders: Sequence[str]) -> List[str]:
+        """Every folder at or under `folders` that directly holds a `.json`.
+
+        A corpus is a tree, not a flat directory: `tools/corpus/generate.py`
+        gives each case its own folder so that concurrent workers never share
+        one, and a corpus of any size wants chunking anyway. Verifying it has to
+        mean verifying the tree, or "verify this corpus" is a loop the caller
+        writes.
+
+        A flat folder expands to itself, so pointing at `./replays/` is
+        unchanged. Folders that hold no JSON at all are dropped, which keeps an
+        intermediate directory out of the reported folder list without hiding
+        an empty corpus -- `Run` still fails when nothing was verified.
+
+        Sorted, and symlinks are not followed: a verification report has to be
+        the same on two machines, and a link back up the tree would otherwise
+        walk forever.
+        """
+        import os
+
+        found: List[str] = []
+        for folder in folders:
+            if not FileManager.IsDir(folder):
+                # Left in so `Enumerate` can warn about it by name rather than
+                # silently verifying nothing.
+                found.append(folder)
+                continue
+            for current, subfolders, names in os.walk(folder):
+                subfolders.sort()
+                if any(name.endswith(".json") for name in names):
+                    found.append(current)
+        return sorted(set(found))
 
     @staticmethod
     def Enumerate(folders: Sequence[str]) -> List[str]:
