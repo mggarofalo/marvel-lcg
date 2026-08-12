@@ -180,6 +180,97 @@ jobs:
       - name: Self-play still reaches the forced-ability tie-break
         run: python -m tools.determinism.probe_forced_selection
 
+  corpus-generate:
+    # MARVEL-17: a corpus must be proven to reproduce on a machine that did not
+    # make it. Generating and verifying in one process proves almost nothing —
+    # the same interpreter, the same filesystem, the same warm state. This pair
+    # of jobs generates on Linux and verifies on Windows, which is the shape the
+    # C# validation strategy actually depends on.
+    #
+    # Small on purpose. It is a *proof of the property*, not a corpus: the
+    # expensive corpus is generated out of band by
+    # `python -m tools.corpus.generate`, and what CI has to keep true is that a
+    # corpus crossing an OS boundary still reproduces.
+    name: generate a corpus (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: py_src/.python-version
+          cache: pip
+          cache-dependency-path: py_src/requirements.lock
+
+      - name: Install pinned dependencies
+        run: pip install -r requirements.lock
+
+      # `--floor 0`: the coverage floor would demand one game per scenario, 108
+      # of them, which is a corpus rather than a proof. The seed is fixed so a
+      # failure here names one reproducible corpus.
+      - name: Generate
+        run: |
+          python -m tools.corpus.generate \
+            --out ./corpus/ --games 12 --floor 0 --seed 4242 \
+            --scenarios rhino,klaw,ultron \
+            --heroes spider_man,she_hulk,captain_marvel,thor \
+            --workers 2
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: corpus-ubuntu
+          path: py_src/corpus
+          retention-days: 3
+
+  corpus-verify:
+    # The other half. `needs` rather than a pattern download: if generation
+    # failed, this must not run and quietly pass on an empty folder.
+    name: it reproduces on the other OS (windows)
+    needs: corpus-generate
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: py_src/.python-version
+          cache: pip
+          cache-dependency-path: py_src/requirements.lock
+
+      - name: Install pinned dependencies
+        run: pip install -r requirements.lock
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: corpus-ubuntu
+          path: py_src/corpus
+
+      # Verifying nothing exits non-zero, so a corpus that failed to transfer
+      # fails here rather than reporting a clean run over an empty folder.
+      # The quarantine folder is always written, even when empty — "nothing was
+      # quarantined" and "quarantining never ran" must not look alike.
+      - name: Every scene reproduces, and the config it was made under matches
+        run: |
+          python main.py -verify_replays -verify_folders ./corpus/ \
+            -verify_report_file ./verify.json \
+            -verify_quarantine_folder ./quarantine/
+
+      # Only on failure: the whole point is the *reasons*, and on a green run
+      # there are none. See MARVEL-17 — a non-reproducing replay must never be
+      # silently dropped.
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: corpus-quarantine
+          path: |
+            py_src/quarantine
+            py_src/verify.json
+          retention-days: 14
+
   # MARVEL-18 attaches here: a job that verifies the frozen corpus manifest
-  # hash. It needs the corpus to exist first (MARVEL-15), so it is named but
-  # not stubbed — an empty job that always passes is worse than no job.
+  # hash. It needs a frozen corpus to exist first, so it is named but not
+  # stubbed — an empty job that always passes is worse than no job.

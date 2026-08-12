@@ -59,7 +59,8 @@ class ReplayVerifier:
     @staticmethod
     def Run(game: 'Game', folders: Sequence[str], *,
             report_path: str="", allow_incomplete: bool=False,
-            allow_config_drift: bool=False) -> bool:
+            allow_config_drift: bool=False,
+            quarantine_folder: str="") -> bool:
         """Verify every scene under `folders`. Returns False if anything failed."""
         from engine.device.manager.verify.manager import VerifyDeviceManager
 
@@ -99,6 +100,10 @@ class ReplayVerifier:
 
         document = ReplayVerifier.BuildReport(resolved, cases, allow_incomplete,
                                               manifests, allow_config_drift)
+
+        if quarantine_folder:
+            document["quarantine"] = ReplayVerifier.Quarantine(
+                cases, quarantine_folder, allow_incomplete)
 
         if report_path:
             ReplayVerifier.WriteReport(document, report_path)
@@ -171,6 +176,81 @@ class ReplayVerifier:
             Log.Info(CATEGORY_NAME,
                 f"Skipped {skipped} file(s) that are not saved scenes")
         return scenes
+
+    ################################################################################
+    #
+    @staticmethod
+    def Quarantine(cases: Sequence[Dict[str, Any]], folder: str,
+                   allow_incomplete: bool) -> Dict[str, Any]:
+        """Set aside every scene that did not reproduce, and say why.
+
+        MARVEL-17's rule is that a non-reproducing replay must not be *silently*
+        dropped: a corpus entry that fails to reproduce is a finding, and a
+        finding that leaves no artefact will be rediscovered as a C# port bug
+        months later and cost days.
+
+        **Copied, not moved.** The corpus is this run's input, and a verifier
+        that edits its input cannot be run twice against the same folder to see
+        whether a failure repeats -- which is the first thing anyone will want
+        to do. Removing them from the frozen set is MARVEL-18's job, and
+        `quarantine.json` is what it reads.
+
+        Quarantining does not forgive: the run still fails. This records what
+        failed, it does not excuse it.
+
+        Incomplete cases come here too unless `-verify_allow_incomplete` said
+        they were expected -- a truncated recording is a corpus entry that
+        describes less than a game, which is exactly what must not be frozen.
+        """
+        import shutil
+
+        wanted = ("fail",) if allow_incomplete else ("fail", "incomplete")
+        held = [case for case in cases if case.get("status") in wanted]
+
+        index: Dict[str, Any] = {
+            "tool": "verify-quarantine",
+            "count": len(held),
+            "cases": [],
+        }
+
+        if not held:
+            # Written even when empty, on purpose: "nothing was quarantined" and
+            # "quarantining never ran" must not look the same to whoever freezes
+            # the corpus. The acceptance is an *empty* set, not a missing one.
+            Log.Info(CATEGORY_NAME, "quarantine: nothing to set aside")
+        else:
+            Log.Assert(CATEGORY_NAME,
+                f"quarantine: setting aside {len(held)} scene(s) in {folder}")
+
+        FileManager.MakeDir(folder)
+        for case in held:
+            entry = {
+                "file": case.get("file"),
+                "source": case.get("path"),
+                "status": case.get("status"),
+                "detail": case.get("detail"),
+                "recorded_steps": case.get("recorded_steps"),
+                "replayed_steps": case.get("replayed_steps"),
+                "copied": False,
+            }
+            source = str(case.get("path") or "")
+            target = FileManager.JoinPath(folder, str(case.get("file") or ""))
+            try:
+                if source and FileManager.IsFile(source):
+                    shutil.copyfile(source, target)
+                    entry["copied"] = True
+            except OSError as exc:
+                # The record is the deliverable; the copy is a convenience. A
+                # full disk must not turn a reported failure into a lost one.
+                entry["detail"] = f"{entry['detail']} (copy failed: {exc})"
+            index["cases"].append(entry)
+            Log.Assert(CATEGORY_NAME,
+                f"    {entry['status']} {entry['file']}: {entry['detail']}")
+
+        path = FileManager.JoinPath(folder, "quarantine.json")
+        Json.Save(index, path)
+        Log.Info(CATEGORY_NAME, f"Quarantine: {path}")
+        return {"folder": folder, "path": path, "count": len(held)}
 
     ################################################################################
     #
@@ -353,6 +433,20 @@ class ReplayVerifier:
                           "game had not finished")
         else:
             status = "fail"
+            if not detail:
+                # The common failure has no exception behind it: the replay
+                # module compared the recorded digest against the recomputed one,
+                # logged a card-by-card diff and carried on, and `Log.HasError`
+                # is what turned that into a verdict. So there is nothing to
+                # quote, and "fail" with an empty reason is not a reason --
+                # MARVEL-17 wants a quarantined scene to say why it is there.
+                # Say what is known: where it stopped, and where the detail is.
+                detail = (
+                    f"Diverged after {replayed} of {recorded} recorded step(s). "
+                    "The recomputed state digest did not match the one saved "
+                    "with the step; the card-by-card diff is in the run log "
+                    "(engine/controller/module/replay.py)."
+                )
 
         record: Dict[str, Any] = {
             "file": FileManager.GetBaseName(path),

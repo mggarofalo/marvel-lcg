@@ -193,6 +193,45 @@ the case in flight; a truncated last line is an expected state and costs exactly
 Only a run that produced nothing at all exits non-zero. A corpus with holes is still a corpus,
 and `corpus-manifest.json` says where the holes are.
 
+## Proving the corpus reproduces
+
+```bash
+python main.py -verify_replays -verify_folders ./corpus/ \
+    -verify_report_file ./verify.json -verify_quarantine_folder ./quarantine/
+```
+
+A replay that does not reproduce is worse than no replay — it surfaces later as a C# port bug
+and costs days. So every scene must be proven to reproduce *before* it is allowed into a frozen
+corpus, and anything that does not must leave an artefact rather than be dropped. That is
+MARVEL-17.
+
+**`-verify_quarantine_folder` sets aside every scene that failed or was truncated**, with the
+reason, the step it diverged at, and a copy of the file. Three things about it are deliberate:
+
+- **Copied, not moved.** The corpus is the verifier's *input*, and a verifier that edits its
+  input cannot be run twice against the same folder to see whether a failure repeats — the
+  first thing anyone will want to do. Excluding quarantined scenes from the frozen set is
+  MARVEL-18's job, and `quarantine.json` is what it reads.
+- **Quarantining does not forgive.** The run still exits non-zero. This records what failed; it
+  does not excuse it.
+- **`quarantine.json` is written even when empty.** "Nothing was quarantined" and "quarantining
+  never ran" must not look the same to whoever freezes the corpus — the acceptance is an
+  *empty* set, not a missing one.
+
+A digest divergence has no exception behind it: the replay module logs a card-by-card diff and
+`Log.HasError` turns that into a verdict. So the quarantine record synthesises its reason from
+what is known — where the replay stopped, out of how many recorded steps, and where to find the
+diff. "fail" with an empty reason is not a reason.
+
+### On a machine that did not make it
+
+Generating and verifying in one process proves almost nothing: same interpreter, same
+filesystem, same warm state. `determinism.yml` therefore **generates a corpus on Linux and
+verifies it on Windows** (`corpus-generate` → `corpus-verify`), which is the shape the C#
+validation strategy depends on. It is small on purpose — a proof of the property, not a corpus.
+The quarantine folder and verification report upload as artefacts on failure only, since on a
+green run there are no reasons to read.
+
 ## Throughput
 
 Reported at the end of every run and recorded under `timing` in the manifest:
