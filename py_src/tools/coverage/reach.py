@@ -71,6 +71,13 @@ from typing import Any, Dict, Iterable, List, NamedTuple, Sequence, Set
 from engine.profile import coverage_report
 
 HERO_FOLDERS = (os.path.join("deck", "starter"),)
+
+# Decks built by `tools.decks.build` to carry cards no shipped deck names
+# (MARVEL-80). Kept as a separate source kind rather than folded into
+# HERO_FOLDERS, so the shipped ceiling stays readable next to the built one --
+# a single merged number would make it impossible to tell whether reach moved
+# because the game changed or because this tool ran.
+GENERATED_HERO_FOLDERS = (os.path.join("deck", "generated"),)
 ENCOUNTER_FOLDERS = (os.path.join("data", "encounter_sets"),
                      os.path.join("data", "nemesis"))
 SCENARIO_FOLDERS = (os.path.join("data", "scenarios"),
@@ -172,9 +179,14 @@ def ReadFolder(folders: Sequence[str], keys: Sequence[str],
     return sources
 
 
-def Build() -> Map:
+def Build(*, generated: bool=True) -> Map:
+    """The reach map. `generated=False` gives the shipped-only baseline."""
+    sources = ReadFolder(HERO_FOLDERS, HERO_KEYS, "hero")
+    if generated:
+        sources += ReadFolder(GENERATED_HERO_FOLDERS, HERO_KEYS,
+                              "hero-generated")
     return Map(sources=(
-        ReadFolder(HERO_FOLDERS, HERO_KEYS, "hero")
+        sources
         + ReadFolder(ENCOUNTER_FOLDERS, ENCOUNTER_KEYS, "encounter-set")
         + ReadFolder(SCENARIO_FOLDERS, SCENARIO_KEYS, "scenario")
     ))
@@ -190,7 +202,7 @@ def Describe(reach: Map, universe: Sequence[str]) -> List[str]:
         f"unreachable       {len(known) - len(reachable)}",
         "",
     ]
-    for kind in ("hero", "encounter-set", "scenario"):
+    for kind in ("hero", "hero-generated", "encounter-set", "scenario"):
         sources = reach.Of(kind)
         cards: Set[str] = set()
         for source in sources:

@@ -32,6 +32,16 @@ from typing import Any, Dict, List, NamedTuple, Sequence
 SCENARIO_FOLDER = os.path.join("data", "scenarios")
 HERO_FOLDER = os.path.join("deck", "starter")
 
+# Decks built by `tools.decks.build` to carry cards no shipped deck names
+# (MARVEL-80). Sampled exactly like a starter deck -- `-bot_heroes` takes the
+# file stem either way -- but they must be on `deck_folders` for the run to
+# resolve them, which `tools.corpus.generate` does not assume. See MARVEL-80.
+#
+# Including them moves `Inventory.Digest`, and that is the point: a plan drawn
+# before these decks existed is not the same plan, and the digest is what says
+# so rather than leaving it to be discovered from a diverging corpus.
+GENERATED_HERO_FOLDER = os.path.join("deck", "generated")
+
 EXPERT_SUFFIX = "_expert"
 
 
@@ -95,10 +105,17 @@ def Stems(folder: str) -> List[str]:
 
 
 def Read(scenario_folder: str=SCENARIO_FOLDER,
-         hero_folder: str=HERO_FOLDER) -> Inventory:
+         hero_folder: str=HERO_FOLDER,
+         generated_folder: str|None=GENERATED_HERO_FOLDER) -> Inventory:
+    """What is on disk. `generated_folder=None` gives the shipped-only view."""
+    heroes = Stems(hero_folder)
+    if generated_folder:
+        # Sorted as one list rather than appended, so the inventory does not
+        # depend on which folder a deck happened to be written to.
+        heroes = sorted(set(heroes) | set(Stems(generated_folder)))
     return Inventory(
         scenarios=[Scenario(name) for name in Stems(scenario_folder)],
-        heroes=Stems(hero_folder),
+        heroes=heroes,
     )
 
 
