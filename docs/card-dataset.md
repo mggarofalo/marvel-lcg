@@ -124,6 +124,16 @@ Notes on the fields that are easy to misread:
   `Permanent`) under the engine's own keys. `stats` is every MarvelSDB key that
   is not identity, so a stat field added upstream flows through without a code
   change.
+- **`[[X]]` in the printed text is a trait; `[x]` is a resource icon.** The
+  distinction is load-bearing wherever a card's rules text names other cards:
+  Cyclops' "You may include `[[X-MEN]]` allies" is `"X-Men" in traits`, while
+  Wonder Man's "events with a printed `[energy]` resource icon" is
+  `stats.resource_energy`. `tools/decks/rules.py` reads both.
+- **A trait can contain periods.** `S.H.I.E.L.D.` (114 cards) and `A.I.M.` (10)
+  are single traits, and are stored with their terminal period so they read as
+  printed. Upstream stores the trait line as one string, `"Location.
+  S.H.I.E.L.D."`, and the separator is a period *and a space* — splitting on
+  every period shredded both acronyms into single letters until MARVEL-85.
 - **`reprint_of` and `engine.link` are different relationships.** The first is
   MarvelSDB's `duplicate_of`, a card printed again in a later pack. The second
   is the engine's `full_link`/`ability_link`, which also decides which script

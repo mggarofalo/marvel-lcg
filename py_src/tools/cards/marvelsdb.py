@@ -16,6 +16,7 @@ Two upstream shapes need resolving before the data is usable:
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List
@@ -101,8 +102,21 @@ class MarvelData:
 
 
 def SplitTraits(raw: str) -> List[str]:
-    """`"Avenger. Genius."` -> `["Avenger", "Genius"]`."""
-    return [t.strip() for t in raw.split(".") if t.strip()]
+    """`"Avenger. Genius."` -> `["Avenger", "Genius"]`.
+
+    A period ends a trait, but only a period *followed by a separator* ends the
+    list item -- so the split is on `". "`, not on every `"."`. Splitting on
+    every period shredded the two dotted acronyms that are printed as traits,
+    `S.H.I.E.L.D.` and `A.I.M.`, into single letters: 114 cards carried the
+    traits `S`, `H`, `I`, `E`, `L`, `D` instead. That made Maria Hill's printed
+    deck-building line -- "the maximum number of copies of 3 [[S.H.I.E.L.D.]]
+    supports" -- name a trait the dataset did not contain (MARVEL-85).
+
+    A token that still holds a period after the terminal one is removed is one
+    of those acronyms, and keeps its terminal period so it reads as printed.
+    """
+    parts = (t.strip().rstrip(".").strip() for t in re.split(r"\.\s+", raw))
+    return [t + "." if "." in t else t for t in parts if t]
 
 
 def _Read(entry: Dict[str, Any], typos: List[str]) -> MarvelCard:
