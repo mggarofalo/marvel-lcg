@@ -222,7 +222,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_run_digest unit_test.test_heuristic_policy \
                    unit_test.test_max_health_guard unit_test.test_config_record \
                    unit_test.test_corpus_plan unit_test.test_coverage_reach \
-                   unit_test.test_corpus_freeze
+                   unit_test.test_corpus_freeze unit_test.test_spec_coverage
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
@@ -353,6 +353,8 @@ python -m tools.spec.validate --triage triage.json      # records for adjudicati
 `specs/self-test/quarantine.feature` is wrong on purpose and must stay that way — it is the proof the gate works.
 
 **Two things about puzzle scenes bite every author once.** A scene starts with no player deck and no encounter deck, so a scenario that ends a turn without stocking both does not walk the phases — it decks the hero out in round 1, or halts the villain phase with an empty encounter deck. And **decks are written top-first**: `the encounter deck is "A", "B", "C"` puts A on top, so during a villain activation the first card written is the boost card and the second is the one revealed. `#N` still counts written order, and order does not survive an in-game shuffle. Both are written up in [docs/spec-harness.md](docs/spec-harness.md).
+
+**Coverage and the campaign.** `python -m tools.spec.coverage` reports which cards have a trusted scenario, at what depth, and what is left; the sharding plan and the depth rule per tier are in [docs/spec-campaign.md](docs/spec-campaign.md) (MARVEL-68). The denominator is **3,996**, not the 3,781 cards with a script — 215 more are implemented by `game/card/face/attribute/` rather than per card, and Hydra Mercenary's Guard is already specced without one. Only the 348 cards the engine does not have are out of scope.
 
 This only works while the Python engine still runs and is still the reference. Read [docs/spec-harness.md](docs/spec-harness.md) before authoring.
 
