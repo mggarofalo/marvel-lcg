@@ -60,13 +60,33 @@ Feature: Keywords
   #
   # "While this minion is engaged with you, you cannot attack the villain."
   #
-  # The engine enforces this by filtering targets rather than by removing the
-  # Attack option, so the restriction is not visible in the option set and the
-  # current vocabulary cannot assert it directly -- a scenario naming Rhino is
-  # refused with "Rhino is not a legal target for Attack", which is a harness
-  # refusal and not something a `Then` can claim. What it can show is the
-  # restriction lifting: defeat the guard and the villain becomes attackable in
-  # the same turn.
+  # The engine enforces this by filtering the Attack option's legal targets
+  # rather than by removing the option, so the restriction shows up in neither
+  # the option set nor any card's state. `Then I cannot attack "<card>"` is the
+  # step that can see it (MARVEL-84).
+
+  Scenario: a guard minion puts the villain out of reach
+    Given the encounter deck is "Hydra Mercenary", "Hydra Mercenary"
+    And "Hydra Mercenary #1" is in play
+
+    Then I cannot attack "Rhino"
+
+  Scenario: the guard itself is still attackable
+    # The restriction is about the villain, not about attacking at all. Without
+    # this the scenario above would also pass against an engine that had
+    # forgotten how to attack.
+    Given the encounter deck is "Hydra Mercenary", "Hydra Mercenary"
+    And "Hydra Mercenary #1" is in play
+
+    When I attack "Hydra Mercenary #1"
+    Then "Hydra Mercenary #1" has 2 damage
+
+  Scenario: with no guard in play the villain is attackable
+    # The control for the restriction. `I cannot attack` must be capable of
+    # failing, or the scenario above establishes nothing -- so here is the same
+    # board without the minion, where the villain takes the hero's printed 2.
+    When I attack "Rhino"
+    Then "Rhino" has 2 damage
 
   Scenario: the villain becomes attackable once the guard is defeated
     # Hellcat is printed ATK 1 and the minion has 1 hit point left, so the ally
@@ -76,6 +96,8 @@ Feature: Keywords
     And "Hydra Mercenary #1" is in play
     And "Hydra Mercenary #1" has 2 damage
     And "Hellcat" is in play
+
+    Then I cannot attack "Rhino"
 
     When I choose "attack" on "Hellcat" targeting "Hydra Mercenary #1"
     Then "Hydra Mercenary #1" is not in play

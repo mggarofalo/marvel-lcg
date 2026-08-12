@@ -17,8 +17,8 @@ import unittest
 
 from tools.spec.assertions import Evaluate, ResolveSubject
 from tools.spec.case import (
-    GivenStep, LoadJsonCases, NoPromptStep, PromptStep, SourceDigest, SpecCase,
-    SpecCaseError, ThenStep, WhenStep)
+    CannotStep, GivenStep, LoadJsonCases, NoPromptStep, PromptStep, SourceDigest,
+    SpecCase, SpecCaseError, ThenStep, WhenStep)
 from tools.spec.harness import (
     OUTCOME_ASSERTION, OUTCOME_PASS, OUTCOME_UNPLAYABLE, RunCase)
 from tools.spec.resolve import CardRef, CardRefError, NormaliseLabel
@@ -475,6 +475,89 @@ class TestAgainstTheEngine(unittest.TestCase):
                 ThenStep("Rhino", "health", 10),
                 ThenStep("the main scheme", "threat", 5),
                 ThenStep("player", "hand_size", 2),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_restriction_passes_when_the_target_is_filtered_out(self):
+        """Guard: the option stays, the villain leaves its legal targets."""
+        case = MakeCase(
+            name="guard",
+            given=(
+                HERO_FORM,
+                GivenStep("encounter_deck", ("Hydra Mercenary", "Hydra Mercenary")),
+                GivenStep("in_play", ("Hydra Mercenary #1",)),
+            ),
+            beats=(CannotStep(option="attack", card="Rhino"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_restriction_passes_when_the_action_has_no_legal_target(self):
+        """Stun, which this engine expresses the same way Guard does.
+
+        A stunned hero is still offered `Attack`; `all_legal_targets` is empty.
+        Worth its own test because the obvious reading -- that stun removes the
+        option -- is wrong, and a check written for that reading would pass this
+        case for the wrong reason.
+        """
+        case = MakeCase(
+            name="stunned",
+            given=(HERO_FORM, GivenStep("stunned", ("Spider-Man",))),
+            beats=(CannotStep(option="attack", card="Rhino"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_restriction_the_engine_does_not_impose_fails(self):
+        """The control. Without this the step could pass unconditionally."""
+        case = MakeCase(
+            name="no restriction",
+            given=(HERO_FORM,),
+            beats=(CannotStep(option="attack", card="Rhino"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
+        self.assertIn("legal target", result.Failures()[0].message)
+
+    def test_a_restriction_about_a_card_outside_the_game_is_unresolvable(self):
+        """Not vacuously true.
+
+        "You cannot attack a card that is not in this game" holds trivially, so
+        granting it would let a misspelled card name read as a proven
+        restriction. It is the one way this step could pass while saying
+        nothing, so it is refused -- and refused as *unresolvable*, which is
+        what routes it to FAIL-spec-wrong rather than FAIL-engine-suspected.
+        """
+        case = MakeCase(
+            name="missing card",
+            given=(HERO_FORM,),
+            beats=(CannotStep(option="attack", card="Galactus"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertTrue(result.Failures()[0].unresolvable)
+
+    def test_a_restriction_can_follow_a_prompt_table(self):
+        """Assertions after the option table describe the same decision.
+
+        The prompt beat is consumed mid-`Choose`, so anything queued behind it
+        has to be drained again before the next action is looked for. Without
+        that second drain this reads as "unexpected beat at a decision".
+        """
+        case = MakeCase(
+            name="prompt then restriction",
+            given=(
+                HERO_FORM,
+                GivenStep("encounter_deck", ("Hydra Mercenary", "Hydra Mercenary")),
+                GivenStep("in_play", ("Hydra Mercenary #1",)),
+            ),
+            beats=(
+                PromptStep(options=("Attack", "Change Form")),
+                CannotStep(option="attack", card="Rhino"),
+                WhenStep(option="attack", targets=("Hydra Mercenary #1",)),
+                ThenStep("Hydra Mercenary #1", "damage", 2),
             ),
         )
         result = RunCase(case)

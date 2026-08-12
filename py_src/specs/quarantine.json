@@ -3,43 +3,55 @@
   "scenarios": {
     "Quarantine self-test :: a mid-resolution choice the transcript does not answer is FAIL-spec-wrong": {
       "reason": "the transcript ended while the engine was still asking 'WhenPlayerChooseAbility', offering Draw_3_cards on Nick Fury (01084) in AlliesArea; Deal_4_damage_to_an_enemy on Nick Fury (01084) in AlliesArea at 'WhenPlayerChooseAbility' (step 1) #0 WhenPlayerInTurn (Normal): Attack on Spider-Man (01001a) i...",
-      "sha256": "b6d2674d6e5dd4d1f9ae8997b88ff0aae38d373c6ef266958801af2854b7d9dd",
+      "sha256": "081274917427dfcad5a3bf7e5a09270d24a1efbda6439f9c350a50adfbe7e63a",
       "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-spec-wrong"
     },
+    "Quarantine self-test :: a restriction about a card outside the game is FAIL-spec-wrong": {
+      "reason": "FAIL I cannot attack 'Galactus' Galactus: no card matches 'Galactus'",
+      "sha256": "081274917427dfcad5a3bf7e5a09270d24a1efbda6439f9c350a50adfbe7e63a",
+      "source": "specs/self-test/quarantine.feature",
+      "verdict": "FAIL-spec-wrong"
+    },
+    "Quarantine self-test :: a restriction the engine does not impose is FAIL-engine-suspected": {
+      "reason": "FAIL I cannot attack 'Rhino' Rhino is a legal target for Attack; the engine would allow it alongside Rhino (01094) in VillainArea",
+      "sha256": "081274917427dfcad5a3bf7e5a09270d24a1efbda6439f9c350a50adfbe7e63a",
+      "source": "specs/self-test/quarantine.feature",
+      "verdict": "FAIL-engine-suspected"
+    },
     "Quarantine self-test :: a wrong expected value is FAIL-engine-suspected": {
       "reason": "FAIL Rhino health == 99 expected 99, got 12 Rhino (01094) in VillainArea, 12/14 hp",
-      "sha256": "b6d2674d6e5dd4d1f9ae8997b88ff0aae38d373c6ef266958801af2854b7d9dd",
+      "sha256": "081274917427dfcad5a3bf7e5a09270d24a1efbda6439f9c350a50adfbe7e63a",
       "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-engine-suspected"
     },
     "Quarantine self-test :: an action the engine never offers is FAIL-spec-wrong": {
       "reason": "I choose 'attack' targeting 'Rhino' could not be played: the engine offered Change_Form on Peter Parker (01001b) in HeroArea at 'WhenPlayerInTurn' (step 0) FAIL I choose 'attack' targeting 'Rhino' the game ended before this step could be played FAIL Rhino health == 12 expected 12, got 14 Rhino (0109...",
-      "sha256": "b6d2674d6e5dd4d1f9ae8997b88ff0aae38d373c6ef266958801af2854b7d9dd",
+      "sha256": "081274917427dfcad5a3bf7e5a09270d24a1efbda6439f9c350a50adfbe7e63a",
       "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-spec-wrong"
     },
     "Quarantine self-test :: an assertion about a card outside the game is FAIL-spec-wrong": {
       "reason": "FAIL Galactus health == 1 no card matches 'Galactus' anywhere in this game",
-      "sha256": "b6d2674d6e5dd4d1f9ae8997b88ff0aae38d373c6ef266958801af2854b7d9dd",
+      "sha256": "081274917427dfcad5a3bf7e5a09270d24a1efbda6439f9c350a50adfbe7e63a",
       "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-spec-wrong"
     },
     "Quarantine self-test :: an ordinal over cards the scenario did not create is FAIL-spec-wrong": {
       "reason": "FAIL Rhino #2 damage == 0 Rhino #2 would index cards the scenario did not create, so which one it names is the engine's allocation order rather than anything the scenario says. Name the zone instead. Candidates: Rhino (01094) in VillainArea, 14/14 hp; Rhino (01095) in VillainDeck, 0/0 hp",
-      "sha256": "b6d2674d6e5dd4d1f9ae8997b88ff0aae38d373c6ef266958801af2854b7d9dd",
+      "sha256": "081274917427dfcad5a3bf7e5a09270d24a1efbda6439f9c350a50adfbe7e63a",
       "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-spec-wrong"
     },
     "Quarantine self-test :: an unexpected extra prompt is FAIL-engine-suspected": {
       "reason": "FAIL I am not prompted again expected no further prompt, but the engine asked 'WhenPlayerChooseAbility' offering Draw_3_cards on Nick Fury (01084) in AlliesArea; Deal_4_damage_to_an_enemy on Nick Fury (01084) in AlliesArea",
-      "sha256": "b6d2674d6e5dd4d1f9ae8997b88ff0aae38d373c6ef266958801af2854b7d9dd",
+      "sha256": "081274917427dfcad5a3bf7e5a09270d24a1efbda6439f9c350a50adfbe7e63a",
       "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-engine-suspected"
     },
     "Quarantine self-test :: saying a card is in play twice is FAIL-spec-wrong": {
       "reason": "Hydra Mercenary in_play: an earlier Given already used Hydra Mercenary, so this step repeats it rather than adding a copy. If you meant a second copy, create both and name them by ordinal \u2014 the encounter deck is \"Hydra Mercenary\", \"Hydra Mercenary\" then \"Hydra Mercenary #1\" / \"Hydra Mercenary #2\".",
-      "sha256": "b6d2674d6e5dd4d1f9ae8997b88ff0aae38d373c6ef266958801af2854b7d9dd",
+      "sha256": "081274917427dfcad5a3bf7e5a09270d24a1efbda6439f9c350a50adfbe7e63a",
       "source": "specs/self-test/quarantine.feature",
       "verdict": "FAIL-spec-wrong"
     }

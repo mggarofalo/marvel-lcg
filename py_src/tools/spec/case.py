@@ -16,11 +16,12 @@ the *number of prompts* implicitly. A scenario written that way passes against
 an engine that asks a different set of questions and lands on the same final
 state, which is exactly the failure the format exists to prevent (MARVEL-22).
 
-Four kinds of beat:
+Five kinds of beat:
 
 - `WhenStep`      answer the decision the engine is currently asking
 - `PromptStep`    assert what the engine is asking, and with which options
 - `NoPromptStep`  assert the resolution is over -- no further mid-resolution ask
+- `CannotStep`    assert an action will not take a card as its target
 - `ThenStep`      assert one thing about readable state
 
 `GivenStep` stays a block ahead of the transcript: it builds the board before
@@ -219,6 +220,51 @@ class NoPromptStep:
         return {"kind": "no_prompt"}
 
 
+@dataclass(frozen=True)
+class CannotStep:
+    """Assert the engine will not let this action name this card.
+
+    The third thing a transcript can assert, and the only one that is about
+    something *not* being possible. `PromptStep` pins which options are offered
+    and `ThenStep` pins the board, and a restriction that shows up as neither
+    slips past both.
+
+    Guard is the case that forced it: "while this minion is engaged with you,
+    you cannot attack the villain". The engine enforces it by emptying the
+    option's legal targets, so `Attack` is still offered -- the option set is
+    unchanged, no card's state has changed, and the restriction is invisible to
+    every other assertion the format has. Stun works the same way: a stunned
+    hero is still offered `Attack`, with `all_legal_targets` empty.
+
+    An action can also be absent outright -- an alter-ego is offered no `Attack`
+    at all. Both are "I cannot attack Rhino", which is what the rules text says,
+    so this step passes when either holds: no matching option, or a matching
+    option that will not take this card as a target.
+
+    This is a claim about the decision the engine is asking *now*. It is not a
+    claim about the board, so it cannot be evaluated from a captured state the
+    way a `ThenStep` can; the policy checks it against the live decision.
+    """
+
+    option: str
+    card: str
+
+    kind = "cannot"
+
+    def __post_init__(self) -> None:
+        if not self.option:
+            raise SpecCaseError("a cannot assertion needs an action")
+        if not self.card:
+            raise SpecCaseError(
+                f"a cannot assertion needs a card; {self.option!r} names none")
+
+    def Describe(self) -> str:
+        return f"I cannot {self.option} {self.card!r}"
+
+    def ToDict(self) -> Dict[str, Any]:
+        return {"kind": "cannot", "option": self.option, "card": self.card}
+
+
 COMPARISONS = ("==", "!=", ">=", "<=", ">", "<")
 
 
@@ -253,9 +299,9 @@ class ThenStep:
                 "op": self.op, "value": self.value}
 
 
-Beat = Union[WhenStep, PromptStep, NoPromptStep, ThenStep]
+Beat = Union[WhenStep, PromptStep, NoPromptStep, CannotStep, ThenStep]
 
-ASSERTION_KINDS = ("prompt", "no_prompt", "then")
+ASSERTION_KINDS = ("prompt", "no_prompt", "cannot", "then")
 
 
 def IsAction(beat: Beat) -> bool:
@@ -387,6 +433,9 @@ def BeatFromDict(item: Dict[str, Any]) -> Beat:
         return PromptStep(options=tuple(str(o) for o in item.get("options", ())))
     if kind == "no_prompt":
         return NoPromptStep()
+    if kind == "cannot":
+        return CannotStep(option=str(item.get("option", "")),
+                          card=str(item.get("card", "")))
     if kind == "then":
         return ThenStep(
             subject=str(item["subject"]),

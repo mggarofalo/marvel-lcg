@@ -236,12 +236,43 @@ Read the catalogue for the current list. The shape:
 - **When** — `I play`, `I choose`, `I attack`, `I thwart`, `I change form`,
   `I pass`, each optionally `targeting "<card>"`
 - **Then** — `I am prompted to choose one` + table, `I am not prompted again`,
-  card state (`has <n> damage`, `is in the "<zone>"`, `is [not] stunned`),
-  my state (`I have <n> cards in hand`), game state (`the game is over`,
+  `I cannot attack "<card>"`, card state (`has <n> damage`,
+  `is in the "<zone>"`, `is [not] stunned`), my state
+  (`I have <n> cards in hand`), game state (`the game is over`,
   `it is round <n>`, `it is the villain phase`, `it is the "<phase>" phase`)
 
 A step that matches nothing is a parse error naming the line. A scenario
 compiles completely or not at all.
+
+### Asserting what the engine will not let you do
+
+`I cannot attack "Rhino"` is the third assertion a transcript can make, and the
+only one about something *not* being possible.
+
+It exists because a restriction can be invisible to the other two. Guard is
+"while this minion is engaged with you, you cannot attack the villain", and the
+engine enforces it by emptying the `Attack` option's legal targets — the option
+set is unchanged, so `I am prompted to choose one` sees nothing, and no card's
+state changed, so no `Then` sees anything either. Stun works the same way: a
+stunned hero is still offered `Attack`, with no legal target.
+
+The step passes two ways, because "I cannot attack Rhino" is true either way:
+
+| | |
+|---|---|
+| the action is not offered at all | an alter-ego has no `Attack` |
+| the action is offered but will not take this card | Guard, stun |
+
+**A card the scenario cannot resolve fails rather than passing.** "You cannot
+attack a card that is not in this game" is true and worthless, and it is the one
+way this step could pass while establishing nothing — so a misspelled name is
+`FAIL-spec-wrong`, not a proven restriction.
+
+Always write the control next to it. `specs/rules/status.feature` pairs "a
+stunned hero cannot attack" with "a stunned hero can still thwart", because
+without the second an engine that had forgotten how to do anything at all would
+satisfy the first. `specs/self-test/quarantine.feature` carries the proof that
+the step can fail.
 
 ### Phases come at two grains
 

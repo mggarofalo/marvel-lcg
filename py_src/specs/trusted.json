@@ -70,39 +70,51 @@
       "source": "specs/cards/core/01101-hydra-mercenary.feature"
     },
     "Keywords :: a card without surge reveals nothing more": {
-      "sha256": "4b0e3f39a16c4cdc86240473f6ed3d168874f55b2213afe6cfb832aed3e3254a",
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: a guard minion puts the villain out of reach": {
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a minion without quickstrike waits for the next villain phase": {
-      "sha256": "4b0e3f39a16c4cdc86240473f6ed3d168874f55b2213afe6cfb832aed3e3254a",
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a quickstrike minion attacks the moment it engages": {
-      "sha256": "4b0e3f39a16c4cdc86240473f6ed3d168874f55b2213afe6cfb832aed3e3254a",
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a tough minion takes no damage from the first attack": {
-      "sha256": "4b0e3f39a16c4cdc86240473f6ed3d168874f55b2213afe6cfb832aed3e3254a",
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: retaliate answers the villain that attacked": {
-      "sha256": "4b0e3f39a16c4cdc86240473f6ed3d168874f55b2213afe6cfb832aed3e3254a",
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: retaliate does not fire when the hero is the one attacking": {
-      "sha256": "4b0e3f39a16c4cdc86240473f6ed3d168874f55b2213afe6cfb832aed3e3254a",
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: surge reveals one more encounter card": {
-      "sha256": "4b0e3f39a16c4cdc86240473f6ed3d168874f55b2213afe6cfb832aed3e3254a",
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: the guard itself is still attackable": {
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: the villain becomes attackable once the guard is defeated": {
-      "sha256": "4b0e3f39a16c4cdc86240473f6ed3d168874f55b2213afe6cfb832aed3e3254a",
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: toughness cancels the damage rather than reducing it": {
-      "sha256": "4b0e3f39a16c4cdc86240473f6ed3d168874f55b2213afe6cfb832aed3e3254a",
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: with no guard in play the villain is attackable": {
+      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
       "source": "specs/rules/keywords.feature"
     },
     "Nick Fury :: damage is dealt to the chosen enemy, not the first one": {
@@ -156,6 +168,34 @@
     "Sandman :: the tough status absorbs an attack instead of hit points": {
       "sha256": "3ec3dde3460848eb46635d22908b112ee5fc5d4ba20cd98cc4744f633bd8d91f",
       "source": "specs/cards/core/01102-sandman.feature"
+    },
+    "Status cards :: a confused hero can still attack": {
+      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "source": "specs/rules/status.feature"
+    },
+    "Status cards :: a confused hero cannot thwart": {
+      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "source": "specs/rules/status.feature"
+    },
+    "Status cards :: a stunned hero can still thwart": {
+      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "source": "specs/rules/status.feature"
+    },
+    "Status cards :: a stunned hero cannot attack": {
+      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "source": "specs/rules/status.feature"
+    },
+    "Status cards :: a stunned villain's attack is cancelled and the status spent": {
+      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "source": "specs/rules/status.feature"
+    },
+    "Status cards :: an unconfused hero can thwart": {
+      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "source": "specs/rules/status.feature"
+    },
+    "Status cards :: an unstunned hero can attack": {
+      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "source": "specs/rules/status.feature"
     },
     "Swinging Web Kick :: it deals 8 damage to the chosen enemy": {
       "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
