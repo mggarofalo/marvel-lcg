@@ -7,17 +7,28 @@ probe asks the question end to end, through the real command line, in fresh
 processes -- the only way to see the exit code, the report and the engine's
 device selection at the same time.
 
-It plays one bot game and then puts four corpora past the verifier:
+It plays bot games and then puts corpora past the verifier:
 
   clean       the scene as saved                       -> accepted, exit 0
   corrupt     one recorded step digest overwritten     -> rejected, exit 1
   truncated   the tail of the recording removed        -> incomplete, exit 1
   truncated   the same corpus, with -verify_allow_incomplete -> accepted, exit 0
+  drifted     generated under -max_workers 3, verified without it -> exit 1
+  drifted     the same corpus, verified with it                   -> exit 0
+  drifted     the same corpus, with -verify_allow_config_drift    -> exit 0
 
 The truncated pair is the one that hangs if the verify device is ever swapped
 for an interactive one: a recording that ends before the game does makes the
 engine ask for a decision nobody is there to make. That was MARVEL-28's original
 symptom, so it is worth a probe rather than a comment.
+
+The drifted trio is MARVEL-34, and it needs all three cases rather than the
+first: a gate that fails whenever it is asked is as useless as one that never
+does, and the honest path -- generate, then verify with the same engine -- has
+to stay green or nobody will keep the gate. The first calibration of it did not:
+`check_invariants` is forced on for `-device bot` and left off for a verifier,
+so every corpus failed until that was recognised as invocation rather than
+config.
 
 Run:  python -m tools.replay.probe_verify
       python -m tools.replay.probe_verify --seed 7
@@ -61,7 +72,7 @@ class Result(NamedTuple):
         return [str(case.get("status")) for case in self.report.get("cases", [])]
 
 
-def Generate(folder: str, seed: int) -> str:
+def Generate(folder: str, seed: int, extra: List[str] | None=None) -> str:
     """Play one bot game into `folder` and return the scene it saved."""
     os.makedirs(folder, exist_ok=True)
     proc = subprocess.run(
@@ -69,7 +80,7 @@ def Generate(folder: str, seed: int) -> str:
             sys.executable, "main.py", "-bot",
             "-bot_seed", str(seed),
             "-bot_save_folder", folder.replace("\\", "/") + "/",
-        ],
+        ] + list(extra or []),
         capture_output=True, text=True, errors="replace",
         env=build_env(), cwd=os.getcwd(),
     )
@@ -82,7 +93,8 @@ def Generate(folder: str, seed: int) -> str:
     return os.path.join(folder, saved[0])
 
 
-def Verify(folder: str, report_path: str, *, allow_incomplete: bool=False) -> Result:
+def Verify(folder: str, report_path: str, *, allow_incomplete: bool=False,
+           extra: List[str] | None=None) -> Result:
     """Run the real command over `folder` and read what it said."""
     command = [
         sys.executable, "main.py", "-verify_replays",
@@ -91,6 +103,7 @@ def Verify(folder: str, report_path: str, *, allow_incomplete: bool=False) -> Re
     ]
     if allow_incomplete:
         command.append("-verify_allow_incomplete")
+    command += list(extra or [])
 
     proc = subprocess.run(command, capture_output=True, text=True,
                           errors="replace", env=build_env(), cwd=os.getcwd())
@@ -165,6 +178,12 @@ def main(argv: List[str] | None=None) -> int:
         failures += Check("the run artefacts beside it were not counted as scenes",
                           clean.report.get("total") == 1,
                           f"total={clean.report.get('total')}")
+        # The honest path: same engine, same flags. If this ever goes red the
+        # drift gate is miscalibrated, not the corpus.
+        failures += Check("its manifest reports no config drift",
+                          clean.report.get("config_drifted") == 0,
+                          f"config_drifted={clean.report.get('config_drifted')}\n"
+                          + json.dumps(clean.report.get("manifests"), indent=2)[:900])
 
         # --- corrupt -----------------------------------------------------
         corrupt_folder = os.path.join(root, "corrupt")
@@ -202,6 +221,43 @@ def main(argv: List[str] | None=None) -> int:
               f"{allowed.statuses}")
         failures += Check("-verify_allow_incomplete accepts it",
                           allowed.ok and allowed.exit_code == 0, allowed.tail)
+
+        # --- config drift ------------------------------------------------
+        # A real second run under a real gameplay flag, rather than an edited
+        # manifest: what is under test is the path from the command line
+        # through the snapshot to the verifier's exit code.
+        drift_folder = os.path.join(root, "drift")
+        Generate(drift_folder, args.seed, ["-max_workers", "3"])
+
+        drifted = Verify(drift_folder, os.path.join(root, "drift.json"))
+        print(f"drifted    exit {drifted.exit_code}  ok={drifted.report.get('ok')}  "
+              f"config_drifted={drifted.report.get('config_drifted')}  {drifted.statuses}")
+        failures += Check("a corpus generated under different config is rejected",
+                          not drifted.ok and drifted.exit_code == 1, drifted.tail)
+        failures += Check("and the scenes themselves still replayed",
+                          drifted.statuses == ["pass"], str(drifted.statuses))
+        failures += Check("the drift names the variable that moved",
+                          any(item["name"] == "max_workers"
+                              for record in drifted.report.get("manifests", [])
+                              for item in record.get("drift", [])),
+                          json.dumps(drifted.report.get("manifests"), indent=2)[:900])
+
+        matched = Verify(drift_folder, os.path.join(root, "matched.json"),
+                         extra=["-max_workers", "3"])
+        print(f"matched    exit {matched.exit_code}  ok={matched.report.get('ok')}  "
+              f"config_drifted={matched.report.get('config_drifted')}")
+        failures += Check("verifying it under the same config is accepted",
+                          matched.ok and matched.exit_code == 0, matched.tail)
+
+        waived = Verify(drift_folder, os.path.join(root, "waived.json"),
+                        extra=["-verify_allow_config_drift"])
+        print(f"waived     exit {waived.exit_code}  ok={waived.report.get('ok')}  "
+              f"config_drifted={waived.report.get('config_drifted')}")
+        failures += Check("-verify_allow_config_drift accepts it",
+                          waived.ok and waived.exit_code == 0, waived.tail)
+        failures += Check("and still says what drifted",
+                          waived.report.get("config_drifted") == 1,
+                          f"config_drifted={waived.report.get('config_drifted')}")
 
         # --- empty -------------------------------------------------------
         empty_folder = os.path.join(root, "empty")

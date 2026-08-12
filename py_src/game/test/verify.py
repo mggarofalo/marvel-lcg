@@ -28,6 +28,16 @@ Three outcomes rather than two:
 Verifying nothing is also a failure. A folder with no scenes in it exits
 non-zero, because "the gate found no divergence" and "the gate never ran" must
 not look the same to CI.
+
+**Config drift is a fourth way to fail, and it is checked before any replaying.**
+The engine is deterministic for a given configuration and not across
+configurations, so a corpus generated under one set of flags and verified under
+another can diverge for a reason that has nothing to do with the engine being
+wrong. Every `bot-manifest-*.json` in the folders carries the resolved config of
+the run that wrote it (MARVEL-34); this compares each against the running
+process and refuses to verify against a moving target. `-verify_allow_config_drift`
+downgrades it to a warning for the case where the difference is the thing you
+are deliberately testing.
 """
 
 from typing import TypeAlias
@@ -48,7 +58,8 @@ class ReplayVerifier:
     #
     @staticmethod
     def Run(game: 'Game', folders: Sequence[str], *,
-            report_path: str="", allow_incomplete: bool=False) -> bool:
+            report_path: str="", allow_incomplete: bool=False,
+            allow_config_drift: bool=False) -> bool:
         """Verify every scene under `folders`. Returns False if anything failed."""
         from engine.device.manager.verify.manager import VerifyDeviceManager
 
@@ -74,7 +85,20 @@ class ReplayVerifier:
                 f"No saved scenes found in {resolved}. There is nothing to "
                 "verify, which is not the same as nothing being wrong.")
 
-        document = ReplayVerifier.BuildReport(resolved, cases, allow_incomplete)
+        # Was this corpus made by an engine configured the way this one is? A
+        # divergence found under drifted config says nothing about the engine.
+        #
+        # After the replays rather than before them, which is worth the wasted
+        # work when it fails: a config variable only exists once the module
+        # declaring it has been imported, so a check run before the first scene
+        # is comparing a barely-started process against one that had played a
+        # game. Everything would read as "never registered here". Both snapshots
+        # are now taken with the play path loaded, which is the only way the two
+        # are comparable at all.
+        manifests = ReplayVerifier.CheckConfig(resolved, allow_config_drift)
+
+        document = ReplayVerifier.BuildReport(resolved, cases, allow_incomplete,
+                                              manifests, allow_config_drift)
 
         if report_path:
             ReplayVerifier.WriteReport(document, report_path)
@@ -116,6 +140,104 @@ class ReplayVerifier:
                 f"Skipped {skipped} file(s) that are not saved scenes")
         return scenes
 
+    ################################################################################
+    #
+    @staticmethod
+    def CheckConfig(folders: Sequence[str],
+                    allow_drift: bool) -> List[Dict[str, Any]]:
+        """Compare every run manifest under `folders` against this process.
+
+        One record per manifest, whether or not it drifted, because "no manifest
+        described this corpus" and "a manifest described it and agreed" are
+        different findings and the report has to be able to tell them apart. A
+        corpus with no manifest at all is **not** an error -- scenes saved by
+        hand or by the web client never had one -- but it is reported, since it
+        means nothing was checked.
+        """
+        from engine.config_record import ConfigRecord
+
+        records: List[Dict[str, Any]] = []
+        for path in ReplayVerifier.EnumerateManifests(folders):
+            document = ReplayVerifier.ReadJson(path)
+            name = FileManager.GetBaseName(path)
+            compared = ConfigRecord.Compare((document or {}).get("config"))
+
+            drifts = [drift for drift in compared if drift.is_failing]
+            unmatched = [drift for drift in compared if not drift.is_failing]
+
+            records.append({
+                "file": name,
+                "path": path,
+                "git_sha": ((document or {}).get("config") or {}).get("git_sha"),
+                "drifted": bool(drifts),
+                "drift": [drift.ToDict() for drift in drifts],
+                "unmatched": [drift.ToDict() for drift in unmatched],
+            })
+
+            if unmatched:
+                # Not a failure -- see `ConfigDrift`. Said out loud anyway,
+                # because a variable one side never read is worth a glance.
+                Log.Info(CATEGORY_NAME,
+                    f"{len(unmatched)} variable(s) registered on only one side "
+                    f"of {name}: {', '.join(drift.name for drift in unmatched)}")
+
+            if not drifts:
+                Log.Info(CATEGORY_NAME, f"config matches {name}")
+                continue
+
+            # Loud on purpose: this is the reason a divergence would be
+            # unreadable, and it is cheap to fix once you know.
+            report = Log.Warn if allow_drift else Log.Assert
+            report(CATEGORY_NAME,
+                f"config drift against {name} ({len(drifts)} variable(s)):")
+            for drift in drifts:
+                report(CATEGORY_NAME, f"    {drift.name}: {drift.Describe()}")
+            if allow_drift:
+                Log.Warn(CATEGORY_NAME,
+                    "allowed by -verify_allow_config_drift")
+
+        if not records:
+            Log.Info(CATEGORY_NAME,
+                "No run manifest found beside these scenes, so the config they "
+                "were generated under is unknown and unchecked.")
+        return records
+
+    @staticmethod
+    def EnumerateManifests(folders: Sequence[str]) -> List[str]:
+        """The run manifests under `folders`, sorted so a report is stable."""
+        found: List[str] = []
+        for folder in folders:
+            if not FileManager.IsDir(folder):
+                continue
+            for name in FileManager.ListDir(folder):
+                if not name.startswith("bot-manifest-") or not name.endswith(".json"):
+                    continue
+                path = FileManager.JoinPath(folder, name)
+                if FileManager.IsFile(path):
+                    found.append(path)
+        return sorted(found)
+
+    @staticmethod
+    def ReadJson(path: str) -> Dict[str, Any]|None:
+        """Read a run artefact with the standard library.
+
+        Same reasoning as `IsSceneDocument`: `Json.Load` checks a checksum
+        against `Ver.version`, and whether a manifest can be *read* must not
+        depend on which engine wrote it -- the whole point of reading it is to
+        find out.
+        """
+        import json
+
+        try:
+            with FileManager.OpenFile(path, read=True) as file:
+                document = json.loads(file.Read())
+        except Exception as exc:
+            Log.Warn(CATEGORY_NAME, f"Could not read {path}: {type(exc).__name__}: {exc}")
+            return None
+        return document if isinstance(document, dict) else None
+
+    ################################################################################
+    #
     @staticmethod
     def IsSceneDocument(path: str) -> bool:
         """Whether this JSON file is a saved scene rather than a run artefact.
@@ -229,7 +351,9 @@ class ReplayVerifier:
     #
     @staticmethod
     def BuildReport(folders: Sequence[str], cases: Sequence[Dict[str, Any]],
-                    allow_incomplete: bool) -> Dict[str, Any]:
+                    allow_incomplete: bool,
+                    manifests: Sequence[Dict[str, Any]]=(),
+                    allow_config_drift: bool=False) -> Dict[str, Any]:
         """What the run found, as one machine-readable document.
 
         Nothing here reads the clock or the host, so two verification runs over
@@ -243,8 +367,14 @@ class ReplayVerifier:
             status = str(case.get("status", "fail"))
             counts[status] = counts.get(status, 0) + 1
 
+        drifted = [record for record in manifests if record["drifted"]]
+
         ok = bool(cases) and counts["fail"] == 0
         if not allow_incomplete and counts["incomplete"]:
+            ok = False
+        if not allow_config_drift and drifted:
+            # A pass under drifted config is not a pass: the corpus and the
+            # engine that replayed it were not the same engine.
             ok = False
 
         return {
@@ -252,6 +382,9 @@ class ReplayVerifier:
             "engine_version": str(Ver.version),
             "folders": list(folders),
             "allow_incomplete": allow_incomplete,
+            "allow_config_drift": allow_config_drift,
+            "manifests": list(manifests),
+            "config_drifted": len(drifted),
             "total": len(cases),
             "passed": counts["pass"],
             "failed": counts["fail"],
@@ -276,6 +409,11 @@ class ReplayVerifier:
         if document["incomplete"]:
             suffix = " (allowed)" if document["allow_incomplete"] else ""
             lines.append(f"{document['incomplete']} scene(s) ended before the game did{suffix}")
+        if document.get("config_drifted"):
+            suffix = " (allowed)" if document.get("allow_config_drift") else ""
+            lines.append(
+                f"{document['config_drifted']} manifest(s) describe a corpus "
+                f"generated under different config{suffix}")
         if not document["ok"] and not document["total"]:
             lines.append("no scenes were verified")
         return lines

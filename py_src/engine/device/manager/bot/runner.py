@@ -454,15 +454,25 @@ class BotRunner:
                       collector: 'CrashCollector|None'=None) -> Dict[str, Any]:
         """What a corpus file was generated under, so it can be audited later.
 
-        Deliberately small. The resolved input timeout is the load-bearing
-        field (MARVEL-32): a corpus generated under a non-zero timeout can
-        contain fabricated declines and would not reproduce elsewhere, and
-        after the fact the scene file alone cannot tell you. Recording the full
-        resolved config is MARVEL-34.
+        The named fields are the ones a reader wants without parsing anything:
+        the resolved input timeout is load-bearing (MARVEL-32), because a corpus
+        generated under a non-zero timeout can contain fabricated declines and
+        would not reproduce elsewhere, and the scene file alone cannot say so.
+
+        Under them, `config` holds the *whole* resolved variable set and the
+        commit that produced it (MARVEL-34). The engine is deterministic for a
+        given configuration and not across configurations -- the audit measured
+        158 against 183 forced effects under different flags -- so the named
+        fields alone were never enough to reproduce a run. The duplication
+        between the two is deliberate: the named fields are the contract, and
+        `config.values` is the evidence.
 
         Nothing here reads the clock or the host, so the manifest is as
-        reproducible as the scenes it describes.
+        reproducible as the scenes it describes. The config snapshot is taken
+        here, at the end of the run, because a variable exists only once the
+        module declaring it has been imported -- see `engine/config_record.py`.
         """
+        from engine.config_record import ConfigRecord
         from engine.lib import Ver
 
         requested, resolved = BotRunner.GetTimeouts(game, device_manager)
@@ -496,6 +506,7 @@ class BotRunner:
             # only reports the value at the moment it was read.
             "fabricated_inputs": device_manager.fabricated_inputs_total,
             "crashes": crashes,
+            "config": ConfigRecord.Snapshot(),
             "games": played,
         }
 
