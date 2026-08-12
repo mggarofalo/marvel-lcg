@@ -17,6 +17,42 @@
       "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
       "source": "specs/rules/basic-actions.feature"
     },
+    "Damage and threat :: a completed main scheme ends the game": {
+      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: an ally that attacks takes consequential damage": {
+      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: an ally that thwarts takes consequential damage too": {
+      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: damage stays on the enemy it was dealt to": {
+      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: excess damage is lost rather than carried to another enemy": {
+      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: one short of the threshold does not end the game": {
+      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: the hero takes no consequential damage for the same actions": {
+      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: threat accelerates once per round while the villain attacks": {
+      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
+    "Damage and threat :: thwarting removes threat from the scheme it names": {
+      "sha256": "fe3653c30557d3ce8b64ef1f437bba42ff6ff1cd8d7541dcce811f1a7a00d479",
+      "source": "specs/rules/damage-and-threat.feature"
+    },
     "Hydra Mercenary :: damage lands on the copy the transcript named": {
       "sha256": "b08f81ed57c08f62321735d08be4dc324ba2fbca2e3faa1a4af50ef4f9637f22",
       "source": "specs/cards/core/01101-hydra-mercenary.feature"
@@ -33,6 +69,42 @@
       "sha256": "b08f81ed57c08f62321735d08be4dc324ba2fbca2e3faa1a4af50ef4f9637f22",
       "source": "specs/cards/core/01101-hydra-mercenary.feature"
     },
+    "Keywords :: a card without surge reveals nothing more": {
+      "sha256": "9aede8d84b7afd4e4370284b154f911dde7cf47a9440a6f455185604dcbb7a1b",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: a minion without quickstrike waits for the next villain phase": {
+      "sha256": "9aede8d84b7afd4e4370284b154f911dde7cf47a9440a6f455185604dcbb7a1b",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: a quickstrike minion attacks the moment it engages": {
+      "sha256": "9aede8d84b7afd4e4370284b154f911dde7cf47a9440a6f455185604dcbb7a1b",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: a tough minion takes no damage from the first attack": {
+      "sha256": "9aede8d84b7afd4e4370284b154f911dde7cf47a9440a6f455185604dcbb7a1b",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: retaliate answers the villain that attacked": {
+      "sha256": "9aede8d84b7afd4e4370284b154f911dde7cf47a9440a6f455185604dcbb7a1b",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: retaliate does not fire when the hero is the one attacking": {
+      "sha256": "9aede8d84b7afd4e4370284b154f911dde7cf47a9440a6f455185604dcbb7a1b",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: surge reveals one more encounter card": {
+      "sha256": "9aede8d84b7afd4e4370284b154f911dde7cf47a9440a6f455185604dcbb7a1b",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: the villain becomes attackable once the guard is defeated": {
+      "sha256": "9aede8d84b7afd4e4370284b154f911dde7cf47a9440a6f455185604dcbb7a1b",
+      "source": "specs/rules/keywords.feature"
+    },
+    "Keywords :: toughness cancels the damage rather than reducing it": {
+      "sha256": "9aede8d84b7afd4e4370284b154f911dde7cf47a9440a6f455185604dcbb7a1b",
+      "source": "specs/rules/keywords.feature"
+    },
     "Nick Fury :: damage is dealt to the chosen enemy, not the first one": {
       "sha256": "6bd222e75731942c251ebfb771382225b9ad31d8a9bcb9e888d60056a107830e",
       "source": "specs/cards/core/01084-nick-fury.feature"
@@ -44,6 +116,38 @@
     "Nick Fury :: the option to remove threat is not offered when no scheme has any": {
       "sha256": "6bd222e75731942c251ebfb771382225b9ad31d8a9bcb9e888d60056a107830e",
       "source": "specs/cards/core/01084-nick-fury.feature"
+    },
+    "Phase structure :: a game begins in the player phase of round 1": {
+      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "source": "specs/rules/phase-structure.feature"
+    },
+    "Phase structure :: a hero form round accelerates the scheme without the villain scheming": {
+      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "source": "specs/rules/phase-structure.feature"
+    },
+    "Phase structure :: a hero who ends their turn in hero form is attacked": {
+      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "source": "specs/rules/phase-structure.feature"
+    },
+    "Phase structure :: an alter-ego is schemed against rather than attacked": {
+      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "source": "specs/rules/phase-structure.feature"
+    },
+    "Phase structure :: ending a turn with cards in hand asks to discard before drawing up": {
+      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "source": "specs/rules/phase-structure.feature"
+    },
+    "Phase structure :: ending the last player's turn hands the round to the villain": {
+      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "source": "specs/rules/phase-structure.feature"
+    },
+    "Phase structure :: the round comes back around a second time": {
+      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "source": "specs/rules/phase-structure.feature"
+    },
+    "Phase structure :: the villain phase stops at enemy activation to ask for a defence": {
+      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "source": "specs/rules/phase-structure.feature"
     },
     "Sandman :: it enters play with a tough status card": {
       "sha256": "3ec3dde3460848eb46635d22908b112ee5fc5d4ba20cd98cc4744f633bd8d91f",
@@ -60,6 +164,34 @@
     "Swinging Web Kick :: playing it discards the card and the resources that paid for it": {
       "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
       "source": "specs/cards/core/01005-swinging-web-kick.feature"
+    },
+    "Timing priority :: a tough status card cancels an attack and is discarded": {
+      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "source": "specs/rules/timing-priority.feature"
+    },
+    "Timing priority :: a villain attack opens three windows in order": {
+      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "source": "specs/rules/timing-priority.feature"
+    },
+    "Timing priority :: an interrupt at the damage window prevents the whole attack": {
+      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "source": "specs/rules/timing-priority.feature"
+    },
+    "Timing priority :: an interrupt at the initiation window resolves before the attack lands": {
+      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "source": "specs/rules/timing-priority.feature"
+    },
+    "Timing priority :: declining every window leaves the hand at hand size": {
+      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "source": "specs/rules/timing-priority.feature"
+    },
+    "Timing priority :: the Armored Rhino Suit takes damage that would have gone to Rhino": {
+      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "source": "specs/rules/timing-priority.feature"
+    },
+    "Timing priority :: toughness resolves first and leaves the Suit nothing to absorb": {
+      "sha256": "5e633912341bce49a20d8b2afcb15c7ff754eeac16382cff3cf37e345866fe1c",
+      "source": "specs/rules/timing-priority.feature"
     }
   },
   "version": 1

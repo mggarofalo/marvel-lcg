@@ -58,7 +58,9 @@
       "player <n> has <m> cards in hand",
       "the game is [not] over",
       "the players won",
-      "it is round <n>"
+      "it is round <n>",
+      "it is the <player|villain|end> phase",
+      "it is the \"<phase>\" phase"
     ],
     "when": [
       "I play \"<card>\"",

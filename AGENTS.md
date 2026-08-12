@@ -352,6 +352,8 @@ python -m tools.spec.validate --triage triage.json      # records for adjudicati
 
 `specs/self-test/quarantine.feature` is wrong on purpose and must stay that way — it is the proof the gate works.
 
+**Two things about puzzle scenes bite every author once.** A scene starts with no player deck and no encounter deck, so a scenario that ends a turn without stocking both does not walk the phases — it decks the hero out in round 1, or halts the villain phase with an empty encounter deck. And `the encounter deck is "A", "B", "C"` puts **C** on top, because the list is appended and the deck is drawn from its end; during a villain activation the last card written is the boost card and the second-to-last is the one revealed (MARVEL-82). Both are written up in [docs/spec-harness.md](docs/spec-harness.md).
+
 This only works while the Python engine still runs and is still the reference. Read [docs/spec-harness.md](docs/spec-harness.md) before authoring.
 
 ## Workflow

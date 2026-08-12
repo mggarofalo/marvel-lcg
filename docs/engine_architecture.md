@@ -520,9 +520,22 @@ Abilities are the core of card logic.
 
 ```
 TimingPriority:
-  Rule → Constant → Status → ForcedInterrupt → Interrupt →
+  Rule → Statistics → Constant → Status → ForcedInterrupt → Interrupt →
   Boost → ForcedResponse → Response → Normal → Consequential → End
 ```
+
+Twelve levels, not eleven — this list omitted `Statistics` until MARVEL-23. It
+sits between `Rule` and `Constant` (`game/ability/ability_type.py`) and carries
+the stat and achievement bookkeeping in `game/rule/statistics.py`, so anything
+counting levels or porting the enum from this page was one short.
+
+Five of the twelve are reached by no card script in any pack — `Rule`,
+`Statistics`, `Normal`, `Consequential` and `End` are engine-internal. Their
+*effects* are still specifiable (consequential damage to an attacking ally is a
+rule a behavioral spec pins, and does), but no printed card text can name the
+level, so the ordering between them is not observable from a scenario. See
+`py_src/specs/rules/timing-priority.feature` for which adjacent pairs are proven
+and which are not.
 
 **Ability** contains:
 - `type` — AbilityType (when it triggers)

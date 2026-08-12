@@ -61,6 +61,7 @@ from tools.spec.case import (
     GivenStep, NoPromptStep, PromptStep, SourceDigest, SpecCase, SpecCaseError,
     ThenStep, WhenStep)
 from tools.spec.resolve import SplitRefs
+from tools.spec.state import PHASE_NAMES
 
 
 class GherkinError(SpecCaseError):
@@ -319,6 +320,19 @@ THEN_TABLE: Table = [
     ('it is round <n>',
      Rx(r'it is round ' + N),
      lambda value: ("then", ThenStep("game", "round", int(value)))),
+
+    # Two grains, because the rulebook and the engine do not agree on how many
+    # phases there are. `the villain phase` is the rulebook's three-phase round
+    # and is what a rules scenario means; the quoted form names one of the
+    # engine's eleven `Phase.State`s, which is what pins a *transition* -- "the
+    # villain phase" cannot tell threat placement from enemy activation, and the
+    # order of those two is exactly the sort of thing a port gets wrong.
+    ('it is the <player|villain|end> phase',
+     Rx(r'it is the (' + "|".join(PHASE_NAMES) + r') phase'),
+     lambda group: ("then", ThenStep("game", "phase_group", group.lower()))),
+    ('it is the "<phase>" phase',
+     Rx(r'it is the ' + Q + r' phase'),
+     lambda phase: ("then", ThenStep("game", "phase", phase))),
 ]
 
 TABLES: Dict[str, Table] = {

@@ -332,6 +332,23 @@ class TestGherkinParsing(unittest.TestCase):
         self.assertEqual(cases[0].beats[0].value, False)
         self.assertEqual(cases[0].beats[1].value, True)
 
+    def test_the_two_phase_forms_compile_to_different_properties(self):
+        """`the villain phase` and `"Enemy Activation"` are not the same claim.
+
+        Both read as "it is the ... phase", and the quoted form is the wider
+        pattern of the two, so a table ordered the other way would swallow
+        `villain` as a phase name and every rulebook-grain assertion would
+        quietly start asking about a `Phase.State` that does not exist.
+        """
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    Then it is the villain phase
+    And it is the "Enemy Activation" phase
+"""))
+        group, state = cases[0].beats
+        self.assertEqual((group.prop, group.value), ("phase_group", "villain"))
+        self.assertEqual((state.prop, state.value), ("phase", "Enemy Activation"))
+
     def test_every_scenario_carries_the_source_hash(self):
         text = Feature("""
   Scenario: one

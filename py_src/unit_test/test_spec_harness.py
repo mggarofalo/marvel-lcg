@@ -22,7 +22,8 @@ from tools.spec.case import (
 from tools.spec.harness import (
     OUTCOME_ASSERTION, OUTCOME_PASS, OUTCOME_UNPLAYABLE, RunCase)
 from tools.spec.resolve import CardRef, CardRefError, NormaliseLabel
-from tools.spec.state import CardState, PlayerState, StateView, UnknownProperty
+from tools.spec.state import (
+    PHASE_GROUPS, PHASE_NAMES, CardState, PlayerState, StateView, UnknownProperty)
 
 HERO_FORM = GivenStep("hero_form", ("me",))
 
@@ -56,10 +57,10 @@ def MakeCard(**overrides):
     return CardState(**fields)
 
 
-def MakeState(cards=(), players=()):
+def MakeState(cards=(), players=(), phase="Player Turn"):
     return StateView(
         round_id=1,
-        phase="Player 1 Turn",
+        phase=phase,
         game_over=False,
         game_over_reason="",
         players_won=None,
@@ -328,6 +329,61 @@ class TestStateProperties(unittest.TestCase):
         with self.assertRaises(UnknownProperty) as caught:
             MakeCard().Get("charisma")
         self.assertIn("health", str(caught.exception))
+
+
+class TestPhaseAssertions(unittest.TestCase):
+    """The two grains a scenario can name a phase at.
+
+    `Phase.State` is not imported here on purpose. These are the strings the C#
+    runner has to reproduce, so the test pins the literal wire and a rename on
+    the engine side has to be a deliberate edit in two places rather than a
+    silent follow.
+    """
+
+    def test_a_state_reads_back_as_written(self):
+        self.assertEqual(MakeState(phase="Enemy Activation").Get("phase"),
+                         "Enemy Activation")
+
+    def test_each_engine_state_belongs_to_a_rulebook_phase(self):
+        cases = {
+            "Player Turn":               "player",
+            "Player Turn End":           "player",
+            "Main Scheme Place Threat":  "villain",
+            "Enemy Activation":          "villain",
+            "Deal Encounter Cards":      "villain",
+            "Reveal Encounter Cards":    "villain",
+            "End Phase":                 "end",
+            "End Round":                 "end",
+        }
+        for state, group in cases.items():
+            with self.subTest(state=state):
+                self.assertEqual(MakeState(phase=state).Get("phase_group"), group)
+
+    def test_every_engine_phase_state_is_classified(self):
+        """A `Phase.State` nobody grouped would answer "no" to every phase.
+
+        This is the check that catches a new state being added to the engine
+        without anyone deciding which phase it belongs to -- at which point
+        `it is the villain phase` starts failing for a reason that has nothing
+        to do with the scenario.
+        """
+        from game.world.phase import Phase
+
+        missing = [member.value for member in Phase.State
+                   if member.value not in PHASE_GROUPS]
+        self.assertEqual(missing, [], "unclassified Phase.State values")
+
+    def test_an_unclassified_phase_raises_rather_than_answering_no(self):
+        with self.assertRaises(UnknownProperty) as caught:
+            MakeState(phase="Interdimensional Tea Break").Get("phase_group")
+        self.assertIn("PHASE_GROUPS", str(caught.exception))
+
+    def test_the_grouping_only_names_phases_the_vocabulary_offers(self):
+        self.assertEqual(set(PHASE_NAMES), {"player", "villain", "end"})
+        # "setup" and "start" are real groups but no step spells them: a
+        # scenario runs inside GameLoop and never observes them. They stay in
+        # the mapping so `phase_group` can answer for them rather than raise.
+        self.assertLessEqual(set(PHASE_NAMES), set(PHASE_GROUPS.values()))
 
 
 ################################################################################

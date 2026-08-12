@@ -175,6 +175,33 @@ class PlayerState:
                 f"{self.deck_size} in deck, {self.discard_size} in discard")
 
 
+# The rulebook names three phases; the engine walks eleven states. A scenario
+# about "the villain phase" means the rulebook's, so both are assertable and the
+# grouping is written down here rather than inferred from the state's spelling.
+#
+# `Phase.State` is not imported: this module is the harness's view of a world,
+# and the values are the wire the C# runner has to reproduce. A mapping keyed by
+# a string fails loudly on an unlisted state; one keyed by an imported enum
+# would quietly follow a rename.
+PHASE_GROUPS: Dict[str, str] = {
+    "Initialize":                "setup",
+    "Scenario Setup":            "setup",
+    "Resolve Mulligans":         "setup",
+    "Init Finished":             "setup",
+    "Start Round":               "start",
+    "Player Turn":               "player",
+    "Player Turn End":           "player",
+    "Main Scheme Place Threat":  "villain",
+    "Enemy Activation":          "villain",
+    "Deal Encounter Cards":      "villain",
+    "Reveal Encounter Cards":    "villain",
+    "End Phase":                 "end",
+    "End Round":                 "end",
+}
+
+PHASE_NAMES: Tuple[str, ...] = ("player", "villain", "end")
+
+
 @dataclass(frozen=True)
 class StateView:
     round_id: int
@@ -193,12 +220,31 @@ class StateView:
             return self.round_id
         if key == "phase":
             return self.phase
+        if key == "phase_group":
+            return self.PhaseGroup()
         if key in ("game_over", "over"):
             return self.game_over
         if key in ("players_won", "won"):
             return self.players_won
         raise UnknownProperty(
-            f"the game has no property {prop!r}. Known: round, phase, game_over, players_won")
+            f"the game has no property {prop!r}. Known: round, phase, "
+            f"phase_group, game_over, players_won")
+
+    def PhaseGroup(self) -> str:
+        """Which rulebook phase this engine state belongs to.
+
+        An unmapped state raises rather than defaulting. A scenario that says
+        "it is the villain phase" while the engine sits in a state nobody
+        classified has not established anything, and silently answering "no"
+        would make that scenario read as a genuine disagreement.
+        """
+        try:
+            return PHASE_GROUPS[self.phase]
+        except KeyError:
+            raise UnknownProperty(
+                f"phase {self.phase!r} is in no rulebook phase. Add it to "
+                f"PHASE_GROUPS in tools/spec/state.py (it is a new "
+                f"Phase.State) -- known: {', '.join(sorted(PHASE_GROUPS))}")
 
     def FindCards(self, key: str, zone: str = "") -> List[CardState]:
         wanted = key.strip().lower()
@@ -362,10 +408,14 @@ def Capture(world: Any) -> StateView:
     # `GetPhaseText` asserts a current player during a player turn, which does
     # not hold once the engine has unwound. A snapshot must never be the thing
     # that raises.
-    try:
-        phase = str(world.GetPhaseText())
-    except Exception:
-        phase = str(world.phase.state)
+    # `Phase.State`'s value, not `GetPhaseText()`. The text renders a player turn
+    # as "Player 1 Turn", so it varies with who is seated and a scenario could
+    # not name it; the state does not. Which player is in turn is a separate
+    # question with its own steps.
+    #
+    # `.value` because `Phase.State` is a `str, Enum`, which keeps `Enum.__str__`
+    # -- `str()` of a member is "State.PlayerTurnEnd", not "Player Turn End".
+    phase = str(world.phase.state.value)
 
     return StateView(
         round_id=int(world.round_id),

@@ -649,5 +649,12 @@ class World(WorldAction, WorldFind):
             assert self.current_player != None
             return f"Player {self.const_seat_order_players.index(self.current_player)+1} Turn"
         else:
-            return self.phase.state
+            # `.value`, not the member. `Phase.State` is a `str, Enum`, which
+            # keeps `Enum.__str__` -- so `str(...)` and any f-string render it
+            # "State.PlayerTurnEnd" rather than "Player Turn End", which is what
+            # a method called GetPhaseText is for. json.dumps reaches past
+            # __str__ to the underlying str, so the descriptor sent to a client
+            # was already correct and stays byte-identical; only Python-side
+            # formatting was wrong.
+            return self.phase.state.value
 
