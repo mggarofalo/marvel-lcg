@@ -28,7 +28,7 @@ def GetAbilities() -> Sequence['Ability']:
             initiator.ChooseAbilities(
                 effect,
                 AbilityFactory.ForChoiceAbility(
-                    "Deal 1 damage to echo character",
+                    "Deal 1 damage to each character",
                     lambda targets:
                         this.DealDamage(targets, 1, effect)
                 ).SetTarget(Unit2, range="All")
