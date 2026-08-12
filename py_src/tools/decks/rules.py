@@ -17,7 +17,10 @@ them:
                 pool / encounter / campaign
     set         for a hero card, which hero it belongs to ("spider_man")
     deck_limit  the most copies one deck may hold
-    type        hero, alter_ego, ally, event, ...
+    type        hero, alter_ego, ally, event, player_side_scheme, ...
+    traits      the printed trait line, split ("X-Men", "S.H.I.E.L.D.")
+    stats       the printed numbers, including the resource icons
+                (`resource_energy`, `resource_physical`, ...)
 
 Run from `py_src/`.
 """
@@ -25,10 +28,12 @@ Run from `py_src/`.
 from __future__ import annotations
 
 import collections
+import itertools
 import json
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import (
+    Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple)
 
 CARD_DATASET = "../datasets/cards/cards.json"
 
@@ -126,32 +131,158 @@ class Catalogue:
 #
 
 
-# Heroes whose printed deck-building line changes how many aspects they may
-# take. Keyed by the identity's `set`, with the card the rule is printed on.
+# The printed deck-building modifiers, in two shapes.
 #
-# Derived rather than invented: exactly two identities in the whole dataset
-# carry a line matching /deck[- ]?building/, and both are here. The table is
-# written out instead of parsed because two English sentences are not a grammar,
-# and a regex over them would fail silently on the third one to be printed --
+# The first shape widens *how many aspects* a deck may draw on -- Spider-Woman
+# takes two, Adam Warlock all four -- and in both printed cases requires those
+# aspects to be the same size.
+#
+# The second shape is narrower and much more common: the deck still has one
+# aspect, but cards **matching a description** are let in from the others.
+# Cyclops takes X-Men allies, Cable player side schemes, Wonder Man events with
+# an energy icon; Gamora takes at most 6 attack/thwart events and Maria Hill at
+# most 3 S.H.I.E.L.D. supports. Those are all one rule -- *cards matching P from
+# an aspect you did not choose, up to N* -- so they are modelled as one rule
+# with a predicate rather than five special cases, and a sixth such identity
+# needs a table row and no code.
+#
+# Every predicate reads a printed field. The bracket convention in the printed
+# text says which: MarvelSDB renders a **trait** as `[[X-MEN]]` and a **resource
+# icon** as `[energy]`, so "[[X-MEN]] allies" is `type == ally and "X-Men" in
+# traits` while "a printed [energy] resource icon" is `stats.resource_energy`.
+# `[[attack]]`/`[[thwart]]` are likewise traits, not the `(attack)` marker in an
+# ability line -- the trait is the superset (249 events carry both, 20 carry only
+# the trait, none only the marker), and the trait is what is printed on the card.
+
+ALLY = "ally"
+EVENT = "event"
+SUPPORT = "support"
+PLAYER_SIDE_SCHEME = "player_side_scheme"
+
+TRAIT_XMEN = "X-Men"
+TRAIT_SHIELD = "S.H.I.E.L.D."
+TRAIT_ATTACK = "Attack"
+TRAIT_THWART = "Thwart"
+
+
+def _Is(card_type: str, *traits: str) -> Callable[[Dict[str, Any]], bool]:
+    """A card of this type, carrying at least one of these traits."""
+    def Match(card: Dict[str, Any]) -> bool:
+        if str(card.get("type") or "") != card_type:
+            return False
+        return not traits or bool(set(traits) & set(card.get("traits") or []))
+    return Match
+
+
+def _EnergyEvent(card: Dict[str, Any]) -> bool:
+    """An event with a printed [energy] resource icon."""
+    if str(card.get("type") or "") != EVENT:
+        return False
+    return int((card.get("stats") or {}).get("resource_energy") or 0) > 0
+
+
+@dataclass(frozen=True)
+class Allowance:
+    """Cards matching `predicate` may come from aspects the deck did not choose.
+
+    `limit` is how many, `None` for no cap. Gamora's is counted in cards ("up to
+    6 attack and/or thwart events"); Maria Hill's is counted in *titles* ("the
+    maximum number of copies of 3 S.H.I.E.L.D. supports" -- three cards, each at
+    its full copy limit), which is what `by_title` selects.
+
+    Cards from the aspect the deck *did* choose never consume an allowance:
+    both capped lines say "from aspects other than your chosen aspect", and the
+    three uncapped ones say "from any aspect", which is only a widening.
+    """
+    what: str
+    predicate: Callable[[Dict[str, Any]], bool]
+    limit: Optional[int] = None
+    by_title: bool = False
+
+
+@dataclass(frozen=True)
+class Deckbuilding:
+    """One identity's printed deck-building line."""
+    card_id: str
+    printed: str
+    aspects: int = 1
+    equal: bool = False
+    allowances: Tuple[Allowance, ...] = ()
+    # Adam Warlock alone: every card that is not his own is capped at 1 copy,
+    # under its printed `deck_limit`.
+    copy_cap: Optional[int] = None
+
+
+# Derived rather than invented: seven identities in the whole dataset print a
+# line matching any of `DECKBUILDING_LINES`, and all seven are here. The table
+# is written out instead of parsed because seven English sentences are not a
+# grammar, and a regex over them would fail silently on the eighth --
 # `test_decks.py` fails if a new identity prints such a line and is not listed.
-ASPECT_EXCEPTIONS: Dict[str, Tuple[int, str, str]] = {
-    # set: (how many aspects, the card it is printed on, the printed rule)
-    "spider_woman": (2, "04031b",
-                     "Choose two aspects instead of one during deck-building. "
-                     "You must include an equal number of cards from those "
-                     "aspects in your deck."),
-    "warlock": (4, "21031b",
-                "During deck-building, your deck must include an equal number "
-                "of cards from all 4 aspects. You cannot include more than 1 "
-                "copy of any non-Adam Warlock card."),
+#
+# Keyed by the identity's `set`. Note Gamora's is `gam`, not `gamora`.
+DECKBUILDING: Dict[str, Deckbuilding] = {
+    "spider_woman": Deckbuilding(
+        "04031b",
+        "Choose two aspects instead of one during deck-building. You must "
+        "include an equal number of cards from those aspects in your deck.",
+        aspects=2, equal=True),
+    "warlock": Deckbuilding(
+        "21031b",
+        "During deck-building, your deck must include an equal number of cards "
+        "from all 4 aspects. You cannot include more than 1 copy of any "
+        "non-Adam Warlock card.",
+        aspects=4, equal=True, copy_cap=1),
+    "cyclops": Deckbuilding(
+        "33001b",
+        "You may include [[X-MEN]] allies from any aspect in your deck.",
+        allowances=(Allowance("X-Men allies", _Is(ALLY, TRAIT_XMEN)),)),
+    "cable": Deckbuilding(
+        "40001b",
+        "You may include player side schemes from any aspect in your deck.",
+        allowances=(Allowance("player side schemes",
+                              _Is(PLAYER_SIDE_SCHEME)),)),
+    "gam": Deckbuilding(
+        "18001b",
+        "You may include up to 6 [[attack]] and/or [[thwart]] events in your "
+        "deck from aspects other than your chosen aspect.",
+        allowances=(Allowance("attack and/or thwart events",
+                              _Is(EVENT, TRAIT_ATTACK, TRAIT_THWART),
+                              limit=6),)),
+    "maria_hill": Deckbuilding(
+        "50001b",
+        "You may include the maximum number of copies of 3 [[S.H.I.E.L.D.]] "
+        "supports in your deck from aspects other than your chosen aspect.",
+        allowances=(Allowance("S.H.I.E.L.D. supports",
+                              _Is(SUPPORT, TRAIT_SHIELD),
+                              limit=3, by_title=True),)),
+    "wonder_man": Deckbuilding(
+        "58001b",
+        "You may include events with a printed [energy] resource icon from any "
+        "aspect in your deck.",
+        allowances=(Allowance("events with a printed energy resource icon",
+                              _EnergyEvent),)),
 }
 
-DECKBUILDING_LINE = "deck-building"
+NO_EXCEPTION = Deckbuilding("", "a deck takes cards from exactly one aspect")
+
+# Every phrasing an identity has used to print a deck-building modifier. The
+# guard in `test_decks.py` greps identity text for these and fails if it finds a
+# `set` that `DECKBUILDING` does not list -- widening this set is how an eighth
+# identity gets caught rather than silently checked under the default.
+DECKBUILDING_LINES: Tuple[str, ...] = (
+    "you may include", "deck-building", "deckbuilding", "deck building",
+    "instead of one", "in your deck",
+)
+
+
+def Rule(hero_set: str) -> Deckbuilding:
+    """This hero's printed deck-building line, or the unmodified default."""
+    return DECKBUILDING.get(hero_set, NO_EXCEPTION)
 
 
 def AspectAllowance(hero_set: str) -> int:
     """How many aspects this hero's deck may draw on. One, unless printed."""
-    return ASPECT_EXCEPTIONS.get(hero_set, (1, "", ""))[0]
+    return Rule(hero_set).aspects
 
 
 def DeckAspect(catalogue: Catalogue, card_ids: Iterable[str]) -> Set[str]:
@@ -159,6 +290,101 @@ def DeckAspect(catalogue: Catalogue, card_ids: Iterable[str]) -> Set[str]:
     return {catalogue.Faction(card_id) for card_id in card_ids
             if catalogue.Faction(card_id) in ASPECTS or
             catalogue.Faction(card_id) == POOL}
+
+
+def _AgainstChoice(catalogue: Catalogue, card_ids: Sequence[str],
+                   chosen: Tuple[str, ...], rule: Deckbuilding
+                   ) -> Tuple[int, List[Violation]]:
+    """What breaks if this deck chose exactly these aspects.
+
+    Returns a cost as well as the violations. The cost counts *cards* rather
+    than violations, because it is what picks the choice to report: two copies
+    of one off-aspect card is one violation but a worse deck than one copy of
+    another, and a choice that leaves 4 cards stranded must beat one that leaves
+    26 even when both read as two lines.
+    """
+    violations: List[Violation] = []
+    cost = 0
+    listing = ", ".join(chosen) or "none"
+
+    # -- cards from an aspect the deck did not choose ------------------------
+    outside = [card_id for card_id in card_ids
+               if catalogue.Faction(card_id) in ASPECTS + (POOL,)
+               and catalogue.Faction(card_id) not in chosen]
+
+    taken: Dict[int, List[str]] = {i: [] for i in range(len(rule.allowances))}
+    stranded: List[str] = []
+    for card_id in sorted(outside):
+        for index, allowance in enumerate(rule.allowances):
+            if allowance.predicate(catalogue.Get(card_id)):
+                taken[index].append(card_id)
+                break
+        else:
+            stranded.append(card_id)
+
+    for card_id, count in sorted(collections.Counter(stranded).items()):
+        cost += count
+        violations.append(Violation(
+            "aspect", f"{count} x {card_id} ({catalogue.Name(card_id)}) is a "
+                      f"{catalogue.Faction(card_id)} card and the deck's "
+                      f"aspect is {listing}"))
+
+    # -- more taken under an allowance than it permits -----------------------
+    for index, allowance in enumerate(rule.allowances):
+        if allowance.limit is None:
+            continue
+        used = (len(set(taken[index])) if allowance.by_title
+                else len(taken[index]))
+        if used > allowance.limit:
+            unit = "title" if allowance.by_title else "card"
+            cost += used - allowance.limit
+            violations.append(Violation(
+                "allowance",
+                f"{used} {unit}s of {allowance.what} from outside {listing}; "
+                f"{rule.card_id} allows {allowance.limit}"))
+
+    # -- the chosen aspects must be the same size ----------------------------
+    #
+    # Only aspects the deck actually drew on are balanced. A Spider-Woman deck
+    # that used one aspect is checked as a one-aspect deck rather than told its
+    # unused second aspect is empty: rejecting a legal deck is the failure mode
+    # this module is most careful about, and nothing else here reads the deck's
+    # unwritten choice either.
+    if rule.equal and len(chosen) > 1:
+        sizes = {aspect: sum(1 for card_id in card_ids
+                             if catalogue.Faction(card_id) == aspect)
+                 for aspect in chosen}
+        if len(set(sizes.values())) > 1:
+            cost += sum(sizes.values()) - min(sizes.values()) * len(sizes)
+            counts = ", ".join(f"{a} {n}" for a, n in sorted(sizes.items()))
+            violations.append(Violation(
+                "balance", f"{counts}; {rule.card_id} requires an equal number "
+                           f"of cards from each chosen aspect"))
+
+    return cost, violations
+
+
+def _CheckAspects(catalogue: Catalogue, card_ids: Sequence[str],
+                  rule: Deckbuilding) -> List[Violation]:
+    """The aspect rules, read against the best choice the deck could have made.
+
+    A deck file does not record which aspect its builder chose, so the checker
+    asks the only question it can: **is there a choice that makes this deck
+    legal?** It tries every combination of the aspects present and reports the
+    cheapest, which is both the right answer for a legal deck (cost 0 exists)
+    and the most useful one for an illegal deck (the reading that blames the
+    fewest cards). There are at most 6 combinations, so this is free.
+    """
+    present = sorted(DeckAspect(catalogue, card_ids))
+    size = min(rule.aspects, len(present))
+    best: Optional[Tuple[int, List[Violation]]] = None
+    for chosen in itertools.combinations(present, size):
+        result = _AgainstChoice(catalogue, card_ids, chosen, rule)
+        if best is None or result[0] < best[0]:
+            best = result
+        if best[0] == 0:
+            break
+    return best[1] if best else []
 
 
 def HeroSet(catalogue: Catalogue, deck: Dict[str, Any]) -> str:
@@ -190,6 +416,7 @@ def Check(deck: Dict[str, Any], catalogue: Optional[Catalogue] = None,
         return [Violation("empty", "the deck holds no cards")]
 
     hero_set = HeroSet(catalogue, deck)
+    rule = Rule(hero_set)
 
     # -- size ---------------------------------------------------------------
     if len(card_ids) < minimum:
@@ -197,15 +424,7 @@ def Check(deck: Dict[str, Any], catalogue: Optional[Catalogue] = None,
             "size", f"{len(card_ids)} cards, the minimum is {minimum}"))
 
     # -- aspects ------------------------------------------------------------
-    aspects = DeckAspect(catalogue, card_ids)
-    allowed = AspectAllowance(hero_set)
-    if len(aspects) > allowed:
-        listing = ", ".join(sorted(aspects))
-        printed = ASPECT_EXCEPTIONS.get(hero_set)
-        rule = (f"{hero_set} may take {allowed} ({printed[1]}: {printed[2]})"
-                if printed else "a deck takes cards from exactly one aspect")
-        violations.append(Violation(
-            "aspect", f"cards from {len(aspects)} aspects ({listing}); {rule}"))
+    violations.extend(_CheckAspects(catalogue, card_ids, rule))
 
     # -- faction and set ----------------------------------------------------
     for card_id in sorted(set(card_ids)):
@@ -223,12 +442,22 @@ def Check(deck: Dict[str, Any], catalogue: Optional[Catalogue] = None,
                                  f"not to {hero_set}"))
 
     # -- copy limits --------------------------------------------------------
+    #
+    # Printed `deck_limit`, except where the identity caps it lower: Adam
+    # Warlock's "you cannot include more than 1 copy of any non-Adam Warlock
+    # card" is the only printed line that does, and it spares his own cards.
     for card_id, count in sorted(collections.Counter(card_ids).items()):
         limit = catalogue.Limit(card_id)
+        why = f"the limit is {limit}"
+        if rule.copy_cap is not None and catalogue.Set(card_id) != hero_set:
+            if rule.copy_cap < limit:
+                limit = rule.copy_cap
+                why = (f"{rule.card_id} caps every card that is not "
+                       f"{hero_set}'s at {limit}")
         if count > limit:
             violations.append(Violation(
                 "copies", f"{count} copies of {card_id} "
-                          f"({catalogue.Name(card_id)}), the limit is {limit}"))
+                          f"({catalogue.Name(card_id)}), {why}"))
 
     return violations
 

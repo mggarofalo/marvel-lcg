@@ -408,6 +408,23 @@ class TestMarvelSdbLoader(unittest.TestCase):
                          ["Avenger", "Genius"])
         self.assertEqual(marvelsdb.SplitTraits(""), [])
 
+    def test_a_dotted_acronym_survives_the_split(self):
+        """`S.H.I.E.L.D.` and `A.I.M.` are traits, not six and three of them.
+
+        Splitting on every period turned 114 cards' trait line into `S`, `H`,
+        `I`, `E`, `L`, `D`, which left Maria Hill's printed deck-building rule
+        -- "3 [[S.H.I.E.L.D.]] supports" -- naming a trait the dataset did not
+        have (MARVEL-85). The separator is a period *and a space*.
+        """
+        self.assertEqual(marvelsdb.SplitTraits("S.H.I.E.L.D."),
+                         ["S.H.I.E.L.D."])
+        self.assertEqual(marvelsdb.SplitTraits("Location. S.H.I.E.L.D."),
+                         ["Location", "S.H.I.E.L.D."])
+        self.assertEqual(marvelsdb.SplitTraits("S.H.I.E.L.D. Soldier. Spy."),
+                         ["S.H.I.E.L.D.", "Soldier", "Spy"])
+        self.assertEqual(marvelsdb.SplitTraits("A.I.M. Genius."),
+                         ["A.I.M.", "Genius"])
+
     def test_unlisted_keys_become_stats(self):
         data = self.Load([self.Entry("01002", name="Black Cat", cost=2, attack=1,
                                      thwart_cost=1, illustrator="Someone")])
