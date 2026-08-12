@@ -160,6 +160,19 @@ omission — both halves were tried and both fired on ordinary play:
 
 Neither reaches the wire: `digest._Fields` returns nothing for a card off the field.
 
+**`max_health` is the half that did survive, and it caught a real engine defect.** There
+is no rule that reduces a printed maximum below zero, so a negative one is always a bug —
+and `health/max-negative` found one on the first four-hero Ultron run under the
+`heuristic` policy (MARVEL-77). `components.health` belongs to the **card**, not the
+face, and `UpdateMaxHealth` was editing it without asking whether the face was still in
+play. When `01142` Upgraded Drones left play and its +1 HP grant was removed from every
+drone, `GainHealthAndMaxHealth` ran the health half first, which killed the one drone
+sitting at 1 HP — reverting the card to the player card it had been made from and zeroing
+the component — and then subtracted the grant from that fresh component. The fix gives
+`UpdateMaxHealth` the same `IsInPlay()` guard `UpdateHealth` always had; **not** a clamp
+inside the mutator, which would have hidden the next defect of this shape from the rule
+that caught this one. `unit_test/test_max_health_guard.py` pins it.
+
 ### Exhausted and ready
 
 | rule | statement |
