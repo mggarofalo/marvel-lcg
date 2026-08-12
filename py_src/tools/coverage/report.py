@@ -35,11 +35,21 @@ ARTEFACT_GLOB = "bot-coverage-*.json"
 
 
 def Expand(paths: Sequence[str]) -> List[str]:
-    """Turn arguments into a sorted, de-duplicated list of artefact files."""
+    """Turn arguments into a sorted, de-duplicated list of artefact files.
+
+    A directory is walked to the bottom, not just listed. A corpus is a tree --
+    `tools/corpus/generate.py` gives every case its own folder because the
+    engine is not thread-safe and concurrent workers must not share one -- so
+    listing only the top level of a corpus root finds nothing at all, which
+    reads as "this corpus covered no cards" rather than as "wrong depth".
+    A flat folder is unaffected: `os.walk` yields it first.
+    """
     found: List[str] = []
     for argument in paths:
         if os.path.isdir(argument):
-            found.extend(glob.glob(os.path.join(argument, ARTEFACT_GLOB)))
+            for current, subfolders, _ in os.walk(argument):
+                subfolders.sort()
+                found.extend(glob.glob(os.path.join(current, ARTEFACT_GLOB)))
         else:
             matches = glob.glob(argument)
             # An argument that matches nothing is passed through so the caller
