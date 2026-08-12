@@ -271,6 +271,39 @@ jobs:
             py_src/verify.json
           retention-days: 14
 
-  # MARVEL-18 attaches here: a job that verifies the frozen corpus manifest
-  # hash. It needs a frozen corpus to exist first, so it is named but not
-  # stubbed — an empty job that always passes is worse than no job.
+      # MARVEL-18. There is no frozen corpus yet — freezing one is an
+      # operational step needing hours of generation and the corpus repo — so
+      # what CI can keep true is that the *mechanism* works, on a corpus that
+      # crossed an OS boundary to get here. When a real corpus is frozen, its
+      # manifest is checked into this repo and this step points at that instead.
+      #
+      # Quarantined scenes are excluded by name: a replay that did not
+      # reproduce must not enter the corpus.
+      - name: The corpus content-addresses, and the manifest round-trips
+        run: |
+          python -m tools.corpus.freeze ./corpus/ \
+            --out ./corpus-manifest.json --quarantine ./quarantine/
+          python -m tools.corpus.freeze ./corpus/ --check ./corpus-manifest.json
+
+      # A gate that cannot fail is not a gate — this project has shipped two
+      # that could not (MARVEL-43, MARVEL-65). Change one byte of one scene and
+      # the check must reject it.
+      - name: And it notices a corpus that changed underneath it
+        run: |
+          python - <<'PY'
+          import glob, json, os
+          scenes = [p for p in sorted(glob.glob("corpus/*/*.json"))
+                    if not os.path.basename(p).startswith(("bot-manifest-", "bot-coverage-"))]
+          assert scenes, "no scene to tamper with"
+          with open(scenes[0], encoding="utf-8") as handle:
+              document = json.load(handle)
+          document["rules"] = list(document.get("rules") or []) + ["tampered"]
+          with open(scenes[0], "w", encoding="utf-8") as handle:
+              json.dump(document, handle)
+          print("tampered", scenes[0])
+          PY
+          if python -m tools.corpus.freeze ./corpus/ --check ./corpus-manifest.json; then
+            echo "::error::the integrity check accepted a modified corpus"
+            exit 1
+          fi
+          echo "rejected as expected"

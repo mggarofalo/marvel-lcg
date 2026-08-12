@@ -232,6 +232,67 @@ validation strategy depends on. It is small on purpose — a proof of the proper
 The quarantine folder and verification report upload as artefacts on failure only, since on a
 green run there are no reasons to read.
 
+## Freezing it
+
+```bash
+python -m tools.corpus.freeze ./corpus/ --quarantine ./quarantine/ \
+    --out ../datasets/corpus/manifest.json --shards ./frozen/ --dated 2026-08-12
+python -m tools.corpus.freeze ./corpus/ --check ../datasets/corpus/manifest.json
+```
+
+From the freeze onward the corpus is immutable and every later phase validates against it. A
+corpus that can drift is not an oracle. MARVEL-4 decided the storage: **gzipped, in a separate
+repo pinned by commit SHA, with the hash manifest checked into *this* repo** so integrity is
+verifiable without fetching the corpus, sharded by scenario so CI can fetch a subset.
+
+### What the root hash covers, and what it deliberately does not
+
+**Scene files and nothing else.** That is a decision with a measured reason: since MARVEL-34 a
+per-run `bot-manifest-*.json` records the fully resolved config, which includes
+`bot_save_folder` — an absolute path. Two byte-identical corpora generated into different
+directories therefore have different run manifests, and hashing them would make the identity of
+a corpus depend on where the generator happened to be standing.
+
+The scenes are the oracle. Everything else is *recorded* with its own hash under `artefacts` —
+including the coverage report, which MARVEL-18 wants published as a first-class artefact
+because future phases need to know what the corpus does **not** cover — so drift in derived data
+is visible without the corpus's identity depending on it.
+
+Three fields are fenced out entirely, in `provenance`: Python version, platform, and freeze
+date. They are what MARVEL-18 asks to record and exactly what cannot be reproduced; a manifest
+that changed because it was rebuilt on a different machine would be useless as an integrity
+check. The engine git SHA sits there too, but it *is* reproducible — it says which engine to
+check the corpus out against.
+
+The hash is over `path\tsha256` lines rather than over concatenated content, so **renaming a
+scene changes the root hash**. That is intended: a corpus with two identical scenes at different
+paths is not the same corpus as one with a single scene.
+
+**Quarantined scenes are excluded by name and on the record.** `--quarantine` reads the
+`quarantine.json` MARVEL-17 writes and leaves those scenes out, recording how many and which. A
+non-reproducing replay must not enter the corpus, and must not vanish without trace either.
+
+### Shards
+
+`--shards` writes one gzipped bundle per scenario, keyed by corpus-relative path. The scenario
+comes from each scene's own `campaign.name`, not from its filename — a shard boundary parsed out
+of a name would move the first time the naming changed. `mtime=0` in the gzip header, because a
+shard that changed only because it was rebuilt on Tuesday is not an immutable artefact;
+rebuilding produces byte-identical files.
+
+Measured on a 12-game corpus of one-to-three-hero games: **61.5 MiB of scenes → 3.16 MiB of
+shards, 19.5×.** MARVEL-4 measured 8.2× on v1-era scenes and `docs/migration.md` projects 69.6×
+for v2 from a 13-game sample; this is a third datapoint from a different game shape, and all
+three leave the storage projection comfortable.
+
+### There is no frozen corpus yet
+
+Freezing one is an operational step: hours of generation, and the corpus repo. What CI keeps
+true today is that the **mechanism** works — `determinism.yml` freezes the corpus it just
+generated and verified across an OS boundary, checks the manifest round-trips, and then tampers
+with one scene and requires the check to reject it. A gate that cannot fail is not a gate. When
+a real corpus is frozen, its manifest is checked into this repo and that step points at it.
+
 ## Throughput
 
 Reported at the end of every run and recorded under `timing` in the manifest:

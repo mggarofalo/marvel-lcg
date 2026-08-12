@@ -130,6 +130,8 @@ A corpus is a **tree**, one folder per case, because the engine is not thread-sa
 
 **A scene that does not reproduce must leave an artefact.** `-verify_quarantine_folder` sets aside every failed or truncated scene with its reason, the step it diverged at, and a copy — *copied*, not moved, because a verifier that edits its input cannot be re-run against the same folder to see whether the failure repeats. Quarantining does not forgive: the run still exits non-zero. `quarantine.json` is written even when empty, because "nothing was quarantined" and "quarantining never ran" must not look alike to whoever freezes the corpus. Generating and verifying in one process proves almost nothing, so `determinism.yml` generates on Linux and verifies on Windows. See MARVEL-17.
 
+**Freezing content-addresses the scenes and nothing else.** `python -m tools.corpus.freeze` hashes each scene and a root hash over the set, excluding quarantined ones by name. Run manifests and the coverage report are recorded with their own hashes under `artefacts` but are **not** part of the identity — since MARVEL-34 a run manifest embeds `bot_save_folder`, so hashing it would make a corpus's identity depend on which directory generated it. Python version, platform and freeze date sit in `provenance`, outside the hash, because a manifest that changed when rebuilt elsewhere is useless as an integrity check. Shards are gzipped per scenario with `mtime=0` and rebuild byte-identically (MARVEL-4). There is no frozen corpus yet — CI keeps the *mechanism* true, including a negative control that tampers with a scene and requires rejection. See MARVEL-18.
+
 `--rounds N` makes generation a loop: play, merge coverage, aim the next round at cards that have still never resolved an ability, stop when a round adds fewer than `--plateau` of them. Aiming is greedy set cover over `tools/coverage/reach.py`, a pure data join answering *which setups contain this card*. **Covering a card is not playing it** — a scenario that contains one still has to draw it — so the plan only steers and the next round's measurement is what says whether it worked.
 
 **Self-play coverage is bounded at 91.2%.** `python -m tools.coverage.reach` measures it: of 3781 scripted cards, **334 are named by no starter deck, encounter set or scenario**, so no corpus of any size reaches them — they are input to hand-authored puzzle tests. A measured run reached 2897 (84.0% of what is reachable) in 960 games, with the yield curve flat after round 9. **The map is a lower bound and must be cross-checked** (`--corpus`): its first version omitted `player_deck` and reported a confident 71%, because a missed key does not look like a bug, it looks like a smaller universe. See [docs/corpus.md](docs/corpus.md).
@@ -219,7 +221,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_hand_size unit_test.test_policy_driver \
                    unit_test.test_run_digest unit_test.test_heuristic_policy \
                    unit_test.test_max_health_guard unit_test.test_config_record \
-                   unit_test.test_corpus_plan unit_test.test_coverage_reach
+                   unit_test.test_corpus_plan unit_test.test_coverage_reach \
+                   unit_test.test_corpus_freeze
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
