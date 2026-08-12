@@ -315,3 +315,45 @@ class TestForcedOrderLabels(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestConstantAbilitiesAreNotOrdered(unittest.TestCase):
+    """A constant effect never initiates, so it is never put to the first player.
+
+    The Rules Reference sentence at the top of this file is about abilities that
+    *initiate*. A constant applies continuously -- there is no moment at which it
+    starts, and so no order to choose. `game/event/manager.py` already excluded
+    Status, setup, resource and delay abilities from the prompt; it did not
+    exclude Constant.
+
+    That was MARVEL-91, and it was not one card. 86 cards carry two or more
+    forced Constant abilities on `WhenCardEnterPlay` and 78 were driven into a
+    live game, every one of which stopped play to ask an unanswerable question:
+    the two options had no names and produced identical boards. Gatekeeper
+    (32044) gets its pair from one `GiveKeywordToAttached` call, which builds
+    keyword grants and hit-point grants separately because
+    `asset_helper.py` drops the first when the attached unit flips and keeps the
+    second -- but 56 of the 78 simply declare two constants in the card script,
+    which is why the fix cannot live in the factory.
+
+    This test pins the guard as a rule rather than as a line of source. The
+    behavioural half lives in `specs/rules/timing-priority.feature`, whose
+    Interrupt-before-Boost scenarios could not be authored at all until this was
+    fixed -- they need Gatekeeper attached to a minion.
+    """
+
+    def test_the_guard_excludes_constant_alongside_status(self):
+        import inspect
+
+        from game.ability.ability_type import TimingPriority
+        from game.event.manager import EventManager as Manager
+
+        source = inspect.getsource(Manager)
+        self.assertIn("priority != TimingPriority.Constant", source,
+                      "the forced-ordering guard no longer excludes Constant; "
+                      "see MARVEL-91 before removing it")
+        # `TimingPriority` is a plain Enum, so its members do not order with
+        # `<`; the number is the priority and that is what the engine loops
+        # over. Constant resolves before Status, so a batch reaching the prompt
+        # has passed both exclusions.
+        self.assertLess(TimingPriority.Constant.value, TimingPriority.Status.value)

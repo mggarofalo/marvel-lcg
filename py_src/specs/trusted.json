@@ -262,47 +262,59 @@
       "source": "specs/cards/core/01005-swinging-web-kick.feature"
     },
     "Timing priority :: a constant alone prevents the damage": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: a forced response has already resolved when the optional one is offered": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: a tough status card cancels an attack and is discarded": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: a villain attack opens three windows in order": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "source": "specs/rules/timing-priority.feature"
+    },
+    "Timing priority :: a when-defeated ability places its threat with nothing to race": {
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: an interrupt at the damage window prevents the whole attack": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: an interrupt at the initiation window resolves before the attack lands": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: an optional response deals its damage when nothing intervenes": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: declining every window leaves the hand at hand size": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "source": "specs/rules/timing-priority.feature"
+    },
+    "Timing priority :: declining the interrupt leaves only the when-defeated": {
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: the Armored Rhino Suit takes damage that would have gone to Rhino": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: the constant resolves first and leaves the tough card unspent": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "source": "specs/rules/timing-priority.feature"
+    },
+    "Timing priority :: the interrupt removes its threat before the when-defeated adds any": {
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: toughness resolves first and leaves the Suit nothing to absorb": {
-      "sha256": "50f9347d69729f0aa68023957de3b8bff12591774740ca68b075b6c46024d3ef",
+      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     }
   },
