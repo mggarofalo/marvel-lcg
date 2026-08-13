@@ -188,3 +188,48 @@ class TestAgainstTheRealDataset(unittest.TestCase):
         scripted = [c for c in self.cards if (c.get("engine") or {}).get("script")]
         specifiable = [c for c in self.cards if Tier(c) in SPECIFIABLE]
         self.assertGreater(len(specifiable), len(scripted))
+
+
+################################################################################
+#
+
+class TestDepthIsReportedBesideCoverage(unittest.TestCase):
+    """MARVEL-87: one scenario on an interactive card is not the job done.
+
+    `Covered` answers "has anyone looked at this card", which is the right
+    question for the campaign's headline. It is the wrong question for "is this
+    card finished", and under delegation the difference is the whole risk: 479
+    thin interactive scenarios would report that tier fully covered against a
+    plan of 1,916, and no number in the report would disagree.
+    """
+
+    def Coverage(self, tier, scenarios):
+        script = {"interactive": Script(player_choice_calls=["ChooseAbilities"]),
+                  "imperative": Script(has_imperative_handler=True),
+                  "declarative": Script()}[tier]
+        cards = [MakeCard(card_id="X1", script=script)]
+        tagged = {f"case {n}": ["X1"] for n in range(scenarios)}
+        return Coverage(cards, tagged, trusted=list(tagged), quarantined=[])
+
+    def test_one_scenario_covers_an_interactive_card_but_is_not_its_depth(self):
+        one = self.Coverage("interactive", 1)
+        self.assertTrue(one.Covered("X1"))
+        self.assertFalse(one.AtDepth("X1"))
+
+    def test_the_planned_number_reaches_depth(self):
+        full = self.Coverage("interactive", 4)
+        self.assertTrue(full.AtDepth("X1"))
+
+    def test_more_than_planned_still_counts(self):
+        # The plan is a target, not a gate -- spec-campaign.md is explicit that
+        # a card needing five gets five.
+        self.assertTrue(self.Coverage("interactive", 5).AtDepth("X1"))
+
+    def test_an_uncovered_card_is_not_at_depth(self):
+        self.assertFalse(self.Coverage("interactive", 0).AtDepth("X1"))
+
+    def test_depth_is_carried_in_the_totals_and_per_tier(self):
+        data = self.Coverage("interactive", 1).ToDict()
+        self.assertEqual(data["totals"]["covered"], 1)
+        self.assertEqual(data["totals"]["at_depth"], 0)
+        self.assertEqual(data["by_tier"]["interactive"]["at_depth"], 0)

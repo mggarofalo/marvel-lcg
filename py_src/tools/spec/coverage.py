@@ -181,10 +181,31 @@ class Coverage:
     def Covered(self, card_id: str) -> bool:
         return bool(self.trusted.get(card_id))
 
+    def AtDepth(self, card_id: str) -> bool:
+        """Covered to the depth its tier plans for, not merely covered.
+
+        MARVEL-87. `Covered` credits a card for one trusted scenario whatever
+        its tier asks. That is the right rule for "has anyone looked at this
+        card", and the wrong one for "is this card done": an interactive card
+        is planned for four scenarios because it has four decision paths, and
+        one scenario covering one of them is a quarter of the job reported as
+        the whole of it.
+
+        It matters most under delegation, which is what MARVEL-87 measured. 479
+        thin interactive scenarios would report that tier fully covered against
+        a plan of 1,916, and nothing in the numbers would say otherwise.
+
+        The plan is a target, not a gate -- `spec-campaign.md` is explicit that
+        a card needing four gets four whatever its tier says. So this is
+        reported beside `covered`, not instead of it.
+        """
+        planned = TIERS[self.tier.get(card_id, "")][0] if card_id in self.tier else 0
+        return len(self.trusted.get(card_id, ())) >= planned > 0
+
     def ByTier(self) -> Dict[str, Dict[str, int]]:
         rows: Dict[str, Dict[str, int]] = {
-            tier: {"cards": 0, "covered": 0, "scenarios": 0, "quarantined": 0,
-                   "planned": 0}
+            tier: {"cards": 0, "covered": 0, "at_depth": 0, "scenarios": 0,
+                   "quarantined": 0, "planned": 0}
             for tier in TIER_ORDER}
         for card_id, tier in self.tier.items():
             row = rows[tier]
@@ -194,6 +215,8 @@ class Coverage:
             row["quarantined"] += len(self.quarantined.get(card_id, ()))
             if self.Covered(card_id):
                 row["covered"] += 1
+            if self.AtDepth(card_id):
+                row["at_depth"] += 1
         return rows
 
     def ByPack(self) -> Dict[str, Dict[str, int]]:
@@ -244,6 +267,7 @@ class Coverage:
     def ToDict(self) -> Dict[str, Any]:
         specifiable = self.Specifiable()
         covered = [card_id for card_id in specifiable if self.Covered(card_id)]
+        at_depth = [card_id for card_id in specifiable if self.AtDepth(card_id)]
         return {
             "note": ("Coverage is a card with at least one scenario in "
                      "specs/trusted.json tagged @card:<id>. A quarantined "
@@ -252,6 +276,7 @@ class Coverage:
                 "cards": len(self.cards),
                 "specifiable": len(specifiable),
                 "covered": len(covered),
+                "at_depth": len(at_depth),
                 "scenarios": sum(len(v) for v in self.trusted.values()),
                 "quarantined": sum(len(v) for v in self.quarantined.values()),
             },
@@ -292,15 +317,20 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int) -> None:
               f"(claims that failed -- not coverage)")
     print()
 
-    print(f"{'tier':<13} {'cards':>6} {'covered':>8} {'scenarios':>10} "
-          f"{'planned':>8}  what it means")
+    print(f"{'tier':<13} {'cards':>6} {'covered':>8} {'at depth':>9} "
+          f"{'scenarios':>10} {'planned':>8}  what it means")
     for name in TIER_ORDER:
         row = data["by_tier"][name]
         if not row["cards"]:
             continue
         print(f"{name:<13} {row['cards']:>6} "
-              f"{row['covered']:>8} {row['scenarios']:>10} {row['planned']:>8}"
-              f"  {TIERS[name][1]}")
+              f"{row['covered']:>8} {row['at_depth']:>9} {row['scenarios']:>10} "
+              f"{row['planned']:>8}  {TIERS[name][1]}")
+    print()
+    print("'covered' is a card with any trusted scenario; 'at depth' is one with"
+          "\nas many as its tier plans for. The gap between them is how much of"
+          "\nthe covered set is one scenario deep -- which is what mass"
+          "\ndelegation produces if nothing watches for it (MARVEL-87).")
     print()
 
     if coverage.unknown_tags:
