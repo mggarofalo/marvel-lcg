@@ -219,6 +219,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_invariants unit_test.test_verify_replays \
                    unit_test.test_integrity_errors unit_test.test_config \
                    unit_test.test_file_paths unit_test.test_cross_os \
+                   unit_test.test_console_encoding \
                    unit_test.test_render_skip unit_test.test_no_progress \
                    unit_test.test_hand_size unit_test.test_policy_driver \
                    unit_test.test_run_digest unit_test.test_heuristic_policy \
@@ -231,7 +232,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
                    unit_test.test_puzzle unit_test.test_worlds_encounter \
-                   unit_test.test_card_coverage_play
+                   unit_test.test_card_coverage_play unit_test.test_card_removal
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
 python -m tools.determinism.check_runs --runs 4 --matrix wide --policy first  # ...on games that play cards
 python -m tools.determinism.probe_forced_selection  # self-play still reaches the forced-ability tie-break

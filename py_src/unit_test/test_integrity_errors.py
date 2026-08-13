@@ -417,9 +417,6 @@ REVIEWED_ABSORBERS = {
     ("engine/lib/check_new_version.py", "CheckForNewVersion.Check"): 1,
     # A missing or malformed translation file. The engine runs untranslated.
     ("engine/lib/translate.py", "TransText.__init__"): 1,
-    # A console that cannot encode a card name. Printing must never be fatal --
-    # and this one is the logger, so it cannot report through the logger.
-    ("engine/log/log.py", "PrintUtf8"): 1,
     # A crash reporter must never become the crash. It uninstalls the observer
     # and says so.
     ("engine/log/log.py", "Log.NotifyCrashObserver"): 1,

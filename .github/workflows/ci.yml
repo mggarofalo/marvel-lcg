@@ -30,8 +30,20 @@ defaults:
     working-directory: py_src
 
 env:
-  # MARVEL-36: the Windows console encoding drops log lines containing game
-  # symbols. Pin UTF-8 so a run's logs are readable and identical on both OSes.
+  # UTF-8 for every step, so a log line carrying a game symbol survives the
+  # cp1252 stdout Windows hands a redirected process.
+  #
+  # The engine no longer needs this: MARVEL-36 moved the decision into
+  # `System.UseUtf8Streams`, which runs when `core` is imported, so anything
+  # that boots the engine configures its own streams. It stays for the steps
+  # that never import `core` — `tools.cards.extract --check` prints card names
+  # straight from the MarvelSDB snapshot — and because a green matrix should
+  # not depend on which tool happens to import what.
+  #
+  # A consequence worth knowing: with this set, the Windows leg cannot
+  # demonstrate the MARVEL-36 fix, because it would pass without it.
+  # `unit_test/test_console_encoding.py` is what proves the fix, on a synthetic
+  # cp1252 stream that behaves the same on every platform.
   PYTHONIOENCODING: utf-8
 
 jobs:
@@ -79,6 +91,7 @@ jobs:
             unit_test.test_invariants unit_test.test_verify_replays \
             unit_test.test_integrity_errors unit_test.test_config \
             unit_test.test_file_paths unit_test.test_cross_os \
+            unit_test.test_console_encoding \
             unit_test.test_render_skip unit_test.test_no_progress \
             unit_test.test_hand_size unit_test.test_policy_driver \
             unit_test.test_run_digest unit_test.test_heuristic_policy \
@@ -93,7 +106,7 @@ jobs:
           python -m unittest \
             unit_test.test_spec_harness unit_test.test_spec_validate \
             unit_test.test_puzzle unit_test.test_worlds_encounter \
-            unit_test.test_card_coverage_play
+            unit_test.test_card_coverage_play unit_test.test_card_removal
 
       # MARVEL-55: the suite used to bump the version and leave a commit on
       # whatever branch was checked out. unit_test/test_package_tools.py guards

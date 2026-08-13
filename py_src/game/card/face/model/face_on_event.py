@@ -49,9 +49,6 @@ class ModelOnEvent(ModelBase):
         message.Send()
         return True
 
-    def OnAfterDestroy(self):
-        pass
-
     def OnBeforeFlip(self, by_effect: 'Effect', no_detach: bool=False):
         this = self.GetThis()
         this.card.components.OnBeforeFlip(by_effect, no_detach)

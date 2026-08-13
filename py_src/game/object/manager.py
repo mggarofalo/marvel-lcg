@@ -72,26 +72,19 @@ class ObjectManager:
 
         return object_id
 
-    def RemoveCard(self, object_id: int) -> None:
-        """Forget a card entirely. **Digest-visible** -- see `game/world/digest.py`.
-
-        The digest walks `card_dict`, and its contract is "every card, no
-        exclusions", so this is the only way a card can stop being described.
-        `Card.Destroy` is the one caller: before MARVEL-50 it removed the card
-        from its area and unregistered its effects but left it here, still
-        pointing at the area it had just been taken out of, so the digest went
-        on reporting a destroyed card in whatever zone the stale pointer named.
-
-        **The id is not released.** `index_dict` is only ever incremented, so a
-        later card cannot be allocated the id of a destroyed one. That is part
-        of the object-id contract a port has to reproduce -- see
-        `docs/state-digest-v2.md`.
-
-        Removing an id that is not present is a programming error rather than a
-        no-op: it means the caller believes it destroyed something twice.
-        """
-        assert object_id in self.card_dict, f"{object_id=} is not a live card"
-        del self.card_dict[object_id]
+    # `card_dict` is append-only for the life of a game. **Digest-visible** --
+    # see `game/world/digest.py`, whose contract is "every card, no exclusions":
+    # append-only is what makes that sentence true without a caveat, and it is
+    # what lets `game/world/invariants.py` treat a card that is in `card_dict`
+    # but in no zone's list as a violation rather than a legal state.
+    #
+    # There was one exception, `RemoveCard`, called only from `Card.Destroy`,
+    # which nothing called. Both are gone under MARVEL-70. Nothing takes a card
+    # out of the world: removed-from-game cards sit in `world.area_removed` and
+    # keep their entry here, which is also what a C# port should do.
+    #
+    # `ResetObjects` below is the one thing that empties it, and that is a new
+    # game rather than a card leaving one.
 
     def ResetObjects(self) -> None:
         self.index_dict = ObjectManager.INIT_DICT.copy()
