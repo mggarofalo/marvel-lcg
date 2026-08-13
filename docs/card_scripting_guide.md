@@ -8,6 +8,8 @@ This guide teaches you how to write card ability scripts for Marvel LCG.
 
 Card scripts are **executable Python code**. Do not install or run third-party card scripts unless you trust them.
 
+This is the pattern the migration removes. [The Card DSL](card-dsl.md) is the design that replaces it — cards as a tree of typed nodes, so a downloaded card cannot execute anything because there is nothing to execute. Read it before adding a card script that needs a construct this guide does not already show; if the DSL cannot hold it, that is worth knowing now rather than at port time.
+
 ---
 
 ## Table of Contents

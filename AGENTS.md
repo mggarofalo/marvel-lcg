@@ -95,6 +95,8 @@ Card scripts are **executed as Python**. `py_src/cards/database.py` calls `exec(
 - Never load or execute a card script from an untrusted source, including in tests.
 - Do not extend the `exec`-based loading path. Removing it is a goal of the migration, not something to build on.
 
+What replaces it is designed in [docs/card-dsl.md](docs/card-dsl.md) — cards as a tree of typed nodes, with the trust boundary at provenance rather than expressiveness. `python -m tools.dsl.blockers` measures how much of the corpus that reaches and what is left over; read it before arguing that some card needs an escape hatch.
+
 ## Headless bot
 
 Plays games with no client attached — no websocket, no HTTP server, no keyboard. Lives in `py_src/engine/device/manager/bot/`. Run from `py_src/`:
@@ -223,7 +225,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_max_health_guard unit_test.test_config_record \
                    unit_test.test_corpus_plan unit_test.test_coverage_reach \
                    unit_test.test_corpus_freeze unit_test.test_spec_coverage \
-                   unit_test.test_decks unit_test.test_deck_build
+                   unit_test.test_decks unit_test.test_deck_build \
+                   unit_test.test_dsl_blockers
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \

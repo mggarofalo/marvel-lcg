@@ -59,12 +59,18 @@ A card ability becomes a serializable tree of typed nodes (`seq`, `ifThen`, `for
 
 The trust boundary is **provenance, not expressiveness**:
 
-- A small number of first-party scenario scripts stay as compiled engine code. Some content genuinely does not fit a data DSL — `cards/pack/twc/07001a.py` (Breakout) builds four encounter decks and registers abilities dynamically at setup; `cards/pack/deadpool/44057.py` (Tic-Tac-Toe) computes win-lines over a counter grid.
+- A small number of first-party scenario scripts stay as compiled engine code. Some content genuinely does not fit a data DSL — `cards/pack/twc/07001a.py` (Breakout) builds four encounter decks and registers abilities dynamically at setup.
 - Everything a user can author or download is data only.
 
 Forcing the hard tail into the DSL would warp it into a general-purpose language, which reintroduces the original problem. Do not do this.
 
 **Design the DSL against the hardest ~30 cards first, not the common ones.** The common cases fall out for free; the tail does not. Projects like this routinely hit 90% quickly, then bolt escape hatches onto the DSL until it is a scripting language again.
+
+**Done, in [card-dsl.md](card-dsl.md) (MARVEL-92).** All thirty were read and the node set is written against named ones. Three things there change what this section said:
+
+- **The envelope is already data.** The imperative handler is one field of an `Ability` whose target selector, cost, printed conditions and use-limits are literals today. 22.9% of statements in `GetAbilities` are that envelope and 531 scripts (15.4%) are nothing else. The work is replacing the `operation` callback, not inventing a card language.
+- **The escape hatch is 2 cards plus scenario setup**, measured — cards that install an ability onto a card they do not own. Seven scripts call `.Registers()`, but five call it on themselves and unregister it again: three are duration-scoped grants (`grantUntil`, a node, shared with 56 `RegisterTemp` users) and two watch their own sub-resolution, which wants a return value rather than a watcher. `python -m tools.dsl.blockers` re-measures it.
+- **Tic-Tac-Toe was named here in error.** `44057` is nine named counters, a literal table of eight win-lines, and `any(line, all(cell, counter > 0))`. Breakout holds up; Tic-Tac-Toe does not, and the correction is argued where it can be checked.
 
 ## The oracle
 

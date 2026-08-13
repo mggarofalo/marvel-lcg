@@ -35,6 +35,7 @@ already been decided.
 | [Migration to C#](docs/migration.md)                    | Why the migration is happening and what has been decided                   |
 | [Engine Architecture](docs/engine_architecture.md)      | Engine internals for developers                                            |
 | [Card Scripting Guide](docs/card_scripting_guide.md)    | How to write card ability scripts                                          |
+| [The Card DSL](docs/card-dsl.md)                        | The design that replaces those scripts with data, and what it cannot hold  |
 | [The Card Dataset](docs/card-dataset.md)                | The joined card data behind spec authoring and the card port               |
 | [Behavioral Spec Harness](docs/spec-harness.md)         | How a card's printed text becomes an executable claim about the engine     |
 | [Card Coverage](docs/card-coverage.md)                  | The metric that decides whether the replay corpus is worth anything        |
