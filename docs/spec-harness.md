@@ -215,6 +215,89 @@ sides are normalised (`_` → space, collapse whitespace, casefold) before
 comparison, so **a scenario never asserts a raw engine identifier**. The C#
 engine must expose the same domain-level labels; that is MARVEL-41.
 
+Because the label comes from the script and not the card, **you cannot derive it
+by reading the printed text** — Sonic Boom's cost branch is
+`Spend_[[energy]][[mental]][[physical]]`, and Crisis Interdiction's follow-up is
+built as `ForChoiceAbility("")` and comes out named `Play`. Probe for it (below)
+rather than guessing.
+
+## The authoring loop
+
+Write the scenario, run it, read the failure, fix. The validator's messages are
+built to be instructive rather than merely diagnostic, so the loop converges
+fast — but only if you start it before you have written four scenarios on a
+guess.
+
+**Probe first.** A scenario whose only assertion is a deliberately wrong
+one-row table makes the engine print what it actually offered:
+
+```gherkin
+  Scenario: probe
+    Given I am in alter-ego form
+    When I choose "Futurist"
+    Then I am prompted to choose one
+      | probe |
+```
+
+```
+the engine offered Futurist on Tony Stark (01029b) in HeroArea
+    (missing 'probe'; unexpected 'futurist')
+```
+
+The same trick reads back zone names — assert `is in the "nonsense"` and the
+failure names the real one (`HandsArea`, `PlayerDeck`, `DiscardPile`,
+`EncounterDiscardPile`, `EncounterDeck`, `RemovedArea`, `ObligationsArea`).
+Note `DiscardsArea` is *not* the player discard pile.
+
+The validator also volunteers the step form when a decision needs a target:
+
+```
+Futurist has 3 legal targets (Repulsor Blast, Mark V Armor, Pepper Potts);
+say which with 'targeting "<card>"'
+```
+
+**Three traps that cost real time**, each hit independently while authoring the
+first core-set batch:
+
+- **An option table must be complete, including options the card did not
+  create.** A card just added to hand shows up as a `Play` option on the next
+  menu, and omitting it fails the scenario for a reason unrelated to the card.
+- **A lone remaining option is still asked.** The engine only skips the prompt
+  when there is neither an option nor a target left to pick, so a one-row table
+  and a `When` that answers it are usually still required.
+- **`Given "<card>" is in play` runs the card's enter-play response** during
+  setup and can strand the transcript mid-resolution. `Given "<card>" is
+  revealed` likewise runs the whole reveal pipeline, which is why obligation
+  scenarios legitimately open with a `Then I am prompted to choose one` and no
+  preceding `When`.
+
+## What the vocabulary cannot say
+
+Worth knowing before you design a scenario around it, and tracked as MARVEL-94.
+
+**`I am prompted to choose one` asserts the option set, not the target set.**
+When a card offers one action over several cards — `AskChooseFace`,
+`AskDiscardFaces`, any `ForChoiceAbility` with multiple legal targets — the
+prompt is a *single row* and the cards are its targets. So "these three cards
+were the ones offered" is not assertable, and neither is "this card was excluded
+from the follow-up". The engine does enforce both, and says so when probed:
+
+```
+the main scheme is not a legal target for Play;
+legal targets are Breakin' & Takin', Bomb Scare
+```
+
+Until there is a step for it, pin the restriction through its *outcome* — build
+a board where the illegal target is the only candidate and assert it survived —
+and say in a comment that that is what you are doing. It is weaker, and writing
+it down keeps it from reading as full coverage.
+
+Two smaller ones from the same batch: **"gains surge" is invisible from a
+`Given`-time reveal** (the surged card stops in `DealtEncounterCardsDeck`), so
+surge needs a real villain phase with the encounter deck stacked; and
+`"<card>" is in the "<zone>"` reports a zone *type*, so in a multiplayer
+scenario it cannot say *whose* area a card reached.
+
 ## The step vocabulary
 
 `specs/steps.catalogue.json` is the contract. `unit_test/test_spec_validate.py`

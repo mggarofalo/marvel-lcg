@@ -1,6 +1,22 @@
 {
   "note": "Written only by tools/spec/validate.py, only from PASS verdicts. Each entry is pinned to the hash of the scenario source it was validated against: edit the scenario and it leaves this file on the next run. Do not hand-edit.",
   "scenarios": {
+    "Affairs of State :: an upgrade without the BLACK PANTHER trait cannot be fed to the obligation": {
+      "sha256": "2550db8e85a383623b30008e903308dbd65ff85b29d31af15f0769251a221f49",
+      "source": "specs/cards/core/01155-affairs-of-state.feature"
+    },
+    "Affairs of State :: declining the flip takes the exhaust option off the table": {
+      "sha256": "2550db8e85a383623b30008e903308dbd65ff85b29d31af15f0769251a221f49",
+      "source": "specs/cards/core/01155-affairs-of-state.feature"
+    },
+    "Affairs of State :: exhausting T'Challa removes the obligation from the game and spares the upgrade": {
+      "sha256": "2550db8e85a383623b30008e903308dbd65ff85b29d31af15f0769251a221f49",
+      "source": "specs/cards/core/01155-affairs-of-state.feature"
+    },
+    "Affairs of State :: the chosen upgrade is discarded, not the other one": {
+      "sha256": "2550db8e85a383623b30008e903308dbd65ff85b29d31af15f0769251a221f49",
+      "source": "specs/cards/core/01155-affairs-of-state.feature"
+    },
     "Basic actions :: a basic attack deals the hero's ATK and exhausts them": {
       "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
       "source": "specs/rules/basic-actions.feature"
@@ -16,6 +32,54 @@
     "Basic actions :: changing form flips the identity to its hero side": {
       "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
       "source": "specs/rules/basic-actions.feature"
+    },
+    "Business Problems :: declining the flip takes the exhaust option off the table": {
+      "sha256": "efcbc4958d55606ff5a1a80f328b472abbc9105bd33a68532de9e4ec86066fa3",
+      "source": "specs/cards/core/01170-business-problems.feature"
+    },
+    "Business Problems :: every upgrade exhausts, and nothing else does": {
+      "sha256": "efcbc4958d55606ff5a1a80f328b472abbc9105bd33a68532de9e4ec86066fa3",
+      "source": "specs/cards/core/01170-business-problems.feature"
+    },
+    "Business Problems :: exhausting Tony Stark removes the obligation from the game and leaves the upgrades ready": {
+      "sha256": "efcbc4958d55606ff5a1a80f328b472abbc9105bd33a68532de9e4ec86066fa3",
+      "source": "specs/cards/core/01170-business-problems.feature"
+    },
+    "Business Problems :: flipping first is what makes the exhaust option available": {
+      "sha256": "efcbc4958d55606ff5a1a80f328b472abbc9105bd33a68532de9e4ec86066fa3",
+      "source": "specs/cards/core/01170-business-problems.feature"
+    },
+    "Caught Off Guard :: a single eligible card is discarded and the card does not surge": {
+      "sha256": "a1aa5152be3461382f6b1d48994d7f0ba15de27fee59c7bc68f2ea27834b381d",
+      "source": "specs/cards/core/01188-caught-off-guard.feature"
+    },
+    "Caught Off Guard :: an ally is neither an upgrade nor a support, so the card still surges": {
+      "sha256": "a1aa5152be3461382f6b1d48994d7f0ba15de27fee59c7bc68f2ea27834b381d",
+      "source": "specs/cards/core/01188-caught-off-guard.feature"
+    },
+    "Caught Off Guard :: with nothing to discard the card surges": {
+      "sha256": "a1aa5152be3461382f6b1d48994d7f0ba15de27fee59c7bc68f2ea27834b381d",
+      "source": "specs/cards/core/01188-caught-off-guard.feature"
+    },
+    "Caught Off Guard :: with two eligible cards the player is asked which one goes": {
+      "sha256": "a1aa5152be3461382f6b1d48994d7f0ba15de27fee59c7bc68f2ea27834b381d",
+      "source": "specs/cards/core/01188-caught-off-guard.feature"
+    },
+    "Crisis Interdiction :: Aerial asks which other scheme when two could take it": {
+      "sha256": "936c148aa2f859d42355b64e13b1307d6d221b40e2c994796b7dd853b9f508fc",
+      "source": "specs/cards/core/01012-crisis-interdiction.feature"
+    },
+    "Crisis Interdiction :: Aerial cannot take the second 2 threat off the same scheme": {
+      "sha256": "936c148aa2f859d42355b64e13b1307d6d221b40e2c994796b7dd853b9f508fc",
+      "source": "specs/cards/core/01012-crisis-interdiction.feature"
+    },
+    "Crisis Interdiction :: Aerial takes 2 more off the only other scheme, without asking": {
+      "sha256": "936c148aa2f859d42355b64e13b1307d6d221b40e2c994796b7dd853b9f508fc",
+      "source": "specs/cards/core/01012-crisis-interdiction.feature"
+    },
+    "Crisis Interdiction :: without Aerial only the named scheme loses threat": {
+      "sha256": "936c148aa2f859d42355b64e13b1307d6d221b40e2c994796b7dd853b9f508fc",
+      "source": "specs/cards/core/01012-crisis-interdiction.feature"
     },
     "Damage and threat :: a card effect is stopped by the icon too, and is still spent": {
       "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
@@ -89,6 +153,22 @@
       "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
       "source": "specs/rules/damage-and-threat.feature"
     },
+    "Family Emergency :: declining the flip leaves only the stun, and the hero takes it": {
+      "sha256": "beac2545faa44950186dc68dfa25ad41fecd115d29a1509a1cca4bead7f15af7",
+      "source": "specs/cards/core/01175-family-emergency.feature"
+    },
+    "Family Emergency :: exhausting Carol Danvers removes the obligation from the game without stunning her": {
+      "sha256": "beac2545faa44950186dc68dfa25ad41fecd115d29a1509a1cca4bead7f15af7",
+      "source": "specs/cards/core/01175-family-emergency.feature"
+    },
+    "Family Emergency :: flipping first is what makes the exhaust option available": {
+      "sha256": "beac2545faa44950186dc68dfa25ad41fecd115d29a1509a1cca4bead7f15af7",
+      "source": "specs/cards/core/01175-family-emergency.feature"
+    },
+    "Family Emergency :: the other bullet stuns the identity and discards the obligation instead": {
+      "sha256": "beac2545faa44950186dc68dfa25ad41fecd115d29a1509a1cca4bead7f15af7",
+      "source": "specs/cards/core/01175-family-emergency.feature"
+    },
     "Hulk :: a mental top card discards Hulk": {
       "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
       "source": "specs/cards/core/01050-hulk.feature"
@@ -108,6 +188,22 @@
     "Hulk :: the forced response fires on every attack, not only the first": {
       "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
       "source": "specs/cards/core/01050-hulk.feature"
+    },
+    "Hydra Bomber :: an alter-ego is asked the same question and takes the same damage": {
+      "sha256": "b6c6dd3fcc835aeb89e379f07bf1c9062f7f507927fd91303a03611e2f25bdf1",
+      "source": "specs/cards/core/01110-hydra-bomber.feature"
+    },
+    "Hydra Bomber :: placing the threat leaves the hero undamaged": {
+      "sha256": "b6c6dd3fcc835aeb89e379f07bf1c9062f7f507927fd91303a03611e2f25bdf1",
+      "source": "specs/cards/core/01110-hydra-bomber.feature"
+    },
+    "Hydra Bomber :: taking the damage puts it on the identity, not on the minion": {
+      "sha256": "b6c6dd3fcc835aeb89e379f07bf1c9062f7f507927fd91303a03611e2f25bdf1",
+      "source": "specs/cards/core/01110-hydra-bomber.feature"
+    },
+    "Hydra Bomber :: two copies ask twice, and the answers are independent": {
+      "sha256": "b6c6dd3fcc835aeb89e379f07bf1c9062f7f507927fd91303a03611e2f25bdf1",
+      "source": "specs/cards/core/01110-hydra-bomber.feature"
     },
     "Hydra Mercenary :: damage lands on the copy the transcript named": {
       "sha256": "b08f81ed57c08f62321735d08be4dc324ba2fbca2e3faa1a4af50ef4f9637f22",
@@ -225,6 +321,14 @@
       "sha256": "3ec3dde3460848eb46635d22908b112ee5fc5d4ba20cd98cc4744f633bd8d91f",
       "source": "specs/cards/core/01102-sandman.feature"
     },
+    "Sonic Boom :: paying the three resources leaves every character ready": {
+      "sha256": "67b712e6629d10ff1472639c35088db7e0715500b4b987508f3ec1090e88d070",
+      "source": "specs/cards/core/01123-sonic-boom.feature"
+    },
+    "Sonic Boom :: the exhaust branch exhausts the ally as well as the hero": {
+      "sha256": "67b712e6629d10ff1472639c35088db7e0715500b4b987508f3ec1090e88d070",
+      "source": "specs/cards/core/01123-sonic-boom.feature"
+    },
     "Status cards :: a confused hero can still attack": {
       "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
       "source": "specs/rules/status.feature"
@@ -316,6 +420,18 @@
     "Timing priority :: toughness resolves first and leaves the Suit nothing to absorb": {
       "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
+    },
+    "Tony Stark :: the card added to hand is the one chosen, not the top of the deck": {
+      "sha256": "c55ae10140653b32dec4aef1fb7535cd6013324bd8f38271a0ec566775b82a36",
+      "source": "specs/cards/core/01029b-tony-stark.feature"
+    },
+    "Tony Stark :: the chosen card goes to hand and the other two are discarded": {
+      "sha256": "c55ae10140653b32dec4aef1fb7535cd6013324bd8f38271a0ec566775b82a36",
+      "source": "specs/cards/core/01029b-tony-stark.feature"
+    },
+    "Tony Stark :: the printed once-per-round limit removes the option, it does not error": {
+      "sha256": "c55ae10140653b32dec4aef1fb7535cd6013324bd8f38271a0ec566775b82a36",
+      "source": "specs/cards/core/01029b-tony-stark.feature"
     }
   },
   "version": 1
