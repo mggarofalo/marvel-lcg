@@ -97,6 +97,7 @@ jobs:
             unit_test.test_run_digest unit_test.test_heuristic_policy \
             unit_test.test_max_health_guard unit_test.test_config_record \
             unit_test.test_corpus_plan unit_test.test_coverage_reach \
+            unit_test.test_coverage_literals \
             unit_test.test_corpus_freeze \
             unit_test.test_spec_coverage unit_test.test_decks unit_test.test_deck_build \
             unit_test.test_dsl_blockers

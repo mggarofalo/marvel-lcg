@@ -6,17 +6,26 @@ steers by. A card no shipped setup contains is not a sampling failure that more
 games would fix, which is the distinction MARVEL-16's "genuinely unreachable
 remainder" turns on.
 
-The measurement these tests protect: **3447 of 3781 scripted cards (91.2%) are
-reachable**, leaving 334 that self-play cannot get to at any corpus size.
+The measurement these tests protect: **3659 of 3781 scripted cards (96.8%) are
+reachable**, leaving 122 that self-play cannot get to at any corpus size. It was
+3447 (91.2%) before MARVEL-80 generated decks for the cards no shipped deck
+names, and 3617 (95.7%) before MARVEL-98 read the ids out of the card scripts.
 
-The map is a **lower bound**, and the first version of it was badly wrong: it
-omitted `player_deck`, the aspect-and-basic half of a starter deck and 25 of its
-40 cards, which understated reachability by 756 and would have shipped as a
-confident 71%. What caught it was a corpus resolving cards the map called
-unreachable. `TestEveryIdBearingKeyIsRead` is the guard that would have caught it
-first.
+The map is a **lower bound**, and it has been badly wrong twice. It omitted
+`player_deck`, the aspect-and-basic half of a starter deck and 25 of its 40
+cards, which understated reachability by 756 and would have shipped as a
+confident 71%. Then it missed the Wrecking Crew's whole encounter deck, which is
+a Python list in a card script rather than anything in `data/`.
+
+Both times what caught it was a corpus resolving cards the map called
+unreachable, and the second time that check took weeks to act on because it only
+*printed*. It is a gate now: `TestTheCrossCheckIsAGate` pins that an unexplained
+card fails, and `TestEveryIdBearingKeyIsRead` is the guard that would have caught
+the first defect before any corpus existed.
 """
 
+import contextlib
+import io
 import json
 import os
 import shutil
@@ -132,9 +141,18 @@ class TestTheShippedData(unittest.TestCase):
     def setUpClass(cls):
         cls.reach = reach_module.Build()
 
-    def test_all_three_kinds_are_found(self):
-        for kind in ("hero", "encounter-set", "scenario"):
+    def test_every_kind_is_found(self):
+        for kind in reach_module.KINDS:
             self.assertTrue(self.reach.Of(kind), kind)
+
+    def test_kinds_names_every_kind_the_map_holds(self):
+        # `Describe` and `Document` both walk `KINDS`. A kind added to `Build`
+        # and not to `KINDS` would count toward `reachable` while vanishing from
+        # the report and the JSON map -- the generated decks were exactly that
+        # for the JSON until MARVEL-98 -- and the two would disagree with no
+        # test failing.
+        self.assertEqual({source.kind for source in self.reach.sources},
+                         set(reach_module.KINDS))
 
     def test_there_are_sixty_three_starter_decks(self):
         self.assertEqual(len(self.reach.Of("hero")), 63)
@@ -147,7 +165,7 @@ class TestTheShippedData(unittest.TestCase):
         self.assertIn("rhino", [s.name for s in self.reach.Sources("01094")])
 
     def test_most_of_the_universe_is_reachable(self):
-        # Measured at 91.2%. Held as a range rather than an exact number so a
+        # Measured at 96.8%. Held as a range rather than an exact number so a
         # card pack can be added without breaking the suite; what must not
         # happen silently is the *shape* moving, which means a source folder or
         # a key stopped being read.
@@ -249,6 +267,210 @@ class TestEveryIdBearingKeyIsRead(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             self.Check(reach_module.HERO_FOLDERS, read)
+
+
+class TestCardScriptsAreTheirOwnKind(unittest.TestCase):
+    """The Wrecking Crew's encounter deck is Python, not data (MARVEL-98).
+
+    `data/scenarios/the_wrecking_crew.json` has an empty `villain` and
+    `encounters`; the four encounter decks are id lists in
+    `cards/pack/twc/07001a.py`, handed to `CardFactory.GenerateCards` and
+    `SetAsideDeck.Create`. A map built only from files calls 42 cards unreachable
+    that every game of that scenario plays.
+
+    The rule that finds them is `tools/coverage/literals.py` and is tested in
+    `unit_test/test_coverage_literals.py`. What is tested here is the join: that
+    those ids reach the map, and that they stay **separately attributable**.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.reach = reach_module.Build()
+        cls.files_only = reach_module.Build(scripts=False)
+
+    def test_a_card_only_a_script_names_is_reachable(self):
+        # `07005` Held Hostage: in no deck, set or scenario file.
+        sources = self.reach.Sources("07005")
+        self.assertEqual([source.name for source in sources], ["twc/07001a"])
+        self.assertEqual([source.kind for source in sources], ["script-literal"])
+
+    def test_without_the_scanner_that_card_is_unreachable(self):
+        # The defect, reproduced. A guard nobody has seen fail is a guard nobody
+        # knows works, and this is the one that moved 42 cards.
+        self.assertNotIn("07005", self.files_only.reachable)
+
+    def test_the_scanner_moved_the_whole_encounter_deck(self):
+        from engine.profile import coverage_report
+        try:
+            universe = set(coverage_report.LoadUniverse().cards)
+        except coverage_report.DatasetMissing:
+            self.skipTest("datasets/cards/cards.json is not built")
+
+        moved = (self.reach.reachable - self.files_only.reachable) & universe
+
+        # 42 scripted cards, measured. A range, so a pack can be added; what
+        # must not happen silently is this going to nothing, which is what a
+        # scanner that stopped matching would look like.
+        self.assertGreater(len(moved), 30)
+        self.assertTrue(all(card_id.startswith("07") for card_id in moved),
+                        sorted(moved))
+
+    def test_it_is_not_folded_into_the_shipped_ceiling(self):
+        # The same rule the generated decks are kept under: a single merged
+        # number makes it impossible to say whether reach moved because the game
+        # changed or because this tool got smarter.
+        for kind in ("hero", "encounter-set", "scenario"):
+            for source in self.reach.Of(kind):
+                self.assertNotIn("07005", source.cards, source.name)
+
+    def test_the_other_script_it_finds_adds_no_reach(self):
+        # `sm/venom_goblin/27116a` maps a campaign log entry to the six Sinister
+        # Six villains. They are the only non-`twc` cards the scanner picks up,
+        # and every one of them is already named by a data file -- which is the
+        # evidence that the twc shape is the outlier rather than the norm.
+        for card_id in ("27158", "27159", "27160", "27161", "27162", "27163"):
+            self.assertIn(card_id, self.files_only.reachable, card_id)
+
+    def test_a_script_source_appears_in_the_json_map(self):
+        from engine.profile import coverage_report
+        try:
+            universe = coverage_report.LoadUniverse()
+        except coverage_report.DatasetMissing:
+            self.skipTest("datasets/cards/cards.json is not built")
+
+        document = reach_module.Document(self.reach, universe)
+
+        self.assertIn("script-literal", document["sources"])
+        self.assertIn("07005", document["sources"]["script-literal"]["twc/07001a"])
+
+
+class TestTheCrossCheckIsAGate(unittest.TestCase):
+    """A card played that the map calls unreachable now fails the command.
+
+    It used to print. That is how 45 `twc` cards came to sit on the unreachable
+    list while this file's own docstring described 26 of them as known: nothing
+    failed, so nothing had to be done. The line between the two is not the
+    number, it is the exit code.
+
+    A hard invariant is not available -- `tough`, `stunned` and `confused` are
+    created by the engine, named by no file, and played in almost every game. So
+    the gate is an allowlist with a reason per entry: a known hole passes, and a
+    new one fails.
+    """
+
+    def Corpus(self, resolved):
+        """A folder holding one coverage artefact that resolved those cards."""
+        folder = tempfile.mkdtemp(prefix="reach-corpus-")
+        self.addCleanup(shutil.rmtree, folder, True)
+        document = {"coverage_version": 1, "games": [{
+            "seed": 1, "scenario": "x", "heroes": ["a"],
+            "cards": {"present": sorted(resolved), "entered_play": {},
+                      "resolved": {card_id: 1 for card_id in resolved}},
+            "factories": {}, "triggers": {}, "stages": {}, "ability_types": {}}]}
+        path = os.path.join(folder, "bot-coverage-x-a-1-1.json")
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(document, handle)
+        return folder
+
+    def Universe(self):
+        from engine.profile import coverage_report
+        try:
+            return coverage_report.LoadUniverse()
+        except coverage_report.DatasetMissing:
+            self.skipTest("datasets/cards/cards.json is not built")
+
+    def AnUnreachableCard(self, reach, universe):
+        remaining = reach.Unreachable(universe.cards)
+        remaining = [c for c in remaining if c not in reach_module.ENGINE_CREATED]
+        self.assertTrue(remaining, "nothing is unreachable to test with")
+        return remaining[0]
+
+    # -- the rule on its own, with no corpus on disk --------------------------
+
+    def test_an_allowlisted_card_is_explained(self):
+        self.assertEqual(reach_module.Unexplained(["tough", "stunned"]), [])
+
+    def test_anything_else_is_not(self):
+        self.assertEqual(reach_module.Unexplained(["tough", "07005"]), ["07005"])
+
+    def test_every_allowlist_entry_carries_a_reason(self):
+        # The allowlist is the waiver, so an entry with no reason is a hand-list
+        # of ids -- which is the shape MARVEL-98 was told not to produce.
+        for card_id, reason in reach_module.ENGINE_CREATED.items():
+            self.assertTrue(reason.strip(), card_id)
+            self.assertGreater(len(reason), 20, card_id)
+
+    def test_the_allowlist_is_only_the_engine_created_cards(self):
+        # Three status cards. If this grows, someone widened the waiver, and
+        # that is a decision rather than a detail.
+        self.assertEqual(sorted(reach_module.ENGINE_CREATED),
+                         ["confused", "stunned", "tough"])
+
+    # -- end to end, over a corpus -------------------------------------------
+
+    def test_a_corpus_that_only_played_allowlisted_cards_passes(self):
+        universe = self.Universe()
+        reach = reach_module.Build()
+
+        check = reach_module.CrossCheck(
+            reach, universe, self.Corpus(["tough", "stunned", "07005"]))
+
+        self.assertTrue(check.ok, check.lines)
+
+    def test_a_corpus_that_played_something_unexplained_fails(self):
+        universe = self.Universe()
+        reach = reach_module.Build()
+        surprise = self.AnUnreachableCard(reach, universe)
+
+        check = reach_module.CrossCheck(
+            reach, universe, self.Corpus(["tough", surprise]))
+
+        self.assertFalse(check.ok)
+        self.assertEqual(check.unexplained, [surprise])
+        self.assertTrue(any("FAIL" in line for line in check.lines), check.lines)
+
+    def test_the_twc_deck_would_have_failed_before_the_scanner(self):
+        # The defect this issue is, run as a test: the same corpus that passes
+        # against the map fails against the file-only one.
+        universe = self.Universe()
+        corpus = self.Corpus(["tough", "07005", "07020"])
+
+        self.assertTrue(reach_module.CrossCheck(
+            reach_module.Build(), universe, corpus).ok)
+        self.assertEqual(reach_module.CrossCheck(
+            reach_module.Build(scripts=False), universe, corpus).unexplained,
+            ["07005", "07020"])
+
+    def test_a_corpus_with_no_artefacts_is_a_failure(self):
+        # "The gate found no hole" and "the gate never ran" must not look alike.
+        # `-verify_replays` settles an empty folder the same way.
+        universe = self.Universe()
+        folder = tempfile.mkdtemp(prefix="reach-empty-")
+        self.addCleanup(shutil.rmtree, folder, True)
+
+        check = reach_module.CrossCheck(reach_module.Build(), universe, folder)
+
+        self.assertFalse(check.ok)
+
+    def test_the_command_exits_non_zero(self):
+        universe = self.Universe()
+        surprise = self.AnUnreachableCard(reach_module.Build(), universe)
+        buffer = io.StringIO()
+
+        with contextlib.redirect_stdout(buffer):
+            code = reach_module.main(["--corpus", self.Corpus(["tough", surprise])])
+
+        self.assertEqual(code, 1, buffer.getvalue())
+        self.assertIn(surprise, buffer.getvalue())
+
+    def test_the_command_exits_zero_when_every_hole_is_explained(self):
+        self.Universe()
+        buffer = io.StringIO()
+
+        with contextlib.redirect_stdout(buffer):
+            code = reach_module.main(["--corpus", self.Corpus(["tough"])])
+
+        self.assertEqual(code, 0, buffer.getvalue())
 
 
 class TestDirectedPlanning(unittest.TestCase):
