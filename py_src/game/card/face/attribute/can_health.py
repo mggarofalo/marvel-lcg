@@ -479,10 +479,25 @@ class CanHealth(HasHealth):
 
     @final
     def SetBaseHealth(self, value: int, by_effect: 'Effect') -> None:
+        # Moving base health by `diff` moves max health by `diff` and current
+        # health with it -- one edit each, the same shape as `SetBaseAttack` and
+        # `SetBaseScheme`, which move their one keyword once.
+        #
+        # `GainOnlyMaxHealth` *is* `UpdateMaxHealth`, so calling both applied the
+        # max-health half twice while the current-health half ran once. A card
+        # whose whole stat line is granted felt it on arrival: a Drone Minion has
+        # no printed statistics, so Ultron Drones' `base_health=1` took a fresh
+        # 0/0 drone to `health=1, max_health=2` and it entered play already
+        # reading 1 damage. Lethality was unchanged -- 0 hit points is 0 hit
+        # points -- and the v2 digest carries `health` and not `max_health`, so
+        # nothing the corpus oracle reads could see it either. What could see it
+        # is `sustained`, which is what a `CardFinder(canbe_heal=True)` asks
+        # about: a fresh drone was a legal target for First Aid (01086) and three
+        # other shipped cards, and healing it left a 2/2 drone that took two hits
+        # to kill instead of one. See MARVEL-100.
         if self.base_health != value:
             diff = value - self.base_health
             self.base_health = value
-            self.UpdateMaxHealth(diff, by_effect)
             self.GainOnlyMaxHealth(diff, by_effect)
             self.GainOnlyHealth(diff, by_effect)
 
