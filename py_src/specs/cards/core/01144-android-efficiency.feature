@@ -41,7 +41,7 @@ Feature: Android Efficiency
     Given the scenario is "rhino"
     And "Ultron Drones" is in play
 
-  @card:01144a
+  @card:01144 @card:01144a
   Scenario: the reveal takes the top card of the deck and nothing under it
     # "the top card of their deck" is the claim, so the deck is written with a
     # distinguishable card on top and the second card is asserted still in the
@@ -58,7 +58,7 @@ Feature: Android Efficiency
     And "01144a" is in the "EncounterDiscardPile"
     And I am not prompted again
 
-  @card:01144a
+  @card:01144 @card:01144a
   Scenario: as a boost card it offers the printed [energy] cost, and paying it makes no drone
     # Android Efficiency is written first in the encounter deck, so it is the
     # card dealt face down to boost Rhino's activation. Iron Man draws one card
@@ -90,7 +90,7 @@ Feature: Android Efficiency
     And I have 2 damage
     And it is round 2
 
-  @card:01144b
+  @card:01144 @card:01144b
   Scenario: the [mental] face offers the same choice, and the drone branch costs no card
     # The other branch of the boost, on the face that prints [mental]. The hand
     # is untouched and the deck is one shorter: the two halves of "either spend
@@ -125,7 +125,7 @@ Feature: Android Efficiency
     Then I have 3 damage
     And it is round 2
 
-  @card:01144c
+  @card:01144 @card:01144c
   Scenario: the [physical] face charges a physical resource for the same boost
     # The third face, and the reason the faces are not one scenario. The deck is
     # stocked with Strength rather than Energy, so the card drawn at the end of
