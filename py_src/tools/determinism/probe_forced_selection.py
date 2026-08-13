@@ -25,6 +25,19 @@ It counts, for every call:
 evidence must not be read as coverage. `misaligned > 0` means MARVEL-39 was
 live in this run, not latent.
 
+**`multi > 0` is necessary and not sufficient, and that is not a hypothetical.**
+Until MARVEL-95 the only batch this probe ever counted was two `AbilityType.Temp0`
+cleanups on a single face -- the engine taking two continuous modifiers back off,
+labelled `Temp #1` and `Temp #2`, with interchangeable answers and no order for
+anyone to choose. It counted as `multi` and proved nothing. MARVEL-95 stopped
+asking about those and this probe went straight to zero, which is how the
+artefact was identified at all. The current defaults reach a genuine one: two
+`ForcedInterrupt` abilities on two different cards, 04072 Experimental Weapons
+and 04149 Weapon Master.
+
+So read `multi` with the batch's contents in hand. A count is evidence that a
+*prompt* happened, not that a rules question was asked.
+
 Run:  python -m tools.determinism.probe_forced_selection
       python -m tools.determinism.probe_forced_selection --matrix wide
 """
@@ -158,12 +171,24 @@ def main(argv: List[str] | None = None) -> int:
     # at 59 batches, largest 1), so a bare run of this probe on smoke would
     # always report that it exercises neither fix. See MARVEL-69.
     parser.add_argument("--matrix", choices=("smoke", "wide"), default="wide")
-    parser.add_argument("--max-steps", type=int, default=400)
+    # 400 steps, `first`, seed 0 was the default until MARVEL-95, and the one
+    # multi-candidate batch it ever found was not a tie-break at all: two
+    # `AbilityType.Temp0` cleanups on one face, labelled `Temp #1` and
+    # `Temp #2`, whose answers were interchangeable. MARVEL-95 stopped asking
+    # about those, and this probe went to zero -- which is the measurement that
+    # says MARVEL-69's evidence had been resting on an artefact.
+    #
+    # These defaults reach a real one: 04072 Experimental Weapons and 04149
+    # Weapon Master, two `ForcedInterrupt` abilities on two different cards,
+    # under `crossbones / black_widow+doctor_strange+hulk / seed 20260806`.
+    # Reproducible across runs, and `unit_test/test_forced_order_prompt.py`
+    # pins the shape independently of self-play finding it.
+    parser.add_argument("--max-steps", type=int, default=800)
     # A decline-only driver never plays a card, so it never opens a response
     # window where two forced abilities meet. See MARVEL-69.
-    parser.add_argument("--policy", default="first",
+    parser.add_argument("--policy", default="random",
                         choices=("decline", "first", "random"))
-    parser.add_argument("--policy-seed", type=int, default=0)
+    parser.add_argument("--policy-seed", type=int, default=2)
     args = parser.parse_args(argv)
 
     cases = MATRIX_SMOKE if args.matrix == "smoke" else MATRIX_WIDE

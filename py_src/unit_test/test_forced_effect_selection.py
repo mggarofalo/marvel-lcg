@@ -26,6 +26,7 @@ import unittest
 # `engine` package has been imported. That is the whole bootstrap this needs.
 import engine  # noqa: F401  pylint: disable=unused-import
 
+from game.ability.ability_type import AbilityType
 from game.event.manager import EventManager
 
 
@@ -53,18 +54,26 @@ class FakeFlags:
 
 
 class FakeAbility:
-    def __init__(self, is_delay_ability: bool) -> None:
+    def __init__(self, is_delay_ability: bool,
+                 ability_type: AbilityType | None = None) -> None:
         self.flags = FakeFlags(is_delay_ability)
+        # `IsInternalCleanupBatch` reads `ability.type`, and the real
+        # `AbilityType` enum is used rather than a stand-in so a test cannot
+        # keep passing after the engine renames a member. The default is a
+        # printed card ability, so a fake that says nothing about its type is
+        # never mistaken for the engine's own bookkeeping.
+        self.type = ability_type if ability_type is not None else AbilityType.ForcedResponse
 
 
 class FakeEffect:
     """The members of `Effect` the selection and the labels read."""
 
     def __init__(self, label: str, face: FakeFace, delay: bool = False,
-                 display_name: str | None = None) -> None:
+                 display_name: str | None = None,
+                 ability_type: AbilityType | None = None) -> None:
         self.label = label
         self.this = face
-        self.ability = FakeAbility(delay)
+        self.ability = FakeAbility(delay, ability_type)
         self.display_name = display_name if display_name is not None else label
 
     def GetDisplayName(self, *, remove_space: bool = False) -> str:
@@ -357,3 +366,150 @@ class TestConstantAbilitiesAreNotOrdered(unittest.TestCase):
         # over. Constant resolves before Status, so a batch reaching the prompt
         # has passed both exclusions.
         self.assertLess(TimingPriority.Constant.value, TimingPriority.Status.value)
+
+
+class TestInternalCleanupsAreNotOrdered(unittest.TestCase):
+    """An internal cleanup never initiates, so it is never put to the first player.
+
+    MARVEL-95, and the same reasoning as MARVEL-91 one priority band over.
+    `AbilityType.Temp0` and `Temp0UI` map to `TimingPriority.Rule`, and the
+    ordering guard excluded `Status` and `Constant` but not these.
+
+    **Where the pair actually comes from.** Not from one card carrying two
+    constants -- `FaceEffect.RegisterTemp` files those under `global_effects`,
+    and `EventManager.GetEffectCategory` sends anything with `flags.is_temp` to
+    the `"Rule"` category, which `ProcessRuleEffect` resolves with no prompt at
+    all. The cleanups that reach this prompt are registered *locally*, by
+    `environment_helper2.apply_environment_internal`, and they go **onto the face
+    being modified** rather than onto the card doing the modifying: one per
+    continuous modifier, so the modifier can be taken back off when that face
+    leaves play, flips, is set as another card, or the villain advances. A face
+    under two such modifiers carries two, and they arrive in one batch.
+
+    So the population is boards, not cards. `tools/determinism/probe_temp0_order.py`
+    measured it: of 3999 cards, 2582 can be put into play, 61 of those put a
+    cleanup onto some other face, and exactly one (Divided Loyalties, 50173)
+    reaches two on one face by itself. Of the 1831 boards built from those --
+    one single-card board and every pair of the 61 -- **1139 reached the prompt,
+    2572 prompts in all**, every one of them entirely `Temp0` and every one of
+    them traced to a single line, `environment_helper2.py:177`. Each of the 1139
+    was then driven twice, with the first player forced onto candidate 0 and then
+    onto candidate 1, and **all 1139 produced an identical state digest** with
+    the two runs verified to have answered differently. The wide self-play matrix
+    reaches one of them without any board being built for it: the Ultron facedown
+    Drone Minion, whose two cleanups are the `Temp #1` / `Temp #2` labels in the
+    replays.
+
+    The exclusion is keyed on the **ability type**. The `Rule` band also carries
+    `AbilityType.Rule`, `Challenge`, `Scenario`, `Campaign` and `DelayAbility`,
+    every one of which is a real ability of a card or a scenario, and excluding
+    the band would silence all of them. `test_the_exclusion_is_not_the_priority_band`
+    is what stops that shortcut being taken later.
+    """
+
+    def setUp(self):
+        self.card = FakeCard("Drone Minion")
+        self.face = FakeFace(self.card)
+
+    def Cleanup(self, label: str, ability_type: AbilityType = AbilityType.Temp0):
+        return FakeEffect(label, self.face, ability_type=ability_type)
+
+    ############################################################################
+    # What the predicate says
+
+    def test_two_cleanups_are_an_internal_batch(self):
+        batch = [self.Cleanup("Temp #1"), self.Cleanup("Temp #2")]
+
+        self.assertTrue(EventManager.IsInternalCleanupBatch(batch))
+
+    def test_the_ui_variant_counts_as_a_cleanup(self):
+        # `Temp0UI` subclasses `Temp0`'s flags but carries its own member, so an
+        # identity test against `Temp0` alone would miss it.
+        batch = [self.Cleanup("a", AbilityType.Temp0),
+                 self.Cleanup("b", AbilityType.Temp0UI)]
+
+        self.assertTrue(EventManager.IsInternalCleanupBatch(batch))
+
+    def test_a_batch_of_card_abilities_is_still_ordered(self):
+        batch = [FakeEffect("A", self.face), FakeEffect("B", self.face)]
+
+        self.assertFalse(EventManager.IsInternalCleanupBatch(batch))
+
+    def test_a_mixed_batch_is_still_ordered(self):
+        # The cleanup does not initiate, but the card ability beside it does, so
+        # there is a real order to choose and the prompt stays. No such batch is
+        # reachable from the shipped pool as measured -- but the rule is written
+        # down here rather than left to depend on that staying true.
+        batch = [self.Cleanup("Temp #1"), FakeEffect("a real ability", self.face)]
+
+        self.assertFalse(EventManager.IsInternalCleanupBatch(batch))
+
+    def test_a_delay_ability_beside_cleanups_does_not_make_the_batch_orderable(self):
+        # MARVEL-39: delay abilities are filtered out of the choice, so they are
+        # not part of what would be asked and must not count as a real ability
+        # here either. Reading this batch as "mixed" would put the prompt back.
+        batch = [self.Cleanup("Temp #1"),
+                 FakeEffect("D-delay", self.face, delay=True),
+                 self.Cleanup("Temp #2")]
+
+        self.assertTrue(EventManager.IsInternalCleanupBatch(batch))
+
+    def test_a_batch_of_only_delay_abilities_is_not_a_cleanup_batch(self):
+        # Nothing would be offered, so there is nothing to suppress. Answering
+        # True here would be a claim about an empty candidate list.
+        batch = [FakeEffect("D-delay", self.face, delay=True)]
+
+        self.assertFalse(EventManager.IsInternalCleanupBatch(batch))
+
+    def test_a_lone_cleanup_is_an_internal_batch(self):
+        # `SelectForcedEffect` would not ask about one candidate anyway, but the
+        # predicate is about what the batch *is*, and one cleanup is still a
+        # cleanup. Keeping it honest here means the guard reads the same at
+        # every size as the batch drains.
+        self.assertTrue(EventManager.IsInternalCleanupBatch([self.Cleanup("Temp #1")]))
+
+    ############################################################################
+    # What the exclusion must not become
+
+    def test_the_exclusion_is_not_the_priority_band(self):
+        # Every one of these shares `TimingPriority.Rule` with Temp0. If the
+        # guard is ever rewritten to exclude the band instead of the type, this
+        # fails -- which is the point.
+        from game.ability.ability_type import AbilityTypeFlags, TimingPriority
+
+        band = (AbilityType.Rule, AbilityType.Challenge, AbilityType.Scenario,
+                AbilityType.Campaign, AbilityType.DelayAbility)
+        for ability_type in band:
+            with self.subTest(ability_type=ability_type):
+                self.assertEqual(
+                    AbilityTypeFlags.TYPE_PRIORITY[ability_type],
+                    TimingPriority.Rule,
+                    "this type no longer shares the band with Temp0; the test "
+                    "below is only meaningful while it does")
+                batch = [FakeEffect("a", self.face, ability_type=ability_type),
+                         FakeEffect("b", self.face, ability_type=ability_type)]
+                self.assertFalse(EventManager.IsInternalCleanupBatch(batch))
+
+        for ability_type in (AbilityType.Temp0, AbilityType.Temp0UI):
+            with self.subTest(ability_type=ability_type):
+                self.assertEqual(
+                    AbilityTypeFlags.TYPE_PRIORITY[ability_type],
+                    TimingPriority.Rule)
+
+    ############################################################################
+    # That the guard actually consults it
+
+    def test_the_ordering_guard_consults_the_predicate(self):
+        # The tripwire. Everything above tests the rule; this tests that
+        # `ProcessForcedEffect` still applies it, which no test over the
+        # predicate alone can see. Same shape as MARVEL-91's guard test below,
+        # and for the same reason: the caller needs a live world and a real
+        # first player, so the wiring is not reachable from a unit test.
+        import inspect
+
+        from game.event.manager import EventManager as Manager
+
+        source = inspect.getsource(Manager.ProcessForcedEffect)
+        self.assertIn("IsInternalCleanupBatch(forced_effects)", source,
+                      "the forced-ordering guard no longer excludes internal "
+                      "Temp0 cleanups; see MARVEL-95 before removing it")

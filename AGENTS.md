@@ -233,10 +233,11 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
                    unit_test.test_puzzle unit_test.test_worlds_encounter \
                    unit_test.test_card_coverage_play unit_test.test_card_removal \
-                   unit_test.test_cannot_defend
+                   unit_test.test_cannot_defend unit_test.test_probe_temp0_order
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
 python -m tools.determinism.check_runs --runs 4 --matrix wide --policy first  # ...on games that play cards
 python -m tools.determinism.probe_forced_selection  # self-play still reaches the forced-ability tie-break
+python -m tools.determinism.probe_temp0_order        # no board reaches a Temp0-only forced-order prompt
 python -m tools.determinism.cross_os emit --out trace.json --label $(uname -s)  # this platform's trace
 python -m tools.determinism.cross_os compare a.json b.json  # do two platforms agree?
 python -m tools.determinism.check_scene_repro    # same seed -> same saved file
