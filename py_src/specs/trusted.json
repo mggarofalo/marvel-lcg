@@ -66,19 +66,19 @@
       "source": "specs/cards/core/01188-caught-off-guard.feature"
     },
     "Crisis Interdiction :: Aerial asks which other scheme when two could take it": {
-      "sha256": "936c148aa2f859d42355b64e13b1307d6d221b40e2c994796b7dd853b9f508fc",
+      "sha256": "4948950bc744f281b39a5ad3ffd43993587f88526a681a6ae56a0a4648b1890c",
       "source": "specs/cards/core/01012-crisis-interdiction.feature"
     },
     "Crisis Interdiction :: Aerial cannot take the second 2 threat off the same scheme": {
-      "sha256": "936c148aa2f859d42355b64e13b1307d6d221b40e2c994796b7dd853b9f508fc",
+      "sha256": "4948950bc744f281b39a5ad3ffd43993587f88526a681a6ae56a0a4648b1890c",
       "source": "specs/cards/core/01012-crisis-interdiction.feature"
     },
     "Crisis Interdiction :: Aerial takes 2 more off the only other scheme, without asking": {
-      "sha256": "936c148aa2f859d42355b64e13b1307d6d221b40e2c994796b7dd853b9f508fc",
+      "sha256": "4948950bc744f281b39a5ad3ffd43993587f88526a681a6ae56a0a4648b1890c",
       "source": "specs/cards/core/01012-crisis-interdiction.feature"
     },
     "Crisis Interdiction :: without Aerial only the named scheme loses threat": {
-      "sha256": "936c148aa2f859d42355b64e13b1307d6d221b40e2c994796b7dd853b9f508fc",
+      "sha256": "4948950bc744f281b39a5ad3ffd43993587f88526a681a6ae56a0a4648b1890c",
       "source": "specs/cards/core/01012-crisis-interdiction.feature"
     },
     "Damage and threat :: a card effect is stopped by the icon too, and is still spent": {
@@ -421,16 +421,20 @@
       "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
       "source": "specs/rules/timing-priority.feature"
     },
+    "Tony Stark :: exactly the top three cards are offered, and the fourth is not": {
+      "sha256": "f6c931001ea894bb36874342663e543ac0afe940463766a083d731a83ee8d3fa",
+      "source": "specs/cards/core/01029b-tony-stark.feature"
+    },
     "Tony Stark :: the card added to hand is the one chosen, not the top of the deck": {
-      "sha256": "c55ae10140653b32dec4aef1fb7535cd6013324bd8f38271a0ec566775b82a36",
+      "sha256": "f6c931001ea894bb36874342663e543ac0afe940463766a083d731a83ee8d3fa",
       "source": "specs/cards/core/01029b-tony-stark.feature"
     },
     "Tony Stark :: the chosen card goes to hand and the other two are discarded": {
-      "sha256": "c55ae10140653b32dec4aef1fb7535cd6013324bd8f38271a0ec566775b82a36",
+      "sha256": "f6c931001ea894bb36874342663e543ac0afe940463766a083d731a83ee8d3fa",
       "source": "specs/cards/core/01029b-tony-stark.feature"
     },
     "Tony Stark :: the printed once-per-round limit removes the option, it does not error": {
-      "sha256": "c55ae10140653b32dec4aef1fb7535cd6013324bd8f38271a0ec566775b82a36",
+      "sha256": "f6c931001ea894bb36874342663e543ac0afe940463766a083d731a83ee8d3fa",
       "source": "specs/cards/core/01029b-tony-stark.feature"
     }
   },

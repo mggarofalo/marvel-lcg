@@ -74,6 +74,15 @@ Feature: Crisis Interdiction
     When I play "Crisis Interdiction" targeting "the main scheme"
     Then I am prompted to choose one
       | Play |
+    # "A different scheme", stated directly rather than inferred from the board
+    # afterwards. The option set is one row -- the schemes are its targets, not
+    # options -- so before MARVEL-94 the exclusion could only be pinned by
+    # building a board where the main scheme was the sole candidate and showing
+    # it kept its threat.
+    And the legal targets for "Play" are
+      | Breakin' & Takin' |
+      | Bomb Scare        |
+    And I cannot choose "Play" targeting "the main scheme"
 
     When I choose "Play" targeting "Bomb Scare"
     Then the main scheme has 1 threat

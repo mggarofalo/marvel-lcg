@@ -90,3 +90,33 @@ Feature: Quarantine self-test
     # nothing at all, so it is refused rather than granted.
     Given I am in hero form
     Then I cannot attack "Galactus"
+
+  @self-test
+  Scenario: a legal-targets list that disagrees is FAIL-engine-suspected
+    # MARVEL-94. `the legal targets for` has to be capable of failing, or every
+    # scenario that uses it to pin "look at the top 3" or "a different scheme"
+    # establishes nothing. Attack accepts Rhino here and nothing else.
+    Given I am in hero form
+
+    Then the legal targets for "Attack" are
+      | Galactus |
+
+  @self-test
+  Scenario: legal targets for an option that was not offered is FAIL-spec-wrong
+    # The one way this assertion could pass while saying nothing: name an option
+    # the engine never presented and read its empty target list as agreement.
+    # Refused as unresolvable instead, the same way `cannot` refuses a card that
+    # is not in the game.
+    Given I am in alter-ego form
+
+    Then the legal targets for "Attack" are
+      | Rhino |
+
+  @self-test
+  Scenario: the general cannot form with a legal target is FAIL-engine-suspected
+    # The verb forms `I cannot attack` / `I cannot thwart` are covered above.
+    # This is the same assertion reached through the general sentence, which is
+    # what every non-attack restriction has to use.
+    Given I am in hero form
+
+    Then I cannot choose "Attack" targeting "Rhino"

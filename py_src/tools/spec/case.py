@@ -174,6 +174,49 @@ class WhenStep:
 
 
 @dataclass(frozen=True)
+class TargetsStep:
+    """Assert which cards an offered option will accept.
+
+    MARVEL-94. `PromptStep` pins the option set, and for a card that offers one
+    action over several cards -- `AskChooseFace`, `AskDiscardFaces`, any
+    `ForChoiceAbility` with a multi-target selector -- the option set is a
+    *single row* and every card is a target of it. So the thing the printed text
+    actually says, "look at the top 3 cards of your deck", was not assertable at
+    all: the prompt table said `Futurist` and nothing about the three cards.
+
+    That is the largest prompt family in the corpus, and the workaround it
+    forced -- build a board where the wrong candidate is the only one and assert
+    it survived -- costs a scenario each time and reads like full coverage when
+    it is not.
+
+    Compared as a set, like `PromptStep`, and for the same reason: a missing or
+    extra legal target is behavior, the order the engine built them in is not.
+    """
+
+    option: str
+    targets: Tuple[str, ...] = ()
+
+    kind = "targets"
+
+    def __post_init__(self) -> None:
+        if not self.option:
+            raise SpecCaseError("a legal-targets assertion needs an option")
+        if not self.targets:
+            raise SpecCaseError(
+                f"a legal-targets assertion needs at least one card; "
+                f"{self.option!r} names none. To say an option has no legal "
+                f"target, name the card with 'I cannot choose'")
+
+    def Describe(self) -> str:
+        return (f"the legal targets for {self.option!r} are "
+                f"{', '.join(repr(t) for t in self.targets)}")
+
+    def ToDict(self) -> Dict[str, Any]:
+        return {"kind": "targets", "option": self.option,
+                "targets": list(self.targets)}
+
+
+@dataclass(frozen=True)
 class PromptStep:
     """Assert the engine is asking, and with exactly these options.
 
@@ -248,6 +291,12 @@ class CannotStep:
 
     option: str
     card: str
+    # Display only, and not serialised. `I cannot attack "Rhino"` and
+    # `I cannot choose "Futurist" targeting "Backflip"` are the same assertion
+    # over the same fields, but echoing the second one back in the first one's
+    # shape produces "I cannot Futurist 'Backflip'", which reads as a typo in
+    # the failure message an author is trying to act on.
+    verb: bool = True
 
     kind = "cannot"
 
@@ -259,7 +308,9 @@ class CannotStep:
                 f"a cannot assertion needs a card; {self.option!r} names none")
 
     def Describe(self) -> str:
-        return f"I cannot {self.option} {self.card!r}"
+        if self.verb:
+            return f"I cannot {self.option} {self.card!r}"
+        return f"I cannot choose {self.option!r} targeting {self.card!r}"
 
     def ToDict(self) -> Dict[str, Any]:
         return {"kind": "cannot", "option": self.option, "card": self.card}
@@ -301,7 +352,7 @@ class ThenStep:
 
 Beat = Union[WhenStep, PromptStep, NoPromptStep, CannotStep, ThenStep]
 
-ASSERTION_KINDS = ("prompt", "no_prompt", "cannot", "then")
+ASSERTION_KINDS = ("prompt", "no_prompt", "cannot", "targets", "then")
 
 
 def IsAction(beat: Beat) -> bool:

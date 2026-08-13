@@ -271,32 +271,41 @@ first core-set batch:
   scenarios legitimately open with a `Then I am prompted to choose one` and no
   preceding `When`.
 
-## What the vocabulary cannot say
-
-Worth knowing before you design a scenario around it, and tracked as MARVEL-94.
+## Options and targets are different things
 
 **`I am prompted to choose one` asserts the option set, not the target set.**
 When a card offers one action over several cards — `AskChooseFace`,
 `AskDiscardFaces`, any `ForChoiceAbility` with multiple legal targets — the
-prompt is a *single row* and the cards are its targets. So "these three cards
-were the ones offered" is not assertable, and neither is "this card was excluded
-from the follow-up". The engine does enforce both, and says so when probed:
+prompt is a *single row* and the cards are its targets. Tony Stark's "look at
+the top 3 cards of your deck" arrives as one option named `Futurist` with three
+targets, so a prompt table says nothing at all about the three cards.
 
+Two steps cover that half (MARVEL-94):
+
+```gherkin
+    Then the legal targets for "Futurist" are
+      | Repulsor Blast |
+      | Mark V Armor   |
+      | Pepper Potts   |
+    And I cannot choose "Futurist" targeting "Backflip"
 ```
-the main scheme is not a legal target for Play;
-legal targets are Breakin' & Takin', Bomb Scare
-```
 
-Until there is a step for it, pin the restriction through its *outcome* — build
-a board where the illegal target is the only candidate and assert it survived —
-and say in a comment that that is what you are doing. It is weaker, and writing
-it down keeps it from reading as full coverage.
+`I cannot choose "<option>" targeting "<card>"` is `I cannot attack` generalised
+— same assertion, same machinery, any option — and it is what a printed
+restriction like Crisis Interdiction's "remove 2 threat from a **different**
+scheme" needs. `the legal targets for "<option>" are` is the positive form, and
+naming an option the engine is not offering fails as *unresolvable* rather than
+passing vacuously.
 
-Two smaller ones from the same batch: **"gains surge" is invisible from a
-`Given`-time reveal** (the surged card stops in `DealtEncounterCardsDeck`), so
-surge needs a real villain phase with the encounter deck stacked; and
-`"<card>" is in the "<zone>"` reports a zone *type*, so in a multiplayer
-scenario it cannot say *whose* area a card reached.
+Prefer both to the older workaround of building a board where the illegal
+candidate is the only one and asserting it survived. That reads like full
+coverage and is not.
+
+Two things the vocabulary still cannot say, both from the first core-set batch:
+**"gains surge" is invisible from a `Given`-time reveal** — the surged card
+stops in `DealtEncounterCardsDeck`, so surge needs a real villain phase with the
+encounter deck stacked; and `"<card>" is in the "<zone>"` reports a zone *type*,
+so in a multiplayer scenario it cannot say *whose* area a card reached.
 
 ## The step vocabulary
 

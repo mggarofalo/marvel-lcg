@@ -62,7 +62,9 @@
       "the players won",
       "it is round <n>",
       "it is the <player|villain|end> phase",
-      "it is the \"<phase>\" phase"
+      "it is the \"<phase>\" phase",
+      "I cannot choose \"<option>\" targeting \"<card>\"",
+      "the legal targets for \"<option>\" are"
     ],
     "when": [
       "I play \"<card>\"",
