@@ -1118,11 +1118,43 @@ class AbilityFactoryDoAttack:
         ]
 
         if cannot_trigger_defense_ability != False:
+            # A unit that cannot defend also cannot reach defense-labeled abilities,
+            # which are triggered by a *player*. `which_unit` is a `CardType`, so it
+            # has to be projected onto one: "the player whose identity `which_unit`
+            # matches". `PlayerFinder(is_unit=...)` is that projection for a
+            # `CardFinder`; every other `CardType` spelling -- a `CARD_TYPE_EX`
+            # string ("AttachedIdentity", "AttachedAlly"), a face class (`Ally`,
+            # `Unit2`) -- has no `PlayerFinder` equivalent, so it is projected by
+            # running `CheckWhichCard` against each player's identity instead.
+            #
+            # The projection is what makes the restriction correct rather than
+            # merely broad: a `which_unit` that names a subset of a player's
+            # characters ("AttachedAlly", `Ally`) matches no identity, so it adds no
+            # player-level restriction and leaves that player's own defense cards
+            # alone. One that names every character (`Unit2`, "Character") matches
+            # every identity, and one that names an attached identity matches
+            # exactly the attached player -- the same mapping `UnitCannotAttackTarget`
+            # and `UnitCannotThwartTarget` hard-code as "AttachedIdentity" ->
+            # "AttachedPlayer".
+            check_player: 'PlayerType'
+            check_player_conditions: 'ConditionsType[Message.CheckEffectCondition]' = []
             if cannot_trigger_defense_ability == True and which_unit == "Attached":
                 check_player = "AttachedPlayer"
-            elif which_unit:
-                assert isinstance(which_unit, CardFinder)
+            elif which_unit == "AttachedIdentity":
+                # Spelled out because it is the mapping `UnitCannotAttackTarget`
+                # and `UnitCannotThwartTarget` hard-code; the general projection
+                # below reduces to the same `Condition.ThisAttachedTo` check.
+                check_player = "AttachedPlayer"
+            elif isinstance(which_unit, CardFinder) and which_unit:
                 check_player = PlayerFinder(which_unit)
+            elif which_unit:
+                def check_player_is_which_unit(effect: 'Effect', message: 'Message.CheckEffectCondition') -> bool:
+                    player = message.check_effect.initiator
+                    if not Player.IsType(player):
+                        return False
+                    return Condition.CheckWhichCard(which_unit, player.GetIdentity(), effect)
+                check_player = "AnyPlayer"
+                check_player_conditions = [check_player_is_which_unit]
             else:
                 check_player = "AnyPlayer"
             def check_attacker2(effect: 'Effect', message: 'Message.CheckEffectCondition') -> bool:
@@ -1133,7 +1165,8 @@ class AbilityFactoryDoAttack:
                     None,
                     label='defense',
                     conditions=[
-                        check_attacker2
+                        check_attacker2,
+                        *check_player_conditions,
                     ],
                 )
             )
