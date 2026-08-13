@@ -13,11 +13,13 @@ HIDDEN_LOG_CATEGORIES       = ConfigVariables.ListStr('hidden_log_categories', [
 CRASH_FILE                  = ConfigVariables.File('crash_file', "crash.log")
 DISPLAY_SOUND_NAME          = ConfigVariables.Bool('display_sound_name', False)
 
-def PrintUtf8(log_text: str) -> None:
-    try:
-        print(log_text, end="")
-    except Exception as e:
-        print(f"Error printing log: {e}")
+# Printing is a plain `print`. It used to go through a `PrintUtf8` wrapper that
+# caught every exception and printed the error instead of the line, which is how
+# a card name containing U+26A0 became `Error printing log: 'charmap' codec...`
+# on a Windows console. The encoding is now settled once for the process --
+# `System.UseUtf8Streams`, called when `core` is imported -- so the failure that
+# fallback existed for cannot happen, and a wrapper that reports a broken stdout
+# *through* stdout could never have worked anyway. See MARVEL-36.
 
 class LogHelper:
 
@@ -74,7 +76,7 @@ class LogHelper:
     def Print(log_text: str, end: str="") -> None:
         log_text = log_text + end
         Log.all_log_text += log_text
-        PrintUtf8(log_text)
+        print(log_text, end="")
 
     @staticmethod
     def PrintInternal(category: 'Log.CATEGORY', level: 'Log.LEVELS', infos: str) -> None:
@@ -98,7 +100,7 @@ class LogHelper:
             else:
                 log_text += f'{color_category}[{category_name}] {color_time}{time} | {color_level}{info_line}{Style.RESET_ALL}\n'
 
-        PrintUtf8(log_text)
+        print(log_text, end="")
 
     @staticmethod
     def PrintLog(category: 'Log.CATEGORY', level: 'Log.LEVELS', *info: object) -> None:
@@ -212,7 +214,7 @@ class Log:
         from game.test import Test
         if Test.IsInTesting():
             infos = " ".join(str(x) for x in info)
-            PrintUtf8(infos)
+            print(infos, end="")
 
     @staticmethod
     def Warn(category: 'Log.CATEGORY', *info: object):

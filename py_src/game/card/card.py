@@ -754,28 +754,17 @@ class Card(Object):
             effects += face.effects[:]
         return effects
 
-    def Destroy(self):
-        """Take this card out of the game completely.
-
-        Distinct from every other way a card leaves play: a card removed from
-        the game still exists, still sits in an area and is still described by
-        the digest. A destroyed one stops existing.
-
-        Before MARVEL-50 the last part was not true. The card was removed from
-        its area and its effects were unregistered, but it stayed in
-        `object_manager.card_dict` with `self.area` still pointing at the area
-        it had just been taken out of -- and the digest walks `card_dict`, so it
-        went on describing the card in a zone it was no longer in. That is a
-        trap for the C# port, which would either reproduce it faithfully and
-        inherit the bug or quietly fix it and diverge on the digest.
-        """
-        self.area.Remove(self)
-        assert not self.IsAsOtherCard(), f"{self=}"
-        for effect in self.GetEffects():
-            self.world.event_manager.UnRegisterEffect(effect)
-        self.face.OnAfterDestroy()
-        # Last, so the notification above still sees a coherent world.
-        self.world.object_manager.RemoveCard(self.object_id)
+    # There is no `Destroy`. Marvel Champions has no such rules term: a card is
+    # discarded, removed from the game, or defeated, and each of those leaves it
+    # in the world, in a zone, with its object id. `Faces.RemoveAllFromGame` is
+    # the strongest of them and it moves the card to `world.area_removed`, from
+    # where cards can still be searched and returned.
+    #
+    # `Card.Destroy` modelled a fourth thing -- ceasing to exist -- that no rule
+    # asks for. It had one caller, `Deck2.Destroy`, which had none, and in eight
+    # dead lines it accumulated three defects (MARVEL-50). Deleting it is what
+    # makes `card_dict` append-only, which is the property `game/world/
+    # invariants.py` and the digest contract both rest on. See MARVEL-70.
 
     def Flip(self, by_effect: 'Effect', call_reveal: bool=True, *, ui_group: bool=False, ui_look_at: bool=False, by_swapping: bool=False) -> bool:
         from game.message import Message

@@ -431,7 +431,11 @@ For a C# port targeting byte-identical output, in dependency order:
    reused. Everything else depends on this; the rules are unchanged from v1 and
    set out there.
 2. **Emit every card** in `card_dict`, ascending by id. No exclusions — not the
-   rules pseudo-card, not id 0, not the middle of a deck.
+   rules pseudo-card, not id 0, not the middle of a deck. `card_dict` is
+   append-only for the life of a game: nothing removes a card from it, so the
+   set of emitted ids is always `0..highest`. A card that is *removed from the
+   game* moves to `world.area_removed` and is emitted from there like any other.
+   See `D10`.
 3. **Name the zone** from the `DeckType` member name, with `/removed` for a card
    in `removed_cards`. Read the two lists directly; do not concatenate them.
 4. **Index within the zone list**, from 0.
@@ -529,20 +533,24 @@ Both are settled since:
   in the zone it had just been taken out of. v2 made the consequence visible
   rather than fixing it; `MARVEL-50` fixed it.
 
-  `Destroy` now ends with `object_manager.RemoveCard(self.object_id)`, so
-  destroying a card is the one and only way a card stops being described. **The
-  id is not released** — `index_dict` only ever increments, so no later card can
-  be allocated a destroyed card's number, and the allocation contract above is
-  unchanged.
+  `MARVEL-50` made `Destroy` end with `object_manager.RemoveCard`, so the card
+  stopped being described rather than being described in the wrong place.
+  `MARVEL-70` then asked whether destruction should be modelled at all and
+  answered no. **`Card.Destroy`, `Deck2.Destroy` and `ObjectManager.RemoveCard`
+  are deleted**, and with them the only code that could take a card out of
+  `card_dict`.
 
-  This is distinct from *removed from the game*: a removed card still exists,
-  still sits in an area, and still carries a full record. A destroyed one stops
-  existing.
+  **What a port needs from this is now one sentence: `card_dict` only grows.**
+  Marvel Champions has no "destroy" — a card is discarded, removed from the
+  game, or defeated, and each of those leaves it in a zone with its id. Removed
+  from the game is `world.area_removed`, an ordinary zone that cards can be
+  searched from and returned from, and a card there carries a full record like
+  any other. There is no state in which a card that once existed is absent from
+  the digest.
 
-  **No digest moved**, because the path is dead: `Deck2.Destroy` is the only
-  caller of `Card.Destroy`, and nothing calls `Deck2.Destroy`. It was settled
-  anyway because "destroyed" modelled as "still present with a stale pointer" is
-  something a port would either reproduce faithfully, inheriting the bug, or
-  quietly fix, diverging on the digest. Two further defects on that same dead
-  path were fixed to make the fix demonstrable — see `MARVEL-50` — and whether
-  the path should exist at all is `MARVEL-70`.
+  **No digest moved**, at either step. The path was dead throughout: `Deck2.
+  Destroy` was the only caller of `Card.Destroy`, and nothing called
+  `Deck2.Destroy`. That is also why it was worth removing rather than
+  documenting — three defects accumulated on it undetected, and a port reading a
+  specification for a path nothing takes would have had to decide whether to
+  reproduce it. `unit_test/test_card_removal.py` pins the replacement rule.

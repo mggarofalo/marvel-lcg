@@ -81,17 +81,11 @@ class Deck2(Generic[TC], Object):
         from game.effect.rule import GameRule
         from game.operate.faces import Faces
         Faces.RemoveAllFromGame(self.Get(), GameRule(self.GetOwner().GetRoleCharacter()))
-    def Destroy(self):
-        # Over a copy: `Card.Destroy` calls `area.Remove(self)`, which mutates
-        # this very list, and iterating a list while removing from it skips
-        # every second entry. The `self.cards = []` afterwards hid the damage
-        # here -- the deck ended up empty either way -- but the skipped cards
-        # were never destroyed, so they kept their effects registered and, since
-        # MARVEL-50, would have stayed in `card_dict` too. Found while fixing
-        # that; this method has no callers, so it has never fired.
-        for card in self.cards[:]:
-            card.Destroy()
-        self.cards = []
+    # `Destroy` used to sit here, next to `Clear`, and it was the reason nobody
+    # noticed it was dead: two neighbouring methods that look like a pair, of
+    # which only `Clear` is ever called. It is gone with `Card.Destroy` under
+    # MARVEL-70 -- `Clear` above is how a deck is emptied, and the cards it
+    # empties stay in the world, in `world.area_removed`.
     def MarkAsRemoved(self, card: 'Card') -> None:
         self.removed_cards.append(card)
         self.cards.remove(card)
