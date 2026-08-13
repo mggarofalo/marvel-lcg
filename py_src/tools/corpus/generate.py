@@ -63,6 +63,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, NamedTuple, Sequence
 
 from tools.corpus import inventory as inventory_module
+from tools.corpus import signature as signature_module
 from tools.corpus.plan import Build, Case, Plan, Summarize
 from tools.determinism.pinned_env import build_env
 
@@ -100,6 +101,12 @@ class Outcome(NamedTuple):
     folder: str
     scenes: int
     detail: str
+    # What the child said went wrong, parsed rather than hoped for. `detail`
+    # is still the tail of the output and still means what it always did --
+    # it is the only thing there is when a case failed with no signature at
+    # all -- but it is no longer the only record of the failure. See
+    # `tools/corpus/signature.py` and MARVEL-97.
+    crash: signature_module.Scan = signature_module.EMPTY
 
     def ToDict(self) -> Dict[str, Any]:
         return {
@@ -116,6 +123,7 @@ class Outcome(NamedTuple):
             "folder": self.folder,
             "scenes": self.scenes,
             "detail": self.detail,
+            "crash": self.crash.ToDict(),
         }
 
 
@@ -151,6 +159,22 @@ def CountScenes(folder: str) -> int:
                and not name.startswith(("bot-manifest-", "bot-coverage-")))
 
 
+def Text(captured: Any) -> str:
+    """Whatever a killed child left behind, as text.
+
+    `subprocess.run(text=True)` returns `str` from a completed process, but the
+    output it attaches to `TimeoutExpired` is `bytes` on POSIX and `str` on
+    Windows -- POSIX raises from inside `_communicate`, before the decode.
+    Both platforms run this (`ci.yml`), so both are handled here rather than
+    left to fail on one of them.
+    """
+    if captured is None:
+        return ""
+    if isinstance(captured, bytes):
+        return captured.decode("utf-8", errors="replace")
+    return str(captured)
+
+
 def RunCase(case: Case, root: str, timeout: float,
             extra: Sequence[str]) -> Outcome:
     folder = CaseFolder(root, case)
@@ -163,13 +187,25 @@ def RunCase(case: Case, root: str, timeout: float,
             capture_output=True, text=True, errors="replace",
             env=build_env(), cwd=os.getcwd(), timeout=timeout,
         )
+        output = proc.stdout + proc.stderr
         exit_code, detail = proc.returncode, ""
         if exit_code != 0:
-            detail = (proc.stdout + proc.stderr)[-600:]
+            detail = output[-600:]
         status = "ok" if exit_code == 0 else "failed"
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as expired:
         exit_code, status = -1, "timeout"
         detail = f"killed after {timeout:.0f}s"
+        # Whatever the child managed to say before it was killed. Usually
+        # nothing -- the summary is printed at the end of a run -- but a case
+        # that captured a crash and then wedged has already named it, and the
+        # kill is not a reason to throw that away.
+        output = Text(expired.stdout) + Text(expired.stderr)
+
+    # The whole output, not the tail of it: the tail is what loses this.
+    # Parsed on success too, because a captured crash deliberately does not
+    # fail the run (AGENTS.md, `-bot_fail_on_crash`), so an `ok` case can have
+    # found a real engine bug and until now the manifest recorded nothing of it.
+    crash = signature_module.Parse(output)
 
     return Outcome(
         case=case,
@@ -179,6 +215,7 @@ def RunCase(case: Case, root: str, timeout: float,
         folder=os.path.relpath(folder, root).replace("\\", "/"),
         scenes=CountScenes(folder),
         detail=detail,
+        crash=crash,
     )
 
 
@@ -228,6 +265,35 @@ def Throughput(outcomes: Sequence[Dict[str, Any]], wall_seconds: float,
     }
 
 
+def Explained(outcomes: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
+    """How much of what went wrong this manifest can actually name.
+
+    `unexplained` is the number MARVEL-97 is about: a case that did not finish
+    and left no signature behind. It is not always a defect -- a bad hero name
+    or a kill before the reporter ran genuinely has none -- but it is the
+    number that grows if the parser ever stops matching, which is the one way
+    this fix could rot without anyone noticing.
+    """
+    def Entries(record: Dict[str, Any]) -> List[Dict[str, Any]]:
+        return list((record.get("crash") or {}).get("entries") or [])
+
+    failed = [record for record in outcomes if record.get("status") != "ok"]
+    named = [record for record in failed if Entries(record)]
+    return {
+        "failed": len(failed),
+        "with_signature": len(named),
+        "unexplained": len(failed) - len(named),
+        # Across every case, including the ones that exited 0: a captured
+        # crash does not fail a run, so those carry signatures too.
+        "distinct_signatures": sorted({str(entry.get("signature"))
+                                       for record in outcomes
+                                       for entry in Entries(record)}),
+        "unparsed_cases": sum(
+            1 for record in outcomes
+            if (record.get("crash") or {}).get("status") == signature_module.PARTIAL),
+    }
+
+
 def Generate(plan: Plan, root: str, *, workers: int, timeout: float,
              extra: Sequence[str]=(), fail_fast: bool=False) -> Dict[str, Any]:
     from engine.config_record import ConfigRecord
@@ -263,8 +329,16 @@ def Generate(plan: Plan, root: str, *, workers: int, timeout: float,
                 print(f"[{finished}/{len(todo)}] {mark} {outcome.case.scenario} "
                       f"{'+'.join(outcome.case.heroes)} seed {outcome.case.seed} "
                       f"({outcome.scenes} scene(s), {outcome.seconds:.1f}s)")
-                if outcome.status != "ok" and outcome.detail:
-                    print(f"        {outcome.detail.splitlines()[-1][:160]}")
+                if outcome.status != "ok":
+                    # The parsed signature when there is one, because the last
+                    # line of a tail is whatever the log happened to print
+                    # last. The tail stays as the fallback: a case that failed
+                    # before the reporter ran has nothing else.
+                    described = signature_module.Describe(outcome.crash)
+                    if described:
+                        print(f"        {described[:160]}")
+                    elif outcome.detail:
+                        print(f"        {outcome.detail.splitlines()[-1][:160]}")
                 if fail_fast and outcome.status != "ok":
                     print("        --fail-fast: no further cases will start")
                     stop = True
@@ -282,6 +356,7 @@ def Generate(plan: Plan, root: str, *, workers: int, timeout: float,
         "failed": sum(1 for record in outcomes if record.get("status") == "failed"),
         "timed_out": sum(1 for record in outcomes if record.get("status") == "timeout"),
         "scenes": sum(int(record.get("scenes", 0)) for record in outcomes),
+        "failures": Explained(outcomes),
         # Fenced off: measured in seconds on one machine, and the only thing
         # here that is not reproducible. Nothing regenerating a corpus reads it.
         "timing": Throughput(outcomes, wall, workers),
@@ -306,6 +381,12 @@ def Report(manifest: Dict[str, Any]) -> List[str]:
         lines.append(
             f"unfinished {manifest['failed']} failed, "
             f"{manifest['timed_out']} timed out -- see {MANIFEST_NAME}")
+    failures = manifest.get("failures") or {}
+    if failures.get("failed"):
+        lines.append(
+            f"signatures {failures['with_signature']}/{failures['failed']} "
+            f"named ({len(failures['distinct_signatures'])} distinct across the "
+            f"run, {failures['unexplained']} unexplained)")
     return lines
 
 
