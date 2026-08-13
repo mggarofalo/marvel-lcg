@@ -25,9 +25,10 @@ Five kinds of beat:
 - `ThenStep`      assert one thing about readable state
 
 `GivenStep` stays a block ahead of the transcript: it builds the board before
-the first decision. Every verb maps to a `RunPuzzle` method, and the mapping is
-a closed allowlist checked at load time -- an unknown verb is a load error,
-never a runtime surprise. Nothing here is `exec`-ed.
+the first decision. Every verb maps to a `RunPuzzle` method or to a deck on a
+`Player`, and the mapping is a closed allowlist checked at load time -- an
+unknown verb is a load error, never a runtime surprise. Nothing here is
+`exec`-ed.
 """
 
 from __future__ import annotations
@@ -46,18 +47,33 @@ class SpecCaseError(Exception):
 # Given
 #
 # kind -> what the verb's arguments mean:
-#   "create"            variadic card ids, generated into a zone
+#   "create"            variadic card ids, generated into a shared zone
+#   "create_player"     variadic card ids, generated into one seat's own zone
 #   "card"              one card, a state flip with no magnitude
 #   "card_value"        one card plus an integer
 #   "card_named_value"  one card, a counter/token name, and an integer
 #   "value"             just an integer
+#
+# A `create_player` verb names a deck attribute on `Player` rather than a
+# `RunPuzzle` method, and that is the whole of MARVEL-101. `RunPuzzle`'s four
+# player-zone helpers all stock `world.GetFirstPlayer()`, so there is no way
+# through them to give a *second* player a known top card -- and "each player
+# puts the top card of their deck into play" is printed on 242 cards, 197 of
+# which the engine implements. `player.set_aside_deck` *is*
+# `player.additional_discard_pile`, one object under two names (`player.py`).
+#
+# The first-person spellings are **sugar for player 1**: `my deck is` compiles
+# to `player_deck` with `player=0`, the same step `player 1's deck is` compiles
+# to. One meaning, one code path, no drift between two spellings of one thing.
+# See `GivenStep.player` for why that is a change and why it is the right one.
 
 GIVEN_VERBS: Dict[str, Tuple[str, str]] = {
-    # zone fills
-    "hand":                 ("create", "CreateHandCards"),
-    "player_deck":          ("create", "CreatePlayerDeck"),
-    "player_discard":       ("create", "CreatePlayerDiscardPile"),
-    "player_set_aside":     ("create", "CreatePlayerAdditionalDeck"),
+    # zone fills, one seat's own
+    "hand":                 ("create_player", "hand_cards"),
+    "player_deck":          ("create_player", "player_deck"),
+    "player_discard":       ("create_player", "discard_pile"),
+    "player_set_aside":     ("create_player", "additional_discard_pile"),
+    # zone fills, the whole table's
     "encounter_deck":       ("create", "CreateEncounterDeck"),
     "encounter_discard":    ("create", "CreateEncounterDiscardPile"),
     # magnitudes
@@ -92,6 +108,24 @@ class GivenStep:
     cards: Tuple[str, ...] = ()
     value: int = 0
     name: str = ""
+    player: int = 0
+    """Which seat a `create_player` verb stocks, 0-based. `player 1` is 0.
+
+    Seat order, not turn order, and that is a decision rather than a detail.
+    `world.players` is **rotated by one at the end of every round** to pass the
+    first player token (`world.py`), and an eliminated player is removed from it
+    outright, so `world.GetFirstPlayer()` names the token holder rather than a
+    seat. `world.const_seat_order_players` does not move.
+
+    The first-person Given steps used to route through `RunPuzzle`, which stocks
+    `GetFirstPlayer()`; the first-person *Then* steps have always read
+    `state.Player(0)`, which is seat 1. So `my deck is` and `I have <n> cards in
+    my deck` already meant two different players, and coincided only because a
+    `Given` block cannot run after a `When` and therefore never runs after a
+    rotation. Making both mean seat 1 removes that disagreement instead of
+    adding a third reading, and it is observationally inert for every scenario
+    that can be written today.
+    """
 
     kind = "given"
 
@@ -101,7 +135,7 @@ class GivenStep:
             raise SpecCaseError(f"unknown Given verb {self.verb!r}; known verbs: {known}")
 
         shape = GIVEN_KIND[self.verb]
-        if shape == "create" and not self.cards:
+        if shape in ("create", "create_player") and not self.cards:
             raise SpecCaseError(f"Given {self.verb!r} needs at least one card")
         if shape in ("card", "card_value", "card_named_value") and len(self.cards) != 1:
             raise SpecCaseError(
@@ -110,10 +144,23 @@ class GivenStep:
             raise SpecCaseError(f"Given {self.verb!r} needs a counter/token name")
         if shape == "value" and self.cards:
             raise SpecCaseError(f"Given {self.verb!r} takes no cards")
+        if self.player < 0:
+            raise SpecCaseError(
+                f"Given {self.verb!r} names player {self.player + 1}; "
+                f"players are numbered from 1")
+        if self.player and shape != "create_player":
+            raise SpecCaseError(
+                f"Given {self.verb!r} is not a per-player step, so it cannot "
+                f"name player {self.player + 1}")
 
     def Describe(self) -> str:
         shape = GIVEN_KIND[self.verb]
-        if shape == "create":
+        if shape == "create_player" and self.player:
+            # Only when it is not the default seat. `Describe` is what a failure
+            # message reads back to the author, and someone who wrote `my hand
+            # is` should not be answered about "player 1".
+            return f"player {self.player + 1} {self.verb} is {', '.join(self.cards)}"
+        if shape in ("create", "create_player"):
             return f"{self.verb} is {', '.join(self.cards)}"
         if shape == "card":
             return f"{self.cards[0]} {self.verb}"
@@ -125,7 +172,7 @@ class GivenStep:
 
     def ToDict(self) -> Dict[str, Any]:
         return {"kind": "given", "verb": self.verb, "cards": list(self.cards),
-                "value": self.value, "name": self.name}
+                "value": self.value, "name": self.name, "player": self.player}
 
 
 ################################################################################
@@ -468,6 +515,7 @@ def GivenFromDict(item: Dict[str, Any]) -> GivenStep:
         cards=tuple(str(c) for c in item.get("cards", ())),
         value=int(item.get("value", 0)),
         name=str(item.get("name", "")),
+        player=int(item.get("player", 0)),
     )
 
 

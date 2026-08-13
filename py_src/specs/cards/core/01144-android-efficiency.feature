@@ -59,6 +59,41 @@ Feature: Android Efficiency
     And I am not prompted again
 
   @card:01144 @card:01144a
+  Scenario: the reveal resolves for every player, off each player's own deck
+    # The "each" in "each player puts the top card of their deck into play". The
+    # single-player scenario above is equally consistent with an engine that
+    # resolved this once, for whoever revealed it -- which is exactly the class
+    # of bug MARVEL-16 says self-play will not find, because a bot game that
+    # reaches this card at all still only ever sees one board.
+    #
+    # The two decks are stocked with different cards on top on purpose. Two
+    # drones both made from the same card would pass against an engine that took
+    # two cards off *one* deck, and the deck counts alone would not separate them
+    # either. Naming the two printed identities does.
+    Given the heroes are "spider_man", "captain_marvel"
+    And I am in hero form
+    And my deck is "Aunt May", "Backflip", "Backflip"
+    And player 2's deck is "Pepper Potts", "Energy", "Energy"
+    And "01144a" is revealed
+
+    # Each drone under the printed identity of the card that became it: mine off
+    # my deck, the second player's off theirs.
+    Then "Aunt May" is in the "EngagedEnemiesArea"
+    And "Pepper Potts" is in the "EngagedEnemiesArea"
+    # ...and both under the name the game displays for a facedown drone, which
+    # needs an ordinal because there are now two of them. `#N` is creation order,
+    # so #1 is the card written first -- mine (MARVEL-102).
+    And "Drone Minion #1" is in the "EngagedEnemiesArea"
+    And "Drone Minion #2" is in the "EngagedEnemiesArea"
+    # One card off each deck, not two off one. This is the assertion the
+    # vocabulary could not make before MARVEL-101: the second player's deck had
+    # no step that could stock it and none that could count it.
+    And player 1 has 2 cards in their deck
+    And player 2 has 2 cards in their deck
+    And "01144a" is in the "EncounterDiscardPile"
+    And I am not prompted again
+
+  @card:01144 @card:01144a
   Scenario: as a boost card it offers the printed [energy] cost, and paying it makes no drone
     # Android Efficiency is written first in the encounter deck, so it is the
     # card dealt face down to boost Rhino's activation. Iron Man draws one card

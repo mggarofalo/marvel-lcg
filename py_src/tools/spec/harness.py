@@ -466,10 +466,52 @@ def StackTopFirst(world: Any, before: "frozenset[int]") -> None:
         area.Insert(0, card)
 
 
+def SeatOf(world: Any, index: int) -> Any:
+    """The player in seat `index`, 0-based, or a `SetupError` saying how many.
+
+    **Seat order, not turn order.** `world.players` is rotated by one at the end
+    of every round to pass the first player token and loses a player outright on
+    elimination, so it is not a stable way to name a seat;
+    `const_seat_order_players` is built once and never reordered.
+    """
+    seats = world.const_seat_order_players
+    if index >= len(seats):
+        raise SetupError(
+            f"this game has {len(seats)} player(s), so there is no player "
+            f"{index + 1}; add one with 'the heroes are \"<a>\", \"<b>\"'")
+    return seats[index]
+
+
+# `create_player` verb -> the deck attribute on `Player` it stocks. Kept beside
+# `SeatOf` rather than in `GIVEN_VERBS` alone so the indirection is readable:
+# the catalogue says which sentence, `GIVEN_VERBS` says which deck, and this is
+# where a name is turned into the object.
+def PlayerZone(player: Any, attribute: str) -> Any:
+    zone = getattr(player, attribute, None)
+    if zone is None:
+        raise SetupError(f"a player has no {attribute!r} deck")
+    return zone
+
+
 def ApplyGivenStep(world: Any, puzzle: Any, step: GivenStep,
                    packs: Tuple[str, ...] = (),
                    created: "Set[int]|None" = None) -> None:
     kind, method_name = GIVEN_VERBS[step.verb]
+
+    if kind == "create_player":
+        # One seat's own zone. `RunPuzzle`'s four helpers all stock
+        # `GetFirstPlayer()`, so the second player's deck is unreachable through
+        # them (MARVEL-101); the call they make is this one.
+        from game.card.factory import CardFactory
+
+        area = PlayerZone(SeatOf(world, step.player), method_name)
+        before = frozenset(world.object_manager.card_dict)
+        for card in step.cards:
+            CardFactory.GenerateCard(ResolveCardId(card, packs), area, world)
+        if step.verb in TOP_FIRST_ZONES:
+            StackTopFirst(world, before)
+        return
+
     method = getattr(puzzle, method_name)
 
     if kind == "create":

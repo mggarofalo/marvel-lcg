@@ -148,6 +148,54 @@ class TestGherkinParsing(unittest.TestCase):
         self.assertEqual(case.beats[1].prop, "threat")
         self.assertEqual(case.beats[1].value, 4)
 
+    def test_the_first_person_deck_step_is_sugar_for_player_one(self):
+        # MARVEL-101. `my deck is` and `player 1's deck is` are the *same* step
+        # with the seat left at its default, not two steps that happen to agree.
+        # If they ever compile to different verbs or different seats, a scenario
+        # could mean one thing and read as the other.
+        cases = ParseFeature(Feature("""
+  Scenario: mine
+    Given my deck is "Backflip"
+    Then I have 1 card in my deck
+
+  Scenario: named
+    Given player 1's deck is "Backflip"
+    Then I have 1 card in my deck
+"""))
+        mine, named = cases[0].given[0], cases[1].given[0]
+        self.assertEqual(mine.verb, "player_deck")
+        self.assertEqual(mine.player, 0)
+        self.assertEqual(mine, named)
+
+    def test_a_per_player_deck_step_names_the_seat_it_stocks(self):
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    Given player 2's deck is "Aunt May", "Backflip"
+    Then player 2 has 2 cards in their deck
+"""))
+        case = cases[0]
+        step = case.given[0]
+        self.assertEqual(step.verb, "player_deck")
+        # 0-based seat, so player 2 is index 1.
+        self.assertEqual(step.player, 1)
+        self.assertEqual(step.cards, ("Aunt May", "Backflip"))
+        self.assertEqual(case.beats[0].subject, "player 2")
+        self.assertEqual(case.beats[0].prop, "deck_size")
+        self.assertEqual(case.beats[0].value, 2)
+
+    def test_a_per_player_deck_count_is_not_the_hand_count(self):
+        # The two `player <n> has <m> cards ...` forms differ only in their
+        # tail, so a regex that stopped reading early would quietly answer the
+        # deck question with the hand size.
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    Given my deck is "Backflip"
+    Then player 1 has 3 cards in hand
+    And player 1 has 1 card in their deck
+"""))
+        self.assertEqual([beat.prop for beat in cases[0].beats],
+                         ["hand_size", "deck_size"])
+
     def test_a_given_after_a_when_is_rejected(self):
         # The board is built once, before the transcript starts. A Given in the
         # middle would silently not do what it looks like it does.

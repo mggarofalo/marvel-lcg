@@ -300,7 +300,7 @@ def CaptureCard(card: Any, engine_allocated: bool = False) -> CardState:
     from game.card.face.attribute.can_status import CanStatus
     from game.card.face.base import Scheme2
     from game.card.face.card_type import Hero, Identity, MainScheme
-    from tools.spec.resolve import ZoneName
+    from tools.spec.resolve import NameableFaces, ZoneName
 
     face = card.face
 
@@ -334,9 +334,16 @@ def CaptureCard(card: Any, engine_allocated: bool = False) -> CardState:
         for name in face.components.token.GetTokenNames():
             tokens[str(name)] = int(face.GetTokens(name))
 
-    card_ids = tuple(f.paper.card_id.lower() for f in card.printed_faces)
+    # Every face the card answers to, not only its printed ones. A facedown
+    # DRONE keeps the printed identity of the card it was made from and presents
+    # a "Drone Minion" face on top of it, and a scenario has reason to name
+    # either -- see `resolve.NameableFaces` and MARVEL-102. `card_id` and `name`
+    # above stay the *current* face, because that is what a failure message
+    # should call the card sitting on the board.
+    nameable = NameableFaces(card)
+    card_ids = tuple(f.paper.card_id.lower() for f in nameable)
     names: List[str] = []
-    for f in card.printed_faces:
+    for f in nameable:
         for value in (str(f.name), str(f.printed_name)):
             if value and value.lower() not in names:
                 names.append(value.lower())
