@@ -257,14 +257,34 @@ def Document(reach: Map, universe: coverage_report.Universe) -> Dict[str, Any]:
     }
 
 
+def ResolvedShare(resolved: Set[str], reachable: Set[str]) -> float:
+    """How much of the reachable population a corpus actually resolved.
+
+    Both sets, not one over the other's size. A card the map calls unreachable
+    and the corpus played anyway belongs to neither the numerator nor the
+    denominator of this question -- it is a hole in the map, reported on its own
+    line. Counting it in the numerator alone inflated the figure by 1.3 points
+    at 44 such cards, and enough of them would print a share above 100%.
+    """
+    if not reachable:
+        return 0.0
+    return len(resolved & reachable) / len(reachable)
+
+
 def CrossCheck(reach: Map, universe: 'coverage_report.Universe',
                corpus: str) -> List[str]:
     """Cards a corpus resolved that this map calls unreachable.
 
     Every one is a hole in the map rather than a surprise about the corpus, so
     a non-empty answer is a bug report about this file. The known-and-explained
-    residue is 29: three engine-created status cards and 26 Wrecking Crew cards
-    whose decks are built from `data/cards.json`.
+    residue is the Wrecking Crew cards a card script pulls in by literal id
+    (MARVEL-98) plus the engine-created status cards -- 44 of them at 321 cases.
+
+    The "of what is reachable" ratio counts only cards in *both* sets. Dividing
+    every resolved card by the reachable population mixes them: the cards above
+    are in the numerator and not the denominator, so the figure read 82.4% when
+    the share of reachable cards actually resolved was 81.1%, and a map with
+    enough holes could have printed over 100%.
     """
     from tools.coverage import report as report_module
 
@@ -282,7 +302,7 @@ def CrossCheck(reach: Map, universe: 'coverage_report.Universe',
     lines = [
         f"corpus resolved   {len(resolved)} "
         f"({len(resolved) / len(known):.1%} of the universe, "
-        f"{len(resolved) / len(reachable):.1%} of what is reachable)",
+        f"{ResolvedShare(resolved, reachable):.1%} of what is reachable)",
         f"played anyway     {len(outside)} card(s) this map calls unreachable",
     ]
     for card_id in outside[:40]:

@@ -385,5 +385,40 @@ class TestDirectedDirectly(unittest.TestCase):
         self.assertEqual(len(builder.cases), 2)
 
 
+################################################################################
+#
+
+class TestResolvedShareCountsBothSets(unittest.TestCase):
+    """The cross-check's ratio must not mix populations.
+
+    A card this map calls unreachable and the corpus played anyway is a hole in
+    the map, reported on its own line. It belongs to neither side of "how much
+    of what is reachable did the corpus resolve", and putting it in the
+    numerator alone read 82.4% where the answer was 81.1% -- with 44 such cards
+    out of 3,617. The failure mode is silent and always flattering, which is the
+    one direction a coverage figure must never drift.
+    """
+
+    def test_a_card_played_but_called_unreachable_counts_on_neither_side(self):
+        share = reach_module.ResolvedShare(resolved={"a", "b", "x"},
+                                           reachable={"a", "b", "c", "d"})
+        self.assertEqual(share, 0.5)
+
+    def test_the_share_cannot_exceed_one(self):
+        # The shape the old arithmetic would have printed above 100%: a map with
+        # more holes than reachable cards.
+        share = reach_module.ResolvedShare(resolved={"a", "x", "y", "z"},
+                                           reachable={"a", "b"})
+        self.assertLessEqual(share, 1.0)
+        self.assertEqual(share, 0.5)
+
+    def test_resolving_everything_reachable_is_one(self):
+        self.assertEqual(
+            reach_module.ResolvedShare({"a", "b"}, {"a", "b"}), 1.0)
+
+    def test_an_empty_map_does_not_divide_by_zero(self):
+        self.assertEqual(reach_module.ResolvedShare({"a"}, set()), 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()
