@@ -522,6 +522,7 @@ class EventManager:
             first_effect = forced_effects[0]
 
             if first_effect.ability.priority != TimingPriority.Status and \
+                first_effect.ability.priority != TimingPriority.Constant and \
                 not isinstance(message, Message.WhenGameBeginSetup) and \
                 not check_is_resources(first_effect) and \
                 not first_effect.ability.flags.is_delay_ability:

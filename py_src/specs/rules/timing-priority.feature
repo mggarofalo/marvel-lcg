@@ -42,9 +42,8 @@
 #                                    makes 01098 and 01003 simultaneous.
 #                                    21 events elsewhere carry both; see
 #                                    MARVEL-83
-#     Interrupt -> Boost             one board exists and it is blocked by an
-#                                    engine defect, not by the rule. See the
-#                                    section at the end of this file.
+#     Interrupt -> Boost             proven below, decisively (unblocked by
+#                                    MARVEL-91)
 #     Boost -> ForcedResponse        not observable: the single candidate is a
 #                                    mistyped card. See the end of this file.
 #
@@ -320,35 +319,67 @@ Feature: Timing priority
     And "Hawkeye" has 3 "arrow" counters
 
   # --------------------------------------------------------------------------
-  # Interrupt (5) before Boost (6) -- BLOCKED, not unprovable
+  # Interrupt (5) before Boost (6)
   #
-  # A board exists and it is the only one in the corpus. Both abilities fire on
-  # the same `WhenUnitBeDefeated` message for the same minion, and both write the
-  # same counter -- threat on the main scheme:
+  # The only board in the corpus where these two bear on the same subject. Both
+  # fire on the same `WhenUnitBeDefeated` message for the same minion, and both
+  # write the same counter -- threat on the main scheme:
   #
   #   Gatekeeper (32044)  Interrupt, attached to a minion. "When attached minion
   #                       is defeated, remove 4 threat from the main scheme."
   #   Jolt (50133)        Boost, via AbilityType.WhenDefeated. "When Defeated:
   #                       Place 3 threat on the main scheme."
   #
-  # Starting from 2 threat: Interrupt first removes 4 (clamped to 0) and Jolt
+  # Starting from 2 threat: Interrupt first removes 4, clamped to 0, and Jolt
   # then places 3, ending at 3. Boost first places 3 to make 5, and the removal
-  # takes it to 1. The orders are three apart, so nothing subtle turns on the
-  # clamp.
+  # takes it to 1. Verified decisive by mutation -- remapping AbilityType.Interrupt
+  # to a priority after Boost gives exactly 1, while both controls keep passing.
   #
-  # What blocks it is not the rule. Playing Gatekeeper onto a minion stops the
-  # game with a two-option prompt whose options have no names -- `_#1` and `_#2`
-  # -- and both answers produce an identical board. The only way to write the
-  # transcript today is `When I choose "_#1"`, which asserts an engine-internal
-  # ordinal, would bind to the wrong ability if registration order changed, and
-  # is exactly what MARVEL-87 wants the harness to reject. See MARVEL-91; this
-  # section becomes four scenarios the moment those options are named.
+  # This section was recorded as BLOCKED until MARVEL-91. Playing Gatekeeper used
+  # to stop the game with a two-option prompt whose options had no names, because
+  # `TimingPriority.Constant` reached the simultaneous-forced-ability ordering
+  # prompt -- and a constant applies continuously, so there is no moment to
+  # order. With that fixed the board is reachable and the pair is proven.
   #
-  # It is worth saying which of these is which. MARVEL-91 is a defect in the
-  # engine. The pair being unproven is a consequence of that defect, not a
-  # finding about timing priority -- so it must not be read as evidence that the
-  # two levels never race.
-  #
+  # Jolt enters at 5 hit points and Gatekeeper grants +2, so 5 damage leaves it
+  # one Spider-Man attack from defeat.
+
+  Scenario: a when-defeated ability places its threat with nothing to race
+    # The control. Jolt alone, defeated, takes the main scheme from 2 to 5.
+    Given the main scheme has 2 threat
+    And "Jolt" is in play
+    And "Jolt" has 3 damage
+
+    When I attack "Jolt"
+    Then the main scheme has 5 threat
+
+  Scenario: the interrupt removes its threat before the when-defeated adds any
+    # The decisive one. 3, not 1: the removal found 2 threat and clamped to 0,
+    # and Jolt's 3 went onto an empty scheme. Had Boost gone first the scheme
+    # would have reached 5 and the removal would have left 1.
+    Given the main scheme has 2 threat
+    And "Jolt" is in play
+    And "Gatekeeper" is in play
+    And "Jolt" has 5 damage
+
+    When I attack "Jolt"
+    When I choose "Interrupt" on "Gatekeeper"
+    Then "Jolt" is not in play
+    And the main scheme has 3 threat
+
+  Scenario: declining the interrupt leaves only the when-defeated
+    # The second control, and the one that shows the Interrupt is optional. Same
+    # board, same beats, the offer declined -- and the result is the first
+    # scenario's 5.
+    Given the main scheme has 2 threat
+    And "Jolt" is in play
+    And "Gatekeeper" is in play
+    And "Jolt" has 5 damage
+
+    When I attack "Jolt"
+    When I pass
+    Then the main scheme has 5 threat
+
   # --------------------------------------------------------------------------
   # Boost (6) before ForcedResponse (7) -- NOT OBSERVABLE
   #
