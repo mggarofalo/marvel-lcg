@@ -16,21 +16,35 @@ to `deck/` or `data/`.
 
 ## The number this exists to produce
 
-Of 3781 cards with an engine script, **3447 (91.2%) are reachable** from the 63
-starter decks and the shipped scenarios and encounter sets put together. The
-remaining 334 are what self-play cannot get to at any corpus size, and they are
-the list MARVEL-16 asks to hand to Spec Extraction.
+Of 3781 cards with an engine script, **3617 (95.7%) are reachable** from the 63
+starter decks, the 8 generated ones MARVEL-80 added, and the shipped scenarios
+and encounter sets put together. The remaining 164 are what self-play cannot get
+to at any corpus size, and they are the list MARVEL-16 asks to hand to Spec
+Extraction.
+
+It was 3447 (91.2%) against 334 unreachable before MARVEL-80 built decks that
+carry the cards no shipped deck names.
+
+**44 of those 164 are wrong**, and `--corpus` says so: they are `twc` cards a
+card script pulls in by literal id, which the paragraph below explains and
+MARVEL-98 exists to fix. Treat the residue as an upper bound on the authoring
+list until it does.
 
 ## This is a lower bound, and cross-checking it is how it gets fixed
 
 A file-based map can only see what a file names. Two things it cannot:
 
 - **Cards the engine creates.** `tough`, `stunned` and `confused` are in no deck.
-- **Decks assembled from card metadata.** `data/scenarios/the_wrecking_crew.json`
+- **Decks a card script builds from literal ids.** `data/scenarios/the_wrecking_crew.json`
   has an empty `villain` and `encounters`, listing only the four villains in
-  `set_aside`; the rest of their encounter cards appear in no deck or set file at
-  all, and the engine builds those decks from `data/cards.json`. 26 `twc` cards
-  reach play that way.
+  `set_aside`; the rest of their encounter cards appear in no deck or set file
+  at all. They are **Python literals in the main scheme's script** --
+  `cards/pack/twc/07001a.py:32` opens a four-element list of id strings and
+  feeds it to `CardFactory.GenerateCards`, then sets `skip_create_encounter_deck`
+  so the data-driven builder at `game/world/world.py:231` never runs. There is
+  no metadata join to replicate: nothing queries `cards.json` for set
+  membership. Closing this means scanning card scripts for literal id lists,
+  which is MARVEL-98. A 321-case corpus plays **44** such `twc` cards.
 
 So `--corpus` exists: it compares the map against what a corpus *actually*
 resolved and lists every card that was played despite being called unreachable.
