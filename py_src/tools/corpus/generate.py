@@ -69,6 +69,19 @@ from tools.determinism.pinned_env import build_env
 PROGRESS_NAME = "progress.jsonl"
 MANIFEST_NAME = "corpus-manifest.json"
 
+# Every folder a plan can name a hero from. `engine/file/manager.py` defaults
+# `deck_folders` to `["./deck/"]` alone, so a case whose hero is one of the
+# MARVEL-80 generated decks resolved to nothing and the run died at step 0 with
+# an `AssertionError` in `ReadJson` -- a crash report, not a missing-deck
+# message, which is why this went unnoticed while the plan happily included
+# them.
+#
+# Passed unconditionally rather than only when a generated hero is in the case:
+# the folder either exists or it does not, the engine is fine either way, and a
+# flag that appears on some commands and not others is a difference that has to
+# be explained every time someone reads a corpus manifest.
+DECK_FOLDERS = ("./deck/", "./deck/generated/")
+
 # Long enough that a slow four-hero game on a loaded machine is not killed for
 # being slow, short enough that a wedged one is noticed the same day.
 DEFAULT_CASE_TIMEOUT = 900.0
@@ -121,6 +134,7 @@ def Command(case: Case, folder: str, extra: Sequence[str]) -> List[str]:
         "-bot_seed", str(case.seed),
         "-bot_games", str(case.games),
         "-bot_save_folder", folder.replace("\\", "/") + "/",
+        "-deck_folders", *DECK_FOLDERS,
         # A corpus has already paid for the checker once per game elsewhere, and
         # it costs roughly 40% of a game's wall time. Overridable: `extra` is
         # appended, and the command line beats nothing here.

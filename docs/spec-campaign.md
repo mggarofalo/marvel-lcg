@@ -93,6 +93,74 @@ It is also the only pack the harness has proven it can boot, which is the second
 reason to start there — every other pack has an unknown bring-up cost, and
 finding that out on a 236-card pack is worse than finding it out on this one.
 
+## Delegating authoring
+
+MARVEL-87 ran the experiment: cheap agents on the same six core cards under two
+protocols. The result that matters is not a pass rate, it is a **gradient**:
+
+| protocol | scenarios | pass rate | load-bearing |
+|---|---:|---:|---|
+| Haiku, engine access, iterate to green | 14 | 100% | 2 of 14 |
+| Haiku, blind, printed text only | 17 | 24% | 2 of 4 passes |
+| Large model, blind | 10 | 60% | all |
+| Large model, deliberately vacuous but plausible | 10 | 90% | none |
+
+**Weakening a spec raises its pass rate.** A reviewer looking only at colour
+cannot tell a good batch from a hollow one, and the coverage number goes up
+either way.
+
+The iterate protocol also destroyed a real finding. Authoring Jessica Jones, an
+agent hit `FAIL-engine-suspected`, deleted the scenario, and replaced it with a
+health check. That failure was real and is now MARVEL-86. A process that
+converts findings into deleted lines is not a weaker version of this suite; it
+is the opposite of it.
+
+### Two protocols work. Pick by model tier and reviewer budget.
+
+**Blind.** Withhold the engine — Read/Write only, no validator, no
+`py_src/cards/`. Strip the `engine` block from the card data handed over; it
+carries `script.ability_factories`, which is engine behaviour, not printed text.
+Require a prediction ledger: one row per numeric assertion, deriving it from
+printed numbers. 60–75% of output lands in quarantine and a human walks the
+queue. This is the only protocol that has been shown to work with cheap models.
+
+**Sighted, attributed, mutation-checked.** Give the agent the engine and the
+`--no-write` validator, and impose two rules: a failing scenario may be edited
+**only** when the author can name the specific thing they misread in the printed
+text, and any failure they cannot attribute comes back unresolved with the
+transcript. Then the reviewer **mutation-tests the result** rather than reading
+the colour.
+
+The first core-set batch used the second protocol with session-tier models: 24
+scenarios, 24 passing, no unresolved cases, and three independent discoveries of
+a real vocabulary gap (MARVEL-94). Spot mutation showed the scenarios were
+load-bearing in both directions. That is a genuinely different outcome from the
+study's iterate row, and the difference is not the engine access — it is the
+attribution rule and the fact that nobody accepted a pass rate as evidence.
+
+**Do not add a pass-rate floor to `--check-drift`.** It is the obvious response
+to the table above and it is wrong: the batch just described would have tripped
+it at 100%, and a vacuous batch sits at 90%. Pass rate does not separate them in
+either direction. Mutation does.
+
+### What still holds regardless of protocol
+
+- **One card per file.** A single unparsable step aborts the whole validate run
+  — exit 2, no results for any file in the tree.
+- **Do not delegate `interactive` blind.** It is where the format earns its
+  verbosity, and 117 of 467 `ForChoiceAbility` calls pass an empty label, so a
+  quarter of interactive choice points have no domain name a printed-text author
+  could possibly guess. That is MARVEL-41 work and it blocks faithful blind
+  authoring whoever does it.
+- **`declarative` is not the easy tier.** It is read from script shape, not
+  behaviour: a sample of 25 includes Thanos, Baron Zemo, and a card whose text
+  begins "Create your own game area".
+- **Watch `at depth`, not `covered`.** `python -m tools.spec.coverage` reports
+  both. `covered` credits a card for one trusted scenario whatever its tier
+  plans; the gap between the two columns is how much of the covered set is one
+  scenario deep, which is exactly what mass delegation produces if nothing
+  watches for it.
+
 ## Triage is not optional
 
 Every disagreement is a spec bug or an engine bug and both are worth finding.

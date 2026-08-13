@@ -26,7 +26,7 @@ import shutil
 import tempfile
 import unittest
 
-from tools.corpus import generate
+from tools.corpus import generate, inventory
 from tools.corpus.inventory import Inventory, Scenario, Subset
 from tools.corpus.plan import Build, Summarize
 
@@ -384,6 +384,69 @@ class TestWorkerCommand(unittest.TestCase):
 
         start = command.index("-bot_heroes") + 1
         self.assertEqual(command[start:start + 2], list(case.heroes))
+
+    def DeckFolders(self, command):
+        start = command.index("-deck_folders") + 1
+        folders = []
+        for value in command[start:]:
+            if value.startswith("-"):
+                break
+            folders.append(value)
+        return folders
+
+    def test_every_hero_the_plan_can_name_is_findable_from_the_command(self):
+        """MARVEL-80. The plan sampled decks the engine could not find.
+
+        `deck_folders` defaults to `["./deck/"]` alone; the generated decks live
+        in `./deck/generated/`; and the plan has included them since the builder
+        landed. A case whose hero was one of them died at step 0 with an
+        `AssertionError` in `ReadJson` -- a crash report rather than a
+        missing-deck message, which is how a whole tier of a planned corpus went
+        ungenerated with nothing saying so.
+
+        Stated as the property that actually matters rather than as a literal
+        argument list: every hero the inventory can hand to a case must be
+        reachable under the lookup the engine will actually perform. A deck
+        folder added to one side and not the other then fails here, in
+        milliseconds, instead of at step 0 of a long run.
+
+        The lookup is modelled the way `FileManager` does it (`file/manager.py`
+        around line 216): a **flat** join of the filename over
+        `deck_folders + [starter_deck_folder]`. It does not recurse, which is
+        the whole reason `./deck/` alone did not reach `./deck/generated/` --
+        and a test that walked the tree recursively would pass on the broken
+        command and prove nothing.
+        """
+        if not os.path.isdir("deck"):
+            self.skipTest("run from py_src/")
+
+        folders = self.DeckFolders(self.Command()[1]) + ["./deck/starter"]
+        missing = [hero for hero in inventory.Read().heroes
+                   if not any(os.path.isfile(os.path.join(folder, hero + ".json"))
+                              for folder in folders)]
+        self.assertEqual(missing, [],
+                         f"the plan can name these and {folders} does not hold them")
+
+    def test_the_generated_decks_are_among_them(self):
+        """The regression this exists for, named.
+
+        Without it the test above still passes on a tree with no generated decks
+        on disk -- which is exactly the state the bug hid in.
+        """
+        if not os.path.isdir(inventory.GENERATED_HERO_FOLDER):
+            self.skipTest("no generated decks on disk")
+
+        generated = [h for h in inventory.Read().heroes
+                     if h.startswith("generated_")]
+        self.assertTrue(generated)
+
+        folders = self.DeckFolders(self.Command()[1])
+        for hero in generated:
+            with self.subTest(hero=hero):
+                self.assertTrue(
+                    any(os.path.isfile(os.path.join(folder, hero + ".json"))
+                        for folder in folders),
+                    f"{hero} is in the plan and under none of {folders}")
 
     def test_extra_flags_come_last_so_they_win(self):
         case = Build(Stock(), seed=3, games=10).cases[0]
