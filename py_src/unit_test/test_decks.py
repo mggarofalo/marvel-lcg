@@ -1,4 +1,4 @@
-"""Tests for the deckbuilding rules (MARVEL-80, MARVEL-85).
+"""Tests for the deckbuilding rules (MARVEL-80, MARVEL-85, MARVEL-88).
 
 The rule this module exists to enforce is that **an illegal deck must fail
 loudly**. A deck that breaks the rules still plays: the engine shuffles it and
@@ -18,19 +18,20 @@ import os
 import unittest
 
 from tools.decks.rules import (
-    ASPECTS, DECKBUILDING, DECKBUILDING_LINES, AspectAllowance, Catalogue,
-    Check, DeckError, ReadDeck, Rule, Validate)
+    ASPECTS, DECKBUILDING, AspectAllowance, Catalogue, Check, DeckError,
+    ReadDeck, Rule, Validate)
 
 CARD_DATASET = "../datasets/cards/cards.json"
 
 
 def Card(card_id, faction, *, card_set="", limit=3, card_type="event",
-         traits=(), energy=0):
+         traits=(), energy=0, deckbuilding=None):
     """One printed record, with only the fields the rules read."""
     return {"card_id": card_id, "name": f"Card {card_id}", "faction": faction,
             "set": card_set, "deck_limit": limit, "type": card_type,
             "traits": list(traits),
-            "stats": {"resource_energy": energy} if energy else {}}
+            "stats": {"resource_energy": energy} if energy else {},
+            "deckbuilding": deckbuilding}
 
 
 def MakeCatalogue(*records, **cards):
@@ -157,12 +158,84 @@ class TestRejection(unittest.TestCase):
 IDENTITIES = ("plain", "spider_woman", "warlock", "cyclops", "cable", "gam",
               "maria_hill", "wonder_man")
 
+
+def Allowance(what, card_type, *, traits=(), resource=None, source="any_aspect",
+              limit=None, counted_by="cards"):
+    return {"what": what, "card_type": card_type, "traits": list(traits),
+            "resource": resource, "from": source, "limit": limit,
+            "counted_by": counted_by}
+
+
+def Block(source_card, source_hash, source_text, *, aspects=1,
+          equal_aspects=False, copy_limit=None, allowances=()):
+    return {"aspects": aspects, "equal_aspects": equal_aspects,
+            "copy_limit": copy_limit, "allowances": list(allowances),
+            "source_card": source_card, "source_hash": source_hash,
+            "source_text": source_text}
+
+
+# The seven blocks the extract emits, written out here so these tests run
+# without the 6 MB dataset and so the shape a consumer sees is pinned by hand
+# rather than by whatever the extract happens to produce.
+# `TestTheDatasetMatchesTheFixture` asserts the real dataset agrees, which is
+# what turns this from a restatement into a pin.
+BLOCKS = {
+    "spider_woman": Block(
+        "04031b", "179c419bfa050738",
+        "Double Agent — Choose two aspects instead of one during "
+        "deck-building. You must include an equal number of cards from those "
+        "aspects in your deck.",
+        aspects=2, equal_aspects=True),
+    "warlock": Block(
+        "21031b", "628283156e8e0eba",
+        "Avatar of Life - During deck-building, your deck must include an "
+        "equal number of cards from all 4 aspects. You cannot include more "
+        "than 1 copy of any non-Adam Warlock card.",
+        aspects=4, equal_aspects=True, copy_limit=1),
+    "cyclops": Block(
+        "33001b", "ba3d1502cd0af797",
+        "You may include [[X-MEN]] allies from any aspect in your deck.",
+        allowances=[Allowance("X-Men allies", "ally", traits=["X-Men"])]),
+    "cable": Block(
+        "40001b", "152e29537030f10b",
+        "You may include player side schemes from any aspect in your deck.",
+        allowances=[Allowance("player side schemes", "player_side_scheme")]),
+    "gam": Block(
+        "18001b", "aff002dfb71ca6bd",
+        "Skilled Tactician — You may include up to 6 [[attack]] and/or "
+        "[[thwart]] events in your deck from aspects other than your chosen "
+        "aspect.",
+        allowances=[Allowance("attack and/or thwart events", "event",
+                              traits=["Attack", "Thwart"],
+                              source="other_aspects", limit=6)]),
+    "maria_hill": Block(
+        "50001b", "b27146a8c0d4409c",
+        "You may include the maximum number of copies of 3 [[S.H.I.E.L.D.]] "
+        "supports in your deck from aspects other than your chosen aspect.",
+        allowances=[Allowance("S.H.I.E.L.D. supports", "support",
+                              traits=["S.H.I.E.L.D."], source="other_aspects",
+                              limit=3, counted_by="titles")]),
+    "wonder_man": Block(
+        "58001b", "a3acf7d2b2b1e4f2",
+        "Ionic Energy Being — You may include events with a printed [energy] "
+        "resource icon from any aspect in your deck.",
+        allowances=[Allowance("events with a printed energy resource icon",
+                              "event", resource="energy")]),
+}
+
 # 45 titles per aspect, which is enough for a 40-card deck at one copy each.
 FILLER = [Card(f"{aspect[:3]}{i}", aspect, limit=3)
           for aspect in ASPECTS for i in range(45)]
 
 EXCEPTIONS = MakeCatalogue(
-    *[Card(f"id_{s}", "hero", card_set=s, limit=1, card_type="hero")
+    # Both faces of each identity carry the block, as the dataset emits it.
+    # `id_plain` carries none, and is the control every allowance is checked
+    # against.
+    *[Card(f"id_{s}", "hero", card_set=s, limit=1, card_type="hero",
+           deckbuilding=BLOCKS.get(s))
+      for s in IDENTITIES],
+    *[Card(f"ae_{s}", "hero", card_set=s, limit=1, card_type="alter_ego",
+           deckbuilding=BLOCKS.get(s))
       for s in IDENTITIES],
     *FILLER,
     # Adam Warlock's own cards, which his copy cap spares.
@@ -215,11 +288,11 @@ class TestAspectCountExceptions(unittest.TestCase):
     """Spider-Woman and Adam Warlock: more than one aspect, in equal parts."""
 
     def test_the_default_is_one_aspect(self):
-        self.assertEqual(AspectAllowance("spider_man"), 1)
+        self.assertEqual(EXCEPTIONS.AspectAllowance("spider_man"), 1)
 
     def test_the_printed_aspect_counts_are_honoured(self):
-        self.assertEqual(AspectAllowance("spider_woman"), 2)
-        self.assertEqual(AspectAllowance("warlock"), 4)
+        self.assertEqual(EXCEPTIONS.AspectAllowance("spider_woman"), 2)
+        self.assertEqual(EXCEPTIONS.AspectAllowance("warlock"), 4)
 
     def SplitDeck(self, hero_set, counts):
         """A deck holding `counts[aspect]` cards of each named aspect."""
@@ -400,53 +473,149 @@ class TestScopedAllowances(unittest.TestCase):
         self.assertEqual(Broken(Deck("plain", "energy_event")), ["aspect"])
 
 
-class TestTheTableItself(unittest.TestCase):
+class TestReadingABlock(unittest.TestCase):
+    """The dataset -> rule translation, which used to be a hand-written table.
 
-    def test_every_identity_names_the_card_its_rule_is_printed_on(self):
-        for hero_set, rule in DECKBUILDING.items():
-            self.assertTrue(rule.card_id, hero_set)
-            self.assertTrue(rule.printed, hero_set)
+    The rules themselves are no longer written here or in `tools/decks/rules.py`
+    -- they are read off `deckbuilding` blocks on the identity cards, which
+    `tools/cards/deckbuilding.py` emits and pins to the printed sentence. What
+    is left to test in this direction is that a block is read correctly, that a
+    card without one gets the default, and that a malformed dataset fails
+    rather than picking a reading.
+    """
 
-    def test_gamoras_set_is_gam(self):
-        """Not `gamora`, which is what every other hero's set looks like.
-
-        A table keyed on the wrong string fails open -- her deck would be
-        checked as an ordinary one-aspect deck -- so it is pinned here.
-        """
-        self.assertIn("gam", DECKBUILDING)
-        self.assertNotIn("gamora", DECKBUILDING)
-
-    def test_an_unlisted_hero_gets_the_default(self):
-        rule = Rule("spider_man")
+    def test_an_identity_with_no_block_gets_the_default(self):
+        rule = EXCEPTIONS.Rule("plain")
         self.assertEqual(rule.aspects, 1)
         self.assertEqual(rule.allowances, ())
         self.assertIsNone(rule.copy_cap)
 
-    def test_every_printed_deckbuilding_line_is_in_the_table(self):
-        """The guard on a hand-written table.
+    def test_a_hero_the_catalogue_does_not_have_gets_the_default(self):
+        self.assertEqual(EXCEPTIONS.Rule("no_such_hero").aspects, 1)
 
-        Seven identities in the dataset print a deck-building line and all
-        seven are listed. An eighth would silently be checked as an ordinary
-        one-aspect deck, and its decks would be rejected as illegal while being
-        legal -- so a new one fails here instead. The phrasings are the union of
-        what the seven use; a line that uses none of them is not reachable by
-        any grep, which is the limit of this guard and the reason the table is
-        written out rather than parsed.
+    def test_every_block_names_the_card_its_rule_is_printed_on(self):
+        for hero_set, rule in EXCEPTIONS.Rules().items():
+            self.assertTrue(rule.card_id, hero_set)
+            self.assertTrue(rule.printed, hero_set)
+
+    def test_the_printed_aspect_counts_are_read(self):
+        self.assertEqual(EXCEPTIONS.AspectAllowance("spider_woman"), 2)
+        self.assertEqual(EXCEPTIONS.AspectAllowance("warlock"), 4)
+        self.assertEqual(EXCEPTIONS.AspectAllowance("plain"), 1)
+
+    def test_the_units_a_cap_counts_in_are_read(self):
+        gamora = EXCEPTIONS.Rule("gam").allowances[0]
+        hill = EXCEPTIONS.Rule("maria_hill").allowances[0]
+        self.assertEqual((gamora.limit, gamora.by_title), (6, False))
+        self.assertEqual((hill.limit, hill.by_title), (3, True))
+
+    def test_gamoras_set_is_gam(self):
+        """Not `gamora`, which is what every other hero's set looks like.
+
+        A lookup on the wrong string fails open -- her deck would be checked as
+        an ordinary one-aspect deck -- so it is pinned here. The dataset is
+        keyed on `set` for exactly this reason: nothing in the pipeline gets to
+        invent the key.
         """
+        self.assertIn("gam", EXCEPTIONS.Rules())
+        self.assertNotIn("gamora", EXCEPTIONS.Rules())
+
+    def test_two_faces_disagreeing_is_an_error_not_a_choice(self):
+        """A dataset that says two things is broken, and says so.
+
+        The block is emitted on both faces of an identity so a consumer keyed
+        on `set` need not know which face carries the printing. If they ever
+        differ, picking one silently is the failure mode this whole issue is
+        about.
+        """
+        other = dict(BLOCKS["cyclops"], aspects=2)
+        broken = MakeCatalogue(
+            Card("id_x", "hero", card_set="x", card_type="hero",
+                 deckbuilding=BLOCKS["cyclops"]),
+            Card("ae_x", "hero", card_set="x", card_type="alter_ego",
+                 deckbuilding=other))
+        with self.assertRaises(DeckError):
+            broken.Rules()
+
+    def test_an_allowance_needs_every_clause_to_match(self):
+        """Read directly, without going through a deck.
+
+        Each of the five scoped allowances is exercised against a near miss by
+        the deck tests above; this states the same thing about the predicate
+        itself, which is where a widened reading would come from.
+        """
+        cyclops = EXCEPTIONS.Rule("cyclops").allowances[0]
+        self.assertTrue(cyclops.Matches(EXCEPTIONS.Get("xmen_ally")))
+        self.assertFalse(cyclops.Matches(EXCEPTIONS.Get("xmen_event")))
+        self.assertFalse(cyclops.Matches(EXCEPTIONS.Get("plain_ally")))
+
+        wonder_man = EXCEPTIONS.Rule("wonder_man").allowances[0]
+        self.assertTrue(wonder_man.Matches(EXCEPTIONS.Get("energy_event")))
+        self.assertFalse(wonder_man.Matches(EXCEPTIONS.Get("energy_upgrade")))
+        self.assertFalse(wonder_man.Matches(EXCEPTIONS.Get("plain_event")))
+
+
+class TestTheDatasetMatchesTheFixture(unittest.TestCase):
+    """The fixture above, against what the extract actually emitted.
+
+    Without this the fixture is a restatement of the checker's own beliefs and
+    proves nothing about the cards. With it, the seven blocks in this file are
+    a pin: change what `tools/cards/deckbuilding.py` emits and this fails.
+    """
+
+    def Cards(self):
         if not os.path.exists(CARD_DATASET):
             self.skipTest("run from py_src/")
         with open(CARD_DATASET, "r", encoding="utf-8") as handle:
-            cards = json.load(handle)["cards"]
+            return json.load(handle)["cards"]
 
-        printed = {str(card.get("set") or "") for card in cards
-                   if card.get("type") in ("hero", "alter_ego")
-                   and any(line in (card.get("text_plain") or "").lower()
-                           for line in DECKBUILDING_LINES)}
-        self.assertEqual(printed, set(DECKBUILDING),
-                         "an identity prints a deck-building rule that "
-                         "DECKBUILDING does not list")
+    def test_the_seven_blocks_are_emitted_exactly_as_written_here(self):
+        blocks = {}
+        for card in self.Cards():
+            if card.get("deckbuilding"):
+                blocks.setdefault(card["set"], []).append(card["deckbuilding"])
+        self.assertEqual(sorted(blocks), sorted(BLOCKS),
+                         "the set of identities with a printed deck-building "
+                         "rule has changed")
+        for hero_set, found in sorted(blocks.items()):
+            with self.subTest(hero=hero_set):
+                for block in found:
+                    self.assertEqual(block, BLOCKS[hero_set])
 
-    def test_the_dataset_still_carries_the_traits_the_table_names(self):
+    def test_the_block_is_on_every_face_of_the_identity(self):
+        faces = {}
+        for card in self.Cards():
+            if card.get("type") in ("hero", "alter_ego"):
+                faces.setdefault(card["set"], []).append(card)
+        for hero_set in BLOCKS:
+            with self.subTest(hero=hero_set):
+                found = faces[hero_set]
+                self.assertTrue(found)
+                for card in found:
+                    self.assertEqual(card["deckbuilding"], BLOCKS[hero_set],
+                                     card["card_id"])
+
+    def test_no_other_card_carries_a_block(self):
+        stray = [c["card_id"] for c in self.Cards()
+                 if c.get("deckbuilding") and c["set"] not in BLOCKS]
+        self.assertEqual(stray, [])
+
+    def test_the_module_level_view_reads_the_same_seven(self):
+        """`DECKBUILDING`, `Rule` and `AspectAllowance` without a catalogue.
+
+        `tools/decks/build.py` asks `hero_set in rules.DECKBUILDING` to decide
+        which starter deck to build on, so the lazy read has to answer the same
+        way the catalogue does.
+        """
+        if not os.path.exists(CARD_DATASET):
+            self.skipTest("run from py_src/")
+        self.assertEqual(sorted(DECKBUILDING), sorted(BLOCKS))
+        self.assertEqual(AspectAllowance("spider_woman"), 2)
+        self.assertEqual(AspectAllowance("spider_man"), 1)
+        self.assertEqual(Rule("gam").card_id, "18001b")
+        self.assertEqual(Rule("spider_man").allowances, ())
+
+    def test_the_dataset_still_carries_the_traits_the_blocks_name(self):
         """The predicates match strings, so a dataset change can empty them.
 
         `S.H.I.E.L.D.` is the one that has already gone missing: the trait
