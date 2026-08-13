@@ -106,7 +106,8 @@ jobs:
           python -m unittest \
             unit_test.test_spec_harness unit_test.test_spec_validate \
             unit_test.test_puzzle unit_test.test_worlds_encounter \
-            unit_test.test_card_coverage_play unit_test.test_card_removal
+            unit_test.test_card_coverage_play unit_test.test_card_removal \
+            unit_test.test_cannot_defend
 
       # MARVEL-55: the suite used to bump the version and leave a commit on
       # whatever branch was checked out. unit_test/test_package_tools.py guards
