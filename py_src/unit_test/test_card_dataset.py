@@ -550,6 +550,10 @@ class TestRealDataset(unittest.TestCase):
                 self.assertEqual(again[name], content)
 
     def test_checked_in_dataset_is_current(self):
+        # `extract.Check` is the same code `--check` runs, so this test and the
+        # CI gate cannot drift apart. Each entry is (file, verdict): `stale`
+        # means regenerate, `line_endings` means the checkout rewrote the file
+        # and the content is fine (MARVEL-73).
         stale = extract.Check(self.outputs, REPO / extract.OUTPUT_DIR)
         self.assertEqual(stale, [],
                          "regenerate with: python -m tools.cards.extract")

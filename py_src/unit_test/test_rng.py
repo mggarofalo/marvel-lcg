@@ -459,14 +459,19 @@ class TestTheCrossLanguageFixture(RngTestCase):
     def test_the_fixture_is_not_stale(self):
         # Guards the failure mode where the generator changes and the fixture
         # does not, leaving MARVEL-8 accepted against the old contract.
+        #
+        # Asked through `tools.fixtures` so this agrees with
+        # `python -m tools.rng.emit_vectors --check` by construction rather
+        # than by both being written carefully: byte for byte, with a CRLF
+        # working tree reported as itself and not as staleness (MARVEL-73).
+        from tools import fixtures
         from tools.rng.emit_vectors import Build, Serialise
 
-        with open(VECTORS, "r", encoding="utf-8") as handle:
-            on_disk = handle.read()
-
+        verdict = fixtures.Compare(Serialise(Build()), VECTORS)
         self.assertEqual(
-            on_disk, Serialise(Build()),
-            "datasets/rng/vectors.json is stale; run: python -m tools.rng.emit_vectors")
+            verdict, fixtures.FRESH,
+            fixtures.Explain(verdict, VECTORS,
+                             "python -m tools.rng.emit_vectors"))
 
     def test_a_version_bump_does_not_make_the_fixture_stale(self):
         """MARVEL-58.

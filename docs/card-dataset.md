@@ -62,6 +62,13 @@ changing an input produces byte-identical files, and `--check` is how you prove
 it. The dataset is checked in so the C# side can read it without running Python
 and so drift shows up in review.
 
+`--check` compares **byte for byte**, in the same terms as the RNG and digest
+fixture gates and through the same code — `py_src/tools/fixtures.py` is where
+that decision is written down. Bytes rather than parsed JSON because the layout
+below is the review story: a comparison that ignored it would let the property
+the layout exists for rot unnoticed. A working tree with CRLF line endings
+fails the gate too, and says so in those words rather than reporting staleness.
+
 ## Files
 
 ### `cards.json`
@@ -73,6 +80,14 @@ than a reflowed six-megabyte blob.
 The header records the MarvelSDB commit and the SHA-256 of each engine file it
 was built from, so a consumer holding only this file can still say exactly what
 produced it.
+
+Those hashes are taken over the file's content with **CRLF line endings
+normalised to LF**, so they are the same on every machine. That is not what
+`sha256sum` prints on a Windows checkout with `core.autocrlf=true`, and the
+difference is the point: hashing the raw bytes made the header a property of
+whoever cloned the repository, so `--check` called the dataset stale on Windows
+over two hex strings with nothing semantic changed. Change any character of
+`data/cards.json` and the hash still moves (MARVEL-73).
 
 Every record has every field; absence is a value, never a missing key.
 

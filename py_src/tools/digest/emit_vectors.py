@@ -32,6 +32,7 @@ import os
 import sys
 from typing import Any, Dict, List, Sequence, Tuple
 
+from tools import fixtures
 from tools.determinism.pinned_env import is_pinned
 
 OUTPUT = os.path.join("..", "datasets", "digest", "vectors.json")
@@ -115,14 +116,16 @@ def _main(argv: Sequence[str]) -> int:
     rendered = Render(Build())
 
     if args.check:
-        if not os.path.exists(OUTPUT):
-            print(f"{OUTPUT} is missing; run: python -m tools.digest.emit_vectors",
-                  file=sys.stderr)
-            return 1
-        with open(OUTPUT, "r", encoding="utf-8") as handle:
-            current = handle.read()
-        if current != rendered:
-            print(f"{OUTPUT} is stale; run: python -m tools.digest.emit_vectors",
+        # Compared byte for byte with the file on disk. `tools/fixtures.py`
+        # holds that decision and its consequences, and is the one place all
+        # three fixture gates take their meaning of "stale" from. Byte equality
+        # is the claim worth making here in particular: `step_digests` is the
+        # canonical serialisation a C# port is accepted against character for
+        # character.
+        verdict = fixtures.Compare(rendered, OUTPUT)
+        if verdict != fixtures.FRESH:
+            print(fixtures.Explain(verdict, OUTPUT,
+                                   "python -m tools.digest.emit_vectors"),
                   file=sys.stderr)
             return 1
         print(f"{OUTPUT} is up to date")

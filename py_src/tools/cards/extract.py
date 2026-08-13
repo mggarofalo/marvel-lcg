@@ -15,7 +15,9 @@ Run from `py_src/`:
     python -m tools.cards.extract --check    # fail if the checked-in copy is stale
 
 `--check` is what makes "generated reproducibly" a claim you can test rather
-than a hope. It regenerates into memory and compares; nothing is written.
+than a hope. It regenerates into memory and compares byte for byte; nothing is
+written. What that comparison forgives and what it does not is decided once, in
+`tools/fixtures.py`, for this gate and the two vector gates alike.
 
 Both modes **fail** when an identity prints a deck-building line that nobody
 has classified -- see `tools/cards/deckbuilding.py`. That is deliberate: a new
@@ -35,6 +37,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from tools import fixtures
 from tools.cards import anomalies as anomaly_module
 from tools.cards import deckbuilding as deckbuilding_module
 from tools.cards import engine as engine_module
@@ -509,18 +512,22 @@ def Write(outputs: Dict[str, str], directory: Path) -> None:
         (directory / name).write_text(content, encoding="utf-8", newline="\n")
 
 
-def Check(outputs: Dict[str, str], directory: Path) -> List[str]:
-    """Names of the files whose checked-in copy no longer matches a fresh build."""
-    stale: List[str] = []
+def Check(outputs: Dict[str, str], directory: Path) -> List[Tuple[str, str]]:
+    """(file, verdict) for every checked-in copy that is not a fresh build.
+
+    Empty when the dataset on disk is byte for byte what `Build` produced.
+    `tools/fixtures.py` owns both the verdicts and the decision to compare
+    bytes, and is the one place all three fixture gates take their meaning of
+    "stale" from. Bytes matter more here than anywhere else in the repo:
+    `_RenderCards` hand-rolls the layout so a `git diff` shows the cards that
+    changed, and a comparison that ignored the layout would let the property
+    the layout exists for rot unnoticed.
+    """
+    stale: List[Tuple[str, str]] = []
     for name, content in outputs.items():
-        path = directory / name
-        if not path.exists():
-            stale.append(f"{name} (missing)")
-            continue
-        # Compare by line, not by byte: a checkout under a different
-        # `core.autocrlf` is not a content change.
-        if path.read_text(encoding="utf-8").splitlines() != content.splitlines():
-            stale.append(name)
+        verdict = fixtures.Compare(content, directory / name)
+        if verdict != fixtures.FRESH:
+            stale.append((name, verdict))
     return stale
 
 
@@ -545,8 +552,18 @@ def main(argv: List[str] | None = None) -> int:
     if args.check:
         stale = Check(outputs, args.out)
         if stale:
-            print("dataset is stale: " + ", ".join(stale))
-            print("regenerate with: python -m tools.cards.extract")
+            print("dataset does not match a fresh build: " + ", ".join(
+                f"{name} ({fixtures.SUMMARY[verdict]})" for name, verdict in stale))
+            # One explanation per distinct verdict, against the first file that
+            # earned it: the repair for CRLF is not "regenerate", and printing
+            # that would send the next Windows contributor down the road
+            # MARVEL-73 had to walk back.
+            explained: set[str] = set()
+            for name, verdict in stale:
+                if verdict not in explained:
+                    explained.add(verdict)
+                    print(fixtures.Explain(verdict, args.out / name,
+                                           "python -m tools.cards.extract"))
             return 1
         print(f"dataset up to date ({summary['totals']['cards']} cards)")
         return 0
