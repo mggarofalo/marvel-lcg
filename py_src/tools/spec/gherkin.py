@@ -59,6 +59,7 @@ from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
 
 from tools.spec.case import (
     CannotStep, GivenStep, NoPromptStep, PromptStep, SourceDigest, SpecCase,
+    TargetsStep,
     SpecCaseError, ThenStep, WhenStep)
 from tools.spec.resolve import SplitRefs
 from tools.spec.state import PHASE_NAMES
@@ -76,7 +77,7 @@ class GherkinError(SpecCaseError):
 #   ("setting", key, value)   scenario-level configuration
 #   ("given", GivenStep)
 #   ("when", WhenStep)
-#   ("then", ThenStep | PromptStep | NoPromptStep | "prompt")
+#   ("then", ThenStep | PromptStep | NoPromptStep | "prompt" | ("targets", option))
 #
 # Quotes are required around card and option names so a card called
 # "Hard to Keep Down" is unambiguous.
@@ -251,6 +252,17 @@ THEN_TABLE: Table = [
     ('I cannot thwart "<card>"',
      Rx(r'i cannot thwart ' + Q),
      lambda card: ("then", CannotStep(option="thwart", card=card))),
+    # The same claim over any option, which is what "remove 2 threat from a
+    # *different* scheme" needs. `CannotStep` was already general; only these
+    # two sentences were not. MARVEL-94.
+    ('I cannot choose "<option>" targeting "<card>"',
+     Rx(r'i cannot choose ' + Q + r' targeting ' + Q),
+     lambda option, card: ("then", CannotStep(option=option, card=card,
+                                              verb=False))),
+    # ...and the positive form, for "look at the top 3 cards of your deck".
+    ('the legal targets for "<option>" are',
+     Rx(r'the legal targets for ' + Q + r' are'),
+     lambda option: ("then", ("targets", option))),
 
     # -- card state --------------------------------------------------------
     ('"<card>" has <n> health',
@@ -625,6 +637,13 @@ def Build(draft: Draft, feature: str, path: str, digest: str, where: str) -> Spe
                             f"{where}:{number}: 'I am prompted to choose one' needs "
                             f"a table of the options the engine should offer")
                     payload = PromptStep(options=tuple(rows))
+                elif isinstance(payload, tuple) and payload and payload[0] == "targets":
+                    if not rows:
+                        raise GherkinError(
+                            f"{where}:{number}: 'the legal targets for "
+                            f"{payload[1]!r} are' needs a table of the cards the "
+                            f"engine should accept")
+                    payload = TargetsStep(option=payload[1], targets=tuple(rows))
                 beats.append(payload)
         except GherkinError:
             raise

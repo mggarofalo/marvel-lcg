@@ -44,7 +44,8 @@ from engine.device.manager.bot.command import BotCommand
 from engine.device.manager.bot.policy import BotPolicy
 from tools.spec.assertions import AssertionResult, Evaluate
 from tools.spec.case import (
-    Beat, CannotStep, NoPromptStep, PromptStep, ThenStep, WhenStep)
+    Beat, CannotStep, NoPromptStep, PromptStep, TargetsStep, ThenStep,
+    WhenStep)
 from tools.spec.resolve import (
     CardRefError, DescribeOption, NormaliseLabel, ResolveCard)
 from tools.spec.state import Capture, StateView
@@ -192,10 +193,12 @@ class TranscriptPolicy(BotPolicy):
         order it writes them in should not change what they mean.
         """
         board: Optional[StateView] = None
-        while isinstance(self.Peek(), (ThenStep, CannotStep)):
+        while isinstance(self.Peek(), (ThenStep, CannotStep, TargetsStep)):
             beat = self.beats[self.index]
             if isinstance(beat, CannotStep):
                 self.CheckCannot(beat, decision)
+            elif isinstance(beat, TargetsStep):
+                self.CheckTargets(beat, decision)
             else:
                 if decision.world is None:
                     # No board to read. Leave it queued rather than passing it:
@@ -247,6 +250,49 @@ class TranscriptPolicy(BotPolicy):
                             f"the engine would allow it alongside {listing}")
                 return
         self.Record(beat, True)
+
+    def CheckTargets(self, beat: TargetsStep, decision: Any) -> None:
+        """Check which cards an offered option will accept.
+
+        MARVEL-94. The positive counterpart to `CheckCannot`, and the thing that
+        makes a one-option prompt assertable: `Futurist` with three legal
+        targets is what "look at the top 3 cards of your deck" looks like from
+        the engine's side, and the prompt table alone says nothing about them.
+
+        An option the engine is not offering fails as unresolvable rather than
+        vacuously: "the legal targets for an option that was never offered" has
+        no truth value worth recording, and passing it would be the
+        silent-wrong-pass this harness exists to refuse.
+        """
+        world = decision.world
+        wanted = NormaliseLabel(beat.option)
+        for option in decision.selectable_options:
+            if NormaliseLabel(option.name) != wanted:
+                continue
+            # Compared on the card's *name*, the way an author writes it. The
+            # descriptive form -- "Repulsor Blast (01031) in PlayerDeck" -- is
+            # what the failure message prints, because a target list that
+            # disagrees is much easier to read with the zone attached.
+            actual = sorted(NormaliseLabel(name)
+                            for name in self.TargetNames(world, option))
+            expected = sorted(NormaliseLabel(card) for card in beat.targets)
+            if actual == expected:
+                self.Record(beat, True)
+                return
+            missing = [t for t in expected if t not in actual]
+            extra = [t for t in actual if t not in expected]
+            parts: List[str] = []
+            if missing:
+                parts.append(f"missing {', '.join(repr(t) for t in missing)}")
+            if extra:
+                parts.append(f"unexpected {', '.join(repr(t) for t in extra)}")
+            listing = ", ".join(self.LabelTargets(world, option)) or "nothing"
+            self.Record(beat, False,
+                        f"{option.name} accepts {listing} ({'; '.join(parts)})")
+            return
+        self.Record(beat, False,
+                    f"the engine is not offering {beat.option!r}; it offers "
+                    f"{self.Offered(decision)}", unresolvable=True)
 
     def CheckPrompt(self, beat: PromptStep, decision: Any) -> None:
         expected = sorted(NormaliseLabel(option) for option in beat.options)
@@ -391,6 +437,18 @@ class TranscriptPolicy(BotPolicy):
             return [], (f"{option.name} has {len(legal)} legal targets ({listing}); "
                         f"say which with 'targeting \"<card>\"'")
         return legal[:low], ""
+
+    def TargetNames(self, world: Any, option: Any) -> List[str]:
+        """The bare card name of each legal target, for comparison."""
+        from tools.spec.resolve import CardIndex
+        if world is None:
+            return []
+        index = CardIndex(world)
+        names: List[str] = []
+        for target_id in option.all_legal_targets:
+            card = index.get(int(target_id))
+            names.append(str(card.face.name) if card is not None else str(target_id))
+        return names
 
     def LabelTargets(self, world: Any, option: Any) -> List[str]:
         from tools.spec.resolve import CardIndex, Label

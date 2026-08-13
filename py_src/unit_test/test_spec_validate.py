@@ -356,6 +356,71 @@ class TestGherkinParsing(unittest.TestCase):
 """))[0]
         self.assertEqual(len(case.Assertions()), 1)
 
+    def test_the_general_restriction_form_reaches_the_same_assertion(self):
+        """MARVEL-94. `CannotStep` was always general; the sentences were not.
+
+        Only `attack` and `thwart` had a step form, so "remove 2 threat from a
+        *different* scheme" could not be stated at all and had to be inferred
+        from the board afterwards.
+        """
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then I cannot choose "Futurist" targeting "Backflip"
+"""))[0]
+        beat = case.beats[0]
+        self.assertEqual((beat.kind, beat.option, beat.card),
+                         ("cannot", "Futurist", "Backflip"))
+
+    def test_the_two_restriction_forms_describe_themselves_differently(self):
+        """The failure message is the thing an author acts on.
+
+        Echoing the general form back in the verb form's shape gives
+        "I cannot Futurist 'Backflip'", which reads as a typo in the harness
+        rather than as the assertion that failed.
+        """
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    Then I cannot attack "Rhino"
+    And I cannot choose "Futurist" targeting "Backflip"
+"""))
+        verb, general = cases[0].beats
+        self.assertEqual(verb.Describe(), "I cannot attack 'Rhino'")
+        self.assertEqual(general.Describe(),
+                         "I cannot choose 'Futurist' targeting 'Backflip'")
+
+    def test_legal_targets_compiles_with_its_table(self):
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then the legal targets for "Futurist" are
+      | Repulsor Blast |
+      | Mark V Armor   |
+"""))[0]
+        beat = case.beats[0]
+        self.assertEqual(beat.kind, "targets")
+        self.assertEqual(beat.option, "Futurist")
+        self.assertEqual(beat.targets, ("Repulsor Blast", "Mark V Armor"))
+
+    def test_legal_targets_without_a_table_is_a_parse_error(self):
+        """An empty target list would read as "this option accepts nothing".
+
+        That is a real claim and a different one, so it gets its own sentence
+        (`I cannot choose`) rather than being spelled as an omission.
+        """
+        with self.assertRaises(GherkinError) as caught:
+            ParseFeature(Feature("""
+  Scenario: one
+    Then the legal targets for "Futurist" are
+"""))
+        self.assertIn("needs a table", str(caught.exception))
+
+    def test_legal_targets_counts_as_an_assertion(self):
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then the legal targets for "Futurist" are
+      | Repulsor Blast |
+"""))[0]
+        self.assertEqual(len(case.Assertions()), 1)
+
     def test_the_two_phase_forms_compile_to_different_properties(self):
         """`the villain phase` and `"Enemy Activation"` are not the same claim.
 
