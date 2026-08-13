@@ -153,6 +153,7 @@ across runs.
 | `"the main scheme"` | the main scheme in play |
 | `"Rhino in VillainArea"` | qualified by zone |
 | `"01005 #2"` | the second copy the scenario created |
+| `"Drone Minion"` | by the face the card is presenting right now |
 
 Printed names collide across packs — five cards are called "Nick Fury" — so the
 runner prefers ids from the set the scenario is playing, and honours `@card:`
@@ -167,6 +168,55 @@ Ambiguity is never resolved by guessing — including target selection. An effec
 with two legal targets and a scenario that names neither is refused. A single
 legal target is auto-selected by the engine itself and produces no prompt, so
 naming it would be noise.
+
+### A card can answer to two names at once
+
+A ref matches the card's **printed** faces *and* the face it is presenting right
+now. Those are the same thing for almost every card. They come apart when the
+engine puts one card's face onto another card's object: `Card.SetAsCard` without
+`remove_legacy` replaces `card.face` and leaves `printed_faces` alone.
+
+The facedown DRONE is the case that matters. `Enemies.PutYouDeckTopCardAsFacedownMinion`
+takes the top card of a player's deck and stands it up as a minion the game
+displays as **"Drone Minion"**, while the card underneath keeps being an Aunt
+May. Both names are live, and a scenario has reason to use either — the printed
+one says *which card left the deck*, the drone one says *what is now engaged
+with the hero*:
+
+```gherkin
+Then "Aunt May" is in the "EngagedEnemiesArea"
+And "Drone Minion" is in the "EngagedEnemiesArea"
+And "Drone Minion" has 1 health
+```
+
+Until MARVEL-102 only the printed faces were indexed, so the harness refused a
+name it was itself printing: the validator's error message for the minion
+activation prompt lists "Drone Minion" among the legal targets, because that
+message reads `card.face`. Same shape as MARVEL-94 — the harness printed a name
+it would not accept.
+
+Drones are not a corner. 01134 Ultron, 01144 Android Efficiency and 01138b
+Assault on NORAD all make them, and the whole Ultron encounter set is built
+around them.
+
+Two things follow.
+
+**A drone needs Ultron Drones in play.** A DRONE has no printed statistics of
+its own — the Ultron Drones permanent is what gives it 1 hit point — so on a
+puzzle board without it the drone enters play with 0 hit points and is defeated
+in the same breath. There is then nothing to name, and the scenario reads as
+though the card did nothing.
+
+**Two drones on one board are ambiguous, and the ordinal resolves it.**
+`"Drone Minion #1"` is the first card *the scenario created* that is presenting a
+drone face — not the first one to become one. `#N` still means creation order and
+nothing else. What is new is that the set it indexes **grows while the scene
+runs**, because a card starts answering to a second name partway through; a
+printed name's match set is fixed once the `Given` block has run. So an ordinal
+over a current-face name is a claim about the board at that beat, and
+`"Drone Minion #1"` and `"Aunt May #1"` may well be different cards. Where the
+scenario has the underlying identity to hand, naming it is the more stable
+spelling.
 
 ### Two copies of the same card
 
@@ -323,15 +373,56 @@ public void GivenMyHandIs(string cards) { ... }
 Read the catalogue for the current list. The shape:
 
 - **Given** — `the scenario is`, `the hero is`, `I am in hero form`,
-  `my hand is`, `my deck is`, `"<card>" is in play`,
+  `my hand is`, `my deck is`, `player <n>'s deck is`, `"<card>" is in play`,
   `the main scheme has <n> threat`, damage/threat/counter/status setters
 - **When** — `I play`, `I choose`, `I attack`, `I thwart`, `I change form`,
   `I pass`, each optionally `targeting "<card>"`
 - **Then** — `I am prompted to choose one` + table, `I am not prompted again`,
   `I cannot attack "<card>"`, card state (`has <n> damage`,
   `is in the "<zone>"`, `is [not] stunned`), my state
-  (`I have <n> cards in hand`), game state (`the game is over`,
+  (`I have <n> cards in hand`), another player's state
+  (`player <n> has <m> cards in their deck`), game state (`the game is over`,
   `it is round <n>`, `it is the villain phase`, `it is the "<phase>" phase`)
+
+### "I" means player 1, everywhere
+
+`the heroes are "<a>", "<b>"` builds a two-player game, and until MARVEL-101 the
+second player was write-only: every deck-stocking step was first person, so the
+second player's deck could not be given a known top card, and only
+`player <n> has <m> cards in hand` was per-player on the `Then` side. A card that
+says **"each player"** — 242 of them carry the phrase, 197 of which the engine
+implements — could be set up but not asserted.
+
+Two steps close it, and they are the general form of steps that already existed:
+
+```gherkin
+Given player 2's deck is "Pepper Potts", "Energy"
+Then  player 2 has 2 cards in their deck
+```
+
+**The first-person steps are sugar for player 1.** `my deck is` compiles to the
+same step, with the seat left at its default — one meaning, one code path, and
+no way for two spellings of one thing to drift apart. Adding per-player forms
+*alongside* the first-person ones was the alternative and it is worse on both
+counts: two implementations of every zone step for the C# runner to reproduce,
+and a catalogue growing a near-duplicate of each.
+
+Sugar does change what an existing step means, so it is worth being precise
+about what changed. `world.players` is **rotated by one at the end of every
+round** to pass the first player token, and loses a player outright on
+elimination, so `world.GetFirstPlayer()` names the token holder rather than a
+seat; `const_seat_order_players` does not move. The first-person `Given` steps
+used to route through `RunPuzzle`, which stocks `GetFirstPlayer()` — while the
+first-person `Then` steps have always read seat 1. **The two halves already
+disagreed**, and coincided only because a `Given` block cannot follow a `When`
+and so never runs after a rotation. Making both mean seat 1 removes that
+disagreement rather than adding a third reading, and it is observationally inert
+for every scenario that can be written today.
+
+Naming a seat the game does not have is an error that says how many there are.
+Note that `"<card>" is in the "<zone>"` still reports a zone *type*, so it cannot
+say whose area a card reached; in a two-player scenario, tell the two drones
+apart by the printed identity of the card each was made from.
 
 A step that matches nothing is a parse error naming the line. A scenario
 compiles completely or not at all.

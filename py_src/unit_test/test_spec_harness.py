@@ -1054,5 +1054,220 @@ class TestTranscripts(unittest.TestCase):
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
 
 
+################################################################################
+#
+
+class TestPerPlayerZones(unittest.TestCase):
+    """Stocking and counting a seat's own deck (MARVEL-101).
+
+    Every deck-stocking step used to be first person and route through
+    `RunPuzzle`, whose four player-zone helpers all stock
+    `world.GetFirstPlayer()`. So a two-player board could be *built* --
+    `the heroes are` has always worked -- and nothing about the second player
+    could be set up or asserted. "Each player puts the top card of their deck
+    into play" is printed on 242 cards, so the hole is not one card's.
+
+    The first-person steps are now sugar: `my deck is` is this step with the
+    seat left at player 1.
+    """
+
+    def test_a_second_players_deck_can_be_stocked_and_counted(self):
+        # Two seats, two different cards on top, and each deck counted on its
+        # own. Before this step the second `given` could not be written at all.
+        case = MakeCase(
+            name="two decks",
+            heroes=("spider_man", "captain_marvel"),
+            given=(
+                GivenStep("player_deck", ("Aunt May", "Backflip")),
+                GivenStep("player_deck", ("Pepper Potts", "Energy"), player=1),
+            ),
+            beats=(
+                ThenStep("Aunt May", "zone", "PlayerDeck"),
+                ThenStep("Pepper Potts", "zone", "PlayerDeck"),
+                ThenStep("player 1", "deck_size", 2),
+                ThenStep("player 2", "deck_size", 2),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_the_two_seats_get_different_cards(self):
+        """The seat index has to actually reach a different player.
+
+        Stocking both lists into one deck would satisfy every count above --
+        four cards over two decks and four cards in one deck both read as "2
+        and 2" only if the split is real. So this asserts the split directly:
+        seat 1 holds two cards and seat 2 holds one.
+        """
+        case = MakeCase(
+            name="split decks",
+            heroes=("spider_man", "captain_marvel"),
+            given=(
+                GivenStep("player_deck", ("Aunt May", "Backflip")),
+                GivenStep("player_deck", ("Pepper Potts",), player=1),
+            ),
+            beats=(
+                ThenStep("player 1", "deck_size", 2),
+                ThenStep("player 2", "deck_size", 1),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_the_first_person_step_stocks_seat_one(self):
+        # The sugar claim, against the engine rather than against the parser:
+        # `my deck is` and `player 1's deck is` reach the same deck, so the
+        # second player's is untouched by either.
+        case = MakeCase(
+            name="sugar",
+            heroes=("spider_man", "captain_marvel"),
+            given=(
+                GivenStep("player_deck", ("Aunt May",)),
+                GivenStep("player_deck", ("Backflip",), player=0),
+            ),
+            beats=(
+                ThenStep("player 1", "deck_size", 2),
+                ThenStep("player 2", "deck_size", 0),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_seat_this_game_does_not_have_is_refused(self):
+        # A solo scenario naming player 2 is an author error, and the message
+        # has to say how many seats there are or there is nothing to act on.
+        case = MakeCase(
+            name="no such seat",
+            given=(GivenStep("player_deck", ("Backflip",), player=1),),
+            beats=(ThenStep("player 1", "deck_size", 1),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("1 player(s)", result.message)
+        self.assertIn("no player 2", result.message)
+
+    def test_a_seat_below_one_is_rejected_at_load_time(self):
+        # `player 0's deck is` compiles to seat -1, which would index the last
+        # seat rather than failing. Caught where every other malformed Given is.
+        with self.assertRaises(SpecCaseError) as caught:
+            GivenStep("player_deck", ("Backflip",), player=-1)
+        self.assertIn("numbered from 1", str(caught.exception))
+
+    def test_a_seat_on_a_step_that_has_no_seat_is_rejected(self):
+        # The encounter deck belongs to the table, not to a player. Silently
+        # ignoring the seat would let a scenario read as something it is not.
+        with self.assertRaises(SpecCaseError) as caught:
+            GivenStep("encounter_deck", ("Hydra Mercenary",), player=1)
+        self.assertIn("not a per-player step", str(caught.exception))
+
+
+################################################################################
+#
+
+class TestFacedownDroneNaming(unittest.TestCase):
+    """Naming a card by the face it is presenting (MARVEL-102).
+
+    `Enemies.PutYouDeckTopCardAsFacedownMinion` calls
+    `card.SetAsCard(ultron_facedown_drone)` without `remove_legacy`, so the card
+    keeps its printed identity while presenting a face the game displays as
+    "Drone Minion". Refs matched printed faces only, so the harness refused a
+    name it was itself printing in the legal-target list of the minion
+    activation prompt -- the same shape as MARVEL-94.
+
+    Ultron Drones is in play in every case here because a DRONE has no printed
+    statistics of its own: without it the drone enters play with 0 hit points
+    and is defeated in the same breath, and there is nothing left to name.
+    """
+
+    SOLO = (
+        GivenStep("hero_form", ("me",)),
+        GivenStep("in_play", ("Ultron Drones",)),
+        GivenStep("player_deck", ("Aunt May", "Backflip", "Backflip")),
+        GivenStep("revealed", ("01144a",)),
+    )
+
+    def test_a_drone_is_nameable_by_the_face_it_presents(self):
+        case = MakeCase(name="drone by face", given=self.SOLO,
+                        beats=(ThenStep("Drone Minion", "zone", "EngagedEnemiesArea"),
+                               ThenStep("Drone Minion", "health", 1)))
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_drone_still_answers_to_its_printed_identity(self):
+        # Both names are live at once, deliberately: "Aunt May" is what the
+        # scenario put on top of the deck and "Drone Minion" is what is now
+        # engaged with the hero. Adding the second must not cost the first.
+        case = MakeCase(name="drone by print", given=self.SOLO,
+                        beats=(ThenStep("Aunt May", "zone", "EngagedEnemiesArea"),))
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_card_that_never_changed_face_gains_no_new_name(self):
+        # The current face of an ordinary card is one of its printed faces, so
+        # nothing about this widening should make a second name resolvable.
+        # Rhino's own name still means exactly the cards it always meant.
+        case = MakeCase(name="ordinary card", given=(HERO_FORM,),
+                        beats=(ThenStep("Drone Minion", "in_play", True),))
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("no card matches", result.Failures()[0].message)
+
+    def test_an_ordinal_over_drones_counts_creation_order(self):
+        """`#N` still means the Nth card *the scenario created*.
+
+        Not the Nth card to become a drone. The two decks are stocked in written
+        order, so seat 1's Aunt May is created before seat 2's Pepper Potts and
+        is `Drone Minion #1` whichever of them the engine reaches first. This is
+        the claim the scenario in `01144-android-efficiency.feature` cannot make
+        on its own: both drones sit in a zone of the same *type*, so no `Then`
+        can say which of them is which.
+        """
+        case = MakeCase(
+            name="two drones",
+            heroes=("spider_man", "captain_marvel"),
+            given=(
+                GivenStep("hero_form", ("me",)),
+                GivenStep("in_play", ("Ultron Drones",)),
+                GivenStep("player_deck", ("Aunt May", "Backflip")),
+                GivenStep("player_deck", ("Pepper Potts", "Energy"), player=1),
+                GivenStep("revealed", ("01144a",)),
+            ),
+            beats=(ThenStep("Drone Minion #1", "zone", "EngagedEnemiesArea"),
+                   ThenStep("Drone Minion #2", "zone", "EngagedEnemiesArea")),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+        # Which drone is which, which the scenario cannot say.
+        kind, first, error = ResolveSubject(result.state, "Drone Minion #1")
+        self.assertEqual((kind, error), ("card", ""))
+        kind, second, error = ResolveSubject(result.state, "Drone Minion #2")
+        self.assertEqual((kind, error), ("card", ""))
+        # Aunt May is 01006 and Pepper Potts is 01033. Both cards still carry
+        # the printed id of the card they were made from, alongside the drone's.
+        self.assertIn("01006", first.card_ids)
+        self.assertIn("01033", second.card_ids)
+
+    def test_a_bare_drone_name_with_two_of_them_is_ambiguous(self):
+        # The other half of the ordinal rule: two drones on one board is a real
+        # ambiguity, and answering it with the first match is what this resolver
+        # exists to refuse.
+        case = MakeCase(
+            name="ambiguous drones",
+            heroes=("spider_man", "captain_marvel"),
+            given=(
+                GivenStep("hero_form", ("me",)),
+                GivenStep("in_play", ("Ultron Drones",)),
+                GivenStep("player_deck", ("Aunt May", "Backflip")),
+                GivenStep("player_deck", ("Pepper Potts", "Energy"), player=1),
+                GivenStep("revealed", ("01144a",)),
+            ),
+            beats=(ThenStep("Drone Minion", "zone", "EngagedEnemiesArea"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("matches 2 cards", result.Failures()[0].message)
+
+
 if __name__ == "__main__":
     unittest.main()

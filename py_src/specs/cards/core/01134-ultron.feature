@@ -84,12 +84,24 @@ Feature: Ultron
     # discarded", which is what happens on a board with no Ultron Drones.
     Then I have 4 damage
     And I have 6 cards in my deck
-    # The card that left my deck, named the only way a facedown drone can be
-    # named -- by the deck card underneath it, narrowed by the zone it reached.
-    # The ref fails as unresolvable if no Pepper Potts is standing in the
-    # engaged-enemies area, which is what makes this an assertion rather than a
-    # restatement.
+    # The drone, under both of the names it answers to at once. `SetAsCard`
+    # replaces the card's face and leaves its printed identity alone, so the
+    # card that was on top of my deck is still a Pepper Potts *and* is now the
+    # Drone Minion engaged with me, and a scenario has reason to say either.
+    #
+    # The printed identity, narrowed by the zone it reached. Unresolvable if no
+    # Pepper Potts is standing in the engaged-enemies area, which is what makes
+    # it an assertion rather than a restatement.
     And "Pepper Potts in EngagedEnemiesArea" is in play
+    # The name the game displays, and the same string the validator itself
+    # prints when it lists the legal targets of the minion activation prompt.
+    # Until MARVEL-102 the harness would not accept a name it was already
+    # printing: refs matched printed faces only, and a facedown drone has no
+    # printed face called this.
+    And "Drone Minion" is in the "EngagedEnemiesArea"
+    # 1 hit point, granted by Ultron Drones -- so the ref reached the minion in
+    # play and not merely a card that happens to carry the name.
+    And "Drone Minion" has 1 health
     # The control on the other branch: this one places no threat, so the main
     # scheme is left holding only step one's acceleration.
     And the main scheme has 1 threat

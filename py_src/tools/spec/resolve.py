@@ -27,9 +27,13 @@ matching that ignores "considered as" aliases, and failure messages that name
 candidates and near misses. None of that belongs in the engine's puzzle
 resolver, and a spec must never be answered by a card the engine invented.
 
-Matching is deliberately narrower than `CardFace.IsName`: card id or printed
-name, over every printed face of the card, case-insensitively. "Considered as"
-aliases are not honoured, because a spec should mean the card it names.
+Matching is deliberately narrower than `CardFace.IsName`: card id or name, over
+every face the card answers to, case-insensitively. "Considered as" aliases are
+not honoured, because a spec should mean the card it names.
+
+The faces a card answers to are its **printed** faces plus **the face it is
+presenting right now**, which are the same thing except where the engine has put
+one card's face on another card's object -- see `NameableFaces` and MARVEL-102.
 
 An ambiguous ref is an error that lists every candidate. It is never a silent
 first match -- a spec that says "Rhino" when two Rhinos are in play is a spec
@@ -65,6 +69,23 @@ Two consequences:
   author wrote and can see. `MarkEngineBaseline` draws the line, and it is
   provenance rather than zone: two copies stay `#1` and `#2` after one of them
   moves into play, which is what makes "put both minions into play" writable.
+
+- **An ordinal over a current-face name is legal and means the same thing.**
+  `"Drone Minion #2"` is the second card *the scenario created* that is
+  presenting a drone face right now -- not the second card to become one. The
+  ordinal never appeals to the order faces were swapped, so nothing about
+  MARVEL-102 changes what `#N` promises: it is still creation order, which is
+  still what the author wrote and can see. A refusal was considered and
+  rejected, because the rule is well defined here and a two-drone board is
+  exactly the case the issue was raised for.
+
+  What *is* new is that the set an ordinal indexes can grow while the scene
+  runs, because a card starts answering to "Drone Minion" partway through. A
+  printed name's match set is fixed once the `Given` block has run; a
+  current-face name's is not. So an ordinal over one is a claim about the board
+  at that beat, and `"Drone Minion #1"` and `"Aunt May #1"` may well be
+  different cards. Where a scenario has the underlying identity to hand, naming
+  it is the more stable spelling.
 """
 
 from __future__ import annotations
@@ -171,10 +192,40 @@ def MatchesZone(card: Any, zone: str) -> bool:
     return ZoneName(card).lower() == wanted.lower()
 
 
+def NameableFaces(card: Any) -> List[Any]:
+    """Every face a spec may name this card by.
+
+    Its printed faces, plus **the face it is presenting right now** when that is
+    not one of them. The two are the same card for every ordinary card, and
+    differ exactly when the engine has put one card's face on another card's
+    object -- `Card.SetAsCard` without `remove_legacy` replaces `card.face` and
+    leaves `printed_faces` alone, so both identities are live at once.
+
+    The case that forced it is the facedown DRONE (MARVEL-102).
+    `Enemies.PutYouDeckTopCardAsFacedownMinion` takes the top card of a player's
+    deck and calls `face.card.SetAsCard(ultron_facedown_drone)`: the card keeps
+    its printed identity ("Aunt May") while presenting a minion the game
+    displays as "Drone Minion". Indexing only the printed faces made that name
+    unnameable -- while the validator's own failure message for the minion
+    activation prompt *listed* "Drone Minion" among the legal targets, because
+    `Label` reads `card.face`. The harness printed a name it would not accept,
+    which is the same shape as MARVEL-94.
+
+    Both names stay live, deliberately. "Aunt May" is what the scenario put on
+    top of the deck and "Drone Minion" is what is now engaged with the hero, and
+    a scenario has reason to say either.
+    """
+    faces = list(card.printed_faces)
+    current = getattr(card, "face", None)
+    if current is not None and not any(current is face for face in faces):
+        faces.append(current)
+    return faces
+
+
 def MatchesKey(card: Any, key: str) -> bool:
-    """Card id or printed name, over every printed face, case-insensitively."""
+    """Card id or name, over every face the card answers to, case-insensitively."""
     wanted = key.strip().lower()
-    for face in card.printed_faces:
+    for face in NameableFaces(card):
         if face.paper.card_id.lower() == wanted:
             return True
         if str(face.name).lower() == wanted:
@@ -370,7 +421,7 @@ def NearMisses(world: Any, ref: "CardRef", limit: int = 3) -> List[str]:
         return []
     seen: List[str] = []
     for card in AllCards(world):
-        for face in card.printed_faces:
+        for face in NameableFaces(card):
             name = str(face.name)
             if wanted in name.lower() and name not in seen:
                 seen.append(f"{name!r} ({face.paper.card_id})")

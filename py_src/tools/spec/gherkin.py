@@ -131,6 +131,15 @@ GIVEN_TABLE: Table = [
     ('my set aside deck is "<a>", "<b>"',
      Rx(r'my set aside deck is ' + LIST),
      lambda cards: ("given", GivenStep("player_set_aside", SplitRefs(cards)))),
+    # The per-seat form of the same step, and the reason it exists: "each player
+    # puts the top card of their deck into play" is printed on 242 cards, and
+    # until MARVEL-101 the second player's deck could not be given a known top
+    # card, so the "each" was unassertable. `my deck is` is this step with the
+    # seat left at player 1.
+    ("player <n>'s deck is \"<a>\", \"<b>\"",
+     Rx(r"player " + N + r"'s deck is " + LIST),
+     lambda who, cards: ("given", GivenStep(
+         "player_deck", SplitRefs(cards), player=int(who) - 1))),
     ('the encounter deck is "<a>", "<b>"',
      Rx(r'the encounter deck is ' + LIST),
      lambda cards: ("given", GivenStep("encounter_deck", SplitRefs(cards)))),
@@ -333,6 +342,12 @@ THEN_TABLE: Table = [
     ('player <n> has <m> cards in hand',
      Rx(r'player ' + N + r' has ' + N + r' cards? in hand'),
      lambda who, value: ("then", ThenStep(f"player {who}", "hand_size", int(value)))),
+    # The other half of MARVEL-101. Without it a two-player scenario could be
+    # set up and nothing about the second player's deck could be pinned -- not
+    # even the weak fallback that each deck went down by one.
+    ('player <n> has <m> cards in their deck',
+     Rx(r'player ' + N + r' has ' + N + r' cards? in their deck'),
+     lambda who, value: ("then", ThenStep(f"player {who}", "deck_size", int(value)))),
 
     # -- the game ----------------------------------------------------------
     ('the game is [not] over',
