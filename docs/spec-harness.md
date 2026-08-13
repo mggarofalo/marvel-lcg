@@ -429,6 +429,33 @@ redefine `#1` as the last card written, which is why it does not do that.
 
 It read bottom-first until MARVEL-82.
 
+### A deck step adds to the deck, it does not replace it
+
+`my deck is` and `the encounter deck is` **accumulate**. A `Background` that
+stocks one card and a scenario that stocks two leaves a deck of three, not two,
+and two `the encounter deck is` lists interleave — which silently changes which
+card a villain activation takes as its boost card.
+
+```gherkin
+  Background:
+    Given my deck is "Backflip"
+
+  Scenario: …
+    Given my deck is "Backflip", "Backflip"
+    Then I have 3 cards in my deck        # not 2
+```
+
+Nothing about that is wrong — a deck is stocked by naming what goes into it, and
+the steps are the same steps wherever they appear. It is a trap only because a
+`Background` reads like a default that a scenario overrides, and it does not.
+
+**So stock a deck in one place.** If any scenario in a file needs its own deck,
+every scenario in that file should stock its own and the `Background` should
+stock none. `01134-ultron.feature` and `01138b-assault-on-norad.feature` do
+exactly that, with a comment saying why: both depend on *which* card is the
+boost card, and a `Background` card sitting on top of it would have moved the
+answer without moving the scenario.
+
 ## Verdicts
 
 | Verdict | What it means | Where it goes |
