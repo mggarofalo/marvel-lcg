@@ -18,19 +18,23 @@
       "source": "specs/cards/core/01155-affairs-of-state.feature"
     },
     "Android Efficiency :: as a boost card it offers the printed [energy] cost, and paying it makes no drone": {
-      "sha256": "19c88ceac298de63ab0d2c75e90f263cf11cb69e0a48b761c519d6cb9c009216",
+      "sha256": "f03ff40a114cc40b3dd1055f28b2c1c76986694f7187c47a7e7abe7489bd3c1b",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the [mental] face offers the same choice, and the drone branch costs no card": {
-      "sha256": "19c88ceac298de63ab0d2c75e90f263cf11cb69e0a48b761c519d6cb9c009216",
+      "sha256": "f03ff40a114cc40b3dd1055f28b2c1c76986694f7187c47a7e7abe7489bd3c1b",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the [physical] face charges a physical resource for the same boost": {
-      "sha256": "19c88ceac298de63ab0d2c75e90f263cf11cb69e0a48b761c519d6cb9c009216",
+      "sha256": "f03ff40a114cc40b3dd1055f28b2c1c76986694f7187c47a7e7abe7489bd3c1b",
+      "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
+    "Android Efficiency :: the reveal resolves for every player, off each player's own deck": {
+      "sha256": "f03ff40a114cc40b3dd1055f28b2c1c76986694f7187c47a7e7abe7489bd3c1b",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the reveal takes the top card of the deck and nothing under it": {
-      "sha256": "19c88ceac298de63ab0d2c75e90f263cf11cb69e0a48b761c519d6cb9c009216",
+      "sha256": "f03ff40a114cc40b3dd1055f28b2c1c76986694f7187c47a7e7abe7489bd3c1b",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Assault on NORAD :: step one placing threat on a different main scheme offers nothing": {
@@ -590,19 +594,19 @@
       "source": "specs/cards/core/01029b-tony-stark.feature"
     },
     "Ultron :: an alter-ego is schemed against rather than attacked, so nothing is offered": {
-      "sha256": "3c04e33f35a9701754f94257945dfbe613252bcf706679d4af264fbadcd55a68",
+      "sha256": "fcd77d4002b3fcab048b30d853d1ac2a33fe0a74936e070c7ec6daffe71f688f",
       "source": "specs/cards/core/01134-ultron.feature"
     },
     "Ultron :: the drone branch takes the top card of my deck and stands it up as an enemy": {
-      "sha256": "3c04e33f35a9701754f94257945dfbe613252bcf706679d4af264fbadcd55a68",
+      "sha256": "fcd77d4002b3fcab048b30d853d1ac2a33fe0a74936e070c7ec6daffe71f688f",
       "source": "specs/cards/core/01134-ultron.feature"
     },
     "Ultron :: the threat branch places 1 on the main scheme and takes nothing off my deck": {
-      "sha256": "3c04e33f35a9701754f94257945dfbe613252bcf706679d4af264fbadcd55a68",
+      "sha256": "fcd77d4002b3fcab048b30d853d1ac2a33fe0a74936e070c7ec6daffe71f688f",
       "source": "specs/cards/core/01134-ultron.feature"
     },
     "Ultron :: the threat can only go on the main scheme, not on a side scheme in play": {
-      "sha256": "3c04e33f35a9701754f94257945dfbe613252bcf706679d4af264fbadcd55a68",
+      "sha256": "fcd77d4002b3fcab048b30d853d1ac2a33fe0a74936e070c7ec6daffe71f688f",
       "source": "specs/cards/core/01134-ultron.feature"
     },
     "Under Attack :: the card resolves for the second player as well as for me": {
