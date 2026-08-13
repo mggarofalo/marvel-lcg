@@ -17,6 +17,38 @@
       "sha256": "2550db8e85a383623b30008e903308dbd65ff85b29d31af15f0769251a221f49",
       "source": "specs/cards/core/01155-affairs-of-state.feature"
     },
+    "Android Efficiency :: as a boost card it offers the printed [energy] cost, and paying it makes no drone": {
+      "sha256": "19c88ceac298de63ab0d2c75e90f263cf11cb69e0a48b761c519d6cb9c009216",
+      "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
+    "Android Efficiency :: the [mental] face offers the same choice, and the drone branch costs no card": {
+      "sha256": "19c88ceac298de63ab0d2c75e90f263cf11cb69e0a48b761c519d6cb9c009216",
+      "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
+    "Android Efficiency :: the [physical] face charges a physical resource for the same boost": {
+      "sha256": "19c88ceac298de63ab0d2c75e90f263cf11cb69e0a48b761c519d6cb9c009216",
+      "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
+    "Android Efficiency :: the reveal takes the top card of the deck and nothing under it": {
+      "sha256": "19c88ceac298de63ab0d2c75e90f263cf11cb69e0a48b761c519d6cb9c009216",
+      "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
+    "Assault on NORAD :: step one placing threat on a different main scheme offers nothing": {
+      "sha256": "13c032d0d76d2381fcf3d5e5e38411b068ce1da75bfc78e97bb454ca8c88381a",
+      "source": "specs/cards/core/01138b-assault-on-norad.feature"
+    },
+    "Assault on NORAD :: the drone branch takes the top card of my deck instead of placing threat": {
+      "sha256": "13c032d0d76d2381fcf3d5e5e38411b068ce1da75bfc78e97bb454ca8c88381a",
+      "source": "specs/cards/core/01138b-assault-on-norad.feature"
+    },
+    "Assault on NORAD :: the threat branch places 2 more on the scheme and leaves my deck alone": {
+      "sha256": "13c032d0d76d2381fcf3d5e5e38411b068ce1da75bfc78e97bb454ca8c88381a",
+      "source": "specs/cards/core/01138b-assault-on-norad.feature"
+    },
+    "Assault on NORAD :: the threat goes on this scheme, not on a side scheme sitting beside it": {
+      "sha256": "13c032d0d76d2381fcf3d5e5e38411b068ce1da75bfc78e97bb454ca8c88381a",
+      "source": "specs/cards/core/01138b-assault-on-norad.feature"
+    },
     "Basic actions :: a basic attack deals the hero's ATK and exhausts them": {
       "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
       "source": "specs/rules/basic-actions.feature"
@@ -153,6 +185,46 @@
       "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
       "source": "specs/rules/damage-and-threat.feature"
     },
+    "Electric Whip Attack :: as a boost card on an undefended attack it discards an upgrade": {
+      "sha256": "d629f42f2b135fdca0e99fec722cd47426773d09ae0c6248925c9804e520535a",
+      "source": "specs/cards/core/01173-electric-whip-attack.feature"
+    },
+    "Electric Whip Attack :: defending the same attack leaves both upgrades alone": {
+      "sha256": "d629f42f2b135fdca0e99fec722cd47426773d09ae0c6248925c9804e520535a",
+      "source": "specs/cards/core/01173-electric-whip-attack.feature"
+    },
+    "Electric Whip Attack :: one upgrade makes it one damage, not a flat amount": {
+      "sha256": "d629f42f2b135fdca0e99fec722cd47426773d09ae0c6248925c9804e520535a",
+      "source": "specs/cards/core/01173-electric-whip-attack.feature"
+    },
+    "Electric Whip Attack :: the damage branch counts one for each upgrade and discards nothing": {
+      "sha256": "d629f42f2b135fdca0e99fec722cd47426773d09ae0c6248925c9804e520535a",
+      "source": "specs/cards/core/01173-electric-whip-attack.feature"
+    },
+    "Electric Whip Attack :: the discard branch takes the chosen upgrade and deals no damage": {
+      "sha256": "d629f42f2b135fdca0e99fec722cd47426773d09ae0c6248925c9804e520535a",
+      "source": "specs/cards/core/01173-electric-whip-attack.feature"
+    },
+    "Electric Whip Attack :: with no upgrade to discard the card asks nothing and deals nothing": {
+      "sha256": "d629f42f2b135fdca0e99fec722cd47426773d09ae0c6248925c9804e520535a",
+      "source": "specs/cards/core/01173-electric-whip-attack.feature"
+    },
+    "Eviction Notice :: declining the flip leaves only the random discard, and it resolves unasked": {
+      "sha256": "b87be55b3f64521a4252fef83ce7e56a8ca2c963351c9f64dc6e9a2eb98c5795",
+      "source": "specs/cards/core/01165-eviction-notice.feature"
+    },
+    "Eviction Notice :: exhausting Peter Parker removes the obligation from the game": {
+      "sha256": "b87be55b3f64521a4252fef83ce7e56a8ca2c963351c9f64dc6e9a2eb98c5795",
+      "source": "specs/cards/core/01165-eviction-notice.feature"
+    },
+    "Eviction Notice :: flipping is what puts the exhaust bullet on the table": {
+      "sha256": "b87be55b3f64521a4252fef83ce7e56a8ca2c963351c9f64dc6e9a2eb98c5795",
+      "source": "specs/cards/core/01165-eviction-notice.feature"
+    },
+    "Eviction Notice :: the other bullet costs a card at random and discards the obligation": {
+      "sha256": "b87be55b3f64521a4252fef83ce7e56a8ca2c963351c9f64dc6e9a2eb98c5795",
+      "source": "specs/cards/core/01165-eviction-notice.feature"
+    },
     "Family Emergency :: declining the flip leaves only the stun, and the hero takes it": {
       "sha256": "beac2545faa44950186dc68dfa25ad41fecd115d29a1509a1cca4bead7f15af7",
       "source": "specs/cards/core/01175-family-emergency.feature"
@@ -269,6 +341,22 @@
       "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
       "source": "specs/rules/keywords.feature"
     },
+    "Legal Work :: declining the flip leaves one bullet, and it resolves without a prompt": {
+      "sha256": "0b1b6dfc3a6fd4f78b6539e439cc4e93a6788196d3cdabed2feb17e533581529",
+      "source": "specs/cards/core/01160-legal-work.feature"
+    },
+    "Legal Work :: exhausting Jennifer Walters removes the obligation from the game": {
+      "sha256": "0b1b6dfc3a6fd4f78b6539e439cc4e93a6788196d3cdabed2feb17e533581529",
+      "source": "specs/cards/core/01160-legal-work.feature"
+    },
+    "Legal Work :: taking the offered flip is what puts the exhaust bullet on the table": {
+      "sha256": "0b1b6dfc3a6fd4f78b6539e439cc4e93a6788196d3cdabed2feb17e533581529",
+      "source": "specs/cards/core/01160-legal-work.feature"
+    },
+    "Legal Work :: the acceleration bullet discards the obligation instead of removing it": {
+      "sha256": "0b1b6dfc3a6fd4f78b6539e439cc4e93a6788196d3cdabed2feb17e533581529",
+      "source": "specs/cards/core/01160-legal-work.feature"
+    },
     "Nick Fury :: damage is dealt to the chosen enemy, not the first one": {
       "sha256": "6bd222e75731942c251ebfb771382225b9ad31d8a9bcb9e888d60056a107830e",
       "source": "specs/cards/core/01084-nick-fury.feature"
@@ -312,6 +400,22 @@
     "Phase structure :: the villain phase stops at enemy activation to ask for a defence": {
       "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
       "source": "specs/rules/phase-structure.feature"
+    },
+    "Ritual Combat :: X follows the boost icons of whatever card happened to be on top": {
+      "sha256": "cde155ac0262579bf315f05afe8232471627970463db022c2f339a46dec350bb",
+      "source": "specs/cards/core/01159-ritual-combat.feature"
+    },
+    "Ritual Combat :: a discarded card with no boost icons still makes X one": {
+      "sha256": "cde155ac0262579bf315f05afe8232471627970463db022c2f339a46dec350bb",
+      "source": "specs/cards/core/01159-ritual-combat.feature"
+    },
+    "Ritual Combat :: the damage branch deals X to the hero and places no threat": {
+      "sha256": "cde155ac0262579bf315f05afe8232471627970463db022c2f339a46dec350bb",
+      "source": "specs/cards/core/01159-ritual-combat.feature"
+    },
+    "Ritual Combat :: the threat branch places X on the main scheme and leaves the hero alone": {
+      "sha256": "cde155ac0262579bf315f05afe8232471627970463db022c2f339a46dec350bb",
+      "source": "specs/cards/core/01159-ritual-combat.feature"
     },
     "Sandman :: it enters play with a tough status card": {
       "sha256": "3ec3dde3460848eb46635d22908b112ee5fc5d4ba20cd98cc4744f633bd8d91f",
@@ -364,6 +468,54 @@
     "Swinging Web Kick :: playing it discards the card and the resources that paid for it": {
       "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
       "source": "specs/cards/core/01005-swinging-web-kick.feature"
+    },
+    "The crisis-icon bypass :: an ally ignoring the icon is not you ignoring it": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: an ally that ignores the icon thwarts the main scheme through it": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: an ally whose basic THW ignores the icon removes threat through it": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: an effect that ignores the icon and counts it does both": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: an effect that ignores the icon removes threat the icon would have blocked": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: ignoring the icon fires a response the board can see": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: no crisis icon in play is no response, not a silent one": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: the ally's bypass does not extend to the hero thwarting beside it": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: the same ally removes the same 2 with no crisis in play": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: the same ally removes the same 3 with no crisis in play": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: the same effect removes the same 3 with no crisis in play": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
+    },
+    "The crisis-icon bypass :: the same effect removes the same 6 with an acceleration icon instead": {
+      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "source": "specs/rules/crisis-bypass.feature"
     },
     "Timing priority :: a constant alone prevents the damage": {
       "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
@@ -436,6 +588,54 @@
     "Tony Stark :: the printed once-per-round limit removes the option, it does not error": {
       "sha256": "f6c931001ea894bb36874342663e543ac0afe940463766a083d731a83ee8d3fa",
       "source": "specs/cards/core/01029b-tony-stark.feature"
+    },
+    "Ultron :: an alter-ego is schemed against rather than attacked, so nothing is offered": {
+      "sha256": "3c04e33f35a9701754f94257945dfbe613252bcf706679d4af264fbadcd55a68",
+      "source": "specs/cards/core/01134-ultron.feature"
+    },
+    "Ultron :: the drone branch takes the top card of my deck and stands it up as an enemy": {
+      "sha256": "3c04e33f35a9701754f94257945dfbe613252bcf706679d4af264fbadcd55a68",
+      "source": "specs/cards/core/01134-ultron.feature"
+    },
+    "Ultron :: the threat branch places 1 on the main scheme and takes nothing off my deck": {
+      "sha256": "3c04e33f35a9701754f94257945dfbe613252bcf706679d4af264fbadcd55a68",
+      "source": "specs/cards/core/01134-ultron.feature"
+    },
+    "Ultron :: the threat can only go on the main scheme, not on a side scheme in play": {
+      "sha256": "3c04e33f35a9701754f94257945dfbe613252bcf706679d4af264fbadcd55a68",
+      "source": "specs/cards/core/01134-ultron.feature"
+    },
+    "Under Attack :: the card resolves for the second player as well as for me": {
+      "sha256": "ef5d89b8b9172868e8014f411822944c92569af0da3125b4f5f6347b099aa0bc",
+      "source": "specs/cards/core/01151-under-attack.feature"
+    },
+    "Under Attack :: the damage branch hits the hero and adds no threat": {
+      "sha256": "ef5d89b8b9172868e8014f411822944c92569af0da3125b4f5f6347b099aa0bc",
+      "source": "specs/cards/core/01151-under-attack.feature"
+    },
+    "Under Attack :: the second player's resolution is their own and not a copy of mine": {
+      "sha256": "ef5d89b8b9172868e8014f411822944c92569af0da3125b4f5f6347b099aa0bc",
+      "source": "specs/cards/core/01151-under-attack.feature"
+    },
+    "Under Attack :: the threat branch places 2 on the side scheme and leaves the hero untouched": {
+      "sha256": "ef5d89b8b9172868e8014f411822944c92569af0da3125b4f5f6347b099aa0bc",
+      "source": "specs/cards/core/01151-under-attack.feature"
+    },
+    "Vision :: the ATK branch raises attack by 2 and leaves thwart alone": {
+      "sha256": "3fdaaa534d8c4fee3e19c02f8eb2ac8b5228ccab63b69c11ba5dee9482a8ef2f",
+      "source": "specs/cards/core/01068-vision.feature"
+    },
+    "Vision :: the THW branch raises thwart by 2 and leaves attack alone": {
+      "sha256": "3fdaaa534d8c4fee3e19c02f8eb2ac8b5228ccab63b69c11ba5dee9482a8ef2f",
+      "source": "specs/cards/core/01068-vision.feature"
+    },
+    "Vision :: without the Action Vision attacks for its printed 2": {
+      "sha256": "3fdaaa534d8c4fee3e19c02f8eb2ac8b5228ccab63b69c11ba5dee9482a8ef2f",
+      "source": "specs/cards/core/01068-vision.feature"
+    },
+    "Vision :: without the Action Vision thwarts for its printed 1": {
+      "sha256": "3fdaaa534d8c4fee3e19c02f8eb2ac8b5228ccab63b69c11ba5dee9482a8ef2f",
+      "source": "specs/cards/core/01068-vision.feature"
     }
   },
   "version": 1
