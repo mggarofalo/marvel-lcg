@@ -339,6 +339,55 @@ class EventManager:
         return self.world.is_game_over
 
     @staticmethod
+    def IsInternalCleanupBatch(forced_effects: List['Effect']) -> bool:
+        """Is every ability here the engine's own bookkeeping rather than a card's?
+
+        `AbilityType.Temp0` and `Temp0UI` are internal cleanups. The one that
+        reaches this code is registered by
+        `environment_helper2.apply_environment_internal`: whenever a continuous
+        modifier starts applying to a face, one local `WhileThisStateUpdate`
+        cleanup goes **onto that face**, so the modifier can be taken back off
+        when the face leaves play, flips, is set as another card, or the villain
+        advances. A face sitting under two such modifiers therefore carries two
+        of them, and they all arrive in one batch at `TimingPriority.Rule`.
+
+        Nothing about that is an ability initiating. The Rules Reference sentence
+        the ordering prompt implements is about abilities that *initiate*; taking
+        a continuous modifier back off is the tail of something that was applying
+        all along, and there is no order for the first player to choose. Asking
+        produced a prompt whose options had no names at all -- `Temp #1` and
+        `Temp #2` -- and whose answers were interchangeable.
+
+        **Keyed on the ability type, never on the priority band.**
+        `TimingPriority.Rule` also carries `AbilityType.Rule`, `Challenge`,
+        `Scenario`, `Campaign` and `DelayAbility` (`ability_type.py`), every one
+        of which is a real ability of a card or a scenario. Excluding the band
+        would silence far more than this.
+
+        **And only when the whole batch is cleanups.** A batch mixing a cleanup
+        with a real Rule-priority ability still has a genuine order to choose, so
+        it is still asked. No such batch is reachable from the shipped card pool
+        as measured -- see `tools/determinism/probe_temp0_order.py`, which found
+        5247 candidates across 2572 prompts and every one of them a `Temp0` from
+        one line of `environment_helper2.py` -- but "not reachable today" is a
+        measurement, not a licence to reorder them.
+
+        Delay abilities do not count either way: `SelectForcedEffect` filters
+        them out of the choice, so they are not part of what would be asked.
+
+        See MARVEL-95. This is MARVEL-91's defect one priority band over -- that
+        one excluded `TimingPriority.Constant` for the same reason, that a
+        constant applies continuously and never initiates.
+        """
+        from game.ability.ability_type import AbilityType
+
+        candidates = [x for x in forced_effects if not x.ability.flags.is_delay_ability]
+        if not candidates:
+            return False
+        return all(effect.ability.type in (AbilityType.Temp0, AbilityType.Temp0UI)
+                   for effect in candidates)
+
+    @staticmethod
     def SelectForcedEffect(forced_effects: List['Effect'], ask_first_player: 'Callable[[List[Effect]], Effect|None]') -> 'Effect':
         """Which of several simultaneous forced abilities initiates next.
 
@@ -523,6 +572,7 @@ class EventManager:
 
             if first_effect.ability.priority != TimingPriority.Status and \
                 first_effect.ability.priority != TimingPriority.Constant and \
+                not EventManager.IsInternalCleanupBatch(forced_effects) and \
                 not isinstance(message, Message.WhenGameBeginSetup) and \
                 not check_is_resources(first_effect) and \
                 not first_effect.ability.flags.is_delay_ability:
