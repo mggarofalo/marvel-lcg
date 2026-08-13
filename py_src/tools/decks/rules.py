@@ -13,14 +13,23 @@ Rules are read from `datasets/cards/cards.json` (`tools/cards/extract.py`), neve
 from the engine's `data/cards.json` -- see AGENTS.md. The fields that carry
 them:
 
-    faction     hero / basic / aggression / justice / leadership / protection /
-                pool / encounter / campaign
-    set         for a hero card, which hero it belongs to ("spider_man")
-    deck_limit  the most copies one deck may hold
-    type        hero, alter_ego, ally, event, player_side_scheme, ...
-    traits      the printed trait line, split ("X-Men", "S.H.I.E.L.D.")
-    stats       the printed numbers, including the resource icons
-                (`resource_energy`, `resource_physical`, ...)
+    faction       hero / basic / aggression / justice / leadership /
+                  protection / pool / encounter / campaign
+    set           for a hero card, which hero it belongs to ("spider_man")
+    deck_limit    the most copies one deck may hold
+    type          hero, alter_ego, ally, event, player_side_scheme, ...
+    traits        the printed trait line, split ("X-Men", "S.H.I.E.L.D.")
+    stats         the printed numbers, including the resource icons
+                  (`resource_energy`, `resource_physical`, ...)
+    deckbuilding  on an identity face, the printed deck-building rule, read
+                  into structure by `tools/cards/deckbuilding.py`
+
+That last field used to be a hand-written table here, listing the seven
+identities that print such a rule (MARVEL-85). It is now read (MARVEL-88),
+because a hand-written table has no way to know when it has fallen behind the
+cards: the extract refuses to build a dataset containing an identity line
+nobody has classified, so an eighth identity is a build failure rather than a
+hero quietly checked under the default rule.
 
 Run from `py_src/`.
 """
@@ -33,7 +42,8 @@ import json
 import os
 from dataclasses import dataclass, field
 from typing import (
-    Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple)
+    Any, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, Set,
+    Tuple)
 
 CARD_DATASET = "../datasets/cards/cards.json"
 
@@ -73,6 +83,10 @@ class Catalogue:
     """The dataset, indexed the way deckbuilding asks about it."""
 
     cards: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    # set -> the identity's printed rule, built on first use from the
+    # `deckbuilding` blocks the records carry.
+    _rules: Optional[Dict[str, "Deckbuilding"]] = field(
+        default=None, init=False, repr=False, compare=False)
 
     @staticmethod
     def Load(path: str = CARD_DATASET) -> "Catalogue":
@@ -126,6 +140,38 @@ class Catalogue:
         return sorted(card_id for card_id, card in self.cards.items()
                       if str(card.get("faction") or "").lower() == "basic")
 
+    def Rules(self) -> Dict[str, "Deckbuilding"]:
+        """Every printed deck-building rule in this catalogue, keyed by `set`.
+
+        The dataset repeats the block on both faces of an identity, because a
+        consumer keys on the hero's `set` and should not have to know which
+        face carries the printing. The two must agree; a catalogue where they
+        do not is a broken dataset rather than an ambiguous rule, so it fails
+        here rather than picking one.
+        """
+        if self._rules is None:
+            table: Dict[str, Deckbuilding] = {}
+            for card_id in sorted(self.cards):
+                block = self.cards[card_id].get("deckbuilding")
+                if not block:
+                    continue
+                hero_set = str(self.cards[card_id].get("set") or "")
+                rule = Deckbuilding.FromDataset(block)
+                if table.setdefault(hero_set, rule) != rule:
+                    raise DeckError(
+                        f"{hero_set}: two identity faces carry different "
+                        f"`deckbuilding` blocks")
+            self._rules = table
+        return self._rules
+
+    def Rule(self, hero_set: str) -> "Deckbuilding":
+        """This hero's printed deck-building rule, or the unmodified default."""
+        return self.Rules().get(hero_set, NO_EXCEPTION)
+
+    def AspectAllowance(self, hero_set: str) -> int:
+        """How many aspects this hero's deck may draw on. One, unless printed."""
+        return self.Rule(hero_set).aspects
+
 
 ################################################################################
 #
@@ -142,67 +188,85 @@ class Catalogue:
 # Cyclops takes X-Men allies, Cable player side schemes, Wonder Man events with
 # an energy icon; Gamora takes at most 6 attack/thwart events and Maria Hill at
 # most 3 S.H.I.E.L.D. supports. Those are all one rule -- *cards matching P from
-# an aspect you did not choose, up to N* -- so they are modelled as one rule
-# with a predicate rather than five special cases, and a sixth such identity
-# needs a table row and no code.
+# an aspect you did not choose, up to N* -- so they are one `Allowance` with a
+# printed description rather than five special cases, and a sixth such identity
+# needs no code here at all: it arrives in the dataset.
 #
-# Every predicate reads a printed field. The bracket convention in the printed
-# text says which: MarvelSDB renders a **trait** as `[[X-MEN]]` and a **resource
-# icon** as `[energy]`, so "[[X-MEN]] allies" is `type == ally and "X-Men" in
-# traits` while "a printed [energy] resource icon" is `stats.resource_energy`.
-# `[[attack]]`/`[[thwart]]` are likewise traits, not the `(attack)` marker in an
-# ability line -- the trait is the superset (249 events carry both, 20 carry only
-# the trait, none only the marker), and the trait is what is printed on the card.
-
-ALLY = "ally"
-EVENT = "event"
-SUPPORT = "support"
-PLAYER_SIDE_SCHEME = "player_side_scheme"
-
-TRAIT_XMEN = "X-Men"
-TRAIT_SHIELD = "S.H.I.E.L.D."
-TRAIT_ATTACK = "Attack"
-TRAIT_THWART = "Thwart"
-
-
-def _Is(card_type: str, *traits: str) -> Callable[[Dict[str, Any]], bool]:
-    """A card of this type, carrying at least one of these traits."""
-    def Match(card: Dict[str, Any]) -> bool:
-        if str(card.get("type") or "") != card_type:
-            return False
-        return not traits or bool(set(traits) & set(card.get("traits") or []))
-    return Match
-
-
-def _EnergyEvent(card: Dict[str, Any]) -> bool:
-    """An event with a printed [energy] resource icon."""
-    if str(card.get("type") or "") != EVENT:
-        return False
-    return int((card.get("stats") or {}).get("resource_energy") or 0) > 0
+# A description is always written in printed fields, never in prose. The
+# bracket convention in the printed text says which: MarvelSDB renders a
+# **trait** as `[[X-MEN]]` and a **resource icon** as `[energy]`, so "[[X-MEN]]
+# allies" is `card_type == "ally"` with `traits == ["X-Men"]`, and "a printed
+# [energy] resource icon" is `resource == "energy"`, read out of
+# `stats.resource_energy`. `[[attack]]`/`[[thwart]]` are likewise traits, not
+# the `(attack)` marker in an ability line -- the trait is the superset (249
+# events carry both, 20 carry only the trait, none only the marker), and the
+# trait is what is printed on the card.
+#
+# Reading those fields off a card is this module's job. Deciding that
+# "[[X-MEN]] allies" means them is `tools/cards/deckbuilding.py`'s, and the
+# decision is recorded in the dataset with the sentence it came from.
 
 
 @dataclass(frozen=True)
 class Allowance:
-    """Cards matching `predicate` may come from aspects the deck did not choose.
+    """Cards matching a printed description may come from unchosen aspects.
 
-    `limit` is how many, `None` for no cap. Gamora's is counted in cards ("up to
-    6 attack and/or thwart events"); Maria Hill's is counted in *titles* ("the
-    maximum number of copies of 3 S.H.I.E.L.D. supports" -- three cards, each at
-    its full copy limit), which is what `by_title` selects.
+    Built from one entry of a card's `deckbuilding.allowances`. `limit` is how
+    many, `None` for no cap. Gamora's is counted in cards ("up to 6 attack
+    and/or thwart events"); Maria Hill's is counted in *titles* ("the maximum
+    number of copies of 3 S.H.I.E.L.D. supports" -- three cards, each at its
+    full copy limit), which is what `by_title` selects.
 
     Cards from the aspect the deck *did* choose never consume an allowance:
     both capped lines say "from aspects other than your chosen aspect", and the
-    three uncapped ones say "from any aspect", which is only a widening.
+    three uncapped ones say "from any aspect", which is only a widening. The
+    dataset carries that distinction as `from`; the checker does not need it,
+    because it asks whether *some* choice of aspects makes the deck legal and
+    a card in the chosen aspect is never outside it. It is read and kept on the
+    record anyway, so a consumer that does need it is not re-deriving it from
+    the sentence.
     """
     what: str
-    predicate: Callable[[Dict[str, Any]], bool]
+    card_type: str = ""
+    traits: Tuple[str, ...] = ()
+    resource: Optional[str] = None
+    source: str = "any_aspect"
     limit: Optional[int] = None
     by_title: bool = False
+
+    @staticmethod
+    def FromDataset(spec: Dict[str, Any]) -> "Allowance":
+        return Allowance(
+            what=str(spec.get("what") or ""),
+            card_type=str(spec.get("card_type") or ""),
+            traits=tuple(spec.get("traits") or ()),
+            resource=spec.get("resource") or None,
+            source=str(spec.get("from") or "any_aspect"),
+            limit=spec.get("limit"),
+            by_title=spec.get("counted_by") == "titles")
+
+    def Matches(self, card: Dict[str, Any]) -> bool:
+        """Whether this card is one the printed line lets in.
+
+        Every clause has to hold. An allowance that matched on type alone, or
+        on trait alone, would pass every test that shows it *accepting* a card
+        and quietly legalise hundreds of decks -- which is why each of the five
+        is tested against a near miss as well.
+        """
+        if self.card_type and str(card.get("type") or "") != self.card_type:
+            return False
+        if self.traits and not set(self.traits) & set(card.get("traits") or []):
+            return False
+        if self.resource:
+            stats = card.get("stats") or {}
+            if int(stats.get(f"resource_{self.resource}") or 0) <= 0:
+                return False
+        return True
 
 
 @dataclass(frozen=True)
 class Deckbuilding:
-    """One identity's printed deck-building line."""
+    """One identity's printed deck-building line, as the dataset carries it."""
     card_id: str
     printed: str
     aspects: int = 1
@@ -212,71 +276,68 @@ class Deckbuilding:
     # under its printed `deck_limit`.
     copy_cap: Optional[int] = None
 
+    @staticmethod
+    def FromDataset(block: Dict[str, Any]) -> "Deckbuilding":
+        return Deckbuilding(
+            card_id=str(block.get("source_card") or ""),
+            printed=str(block.get("source_text") or ""),
+            aspects=int(block.get("aspects") or 1),
+            equal=bool(block.get("equal_aspects")),
+            allowances=tuple(Allowance.FromDataset(spec)
+                             for spec in block.get("allowances") or ()),
+            copy_cap=block.get("copy_limit"))
 
-# Derived rather than invented: seven identities in the whole dataset print a
-# line matching any of `DECKBUILDING_LINES`, and all seven are here. The table
-# is written out instead of parsed because seven English sentences are not a
-# grammar, and a regex over them would fail silently on the eighth --
-# `test_decks.py` fails if a new identity prints such a line and is not listed.
-#
-# Keyed by the identity's `set`. Note Gamora's is `gam`, not `gamora`.
-DECKBUILDING: Dict[str, Deckbuilding] = {
-    "spider_woman": Deckbuilding(
-        "04031b",
-        "Choose two aspects instead of one during deck-building. You must "
-        "include an equal number of cards from those aspects in your deck.",
-        aspects=2, equal=True),
-    "warlock": Deckbuilding(
-        "21031b",
-        "During deck-building, your deck must include an equal number of cards "
-        "from all 4 aspects. You cannot include more than 1 copy of any "
-        "non-Adam Warlock card.",
-        aspects=4, equal=True, copy_cap=1),
-    "cyclops": Deckbuilding(
-        "33001b",
-        "You may include [[X-MEN]] allies from any aspect in your deck.",
-        allowances=(Allowance("X-Men allies", _Is(ALLY, TRAIT_XMEN)),)),
-    "cable": Deckbuilding(
-        "40001b",
-        "You may include player side schemes from any aspect in your deck.",
-        allowances=(Allowance("player side schemes",
-                              _Is(PLAYER_SIDE_SCHEME)),)),
-    "gam": Deckbuilding(
-        "18001b",
-        "You may include up to 6 [[attack]] and/or [[thwart]] events in your "
-        "deck from aspects other than your chosen aspect.",
-        allowances=(Allowance("attack and/or thwart events",
-                              _Is(EVENT, TRAIT_ATTACK, TRAIT_THWART),
-                              limit=6),)),
-    "maria_hill": Deckbuilding(
-        "50001b",
-        "You may include the maximum number of copies of 3 [[S.H.I.E.L.D.]] "
-        "supports in your deck from aspects other than your chosen aspect.",
-        allowances=(Allowance("S.H.I.E.L.D. supports",
-                              _Is(SUPPORT, TRAIT_SHIELD),
-                              limit=3, by_title=True),)),
-    "wonder_man": Deckbuilding(
-        "58001b",
-        "You may include events with a printed [energy] resource icon from any "
-        "aspect in your deck.",
-        allowances=(Allowance("events with a printed energy resource icon",
-                              _EnergyEvent),)),
-}
 
 NO_EXCEPTION = Deckbuilding("", "a deck takes cards from exactly one aspect")
 
-# Every phrasing an identity has used to print a deck-building modifier. The
-# guard in `test_decks.py` greps identity text for these and fails if it finds a
-# `set` that `DECKBUILDING` does not list -- widening this set is how an eighth
-# identity gets caught rather than silently checked under the default.
-DECKBUILDING_LINES: Tuple[str, ...] = (
-    "you may include", "deck-building", "deckbuilding", "deck building",
-    "instead of one", "in your deck",
-)
+
+class _DatasetRules(Mapping[str, Deckbuilding]):
+    """`DECKBUILDING`, read from `datasets/cards/cards.json` on first use.
+
+    A mapping rather than a dict because the dataset is 6 MB and most callers
+    of this module never ask about a printed exception; a module-level `dict`
+    would make importing it a file read. Read-only for the same reason the
+    table it replaced is gone: the rules are printed on cards, and a caller
+    that wants a different set of them wants a different `Catalogue`.
+    """
+
+    def __init__(self) -> None:
+        self._table: Optional[Dict[str, Deckbuilding]] = None
+
+    def _Table(self) -> Dict[str, Deckbuilding]:
+        if self._table is None:
+            self._table = Catalogue.Load().Rules()
+        return self._table
+
+    def __getitem__(self, hero_set: str) -> Deckbuilding:
+        return self._Table()[hero_set]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._Table())
+
+    def __len__(self) -> int:
+        return len(self._Table())
+
+    def __repr__(self) -> str:
+        loaded = "unread" if self._table is None else f"{len(self._table)} rules"
+        return f"<DECKBUILDING {loaded} from {CARD_DATASET}>"
+
+
+# Keyed by the identity's `set`. Note Gamora's is `gam`, not `gamora`.
+#
+# Seven identities in this snapshot print a deck-building line and all seven
+# are here, because the extract will not build a dataset in which an identity
+# prints a line nobody has classified. That guard is the reason this is a read
+# rather than a table: a table cannot notice an eighth hero.
+DECKBUILDING: Mapping[str, Deckbuilding] = _DatasetRules()
 
 
 def Rule(hero_set: str) -> Deckbuilding:
-    """This hero's printed deck-building line, or the unmodified default."""
+    """This hero's printed deck-building line, or the unmodified default.
+
+    Reads the checked-in dataset. Prefer `Catalogue.Rule` where a catalogue is
+    already in hand -- this exists for callers that only have a hero's `set`.
+    """
     return DECKBUILDING.get(hero_set, NO_EXCEPTION)
 
 
@@ -316,7 +377,7 @@ def _AgainstChoice(catalogue: Catalogue, card_ids: Sequence[str],
     stranded: List[str] = []
     for card_id in sorted(outside):
         for index, allowance in enumerate(rule.allowances):
-            if allowance.predicate(catalogue.Get(card_id)):
+            if allowance.Matches(catalogue.Get(card_id)):
                 taken[index].append(card_id)
                 break
         else:
@@ -416,7 +477,9 @@ def Check(deck: Dict[str, Any], catalogue: Optional[Catalogue] = None,
         return [Violation("empty", "the deck holds no cards")]
 
     hero_set = HeroSet(catalogue, deck)
-    rule = Rule(hero_set)
+    # From the catalogue in hand, not from the checked-in dataset: a deck is
+    # checked against the cards it is being checked with.
+    rule = catalogue.Rule(hero_set)
 
     # -- size ---------------------------------------------------------------
     if len(card_ids) < minimum:

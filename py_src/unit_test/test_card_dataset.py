@@ -11,12 +11,14 @@ No engine bootstrap: `tools/cards/` is stdlib-only, so this runs anywhere.
     python -m unittest unit_test.test_card_dataset
 """
 
+import dataclasses
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from tools.cards import anomalies, engine, extract, marvelsdb, scripts
+from tools.cards import (
+    anomalies, deckbuilding, engine, extract, marvelsdb, scripts)
 from tools.cards.text import IsCorrupt, ToPlainText
 
 REPO = Path(".")
@@ -715,3 +717,279 @@ class TestAbilityTypeMatchesItsEvent(unittest.TestCase):
             "a Boost-priority AbilityType is registered on an event that is not "
             "about being defeated. Either the ability type is wrong (as in "
             "MARVEL-89) or this guard needs widening -- check the printed card.")
+
+
+################################################################################
+# The deck-building guard (MARVEL-88)
+#
+
+def Identity(card_id, text, *, card_set="hero_set", card_type="alter_ego",
+             name="Somebody"):
+    """The fields `tools.cards.deckbuilding` reads, and nothing else."""
+    return {"card_id": card_id, "type": card_type, "set": card_set,
+            "name": name, "text_plain": text, "back_text": ""}
+
+
+# Cyclops', verbatim. The line the guard is pinned to.
+CYCLOPS = "You may include [[X-MEN]] allies from any aspect in your deck."
+CYCLOPS_HASH = "ba3d1502cd0af797"
+
+# Nightcrawler's, verbatim: the net matches it, and it is reviewed as not a
+# deck-building rule. His face prints exactly this one matching line.
+NIGHTCRAWLER = ("Action: Search your deck for a copy of Bamf! and add it to "
+                "your hand. (Limit once per round.)")
+
+
+def Mentioning(result, card_id):
+    """The problems about one card.
+
+    A scan of a handful of synthetic records always reports the other 47 real
+    lines as no longer printed, which is correct -- the tables describe the
+    whole dataset -- and is noise when the question is about one card.
+    """
+    return [p for p in result.problems if p.startswith(card_id)]
+
+
+class TestDeckbuildingTables(unittest.TestCase):
+    """The parses, checked against the sentences they claim to come from."""
+
+    def test_the_tables_are_internally_consistent(self):
+        self.assertEqual(deckbuilding.SelfCheck(), [])
+
+    def test_every_parse_matches_the_broad_net(self):
+        """A parse of a line the net cannot see would never be reached."""
+        for rule in deckbuilding.RULES:
+            with self.subTest(card=rule.card_id):
+                self.assertTrue(deckbuilding.Matches(rule.source_text))
+
+    def test_a_cap_the_line_does_not_print_is_rejected(self):
+        """Mutation. The number in the parse has to be the printed number.
+
+        Nothing else in the pipeline contradicts a wrong cap: the parse is the
+        only description of the rule there is, so a 7 read off a line that says
+        6 would be believed, and Gamora's legal decks would be rejected.
+        """
+        gamora = next(r for r in deckbuilding.RULES if r.card_id == "18001b")
+        wrong = dataclasses.replace(
+            gamora,
+            allowances=(dataclasses.replace(gamora.allowances[0], limit=7),))
+        complaints = deckbuilding._ParseComplaints(wrong)
+        self.assertTrue(complaints)
+        self.assertIn("does not print the number 7", complaints[0])
+
+    def test_a_trait_the_line_does_not_print_is_rejected(self):
+        cyclops = next(r for r in deckbuilding.RULES if r.card_id == "33001b")
+        wrong = dataclasses.replace(
+            cyclops,
+            allowances=(dataclasses.replace(cyclops.allowances[0],
+                                            traits=("Avenger",)),))
+        self.assertIn("[[Avenger]]",
+                      " ".join(deckbuilding._ParseComplaints(wrong)))
+
+    def test_a_card_type_the_line_does_not_print_is_rejected(self):
+        cyclops = next(r for r in deckbuilding.RULES if r.card_id == "33001b")
+        wrong = dataclasses.replace(
+            cyclops,
+            allowances=(dataclasses.replace(cyclops.allowances[0],
+                                            card_type="upgrade"),))
+        self.assertIn("'upgrades'",
+                      " ".join(deckbuilding._ParseComplaints(wrong)))
+
+    def test_no_line_is_both_a_rule_and_reviewed_as_not_one(self):
+        rules = {(r.card_id, r.source_hash) for r in deckbuilding.RULES}
+        reviewed = {(r.card_id, r.line_hash) for r in deckbuilding.REVIEWED}
+        self.assertEqual(rules & reviewed, set())
+
+
+class TestDeckbuildingGuard(unittest.TestCase):
+    """The mechanism: a line nobody has classified stops the build.
+
+    Every test here is a mutation of the real tables or the real text. An
+    accept-only test would pass just as happily against a scan that classified
+    nothing, which is the exact bug this replaces.
+    """
+
+    def test_a_reviewed_line_is_accepted(self):
+        """Nightcrawler's, which the net matches and which is not a rule."""
+        records = [Identity("48001b", NIGHTCRAWLER, card_set="nightcrawler")]
+        result = deckbuilding.Scan(records)
+        self.assertEqual(Mentioning(result, "48001b"), [])
+        self.assertEqual(result.classified[("48001b",
+                                            deckbuilding.LineHash(NIGHTCRAWLER))],
+                         "search")
+
+    def test_editing_a_reviewed_line_stops_it_being_accepted(self):
+        """The reviewed set is pinned to the text, not to the card.
+
+        Otherwise "somebody looked at this card once" would licence every later
+        rewording of it, which is the failure the hash exists to prevent.
+        """
+        records = [Identity("48001b", NIGHTCRAWLER.replace("Bamf!", "Snikt!"),
+                            card_set="nightcrawler")]
+        self.assertTrue(Mentioning(deckbuilding.Scan(records), "48001b"))
+
+    def test_a_new_deckbuilding_shaped_line_fails(self):
+        """The point of the whole issue.
+
+        A hero printed tomorrow whose rule nobody has read must stop the
+        extract, not be silently checked as an ordinary one-aspect deck.
+        """
+        records = [Identity(
+            "99001b",
+            "You may include [[AVENGER]] upgrades from any aspect in your deck.",
+            card_set="new_hero", name="New Hero")]
+        result = deckbuilding.Scan(records)
+        self.assertTrue(result.problems)
+        self.assertIn("99001b", result.problems[0])
+        self.assertIn("nobody has classified", result.problems[0])
+
+    def test_the_failure_names_the_row_to_add(self):
+        """The message is a work order, so the fix does not need archaeology."""
+        records = [Identity("99001b", "Search your deck for a [[Tech]] upgrade.")]
+        problem = deckbuilding.Scan(records).problems[0]
+        self.assertIn('Reviewed("99001b"', problem)
+        self.assertIn(deckbuilding.LineHash(
+            "Search your deck for a [[Tech]] upgrade."), problem)
+
+    def test_an_unclassified_line_raises_rather_than_warns(self):
+        records = [Identity("99001b", "You may include anything in your deck.")]
+        with self.assertRaises(deckbuilding.DeckbuildingError):
+            deckbuilding.Apply(records)
+
+    def test_a_line_the_net_does_not_match_is_ignored(self):
+        """The limit of the guard, stated as a test rather than as a hope."""
+        records = [Identity("99001b", "Hero Action: ready Somebody.")]
+        result = deckbuilding.Scan(records)
+        self.assertEqual(Mentioning(result, "99001b"), [])
+        self.assertEqual(result.matched_lines, 0)
+
+    def test_a_reworded_rule_fails_twice(self):
+        """The pin. Change one character of a rule's line and it is not a rule.
+
+        Both halves fire: the new wording is unclassified, and the parse now
+        pins a sentence nothing prints. Either alone would be enough; both are
+        reported because they are different repairs.
+        """
+        records = [Identity("33001b", CYCLOPS.replace("allies", "characters"),
+                            card_set="cyclops", name="Cyclops")]
+        problems = "\n".join(deckbuilding.Scan(records).problems)
+        self.assertIn("nobody has classified", problems)
+        self.assertIn("no longer printed on the card", problems)
+
+    def test_a_rule_whose_card_vanishes_fails(self):
+        problems = "\n".join(deckbuilding.Scan([]).problems)
+        self.assertIn("33001b", problems)
+        self.assertIn("no longer", problems)
+
+    def test_a_reviewed_row_whose_line_vanishes_fails(self):
+        """Stale allowlist rows are a failure too.
+
+        A row nobody can trace back to a card is a row nobody will ever delete,
+        and a table that accumulates them stops being auditable -- which is the
+        only property it has.
+        """
+        problems = "\n".join(deckbuilding.Scan([]).problems)
+        self.assertIn("is no longer printed", problems)
+
+    def test_only_identity_faces_are_scanned(self):
+        records = [Identity("99001", CYCLOPS, card_type="ally")]
+        self.assertEqual(Mentioning(deckbuilding.Scan(records), "99001"), [])
+
+    def test_an_inline_back_face_is_scanned_too(self):
+        records = [{"card_id": "99001b", "type": "alter_ego", "set": "x",
+                    "name": "X", "text_plain": "",
+                    "back_text": "<b>Rule</b> — You may include anything in "
+                                 "your deck."}]
+        self.assertTrue(deckbuilding.Scan(records).problems)
+
+    def test_the_hash_moves_when_the_line_does(self):
+        self.assertEqual(deckbuilding.LineHash(CYCLOPS), CYCLOPS_HASH)
+        self.assertNotEqual(deckbuilding.LineHash(CYCLOPS + "."), CYCLOPS_HASH)
+
+
+class TestDeckbuildingAgainstTheRealDataset(unittest.TestCase):
+    """The measurement in MARVEL-88, pinned."""
+
+    @classmethod
+    def setUpClass(cls):
+        if not (REPO / engine.CARDS_JSON).exists():
+            raise unittest.SkipTest("run from py_src/ -- data/cards.json not found")
+        if not SNAPSHOT.exists():
+            raise unittest.SkipTest(f"vendored snapshot missing at {SNAPSHOT}")
+        cls.dataset = json.loads(extract.Build(REPO)[extract.CARDS_FILE])
+        cls.records = cls.dataset["cards"]
+        cls.result = deckbuilding.Scan(cls.records)
+
+    def test_the_real_dataset_has_nothing_unclassified(self):
+        self.assertEqual(self.result.problems, [])
+
+    def test_the_broad_net_matches_what_the_issue_measured(self):
+        """48 lines on 37 heroes, of which 7 are rules and 41 are not.
+
+        Pinned as a number because the argument for the reviewed set rests on
+        it: a net precise enough not to need one does not exist, and if these
+        counts move a long way somebody should re-read the reasoning.
+        """
+        matched = list(deckbuilding.Iterate(self.records))
+        heroes = {c["set"] for c in self.records
+                  if c["card_id"] in {card_id for card_id, _ in matched}}
+        self.assertEqual(len(matched), 48)
+        self.assertEqual(len(heroes), 37)
+        kinds = self.result.classified
+        self.assertEqual(sum(1 for k in kinds.values() if k == "rule"), 7)
+        self.assertEqual(sum(1 for k in kinds.values() if k != "rule"), 41)
+
+    def test_all_seven_printed_rules_are_found(self):
+        found = {block["source_card"] for block in self.result.blocks.values()}
+        self.assertEqual(found, {"04031b", "18001b", "21031b", "33001b",
+                                 "40001b", "50001b", "58001b"})
+
+    def test_every_source_text_is_a_line_the_card_actually_prints(self):
+        """`source_text` is carried so a human can audit the parse in place.
+
+        It is worth nothing if it is a paraphrase, so it is checked against the
+        card rather than trusted.
+        """
+        by_id = {c["card_id"]: c for c in self.records}
+        for rule in deckbuilding.RULES:
+            with self.subTest(card=rule.card_id):
+                self.assertIn(rule.source_text,
+                              deckbuilding.Lines(by_id[rule.card_id]))
+
+    def test_the_block_is_emitted_on_every_face_of_a_hero_that_has_one(self):
+        sets = {c["set"] for c in self.records if c.get("deckbuilding")}
+        for hero_set in sets:
+            faces = [c for c in self.records
+                     if c.get("type") in deckbuilding.IDENTITY_TYPES
+                     and c["set"] == hero_set]
+            with self.subTest(hero=hero_set):
+                self.assertTrue(faces)
+                self.assertTrue(all(c.get("deckbuilding") for c in faces))
+
+    def test_a_perturbed_card_fails_the_build(self):
+        """Mutation, end to end: change the printed text, watch `Build` refuse.
+
+        This is the acceptance criterion of MARVEL-88 written as a test. It
+        perturbs the records the extract would write rather than the vendored
+        snapshot, which is the same input at the only point that matters.
+        """
+        records = [dict(c) for c in self.records]
+        for record in records:
+            if record["card_id"] == "33001b":
+                record["text_plain"] = record["text_plain"].replace(
+                    "[[X-MEN]] allies", "[[X-MEN]] characters")
+        with self.assertRaises(deckbuilding.DeckbuildingError) as caught:
+            deckbuilding.Apply(records)
+        self.assertIn("33001b", str(caught.exception))
+
+    def test_removing_the_guard_would_be_caught(self):
+        """The guard cannot be quietly emptied.
+
+        A `REVIEWED` table pruned to nothing, or a `BROAD_NET` narrowed to
+        match nothing, both leave a scan that classifies nothing and reports no
+        problem -- which is indistinguishable from a clean run unless somebody
+        asserts the work was done.
+        """
+        self.assertEqual(self.result.matched_lines, 48)
+        self.assertEqual(len(deckbuilding.REVIEWED), 41)
+        self.assertEqual(len(deckbuilding.RULES), 7)

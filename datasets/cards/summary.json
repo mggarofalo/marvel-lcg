@@ -584,5 +584,29 @@
     "upstream_text_key_typo": 1,
     "upstream_duplicate_code": 0,
     "upstream_dangling_duplicate": 0
+  },
+  "deckbuilding": {
+    "rule": "Every identity line matching BROAD_NET (`include|deck-?building|your deck|instead of one|aspect|max \\d|per deck|cannot include|must include`) is either parsed into a deck-building rule or listed as reviewed-and-not-one, each pinned to a hash of the printed line. A line in neither fails the extract -- see tools/cards/deckbuilding.py.",
+    "identity_faces_with_a_rule": 14,
+    "matched_lines": 48,
+    "parsed_rules": 7,
+    "reviewed_lines": 41,
+    "by_classification": {
+      "aspect_word": 3,
+      "mill": 4,
+      "rule": 7,
+      "search": 18,
+      "shuffle_back": 9,
+      "top_of_deck": 7
+    },
+    "heroes_with_a_rule": [
+      "04031b",
+      "18001b",
+      "21031b",
+      "33001b",
+      "40001b",
+      "50001b",
+      "58001b"
+    ]
   }
 }

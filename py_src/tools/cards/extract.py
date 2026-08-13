@@ -17,6 +17,11 @@ Run from `py_src/`:
 `--check` is what makes "generated reproducibly" a claim you can test rather
 than a hope. It regenerates into memory and compares; nothing is written.
 
+Both modes **fail** when an identity prints a deck-building line that nobody
+has classified -- see `tools/cards/deckbuilding.py`. That is deliberate: a new
+hero whose printed rule went unnoticed is a hero whose legal decks get called
+illegal, and the failure has to happen at the build rather than months later.
+
 The output is deterministic by construction: cards sorted by id, dict keys in a
 fixed order, every collection sorted before it is written, and no wall-clock
 anywhere. Regenerating without changing an input produces byte-identical files.
@@ -31,6 +36,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from tools.cards import anomalies as anomaly_module
+from tools.cards import deckbuilding as deckbuilding_module
 from tools.cards import engine as engine_module
 from tools.cards import marvelsdb as marvelsdb_module
 from tools.cards import scripts as scripts_module
@@ -204,6 +210,10 @@ def _Record(
         "text_source": text_source,
     }
     record.update(identity)
+    # Filled in by `tools.cards.deckbuilding` once every record exists, because
+    # the rule is printed on one face and applies to the identity's whole set.
+    # Declared here so the key order does not depend on which cards have one.
+    record["deckbuilding"] = None
     record["engine"] = (
         _EngineRecord(known, index, source, printed_text) if known is not None else None
     )
@@ -428,6 +438,11 @@ def Build(root: Path = Path(".")) -> Dict[str, str]:
         for card_id in card_ids
     ]
 
+    # Raises rather than returns when an identity prints a deck-building line
+    # nobody has classified. Before the records are rendered, so a dataset that
+    # would silently drop a rule never reaches the disk.
+    deckbuilding = deckbuilding_module.Apply(records)
+
     claimed_scripts = {
         r["engine"]["script"]["path"]
         for r in records if r["engine"] and r["engine"]["script"]
@@ -435,6 +450,7 @@ def Build(root: Path = Path(".")) -> Dict[str, str]:
 
     found = _CollectAnomalies(records, source, reference, index, claimed_scripts)
     summary = _Summary(records, source, reference, index, found, claimed_scripts)
+    summary["deckbuilding"] = deckbuilding_module.SummaryOf(deckbuilding)
 
     header = {
         "dataset_version": DATASET_VERSION,
@@ -517,7 +533,13 @@ def main(argv: List[str] | None = None) -> int:
                         help=f"output directory (default {OUTPUT_DIR})")
     args = parser.parse_args(argv)
 
-    outputs = Build()
+    try:
+        outputs = Build()
+    except deckbuilding_module.DeckbuildingError as error:
+        # Printed rather than raised: the message is a work order for a human,
+        # and a traceback in front of it only buries the card ids.
+        print(error, file=sys.stderr)
+        return 1
     summary = json.loads(outputs[SUMMARY_FILE])
 
     if args.check:
@@ -541,6 +563,10 @@ def main(argv: List[str] | None = None) -> int:
     flagged = sum(summary["anomalies"].values())
     print(f"  {flagged} anomalies across "
           f"{sum(1 for n in summary['anomalies'].values() if n)} kinds")
+    rules = summary["deckbuilding"]
+    print(f"  {rules['parsed_rules']} deck-building rules parsed, "
+          f"{rules['reviewed_lines']} lines reviewed and not one "
+          f"({rules['matched_lines']} identity lines matched)")
     return 0
 
 

@@ -50,6 +50,12 @@ python -m tools.cards.extract --check    # exit 1 if the checked-in copy is stal
 python -m unittest unit_test.test_card_dataset
 ```
 
+Both modes exit 1, writing nothing, if an identity prints a deck-building line
+nobody has classified — see [Deck-building rules](#deck-building-rules). That is
+the one way this tool refuses to produce output rather than reporting an
+anomaly, because the thing it is protecting against is a rule going missing
+quietly.
+
 The output is deterministic: cards sorted by id, fixed key order, every
 collection sorted before writing, no wall-clock anywhere. Regenerating without
 changing an input produces byte-identical files, and `--check` is how you prove
@@ -92,6 +98,10 @@ Every record has every field; absence is a value, never a missing key.
   "position": 2, "quantity": 1, "deck_limit": 1, "hidden": false,
   "reprint_of": null, "back_link": null, "back_name": "", "back_text": "",
 
+  // The printed deck-building rule, on identity faces that have one.
+  // null on every other card. See "Deck-building rules" below.
+  "deckbuilding": null,
+
   // What the Python engine believes, and what implements it. null if the
   // engine has never heard of this card.
   "engine": {
@@ -128,7 +138,8 @@ Notes on the fields that are easy to misread:
   distinction is load-bearing wherever a card's rules text names other cards:
   Cyclops' "You may include `[[X-MEN]]` allies" is `"X-Men" in traits`, while
   Wonder Man's "events with a printed `[energy]` resource icon" is
-  `stats.resource_energy`. `tools/decks/rules.py` reads both.
+  `stats.resource_energy`. Both readings are made once, in the `deckbuilding`
+  block below, so no consumer re-derives them from the sentence.
 - **A trait can contain periods.** `S.H.I.E.L.D.` (114 cards) and `A.I.M.` (10)
   are single traits, and are stored with their terminal period so they read as
   printed. Upstream stores the trait line as one string, `"Location.
@@ -138,6 +149,63 @@ Notes on the fields that are easy to misread:
   MarvelSDB's `duplicate_of`, a card printed again in a later pack. The second
   is the engine's `full_link`/`ability_link`, which also decides which script
   the card resolves to.
+
+### Deck-building rules
+
+Seven identities print a rule about what may go in a deck. They used to be a
+hand-written table in `tools/decks/rules.py`; they are now a field, so the
+Python checker, the deck builder and the C# engine all read the same reading of
+the same sentence (MARVEL-88).
+
+```jsonc
+"deckbuilding": {
+  "aspects": 1,             // how many aspects the deck draws on
+  "equal_aspects": false,   // whether they must be the same size
+  "copy_limit": null,       // a cap below the printed deck_limit (Adam Warlock's 1)
+  "allowances": [           // cards let in from an aspect the deck did not choose
+    {
+      "what": "X-Men allies",
+      "card_type": "ally",  // matched against `type`
+      "traits": ["X-Men"],  // any one of these, matched against `traits`
+      "resource": null,     // a printed resource icon, e.g. "energy"
+      "from": "any_aspect", // or "other_aspects", as printed
+      "limit": null,        // how many, null for no cap
+      "counted_by": "cards" // or "titles" -- Maria Hill's 3 are titles
+    }
+  ],
+  "source_card": "33001b",
+  "source_hash": "ba3d1502cd0af797",
+  "source_text": "You may include [[X-MEN]] allies from any aspect in your deck."
+}
+```
+
+The block is repeated on **every face** of the identity, so a consumer keyed on
+`set` need not know which face carries the printing. `source_text` is the
+printed line verbatim, so the parse can be audited without leaving the file,
+and `source_hash` is what pins it.
+
+**The mechanism that matters is the failure, not the field.** `include|`
+`deck-?building|your deck|instead of one|aspect|max \d|per deck|`
+`cannot include|must include` is run over every identity face. It matches 48
+lines across 37 heroes: 7 rules and 41 ordinary abilities that merely touch a
+deck — "Search your deck and discard pile for Mjolnir". Every one of those 48
+must be either parsed into a rule or listed in an explicit *reviewed, and not a
+deck-building rule* table, each keyed by card id and a hash of the line. **A
+line in neither fails `python -m tools.cards.extract`**, in both write and
+`--check` modes, and prints the row to paste once a human has read the card.
+
+That is the whole point. The broad net is ~15% precise and the narrow one
+(`/deck[- ]?building/`) was ~29% complete; no regex separates *a rule about
+building a deck* from *an ability that touches a deck*, because the distinction
+is semantic and every new card gets to phrase it freshly. So the net is not
+asked to be right — it is asked to notice, and a human decides. Reword a card
+and its hash moves, which fails the build twice over: the new wording is
+unclassified, and the old parse pins a sentence nothing prints.
+
+The limit, stated plainly: a rule phrased with none of those words is invisible
+here, exactly as it was to any grep. Widening the net costs a few more rows in
+the reviewed table; missing a rule costs legal decks being called illegal, which
+is what MARVEL-85 cost. Everything lives in `tools/cards/deckbuilding.py`.
 
 ### `anomalies.json`
 
@@ -170,8 +238,9 @@ disabled variant are engine code that happens to live under `cards/pack/`.
 
 Counts and inventories, each stated next to the rule that produced it: the
 type and pack breakdowns, the script/text cross-tab, the 303 distinct
-`AbilityFactory` triggers with frequencies, both stat vocabularies, and the
-stratification below.
+`AbilityFactory` triggers with frequencies, both stat vocabularies, the
+deck-building tally (48 identity lines matched, 7 parsed, 41 reviewed and
+classified) and the stratification below.
 
 ## How the engine's text compares
 
