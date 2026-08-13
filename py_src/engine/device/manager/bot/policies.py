@@ -81,6 +81,43 @@ class RepeatGuard:
 
 ################################################################################
 #
+def RepeatOffset(decision: 'BotDecision', repeats: int, option_count: int) -> int:
+    """How far `RepeatGuard` is allowed to move this decision down the list.
+
+    The guard used to be switched off entirely whenever `can_cancel` was False,
+    on the reasoning that a forced decision is the engine driving the game
+    forward rather than the bot spinning. That reasoning is about **"End Turn"**,
+    which recurs every turn *with one legal answer* -- and "the engine will not
+    accept a cancel" turned out not to mean "there is only one answer".
+
+    `PlayerAction.MayChooseOneAbility` is the counter-example that cost MARVEL-99
+    eighteen corpus cases. It appends an explicit `Cancel` **ability** to the
+    option list and then asks forced, so the bot sees `can_cancel == False` and
+    two selectable options. With the guard off, `index` stayed 0 for ever and the
+    policy re-picked the same answer on every pass of
+    `PlayerAction.SwapTheseCards`'s `while True`. Fourteen cases spent the whole
+    20,000-step budget swapping two encounter cards back and forth; four more
+    rode a forced `WhenPlayerInTurn` "Ask" until `NoProgressGuard` fired.
+
+    So the exemption is keyed on what it was always about -- **one legal answer**
+    -- and not on the cancel flag.
+
+    The clamp is the other half. A forced decision has no cancel to fall back
+    on, so letting the guard walk `index` off the end of the list would turn a
+    stall into a `BotStuck` abort. Riding the last option is not a fix, but it is
+    not a new failure either, and `NoProgressGuard` is the thing that catches it.
+    `decision.attempt` is deliberately *not* clamped: it counts answers the
+    engine actually rejected, and running out of those is genuinely stuck.
+    """
+    if decision.can_cancel:
+        return repeats
+    if option_count <= 1:
+        # The "End Phase" shape: one legal answer, legitimately recurring.
+        return 0
+    return min(repeats, option_count - 1)
+
+################################################################################
+#
 class FirstLegalPolicy(BotPolicy):
     """Answer with the first option the engine will accept.
 
@@ -103,12 +140,7 @@ class FirstLegalPolicy(BotPolicy):
     def Choose(self, decision: 'BotDecision') -> 'CommandDescriptor':
         commands = BotCommand.BuildAll(decision.selectable_options)
 
-        repeats = self.guard.Update(decision)
-        if not decision.can_cancel:
-            # A forced decision is the engine driving the game forward, not the
-            # bot spinning. "End Turn" recurs every turn with the same option and
-            # is the only legal answer, so the guard must not skip past it.
-            repeats = 0
+        repeats = RepeatOffset(decision, self.guard.Update(decision), len(commands))
 
         index = decision.attempt + repeats
         if index < len(commands):
@@ -265,11 +297,9 @@ class NoOpAwarePolicy(BotPolicy):
         if not pairs:
             return Fallback(decision)
 
-        repeats = self.guard.Update(decision)
-        if not decision.can_cancel:
-            # Same rule as `FirstLegalPolicy`: a forced decision is the engine
-            # driving the game forward, not the bot spinning.
-            repeats = 0
+        # Same rule as `FirstLegalPolicy`, and it has to be: the MARVEL-99 loop
+        # is `MayChooseOneAbility`, which every policy is offered.
+        repeats = RepeatOffset(decision, self.guard.Update(decision), len(pairs))
 
         pairs.sort(key=lambda pair: (pair[0], pair[1]))
 

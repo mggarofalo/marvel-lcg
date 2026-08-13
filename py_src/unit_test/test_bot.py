@@ -248,6 +248,47 @@ class TestFirstLegalPolicy(unittest.TestCase):
             command = policy.Choose(MakeDecision(options, can_cancel=False, event_name='End Turn'))
             self.assertEqual(command.id, '10')
 
+    def test_moves_on_when_a_forced_question_with_a_way_out_recurs(self):
+        # MARVEL-99. `PlayerAction.MayChooseOneAbility` appends an explicit
+        # `Cancel` *ability* and then asks forced, so `can_cancel` is False while
+        # two legal answers exist -- and one of them is the way out of
+        # `SwapTheseCards`'s `while True`. Riding the first one cost 14 corpus
+        # cases their entire 20,000-step budget.
+        policy = FirstLegalPolicy()
+        options = ParseOptions(
+            MakeOptionJson(id=1, name='Select_2_cards_to_swap',
+                           all_legal_targets=[66, 56], target_num_range=[2, 2]),
+            MakeOptionJson(id=2, name='Cancel'),
+        )
+        decision = lambda: MakeDecision(options, can_cancel=False,
+                                        event_name='WhenPlayerChooseAbility')
+
+        self.assertEqual(policy.Choose(decision()).id, '1')
+        self.assertEqual(policy.Choose(decision()).id, '2')
+
+    def test_a_recurring_forced_question_never_runs_the_policy_out_of_answers(self):
+        # A forced decision has no cancel to fall back on, so walking `index`
+        # off the end would turn a stall into a `BotStuck` abort -- a new way to
+        # lose a game that used to finish. The guard rides the last option
+        # instead and `NoProgressGuard` is what catches it.
+        policy = FirstLegalPolicy()
+        options = ParseOptions(MakeOptionJson(id=1), MakeOptionJson(id=2))
+
+        answers = [policy.Choose(MakeDecision(options, can_cancel=False)).id
+                   for _ in range(40)]
+
+        self.assertEqual(answers[:3], ['1', '2', '2'])
+        self.assertNotIn('', answers)
+
+    def test_a_rejected_answer_still_runs_the_policy_out(self):
+        # `attempt` is not clamped: it counts answers the engine actually
+        # refused, and running out of those is genuinely stuck.
+        policy = FirstLegalPolicy()
+        options = ParseOptions(MakeOptionJson(id=1), MakeOptionJson(id=2))
+
+        with self.assertRaises(BotStuck):
+            policy.Choose(MakeDecision(options, can_cancel=False, attempt=2))
+
     def test_raises_when_it_has_no_answer_and_cannot_decline(self):
         policy = FirstLegalPolicy()
         options = ParseOptions(

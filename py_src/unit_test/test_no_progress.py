@@ -35,6 +35,12 @@ def Feed(guard, digests):
     return None, None
 
 
+def Tight(**kwargs):
+    """A guard with only the consecutive-identical counter armed."""
+    kwargs.setdefault("stall_limit", 0)
+    return NoProgressGuard(**kwargs)
+
+
 class TestAStalledRunIsCaught(unittest.TestCase):
 
     def test_an_unchanging_digest_raises_at_the_limit(self):
@@ -86,10 +92,14 @@ class TestProgressResetsTheCount(unittest.TestCase):
         self.assertIsNone(step)
         self.assertIsNone(error)
 
-    def test_alternating_digests_never_fire(self):
-        guard = NoProgressGuard(limit=2)
+    def test_alternating_digests_never_fire_the_consecutive_counter(self):
+        # This is the MARVEL-99 blind spot stated as a property: a period-2
+        # cycle changes the digest on every step, so "consecutive identical"
+        # resets every step and never fires however long the cycle runs.
+        # `TestAStaleRunIsCaught` below is the counter that does see it.
+        guard = Tight(limit=2)
 
-        step, _ = Feed(guard, ["a", "b"] * 50)
+        step, _ = Feed(guard, ["a", "b"] * 500)
 
         self.assertIsNone(step)
 
@@ -108,7 +118,7 @@ class TestTheLimitIsConfigurable(unittest.TestCase):
 
     def test_a_limit_of_zero_disables_the_guard(self):
         # The escape hatch for someone with a scene proving a long run is real.
-        guard = NoProgressGuard(limit=0)
+        guard = Tight(limit=0)
 
         step, _ = Feed(guard, ["same"] * 500)
 
@@ -119,6 +129,123 @@ class TestTheLimitIsConfigurable(unittest.TestCase):
         # This is not a style preference: the margin is the whole reason a
         # false positive is not expected. See docs/no-op-decisions.md.
         self.assertGreaterEqual(NoProgressGuard().limit, 16)
+
+
+class TestAStaleRunIsCaught(unittest.TestCase):
+    """The loose form: a cycle whose period is greater than 1.
+
+    MARVEL-99. Fourteen corpus cases alternated between two board states for the
+    whole 20,000-step budget. Every decision changed the digest, so the counter
+    above never fired and only the wall-clock cap stopped them.
+    """
+
+    def test_a_period_two_cycle_raises(self):
+        guard = NoProgressGuard(limit=0, stall_limit=8)
+
+        step, error = Feed(guard, ["a", "b"] * 50)
+
+        # "a" and "b" are novel on their first sighting; the eight after that
+        # are the run.
+        self.assertEqual(step, 9)
+        self.assertIsNotNone(error)
+
+    def test_a_longer_cycle_raises_too(self):
+        # Nothing about the detector knows the period is 2.
+        guard = NoProgressGuard(limit=0, stall_limit=8)
+
+        step, _ = Feed(guard, ["a", "b", "c", "d", "e"] * 20)
+
+        self.assertEqual(step, 12)
+
+    def test_the_report_says_it_is_a_cycle_and_names_its_period(self):
+        guard = NoProgressGuard(limit=0, stall_limit=6)
+
+        _, error = Feed(guard, ["a", "b", "c"] * 20)
+
+        message = str(error)
+        self.assertIn("No new state for 6 decisions", message)
+        self.assertIn("cycling between 3 board state(s)", message)
+        # Without this the reader chases the wrong guard: the digest *did*
+        # change, every time.
+        self.assertIn("changed the digest", message)
+
+    def test_the_report_names_more_than_one_decision(self):
+        # `recent` is emptied by every digest change, and in a period-2 cycle
+        # that is every decision -- so the loose report needs its own tail or it
+        # prints a single line and diagnoses nothing.
+        guard = NoProgressGuard(limit=0, stall_limit=8)
+
+        _, error = Feed(guard, ["a", "b"] * 50)
+
+        self.assertGreaterEqual(str(error).count("WhenPlayerInTurn"), 3)
+
+    def test_a_game_that_keeps_reaching_new_states_never_fires(self):
+        guard = NoProgressGuard(limit=0, stall_limit=8)
+
+        step, _ = Feed(guard, [f"state-{n}" for n in range(500)])
+
+        self.assertIsNone(step)
+
+    def test_revisiting_a_state_briefly_does_not_fire(self):
+        # The shape of the longest legitimate run measured: a handful of
+        # decisions inside old states, then somewhere new.
+        guard = NoProgressGuard(limit=0, stall_limit=8)
+
+        digests = []
+        for block in range(20):
+            digests += [f"new-{block}"] + ["old"] * 6
+        step, _ = Feed(guard, digests)
+
+        self.assertIsNone(step)
+
+    def test_a_new_game_forgets_every_state(self):
+        guard = NoProgressGuard(limit=0, stall_limit=8)
+        Feed(guard, ["a", "b"] * 3)
+
+        guard.Reset()
+        step, _ = Feed(guard, ["a", "b"] * 4)
+
+        self.assertIsNone(step)
+
+    def test_a_stall_limit_of_zero_disables_it(self):
+        guard = NoProgressGuard(limit=0, stall_limit=0)
+
+        step, _ = Feed(guard, ["a", "b"] * 500)
+
+        self.assertIsNone(step)
+
+    def test_the_tight_check_wins_when_both_would_fire(self):
+        # It fires sooner and its report names one decision rather than a
+        # cycle, so it is the better diagnosis of the same event.
+        guard = NoProgressGuard(limit=4, stall_limit=4)
+
+        _, error = Feed(guard, ["same"] * 50)
+
+        self.assertIn("left the state digest identical", str(error))
+
+    def test_the_default_clears_the_longest_measured_legitimate_run(self):
+        # 902 completed scenes and 105,633 decisions put that run at 10, and the
+        # 20,000-step wall it replaces is what a false negative costs. The
+        # margin is the whole argument -- see docs/no-op-decisions.md.
+        guard = NoProgressGuard()
+        self.assertGreaterEqual(guard.stall_limit, 100)
+        self.assertLess(guard.stall_limit, 20000)
+
+
+class TestTheStateKeyIsStableAcrossProcesses(unittest.TestCase):
+
+    def test_the_same_digest_always_gives_the_same_key(self):
+        # `hash()` on a str is salted per process. If this key were, two runs of
+        # one seed could disagree about whether the guard fired.
+        from engine.device.manager.bot.progress import DigestKey
+
+        self.assertEqual(DigestKey('{"v":2,"cards":[]}'),
+                         "762f4078dfe1655f485e457be7a551ed")
+
+    def test_different_digests_give_different_keys(self):
+        from engine.device.manager.bot.progress import DigestKey
+
+        self.assertNotEqual(DigestKey("a"), DigestKey("b"))
 
 
 if __name__ == "__main__":

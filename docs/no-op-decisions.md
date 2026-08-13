@@ -171,6 +171,150 @@ the issue describes): without the guard the game runs to the 3000-step cap and i
 reported as a warning with no scene saved; with it, the run stops at **step 37**
 and names the cycling decision.
 
+## The loose form: a loop that moves without going anywhere (MARVEL-99)
+
+The guard above counts *consecutive identical* digests, which only sees a cycle
+of period 1. A 321-case corpus run found the other shape. 21 cases failed and
+**18 were `timeout-stall`**; 14 of those spent the entire 20,000-step
+`bot_max_steps` budget and yielded nothing, at ~5.6% of throughput.
+
+### What the loop is
+
+Six of the fourteen were reproduced decision by decision (klaw 887,
+master_mold_expert 287, rhino 411, sabretooth 275, spiral 107,
+thanos_expert 62). Every one ends in the same unit:
+
+```
+19996 p0 WhenPlayerChooseAbility Response FORCED  cmd=(1, [66, 56])  digest A
+19997 p0 WhenPlayerChooseAbility Response FORCED  cmd=(1, [66, 56])  digest B
+19998 p0 WhenPlayerChooseAbility Response FORCED  cmd=(1, [66, 56])  digest A
+19999 p0 WhenPlayerChooseAbility Response FORCED  cmd=(1, [66, 56])  digest B
+      options: [Select_2_cards_to_swap, Cancel]
+```
+
+- **Unit**: one `WhenPlayerChooseAbility` offering exactly two options,
+  `Select_2_cards_to_swap` and `Cancel`. The policy answers `Cancel`
+  and the loop ends; it answers *swap* and the loop repeats.
+- **Period**: **2**. Swap the two cards, swap them back. The digest alternates
+  between exactly two values and never reaches a third.
+- **Why `NoProgressError` does not fire**: a swap is a real state change, so
+  every decision changes the digest and the consecutive-identical counter resets
+  on every step. The board is genuinely different each time; it is only the *pair*
+  of boards that repeats.
+
+The loop is entered in round one or two — step 10 (spiral 107), 37 (sabretooth),
+40 (master_mold), 44 (klaw), 75 (rhino), 153 (thanos) — and never left. Between
+19,847 and 19,990 of each game's 20,000 decisions are the same prompt.
+
+The `while True` it rides is `PlayerAction.SwapTheseCards`, the "put them back in
+any order" mechanic: re-offer the swap until the player declines. Two cards call
+it — Falcon's **Up, Up, and Away** (53005) and the SHIELD upgrade **Intelligence**
+(50051) — and every one of the fourteen cases has falcon or nick_fury among its
+heroes. That answers the question the scenario list raises: Klaw, Rhino, Thanos,
+Spiral and Master Mold have nothing in common, and they did not need to.
+
+### The fourteen are one cause, and so are the other four
+
+They are also the *same* cause as the four `enchantress` stalls, which look
+different only because they were caught rather than missed:
+
+| Signature | Cases | Where it ended |
+|---|---|---|
+| `4083f456` | 14 | `bot_max_steps`, ~20,000 steps |
+| `1b95a1b2` | 3 | `NoProgressError`, steps 65-162 |
+| `ecd950fa` | 1 | `NoProgressError`, step 91 |
+
+The two `enchantress` signatures are **one bug reported twice**. Their tracebacks
+are identical except for one frame: `game/event/manager.py` line **1075** against
+line **1076** — two adjacent calls to `ProcessOptionalEffect`. The crash signature
+hashes the frames it travelled through, so a two-line difference in one function
+splits one bug across two artefacts. Worth knowing before reading any signature
+count as a bug count.
+
+Traced, the enchantress loop is:
+
+```
+33 p1 WhenPlayerInTurn Normal FORCED n=9  cmd=(86, [1])  digest X
+34 p1 WhenPlayerInTurn Normal FORCED n=9  cmd=(86, [1])  digest X
+   options: [Ask, Attack, Thwart, Play, Play, Play, Play, Forced_Action, Alter-Ego_Action]
+```
+
+Same shape, period 1 instead of 2: a **forced** decision with **nine** legal
+answers, and the policy picks the first one — `Ask`, the inert alter-ego action —
+on every pass. It is forced because a `Forced_Action` is pending, so the turn
+cannot be ended. The digest does not move, so `NoProgressGuard` catches it at 32.
+
+### The cause
+
+`FirstLegalPolicy` (and `NoOpAwarePolicy`) switched `RepeatGuard` off whenever
+`decision.can_cancel` was False:
+
+```python
+repeats = self.guard.Update(decision)
+if not decision.can_cancel:
+    repeats = 0            # "a forced decision has one legal answer"
+```
+
+The reasoning is written down as *"End Turn recurs every turn with one legal
+answer"* — and the code tests the wrong half of it. **"The engine will not accept
+a cancel" is not "there is only one answer."** `PlayerAction.MayChooseOneAbility`
+appends an explicit `Cancel` *ability* to the option list and then asks forced, so
+the bot sees `can_cancel == False` alongside two selectable options, one of which
+is the way out. With the guard off, `index` stayed 0 for ever.
+
+Both stall shapes are that one line. Nothing about the scenarios, the cards or the
+board was needed to explain either.
+
+### Why not the other two fixes
+
+- **The game.** `SwapTheseCards`'s unbounded `while True` is what the loop rides,
+  and bounding it would end these fourteen. It would not end the four
+  `enchantress` stalls, which involve no such loop — and the loop is not wrong:
+  a human rearranges cards until satisfied and then presses Cancel. The engine
+  offers a legal way out on every pass. It is the bot that never takes it.
+- **The guard's window alone.** Generalising `NoProgressError` catches the loose
+  form, but catching is not fixing: the case still yields no scene. It turns a
+  20,000-step nothing into a 256-step nothing, which is worth having and is not
+  the repair.
+
+The policy is where a decision that is legal, available and ignored gets ignored,
+so that is where it is fixed. See `RepeatOffset` in `bot/policies.py`.
+
+### The backstop, generalised
+
+`NoProgressGuard` now runs a second counter: **decisions since the last board
+state the game had never been in before**. A cycle of any period stops producing
+novel states once it closes, and the consecutive-identical run is the special case
+where the period is 1. Like the original, it needs to know nothing about which
+ability was offered.
+
+Measured over **902 completed scenes and 105,633 decisions** from the corpus run
+— every case that finished — the longest legitimate run with no novel state is
+**10**:
+
+| Decisions with no novel state | Occurrences |
+|---|---|
+| 0 | 41059 |
+| 1 | 18142 |
+| 2 | 7413 |
+| 3 | 1366 |
+| 4 | 227 |
+| 5 | 50 |
+| 6 | 5 |
+| 7 | 1 |
+| 10 | 1 |
+| 11+ | 0 |
+
+The longest is `project_wideawake` / valkyrie+spider_man / **seed 364**, which
+reaches step 107 having not seen a new board state for 10 consecutive decisions,
+and then plays on to a real result — 141 steps, `Players Lost`. That is the case
+this limit has to survive: a legitimate game that repeats state for a while and
+still completes. At 256 it clears it by a factor of 25.
+`bot_stall_limit` defaults to **256**, twenty-five times the measured maximum and
+still two orders of magnitude below the wall it replaces. The margin is wider than
+the tight limit's eight-fold one because a revisited state is a weaker signal than
+a frozen one.
+
 ### What it does not do
 
 It does not fire for a human. A person may sit on an alter-ego "Ask" as long as
