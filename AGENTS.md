@@ -220,6 +220,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_integrity_errors unit_test.test_config \
                    unit_test.test_file_paths unit_test.test_cross_os \
                    unit_test.test_console_encoding \
+                   unit_test.test_fixture_staleness \
                    unit_test.test_render_skip unit_test.test_no_progress \
                    unit_test.test_hand_size unit_test.test_policy_driver \
                    unit_test.test_run_digest unit_test.test_heuristic_policy \
@@ -297,6 +298,12 @@ Regenerate the card dataset after touching `data/cards.json`, the card scripts, 
 python -m tools.cards.extract           # write datasets/cards/
 python -m tools.cards.extract --check    # exit 1 if the checked-in copy is stale
 ```
+
+**All three `--check` gates mean the same thing by "stale", and it is written down once**, in `py_src/tools/fixtures.py`: the checked-in file must be **byte for byte** what the generator would write. Not the same parsed JSON — key order, the one-card-per-line layout, number formatting and Unicode escaping are all part of what a C# implementer reads, so they are all part of the comparison. Read that module before changing any of the three; `unit_test/test_fixture_staleness.py` mutation-tests the comparison and asserts the three gates still share it.
+
+That makes **line endings part of the comparison**, so `.gitattributes` pinning `eol=lf` is load-bearing rather than tidy — git's `core.autocrlf` defaults to true on Windows and a clone made before MARVEL-67 has a working tree full of CRLF. A CRLF checkout fails all three gates, deliberately, with a message that says so instead of saying "stale": the repair is to re-normalise the checkout, not to regenerate anything.
+
+The three used to disagree, and nobody could say how. All three read the file in text mode, so Python's universal-newline translation quietly hid CRLF from every one of them; what actually failed on Windows was `tools.cards.extract`, and for a reason that had nothing to do with the comparison. Its output header carries a SHA-256 of each engine file it was built from, `tools/cards/engine.py:Sha256` hashed raw bytes, and on a CRLF checkout those bytes differ — so the regenerated header disagreed with the committed one over two hex strings with nothing semantic changed. **That hash is newline-normalised now** (MARVEL-73): it names the file's content, not the checkout, and it is no longer the value `sha256sum` prints on a CRLF tree.
 
 **`replays/` is empty and untracked**, so there is no regression suite yet. Building it is the entire point of the `Corpus and Oracle` phase — weigh changes accordingly.
 

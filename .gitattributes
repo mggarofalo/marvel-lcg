@@ -8,6 +8,10 @@
 # git is set to input or false, and it made the Windows CI leg fail while the
 # Linux leg passed (MARVEL-67).
 #
+# Those gates compare byte for byte, on purpose and in one place —
+# py_src/tools/fixtures.py — so this file is load-bearing rather than tidy:
+# a CRLF working tree fails all three of them (MARVEL-73).
+#
 # Normalise to LF in the working tree on every platform.
 * text=auto eol=lf
 

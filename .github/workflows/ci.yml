@@ -91,7 +91,7 @@ jobs:
             unit_test.test_invariants unit_test.test_verify_replays \
             unit_test.test_integrity_errors unit_test.test_config \
             unit_test.test_file_paths unit_test.test_cross_os \
-            unit_test.test_console_encoding \
+            unit_test.test_console_encoding unit_test.test_fixture_staleness \
             unit_test.test_render_skip unit_test.test_no_progress \
             unit_test.test_hand_size unit_test.test_policy_driver \
             unit_test.test_run_digest unit_test.test_heuristic_policy \
@@ -124,6 +124,13 @@ jobs:
       # Cross-language fixtures the C# port will be accepted against. Each is a
       # regenerate-or-fail check, so a stale fixture is caught at the commit
       # that staled it rather than at the port.
+      #
+      # All three compare byte for byte, through one shared definition of
+      # "stale" in py_src/tools/fixtures.py — read that file before changing
+      # any of them. Line endings are part of the comparison, which is why
+      # .gitattributes pinning eol=lf is load-bearing on the Windows leg
+      # (MARVEL-67, MARVEL-73). unit_test/test_fixture_staleness.py, in the
+      # fast tier above, mutation-tests the comparison itself.
       - name: Fixture staleness — RNG vectors
         run: python -m tools.rng.emit_vectors --check
 

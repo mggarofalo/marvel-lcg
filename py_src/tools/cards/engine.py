@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Tuple
 
+from tools import fixtures
+
 CARDS_JSON = Path("data/cards.json")
 SETS_INFO_JSON = Path("data/sets_info.json")
 
@@ -131,7 +133,24 @@ def _LoadExpansions(raw: Dict[str, Any]) -> Dict[str, str]:
 
 
 def Sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """SHA-256 of a source file's content, with CRLF line endings normalised away.
+
+    These hashes are the dataset's provenance -- they go into `cards.json`'s
+    header as `generated_from.engine_files` -- so they have to name the file's
+    content, not the checkout that produced it. Hashing raw bytes meant they
+    did not: `data/cards.json` is a text file, git rewrites it to CRLF on a
+    `core.autocrlf=true` clone, and the regenerated header then disagreed with
+    the committed one over two hex strings with nothing semantic changed.
+    That failed `tools.cards.extract --check` on Windows and nothing else in
+    the repo, because this is the only place a fixture's *inputs* leak their
+    encoding into a fixture's *output* (MARVEL-73).
+
+    Normalised, not weakened: change any character of the file and the hash
+    still changes. What it is no longer is the hash of the bytes on disk --
+    `sha256sum` on a CRLF checkout prints something else -- which is the price
+    of a provenance value that means the same thing on every machine.
+    """
+    return hashlib.sha256(fixtures.Normalise(path.read_bytes())).hexdigest()
 
 
 def Load(root: Path = Path(".")) -> SourceData:

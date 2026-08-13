@@ -29,6 +29,8 @@ import os
 import sys
 from typing import Any, Dict, List
 
+from tools import fixtures
+
 OUTPUT = os.path.join("..", "datasets", "rng", "vectors.json")
 
 # One arbitrary but fixed seed set. 42 is the value `docs/rng-contract.md`
@@ -262,18 +264,20 @@ def main(argv: List[str] | None = None) -> int:
 
     content = Serialise(Build())
 
-    existing = None
-    if os.path.exists(OUTPUT):
-        with open(OUTPUT, "r", encoding="utf-8") as handle:
-            existing = handle.read()
+    # Compared byte for byte with the file on disk, and the whole file at that:
+    # `tools/fixtures.py` holds that decision and its consequences, and is the
+    # one place all three fixture gates take their meaning of "stale" from.
+    # The whole-file comparison is why nothing that churns for its own reasons
+    # -- a build stamp, a timestamp -- may go into these vectors (MARVEL-58).
+    verdict = fixtures.Compare(content, OUTPUT)
 
-    if existing == content:
+    if verdict == fixtures.FRESH:
         print(f"{OUTPUT} is up to date")
         return 0
 
     if args.check:
-        state = "missing" if existing is None else "stale"
-        print(f"{OUTPUT} is {state}; run: python -m tools.rng.emit_vectors",
+        print(fixtures.Explain(verdict, OUTPUT,
+                               "python -m tools.rng.emit_vectors"),
               file=sys.stderr)
         return 1
 
