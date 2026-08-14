@@ -259,10 +259,32 @@ def IsMainScheme(key: str) -> bool:
 
 
 def ResolveNamed(world: Any, key: str) -> Any:
-    """The card a named subject refers to, or None if it is not a named one."""
+    """The card a named subject refers to, or None if it is not a named one.
+
+    `"me"` is **seat 1**, the same player every other first-person step means.
+    It is the same call `harness.SeatOf` makes for `my deck is`, imported here
+    rather than re-derived, so the two spellings cannot drift apart.
+
+    It used to be `world.GetFirstPlayer()`, which is the **first player token**
+    and not a seat: `world.players` is rotated by one at the end of every round
+    to pass the token (`world.py`) and loses a player outright on elimination.
+    MARVEL-101 made the first-person zone steps seat 1 and left this one behind,
+    so in a two-player scenario running past a round boundary `"me"` named the
+    other hero while `I have <n> cards in hand` stayed on seat 1 -- one scenario
+    talking about two players in two steps (MARVEL-104).
+
+    Nothing observed the difference before, for the same reason MARVEL-101's
+    half was invisible: every trusted two-player scenario resolved inside one
+    round, and a `Given` block cannot follow a `When`, so no `Given` ever ran
+    after a rotation. A `When` beat can, which is what makes this reachable at
+    all -- `I choose "Change Form" on "me"` in round 2 is the shortest case.
+
+    Deferred import because `harness` imports this module; `Worlds` below is
+    deferred for the same shape of reason.
+    """
     if IsSelf(key):
-        player = world.GetFirstPlayer()
-        return player.GetIdentity().card
+        from tools.spec.harness import SeatOf
+        return SeatOf(world, 0).GetIdentity().card
     if IsMainScheme(key):
         from game.operate.worlds import Worlds
         schemes = Worlds.GetAllMainSchemes(world)

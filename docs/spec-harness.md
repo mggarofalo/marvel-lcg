@@ -149,7 +149,7 @@ across runs.
 |---|---|
 | `"Rhino"` | by printed name |
 | `"01094"` | by card id, when the name is ambiguous |
-| `"me"` / `"I"` | the identity, whichever form it is in |
+| `"me"` / `"I"` | seat 1's identity, whichever form it is in |
 | `"the main scheme"` | the main scheme in play |
 | `"Rhino in VillainArea"` | qualified by zone |
 | `"01005 #2"` | the second copy the scenario created |
@@ -420,6 +420,35 @@ disagreement rather than adding a third reading, and it is observationally inert
 for every scenario that can be written today.
 
 Naming a seat the game does not have is an error that says how many there are.
+
+**`"me"` as a card ref is seat 1 as well** (MARVEL-104). `"me"`, `"I"` and the
+other spellings in `resolve.SELF_NAMES` name a *card*, and they read the same
+seat list through the same `harness.SeatOf` call the zone steps use. MARVEL-101
+did not reach this one, so it went on reading `GetFirstPlayer()` — evaluated
+live, at the beat, rather than during setup. That is the one place the token
+reading is reachable: a `Given` block cannot follow a `When`, but a `When` beat
+can sit anywhere in a transcript.
+
+The shortest case that shows it is two heroes walking into round 2. Both alter
+egos pass, the villain schemes at each, the round ends and the token moves to
+seat 2 — so round 2 opens with the *second* hero. Once that hero has passed and
+the transcript is back on seat 1's turn:
+
+```gherkin
+When I choose "Change Form" on "me"
+Then I am in hero form
+```
+
+Under the token reading those two lines are about different heroes: `"me"` is
+seat 2, no offered option is bound to her card, and the `When` is refused while
+the engine's own message lists `Change_Form on Peter Parker` among what it
+offered — the harness declining a card it is itself printing, the MARVEL-94
+shape again. Under seat 1 they are about one hero and the transcript means what
+it reads as.
+
+Choosing the seat over the token is what makes the two halves of a transcript
+agree; a scenario that genuinely needs "whoever holds the first player token"
+has no spelling today, and should get its own rather than borrowing this one.
 Note that `"<card>" is in the "<zone>"` still reports a zone *type*, so it cannot
 say whose area a card reached; in a two-player scenario, tell the two drones
 apart by the printed identity of the card each was made from.
