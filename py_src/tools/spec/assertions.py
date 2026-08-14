@@ -111,10 +111,7 @@ def ResolveSubject(state: StateView, subject: str) -> Tuple[str, Any, str]:
     # Named roles, so a scenario says "I" and "the main scheme" rather than
     # looking up whichever card id either one is at this point in the game.
     if IsSelf(text):
-        identities = [card for card in state.cards if card.is_identity]
-        if not identities:
-            return "card", None, "there is no identity in play"
-        return "card", identities[0], ""
+        return ResolveSelf(state)
 
     if IsMainScheme(text):
         schemes = [card for card in state.cards if card.is_main_scheme and card.in_play]
@@ -156,6 +153,45 @@ def ResolveSubject(state: StateView, subject: str) -> Tuple[str, Any, str]:
             f"{ref.Describe()} matches {len(found)} cards ({listing}). "
             f"Add a zone or an ordinal to say which one.")
     return "card", found[0], ""
+
+
+def ResolveSelf(state: StateView) -> Tuple[str, Any, str]:
+    """`I` / `me` on the `Then` side: **seat 1's identity card** (MARVEL-107).
+
+    The third and last reading of the first person to be made a seat. The zone
+    steps (`I have <n> cards in hand`) were made seat 1 by MARVEL-101 and `"me"`
+    as a card ref by MARVEL-104; both call `harness.SeatOf(world, 0)` over
+    `world.const_seat_order_players`. This one picked the first `is_identity`
+    card out of `state.cards`, which `resolve.AllCards` documents as *object-id*
+    order -- stable, which is what that function needs, but not seat order.
+
+    Nothing failed: this engine allocates identity cards seat by seat during
+    setup, so the lowest-id identity is seat 1's, and the three readings agreed
+    by coincidence. It is a port hazard rather than a Python bug --
+    docs/migration.md lists allocation order among the things the two engines
+    must be *made* to agree on, and MARVEL-42 already refuses to let a scenario
+    lean on it for `#N`. An engine that numbered identities by pack, by hero
+    name, or alter-ego before hero would move `I am in hero form` to another
+    player while `I have 3 cards in hand` and `"me"` stayed on seat 1, and the
+    scenario would fail in C# as an apparent engine disagreement.
+
+    `StateView.players` is built from `const_seat_order_players`, so the seat
+    order is already in the view; the only thing missing was which card each
+    seat's identity is, which `PlayerState.identity_object_id` now carries.
+    That is smaller than giving every `CardState` an owner, and it puts the seat
+    where seats already live.
+    """
+    try:
+        seat = state.Player(0)
+    except UnknownProperty as exc:
+        return "card", None, str(exc)
+    if seat.identity_object_id is None:
+        return "card", None, "player 1 has no identity in this game"
+    card = state.CardByObjectId(seat.identity_object_id)
+    if card is None:
+        return "card", None, (
+            f"player 1's identity ({seat.identity}) is not in this snapshot")
+    return "card", card, ""
 
 
 def DescribeMissing(state: StateView, ref: CardRef) -> str:
