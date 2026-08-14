@@ -18,9 +18,10 @@
 #     and the card does nothing.
 #
 # So the reprint was right and the original was the broken one. 40027 now uses
-# the same shape. The `cost_equal_or_less=3` / `cost_less_than=3` difference
-# that survives between the two files is not a difference: both compile to
-# `printed_cost.val > 3` (game/card/card_finder/checker.py:407 and :417).
+# the same shape. The two files also used to differ over `cost_equal_or_less=3`
+# versus `cost_less_than=3`, which was never a difference -- both compiled to
+# `printed_cost.val > 3`. MARVEL-115 deleted the misnamed spelling, so both now
+# read `cost_equal_or_less=3`, which is what "a cost of 3 or less" prints.
 #
 # The same `may=True` no-op affects six other cards -- see the report on
 # MARVEL-106.

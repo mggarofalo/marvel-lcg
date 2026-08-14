@@ -95,9 +95,8 @@ class CardFinder(metaclass=Tracker.Meta):
         with_attach: 'bool|CardFinder|Type[CardFace]|None'
         # bind_to: 'CardFinder|None'
         # Cost
-        cost_less_than: int|None # 3 -> [0,1,2,3]
         # cost_equal_or_greater: int|None
-        cost_equal_or_less: int|None
+        cost_equal_or_less: int|None # 3 -> [0,1,2,3]
         # Res
         has_printed_res: "Resources.RBYG|List[Resources.RBYG]|None|Literal[True]" # convert_green_res = False
         # non_printed_res: "Resources.RBYG|None"
@@ -200,9 +199,8 @@ class CardFinder(metaclass=Tracker.Meta):
                  not_with_attach: 'CardFinder|Type[CardFace]|None'=None,
                  bind_to: 'CardFinder|CardFace|None'=None,
                 # Cost
-                 cost_less_than: int|None=None, # 3 -> [0,1,2,3]
                  cost_equal_or_greater: int|None=None,
-                 cost_equal_or_less: int|None=None,
+                 cost_equal_or_less: int|None=None, # 3 -> [0,1,2,3]
                 # Res
                  has_printed_res: "Resources.RBYG|List[Resources.RBYG]|None|Literal[True]"=None, # convert_green_res = False
                  non_printed_res: "Resources.RBYG|None"=None,
@@ -286,7 +284,6 @@ class CardFinder(metaclass=Tracker.Meta):
         self.with_attach: 'bool|CardFinder|Type[CardFace]|None' = with_attach
         self.not_with_attach: 'CardFinder|Type[CardFace]|None' = not_with_attach
         self.bind_to: 'CardFinder|CardFace|None' = bind_to
-        self.cost_less_than: int|None = cost_less_than
         self.cost_equal_or_greater: int|None = cost_equal_or_greater
         self.cost_equal_or_less: int|None = cost_equal_or_less
         self.has_printed_res: "Resources.RBYG|List[Resources.RBYG]|None|Literal[True]" = has_printed_res

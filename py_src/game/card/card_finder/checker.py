@@ -404,11 +404,6 @@ def Check(self: 'CardFinder', face: 'CardFace', effect: 'Effect|None'=None) -> b
                 return False
     ################################################################################
     # Cost
-    if self.cost_less_than != None:
-        if not HasCost.IsType(face):
-            return False
-        if face.printed_cost.val > self.cost_less_than:
-            return False
     if self.cost_equal_or_greater != None:
         if not HasCost.IsType(face):
             return False

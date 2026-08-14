@@ -21,7 +21,7 @@ def GetAbilities() -> Sequence['Ability']:
         ).SetTarget(
             CardFinder(
                 card_type=Upgrade,
-                cost_less_than=1,
+                cost_equal_or_less=1,
                 check_effect_fn=lambda effect, face: face.CastTo(Upgrade).CanAttachTo(effect.this),
             ),
             from_where=["PlayersDiscardPile"]),
