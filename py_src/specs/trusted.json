@@ -69,6 +69,38 @@
       "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
       "source": "specs/rules/basic-actions.feature"
     },
+    "Build Support :: 40027 finds the support in the discard pile as well as the deck": {
+      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "source": "specs/cards/reprints/40027-51026-build-support.feature"
+    },
+    "Build Support :: 40027 leaves the deck alone when the search is declined": {
+      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "source": "specs/cards/reprints/40027-51026-build-support.feature"
+    },
+    "Build Support :: 40027 searches the deck and puts the support into play": {
+      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "source": "specs/cards/reprints/40027-51026-build-support.feature"
+    },
+    "Build Support :: 51026 finds the support in the discard pile as well as the deck": {
+      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "source": "specs/cards/reprints/40027-51026-build-support.feature"
+    },
+    "Build Support :: 51026 leaves the deck alone when the search is declined": {
+      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "source": "specs/cards/reprints/40027-51026-build-support.feature"
+    },
+    "Build Support :: 51026 searches the deck and puts the support into play": {
+      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "source": "specs/cards/reprints/40027-51026-build-support.feature"
+    },
+    "Build Support :: a support costing 3 is inside the limit": {
+      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "source": "specs/cards/reprints/40027-51026-build-support.feature"
+    },
+    "Build Support :: a support costing 4 is outside it": {
+      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "source": "specs/cards/reprints/40027-51026-build-support.feature"
+    },
     "Business Problems :: declining the flip takes the exhaust option off the table": {
       "sha256": "efcbc4958d55606ff5a1a80f328b472abbc9105bd33a68532de9e4ec86066fa3",
       "source": "specs/cards/core/01170-business-problems.feature"
@@ -100,6 +132,26 @@
     "Caught Off Guard :: with two eligible cards the player is asked which one goes": {
       "sha256": "a1aa5152be3461382f6b1d48994d7f0ba15de27fee59c7bc68f2ea27834b381d",
       "source": "specs/cards/core/01188-caught-off-guard.feature"
+    },
+    "Concussive Blow :: 05031 can still be played at an enemy that is already confused": {
+      "sha256": "83c8f82d4f5899f947ef8b97daeee2039c2f39038fbfd0458b010569c6721277",
+      "source": "specs/cards/reprints/05031-41014-concussive-blow.feature"
+    },
+    "Concussive Blow :: 05031 confuses the enemy and deals 3 damage when a physical resource paid for it": {
+      "sha256": "83c8f82d4f5899f947ef8b97daeee2039c2f39038fbfd0458b010569c6721277",
+      "source": "specs/cards/reprints/05031-41014-concussive-blow.feature"
+    },
+    "Concussive Blow :: 41014 can still be played at an enemy that is already confused": {
+      "sha256": "83c8f82d4f5899f947ef8b97daeee2039c2f39038fbfd0458b010569c6721277",
+      "source": "specs/cards/reprints/05031-41014-concussive-blow.feature"
+    },
+    "Concussive Blow :: 41014 confuses the enemy and deals 3 damage when a physical resource paid for it": {
+      "sha256": "83c8f82d4f5899f947ef8b97daeee2039c2f39038fbfd0458b010569c6721277",
+      "source": "specs/cards/reprints/05031-41014-concussive-blow.feature"
+    },
+    "Concussive Blow :: paid without a physical resource, it confuses and deals nothing": {
+      "sha256": "83c8f82d4f5899f947ef8b97daeee2039c2f39038fbfd0458b010569c6721277",
+      "source": "specs/cards/reprints/05031-41014-concussive-blow.feature"
     },
     "Crisis Interdiction :: Aerial asks which other scheme when two could take it": {
       "sha256": "4948950bc744f281b39a5ad3ffd43993587f88526a681a6ae56a0a4648b1890c",
@@ -212,6 +264,22 @@
     "Electric Whip Attack :: with no upgrade to discard the card asks nothing and deals nothing": {
       "sha256": "d629f42f2b135fdca0e99fec722cd47426773d09ae0c6248925c9804e520535a",
       "source": "specs/cards/core/01173-electric-whip-attack.feature"
+    },
+    "Ever Vigilant :: 17030 readies the exhausted hero and removes 2 threat": {
+      "sha256": "5626592d10a56c11030c272e85500ac194147eaeeca14580b42906c765bdd079",
+      "source": "specs/cards/reprints/17030-42015-ever-vigilant.feature"
+    },
+    "Ever Vigilant :: 17030 will not take a hero that is already ready": {
+      "sha256": "5626592d10a56c11030c272e85500ac194147eaeeca14580b42906c765bdd079",
+      "source": "specs/cards/reprints/17030-42015-ever-vigilant.feature"
+    },
+    "Ever Vigilant :: 42015 readies the exhausted hero and removes 2 threat": {
+      "sha256": "5626592d10a56c11030c272e85500ac194147eaeeca14580b42906c765bdd079",
+      "source": "specs/cards/reprints/17030-42015-ever-vigilant.feature"
+    },
+    "Ever Vigilant :: 42015 will not take a hero that is already ready": {
+      "sha256": "5626592d10a56c11030c272e85500ac194147eaeeca14580b42906c765bdd079",
+      "source": "specs/cards/reprints/17030-42015-ever-vigilant.feature"
     },
     "Eviction Notice :: declining the flip leaves only the random discard, and it resolves unasked": {
       "sha256": "b87be55b3f64521a4252fef83ce7e56a8ca2c963351c9f64dc6e9a2eb98c5795",
@@ -362,15 +430,19 @@
       "source": "specs/cards/core/01160-legal-work.feature"
     },
     "Nick Fury :: damage is dealt to the chosen enemy, not the first one": {
-      "sha256": "6bd222e75731942c251ebfb771382225b9ad31d8a9bcb9e888d60056a107830e",
+      "sha256": "585ed44c484cf9b167cfd8648423f3ef4773992fab21db7c103e6158357764e8",
       "source": "specs/cards/core/01084-nick-fury.feature"
     },
     "Nick Fury :: drawing puts three cards in hand": {
-      "sha256": "6bd222e75731942c251ebfb771382225b9ad31d8a9bcb9e888d60056a107830e",
+      "sha256": "585ed44c484cf9b167cfd8648423f3ef4773992fab21db7c103e6158357764e8",
+      "source": "specs/cards/core/01084-nick-fury.feature"
+    },
+    "Nick Fury :: he is discarded at the end of the round, not at the end of the turn": {
+      "sha256": "585ed44c484cf9b167cfd8648423f3ef4773992fab21db7c103e6158357764e8",
       "source": "specs/cards/core/01084-nick-fury.feature"
     },
     "Nick Fury :: the option to remove threat is not offered when no scheme has any": {
-      "sha256": "6bd222e75731942c251ebfb771382225b9ad31d8a9bcb9e888d60056a107830e",
+      "sha256": "585ed44c484cf9b167cfd8648423f3ef4773992fab21db7c103e6158357764e8",
       "source": "specs/cards/core/01084-nick-fury.feature"
     },
     "Phase structure :: a game begins in the player phase of round 1": {
@@ -405,6 +477,18 @@
       "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
       "source": "specs/rules/phase-structure.feature"
     },
+    "Preemptive Strike :: 05014 cancels the boost icon and deals 1 damage to the villain": {
+      "sha256": "9aea6d732f6d753c95f0d8101b39208b3e473d55d1470ecc7aae17d9a2ccfbc8",
+      "source": "specs/cards/reprints/05014-38015-preemptive-strike.feature"
+    },
+    "Preemptive Strike :: 38015 cancels the boost icon and deals 1 damage to the villain": {
+      "sha256": "9aea6d732f6d753c95f0d8101b39208b3e473d55d1470ecc7aae17d9a2ccfbc8",
+      "source": "specs/cards/reprints/05014-38015-preemptive-strike.feature"
+    },
+    "Preemptive Strike :: declining the interrupt leaves the boost icon on the attack": {
+      "sha256": "9aea6d732f6d753c95f0d8101b39208b3e473d55d1470ecc7aae17d9a2ccfbc8",
+      "source": "specs/cards/reprints/05014-38015-preemptive-strike.feature"
+    },
     "Ritual Combat :: X follows the boost icons of whatever card happened to be on top": {
       "sha256": "cde155ac0262579bf315f05afe8232471627970463db022c2f339a46dec350bb",
       "source": "specs/cards/core/01159-ritual-combat.feature"
@@ -429,12 +513,24 @@
       "sha256": "3ec3dde3460848eb46635d22908b112ee5fc5d4ba20cd98cc4744f633bd8d91f",
       "source": "specs/cards/core/01102-sandman.feature"
     },
+    "Sonic Boom :: an activation that deals no damage does not exhaust the hero": {
+      "sha256": "61c0abea956ab9019c93687d898c53c0537f267ea27c1093133f66ba6026957a",
+      "source": "specs/cards/core/01123-sonic-boom.feature"
+    },
+    "Sonic Boom :: as a boost card it exhausts the hero the activation damaged": {
+      "sha256": "61c0abea956ab9019c93687d898c53c0537f267ea27c1093133f66ba6026957a",
+      "source": "specs/cards/core/01123-sonic-boom.feature"
+    },
+    "Sonic Boom :: damage taken by a defending ally is not damage to you": {
+      "sha256": "61c0abea956ab9019c93687d898c53c0537f267ea27c1093133f66ba6026957a",
+      "source": "specs/cards/core/01123-sonic-boom.feature"
+    },
     "Sonic Boom :: paying the three resources leaves every character ready": {
-      "sha256": "67b712e6629d10ff1472639c35088db7e0715500b4b987508f3ec1090e88d070",
+      "sha256": "61c0abea956ab9019c93687d898c53c0537f267ea27c1093133f66ba6026957a",
       "source": "specs/cards/core/01123-sonic-boom.feature"
     },
     "Sonic Boom :: the exhaust branch exhausts the ally as well as the hero": {
-      "sha256": "67b712e6629d10ff1472639c35088db7e0715500b4b987508f3ec1090e88d070",
+      "sha256": "61c0abea956ab9019c93687d898c53c0537f267ea27c1093133f66ba6026957a",
       "source": "specs/cards/core/01123-sonic-boom.feature"
     },
     "Status cards :: a confused hero can still attack": {
@@ -472,6 +568,42 @@
     "Swinging Web Kick :: playing it discards the card and the resources that paid for it": {
       "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
       "source": "specs/cards/core/01005-swinging-web-kick.feature"
+    },
+    "Taunt :: 42016 makes the villain attack, only the hero may defend, and draws 3": {
+      "sha256": "d4c9436ec764b989fca8d5ad4fe1e944ae6bce603aa981ba31b41973125a7857",
+      "source": "specs/cards/reprints/42016-56048-taunt.feature"
+    },
+    "Taunt :: 56048 makes the villain attack, only the hero may defend, and draws 3": {
+      "sha256": "d4c9436ec764b989fca8d5ad4fe1e944ae6bce603aa981ba31b41973125a7857",
+      "source": "specs/cards/reprints/42016-56048-taunt.feature"
+    },
+    "Taunt :: an ordinary card-driven villain attack still lets the ally defend": {
+      "sha256": "d4c9436ec764b989fca8d5ad4fe1e944ae6bce603aa981ba31b41973125a7857",
+      "source": "specs/cards/reprints/42016-56048-taunt.feature"
+    },
+    "Teamwork :: 06032 adds the ally's ATK to a basic attack": {
+      "sha256": "ba96f0e999e74ccd38bd309262b5ca11d49f9c760c1b15a6aba8129c665491fd",
+      "source": "specs/cards/reprints/06032-33017-teamwork.feature"
+    },
+    "Teamwork :: 06032 adds the ally's THW to a basic thwart": {
+      "sha256": "ba96f0e999e74ccd38bd309262b5ca11d49f9c760c1b15a6aba8129c665491fd",
+      "source": "specs/cards/reprints/06032-33017-teamwork.feature"
+    },
+    "Teamwork :: 33017 adds the ally's ATK to a basic attack": {
+      "sha256": "ba96f0e999e74ccd38bd309262b5ca11d49f9c760c1b15a6aba8129c665491fd",
+      "source": "specs/cards/reprints/06032-33017-teamwork.feature"
+    },
+    "Teamwork :: 33017 adds the ally's THW to a basic thwart": {
+      "sha256": "ba96f0e999e74ccd38bd309262b5ca11d49f9c760c1b15a6aba8129c665491fd",
+      "source": "specs/cards/reprints/06032-33017-teamwork.feature"
+    },
+    "Teamwork :: an unaided basic attack deals the hero's printed ATK": {
+      "sha256": "ba96f0e999e74ccd38bd309262b5ca11d49f9c760c1b15a6aba8129c665491fd",
+      "source": "specs/cards/reprints/06032-33017-teamwork.feature"
+    },
+    "Teamwork :: an unaided basic thwart removes the hero's printed THW": {
+      "sha256": "ba96f0e999e74ccd38bd309262b5ca11d49f9c760c1b15a6aba8129c665491fd",
+      "source": "specs/cards/reprints/06032-33017-teamwork.feature"
     },
     "The crisis-icon bypass :: an ally ignoring the icon is not you ignoring it": {
       "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
