@@ -225,6 +225,7 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_hand_size unit_test.test_policy_driver \
                    unit_test.test_run_digest unit_test.test_heuristic_policy \
                    unit_test.test_max_health_guard unit_test.test_config_record \
+                   unit_test.test_base_thwart_unreachable \
                    unit_test.test_corpus_plan unit_test.test_coverage_reach \
                    unit_test.test_coverage_literals \
                    unit_test.test_corpus_freeze unit_test.test_spec_coverage \
