@@ -1,6 +1,30 @@
 {
   "note": "Written only by tools/spec/validate.py, only from PASS verdicts. Each entry is pinned to the hash of the scenario source it was validated against: edit the scenario and it leaves this file on the next run. Do not hand-edit.",
   "scenarios": {
+    "\"I'm Tough\" :: a villain that is already tough gains nothing, so the card surges": {
+      "sha256": "6cb221e1b85f56eaff3d9b2e6e9012d7afe5006cb7316e3a053ac00390aae6b6",
+      "source": "specs/cards/core/01105-im-tough.feature"
+    },
+    "\"I'm Tough\" :: an untoughened villain is given the status and nothing surges": {
+      "sha256": "6cb221e1b85f56eaff3d9b2e6e9012d7afe5006cb7316e3a053ac00390aae6b6",
+      "source": "specs/cards/core/01105-im-tough.feature"
+    },
+    "\"I'm Tough\" :: the tough status the card gives is a real one and absorbs an attack": {
+      "sha256": "6cb221e1b85f56eaff3d9b2e6e9012d7afe5006cb7316e3a053ac00390aae6b6",
+      "source": "specs/cards/core/01105-im-tough.feature"
+    },
+    "A Good Workout :: an empty deck discards nothing and the damage is still dealt": {
+      "sha256": "10daed250e6242ac23d46cb91f2aa2638c81a6fa3d62d96daaf56056dfe96145",
+      "source": "specs/cards/search/40040-a-good-workout.feature"
+    },
+    "Advanced Ultron Drone :: defeating it puts the top card of my deck into play as a drone": {
+      "sha256": "5945dfc11e9de9e11166c77bca8681aaae8f981897e69e577b698f8de4948da2",
+      "source": "specs/cards/core/01143-advanced-ultron-drone.feature"
+    },
+    "Advanced Ultron Drone :: its guard puts the villain out of reach while it is engaged with me": {
+      "sha256": "5945dfc11e9de9e11166c77bca8681aaae8f981897e69e577b698f8de4948da2",
+      "source": "specs/cards/core/01143-advanced-ultron-drone.feature"
+    },
     "Affairs of State :: an upgrade without the BLACK PANTHER trait cannot be fed to the obligation": {
       "sha256": "2550db8e85a383623b30008e903308dbd65ff85b29d31af15f0769251a221f49",
       "source": "specs/cards/core/01155-affairs-of-state.feature"
@@ -17,29 +41,85 @@
       "sha256": "2550db8e85a383623b30008e903308dbd65ff85b29d31af15f0769251a221f49",
       "source": "specs/cards/core/01155-affairs-of-state.feature"
     },
+    "Ancestral Knowledge :: \"up to\" allows fewer than three": {
+      "sha256": "20c0d32d6bd378b3d35b25b2ac765841e845be34b77087042e91135ad6cfe369",
+      "source": "specs/cards/core/01042-ancestral-knowledge.feature"
+    },
+    "Ancestral Knowledge :: a hero is not offered the action at all": {
+      "sha256": "20c0d32d6bd378b3d35b25b2ac765841e845be34b77087042e91135ad6cfe369",
+      "source": "specs/cards/core/01042-ancestral-knowledge.feature"
+    },
+    "Ancestral Knowledge :: three chosen cards leave the discard pile and the fourth stays": {
+      "sha256": "20c0d32d6bd378b3d35b25b2ac765841e845be34b77087042e91135ad6cfe369",
+      "source": "specs/cards/core/01042-ancestral-knowledge.feature"
+    },
+    "Android Efficiency :: a [mental] cost this player cannot pay is not offered on the [mental] face": {
+      "sha256": "848dfcd9cbf4a1f6a56639e5bc13b02c8ee2fb6d868956f5606bd0486cf7c7ac",
+      "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
+    "Android Efficiency :: a [physical] cost this player cannot pay is not offered on the [physical] face": {
+      "sha256": "848dfcd9cbf4a1f6a56639e5bc13b02c8ee2fb6d868956f5606bd0486cf7c7ac",
+      "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
     "Android Efficiency :: a cost this player cannot pay is not offered, and the other branch just happens": {
-      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
+      "sha256": "848dfcd9cbf4a1f6a56639e5bc13b02c8ee2fb6d868956f5606bd0486cf7c7ac",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: as a boost card it offers the printed [energy] cost, and paying it makes no drone": {
-      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
+      "sha256": "848dfcd9cbf4a1f6a56639e5bc13b02c8ee2fb6d868956f5606bd0486cf7c7ac",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the [mental] face offers the same choice, and the drone branch costs no card": {
-      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
+      "sha256": "848dfcd9cbf4a1f6a56639e5bc13b02c8ee2fb6d868956f5606bd0486cf7c7ac",
+      "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
+    "Android Efficiency :: the [mental] face's spend branch empties the hand and leaves the deck alone": {
+      "sha256": "848dfcd9cbf4a1f6a56639e5bc13b02c8ee2fb6d868956f5606bd0486cf7c7ac",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the [physical] face charges a physical resource for the same boost": {
-      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
+      "sha256": "848dfcd9cbf4a1f6a56639e5bc13b02c8ee2fb6d868956f5606bd0486cf7c7ac",
+      "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
+    "Android Efficiency :: the [physical] face's drone branch costs no card and adds an attacker": {
+      "sha256": "848dfcd9cbf4a1f6a56639e5bc13b02c8ee2fb6d868956f5606bd0486cf7c7ac",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the reveal resolves for every player, off each player's own deck": {
-      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
+      "sha256": "848dfcd9cbf4a1f6a56639e5bc13b02c8ee2fb6d868956f5606bd0486cf7c7ac",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the reveal takes the top card of the deck and nothing under it": {
-      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
+      "sha256": "848dfcd9cbf4a1f6a56639e5bc13b02c8ee2fb6d868956f5606bd0486cf7c7ac",
       "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
+    "Armored Guard :: it arrives engaged and tough, and puts the villain out of reach": {
+      "sha256": "0c985f35b2175176cf9032d346fc7874eef4fa18f56f88926b6c967320fad185",
+      "source": "specs/cards/core/01120-armored-guard.feature"
+    },
+    "Armored Guard :: with no guard engaged the villain is attackable": {
+      "sha256": "0c985f35b2175176cf9032d346fc7874eef4fa18f56f88926b6c967320fad185",
+      "source": "specs/cards/core/01120-armored-guard.feature"
+    },
+    "Armored Rhino Suit :: any amount means any amount, and 5 or more discards the suit": {
+      "sha256": "0ea19f47523b568554a06a1721127e9ea999947092a6f10ba5a0e3f8a91844d9",
+      "source": "specs/cards/core/01098-armored-rhino-suit.feature"
+    },
+    "Armored Rhino Suit :: it attaches to the villain and takes the damage in its place": {
+      "sha256": "0ea19f47523b568554a06a1721127e9ea999947092a6f10ba5a0e3f8a91844d9",
+      "source": "specs/cards/core/01098-armored-rhino-suit.feature"
+    },
+    "Armored Rhino Suit :: the threshold counts damage already on the suit, and the villain is exposed once it goes": {
+      "sha256": "0ea19f47523b568554a06a1721127e9ea999947092a6f10ba5a0e3f8a91844d9",
+      "source": "specs/cards/core/01098-armored-rhino-suit.feature"
+    },
+    "Assault on NORAD 2A :: completing 1B reveals this stage, which makes a drone and advances to 2B": {
+      "sha256": "0aa972926918cef78c7bb9c0ac1da5c9cc39267b54ff182be2433f9ddead5cfe",
+      "source": "specs/cards/core/01138a-assault-on-norad.feature"
+    },
+    "Assault on NORAD 2A :: every player makes a drone off their own deck": {
+      "sha256": "0aa972926918cef78c7bb9c0ac1da5c9cc39267b54ff182be2433f9ddead5cfe",
+      "source": "specs/cards/core/01138a-assault-on-norad.feature"
     },
     "Assault on NORAD :: step one placing threat on a different main scheme offers nothing": {
       "sha256": "13c032d0d76d2381fcf3d5e5e38411b068ce1da75bfc78e97bb454ca8c88381a",
@@ -72,6 +152,34 @@
     "Basic actions :: changing form flips the identity to its hero side": {
       "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
       "source": "specs/rules/basic-actions.feature"
+    },
+    "Black Panther :: a basic attack deals his printed ATK 2, and he has 11 hit points": {
+      "sha256": "15a382ccbaffd904745c5ef09985263185b64a6f0f1d337e5313d98ab305d69b",
+      "source": "specs/cards/core/01040a-black-panther.feature"
+    },
+    "Black Panther :: a basic thwart removes his printed THW 2": {
+      "sha256": "15a382ccbaffd904745c5ef09985263185b64a6f0f1d337e5313d98ab305d69b",
+      "source": "specs/cards/core/01040a-black-panther.feature"
+    },
+    "Black Panther :: the end phase draws him back up to his printed hand size of 5": {
+      "sha256": "15a382ccbaffd904745c5ef09985263185b64a6f0f1d337e5313d98ab305d69b",
+      "source": "specs/cards/core/01040a-black-panther.feature"
+    },
+    "Breakin' & Takin' :: at one hero it lands with its printed 2 plus the 1 it places": {
+      "sha256": "2ec294fbe7ab27e3d7dce85d7191c4e826b84c494330eeb5dbc9a631e08ce350",
+      "source": "specs/cards/core/01107-breakin-and-takin.feature"
+    },
+    "Breakin' & Takin' :: at two heroes the printed 2 stays put and the placed 1 doubles": {
+      "sha256": "2ec294fbe7ab27e3d7dce85d7191c4e826b84c494330eeb5dbc9a631e08ce350",
+      "source": "specs/cards/core/01107-breakin-and-takin.feature"
+    },
+    "Breakin' & Takin' :: its hazard icon deals a second encounter card in the villain phase": {
+      "sha256": "2ec294fbe7ab27e3d7dce85d7191c4e826b84c494330eeb5dbc9a631e08ce350",
+      "source": "specs/cards/core/01107-breakin-and-takin.feature"
+    },
+    "Breakin' & Takin' :: the same round without the hazard scheme deals one": {
+      "sha256": "2ec294fbe7ab27e3d7dce85d7191c4e826b84c494330eeb5dbc9a631e08ce350",
+      "source": "specs/cards/core/01107-breakin-and-takin.feature"
     },
     "Build Support :: 40027 finds the support in the discard pile as well as the deck": {
       "sha256": "837ba199031a3a5ae670a083f3597b76fbc0e1813175a89b133db66f2a765214",
@@ -165,6 +273,18 @@
       "sha256": "a1aa5152be3461382f6b1d48994d7f0ba15de27fee59c7bc68f2ea27834b381d",
       "source": "specs/cards/core/01188-caught-off-guard.feature"
     },
+    "Charge :: excess damage over a defending ally is dealt to the hero": {
+      "sha256": "565b0cc12a15d4a840df48394f2f7f46a31dd1ae46e3d825a8cdfd3ca1fdf47b",
+      "source": "specs/cards/core/01099-charge.feature"
+    },
+    "Charge :: it attaches to the villain, adds 3 to the attack, and is discarded at the end of it": {
+      "sha256": "565b0cc12a15d4a840df48394f2f7f46a31dd1ae46e3d825a8cdfd3ca1fdf47b",
+      "source": "specs/cards/core/01099-charge.feature"
+    },
+    "Charge :: without Charge the same ally soaks the whole attack": {
+      "sha256": "565b0cc12a15d4a840df48394f2f7f46a31dd1ae46e3d825a8cdfd3ca1fdf47b",
+      "source": "specs/cards/core/01099-charge.feature"
+    },
     "Concussive Blow :: 05031 can still be played at an enemy that is already confused": {
       "sha256": "83c8f82d4f5899f947ef8b97daeee2039c2f39038fbfd0458b010569c6721277",
       "source": "specs/cards/reprints/05031-41014-concussive-blow.feature"
@@ -185,6 +305,26 @@
       "sha256": "83c8f82d4f5899f947ef8b97daeee2039c2f39038fbfd0458b010569c6721277",
       "source": "specs/cards/reprints/05031-41014-concussive-blow.feature"
     },
+    "Countdown to Oblivion 3A :: every player makes a drone off their own deck": {
+      "sha256": "a631faf39ed722df2d84b6b7919eb0ceb07b2b59b13eb0af709632b453c76e24",
+      "source": "specs/cards/core/01139a-countdown-to-oblivion.feature"
+    },
+    "Countdown to Oblivion 3A :: it makes a drone off the top of my deck and advances to 3B": {
+      "sha256": "a631faf39ed722df2d84b6b7919eb0ceb07b2b59b13eb0af709632b453c76e24",
+      "source": "specs/cards/core/01139a-countdown-to-oblivion.feature"
+    },
+    "Countdown to Oblivion 3B :: completing this stage loses the game": {
+      "sha256": "8ada9adc32179c2ee15033bac002ca4b19120305718c3527cb3332aca561d6fb",
+      "source": "specs/cards/core/01139b-countdown-to-oblivion.feature"
+    },
+    "Countdown to Oblivion 3B :: the same hero can still remove threat from a scheme that does not say this": {
+      "sha256": "8ada9adc32179c2ee15033bac002ca4b19120305718c3527cb3332aca561d6fb",
+      "source": "specs/cards/core/01139b-countdown-to-oblivion.feature"
+    },
+    "Countdown to Oblivion 3B :: thwarting this stage removes none of its threat": {
+      "sha256": "8ada9adc32179c2ee15033bac002ca4b19120305718c3527cb3332aca561d6fb",
+      "source": "specs/cards/core/01139b-countdown-to-oblivion.feature"
+    },
     "Crisis Interdiction :: Aerial asks which other scheme when two could take it": {
       "sha256": "4948950bc744f281b39a5ad3ffd43993587f88526a681a6ae56a0a4648b1890c",
       "source": "specs/cards/core/01012-crisis-interdiction.feature"
@@ -200,6 +340,26 @@
     "Crisis Interdiction :: without Aerial only the named scheme loses threat": {
       "sha256": "4948950bc744f281b39a5ad3ffd43993587f88526a681a6ae56a0a4648b1890c",
       "source": "specs/cards/core/01012-crisis-interdiction.feature"
+    },
+    "Crowd Control :: at one hero it enters play with its printed 2 threat": {
+      "sha256": "78de5d1102960c5d4ff37343aed78f7da790d0583c2f069ec5206a180980b021",
+      "source": "specs/cards/core/01108-crowd-control.feature"
+    },
+    "Crowd Control :: at two heroes the starred starting threat doubles": {
+      "sha256": "78de5d1102960c5d4ff37343aed78f7da790d0583c2f069ec5206a180980b021",
+      "source": "specs/cards/core/01108-crowd-control.feature"
+    },
+    "Crowd Control :: its crisis icon stops threat coming off the main scheme": {
+      "sha256": "78de5d1102960c5d4ff37343aed78f7da790d0583c2f069ec5206a180980b021",
+      "source": "specs/cards/core/01108-crowd-control.feature"
+    },
+    "Crowd Control :: the scheme carrying the icon can still be thwarted": {
+      "sha256": "78de5d1102960c5d4ff37343aed78f7da790d0583c2f069ec5206a180980b021",
+      "source": "specs/cards/core/01108-crowd-control.feature"
+    },
+    "Crowd Control :: with no crisis icon in play the same thwart lands": {
+      "sha256": "78de5d1102960c5d4ff37343aed78f7da790d0583c2f069ec5206a180980b021",
+      "source": "specs/cards/core/01108-crowd-control.feature"
     },
     "Damage and threat :: a card effect is stopped by the icon too, and is still spent": {
       "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
@@ -273,6 +433,26 @@
       "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
       "source": "specs/rules/damage-and-threat.feature"
     },
+    "Defense Network :: it arrives on its printed threat plus one for the hero": {
+      "sha256": "6d54881470f1c14a5e5b812d289eb18608713a381c847bf98ddea3d1187a42f2",
+      "source": "specs/cards/core/01125-defense-network.feature"
+    },
+    "Defense Network :: only the additional threat is per hero, not the printed 2": {
+      "sha256": "6d54881470f1c14a5e5b812d289eb18608713a381c847bf98ddea3d1187a42f2",
+      "source": "specs/cards/core/01125-defense-network.feature"
+    },
+    "Drone Factory :: every player makes a drone off their own deck, and the starting threat does not double": {
+      "sha256": "278ad2aac0cf7979042ae9abf19da4b8c2d79e186e46d26f188467564fa4e6e5",
+      "source": "specs/cards/core/01148-drone-factory.feature"
+    },
+    "Drone Factory :: one drone off my deck, and one threat for it": {
+      "sha256": "278ad2aac0cf7979042ae9abf19da4b8c2d79e186e46d26f188467564fa4e6e5",
+      "source": "specs/cards/core/01148-drone-factory.feature"
+    },
+    "Drone Factory :: the threat counts drones that were already in play, not only the ones it made": {
+      "sha256": "278ad2aac0cf7979042ae9abf19da4b8c2d79e186e46d26f188467564fa4e6e5",
+      "source": "specs/cards/core/01148-drone-factory.feature"
+    },
     "Electric Whip Attack :: as a boost card on an undefended attack it discards an upgrade": {
       "sha256": "d629f42f2b135fdca0e99fec722cd47426773d09ae0c6248925c9804e520535a",
       "source": "specs/cards/core/01173-electric-whip-attack.feature"
@@ -298,12 +478,36 @@
       "source": "specs/cards/core/01173-electric-whip-attack.feature"
     },
     "Electromagnetic Blast :: removing the last threat offers the attachment discard": {
-      "sha256": "528ba46399219e26873b4d77b95c592c4cccbf39268c798a88a4dc0ff13aa8b7",
+      "sha256": "a39f91b431d3333007f8bc6f6a542495ec66e8f9c3d92aacbd983244e2a53735",
       "source": "specs/cards/search/49008-electromagnetic-blast.feature"
     },
     "Electromagnetic Blast :: the attachment survives when the discard is declined": {
-      "sha256": "528ba46399219e26873b4d77b95c592c4cccbf39268c798a88a4dc0ff13aa8b7",
+      "sha256": "a39f91b431d3333007f8bc6f6a542495ec66e8f9c3d92aacbd983244e2a53735",
       "source": "specs/cards/search/49008-electromagnetic-blast.feature"
+    },
+    "Electromagnetic Blast :: the three threat comes off the scheme the player named": {
+      "sha256": "a39f91b431d3333007f8bc6f6a542495ec66e8f9c3d92aacbd983244e2a53735",
+      "source": "specs/cards/search/49008-electromagnetic-blast.feature"
+    },
+    "Electromagnetic Blast :: threat left behind is offered nothing at all": {
+      "sha256": "a39f91b431d3333007f8bc6f6a542495ec66e8f9c3d92aacbd983244e2a53735",
+      "source": "specs/cards/search/49008-electromagnetic-blast.feature"
+    },
+    "Energy Daggers :: as a step that is not the final one it deals 1": {
+      "sha256": "093b752b4219b238b2ba55797dd853059773a464a9158ff520658c92961ed8e0",
+      "source": "specs/cards/core/01046-energy-daggers.feature"
+    },
+    "Energy Daggers :: as the final step it deals 2 to the villain and to each engaged enemy": {
+      "sha256": "093b752b4219b238b2ba55797dd853059773a464a9158ff520658c92961ed8e0",
+      "source": "specs/cards/core/01046-energy-daggers.feature"
+    },
+    "Enhanced Ivory Horn :: it attaches to the villain and adds 1 to the villain's attack": {
+      "sha256": "332e450290b8355b8d2e2fc2b02919cbdfa6d504b97fa5e00645019f23863fb0",
+      "source": "specs/cards/core/01100-enhanced-ivory-horn.feature"
+    },
+    "Enhanced Ivory Horn :: the hero action discards it for three physical resources": {
+      "sha256": "332e450290b8355b8d2e2fc2b02919cbdfa6d504b97fa5e00645019f23863fb0",
+      "source": "specs/cards/core/01100-enhanced-ivory-horn.feature"
     },
     "Ever Vigilant :: 17030 readies the exhausted hero and removes 2 threat": {
       "sha256": "5626592d10a56c11030c272e85500ac194147eaeeca14580b42906c765bdd079",
@@ -369,24 +573,44 @@
       "sha256": "fac5d4b4e618a9843d5c100bb08295b9feb5b5db6646d146ceb8f5ad59206867",
       "source": "specs/cards/search/47016-generation-x.feature"
     },
+    "Hard to Keep Down :: a partial heal is still a heal, and does not surge": {
+      "sha256": "3830dcff236d2e611d8760f0fc74fa68e78b5ee212e10df4f7443ecc36a90f1d",
+      "source": "specs/cards/core/01104-hard-to-keep-down.feature"
+    },
+    "Hard to Keep Down :: a villain with damage to spare heals exactly 4 of it": {
+      "sha256": "3830dcff236d2e611d8760f0fc74fa68e78b5ee212e10df4f7443ecc36a90f1d",
+      "source": "specs/cards/core/01104-hard-to-keep-down.feature"
+    },
+    "Hard to Keep Down :: an undamaged villain heals nothing, so the card surges": {
+      "sha256": "3830dcff236d2e611d8760f0fc74fa68e78b5ee212e10df4f7443ecc36a90f1d",
+      "source": "specs/cards/core/01104-hard-to-keep-down.feature"
+    },
+    "Hard to Keep Down :: less than 4 damage heals all of it and no more": {
+      "sha256": "3830dcff236d2e611d8760f0fc74fa68e78b5ee212e10df4f7443ecc36a90f1d",
+      "source": "specs/cards/core/01104-hard-to-keep-down.feature"
+    },
     "Hulk :: a mental top card discards Hulk": {
-      "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
+      "sha256": "352147ea861b4ee4f69fd7ea65127119db658806a2906269ec7cc6151e92c16c",
       "source": "specs/cards/core/01050-hulk.feature"
     },
     "Hulk :: a physical top card adds 2 damage to an enemy": {
-      "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
+      "sha256": "352147ea861b4ee4f69fd7ea65127119db658806a2906269ec7cc6151e92c16c",
       "source": "specs/cards/core/01050-hulk.feature"
     },
     "Hulk :: a wild top card does all of it": {
-      "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
+      "sha256": "352147ea861b4ee4f69fd7ea65127119db658806a2906269ec7cc6151e92c16c",
+      "source": "specs/cards/core/01050-hulk.feature"
+    },
+    "Hulk :: an empty deck discards nothing and the response still finishes": {
+      "sha256": "352147ea861b4ee4f69fd7ea65127119db658806a2906269ec7cc6151e92c16c",
       "source": "specs/cards/core/01050-hulk.feature"
     },
     "Hulk :: an energy top card asks before dealing 1 to each character": {
-      "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
+      "sha256": "352147ea861b4ee4f69fd7ea65127119db658806a2906269ec7cc6151e92c16c",
       "source": "specs/cards/core/01050-hulk.feature"
     },
     "Hulk :: the forced response fires on every attack, not only the first": {
-      "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
+      "sha256": "352147ea861b4ee4f69fd7ea65127119db658806a2906269ec7cc6151e92c16c",
       "source": "specs/cards/core/01050-hulk.feature"
     },
     "Hydra Bomber :: an alter-ego is asked the same question and takes the same damage": {
@@ -421,6 +645,30 @@
       "sha256": "b08f81ed57c08f62321735d08be4dc324ba2fbca2e3faa1a4af50ef4f9637f22",
       "source": "specs/cards/core/01101-hydra-mercenary.feature"
     },
+    "Illegal Arms Factory :: a side scheme without the icon deals only one": {
+      "sha256": "d1116d624099190aa33e285046574b5980e28d3d4a4bddc0be4b65d2cfe0df1e",
+      "source": "specs/cards/core/01126-illegal-arms-factory.feature"
+    },
+    "Illegal Arms Factory :: it arrives on its printed threat plus one for the hero": {
+      "sha256": "d1116d624099190aa33e285046574b5980e28d3d4a4bddc0be4b65d2cfe0df1e",
+      "source": "specs/cards/core/01126-illegal-arms-factory.feature"
+    },
+    "Illegal Arms Factory :: only the additional threat is per hero, not the printed 3": {
+      "sha256": "d1116d624099190aa33e285046574b5980e28d3d4a4bddc0be4b65d2cfe0df1e",
+      "source": "specs/cards/core/01126-illegal-arms-factory.feature"
+    },
+    "Illegal Arms Factory :: the hazard icon deals a second encounter card in the villain phase": {
+      "sha256": "d1116d624099190aa33e285046574b5980e28d3d4a4bddc0be4b65d2cfe0df1e",
+      "source": "specs/cards/core/01126-illegal-arms-factory.feature"
+    },
+    "Invasive AI :: every player discards from their own deck, not one deck twice": {
+      "sha256": "920e999da94bffcf67442358470c96abb04c30de6620b98cba749d919f686233",
+      "source": "specs/cards/core/01149-invasive-ai.feature"
+    },
+    "Invasive AI :: it takes the top three cards of my deck and stops there": {
+      "sha256": "920e999da94bffcf67442358470c96abb04c30de6620b98cba749d919f686233",
+      "source": "specs/cards/core/01149-invasive-ai.feature"
+    },
     "Keep Up the Pressure :: nobody is asked when there is no attack event to find": {
       "sha256": "6eac20198fd0208d2905928c69d84ebb30dd61cad23081a4fc722e5c24fe7820",
       "source": "specs/cards/search/46018-keep-up-the-pressure.feature"
@@ -438,52 +686,96 @@
       "source": "specs/cards/search/46018-keep-up-the-pressure.feature"
     },
     "Keywords :: a card without surge reveals nothing more": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a guard minion puts the villain out of reach": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a minion without quickstrike waits for the next villain phase": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a quickstrike minion attacks the moment it engages": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a tough minion takes no damage from the first attack": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: retaliate answers the villain that attacked": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: retaliate does not fire when the hero is the one attacking": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: surge reveals one more encounter card": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: the guard itself is still attackable": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: the villain becomes attackable once the guard is defeated": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: toughness cancels the damage rather than reducing it": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: with no guard in play the villain is attackable": {
-      "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
+      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
       "source": "specs/rules/keywords.feature"
+    },
+    "Klaw (I) :: a scheming Klaw spends one, because scheming is not attacking": {
+      "sha256": "f6708e99f3ad571203e40a807ae507d5203d356d30435bacc6022f9fcc2bc029",
+      "source": "specs/cards/core/01113-klaw.feature"
+    },
+    "Klaw (I) :: an attacking Klaw spends two boost cards, not one": {
+      "sha256": "f6708e99f3ad571203e40a807ae507d5203d356d30435bacc6022f9fcc2bc029",
+      "source": "specs/cards/core/01113-klaw.feature"
+    },
+    "Klaw (I) :: the printed hit points are per hero": {
+      "sha256": "f6708e99f3ad571203e40a807ae507d5203d356d30435bacc6022f9fcc2bc029",
+      "source": "specs/cards/core/01113-klaw.feature"
+    },
+    "Klaw (II) :: revealing stage II pulls The \"Immortal\" Klaw out of the encounter deck": {
+      "sha256": "a2bcec1318863f431ad1257260f84d2e5578441d63351bb27abdaf03a54a31ca",
+      "source": "specs/cards/core/01114-klaw.feature"
+    },
+    "Klaw (II) :: the discard pile is searched as well as the deck": {
+      "sha256": "a2bcec1318863f431ad1257260f84d2e5578441d63351bb27abdaf03a54a31ca",
+      "source": "specs/cards/core/01114-klaw.feature"
+    },
+    "Klaw (II) :: with nothing to find the stage arrives on its printed hit points": {
+      "sha256": "a2bcec1318863f431ad1257260f84d2e5578441d63351bb27abdaf03a54a31ca",
+      "source": "specs/cards/core/01114-klaw.feature"
+    },
+    "Klaw (III) :: advancing to stage III stands the villain up tough on his printed stats": {
+      "sha256": "833ee1d3bb252b77f6adc397b46d8b72283ee723ca00b289150e91ca84effecd",
+      "source": "specs/cards/core/01115-klaw.feature"
+    },
+    "Klaw (III) :: the printed hit points are per hero": {
+      "sha256": "833ee1d3bb252b77f6adc397b46d8b72283ee723ca00b289150e91ca84effecd",
+      "source": "specs/cards/core/01115-klaw.feature"
+    },
+    "Klaw's Vengeance :: an attack that deals no damage places no threat": {
+      "sha256": "5de5e5f082952a8f701a2f6f61c3906af1032abd8a83aafa5f48ea5d3212e924",
+      "source": "specs/cards/core/01122-klaws-vengeance.feature"
+    },
+    "Klaw's Vengeance :: revealed to a hero Klaw attacks and the damage buys a threat": {
+      "sha256": "5de5e5f082952a8f701a2f6f61c3906af1032abd8a83aafa5f48ea5d3212e924",
+      "source": "specs/cards/core/01122-klaws-vengeance.feature"
+    },
+    "Klaw's Vengeance :: revealed to an alter-ego it takes a card out of hand": {
+      "sha256": "5de5e5f082952a8f701a2f6f61c3906af1032abd8a83aafa5f48ea5d3212e924",
+      "source": "specs/cards/core/01122-klaws-vengeance.feature"
     },
     "Legal Work :: declining the flip leaves one bullet, and it resolves without a prompt": {
       "sha256": "0b1b6dfc3a6fd4f78b6539e439cc4e93a6788196d3cdabed2feb17e533581529",
@@ -533,24 +825,44 @@
       "sha256": "585ed44c484cf9b167cfd8648423f3ef4773992fab21db7c103e6158357764e8",
       "source": "specs/cards/core/01084-nick-fury.feature"
     },
+    "Panther Claws :: as a step that is not the final one it deals 2": {
+      "sha256": "d5e947b778e9729f8a15759051c8eed7802de7b63df27830e6cd3cd0f99232f5",
+      "source": "specs/cards/core/01047-panther-claws.feature"
+    },
+    "Panther Claws :: as the final step it deals 4 to the chosen enemy": {
+      "sha256": "d5e947b778e9729f8a15759051c8eed7802de7b63df27830e6cd3cd0f99232f5",
+      "source": "specs/cards/core/01047-panther-claws.feature"
+    },
     "Phase Disruption :: a lone attachment on the enemy is discarded without being asked about": {
-      "sha256": "f8b2c5be7cdd7622fc7a178ecab0f7a62f0e141e7594fad9d8796d9f838dfd59",
+      "sha256": "bfce534026b760306cf8086708215aabe34efac8f2ef8bd3426bda04427848a2",
+      "source": "specs/cards/search/26011-phase-disruption.feature"
+    },
+    "Phase Disruption :: an attachment without the printed text is left alone": {
+      "sha256": "bfce534026b760306cf8086708215aabe34efac8f2ef8bd3426bda04427848a2",
+      "source": "specs/cards/search/26011-phase-disruption.feature"
+    },
+    "Phase Disruption :: both clauses follow the enemy the player named": {
+      "sha256": "bfce534026b760306cf8086708215aabe34efac8f2ef8bd3426bda04427848a2",
       "source": "specs/cards/search/26011-phase-disruption.feature"
     },
     "Phase Disruption :: two attachments on the confused enemy make the discard a choice": {
-      "sha256": "f8b2c5be7cdd7622fc7a178ecab0f7a62f0e141e7594fad9d8796d9f838dfd59",
+      "sha256": "bfce534026b760306cf8086708215aabe34efac8f2ef8bd3426bda04427848a2",
       "source": "specs/cards/search/26011-phase-disruption.feature"
     },
+    "Phase Strike :: both halves of the card land on the enemy the player named": {
+      "sha256": "ea7404d00b02d6dc7f65bf375a7c5738caecdd5bdfe2d35943c4d8c3fd20be02",
+      "source": "specs/cards/search/32038-phase-strike.feature"
+    },
     "Phase Strike :: phased Shadowcat is offered the attachment discard on the enemy hit": {
-      "sha256": "0b9ff493efd75939445cf99808aac4afdbaf61fb48b01f2f207a194c802eba91",
+      "sha256": "ea7404d00b02d6dc7f65bf375a7c5738caecdd5bdfe2d35943c4d8c3fd20be02",
       "source": "specs/cards/search/32038-phase-strike.feature"
     },
     "Phase Strike :: solid Shadowcat deals the damage and is offered nothing": {
-      "sha256": "0b9ff493efd75939445cf99808aac4afdbaf61fb48b01f2f207a194c802eba91",
+      "sha256": "ea7404d00b02d6dc7f65bf375a7c5738caecdd5bdfe2d35943c4d8c3fd20be02",
       "source": "specs/cards/search/32038-phase-strike.feature"
     },
     "Phase Strike :: the attachment survives when the discard is declined": {
-      "sha256": "0b9ff493efd75939445cf99808aac4afdbaf61fb48b01f2f207a194c802eba91",
+      "sha256": "ea7404d00b02d6dc7f65bf375a7c5738caecdd5bdfe2d35943c4d8c3fd20be02",
       "source": "specs/cards/search/32038-phase-strike.feature"
     },
     "Phase structure :: a game begins in the player phase of round 1": {
@@ -597,6 +909,106 @@
       "sha256": "9aea6d732f6d753c95f0d8101b39208b3e473d55d1470ecc7aae17d9a2ccfbc8",
       "source": "specs/cards/reprints/05014-38015-preemptive-strike.feature"
     },
+    "Program Transmitter :: it attaches to Ultron, adds 1 to his scheme, and spreads 1 to each side scheme": {
+      "sha256": "db80888da4ab780a1a3c4cbd86d5722416516d010efe61b5bb4ef16e3877ed3d",
+      "source": "specs/cards/core/01141-program-transmitter.feature"
+    },
+    "Program Transmitter :: the hero action exhausts my hero, spends two mental resources and discards it": {
+      "sha256": "db80888da4ab780a1a3c4cbd86d5722416516d010efe61b5bb4ef16e3877ed3d",
+      "source": "specs/cards/core/01141-program-transmitter.feature"
+    },
+    "Program Transmitter :: the response follows Ultron scheming, not any threat he causes to be placed": {
+      "sha256": "db80888da4ab780a1a3c4cbd86d5722416516d010efe61b5bb4ef16e3877ed3d",
+      "source": "specs/cards/core/01141-program-transmitter.feature"
+    },
+    "Rage of Ultron :: against a hero Ultron attacks, and two damage costs two cards": {
+      "sha256": "45d384c58962366647e9945e3712f70bb71c3fcdc81bf8d22e8f6e442438427c",
+      "source": "specs/cards/core/01145-rage-of-ultron.feature"
+    },
+    "Rage of Ultron :: against an alter-ego Ultron schemes, and one threat costs one card": {
+      "sha256": "45d384c58962366647e9945e3712f70bb71c3fcdc81bf8d22e8f6e442438427c",
+      "source": "specs/cards/core/01145-rage-of-ultron.feature"
+    },
+    "Repair Sequence :: as a boost card it heals 1 for each drone rather than 2": {
+      "sha256": "2b599798cf0738c318efc3a379865629368646c1427e869291a8e30ec735e19b",
+      "source": "specs/cards/core/01146-repair-sequence.feature"
+    },
+    "Repair Sequence :: drones engaged but nothing to heal still counts as no damage healed": {
+      "sha256": "2b599798cf0738c318efc3a379865629368646c1427e869291a8e30ec735e19b",
+      "source": "specs/cards/core/01146-repair-sequence.feature"
+    },
+    "Repair Sequence :: the reveal heals 2 for each drone engaged with me, and does not surge": {
+      "sha256": "2b599798cf0738c318efc3a379865629368646c1427e869291a8e30ec735e19b",
+      "source": "specs/cards/core/01146-repair-sequence.feature"
+    },
+    "Repair Sequence :: with no drone engaged with me nothing is healed and the card surges": {
+      "sha256": "2b599798cf0738c318efc3a379865629368646c1427e869291a8e30ec735e19b",
+      "source": "specs/cards/core/01146-repair-sequence.feature"
+    },
+    "Resource icons :: Vibranium carries two wild icons": {
+      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "source": "specs/rules/resource-icons.feature"
+    },
+    "Resource icons :: an energy icon pays a cost that names energy": {
+      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "source": "specs/rules/resource-icons.feature"
+    },
+    "Resource icons :: the first printing carries one energy icon and nothing else": {
+      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "source": "specs/rules/resource-icons.feature"
+    },
+    "Resource icons :: the fourth printing carries one wild icon and nothing else": {
+      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "source": "specs/rules/resource-icons.feature"
+    },
+    "Resource icons :: the second printing carries one mental icon and nothing else": {
+      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "source": "specs/rules/resource-icons.feature"
+    },
+    "Resource icons :: the third printing carries one physical icon and nothing else": {
+      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "source": "specs/rules/resource-icons.feature"
+    },
+    "Rhino (I) :: at one hero the villain has its printed 14 hit points": {
+      "sha256": "47a6d456481c855904710837ce559b0c463f78b53977f02f60176f5d64b77724",
+      "source": "specs/cards/core/01094-rhino.feature"
+    },
+    "Rhino (I) :: at two heroes it has 28, which is the printed star and not a constant": {
+      "sha256": "47a6d456481c855904710837ce559b0c463f78b53977f02f60176f5d64b77724",
+      "source": "specs/cards/core/01094-rhino.feature"
+    },
+    "Rhino (II) :: advancing to stage II pulls the side scheme out of the encounter deck": {
+      "sha256": "5e27ac93360b03fddd7ec62c0cd5438a657954cb48141c68b7eb963728507ed2",
+      "source": "specs/cards/core/01095-rhino.feature"
+    },
+    "Rhino (II) :: at two heroes stage II has 30 hit points": {
+      "sha256": "5e27ac93360b03fddd7ec62c0cd5438a657954cb48141c68b7eb963728507ed2",
+      "source": "specs/cards/core/01095-rhino.feature"
+    },
+    "Rhino (II) :: the search reaches the encounter discard pile as well as the deck": {
+      "sha256": "5e27ac93360b03fddd7ec62c0cd5438a657954cb48141c68b7eb963728507ed2",
+      "source": "specs/cards/core/01095-rhino.feature"
+    },
+    "Rhino (II) :: with the side scheme in neither place the advance reveals nothing": {
+      "sha256": "5e27ac93360b03fddd7ec62c0cd5438a657954cb48141c68b7eb963728507ed2",
+      "source": "specs/cards/core/01095-rhino.feature"
+    },
+    "Rhino (III) :: advancing to stage III stands the villain up tough on its printed stats": {
+      "sha256": "7d9416c7a1ca69b354ee4959932a16b94ab70221e7933d5bcf7f09c022f6f117",
+      "source": "specs/cards/core/01096-rhino.feature"
+    },
+    "Rhino (III) :: an alter-ego is not a hero and is not stunned": {
+      "sha256": "7d9416c7a1ca69b354ee4959932a16b94ab70221e7933d5bcf7f09c022f6f117",
+      "source": "specs/cards/core/01096-rhino.feature"
+    },
+    "Rhino (III) :: revealing stage III stuns the hero": {
+      "sha256": "7d9416c7a1ca69b354ee4959932a16b94ab70221e7933d5bcf7f09c022f6f117",
+      "source": "specs/cards/core/01096-rhino.feature"
+    },
+    "Rhino (III) :: the printed hit points are per hero": {
+      "sha256": "7d9416c7a1ca69b354ee4959932a16b94ab70221e7933d5bcf7f09c022f6f117",
+      "source": "specs/cards/core/01096-rhino.feature"
+    },
     "Ritual Combat :: X follows the boost icons of whatever card happened to be on top": {
       "sha256": "cde155ac0262579bf315f05afe8232471627970463db022c2f339a46dec350bb",
       "source": "specs/cards/core/01159-ritual-combat.feature"
@@ -620,6 +1032,58 @@
     "Sandman :: the tough status absorbs an attack instead of hit points": {
       "sha256": "3ec3dde3460848eb46635d22908b112ee5fc5d4ba20cd98cc4744f633bd8d91f",
       "source": "specs/cards/core/01102-sandman.feature"
+    },
+    "Secret Rendezvous (2A) :: completing 1B reveals 2A, which digs out a minion and advances": {
+      "sha256": "69fd68d3d85552704d35209a883c6a14fb3ddf7b00e3e57f7215afcd7ab3ba65",
+      "source": "specs/cards/core/01117a-secret-rendezvous.feature"
+    },
+    "Secret Rendezvous (2A) :: with no minion to find it still advances": {
+      "sha256": "69fd68d3d85552704d35209a883c6a14fb3ddf7b00e3e57f7215afcd7ab3ba65",
+      "source": "specs/cards/core/01117a-secret-rendezvous.feature"
+    },
+    "Secret Rendezvous (2B) :: completing the stage loses the game rather than winning it": {
+      "sha256": "bfef7005036a840449ce87e85e7c0570faa718037bf4d8528b6f118cf39ea388",
+      "source": "specs/cards/core/01117b-secret-rendezvous.feature"
+    },
+    "Secret Rendezvous (2B) :: one short of the threshold is not completion": {
+      "sha256": "bfef7005036a840449ce87e85e7c0570faa718037bf4d8528b6f118cf39ea388",
+      "source": "specs/cards/core/01117b-secret-rendezvous.feature"
+    },
+    "Secret Rendezvous (2B) :: the threshold and the escalation are both per hero": {
+      "sha256": "bfef7005036a840449ce87e85e7c0570faa718037bf4d8528b6f118cf39ea388",
+      "source": "specs/cards/core/01117b-secret-rendezvous.feature"
+    },
+    "Shocker :: an alter-ego is not a hero and takes nothing": {
+      "sha256": "5d2252d9d7e20399d0cee4a5df079ba47358bc890e7f3d735f9d4ed6f79a6c68",
+      "source": "specs/cards/core/01103-shocker.feature"
+    },
+    "Shocker :: revealing it deals 1 damage to the hero and puts the minion into play": {
+      "sha256": "5d2252d9d7e20399d0cee4a5df079ba47358bc890e7f3d735f9d4ed6f79a6c68",
+      "source": "specs/cards/core/01103-shocker.feature"
+    },
+    "Shuri :: an upgrade in the discard pile is not found": {
+      "sha256": "250c3cb2a855009f31a69a8a70af109b979dea01a7497a57a22e489048fefacd",
+      "source": "specs/cards/core/01041-shuri.feature"
+    },
+    "Shuri :: one upgrade in the deck is taken without asking which": {
+      "sha256": "250c3cb2a855009f31a69a8a70af109b979dea01a7497a57a22e489048fefacd",
+      "source": "specs/cards/core/01041-shuri.feature"
+    },
+    "Shuri :: the response can be declined and the deck is left alone": {
+      "sha256": "250c3cb2a855009f31a69a8a70af109b979dea01a7497a57a22e489048fefacd",
+      "source": "specs/cards/core/01041-shuri.feature"
+    },
+    "Shuri :: two upgrades in the deck are offered as a choice": {
+      "sha256": "250c3cb2a855009f31a69a8a70af109b979dea01a7497a57a22e489048fefacd",
+      "source": "specs/cards/core/01041-shuri.feature"
+    },
+    "Solid-Sound Body :: attached to Klaw it answers an attack with 1 damage": {
+      "sha256": "86f3a81fdc8eb3b165a64f193cf2193e1e9526ba9fd97d561c6112f7989b1905",
+      "source": "specs/cards/core/01119-solid-sound-body.feature"
+    },
+    "Solid-Sound Body :: the hero action pays three resources and takes the retaliate with it": {
+      "sha256": "86f3a81fdc8eb3b165a64f193cf2193e1e9526ba9fd97d561c6112f7989b1905",
+      "source": "specs/cards/core/01119-solid-sound-body.feature"
     },
     "Sonic Boom :: an activation that deals no damage does not exhaust the hero": {
       "sha256": "10f7d61be48508037a9b8b12109b6e510cf7224dd707d20026373395ca2b08cc",
@@ -648,6 +1112,54 @@
     "Sonic Boom :: the exhaust branch exhausts the ally as well as the hero": {
       "sha256": "10f7d61be48508037a9b8b12109b6e510cf7224dd707d20026373395ca2b08cc",
       "source": "specs/cards/core/01123-sonic-boom.feature"
+    },
+    "Sonic Converter :: an attack that damages nobody stuns nobody": {
+      "sha256": "1e55d73422a6bd64be3f67593c151082638d16e68fcc5e3d6e46dda4bd1a13b0",
+      "source": "specs/cards/core/01118-sonic-converter.feature"
+    },
+    "Sonic Converter :: an attack that damages the hero stuns the hero": {
+      "sha256": "1e55d73422a6bd64be3f67593c151082638d16e68fcc5e3d6e46dda4bd1a13b0",
+      "source": "specs/cards/core/01118-sonic-converter.feature"
+    },
+    "Sonic Converter :: it attaches itself to Klaw and adds 1 to his attack": {
+      "sha256": "1e55d73422a6bd64be3f67593c151082638d16e68fcc5e3d6e46dda4bd1a13b0",
+      "source": "specs/cards/core/01118-sonic-converter.feature"
+    },
+    "Sonic Converter :: the character stunned is the one that took the damage": {
+      "sha256": "1e55d73422a6bd64be3f67593c151082638d16e68fcc5e3d6e46dda4bd1a13b0",
+      "source": "specs/cards/core/01118-sonic-converter.feature"
+    },
+    "Sonic Converter :: the hero action pays three resources and takes the attachment off": {
+      "sha256": "1e55d73422a6bd64be3f67593c151082638d16e68fcc5e3d6e46dda4bd1a13b0",
+      "source": "specs/cards/core/01118-sonic-converter.feature"
+    },
+    "Sound Manipulation :: an undamaged Klaw heals nothing and the card surges instead": {
+      "sha256": "6e78c8f1607a9b2e3f8447c5ae75a465b362fd9f589c015e35e330744a581ef1",
+      "source": "specs/cards/core/01124-sound-manipulation.feature"
+    },
+    "Sound Manipulation :: revealed to a hero it costs the hero 2 and gives Klaw 2 back": {
+      "sha256": "6e78c8f1607a9b2e3f8447c5ae75a465b362fd9f589c015e35e330744a581ef1",
+      "source": "specs/cards/core/01124-sound-manipulation.feature"
+    },
+    "Sound Manipulation :: revealed to an alter-ego it heals Klaw 4 and does not surge": {
+      "sha256": "6e78c8f1607a9b2e3f8447c5ae75a465b362fd9f589c015e35e330744a581ef1",
+      "source": "specs/cards/core/01124-sound-manipulation.feature"
+    },
+    "Stampede :: a character the attack does not damage is not stunned": {
+      "sha256": "8244019ecf9455298c101ce3f8345cbdfac0248f5623c6f88b640cf68b126a1a",
+      "source": "specs/cards/core/01106-stampede.feature"
+    },
+    "Stampede :: revealed to a hero it does not surge, and Rhino attacks instead": {
+      "sha256": "8244019ecf9455298c101ce3f8345cbdfac0248f5623c6f88b640cf68b126a1a",
+      "source": "specs/cards/core/01106-stampede.feature"
+    },
+    "Stampede :: revealed to an alter-ego it surges and nobody is attacked": {
+      "sha256": "8244019ecf9455298c101ce3f8345cbdfac0248f5623c6f88b640cf68b126a1a",
+      "source": "specs/cards/core/01106-stampede.feature"
+    },
+    "Stampede :: the character stunned is the one the attack damaged, not the one it was aimed at": {
+      "sha256": "8244019ecf9455298c101ce3f8345cbdfac0248f5623c6f88b640cf68b126a1a",
+      "source": "specs/cards/core/01106-stampede.feature"
     },
     "Status cards :: a confused hero can still attack": {
       "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
@@ -693,6 +1205,18 @@
       "sha256": "4af390eabae9519638540b95990ca6f2f2613de8cd68b7d72b0fb91d9e556717",
       "source": "specs/cards/search/40059-superpower-training.feature"
     },
+    "Swarm Attack :: an alter-ego has no hero for the drones to be engaged with, so a drone is made anyway": {
+      "sha256": "dc3d55ed4ce2f82415364dbcf53dc4f0aebaadf7307a0d6ee34e10549abeafd6",
+      "source": "specs/cards/core/01147-swarm-attack.feature"
+    },
+    "Swarm Attack :: every drone engaged with my hero attacks, and no new drone is made": {
+      "sha256": "dc3d55ed4ce2f82415364dbcf53dc4f0aebaadf7307a0d6ee34e10549abeafd6",
+      "source": "specs/cards/core/01147-swarm-attack.feature"
+    },
+    "Swarm Attack :: with nothing engaged with me it makes a drone instead": {
+      "sha256": "dc3d55ed4ce2f82415364dbcf53dc4f0aebaadf7307a0d6ee34e10549abeafd6",
+      "source": "specs/cards/core/01147-swarm-attack.feature"
+    },
     "Swinging Web Kick :: it deals 8 damage to the chosen enemy": {
       "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
       "source": "specs/cards/core/01005-swinging-web-kick.feature"
@@ -700,6 +1224,46 @@
     "Swinging Web Kick :: playing it discards the card and the resources that paid for it": {
       "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
       "source": "specs/cards/core/01005-swinging-web-kick.feature"
+    },
+    "T'Challa :: Foresight searches the deck for a Black Panther upgrade and adds it to hand": {
+      "sha256": "2ebe8a29c2668b7b512d796def1fea621331900f43abbae3cdb825e802ea78af",
+      "source": "specs/cards/core/01040b-tchalla.feature"
+    },
+    "T'Challa :: Recover heals his printed REC of 4": {
+      "sha256": "2ebe8a29c2668b7b512d796def1fea621331900f43abbae3cdb825e802ea78af",
+      "source": "specs/cards/core/01040b-tchalla.feature"
+    },
+    "T'Challa :: the end phase draws him back up to his printed hand size of 6": {
+      "sha256": "2ebe8a29c2668b7b512d796def1fea621331900f43abbae3cdb825e802ea78af",
+      "source": "specs/cards/core/01040b-tchalla.feature"
+    },
+    "T'Challa :: with no Black Panther upgrade in the deck Foresight adds nothing": {
+      "sha256": "2ebe8a29c2668b7b512d796def1fea621331900f43abbae3cdb825e802ea78af",
+      "source": "specs/cards/core/01040b-tchalla.feature"
+    },
+    "Tactical Genius :: as a step that is not the final one it removes 1": {
+      "sha256": "8603ac32125851de5c294ab27b2cdc8b090e2a3d6e707e21e6b86d75665a2a00",
+      "source": "specs/cards/core/01048-tactical-genius.feature"
+    },
+    "Tactical Genius :: as the final step it removes 2 threat from the chosen scheme": {
+      "sha256": "8603ac32125851de5c294ab27b2cdc8b090e2a3d6e707e21e6b86d75665a2a00",
+      "source": "specs/cards/core/01048-tactical-genius.feature"
+    },
+    "Target counts :: a fifth card in the pile does not raise the ceiling": {
+      "sha256": "b5e9fa23712aa4508ad97ef637e8695782279b2ca07b87b804197d1fbf7f5bb5",
+      "source": "specs/rules/target-counts.feature"
+    },
+    "Target counts :: a third upgrade raises that ceiling to three": {
+      "sha256": "b5e9fa23712aa4508ad97ef637e8695782279b2ca07b87b804197d1fbf7f5bb5",
+      "source": "specs/rules/target-counts.feature"
+    },
+    "Target counts :: an each-you-control effect takes as many targets as the board offers": {
+      "sha256": "b5e9fa23712aa4508ad97ef637e8695782279b2ca07b87b804197d1fbf7f5bb5",
+      "source": "specs/rules/target-counts.feature"
+    },
+    "Target counts :: up to 3 is a ceiling of 3 even with four cards to choose from": {
+      "sha256": "b5e9fa23712aa4508ad97ef637e8695782279b2ca07b87b804197d1fbf7f5bb5",
+      "source": "specs/rules/target-counts.feature"
     },
     "Taunt :: 42016 makes the villain attack, only the hero may defend, and draws 3": {
       "sha256": "d4c9436ec764b989fca8d5ad4fe1e944ae6bce603aa981ba31b41973125a7857",
@@ -736,6 +1300,58 @@
     "Teamwork :: an unaided basic thwart removes the hero's printed THW": {
       "sha256": "ba96f0e999e74ccd38bd309262b5ca11d49f9c760c1b15a6aba8129c665491fd",
       "source": "specs/cards/reprints/06032-33017-teamwork.feature"
+    },
+    "The \"Immortal\" Klaw :: defeating the scheme takes the hit points back and leaves the damage": {
+      "sha256": "6e15d70d01b03988078a72c4bb244c58439f26db74cd3c32ce6e85049ace78e8",
+      "source": "specs/cards/core/01127-the-immortal-klaw.feature"
+    },
+    "The \"Immortal\" Klaw :: the starting threat is per hero and the grant is not": {
+      "sha256": "6e15d70d01b03988078a72c4bb244c58439f26db74cd3c32ce6e85049ace78e8",
+      "source": "specs/cards/core/01127-the-immortal-klaw.feature"
+    },
+    "The \"Immortal\" Klaw :: while it is in play Klaw stands on 10 more hit points": {
+      "sha256": "6e15d70d01b03988078a72c4bb244c58439f26db74cd3c32ce6e85049ace78e8",
+      "source": "specs/cards/core/01127-the-immortal-klaw.feature"
+    },
+    "The Break-In! (1A) :: the game opens on side B, in play, with no threat on it": {
+      "sha256": "92e25d9e3ec545d6571de1d674de04964bb44260e78f9b089e2673e07d7136a2",
+      "source": "specs/cards/core/01097a-the-break-in.feature"
+    },
+    "The Break-In! (1B) :: at one hero the stage completes at 7 and accelerates by 1": {
+      "sha256": "e61fe9829d096e5a29aa314c2e76f15056e3b95c3b055d181975727c15fad2c8",
+      "source": "specs/cards/core/01097b-the-break-in.feature"
+    },
+    "The Break-In! (1B) :: at two heroes both stars double and the starting threat does not": {
+      "sha256": "e61fe9829d096e5a29aa314c2e76f15056e3b95c3b055d181975727c15fad2c8",
+      "source": "specs/cards/core/01097b-the-break-in.feature"
+    },
+    "The Break-In! (1B) :: completing the stage loses the game": {
+      "sha256": "e61fe9829d096e5a29aa314c2e76f15056e3b95c3b055d181975727c15fad2c8",
+      "source": "specs/cards/core/01097b-the-break-in.feature"
+    },
+    "The Crimson Cowl 1A :: the game opens on stage 1B rather than on the setup face": {
+      "sha256": "c8021a93454d152b93d6faf44ec4007174696ee870f92e736ae4fb2ee2307932",
+      "source": "specs/cards/core/01137a-the-crimson-cowl.feature"
+    },
+    "The Crimson Cowl 1A :: the setup line puts the Ultron Drones environment into play": {
+      "sha256": "c8021a93454d152b93d6faf44ec4007174696ee870f92e736ae4fb2ee2307932",
+      "source": "specs/cards/core/01137a-the-crimson-cowl.feature"
+    },
+    "The Crimson Cowl 1B :: every player makes a drone, each off their own deck": {
+      "sha256": "fade049eac8828208d74bb1164cbc4740fa09f65af1e58ec50a53919a269ae77",
+      "source": "specs/cards/core/01137b-the-crimson-cowl.feature"
+    },
+    "The Crimson Cowl 1B :: revealing the stage takes the top card of my deck and stands it up as a drone": {
+      "sha256": "fade049eac8828208d74bb1164cbc4740fa09f65af1e58ec50a53919a269ae77",
+      "source": "specs/cards/core/01137b-the-crimson-cowl.feature"
+    },
+    "The Golden City :: a hero is not offered the action": {
+      "sha256": "6ac2c679c3d9536cf10620970da287f810bea0c9fd0586ce6f5ad2a4aab7192d",
+      "source": "specs/cards/core/01045-the-golden-city.feature"
+    },
+    "The Golden City :: the action draws 2 and exhausts the support": {
+      "sha256": "6ac2c679c3d9536cf10620970da287f810bea0c9fd0586ce6f5ad2a4aab7192d",
+      "source": "specs/cards/core/01045-the-golden-city.feature"
     },
     "The crisis-icon bypass :: an ally ignoring the icon is not you ignoring it": {
       "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
@@ -873,6 +1489,70 @@
       "sha256": "fcd77d4002b3fcab048b30d853d1ac2a33fe0a74936e070c7ec6daffe71f688f",
       "source": "specs/cards/core/01134-ultron.feature"
     },
+    "Ultron Drones :: a defeated facedown drone goes to its owner's discard pile": {
+      "sha256": "f02179780da5556a371ceda5b31912a59313cf3128ed40245df617fcdf4dfe15",
+      "source": "specs/cards/core/01140-ultron-drones.feature"
+    },
+    "Ultron Drones :: a drone minion that is not facedown keeps its own printed statistics": {
+      "sha256": "f02179780da5556a371ceda5b31912a59313cf3128ed40245df617fcdf4dfe15",
+      "source": "specs/cards/core/01140-ultron-drones.feature"
+    },
+    "Ultron Drones :: a facedown drone is given a base scheme, attack and hit point line": {
+      "sha256": "f02179780da5556a371ceda5b31912a59313cf3128ed40245df617fcdf4dfe15",
+      "source": "specs/cards/core/01140-ultron-drones.feature"
+    },
+    "Ultron Drones :: removing the only source of the grant does defeat the drone": {
+      "sha256": "f02179780da5556a371ceda5b31912a59313cf3128ed40245df617fcdf4dfe15",
+      "source": "specs/cards/core/01140-ultron-drones.feature"
+    },
+    "Ultron Drones :: two live base grants stack, so removing one leaves the other standing": {
+      "sha256": "f02179780da5556a371ceda5b31912a59313cf3128ed40245df617fcdf4dfe15",
+      "source": "specs/cards/core/01140-ultron-drones.feature"
+    },
+    "Ultron Drones :: without this card a facedown drone has no hit points and is defeated at once": {
+      "sha256": "f02179780da5556a371ceda5b31912a59313cf3128ed40245df617fcdf4dfe15",
+      "source": "specs/cards/core/01140-ultron-drones.feature"
+    },
+    "Ultron II :: an alter-ego is schemed against, so no drone is made and no bonus applies": {
+      "sha256": "af2f8e4bc679fea5f37164084911a324b75f65afd73666a7b0e7479a04f490db",
+      "source": "specs/cards/core/01135-ultron.feature"
+    },
+    "Ultron II :: his attack makes a drone first and is worth 1 more for it": {
+      "sha256": "af2f8e4bc679fea5f37164084911a324b75f65afd73666a7b0e7479a04f490db",
+      "source": "specs/cards/core/01135-ultron.feature"
+    },
+    "Ultron II :: the bonus counts every drone minion engaged with me, not only the one he made": {
+      "sha256": "af2f8e4bc679fea5f37164084911a324b75f65afd73666a7b0e7479a04f490db",
+      "source": "specs/cards/core/01135-ultron.feature"
+    },
+    "Ultron III :: every drone minion gets +1 ATK and +1 hit point, printed statistics or not": {
+      "sha256": "c081c9a42f97a05de9ed91731e0f0b099ef630c8217a3b9c727567ce6c29b0f1",
+      "source": "specs/cards/core/01136-ultron.feature"
+    },
+    "Ultron III :: he cannot be damaged while a drone minion is in play": {
+      "sha256": "c081c9a42f97a05de9ed91731e0f0b099ef630c8217a3b9c727567ce6c29b0f1",
+      "source": "specs/cards/core/01136-ultron.feature"
+    },
+    "Ultron III :: it finds Ultron's Imperative in the encounter discard pile as well": {
+      "sha256": "c081c9a42f97a05de9ed91731e0f0b099ef630c8217a3b9c727567ce6c29b0f1",
+      "source": "specs/cards/core/01136-ultron.feature"
+    },
+    "Ultron III :: revealing this stage finds Ultron's Imperative in the encounter deck and reveals it": {
+      "sha256": "c081c9a42f97a05de9ed91731e0f0b099ef630c8217a3b9c727567ce6c29b0f1",
+      "source": "specs/cards/core/01136-ultron.feature"
+    },
+    "Ultron III :: with no drone in play the same Haymaker lands": {
+      "sha256": "c081c9a42f97a05de9ed91731e0f0b099ef630c8217a3b9c727567ce6c29b0f1",
+      "source": "specs/cards/core/01136-ultron.feature"
+    },
+    "Ultron's Imperative :: only the first player's deck is touched": {
+      "sha256": "76ae31c32ae1215d6b879daad299a476f108cda9f8118a26c649b9dd1c32009b",
+      "source": "specs/cards/core/01150-ultrons-imperative.feature"
+    },
+    "Ultron's Imperative :: two drones, off the top two cards of my deck": {
+      "sha256": "76ae31c32ae1215d6b879daad299a476f108cda9f8118a26c649b9dd1c32009b",
+      "source": "specs/cards/core/01150-ultrons-imperative.feature"
+    },
     "Under Attack :: the card resolves for the second player as well as for me": {
       "sha256": "ef5d89b8b9172868e8014f411822944c92569af0da3125b4f5f6347b099aa0bc",
       "source": "specs/cards/core/01151-under-attack.feature"
@@ -889,6 +1569,54 @@
       "sha256": "ef5d89b8b9172868e8014f411822944c92569af0da3125b4f5f6347b099aa0bc",
       "source": "specs/cards/core/01151-under-attack.feature"
     },
+    "Underground Distribution (1A) :: the game begins with stage 1A already advanced to 1B": {
+      "sha256": "eebf27f280ddb22d78eae4b9c5728865ca401569d5af763e57d240955ee85526",
+      "source": "specs/cards/core/01116a-underground-distribution.feature"
+    },
+    "Underground Distribution (1A) :: the setup line finds Defense Network in the encounter deck and reveals it": {
+      "sha256": "eebf27f280ddb22d78eae4b9c5728865ca401569d5af763e57d240955ee85526",
+      "source": "specs/cards/core/01116a-underground-distribution.feature"
+    },
+    "Underground Distribution (1B) :: a deck with no minion in it puts nothing into play": {
+      "sha256": "d3b5445712bdd7ad7e009d1cfbc0867b5182f4255417c58a0a45d81e46e78dd0",
+      "source": "specs/cards/core/01116b-underground-distribution.feature"
+    },
+    "Underground Distribution (1B) :: cards come off the deck until a minion does, and that minion enters play": {
+      "sha256": "d3b5445712bdd7ad7e009d1cfbc0867b5182f4255417c58a0a45d81e46e78dd0",
+      "source": "specs/cards/core/01116b-underground-distribution.feature"
+    },
+    "Underground Distribution (1B) :: the threat the stage completes at is per hero, and so is the escalation": {
+      "sha256": "d3b5445712bdd7ad7e009d1cfbc0867b5182f4255417c58a0a45d81e46e78dd0",
+      "source": "specs/cards/core/01116b-underground-distribution.feature"
+    },
+    "Upgraded Drones :: it attaches to the environment and gives every facedown drone +1 ATK and +1 hit point": {
+      "sha256": "b9c28d7581909ea125f82de6c1555a94f8b5786946b9a704792115ab64ca6320",
+      "source": "specs/cards/core/01142-upgraded-drones.feature"
+    },
+    "Upgraded Drones :: the hero action spends three resources and takes the bonus away with the card": {
+      "sha256": "b9c28d7581909ea125f82de6c1555a94f8b5786946b9a704792115ab64ca6320",
+      "source": "specs/cards/core/01142-upgraded-drones.feature"
+    },
+    "Vibranium :: a cost of 3 takes both Vibranium": {
+      "sha256": "e53170ee68b240ad57c5b72c43073cbf06ad5d052f082d9be5ec6edb1d280904",
+      "source": "specs/cards/core/01044-vibranium.feature"
+    },
+    "Vibranium :: one Vibranium pays a cost of 2 on its own": {
+      "sha256": "e53170ee68b240ad57c5b72c43073cbf06ad5d052f082d9be5ec6edb1d280904",
+      "source": "specs/cards/core/01044-vibranium.feature"
+    },
+    "Vibranium Suit :: as a step that is not the final one it moves 1": {
+      "sha256": "31ee7a4c57dff53686e647727e4d0b7e5320a47293de8a74869426f02b08345d",
+      "source": "specs/cards/core/01049-vibranium-suit.feature"
+    },
+    "Vibranium Suit :: as the final step it moves 2 damage to the chosen enemy": {
+      "sha256": "31ee7a4c57dff53686e647727e4d0b7e5320a47293de8a74869426f02b08345d",
+      "source": "specs/cards/core/01049-vibranium-suit.feature"
+    },
+    "Vibranium Suit :: it moves no more damage than the hero is carrying": {
+      "sha256": "31ee7a4c57dff53686e647727e4d0b7e5320a47293de8a74869426f02b08345d",
+      "source": "specs/cards/core/01049-vibranium-suit.feature"
+    },
     "Vision :: the ATK branch raises attack by 2 and leaves thwart alone": {
       "sha256": "3fdaaa534d8c4fee3e19c02f8eb2ac8b5228ccab63b69c11ba5dee9482a8ef2f",
       "source": "specs/cards/core/01068-vision.feature"
@@ -904,6 +1632,38 @@
     "Vision :: without the Action Vision thwarts for its printed 1": {
       "sha256": "3fdaaa534d8c4fee3e19c02f8eb2ac8b5228ccab63b69c11ba5dee9482a8ef2f",
       "source": "specs/cards/core/01068-vision.feature"
+    },
+    "Wakanda Forever! :: a lone upgrade is the final step of the sequence": {
+      "sha256": "45e572bd0cca4edd22916036ced5ff83acf112fcb9f7eceaa7b85cfacaeb737f",
+      "source": "specs/cards/core/01043a-wakanda-forever.feature"
+    },
+    "Wakanda Forever! :: the mental printing resolves the same ability": {
+      "sha256": "45e572bd0cca4edd22916036ced5ff83acf112fcb9f7eceaa7b85cfacaeb737f",
+      "source": "specs/cards/core/01043a-wakanda-forever.feature"
+    },
+    "Wakanda Forever! :: the order named decides which upgrade gets the final step": {
+      "sha256": "45e572bd0cca4edd22916036ced5ff83acf112fcb9f7eceaa7b85cfacaeb737f",
+      "source": "specs/cards/core/01043a-wakanda-forever.feature"
+    },
+    "Wakanda Forever! :: the physical printing resolves the same ability": {
+      "sha256": "45e572bd0cca4edd22916036ced5ff83acf112fcb9f7eceaa7b85cfacaeb737f",
+      "source": "specs/cards/core/01043a-wakanda-forever.feature"
+    },
+    "Wakanda Forever! :: the same two upgrades in the other order swap both numbers": {
+      "sha256": "45e572bd0cca4edd22916036ced5ff83acf112fcb9f7eceaa7b85cfacaeb737f",
+      "source": "specs/cards/core/01043a-wakanda-forever.feature"
+    },
+    "Wakanda Forever! :: the wild printing resolves the same ability": {
+      "sha256": "45e572bd0cca4edd22916036ced5ff83acf112fcb9f7eceaa7b85cfacaeb737f",
+      "source": "specs/cards/core/01043a-wakanda-forever.feature"
+    },
+    "Wakanda Forever! :: with no Black Panther upgrade in play the event is not offered": {
+      "sha256": "45e572bd0cca4edd22916036ced5ff83acf112fcb9f7eceaa7b85cfacaeb737f",
+      "source": "specs/cards/core/01043a-wakanda-forever.feature"
+    },
+    "Weapons Runner :: as a boost card it puts itself into play engaged with you": {
+      "sha256": "d2a20729b055bd83380586271a042c15c7c0769c851e0a3e6662d9df2d788376",
+      "source": "specs/cards/core/01121-weapons-runner.feature"
     }
   },
   "version": 1
