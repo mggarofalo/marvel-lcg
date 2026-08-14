@@ -66,3 +66,53 @@ Feature: Electromagnetic Blast
     When I choose "Cancel"
     Then "Enhanced Ivory Horn" is in play
     And I am not prompted again
+
+  @card:49008
+  Scenario: threat left behind is offered nothing at all
+    # "**If** this removes the last threat from that scheme". The two scenarios
+    # above both empty the scheme, so both are equally consistent with an engine
+    # that ignored the condition and offered the discard unconditionally. Five
+    # threat minus three is two, and two is not none, so the opt-in never
+    # appears -- and there is no `When` here to answer one, which is what makes
+    # the claim load-bearing: an engine that asked anyway halts the transcript on
+    # a decision it does not answer.
+    Given the main scheme has 5 threat
+
+    When I play "Electromagnetic Blast"
+    Then the main scheme has 2 threat
+    And "Enhanced Ivory Horn" is in play
+    And I am not prompted again
+
+  @card:49008
+  Scenario: the three threat comes off the scheme the player named
+    # "Remove 3 threat from **a** scheme", and then "the last threat from **that**
+    # scheme" -- two clauses about the same chosen scheme, and neither is
+    # observable on a board with only one scheme on it. Usurp The Throne is the
+    # cheap second scheme: it prints no text at all, so nothing it does can be
+    # mistaken for something this card did.
+    #
+    # The side scheme is emptied and the main scheme is untouched, so the opt-in
+    # that follows is evidence about the *side* scheme's last threat. An engine
+    # reading the condition off the main scheme instead would see five threat
+    # standing and offer nothing.
+    Given the main scheme has 5 threat
+    And "Usurp The Throne" is in play
+    And "Usurp The Throne" has 3 threat
+
+    # The opt-in appearing here *is* the claim that the side scheme lost its
+    # last threat, so nothing needs to say so twice. Where the side scheme ended
+    # up is asserted at the end of the transcript rather than at this beat: the
+    # engine processes a defeated scheme's removal once the event has finished
+    # resolving, so at this point it is emptied but still standing in
+    # `SideSchemesArea`, and a scenario should not be pinned to which side of
+    # that line the prompt falls on.
+    When I play "Electromagnetic Blast" targeting "Usurp The Throne"
+    Then the main scheme has 5 threat
+    And I am prompted to choose one
+      | Discard an attachment |
+      | Cancel                |
+
+    When I choose "Discard an attachment"
+    Then "Enhanced Ivory Horn" is not in play
+    And "Usurp The Throne" is in the "EncounterDiscardPile"
+    And I am not prompted again

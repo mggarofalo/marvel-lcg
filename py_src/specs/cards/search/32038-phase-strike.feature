@@ -74,6 +74,38 @@ Feature: Phase Strike
     And I am not prompted again
 
   @card:32038
+  Scenario: both halves of the card land on the enemy the player named
+    # "Deal 6 damage to **an** enemy ... discard an attachment ... **from that
+    # enemy**". Every scenario above runs on a board with one enemy on it, where
+    # the engine picks the target itself and the two clauses cannot come apart.
+    # Here there are two, so the target is a decision the transcript makes, and
+    # both clauses have to follow it: the damage goes on Radioactive Man and the
+    # horn on Rhino is neither offered nor discarded.
+    #
+    # This is the assertion that separates `DiscardHeroActionAttachment`'s
+    # `enemies` branch from its `else` branch. Scoped to the chosen enemy there
+    # is nothing to discard and the opt-in is dropped before the prompt, so no
+    # decision is put to the transcript; scoped board-wide the horn would be a
+    # legal target and the engine would stop here asking about it.
+    #
+    # Radioactive Man rather than a Hydra Mercenary: Guard would make Rhino an
+    # illegal target and leave one enemy to choose from, which is the board this
+    # scenario exists to get away from. His 7 hit points also survive the 6, so
+    # the damage is still there to read; his printed Forced Response is on
+    # attacks against *you* and does not fire here.
+    Given "Radioactive Man" is in play
+
+    When I choose "Action" on "Kitty Pryde"
+
+    When I change form
+
+    When I play "Phase Strike" targeting "Radioactive Man"
+    Then "Radioactive Man" has 6 damage
+    And "Rhino" has 0 damage
+    And "Enhanced Ivory Horn" is in play
+    And I am not prompted again
+
+  @card:32038
   Scenario: solid Shadowcat deals the damage and is offered nothing
     When I change form
 
