@@ -25,7 +25,7 @@ def GetAbilities() -> Sequence['Ability']:
             considered_at_least_hp=1,
         ),
         AbilityFactory.AfterUnitAttackUnit(
-            AbilityType.Response,
+            AbilityType.HeroResponse,
             Identity,
             "AttachedVillain",
             golden_horse

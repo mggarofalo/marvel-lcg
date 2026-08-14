@@ -66,7 +66,7 @@ def GetAbilities() -> Sequence['Ability']:
             "YouControlCharacter",
             CardFinder(name="Black Widow"),
             black_widows_gauntlet
-        ),
+        ).SetSecondType(AbilityType.HeroResponse),
         *AbilityFactory.GiveKeywordToAttached(
             "Character",
             retaliate=1,

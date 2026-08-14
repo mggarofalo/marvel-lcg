@@ -12,13 +12,13 @@ def GetAbilities() -> Sequence['Ability']:
 
     return [
         AbilityFactory.WhenInYourPlayTurn(
-            AbilityType.Action,
+            AbilityType.HeroAction,
             stun_gun
         ).SetCostFunc(CostFunc.Exhaust("This"))
         .SetCostFunc(CostFunc.Counter("This", 1, 'charge'))
         .SetTarget(Minion, canbe_stunned=True),
         AbilityFactory.WhenInYourPlayTurn(
-            AbilityType.Action,
+            AbilityType.HeroAction,
             stun_gun
         ).SetCostFunc(CostFunc.Exhaust("This"))
         .SetCostFunc(CostFunc.Counter("This", 2, 'charge'))

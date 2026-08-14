@@ -118,7 +118,7 @@ class AbilityFactoryForm:
                 action,
                 from_form=from_form,
                 to_form=to_form,
-            )
+            ).SetSecondType(ability_type)
         else:
             return AbilityFactoryForm.AfterUnitChangeFormInternal(
                 ability_type,

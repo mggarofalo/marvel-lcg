@@ -27,7 +27,7 @@ def GetAbilities() -> Sequence['Ability']:
             considered_at_least_hp=1,
         ),
         AbilityFactory.AfterUnitAttackUnit(
-            AbilityType.Response,
+            AbilityType.HeroResponse,
             Identity,
             CardFinder(name="Death"),
             metal_wings

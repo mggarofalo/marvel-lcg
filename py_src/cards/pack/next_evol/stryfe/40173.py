@@ -28,7 +28,7 @@ def GetAbilities() -> Sequence['Ability']:
             "YourIdentity"
         ),
         AbilityFactory.PlayerActionToDiscardThis(
-            AbilityType.Action,
+            AbilityType.HeroAction,
             conditions=[psychic_inertia]
         ),
     ]
