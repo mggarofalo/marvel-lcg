@@ -1164,6 +1164,115 @@ class TestPerPlayerZones(unittest.TestCase):
 ################################################################################
 #
 
+class TestSelfAfterTheTokenMoves(unittest.TestCase):
+    """`"me"` as a card ref is seat 1 too, not the first player token (MARVEL-104).
+
+    MARVEL-101 made the first-person *zone* steps sugar for seat 1 and left
+    `resolve.ResolveNamed` reading `world.GetFirstPlayer()`, which is the token
+    holder: `world.players` is rotated by one at the end of every round and
+    loses a player outright on elimination. So in a two-player game past a round
+    boundary, `"me"` named one hero while `I have <n> cards in hand` named the
+    other -- one scenario talking about two players in two steps.
+
+    It was unreachable by accident rather than by design, the same accident that
+    hid MARVEL-101: a `Given` block cannot follow a `When`, so no `Given` ever
+    ran after a rotation, and every trusted two-player scenario resolved inside
+    one round. A `When` beat is not bound by either, which is what these pin.
+    """
+
+    def RotatedWorld(self):
+        """A two-player board with the first player token moved on one seat.
+
+        The rotation is done to `world.players` directly rather than by playing
+        a round, because what is under test is the *reading* of `"me"` and not
+        the engine's round machinery: the transcript below does it the long way
+        and would still pass against a resolver that read the token if the
+        rotation happened to be a no-op.
+        """
+        from core.utility.types import Types
+        from tools.spec.harness import ApplyGiven, EnsureEngine, NewGameForCase
+        from tools.spec.policy import TranscriptPolicy
+
+        EnsureEngine()
+        case = MakeCase(name="two seats", heroes=("spider_man", "captain_marvel"))
+        game = NewGameForCase(case, TranscriptPolicy())
+        self.assertTrue(game.GameSetup())
+        world = game.world
+        ApplyGiven(world, case)
+
+        world.players = Types.Rotate(world.players, 1)
+        return world
+
+    def test_me_names_seat_one_and_not_the_token_holder(self):
+        from tools.spec.resolve import ResolveCard
+
+        world = self.RotatedWorld()
+        seat_one = world.const_seat_order_players[0]
+
+        # The premise: the two readings really have come apart on this board.
+        self.assertIsNot(world.GetFirstPlayer(), seat_one)
+
+        self.assertIs(ResolveCard(world, "me"), seat_one.GetIdentity().card)
+        self.assertIsNot(ResolveCard(world, "me"),
+                         world.GetFirstPlayer().GetIdentity().card)
+
+    def test_every_spelling_of_the_first_person_names_the_same_card(self):
+        # `SELF_NAMES` is a list of synonyms and nothing else. One reading, so
+        # a scenario cannot pick a different player by spelling it differently.
+        from tools.spec.resolve import SELF_NAMES, ResolveCard
+
+        world = self.RotatedWorld()
+        seat_one = world.const_seat_order_players[0]
+        for name in SELF_NAMES:
+            self.assertIs(ResolveCard(world, name), seat_one.GetIdentity().card, name)
+
+    def test_a_transcript_that_crosses_a_round_boundary_stays_on_one_hero(self):
+        """The reachable case, played out rather than injected.
+
+        Two alter-egos pass through round 1, the villain schemes at each of
+        them, and the round ends -- which hands the first player token to seat
+        2, so round 2 opens with Carol Danvers rather than Peter Parker. She
+        passes, and the transcript then addresses `"me"` on Peter Parker's turn.
+
+        Under the token reading `"me"` is Carol Danvers, no offered option is
+        bound to her card, and the `When` is unplayable while the engine is
+        printing `Change_Form on Peter Parker` among the options it offered --
+        the harness refusing a card it is itself naming. The `Then` is the other
+        half: `I am in hero form` reads seat 1, so the two steps have to agree
+        about who "I" is for the scenario to mean anything.
+
+        Both decks are stocked and so is the encounter deck, because a puzzle
+        scene has neither and a round draws from all three.
+        """
+        filler = ("Pepper Potts",) * 8
+        case = MakeCase(
+            name="me across a round boundary",
+            heroes=("spider_man", "captain_marvel"),
+            given=(
+                GivenStep("alter_ego_form", ("me",)),
+                GivenStep("player_deck", filler),
+                GivenStep("player_deck", filler, player=1),
+                GivenStep("encounter_deck", ("Hydra Mercenary",) * 8),
+            ),
+            beats=(
+                WhenStep(pass_priority=True),   # seat 1 ends its turn
+                WhenStep(pass_priority=True),   # seat 2 ends its turn
+                ThenStep("game", "round", 2),   # the token has moved to seat 2
+                WhenStep(pass_priority=True),   # seat 2 goes first now
+                WhenStep(option="change form", card="me"),
+                ThenStep("me", "hero_form", True),
+                # Seat 2 is untouched: still the alter-ego she started as, so
+                # the change of form landed on seat 1 and not merely on someone.
+                ThenStep("Carol Danvers", "in_play", True),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+
+################################################################################
+#
+
 class TestFacedownDroneNaming(unittest.TestCase):
     """Naming a card by the face it is presenting (MARVEL-102).
 
