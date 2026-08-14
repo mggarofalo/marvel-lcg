@@ -461,5 +461,501 @@ class TestADroneThatOutlivesUltronDrones(unittest.TestCase):
         self.assertEqual(self.FindDrone().area.deck_type.name, "EngagedEnemiesArea")
 
 
+class TwoLiveGrantsOnOneCharacter(unittest.TestCase):
+    """Two sources granting one base statistic to one character at the same time.
+
+    A base grant used to be a single stored value: applying wrote it, removing
+    wrote the *printed* statistic back. With two sources live, whichever ended
+    first therefore wiped the other's grant and the character reverted to printed
+    with a grant still active. See MARVEL-111.
+
+    The rules answer is that the newest grant is the one showing and the older
+    one is still there underneath, so ending the newest falls back to the older
+    and ending the older changes nothing visible. That is an ordered stack, and
+    the identity it is keyed on is the granting `Effect`:
+    `WhenFaceApplyThisInternal.when_this_in_play` binds one per granting card and
+    hands the same object to both the apply and the unapply path.
+
+    Two `DebugRule`s built on the *same* face stand in for the two sources here,
+    deliberately: `GainKeyword` attributes a contribution to `by_effect.this`, so
+    sharing a face means nothing about these tests can pass by telling the two
+    sources apart any other way than by the `Effect` object. The shipped pair of
+    distinct cards is driven separately, in
+    `TestTwoCopiesOfUltronDronesOnOneDrone`.
+
+    The grants carry different values throughout, because equal values make
+    every ordering look alike and would pass whichever entry removal dropped.
+
+    A third source is available for the ordering tests, and it is not
+    decoration. With only two grants live, removing one leaves exactly one
+    behind, and "the newest of what is left" and "the oldest of what is left"
+    name the same entry -- three separate wrong orderings pass every two-grant
+    test. `TestOrderingNeedsThreeGrants` is where they fail.
+    """
+
+    def setUp(self):
+        from game.effect.rule import DebugRule
+
+        self.world = NewWorld()
+        self.puzzle = RunPuzzle(self.world)
+        self.rhino = self.puzzle.FindFaceByName("Rhino")
+        self.assertIsNotNone(self.rhino)
+
+        sentinel = self.world.object_manager.card_dict[0].face
+        self.older = DebugRule(sentinel, display_name="older grant")
+        self.newer = DebugRule(sentinel, display_name="newer grant")
+        self.newest = DebugRule(sentinel, display_name="newest grant")
+        self.assertEqual(len({id(self.older), id(self.newer), id(self.newest)}), 3)
+
+    def Apply(self, source, **grant):
+        self.rhino.Gain(effect=source, diff=APPLY, **grant)
+
+    def Remove(self, source, **grant):
+        self.rhino.Gain(effect=source, diff=REMOVE, **grant)
+
+
+class TestTwoLiveSchemeGrants(TwoLiveGrantsOnOneCharacter):
+    """Rhino prints SCH 1. The two grants are 3 and then 5."""
+
+    def ApplyBoth(self):
+        self.Apply(self.older, base_sch=3)
+        self.Apply(self.newer, base_sch=5)
+
+    def test_the_newest_grant_is_the_one_showing(self):
+        self.ApplyBoth()
+
+        self.assertEqual(self.rhino.scheme, 5)
+        self.assertEqual(self.rhino.base_scheme, 5)
+
+    def test_ending_the_older_grant_leaves_the_newer_one_showing(self):
+        # The out-of-order removal, and the case the single stored value got
+        # wrong: this used to put Rhino back on his printed SCH of 1 while a
+        # grant of 5 was still live.
+        self.ApplyBoth()
+
+        self.Remove(self.older, base_sch=3)
+
+        self.assertEqual(self.rhino.scheme, 5)
+        self.assertEqual(self.rhino.base_scheme, 5)
+
+    def test_ending_the_newer_grant_falls_back_to_the_older_one(self):
+        self.ApplyBoth()
+
+        self.Remove(self.newer, base_sch=5)
+
+        self.assertEqual(self.rhino.scheme, 3)
+        self.assertEqual(self.rhino.base_scheme, 3)
+
+    def test_ending_both_oldest_first_restores_printed(self):
+        self.ApplyBoth()
+
+        self.Remove(self.older, base_sch=3)
+        self.Remove(self.newer, base_sch=5)
+
+        self.assertEqual(self.rhino.scheme, 1)
+        self.assertEqual(self.rhino.base_scheme, 1)
+        self.assertEqual(self.rhino.GetKeyword('SCH'), 1)
+
+    def test_ending_both_newest_first_restores_printed(self):
+        self.ApplyBoth()
+
+        self.Remove(self.newer, base_sch=5)
+        self.Remove(self.older, base_sch=3)
+
+        self.assertEqual(self.rhino.scheme, 1)
+        self.assertEqual(self.rhino.base_scheme, 1)
+        self.assertEqual(self.rhino.GetKeyword('SCH'), 1)
+
+
+class TestTwoLiveAttackGrants(TwoLiveGrantsOnOneCharacter):
+    """Rhino prints ATK 2. The two grants are 3 and then 5."""
+
+    def ApplyBoth(self):
+        self.Apply(self.older, base_atk=3)
+        self.Apply(self.newer, base_atk=5)
+
+    def test_the_newest_grant_is_the_one_showing(self):
+        self.ApplyBoth()
+
+        self.assertEqual(self.rhino.attack, 5)
+        self.assertEqual(self.rhino.base_attack, 5)
+
+    def test_ending_the_older_grant_leaves_the_newer_one_showing(self):
+        self.ApplyBoth()
+
+        self.Remove(self.older, base_atk=3)
+
+        self.assertEqual(self.rhino.attack, 5)
+        self.assertEqual(self.rhino.base_attack, 5)
+
+    def test_ending_the_newer_grant_falls_back_to_the_older_one(self):
+        self.ApplyBoth()
+
+        self.Remove(self.newer, base_atk=5)
+
+        self.assertEqual(self.rhino.attack, 3)
+        self.assertEqual(self.rhino.base_attack, 3)
+
+    def test_ending_both_oldest_first_restores_printed(self):
+        self.ApplyBoth()
+
+        self.Remove(self.older, base_atk=3)
+        self.Remove(self.newer, base_atk=5)
+
+        self.assertEqual(self.rhino.attack, 2)
+        self.assertEqual(self.rhino.base_attack, 2)
+        self.assertEqual(self.rhino.GetKeyword('ATK'), 2)
+
+    def test_ending_both_newest_first_restores_printed(self):
+        self.ApplyBoth()
+
+        self.Remove(self.newer, base_atk=5)
+        self.Remove(self.older, base_atk=3)
+
+        self.assertEqual(self.rhino.attack, 2)
+        self.assertEqual(self.rhino.base_attack, 2)
+        self.assertEqual(self.rhino.GetKeyword('ATK'), 2)
+
+
+class TestTwoLiveHitPointGrants(TwoLiveGrantsOnOneCharacter):
+    """Rhino prints 14 hit points. The two grants are 10 and then 6.
+
+    Hit points are where the ordering stops being bookkeeping: `SetBaseHealth`
+    moves current health along with max, so falling back to the wrong entry is a
+    character gaining or losing hit points, not a stale field.
+    """
+
+    def ApplyBoth(self):
+        self.Apply(self.older, base_health=10)
+        self.Apply(self.newer, base_health=6)
+
+    def test_the_newest_grant_is_the_one_showing(self):
+        self.ApplyBoth()
+
+        self.assertEqual(self.rhino.health, 6)
+        self.assertEqual(self.rhino.max_health, 6)
+        self.assertEqual(self.rhino.base_health, 6)
+
+    def test_ending_the_older_grant_leaves_the_newer_one_showing(self):
+        self.ApplyBoth()
+
+        self.Remove(self.older, base_health=10)
+
+        self.assertEqual(self.rhino.health, 6)
+        self.assertEqual(self.rhino.max_health, 6)
+        self.assertEqual(self.rhino.base_health, 6)
+
+    def test_ending_the_older_grant_is_not_a_heal(self):
+        # Reading the same no-op through what a player would see: nothing about
+        # the character's hit points moved, so it took no damage and healed none.
+        self.ApplyBoth()
+
+        self.Remove(self.older, base_health=10)
+
+        self.assertEqual(self.rhino.sustained, 0)
+
+    def test_ending_the_newer_grant_falls_back_to_the_older_one(self):
+        self.ApplyBoth()
+
+        self.Remove(self.newer, base_health=6)
+
+        self.assertEqual(self.rhino.health, 10)
+        self.assertEqual(self.rhino.max_health, 10)
+        self.assertEqual(self.rhino.base_health, 10)
+
+    def test_ending_both_oldest_first_restores_printed(self):
+        self.ApplyBoth()
+
+        self.Remove(self.older, base_health=10)
+        self.Remove(self.newer, base_health=6)
+
+        self.assertEqual(self.rhino.health, 14)
+        self.assertEqual(self.rhino.max_health, 14)
+        self.assertEqual(self.rhino.base_health, 14)
+
+    def test_ending_both_newest_first_restores_printed(self):
+        self.ApplyBoth()
+
+        self.Remove(self.newer, base_health=6)
+        self.Remove(self.older, base_health=10)
+
+        self.assertEqual(self.rhino.health, 14)
+        self.assertEqual(self.rhino.max_health, 14)
+        self.assertEqual(self.rhino.base_health, 14)
+
+    def test_the_character_survives_both_removals_in_either_order(self):
+        self.ApplyBoth()
+
+        self.Remove(self.older, base_health=10)
+        self.Remove(self.newer, base_health=6)
+
+        self.assertFalse(self.rhino.IsDefeated())
+        self.assertEqual(self.rhino.sustained, 0)
+
+
+class TestTheWholeLineFromTwoSources(TwoLiveGrantsOnOneCharacter):
+    """All three statistics granted by both sources, torn down in one call.
+
+    This is the shape a real game reaches: the three keywords arrive and leave
+    together in a single `Gain`, and hit points are last, so a defect in scheme
+    or attack used to be read off a corpse.
+    """
+
+    def ApplyBoth(self):
+        self.Apply(self.older, base_sch=3, base_atk=3, base_health=10)
+        self.Apply(self.newer, base_sch=5, base_atk=5, base_health=6)
+
+    def test_ending_the_older_source_leaves_the_whole_newer_line(self):
+        self.ApplyBoth()
+
+        self.Remove(self.older, base_sch=3, base_atk=3, base_health=10)
+
+        self.assertEqual(self.rhino.scheme, 5)
+        self.assertEqual(self.rhino.attack, 5)
+        self.assertEqual(self.rhino.health, 6)
+
+    def test_ending_the_newer_source_falls_back_to_the_whole_older_line(self):
+        self.ApplyBoth()
+
+        self.Remove(self.newer, base_sch=5, base_atk=5, base_health=6)
+
+        self.assertEqual(self.rhino.scheme, 3)
+        self.assertEqual(self.rhino.attack, 3)
+        self.assertEqual(self.rhino.health, 10)
+
+    def test_ending_both_restores_the_whole_printed_line(self):
+        self.ApplyBoth()
+
+        self.Remove(self.older, base_sch=3, base_atk=3, base_health=10)
+        self.Remove(self.newer, base_sch=5, base_atk=5, base_health=6)
+
+        self.assertEqual(self.rhino.scheme, 1)
+        self.assertEqual(self.rhino.attack, 2)
+        self.assertEqual(self.rhino.health, 14)
+
+
+class TestOrderingNeedsThreeGrants(TwoLiveGrantsOnOneCharacter):
+    """Three live grants, because two cannot tell three wrong orderings apart.
+
+    Remove one of two grants and a single entry is left, so it is simultaneously
+    the newest and the oldest survivor and the stack's order never has to be
+    consulted. Three wrong implementations pass every two-grant test in this
+    file: falling back to the *oldest* survivor, pushing new grants onto the
+    *bottom* of the stack, and letting a repeat grant keep its old position
+    instead of moving to the top. Each of them needs a third grant to show.
+
+    The values climb (3, 5, 7) so that "the newest survivor" and "the oldest
+    survivor" are never the same number.
+    """
+
+    def ApplyThree(self, statistic):
+        self.Apply(self.older, **{statistic: 3})
+        self.Apply(self.newer, **{statistic: 5})
+        self.Apply(self.newest, **{statistic: 7})
+
+    def test_scheme_falls_back_to_the_newest_survivor(self):
+        self.ApplyThree("base_sch")
+        self.assertEqual(self.rhino.scheme, 7)
+
+        self.Remove(self.newest, base_sch=7)
+
+        self.assertEqual(self.rhino.scheme, 5)
+
+    def test_attack_falls_back_to_the_newest_survivor(self):
+        self.ApplyThree("base_atk")
+        self.assertEqual(self.rhino.attack, 7)
+
+        self.Remove(self.newest, base_atk=7)
+
+        self.assertEqual(self.rhino.attack, 5)
+
+    def test_hit_points_fall_back_to_the_newest_survivor(self):
+        self.Apply(self.older, base_health=12)
+        self.Apply(self.newer, base_health=10)
+        self.Apply(self.newest, base_health=6)
+        self.assertEqual(self.rhino.health, 6)
+
+        self.Remove(self.newest, base_health=6)
+
+        self.assertEqual(self.rhino.health, 10)
+        self.assertEqual(self.rhino.max_health, 10)
+        self.assertEqual(self.rhino.base_health, 10)
+
+    def test_removing_the_middle_grant_changes_nothing_then_skips_it(self):
+        # The out-of-order removal with somewhere left to fall: taking the
+        # middle grant away is invisible, and the newest ending afterwards has
+        # to skip past it to the oldest rather than land on a dead entry.
+        self.ApplyThree("base_atk")
+
+        self.Remove(self.newer, base_atk=5)
+        self.assertEqual(self.rhino.attack, 7)
+
+        self.Remove(self.newest, base_atk=7)
+        self.assertEqual(self.rhino.attack, 3)
+
+        self.Remove(self.older, base_atk=3)
+        self.assertEqual(self.rhino.attack, 2)
+
+    def test_a_repeat_grant_moves_to_the_top_of_the_stack(self):
+        # Re-applying is a fresh application. Read it where it shows: after the
+        # oldest source grants again, it outranks the two that came before, so
+        # the newest of those ending must leave *its* value showing.
+        self.ApplyThree("base_atk")
+
+        self.Apply(self.older, base_atk=4)
+        self.assertEqual(self.rhino.attack, 4)
+
+        self.Remove(self.newest, base_atk=7)
+
+        self.assertEqual(self.rhino.attack, 4)
+
+
+class TestTheEdgesOfTheStack(TwoLiveGrantsOnOneCharacter):
+    """Cases the stack has to answer that a single stored value never faced."""
+
+    def test_a_source_granting_again_becomes_the_newest(self):
+        # Re-applying is a fresh application, so it goes on top rather than
+        # updating in place -- otherwise the older source could end up deciding
+        # the base after the newer one had already claimed it.
+        self.Apply(self.older, base_atk=3)
+        self.Apply(self.newer, base_atk=5)
+
+        self.Apply(self.older, base_atk=4)
+
+        self.assertEqual(self.rhino.attack, 4)
+
+        self.Remove(self.older, base_atk=4)
+
+        self.assertEqual(self.rhino.attack, 5)
+
+    def test_a_source_that_never_granted_does_not_disturb_one_that_did(self):
+        # Removal drops this source's own entry. A source with no entry has
+        # nothing to drop, and must not take the live grant down with it.
+        self.Apply(self.older, base_atk=3)
+
+        self.Remove(self.newer, base_atk=5)
+
+        self.assertEqual(self.rhino.attack, 3)
+        self.assertEqual(self.rhino.base_attack, 3)
+
+    def test_resetting_keywords_forgets_every_live_grant(self):
+        # `ResetKeywords` throws away every keyword contribution from every
+        # source. If the base grants outlived that, a later removal would fall
+        # back to a grant whose contribution no longer exists and re-apply it
+        # out of nowhere.
+        self.Apply(self.older, base_atk=3, base_sch=3)
+        self.Apply(self.newer, base_atk=5, base_sch=5)
+
+        self.rhino.ResetKeywords()
+
+        self.Remove(self.newer, base_atk=5, base_sch=5)
+
+        self.assertEqual(self.rhino.attack, 2)
+        self.assertEqual(self.rhino.base_attack, 2)
+        self.assertEqual(self.rhino.scheme, 1)
+        self.assertEqual(self.rhino.base_scheme, 1)
+
+    def test_resetting_hit_points_forgets_every_live_grant(self):
+        # The health half of the same guard. `ResetHealth` rebuilds the whole
+        # hit-point line from printed, so a grant surviving it would be handed
+        # back Rhino's hit points on the next removal -- visibly, since base
+        # health moves current health.
+        self.Apply(self.older, base_health=10)
+        self.Apply(self.newer, base_health=6)
+
+        self.rhino.ResetHealth(self.puzzle.debug_rule)
+        self.assertEqual(self.rhino.health, 14)
+
+        self.Remove(self.newer, base_health=6)
+
+        self.assertEqual(self.rhino.health, 14)
+        self.assertEqual(self.rhino.max_health, 14)
+        self.assertEqual(self.rhino.base_health, 14)
+
+    def test_flipping_forgets_every_live_grant(self):
+        # `CanHealth.OnFlip` is the third direct assignment of
+        # `base_health = printed_health`, and the one `ResetHealth` does not go
+        # through. Driven at the attribute hook, which is what a flip calls.
+        self.Apply(self.older, base_health=10)
+        self.Apply(self.newer, base_health=6)
+
+        self.rhino.OnFlip(self.puzzle.debug_rule, None)
+        self.assertEqual(self.rhino.base_health, 14)
+
+        self.Remove(self.newer, base_health=6)
+
+        self.assertEqual(self.rhino.base_health, 14)
+
+
+class TestTwoCopiesOfUltronDronesOnOneDrone(unittest.TestCase):
+    """The shipped pair, on the card the grant was written for.
+
+    `26031` is not a second script -- `data/cards.json` carries it as
+    `{"card_id": "26031", "full_link": "01140"}`, the same Ultron Drones -- so
+    two copies in play are two live sources of the same base line on every Drone
+    Minion. A drone prints nothing, so its whole stat line comes from them.
+
+    Removing one used to put the drone back on its printed 0 hit points and kill
+    it while the other copy was still in play. Whichever copy leaves first, the
+    drone has to walk away at 1 hit point and only die when the last one goes.
+    """
+
+    REPRINT = "26031"
+
+    def setUp(self):
+        self.world = NewWorld()
+        self.puzzle = RunPuzzle(self.world)
+        self.puzzle.CreatePlayerDeck(AUNT_MAY)
+        self.puzzle.PutIntoPlay(ULTRON_DRONES)
+        self.puzzle.PutIntoPlay(self.REPRINT)
+        self.puzzle.Reveal(ANDROID_EFFICIENCY)
+        self.assertIsNotNone(self.FindDrone(), "no drone was made; the rest is vacuous")
+
+    def FindDrone(self):
+        for card in self.world.object_manager.card_dict.values():
+            if card.face.paper.card_id == DRONE:
+                return card
+        return None
+
+    def AssertADroneAtOneHitPoint(self):
+        drone = self.FindDrone()
+        self.assertIsNotNone(drone, "the drone was defeated by a grant it still has")
+        self.assertEqual(drone.face.health, 1)
+        self.assertEqual(drone.face.max_health, 1)
+        self.assertEqual(drone.face.base_health, 1)
+        self.assertEqual(drone.face.base_attack, 1)
+        self.assertEqual(drone.face.base_scheme, 1)
+
+    def test_both_copies_in_play_grant_one_stat_line(self):
+        self.AssertADroneAtOneHitPoint()
+
+    def test_the_drone_survives_losing_the_first_copy(self):
+        self.puzzle.Remove(ULTRON_DRONES)
+
+        self.AssertADroneAtOneHitPoint()
+
+    def test_the_drone_survives_losing_the_second_copy(self):
+        self.puzzle.Remove(self.REPRINT)
+
+        self.AssertADroneAtOneHitPoint()
+
+    def test_the_drone_dies_when_the_last_copy_goes_first_order(self):
+        self.puzzle.Remove(ULTRON_DRONES)
+        self.puzzle.Remove(self.REPRINT)
+
+        self.assertIsNone(self.FindDrone())
+
+    def test_the_drone_dies_when_the_last_copy_goes_other_order(self):
+        self.puzzle.Remove(self.REPRINT)
+        self.puzzle.Remove(ULTRON_DRONES)
+
+        self.assertIsNone(self.FindDrone())
+
+    def test_the_surviving_drone_is_still_a_minion_on_the_board(self):
+        self.puzzle.Remove(ULTRON_DRONES)
+
+        self.assertEqual(self.FindDrone().area.deck_type.name, "EngagedEnemiesArea")
+
+
 if __name__ == "__main__":
     unittest.main()

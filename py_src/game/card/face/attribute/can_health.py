@@ -24,6 +24,11 @@ class HasHealth(HasAttribute, CanAttacked):
         self.considered_at_least_hp_dict: Dict['Effect', int] = {}
 
         self.base_health = 0
+        # Every live "has a base hit points of N" grant on this face, oldest
+        # first, one entry per granting `Effect`. `base_health` is the last
+        # entry's value, or `printed_health` when there is none. See
+        # `PushBaseHealth`.
+        self.base_health_grants: List[Tuple['Effect', int]] = []
         # self.health_max = 0
 
         super().__init__(paper)
@@ -102,6 +107,12 @@ class CanHealth(HasHealth):
     def OnFlip(self, by_effect: 'Effect', origin_face: 'CardFace|None'):
         from game.effect.rule import ResetKeyword
         from game.card.face.base import Unit2
+        # The record of who granted a base goes the same way as
+        # `considered_at_least_hp_dict` right beside it, and for the same reason:
+        # this face is being put back on its printed line wholesale, so a grant
+        # left on the stack would be a value to fall back to that no longer
+        # corresponds to anything. See MARVEL-111.
+        self.base_health_grants = []
         self.base_health = self.printed_health
         self.considered_at_least_hp_dict = {}
         # self.health_max = self.base_health
@@ -123,6 +134,9 @@ class CanHealth(HasHealth):
         from game.card.face.base import Unit2
         from game.operate.worlds import Worlds
 
+        # As in `OnFlip`: the hit-point line is being rebuilt from printed, so
+        # the live base grants go with it. See MARVEL-111.
+        self.base_health_grants = []
         self.base_health = self.printed_health
         self.components.health.SetMaxHealth(self.base_health)
         self.considered_at_least_hp_dict = {}
@@ -476,6 +490,48 @@ class CanHealth(HasHealth):
         else:
             self.GainOnlyHealth(value, by_effect)
             self.GainOnlyMaxHealth(value, by_effect)
+
+    @final
+    def PushBaseHealth(self, value: int, by_effect: 'Effect') -> None:
+        """Add `by_effect`'s base hit-point grant. The newest live grant is the base.
+
+        Two sources can grant a base statistic to one character at once, and the
+        one applied last is the one that counts -- but the earlier one is still
+        active underneath, so when the newest ends the character falls back to it
+        rather than to its printed line. That needs the whole ordered set kept,
+        not just the value currently showing. See MARVEL-111.
+
+        Hit points are the statistic where the ordering is visible rather than
+        bookkeeping: `SetBaseHealth` moves current health along with max, so
+        falling back to the wrong value is a character taking or losing damage,
+        and falling back to a printed 0 is a character dying.
+
+        A source that grants again while already on the stack moves to the top,
+        because that is a fresh application.
+        """
+        self.base_health_grants = [
+            grant for grant in self.base_health_grants if grant[0] is not by_effect]
+        self.base_health_grants.append((by_effect, value))
+        self.SetBaseHealth(value, by_effect)
+
+    @final
+    def PopBaseHealth(self, by_effect: 'Effect') -> None:
+        """Drop `by_effect`'s grant -- *its own* entry, not the newest one.
+
+        The out-of-order case is the whole point, and on hit points it is fatal:
+        a Drone Minion holding grants from two copies of Ultron Drones (`01140`,
+        reprinted as `26031`) prints 0 hit points, so putting it back on its
+        printed line while the second grant is still live kills it. Dropping the
+        top entry instead of this effect's own would do exactly that whenever the
+        older of the two ends first.
+        """
+        self.base_health_grants = [
+            grant for grant in self.base_health_grants if grant[0] is not by_effect]
+        if self.base_health_grants:
+            value = self.base_health_grants[-1][1]
+        else:
+            value = self.printed_health
+        self.SetBaseHealth(value, by_effect)
 
     @final
     def SetBaseHealth(self, value: int, by_effect: 'Effect') -> None:

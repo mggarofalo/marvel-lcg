@@ -19,6 +19,10 @@ class HasScheme(HasAttribute):
     def __init__(self, paper: 'Paper') -> None:
         self.base_scheme = 0
         self.printed_scheme = 0
+        # Every live "has a base SCH of N" grant on this face, oldest first, one
+        # entry per granting `Effect`. `base_scheme` is the last entry's value,
+        # or `printed_scheme` when there is none. See `PushBaseScheme`.
+        self.base_scheme_grants: List[Tuple['Effect', int]] = []
 
         super().__init__(paper)
 
@@ -27,9 +31,48 @@ class HasScheme(HasAttribute):
 
     @override
     def OnResetKeywords(self, by_effect: 'Effect'):
+        # `ResetKeywords` throws away every keyword contribution from every
+        # source, so the record of who granted a base has to go with them --
+        # otherwise a grant that no longer contributes anything would still be
+        # picked as the value to fall back to. See MARVEL-111.
+        self.base_scheme_grants = []
         self.base_scheme = self.printed_scheme
         self.GainScheme(self.base_scheme, by_effect)
         return super().OnResetKeywords(by_effect)
+
+    @final
+    def PushBaseScheme(self, value: int, by_effect: 'Effect') -> None:
+        """Add `by_effect`'s base-SCH grant. The newest live grant is the base.
+
+        Two sources can grant a base statistic to one character at once, and the
+        one applied last is the one that counts -- but the earlier one is still
+        active underneath, so when the newest ends the character falls back to it
+        rather than to its printed line. That needs the whole ordered set kept,
+        not just the value currently showing. See MARVEL-111.
+
+        A source that grants again while already on the stack moves to the top,
+        because that is a fresh application.
+        """
+        self.base_scheme_grants = [
+            grant for grant in self.base_scheme_grants if grant[0] is not by_effect]
+        self.base_scheme_grants.append((by_effect, value))
+        self.SetBaseScheme(value, by_effect)
+
+    @final
+    def PopBaseScheme(self, by_effect: 'Effect') -> None:
+        """Drop `by_effect`'s grant -- *its own* entry, not the newest one.
+
+        The out-of-order case is the whole point: the first of two grants ending
+        must leave the second one showing, and dropping the top entry instead
+        would put the character back on the printed line with a grant still live.
+        """
+        self.base_scheme_grants = [
+            grant for grant in self.base_scheme_grants if grant[0] is not by_effect]
+        if self.base_scheme_grants:
+            value = self.base_scheme_grants[-1][1]
+        else:
+            value = self.printed_scheme
+        self.SetBaseScheme(value, by_effect)
 
     @final
     def SetBaseScheme(self, value: int, by_effect: 'Effect'):

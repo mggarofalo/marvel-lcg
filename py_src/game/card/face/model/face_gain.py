@@ -328,8 +328,9 @@ class ModelGain(ModelBase):
         # "has a base SCH of 1, a base ATK of 1, and a base hit points of 1".
         # So `diff` selects a direction here, it does not scale the value: on
         # application the base becomes what the card states, and on removal it
-        # goes back to the printed statistic, which is the same value
-        # `OnResetKeywords` and `ResetHealth` restore it to.
+        # goes back to whatever grant is still live underneath, or to the printed
+        # statistic when none is -- the same value `OnResetKeywords` and
+        # `ResetHealth` restore it to.
         #
         # Multiplying by `diff` was both halves wrong. It read a granted base as
         # an increment on application -- correct only because the one shipped
@@ -362,25 +363,42 @@ class ModelGain(ModelBase):
         # `unit_test/test_base_stat_grant.py` pins the no-op so that collapsing
         # them back fails a test rather than waiting for the first card that
         # combines `base_*` with `trait=`.
+        #
+        # Grants layer. Two sources can grant a base line to one character --
+        # two copies of Ultron Drones on one Drone Minion is the shipped case --
+        # and setting the base on application while restoring *printed* on
+        # removal makes the first source to end wipe the second's grant. The
+        # drone then reverts to a printed 0 hit points and dies to a teardown
+        # that should have left it standing.
+        #
+        # So the base is not one stored value but the top of an ordered stack of
+        # live grants: `PushBaseX` adds this source's, `PopBaseX` drops *this
+        # source's own* entry rather than the newest one, and the base becomes
+        # whatever grant is left underneath, or the printed statistic when none
+        # is. `effect` is the identity that makes that work, and it is free:
+        # `WhenFaceApplyThisInternal.when_this_in_play` binds one `Effect` per
+        # granting card and hands the same object to both
+        # `apply_environment_internal` and `unapply_environment_internal`, so two
+        # copies of one card are two distinct sources here. See MARVEL-111.
         if base_sch != None and HasScheme.IsType(unit):
             if diff > 0:
-                unit.SetBaseScheme(base_sch, effect)
+                unit.PushBaseScheme(base_sch, effect)
             elif diff < 0:
-                unit.SetBaseScheme(unit.printed_scheme, effect)
+                unit.PopBaseScheme(effect)
             return_val += base_sch
 
         if base_atk != None and HasAttack.IsType(unit):
             if diff > 0:
-                unit.SetBaseAttack(base_atk, effect)
+                unit.PushBaseAttack(base_atk, effect)
             elif diff < 0:
-                unit.SetBaseAttack(unit.printed_attack, effect)
+                unit.PopBaseAttack(effect)
             return_val += base_atk
 
         if base_health != None and CanHealth.IsType(unit):
             if diff > 0:
-                unit.SetBaseHealth(base_health, effect)
+                unit.PushBaseHealth(base_health, effect)
             elif diff < 0:
-                unit.SetBaseHealth(unit.printed_health, effect)
+                unit.PopBaseHealth(effect)
             return_val += base_health
 
         return return_val * diff
