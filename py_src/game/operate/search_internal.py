@@ -3,6 +3,19 @@ from . import *
 @final
 class SearchInternal:
 
+    # The label the opt-in half of a `may` search is offered under.
+    #
+    # A `may` search is two decisions printed as one sentence -- "do you want to
+    # search?" and "which card?" -- and the first one has to be a named option or
+    # no player, human or bot, can answer it. Without a name `Effect.Render`
+    # falls back to the *binding* effect's display name, so the opt-in reads as
+    # "When_Defeated" and is indistinguishable from the trigger that caused it.
+    #
+    # It is deliberately card-independent: every card that reaches here prints
+    # "may search their deck ... ", so one word covers all of them, and a spec
+    # transcript that answers it stays readable.
+    MAY_SEARCH_PROMPT = "Search"
+
     @staticmethod
     def SearchForCardsInternal(by_effect: 'Effect',
                                 player: 'Player',
@@ -50,12 +63,30 @@ class SearchInternal:
 
         return_face: List[Any] = []
 
-        if may:
-            # Hack
-            assert isinstance(range, Tuple)
-            x = range[1]
-            assert not isinstance(x, str)
-            range = (0, x)
+        # `may` used to widen the range to (0, max) here. That is the wrong
+        # shape for an opt-in and it made every "may search" card a no-op:
+        #
+        #   * The minimum became 0, and picking the minimum is what every
+        #     automated player does -- `BotCommand.Build` takes
+        #     `all_legal_targets[:target_num_range[0]]`, which is the same
+        #     minimum `PlayerAction` assigns to a forced effect. So the search
+        #     always came back empty.
+        #   * The decision still went out `forced=True`, so the client showed no
+        #     cancel button and the one option it did show carried no name. The
+        #     opt-in was not expressible: there was no "no" to choose and no "yes"
+        #     to read.
+        #
+        # "May" is a choice between two abilities, not a target count. Below,
+        # the range is left alone -- a search that happens finds a card -- and
+        # declining is offered as its own option by `MayChooseOneAbility`, via
+        # `AskChooseSelect(forced=False)`. That is the shape 51026 Build Support
+        # already spelled out by hand, and MARVEL-106 established it as the one
+        # that works.
+        #
+        # A consequence worth stating: with the range back at (1, max), a search
+        # that can find nothing has no legal targets, `Selector.GetTargetRange`
+        # returns None, and the effect is filtered out before the prompt. The
+        # player is asked only when there is something to say yes to.
 
         # We use this to do shuffle
         selector = Select.From(faces=select_face,
@@ -73,6 +104,13 @@ class SearchInternal:
                 # selector.peek = True
                 selector.IfSelectTargetFailure(by_effect)
                 faces = []
+        elif may:
+            faces = player.AskChooseSelect(
+                selector,
+                by_effect,
+                prompt=SearchInternal.MAY_SEARCH_PROMPT,
+                forced=False,
+            )
         else:
             faces = player.AskChooseSelect(selector, by_effect)
 
