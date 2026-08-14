@@ -344,6 +344,40 @@ class TestGherkinParsing(unittest.TestCase):
         self.assertEqual(cases[0].tags, ("card:01084", "self-test"))
         self.assertEqual(cases[0].card_tags, ("01084",))
 
+    def test_tags_accumulate_across_lines(self):
+        """One scenario, one `@card:` per line -- both ids must survive.
+
+        This is how every file in `specs/cards/reprints/` credits a reprint
+        pair, because a scenario about one printing is the same claim about the
+        other. The parser used to assign per tag line rather than accumulate, so
+        the *first* id of each pair was dropped and the card read as uncovered
+        while its own spec sat in the tree -- the coverage number moving in the
+        one direction it must never move on its own.
+        """
+        cases = ParseFeature(Feature("""
+  @card:05014
+  @card:38015
+  Scenario: one
+    Then "Rhino" has 14 health
+"""))
+        self.assertEqual(cases[0].card_tags, ("05014", "38015"))
+
+    def test_tags_do_not_leak_into_the_next_scenario(self):
+        # The other half of accumulating: the buffer has to be emptied when a
+        # scenario consumes it, or every later scenario in the file inherits
+        # every tag above it and coverage over-counts instead.
+        cases = ParseFeature(Feature("""
+  @card:05014
+  Scenario: one
+    Then "Rhino" has 14 health
+
+  @card:38015
+  Scenario: two
+    Then "Rhino" has 14 health
+"""))
+        self.assertEqual(cases[0].card_tags, ("05014",))
+        self.assertEqual(cases[1].card_tags, ("38015",))
+
     def test_a_scenario_that_asserts_nothing_is_rejected(self):
         with self.assertRaises(GherkinError):
             ParseFeature(Feature("""

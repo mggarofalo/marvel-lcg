@@ -483,7 +483,14 @@ def ParseFeature(text: str, *, path: str = "") -> List[SpecCase]:
             continue
 
         if line.startswith("@"):
-            pending_tags = [tag.lstrip("@") for tag in line.split()]
+            # Accumulate. Gherkin lets one scenario carry its tags over several
+            # lines, and every file in `specs/cards/reprints/` uses that shape to
+            # credit both ids of a pair -- one `@card:` per line. An assignment
+            # here keeps only the last line, so the first id of each pair
+            # silently lost every scenario written for it, and the card read as
+            # uncovered while its own spec sat in the tree: the coverage number
+            # moving in the one direction it must never move on its own.
+            pending_tags += [tag.lstrip("@") for tag in line.split()]
             continue
 
         keyword = KEYWORD.match(line)
