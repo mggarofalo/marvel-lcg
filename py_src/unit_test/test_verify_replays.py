@@ -473,21 +473,102 @@ class TestTheEngineKnowsWhenItIsVerifying(unittest.TestCase):
         self.assertFalse(self.IsVerifying(folders=["", ""]))
 
 
-class TestFolderResolution(unittest.TestCase):
+class TestATreeExpandsToTheFoldersThatHoldScenes(TempFolderTestCase):
+    """A corpus is a tree: one folder per case, so that concurrent workers never
+    share one. Verifying it has to mean verifying the tree."""
 
-    def test_an_explicit_folder_wins(self):
-        self.assertEqual(ReplayVerifier.ResolveFolders(["./corpus/"]), ["./corpus/"])
+    def Sub(self, *parts):
+        path = os.path.join(self.folder, *parts)
+        os.makedirs(path, exist_ok=True)
+        return path
 
-    def test_no_folder_falls_back_to_the_configured_replay_folders(self):
+    def test_a_flat_folder_expands_to_itself(self):
+        WriteJson(self.folder, "[0.5.9.205]-a.json", SCENE)
+
+        self.assertEqual(ReplayVerifier.ExpandTree([self.folder]), [self.folder])
+
+    def test_a_case_folder_comes_back_and_its_parent_does_not(self):
+        # The parent is an intermediate directory: it holds cases, not scenes,
+        # and naming it in the report would say a folder was verified that has
+        # nothing in it to verify.
+        first = self.Sub("case-0001")
+        second = self.Sub("case-0002")
+        WriteJson(first, "[0.5.9.205]-a.json", SCENE)
+        WriteJson(second, "[0.5.9.205]-a.json", SCENE)
+
+        self.assertEqual(ReplayVerifier.ExpandTree([self.folder]), [first, second])
+
+    def test_a_folder_that_is_not_there_survives_so_it_can_be_named(self):
+        # Dropping it would leave `Enumerate` with nothing to warn about.
+        absent = os.path.join(self.folder, "absent")
+
+        self.assertEqual(ReplayVerifier.ExpandTree([absent]), [absent])
+
+    def test_an_empty_folder_survives_exactly_as_a_missing_one_does(self):
+        # MARVEL-110. These two used to disagree: a folder that was not there
+        # was kept and an existing folder with no JSON in it was dropped, so
+        # `./replays/` resolved to nothing on any machine that had run the bot
+        # and then cleaned up the scenes.
+        absent = os.path.join(self.folder, "absent")
+
+        self.assertEqual(ReplayVerifier.ExpandTree([absent]), [absent])
+        self.assertEqual(ReplayVerifier.ExpandTree([self.folder]), [self.folder])
+
+    def test_a_subtree_with_no_scenes_anywhere_under_it_survives(self):
+        # Still nothing to drop in favour of, so the named folder is what the
+        # report has to talk about.
+        self.Sub("case-0001")
+
+        self.assertEqual(ReplayVerifier.ExpandTree([self.folder]), [self.folder])
+
+    def test_a_folder_is_reported_once_however_it_was_reached(self):
+        WriteJson(self.folder, "[0.5.9.205]-a.json", SCENE)
+
+        self.assertEqual(ReplayVerifier.ExpandTree([self.folder, self.folder]),
+                         [self.folder])
+
+
+class TestFolderResolution(TempFolderTestCase):
+    """What a folder resolves to must not depend on the machine it resolves on.
+
+    These tests named `./replays/` directly and so were coupled to whether that
+    folder happened to exist. It is gitignored -- absent in a fresh checkout,
+    present and usually empty on any machine that has run the bot -- so the
+    suite was green in CI and red locally for a reason that had nothing to do
+    with the code under test. They name temporary folders now, and pin the
+    empty and missing states side by side rather than inheriting one of them
+    from the environment. MARVEL-110.
+    """
+
+    def Fallback(self, configured):
         from game.test.test import REPLAY_FOLDERS
 
-        with mock.patch.object(REPLAY_FOLDERS, "value", ["./replays/"]):
+        with mock.patch.object(REPLAY_FOLDERS, "value", list(configured)):
             with mock.patch.object(REPLAY_FOLDERS, "set_from", "LaunchJson"):
-                self.assertEqual(ReplayVerifier.ResolveFolders([]), ["./replays/"])
+                return ReplayVerifier.ResolveFolders([])
+
+    def test_an_explicit_folder_wins(self):
+        WriteJson(self.folder, "[0.5.9.205]-a.json", SCENE)
+
+        self.assertEqual(ReplayVerifier.ResolveFolders([self.folder]), [self.folder])
+
+    def test_no_folder_falls_back_to_the_configured_replay_folders(self):
+        WriteJson(self.folder, "[0.5.9.205]-a.json", SCENE)
+
+        self.assertEqual(self.Fallback([self.folder]), [self.folder])
+
+    def test_the_fallback_holds_when_the_configured_folder_is_empty(self):
+        # The state a machine is left in by a bot run followed by a cleanup.
+        self.assertEqual(self.Fallback([self.folder]), [self.folder])
+
+    def test_the_fallback_holds_when_the_configured_folder_is_not_there(self):
+        # The state of a fresh checkout, where `replays/` is gitignored.
+        absent = os.path.join(self.folder, "absent")
+
+        self.assertEqual(self.Fallback([absent]), [absent])
 
     def test_blank_entries_are_not_folders(self):
-        with mock.patch.object(ReplayVerifier, "ResolveFolders", ReplayVerifier.ResolveFolders):
-            self.assertNotIn("", ReplayVerifier.ResolveFolders(["", "./corpus/"]))
+        self.assertNotIn("", ReplayVerifier.ResolveFolders(["", self.folder]))
 
 
 class TestTheRunRefusesTheWrongDevice(unittest.TestCase):
