@@ -12,13 +12,19 @@
 # repair, and the two scenarios below are the evidence. Phase Strike (32038)
 # prints the same clause over the same helper and is the same story.
 #
-# What it does share with the search cards is the *labelling* half of the bug.
-# `DiscardHeroActionAttachment` builds its ability with an empty name, and
+# What it did share with the search cards is the *labelling* half of the bug.
+# `DiscardHeroActionAttachment` built its ability with an empty name, and
 # `Effect.Render` falls back to the binding effect's display name when a
-# `ForChoiceAbility` has none -- so the opt-in is offered as **"Play"**, the name
-# of the event being played, rather than as anything about discarding an
-# attachment. That is what the prompt table records. It is answerable, unlike
-# the search cards before MARVEL-112, but it does not say what it does.
+# `ForChoiceAbility` has none -- so the opt-in was offered as **"Play"**, the
+# name of the event being played, rather than as anything about discarding an
+# attachment. It was answerable, unlike the search cards before MARVEL-112, but
+# it did not say what it did.
+#
+# This scenario was written recording that wrong label rather than papering over
+# it, so that fixing the engine would fail it on purpose. MARVEL-116 is that fix:
+# the ability now carries `Players.DISCARD_ATTACHMENT_PROMPT`, the same shape as
+# `SearchInternal.MAY_SEARCH_PROMPT`, and the prompt table below is what the
+# label change is pinned by.
 #
 # ---------------------------------------------------------------------------
 # Board notes.
@@ -45,10 +51,10 @@ Feature: Electromagnetic Blast
     When I play "Electromagnetic Blast"
     Then the main scheme has 0 threat
     And I am prompted to choose one
-      | Play   |
-      | Cancel |
+      | Discard an attachment |
+      | Cancel                |
 
-    When I choose "Play"
+    When I choose "Discard an attachment"
     Then "Enhanced Ivory Horn" is not in play
     And I am not prompted again
 
