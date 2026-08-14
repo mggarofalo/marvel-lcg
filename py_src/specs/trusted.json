@@ -17,24 +17,28 @@
       "sha256": "2550db8e85a383623b30008e903308dbd65ff85b29d31af15f0769251a221f49",
       "source": "specs/cards/core/01155-affairs-of-state.feature"
     },
+    "Android Efficiency :: a cost this player cannot pay is not offered, and the other branch just happens": {
+      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
+      "source": "specs/cards/core/01144-android-efficiency.feature"
+    },
     "Android Efficiency :: as a boost card it offers the printed [energy] cost, and paying it makes no drone": {
-      "sha256": "f03ff40a114cc40b3dd1055f28b2c1c76986694f7187c47a7e7abe7489bd3c1b",
+      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the [mental] face offers the same choice, and the drone branch costs no card": {
-      "sha256": "f03ff40a114cc40b3dd1055f28b2c1c76986694f7187c47a7e7abe7489bd3c1b",
+      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the [physical] face charges a physical resource for the same boost": {
-      "sha256": "f03ff40a114cc40b3dd1055f28b2c1c76986694f7187c47a7e7abe7489bd3c1b",
+      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the reveal resolves for every player, off each player's own deck": {
-      "sha256": "f03ff40a114cc40b3dd1055f28b2c1c76986694f7187c47a7e7abe7489bd3c1b",
+      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Android Efficiency :: the reveal takes the top card of the deck and nothing under it": {
-      "sha256": "f03ff40a114cc40b3dd1055f28b2c1c76986694f7187c47a7e7abe7489bd3c1b",
+      "sha256": "7f524e06b4c49e7e4de69a93023c563fd8c791fed864c94087131f3eb6e4a79e",
       "source": "specs/cards/core/01144-android-efficiency.feature"
     },
     "Assault on NORAD :: step one placing threat on a different main scheme offers nothing": {
@@ -116,6 +120,34 @@
     "Business Problems :: flipping first is what makes the exhaust option available": {
       "sha256": "efcbc4958d55606ff5a1a80f328b472abbc9105bd33a68532de9e4ec86066fa3",
       "source": "specs/cards/core/01170-business-problems.feature"
+    },
+    "Call for Backup :: 40018 leaves the deck alone when the search is declined": {
+      "sha256": "a35c1b097adc3005bec54370f9e549221aacd34d17205b96090f6f78425afd68",
+      "source": "specs/cards/search/40018-59022-call-for-backup.feature"
+    },
+    "Call for Backup :: 40018 offers the search and puts the ally into play": {
+      "sha256": "a35c1b097adc3005bec54370f9e549221aacd34d17205b96090f6f78425afd68",
+      "source": "specs/cards/search/40018-59022-call-for-backup.feature"
+    },
+    "Call for Backup :: 59022 leaves the deck alone when the search is declined": {
+      "sha256": "a35c1b097adc3005bec54370f9e549221aacd34d17205b96090f6f78425afd68",
+      "source": "specs/cards/search/40018-59022-call-for-backup.feature"
+    },
+    "Call for Backup :: 59022 offers the search and puts the ally into play": {
+      "sha256": "a35c1b097adc3005bec54370f9e549221aacd34d17205b96090f6f78425afd68",
+      "source": "specs/cards/search/40018-59022-call-for-backup.feature"
+    },
+    "Call for Backup :: nobody is asked when there is no ally to find": {
+      "sha256": "a35c1b097adc3005bec54370f9e549221aacd34d17205b96090f6f78425afd68",
+      "source": "specs/cards/search/40018-59022-call-for-backup.feature"
+    },
+    "Call for Backup :: the search offers every ally and nothing else": {
+      "sha256": "a35c1b097adc3005bec54370f9e549221aacd34d17205b96090f6f78425afd68",
+      "source": "specs/cards/search/40018-59022-call-for-backup.feature"
+    },
+    "Call for Backup :: the search reaches the discard pile as well as the deck": {
+      "sha256": "a35c1b097adc3005bec54370f9e549221aacd34d17205b96090f6f78425afd68",
+      "source": "specs/cards/search/40018-59022-call-for-backup.feature"
     },
     "Caught Off Guard :: a single eligible card is discarded and the card does not surge": {
       "sha256": "a1aa5152be3461382f6b1d48994d7f0ba15de27fee59c7bc68f2ea27834b381d",
@@ -265,6 +297,14 @@
       "sha256": "d629f42f2b135fdca0e99fec722cd47426773d09ae0c6248925c9804e520535a",
       "source": "specs/cards/core/01173-electric-whip-attack.feature"
     },
+    "Electromagnetic Blast :: removing the last threat offers the attachment discard": {
+      "sha256": "2b74ab64bcf4537f7437087d3fd2ac7377aeef6680515d5018653383fc052086",
+      "source": "specs/cards/search/49008-electromagnetic-blast.feature"
+    },
+    "Electromagnetic Blast :: the attachment survives when the discard is declined": {
+      "sha256": "2b74ab64bcf4537f7437087d3fd2ac7377aeef6680515d5018653383fc052086",
+      "source": "specs/cards/search/49008-electromagnetic-blast.feature"
+    },
     "Ever Vigilant :: 17030 readies the exhausted hero and removes 2 threat": {
       "sha256": "5626592d10a56c11030c272e85500ac194147eaeeca14580b42906c765bdd079",
       "source": "specs/cards/reprints/17030-42015-ever-vigilant.feature"
@@ -312,6 +352,22 @@
     "Family Emergency :: the other bullet stuns the identity and discards the obligation instead": {
       "sha256": "beac2545faa44950186dc68dfa25ad41fecd115d29a1509a1cca4bead7f15af7",
       "source": "specs/cards/core/01175-family-emergency.feature"
+    },
+    "Generation X :: a basic event is not identity-specific": {
+      "sha256": "fac5d4b4e618a9843d5c100bb08295b9feb5b5db6646d146ceb8f5ad59206867",
+      "source": "specs/cards/search/47016-generation-x.feature"
+    },
+    "Generation X :: nobody is asked when there is no identity-specific event to find": {
+      "sha256": "fac5d4b4e618a9843d5c100bb08295b9feb5b5db6646d146ceb8f5ad59206867",
+      "source": "specs/cards/search/47016-generation-x.feature"
+    },
+    "Generation X :: the deck is left alone when the search is declined": {
+      "sha256": "fac5d4b4e618a9843d5c100bb08295b9feb5b5db6646d146ceb8f5ad59206867",
+      "source": "specs/cards/search/47016-generation-x.feature"
+    },
+    "Generation X :: the search adds the identity-specific event to hand": {
+      "sha256": "fac5d4b4e618a9843d5c100bb08295b9feb5b5db6646d146ceb8f5ad59206867",
+      "source": "specs/cards/search/47016-generation-x.feature"
     },
     "Hulk :: a mental top card discards Hulk": {
       "sha256": "0493dc81f54736427695c3cc52b88ee3be732ef0d88dac1080d38fa25ffe3755",
@@ -364,6 +420,22 @@
     "Hydra Mercenary :: two copies are told apart by the order the scenario created them": {
       "sha256": "b08f81ed57c08f62321735d08be4dc324ba2fbca2e3faa1a4af50ef4f9637f22",
       "source": "specs/cards/core/01101-hydra-mercenary.feature"
+    },
+    "Keep Up the Pressure :: nobody is asked when there is no attack event to find": {
+      "sha256": "6eac20198fd0208d2905928c69d84ebb30dd61cad23081a4fc722e5c24fe7820",
+      "source": "specs/cards/search/46018-keep-up-the-pressure.feature"
+    },
+    "Keep Up the Pressure :: only attack events are offered": {
+      "sha256": "6eac20198fd0208d2905928c69d84ebb30dd61cad23081a4fc722e5c24fe7820",
+      "source": "specs/cards/search/46018-keep-up-the-pressure.feature"
+    },
+    "Keep Up the Pressure :: the deck is left alone when the search is declined": {
+      "sha256": "6eac20198fd0208d2905928c69d84ebb30dd61cad23081a4fc722e5c24fe7820",
+      "source": "specs/cards/search/46018-keep-up-the-pressure.feature"
+    },
+    "Keep Up the Pressure :: the search adds the attack event to hand": {
+      "sha256": "6eac20198fd0208d2905928c69d84ebb30dd61cad23081a4fc722e5c24fe7820",
+      "source": "specs/cards/search/46018-keep-up-the-pressure.feature"
     },
     "Keywords :: a card without surge reveals nothing more": {
       "sha256": "75b1914a7adfbc881b28b17702c20f4d4c79a985f8f42cb65ff5e2dfff9f4429",
@@ -428,6 +500,22 @@
     "Legal Work :: the acceleration bullet discards the obligation instead of removing it": {
       "sha256": "0b1b6dfc3a6fd4f78b6539e439cc4e93a6788196d3cdabed2feb17e533581529",
       "source": "specs/cards/core/01160-legal-work.feature"
+    },
+    "Lock and Load :: nobody is asked when there is no weapon upgrade to find": {
+      "sha256": "ccde4e10e9502b0fd030dd21293f9ac4f377c9f45a0a2df70fef9c7b9f91882e",
+      "source": "specs/cards/search/40019-lock-and-load.feature"
+    },
+    "Lock and Load :: only weapon upgrades are offered": {
+      "sha256": "ccde4e10e9502b0fd030dd21293f9ac4f377c9f45a0a2df70fef9c7b9f91882e",
+      "source": "specs/cards/search/40019-lock-and-load.feature"
+    },
+    "Lock and Load :: the deck is left alone when the search is declined": {
+      "sha256": "ccde4e10e9502b0fd030dd21293f9ac4f377c9f45a0a2df70fef9c7b9f91882e",
+      "source": "specs/cards/search/40019-lock-and-load.feature"
+    },
+    "Lock and Load :: the search puts the weapon upgrade into play": {
+      "sha256": "ccde4e10e9502b0fd030dd21293f9ac4f377c9f45a0a2df70fef9c7b9f91882e",
+      "source": "specs/cards/search/40019-lock-and-load.feature"
     },
     "Nick Fury :: damage is dealt to the chosen enemy, not the first one": {
       "sha256": "585ed44c484cf9b167cfd8648423f3ef4773992fab21db7c103e6158357764e8",
@@ -514,23 +602,31 @@
       "source": "specs/cards/core/01102-sandman.feature"
     },
     "Sonic Boom :: an activation that deals no damage does not exhaust the hero": {
-      "sha256": "61c0abea956ab9019c93687d898c53c0537f267ea27c1093133f66ba6026957a",
+      "sha256": "10f7d61be48508037a9b8b12109b6e510cf7224dd707d20026373395ca2b08cc",
+      "source": "specs/cards/core/01123-sonic-boom.feature"
+    },
+    "Sonic Boom :: an unpayable spend is not offered": {
+      "sha256": "10f7d61be48508037a9b8b12109b6e510cf7224dd707d20026373395ca2b08cc",
       "source": "specs/cards/core/01123-sonic-boom.feature"
     },
     "Sonic Boom :: as a boost card it exhausts the hero the activation damaged": {
-      "sha256": "61c0abea956ab9019c93687d898c53c0537f267ea27c1093133f66ba6026957a",
+      "sha256": "10f7d61be48508037a9b8b12109b6e510cf7224dd707d20026373395ca2b08cc",
       "source": "specs/cards/core/01123-sonic-boom.feature"
     },
     "Sonic Boom :: damage taken by a defending ally is not damage to you": {
-      "sha256": "61c0abea956ab9019c93687d898c53c0537f267ea27c1093133f66ba6026957a",
+      "sha256": "10f7d61be48508037a9b8b12109b6e510cf7224dd707d20026373395ca2b08cc",
+      "source": "specs/cards/core/01123-sonic-boom.feature"
+    },
+    "Sonic Boom :: neither option fulfillable spends as much as it can": {
+      "sha256": "10f7d61be48508037a9b8b12109b6e510cf7224dd707d20026373395ca2b08cc",
       "source": "specs/cards/core/01123-sonic-boom.feature"
     },
     "Sonic Boom :: paying the three resources leaves every character ready": {
-      "sha256": "61c0abea956ab9019c93687d898c53c0537f267ea27c1093133f66ba6026957a",
+      "sha256": "10f7d61be48508037a9b8b12109b6e510cf7224dd707d20026373395ca2b08cc",
       "source": "specs/cards/core/01123-sonic-boom.feature"
     },
     "Sonic Boom :: the exhaust branch exhausts the ally as well as the hero": {
-      "sha256": "61c0abea956ab9019c93687d898c53c0537f267ea27c1093133f66ba6026957a",
+      "sha256": "10f7d61be48508037a9b8b12109b6e510cf7224dd707d20026373395ca2b08cc",
       "source": "specs/cards/core/01123-sonic-boom.feature"
     },
     "Status cards :: a confused hero can still attack": {
@@ -560,6 +656,22 @@
     "Status cards :: an unstunned hero can attack": {
       "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
       "source": "specs/rules/status.feature"
+    },
+    "Superpower Training :: a basic upgrade is not identity-specific": {
+      "sha256": "4af390eabae9519638540b95990ca6f2f2613de8cd68b7d72b0fb91d9e556717",
+      "source": "specs/cards/search/40059-superpower-training.feature"
+    },
+    "Superpower Training :: nobody is asked when there is no identity-specific upgrade to find": {
+      "sha256": "4af390eabae9519638540b95990ca6f2f2613de8cd68b7d72b0fb91d9e556717",
+      "source": "specs/cards/search/40059-superpower-training.feature"
+    },
+    "Superpower Training :: the deck is left alone when the search is declined": {
+      "sha256": "4af390eabae9519638540b95990ca6f2f2613de8cd68b7d72b0fb91d9e556717",
+      "source": "specs/cards/search/40059-superpower-training.feature"
+    },
+    "Superpower Training :: the search puts the identity-specific upgrade into play": {
+      "sha256": "4af390eabae9519638540b95990ca6f2f2613de8cd68b7d72b0fb91d9e556717",
+      "source": "specs/cards/search/40059-superpower-training.feature"
     },
     "Swinging Web Kick :: it deals 8 damage to the chosen enemy": {
       "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
