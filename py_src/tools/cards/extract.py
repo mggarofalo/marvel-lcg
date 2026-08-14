@@ -83,6 +83,7 @@ def _ScriptRecord(facts: scripts_module.ScriptFacts) -> Dict[str, Any]:
         "lines": facts.lines,
         "has_imperative_handler": facts.has_imperative_handler,
         "player_choice_calls": facts.player_choice_calls,
+        "player_choice_helpers": facts.player_choice_helpers,
         "ability_factories": facts.ability_factories,
     }
 
@@ -399,6 +400,41 @@ def _Summary(
                     1 for r in records
                     if r["engine"] and r["engine"]["script"]
                     and r["engine"]["script"]["player_choice_calls"]
+                ),
+            },
+            "suspends_through_a_helper": {
+                "rule": (
+                    "Card scripts calling a game/operate/ helper which, with "
+                    "the arguments passed at that call site, reaches a prompt "
+                    "on every path through it (MARVEL-114). "
+                    "cards_that_name_no_prompt_themselves is the subset whose "
+                    "only question is asked inside the helper -- the population "
+                    "the depth tier was getting wrong. Deliberately an "
+                    "under-approximation: helpers "
+                    "whose prompt depends on board state -- Faces.DiscardAll "
+                    "under simultaneous=True, Worlds.FindMainScheme when more "
+                    "than one main scheme is in play -- are not counted, "
+                    "because a false 'this card asks' is as wrong in this "
+                    "dataset as a false 'it does not'. The rule is in "
+                    "tools/cards/helper_prompts.py."
+                ),
+                "helpers": sorted({
+                    helper for f in index.facts.values()
+                    for helper in f.player_choice_helpers
+                }),
+                "scripts": sum(
+                    1 for f in index.facts.values() if f.player_choice_helpers
+                ),
+                "cards": sum(
+                    1 for r in records
+                    if r["engine"] and r["engine"]["script"]
+                    and r["engine"]["script"]["player_choice_helpers"]
+                ),
+                "cards_that_name_no_prompt_themselves": sum(
+                    1 for r in records
+                    if r["engine"] and r["engine"]["script"]
+                    and r["engine"]["script"]["player_choice_helpers"]
+                    and not r["engine"]["script"]["player_choice_calls"]
                 ),
             },
         },

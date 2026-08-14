@@ -11,6 +11,7 @@ No engine bootstrap: `tools/cards/` is stdlib-only, so this runs anywhere.
     python -m unittest unit_test.test_card_dataset
 """
 
+import ast
 import dataclasses
 import json
 import tempfile
@@ -18,7 +19,8 @@ import unittest
 from pathlib import Path
 
 from tools.cards import (
-    anomalies, deckbuilding, engine, extract, marvelsdb, scripts)
+    anomalies, deckbuilding, engine, extract, helper_prompts, marvelsdb,
+    scripts)
 from tools.cards.text import IsCorrupt, ToPlainText
 
 REPO = Path(".")
@@ -62,10 +64,20 @@ class PlayerAsk:
 '''
 
 
-def MakeScriptTree(root: Path, files: dict) -> None:
+def MakeScriptTree(root: Path, files: dict, operate: dict | None = None) -> None:
+    """A tree shaped like the two engine sources the script index reads.
+
+    `operate` is the helper layer (`game/operate/`). It is written even when
+    empty, because `HelperPrompts` refuses a missing one rather than quietly
+    crediting nothing -- which is the failure mode MARVEL-114 was.
+    """
     ask = root / scripts.PLAYER_ASK_SOURCE
     ask.parent.mkdir(parents=True, exist_ok=True)
     ask.write_text(FAKE_PLAYER_ASK, encoding="utf-8")
+    helpers = root / helper_prompts.OPERATE_ROOT
+    helpers.mkdir(parents=True, exist_ok=True)
+    for name, body in (operate or {}).items():
+        (helpers / name).write_text(body, encoding="utf-8")
     for relative, body in files.items():
         path = root / scripts.PACK_ROOT / relative
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -245,11 +257,11 @@ class TestCleanName(unittest.TestCase):
 
 class TestScriptAnalysis(unittest.TestCase):
 
-    def Index(self, files):
+    def Index(self, files, operate=None):
         self._tmp = tempfile.TemporaryDirectory()
         root = Path(self._tmp.name)
         self.addCleanup(self._tmp.cleanup)
-        MakeScriptTree(root, files)
+        MakeScriptTree(root, files, operate)
         return scripts.Index(root)
 
     def test_declarative_script_has_no_imperative_handler(self):
@@ -346,6 +358,453 @@ class TestScriptAnalysis(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(FileNotFoundError):
                 scripts.Index(Path(tmp))
+
+
+# --------------------------------------------------------------------------
+# Prompts a card reaches through a helper (MARVEL-114)
+# --------------------------------------------------------------------------
+
+# Every `game/operate/` prompt site the analysis does **not** credit, with the
+# reason it cannot be. This is the guard, and it is deliberately shaped like
+# `REVIEWED_ABSORBERS` in `test_integrity_errors.py`: the population is derived
+# from the source, the exemptions are written down, and the two are compared.
+#
+# It is not a list of card ids. Pinning today's fourteen cards would pass
+# forever while the next helper went uncounted -- that is a snapshot, not an
+# invariant. What has to hold is that **every prompt site in the helper layer
+# has been looked at**: a new one either prompts unconditionally, in which case
+# the analysis credits it with no edit anywhere and it never appears here, or it
+# is guarded, in which case it lands in this set and somebody has to say why.
+# The comparison is an equality, so it also fails in the other direction -- an
+# analysis that stopped crediting `Search.Collection` would drop it in here, and
+# one that started crediting everything would empty the set.
+REVIEWED_GUARDED_PROMPTS = {
+    ("Enemies", "DoActivateAgainstYouInternal"):
+        "asks the first player for an order only when more than one enemy "
+        "activates at once -- board state",
+    ("Faces", "DiscardAll"):
+        "prompts only under `simultaneous=True`, and no call site in "
+        "cards/pack/ passes it: 244 of 244 leave it at the default",
+    ("Filter", "One"):
+        "asks only to break a tie between equally extreme cards -- board state",
+    ("Players", "DiscardResourceIconFromHand"):
+        "two guarded returns above the prompt, on how many matching resource "
+        "icons the hand holds -- board state. Note the prompt itself sits "
+        "under no `if` at all, so a guard rule that reads only enclosing tests "
+        "calls this one unconditional and is wrong",
+    ("SearchInternal", "SearchForCardsInternal"):
+        "skips the prompt when every legal card is interchangeable "
+        "(`skip_choose`) -- board state. Credited when `may=True`, which "
+        "excludes that branch, and that is how `Search.PlayerCard` earns its "
+        "credit",
+    ("SetupCards", "AttachTo"):
+        "prompts only under `choose='Ask'`; the one call site that passes "
+        "`choose` at all passes `'Random'`",
+    ("Worlds", "FindMainScheme"):
+        "asks only when the board holds more than one main scheme -- board "
+        "state",
+}
+
+
+def _QualifiedPairsInCardScripts(root: Path) -> set:
+    """`Class.Method` pairs card scripts call, across the whole pack tree."""
+    pairs = set()
+    for path in sorted((root / scripts.PACK_ROOT).rglob("*.py")):
+        if path.name == "__init__.py":
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name)):
+                pairs.add((node.func.value.id, node.func.attr))
+    return pairs
+
+
+def _GameMethods(root: Path) -> dict:
+    """`(Class, Method) -> [(definition, file)]` over the whole `game/` tree."""
+    found: dict = {}
+    for path in sorted((root / "game").rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            for member in node.body:
+                if isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    found.setdefault((node.name, member.name), []).append(
+                        (member, path.as_posix()))
+    return found
+
+
+class TestIndirectPlayerChoice(unittest.TestCase):
+    """A prompt a card reaches through a helper is still the card asking.
+
+    `player_choice_calls` reads the names a script writes down, so a card whose
+    only question is asked inside `game/operate/` recorded none and
+    `tools/spec/coverage.py` tiered it `imperative` -- "never suspends", which
+    was false for it. MARVEL-114.
+    """
+
+    PROMPTER = (
+        "class Utility:\n"
+        "    @staticmethod\n"
+        "    def Ask(player, effect):\n"
+        "        player.ChooseAbilities(effect)\n"
+    )
+
+    def Index(self, files, operate):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        MakeScriptTree(root, files, operate)
+        return scripts.Index(root)
+
+    def Facts(self, body, operate):
+        index = self.Index({"core/01001.py": body}, operate)
+        return index.facts["cards/pack/core/01001.py"]
+
+    def Card(self, call):
+        return ("def GetAbilities():\n"
+                "    def handler(effect, message):\n"
+                f"        {call}\n"
+                "    return []\n")
+
+    # -- the mechanism -----------------------------------------------------
+
+    def test_an_unconditional_helper_prompt_is_credited(self):
+        facts = self.Facts(self.Card("Utility.Ask(player, effect)"),
+                           {"utility.py": self.PROMPTER})
+        self.assertEqual(facts.player_choice_helpers, ["Utility.Ask"])
+        self.assertTrue(facts.AsksThePlayer())
+
+    def test_the_direct_field_is_left_alone(self):
+        # Additive, not merged. The two carry different evidence and a reader
+        # of the dataset has to be able to tell which is which.
+        facts = self.Facts(self.Card("Utility.Ask(player, effect)"),
+                           {"utility.py": self.PROMPTER})
+        self.assertEqual(facts.player_choice_calls, [])
+
+    def test_a_helper_behind_an_undecidable_guard_is_not_credited(self):
+        operate = {"utility.py": (
+            "class Utility:\n"
+            "    @staticmethod\n"
+            "    def Ask(player, effect, faces):\n"
+            "        if len(faces) > 1:\n"
+            "            player.ChooseAbilities(effect)\n"
+        )}
+        facts = self.Facts(self.Card("Utility.Ask(player, effect, faces)"), operate)
+        self.assertEqual(facts.player_choice_helpers, [])
+
+    def test_both_arms_prompting_means_the_helper_always_prompts(self):
+        # `Players.DiscardHeroActionAttachment` in miniature: the guard is
+        # undecidable but complementary, so every path asks anyway.
+        operate = {"utility.py": (
+            "class Utility:\n"
+            "    @staticmethod\n"
+            "    def Ask(player, effect, may):\n"
+            "        if may:\n"
+            "            player.MayChooseOneAbility(effect)\n"
+            "        else:\n"
+            "            player.ChooseAbilities(effect)\n"
+        )}
+        facts = self.Facts(self.Card("Utility.Ask(player, effect, may)"), operate)
+        self.assertEqual(facts.player_choice_helpers, ["Utility.Ask"])
+
+    def test_a_guarded_return_above_the_prompt_blocks_the_credit(self):
+        # `Players.DiscardResourceIconFromHand`. The prompt is under no `if` at
+        # all; what stops it is an early return. A guard rule reading only
+        # enclosing tests calls this unconditional and credits every caller.
+        operate = {"utility.py": (
+            "class Utility:\n"
+            "    @staticmethod\n"
+            "    def Ask(player, effect):\n"
+            "        if player.hand == []:\n"
+            "            return\n"
+            "        player.ChooseAbilities(effect)\n"
+        )}
+        facts = self.Facts(self.Card("Utility.Ask(player, effect)"), operate)
+        self.assertEqual(facts.player_choice_helpers, [])
+
+    def test_a_break_is_not_a_function_exit(self):
+        # A loop that breaks above the prompt still reaches the prompt. Reading
+        # `break` as an exit hides every search helper behind its scan loop.
+        operate = {"utility.py": (
+            "class Utility:\n"
+            "    @staticmethod\n"
+            "    def Ask(player, effect):\n"
+            "        for face in player.hand:\n"
+            "            if face.ready:\n"
+            "                break\n"
+            "        player.ChooseAbilities(effect)\n"
+        )}
+        facts = self.Facts(self.Card("Utility.Ask(player, effect)"), operate)
+        self.assertEqual(facts.player_choice_helpers, ["Utility.Ask"])
+
+    def test_a_prompt_inside_a_callback_is_not_performed_by_the_helper(self):
+        operate = {"utility.py": (
+            "class Utility:\n"
+            "    @staticmethod\n"
+            "    def Ask(player, effect):\n"
+            "        def later(targets):\n"
+            "            player.ChooseAbilities(effect)\n"
+            "        effect.Register(later)\n"
+        )}
+        facts = self.Facts(self.Card("Utility.Ask(player, effect)"), operate)
+        self.assertEqual(facts.player_choice_helpers, [])
+
+    # -- parameter propagation --------------------------------------------
+
+    FORWARDING = {"search.py": (
+        "class Search:\n"
+        "    @staticmethod\n"
+        "    def PlayerCard(effect, player, *, may=False):\n"
+        "        return Search.SearchForCard(effect, player, may=may)\n"
+        "    @staticmethod\n"
+        "    def SearchForCard(effect, player, *, may=False):\n"
+        "        return Inner.Run(effect, player, may=may)\n"
+    ), "inner.py": (
+        "class Inner:\n"
+        "    @staticmethod\n"
+        "    def Run(effect, player, *, may=False):\n"
+        "        if skip_choose and not may:\n"
+        "            faces = []\n"
+        "        else:\n"
+        "            faces = player.AskChooseFace(effect)\n"
+        "        return faces\n"
+    )}
+
+    def test_a_literal_propagates_along_a_forwarding_chain(self):
+        facts = self.Facts(
+            self.Card("Search.PlayerCard(effect, player, may=True)"),
+            self.FORWARDING)
+        self.assertEqual(facts.player_choice_helpers, ["Search.PlayerCard"])
+
+    def test_the_same_helper_at_its_default_is_not_credited(self):
+        facts = self.Facts(self.Card("Search.PlayerCard(effect, player)"),
+                           self.FORWARDING)
+        self.assertEqual(facts.player_choice_helpers, [])
+
+    def test_an_unreadable_argument_is_unknown_and_not_credited(self):
+        # `may=self.wants` is not a literal and not a bound parameter. The
+        # binding is dropped rather than falling back to the default, because
+        # evaluating a guard against a value the caller never passed is how a
+        # sound analysis turns into a confident wrong one.
+        facts = self.Facts(
+            self.Card("Search.PlayerCard(effect, player, may=effect.wants)"),
+            self.FORWARDING)
+        self.assertEqual(facts.player_choice_helpers, [])
+
+    def test_a_renamed_forward_stops_the_propagation(self):
+        operate = {"search.py": (
+            "class Search:\n"
+            "    @staticmethod\n"
+            "    def PlayerCard(effect, player, *, may=False):\n"
+            "        return Search.SearchForCard(effect, player, optional=may)\n"
+            "    @staticmethod\n"
+            "    def SearchForCard(effect, player, *, unrelated=False):\n"
+            "        if unrelated:\n"
+            "            player.AskChooseFace(effect)\n"
+        )}
+        facts = self.Facts(
+            self.Card("Search.PlayerCard(effect, player, may=True)"), operate)
+        self.assertEqual(facts.player_choice_helpers, [])
+
+    def test_a_string_literal_selects_the_prompting_branch(self):
+        # `SetupCards.AttachTo(choose="Ask")`. Nothing in cards/pack/ does this
+        # today, which is why the real helper is not credited -- but the rule
+        # is about the argument, not about who happens to pass it.
+        operate = {"setup_cards.py": (
+            "class SetupCards:\n"
+            "    @staticmethod\n"
+            "    def AttachTo(effect, choose='First'):\n"
+            "        if choose == 'Random':\n"
+            "            face = Rand.Pick(effect)\n"
+            "        elif choose == 'Ask':\n"
+            "            face = player.AskChooseFace(effect)\n"
+            "        else:\n"
+            "            face = None\n"
+            "        return face\n"
+        )}
+        self.assertEqual(
+            self.Facts(self.Card("SetupCards.AttachTo(effect, choose='Ask')"),
+                       operate).player_choice_helpers,
+            ["SetupCards.AttachTo"])
+        self.assertEqual(
+            self.Facts(self.Card("SetupCards.AttachTo(effect, choose='Random')"),
+                       operate).player_choice_helpers,
+            [])
+        self.assertEqual(
+            self.Facts(self.Card("SetupCards.AttachTo(effect, choose=mode)"),
+                       operate).player_choice_helpers,
+            [])
+
+    def test_a_guard_shape_the_evaluator_does_not_model_is_undecidable(self):
+        """Anything unrecognised has to read as "cannot say", never as "yes".
+
+        Both fallbacks in `Truth` are covered here, and neither is reached by
+        any guard in `game/operate/` today -- which is the point. They are what
+        the analysis lands on the first time somebody writes a guard in a shape
+        it has not seen, and the whole design depends on that landing being a
+        refusal to credit rather than a credit.
+        """
+        # An ordering comparison: both operands are known, and the evaluator
+        # still declines. Deciding it would mean modelling the arithmetic.
+        ordering = {"utility.py": (
+            "class Utility:\n"
+            "    @staticmethod\n"
+            "    def Ask(player, effect, size=1):\n"
+            "        if size > 0:\n"
+            "            player.ChooseAbilities(effect)\n"
+        )}
+        self.assertEqual(
+            self.Facts(self.Card("Utility.Ask(player, effect, size=3)"),
+                       ordering).player_choice_helpers,
+            [])
+        # An attribute read: not a literal, not a bound parameter, no value.
+        attribute = {"utility.py": (
+            "class Utility:\n"
+            "    @staticmethod\n"
+            "    def Ask(player, effect):\n"
+            "        if effect.world.expert:\n"
+            "            player.ChooseAbilities(effect)\n"
+        )}
+        self.assertEqual(
+            self.Facts(self.Card("Utility.Ask(player, effect)"),
+                       attribute).player_choice_helpers,
+            [])
+
+    def test_prompt_sites_ignores_a_handler_defined_at_the_top_of_a_method(self):
+        """The oracle behind the guard has to skip callbacks too.
+
+        `PromptSites` is what `TestHelperPromptScope` compares its reviewed list
+        against, so a version of it that counts a prompt inside a registered
+        handler would report sites the analysis never has to explain -- and the
+        guard would then be arguing about the wrong population. The skip has to
+        be tested on the statement itself, not only on its children: a `def` at
+        the top of a method body has no enclosing statement to be skipped by.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            MakeScriptTree(root, {}, {"utility.py": (
+                "class Utility:\n"
+                "    @staticmethod\n"
+                "    def Register(player, effect):\n"
+                "        def later(targets):\n"
+                "            player.ChooseAbilities(effect)\n"
+                "        effect.Register(later)\n"
+                "    @staticmethod\n"
+                "    def Ask(player, effect):\n"
+                "        player.ChooseAbilities(effect)\n"
+            )})
+            helpers = helper_prompts.HelperPrompts(
+                root, scripts.PlayerChoiceApi(root))
+            self.assertEqual(sorted(helpers.PromptSites()),
+                             [("Utility", "Ask")])
+
+    def test_a_missing_helper_layer_fails_loudly(self):
+        # The same rule as the missing `PlayerAsk`: a layer that moved must not
+        # come back as "nothing reaches a prompt".
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(FileNotFoundError):
+                helper_prompts.HelperPrompts(Path(tmp), {"ChooseAbilities"})
+
+
+class TestHelperPromptScope(unittest.TestCase):
+    """The guard: no prompt site in the helper layer goes unclassified.
+
+    Runs against the real repository, because the thing being guarded is the
+    real helper layer. Both tests fail on the *addition of a helper*, not on a
+    change to any card -- which is the event that has to be caught, since a card
+    quietly tiering `imperative` looks exactly like a card that never asks.
+    """
+
+    def setUp(self):
+        self.api = set(scripts.PlayerChoiceApi(REPO))
+        self.helpers = helper_prompts.HelperPrompts(REPO, self.api)
+
+    def test_every_prompt_site_is_credited_or_reviewed(self):
+        sites = self.helpers.PromptSites()
+        self.assertTrue(sites, "no prompt site found in game/operate/ at all")
+        guarded = {
+            key for key in sites
+            if not self.helpers.AlwaysPrompts(key, self.helpers.DefaultEnv(key))
+        }
+        self.assertEqual(
+            guarded, set(REVIEWED_GUARDED_PROMPTS),
+            "the set of guarded prompt sites in game/operate/ moved. A new "
+            "helper that always asks needs no entry -- the analysis credits it "
+            "on its own. One that asks conditionally needs an entry here "
+            "saying what the condition is, and a decision about whether card "
+            "scripts can pin it down. See MARVEL-114.")
+
+    def test_a_prompting_helper_cannot_hide_outside_the_analysed_scope(self):
+        """`game/operate/` is the scope; this checks it is still enough.
+
+        A prompt reached through a callback does not count -- the helper hands
+        the engine something to call later, exactly as a card script does when
+        it registers a handler, and the two `AbilityFactory` builders that do
+        this are ability declarations rather than operations.
+        """
+        methods = _GameMethods(REPO)
+        cache: dict = {}
+
+        def Immediate(function):
+            calls = []
+
+            def Walk(node):
+                for child in ast.iter_child_nodes(node):
+                    if isinstance(child, helper_prompts._DEFERRED):
+                        continue
+                    if isinstance(child, ast.Call):
+                        calls.append(child)
+                    Walk(child)
+
+            for statement in function.body:
+                if isinstance(statement, helper_prompts._DEFERRED):
+                    continue
+                Walk(statement)
+            return calls
+
+        def Reaches(key, stack=()):
+            if key in stack or len(stack) > 24 or key not in methods:
+                return False
+            if key in cache:
+                return cache[key]
+            cache[key] = False
+            for function, _ in methods[key]:
+                for call in Immediate(function):
+                    func = call.func
+                    if isinstance(func, ast.Attribute):
+                        inner = (func.value.id, func.attr) if isinstance(
+                            func.value, ast.Name) else None
+                        if inner in methods:
+                            if Reaches(inner, stack + (key,)):
+                                cache[key] = True
+                                return True
+                            continue
+                        if func.attr in self.api:
+                            cache[key] = True
+                            return True
+                    elif isinstance(func, ast.Name) and func.id in self.api:
+                        cache[key] = True
+                        return True
+            return cache[key]
+
+        reaching = {key for key in _QualifiedPairsInCardScripts(REPO)
+                    if key in methods and Reaches(key)}
+        self.assertTrue(reaching, "no card script reaches a prompt at all")
+        outside = sorted(
+            f"{key[0]}.{key[1]} ({', '.join(sorted(f for _, f in methods[key]))})"
+            for key in reaching
+            if not all(f.startswith(f"{helper_prompts.OPERATE_ROOT.as_posix()}/")
+                       for _, f in methods[key]))
+        self.assertEqual(
+            outside, [],
+            "a card script calls something outside game/operate/ that reaches "
+            "a prompt without going through a callback. tools/cards/"
+            "helper_prompts.py only analyses game/operate/, so this card is "
+            "recording no player choice. Either move the helper or widen the "
+            "scope -- do not delete this assertion.")
 
 
 class TestScriptResolution(unittest.TestCase):

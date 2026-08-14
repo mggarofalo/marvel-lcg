@@ -46,7 +46,8 @@ def MakeCard(card_id="01001", name="A card", pack="core", in_engine=True,
 def Script(**overrides):
     script = {"path": f"cards/pack/core/{overrides.pop('cid', '01001')}.py",
               "lines": 20, "has_imperative_handler": False,
-              "player_choice_calls": [], "ability_factories": []}
+              "player_choice_calls": [], "player_choice_helpers": [],
+              "ability_factories": []}
     script.update(overrides)
     return script
 
@@ -61,9 +62,26 @@ class TestTierRule(unittest.TestCase):
                                       player_choice_calls=["ChooseAbilities"]))
         self.assertEqual(Tier(card), "interactive")
 
+    def test_a_card_that_asks_only_through_a_helper_is_interactive(self):
+        # MARVEL-114. The script names no prompt of its own; the question is
+        # asked inside `game/operate/`, and the card suspends for it just the
+        # same. Reading only `player_choice_calls` filed fourteen of these
+        # under "a handler that does something, but never asks".
+        card = MakeCard(script=Script(
+            has_imperative_handler=True,
+            player_choice_helpers=["Search.Collection"]))
+        self.assertEqual(Tier(card), "interactive")
+
     def test_a_handler_that_never_asks_is_imperative(self):
         card = MakeCard(script=Script(has_imperative_handler=True))
         self.assertEqual(Tier(card), "imperative")
+
+    def test_a_declarative_script_that_reaches_a_prompt_is_still_interactive(self):
+        # No nested handler, so the shape rule alone would say `declarative`.
+        # The tier is about whether a scenario has a decision to transcribe.
+        card = MakeCard(script=Script(
+            player_choice_helpers=["Utility.PlaceThreatOnOneScheme"]))
+        self.assertEqual(Tier(card), "interactive")
 
     def test_a_script_with_no_handler_is_declarative(self):
         self.assertEqual(Tier(MakeCard(script=Script())), "declarative")

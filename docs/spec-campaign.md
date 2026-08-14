@@ -44,17 +44,36 @@ collapsed back to the bug.
 ## Depth per card
 
 Not a fixed quota. "Three scenarios per card" over-serves the 602 cards with no
-branch to take and under-serves the 479 that stop mid-resolution to ask a
+branch to take and under-serves the 493 that stop mid-resolution to ask a
 question. The tier is read from `engine.script` in `datasets/cards/cards.json`,
 built by `python -m tools.cards.extract`:
 
 | Tier | Cards | Plan | What it means |
 |---|---:|---:|---|
-| `interactive` | 479 | 4 | calls `PlayerAsk` / `ChooseAbilities` / `MayChooseOneAbility` / `AskSpendResources` — the card asks the player something |
-| `imperative` | 2,700 | 2 | a handler that does something, but never suspends |
+| `interactive` | 493 | 4 | calls `PlayerAsk` / `ChooseAbilities` / `MayChooseOneAbility` / `AskSpendResources`, or reaches one through a helper that cannot avoid asking — the card asks the player something |
+| `imperative` | 2,686 | 2 | a handler that does something, but never suspends |
 | `declarative` | 602 | 1 | declarative factory calls, no branch a scenario could take differently |
 | `stats_only` | 215 | 1 | no script; printed stats and keywords, implemented generically |
 | `absent` | 348 | 0 | the engine has no such card |
+
+**Fourteen of the `interactive` cards do not name a prompt anywhere in their
+script.** They call a `game/operate/` helper that does — `Search.Collection`,
+`Search.PlayerCard(may=True)`, `Players.DiscardHeroActionAttachment`,
+`Utility.PlaceThreatOnOneScheme`, `Utility.DealDamageToCharacterYouControl`.
+Thirteen of them sat in the `imperative` list, described as "a handler that does
+something, but never suspends", which was flatly false for them (MARVEL-114).
+`engine.script.player_choice_helpers` records which helper, and
+`--tier interactive` prints it as `via <helper>` so an author knows the question
+is not written in the card's own file.
+
+The detection is an **under-approximation on purpose**: a helper is credited
+only when it asks on every path given the arguments the call site passes.
+Another **512 cards** call a helper that may ask depending on board state —
+`Faces.DiscardAll` needs `simultaneous=True` and no card passes it,
+`Worlds.FindMainScheme` needs a second main scheme in play, `Filter.One` needs a
+tie to break. Those are not credited and still tier `imperative`. Crediting them
+would move a fifth of that tier on a maybe and leave `--tier interactive`
+useless as the work list it exists to be.
 
 **The plan column is a target, not a gate.** A card that needs four scenarios
 gets four whatever its tier says; the tier decides which cards are worth arguing
