@@ -74,35 +74,35 @@
       "source": "specs/rules/basic-actions.feature"
     },
     "Build Support :: 40027 finds the support in the discard pile as well as the deck": {
-      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "sha256": "837ba199031a3a5ae670a083f3597b76fbc0e1813175a89b133db66f2a765214",
       "source": "specs/cards/reprints/40027-51026-build-support.feature"
     },
     "Build Support :: 40027 leaves the deck alone when the search is declined": {
-      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "sha256": "837ba199031a3a5ae670a083f3597b76fbc0e1813175a89b133db66f2a765214",
       "source": "specs/cards/reprints/40027-51026-build-support.feature"
     },
     "Build Support :: 40027 searches the deck and puts the support into play": {
-      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "sha256": "837ba199031a3a5ae670a083f3597b76fbc0e1813175a89b133db66f2a765214",
       "source": "specs/cards/reprints/40027-51026-build-support.feature"
     },
     "Build Support :: 51026 finds the support in the discard pile as well as the deck": {
-      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "sha256": "837ba199031a3a5ae670a083f3597b76fbc0e1813175a89b133db66f2a765214",
       "source": "specs/cards/reprints/40027-51026-build-support.feature"
     },
     "Build Support :: 51026 leaves the deck alone when the search is declined": {
-      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "sha256": "837ba199031a3a5ae670a083f3597b76fbc0e1813175a89b133db66f2a765214",
       "source": "specs/cards/reprints/40027-51026-build-support.feature"
     },
     "Build Support :: 51026 searches the deck and puts the support into play": {
-      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "sha256": "837ba199031a3a5ae670a083f3597b76fbc0e1813175a89b133db66f2a765214",
       "source": "specs/cards/reprints/40027-51026-build-support.feature"
     },
     "Build Support :: a support costing 3 is inside the limit": {
-      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "sha256": "837ba199031a3a5ae670a083f3597b76fbc0e1813175a89b133db66f2a765214",
       "source": "specs/cards/reprints/40027-51026-build-support.feature"
     },
     "Build Support :: a support costing 4 is outside it": {
-      "sha256": "22bd2378f6b254bafa1b6f3348198c103996aa999868abc0387e9b7b6cfc078a",
+      "sha256": "837ba199031a3a5ae670a083f3597b76fbc0e1813175a89b133db66f2a765214",
       "source": "specs/cards/reprints/40027-51026-build-support.feature"
     },
     "Business Problems :: declining the flip takes the exhaust option off the table": {
@@ -298,11 +298,11 @@
       "source": "specs/cards/core/01173-electric-whip-attack.feature"
     },
     "Electromagnetic Blast :: removing the last threat offers the attachment discard": {
-      "sha256": "2b74ab64bcf4537f7437087d3fd2ac7377aeef6680515d5018653383fc052086",
+      "sha256": "528ba46399219e26873b4d77b95c592c4cccbf39268c798a88a4dc0ff13aa8b7",
       "source": "specs/cards/search/49008-electromagnetic-blast.feature"
     },
     "Electromagnetic Blast :: the attachment survives when the discard is declined": {
-      "sha256": "2b74ab64bcf4537f7437087d3fd2ac7377aeef6680515d5018653383fc052086",
+      "sha256": "528ba46399219e26873b4d77b95c592c4cccbf39268c798a88a4dc0ff13aa8b7",
       "source": "specs/cards/search/49008-electromagnetic-blast.feature"
     },
     "Ever Vigilant :: 17030 readies the exhausted hero and removes 2 threat": {
@@ -532,6 +532,26 @@
     "Nick Fury :: the option to remove threat is not offered when no scheme has any": {
       "sha256": "585ed44c484cf9b167cfd8648423f3ef4773992fab21db7c103e6158357764e8",
       "source": "specs/cards/core/01084-nick-fury.feature"
+    },
+    "Phase Disruption :: a lone attachment on the enemy is discarded without being asked about": {
+      "sha256": "f8b2c5be7cdd7622fc7a178ecab0f7a62f0e141e7594fad9d8796d9f838dfd59",
+      "source": "specs/cards/search/26011-phase-disruption.feature"
+    },
+    "Phase Disruption :: two attachments on the confused enemy make the discard a choice": {
+      "sha256": "f8b2c5be7cdd7622fc7a178ecab0f7a62f0e141e7594fad9d8796d9f838dfd59",
+      "source": "specs/cards/search/26011-phase-disruption.feature"
+    },
+    "Phase Strike :: phased Shadowcat is offered the attachment discard on the enemy hit": {
+      "sha256": "0b9ff493efd75939445cf99808aac4afdbaf61fb48b01f2f207a194c802eba91",
+      "source": "specs/cards/search/32038-phase-strike.feature"
+    },
+    "Phase Strike :: solid Shadowcat deals the damage and is offered nothing": {
+      "sha256": "0b9ff493efd75939445cf99808aac4afdbaf61fb48b01f2f207a194c802eba91",
+      "source": "specs/cards/search/32038-phase-strike.feature"
+    },
+    "Phase Strike :: the attachment survives when the discard is declined": {
+      "sha256": "0b9ff493efd75939445cf99808aac4afdbaf61fb48b01f2f207a194c802eba91",
+      "source": "specs/cards/search/32038-phase-strike.feature"
     },
     "Phase structure :: a game begins in the player phase of round 1": {
       "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
