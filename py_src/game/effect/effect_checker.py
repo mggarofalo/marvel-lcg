@@ -70,6 +70,13 @@ class EffectChecker:
                 if FacesCounter.GetDifferentTypesCount(all_legal_targets) < target_range[0]:
                     self.failures.Set(effect.initiator, EffectFailure.TypeCountNotEnough)
                     return False
+            if selector.selector_rule.select_rule == "DifferentCards":
+                # Same shape as `DifferentType` above, and the same reason: an
+                # effect that cannot reach its minimum is not offered. Two
+                # copies of one title count once (MARVEL-118).
+                if FacesCounter.GetDifferentCardsCount(all_legal_targets) < target_range[0]:
+                    self.failures.Set(effect.initiator, EffectFailure.CardCountNotEnough)
+                    return False
             if selector.selector_rule.select_rule == "MustIncludeTraits":
                 left_must_include_traits: List['CardFace.TRAITS'] = selector.selector_rule.target_must_include_traits[:]
                 for target in all_legal_targets:

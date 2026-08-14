@@ -18,6 +18,23 @@ class FacesCounter:
                 count += 1
         return count
 
+    # each different card *title*. "Cards with the same title are considered to
+    # be the same card for the purpose of card abilities" -- so two copies of
+    # one title count once, and this is deliberately not `len(set(faces))`.
+    # Matches `Cards.getCard(id).name` in `public/js/marvel/effect.ts`, which is
+    # `CardDescriptor.name`, which is `face.name`.
+    @staticmethod
+    def GetDifferentCardsCount(faces: Sequence['CardFace']) -> int:
+        names: Dict[str, int] = {}
+        count = 0
+        for face in faces:
+            if face.name in names:
+                pass
+            else:
+                names[face.name] = 1
+                count += 1
+        return count
+
     @staticmethod
     def GetAspectCount(faces: Sequence['CardFace']) -> int:
         from game.card.face.base import ClassCard

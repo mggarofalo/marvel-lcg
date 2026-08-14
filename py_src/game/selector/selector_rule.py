@@ -165,6 +165,18 @@ class SelectorRule:
                         return False
             pass
 
+        # "Choose up to 3 *different* cards". Two copies of one title are one
+        # card for the purpose of card abilities, so the second copy is not an
+        # available second choice. This is the engine-side counterpart of
+        # `check_select_rule` in `public/js/marvel/effect.ts`, which compares
+        # `Cards.getCard(id).name` -- the printed title, not the object -- and
+        # until MARVEL-118 was the only implementation anywhere, so a player who
+        # was not a browser could pick a pair the browser refused.
+        if self.select_rule == "DifferentCards":
+            if FacesCounter.GetDifferentCardsCount(targets) != len(targets):
+                effect.failures.Set(effect.initiator, EffectFailure.SameCardChosen)
+                return False
+
         if self.combined_resource_cost:
             cost = FacesCounter.GetPrintedCost(targets)
             if cost < self.combined_resource_cost[0]:

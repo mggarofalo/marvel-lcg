@@ -12,6 +12,8 @@ class EffectFailure(str, Enum):
     NoCostTarget            = "no cost target",
     HasCostButNoAskPlayer   = "has cost but no ask player",
     TypeCountNotEnough      = "type count not enough",
+    CardCountNotEnough      = "different card count not enough",
+    SameCardChosen          = "two cards with the same title chosen",
     CheckTarget             = "check target",
     CheckPay                = "check pay",
     CannotPay               = "cannot pay this cost",
