@@ -55,21 +55,21 @@
         "MayChooseOneText",
         "MayChoosePaper"
       ],
-      "scripts": 440,
-      "cards": 479
+      "scripts": 441,
+      "cards": 480
     }
   },
   "scripts": {
     "files": 3457,
     "claimed_by_a_card": 3453,
     "unclaimed": 4,
-    "total_lines": 98027,
+    "total_lines": 98054,
     "distinct_ability_factories": 303,
     "ability_factories": {
       "WhenThisRevealed": 683,
       "WhenInYourPlayTurn": 682,
       "WhenCardBecomeBoost": 337,
-      "ForChoiceAbility": 290,
+      "ForChoiceAbility": 291,
       "AttachToFaceWhenPutIntoPlay": 265,
       "GiveKeywordToAttached": 227,
       "WhenSchemeBeDefeated": 139,

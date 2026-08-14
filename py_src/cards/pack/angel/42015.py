@@ -16,7 +16,7 @@ def GetAbilities() -> Sequence['Ability']:
         AbilityFactory.WhenInYourPlayTurn(
             AbilityType.HeroAction,
             ever_vigilant
-        ).SetPlay(only_if_your_identity_has_trait="AERIAL").SetLabel()
+        ).SetPlay(only_if_your_identity_has_trait="AERIAL")
         .SetTarget("YourHero", canbe_ready=True)
         .SetTarget2(MainScheme)
     ]

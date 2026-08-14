@@ -8,17 +8,14 @@ def GetAbilities() -> Sequence['Ability']:
         this = effect.this.CastTo(Event)
         Unused(this)
 
-        initiator = effect.GetInitiator()
+        allies = effect.cost_func.Get(CostFunc.Exhaust).return_exhausted_cards
+        allies = Filter.ByType(allies, Ally)
 
-        ally = effect.cost_func.Get(CostFunc.Exhaust).return_exhausted_cards[0].CastTo(Ally)
-
-        hero = initiator.GetHero()
         if message.power == "ATK":
-            value = ally.attack
-            hero.GainForThisActive(effect, message.would_message, attack=value)
+            message.GainValue(sum(x.attack for x in allies), effect)
         if message.power == "THW":
-            value = ally.thwart
-            hero.GainForThisActive(effect, message.would_message, thwart=value)
+            message.GainValue(sum(x.thwart for x in allies), effect)
+
 
     return [
         AbilityFactory.WhenUnitUseBasicPower(

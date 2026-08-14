@@ -18,6 +18,14 @@ def GetAbilities() -> Sequence['Ability']:
             AbilityType.HeroAction,
             concussive_blow
         ).SetPlay().SetLabel('attack')
-        .SetTarget(Enemy, canbe_confused=True),
+        # No `canbe_confused=True`. The printed card has a second clause -- "deal
+        # 3 damage to that enemy" -- so a STALWART enemy, or one that is already
+        # confused, is still a target a player has reason to choose. Restricting
+        # the target to enemies that can take the status made the card
+        # unplayable against every STALWART villain. The engine reserves
+        # `canbe_confused=True` for a target whose *only* payoff is the status
+        # (01011 Spider-Woman, 37012 Dazzler, 42003 Adaptive Plumage's second
+        # target).
+        .SetTarget(Enemy),
     ]
 
