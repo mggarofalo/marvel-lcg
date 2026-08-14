@@ -337,21 +337,46 @@ class ModelGain(ModelBase):
         # zeroes -- and on removal it passed the *negated* value as a target, so
         # tearing down a grant of 1 moved the base by -2 and left it at -1. See
         # MARVEL-103.
-        if base_sch and HasScheme.IsType(unit):
+        #
+        # `!= None`, not truthiness, and for the same reason every other keyword
+        # above uses it: the grant *replaces* the printed line, so 0 is a value a
+        # card can state -- "has a base ATK of 0" is how you write a character
+        # that cannot attack -- and it has to be distinguishable from granting no
+        # base attack at all. Absence already means `None` at every layer that
+        # decides it: `AbilityFactory.GiveKeywordToInPlayWhenApplyThis` will not
+        # even build the ability unless one of the three is `!= None`, and the
+        # only card scripts that reach here, Ultron Drones (`01140`) and
+        # Controlled Innocents (`50032`), pass 1. See MARVEL-108.
+        #
+        # `diff` is a direction and the branches below are exhaustive on the two
+        # that exist. `diff == 0` is neither: it arrives from
+        # `environment_helper.gain_keyword` as `StoreValueDiff.diff`, the numeric
+        # part of a source's contribution, and that part is 0 when only the
+        # source's trait list changed --
+        # `WhenFaceApplyThisInternal.try_apply_environment` enters both the apply
+        # and the unapply path on `lst_add`/`lst_del` alone. A base statistic is
+        # not carried by that list, so nothing about it changed and nothing about
+        # it moves. That is a contract, not an accident of the branching: the
+        # single unconditional call these branches replaced reached
+        # `base_x * 0` and *set the base to 0*, destroying the statistic.
+        # `unit_test/test_base_stat_grant.py` pins the no-op so that collapsing
+        # them back fails a test rather than waiting for the first card that
+        # combines `base_*` with `trait=`.
+        if base_sch != None and HasScheme.IsType(unit):
             if diff > 0:
                 unit.SetBaseScheme(base_sch, effect)
             elif diff < 0:
                 unit.SetBaseScheme(unit.printed_scheme, effect)
             return_val += base_sch
 
-        if base_atk and HasAttack.IsType(unit):
+        if base_atk != None and HasAttack.IsType(unit):
             if diff > 0:
                 unit.SetBaseAttack(base_atk, effect)
             elif diff < 0:
                 unit.SetBaseAttack(unit.printed_attack, effect)
             return_val += base_atk
 
-        if base_health and CanHealth.IsType(unit):
+        if base_health != None and CanHealth.IsType(unit):
             if diff > 0:
                 unit.SetBaseHealth(base_health, effect)
             elif diff < 0:
