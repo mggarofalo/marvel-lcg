@@ -14,7 +14,7 @@ def GetAbilities() -> Sequence['Ability']:
 
     return [
         AbilityFactory.AfterPlayerResolveAbility(
-            AbilityType.Response,
+            AbilityType.HeroResponse,
             "You",
             Event,
             web_bracelet,

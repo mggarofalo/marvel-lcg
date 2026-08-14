@@ -326,14 +326,14 @@ class AbilityFactoryDefeated:
                 None,
                 action,
                 is_basic_attack=is_basic_attack,
-            )
+            ).SetSecondType(ability_type)
         else:
             return AbilityFactory.WhenFaceWouldDealDamage(
                 AbilityType.DelayAbility,
                 who_killer,
                 action,
                 include_overkill=True
-            )
+            ).SetSecondType(ability_type)
 
     @staticmethod
     def AfterUnitBeDefeatedInternal(ability_type: 'AbilityType',

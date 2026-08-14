@@ -28,7 +28,7 @@ from game.card.face.card_type import Minion
 # from game.card.face.card_type import Upgrade
 from game.card.face.card_type import Identity
 from game.card.face.card_type import Obligation
-# from game.ability.ability_type import AbilityType
+from game.ability.ability_type import AbilityType
 from game.player import Player
 
 @Tracker.count_calls
@@ -66,14 +66,24 @@ def Check(self: 'CardFinder', face: 'CardFace', effect: 'Effect|None'=None) -> b
     if self.with_texts != []:
         def check_text():
             assert self.with_texts != None
+            # A delay ability is a wrapper: it registers the ability the card
+            # actually prints only once the trigger window opens, and carries
+            # nothing but `DelayAbility` flags itself. `second_type` is where
+            # that wrapper records the type it stands for, so a card printing
+            # "Hero Response:" behind one is only visible through it -- see
+            # MARVEL-117, where four attachments were invisible to this filter.
             for text in self.with_texts:
                 if text == "Hero Action":
                     for ability in face.ability.abilities:
                         if ability.flags.is_hero_action:
                             return True
+                        if ability.second_type_internal == AbilityType.HeroAction:
+                            return True
                 if text == "Hero Response":
                     for ability in face.ability.abilities:
                         if ability.flags.is_hero_response:
+                            return True
+                        if ability.second_type_internal == AbilityType.HeroResponse:
                             return True
             return False
         if not check_text():

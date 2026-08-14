@@ -233,7 +233,7 @@ class AbilityFactoryScheme:
                 who_make_thwart,
                 action,
                 thwarted_scheme=which_scheme,
-            )
+            ).SetSecondType(ability_type)
         else:
             return AbilityFactory.AfterUnitDefeatSchemeInternal(
                 ability_type,

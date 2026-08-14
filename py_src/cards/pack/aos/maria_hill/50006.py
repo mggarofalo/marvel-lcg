@@ -14,7 +14,7 @@ def GetAbilities() -> Sequence['Ability']:
 
     return [
         AbilityFactory.WhenInYourPlayTurn(
-            AbilityType.Action,
+            AbilityType.HeroAction,
             the_hard_call
         ).SetPlay().SetLabel()
         .SetCostFunc(CostFunc.Discard(trait="S.H.I.E.L.D", card_type=Support, from_where=["YouControlCards"]))

@@ -616,7 +616,7 @@ class AbilityFactoryDoAttack:
                 attacker,
                 None,
                 action
-            )
+            ).SetSecondType(ability_type)
 
     @staticmethod
     def AfterUnitAttackEnd(ability_type: 'AbilityType',
