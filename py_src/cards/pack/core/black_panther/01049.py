@@ -15,7 +15,10 @@ def GetAbilities() -> Sequence['Ability']:
         damage = 1
         if effect.this == message.sequence[-1]:
             damage = 2
-        damage = min(hero.GetLostHealth(), damage)
+        # No clamp here: `MoveDamage` moves no more than the hero is carrying,
+        # and it reads `GetLostHealth()` on this same hero with nothing in
+        # between. A private copy of that rule made the engine's own clamp
+        # unobservable to this card's scenarios. See MARVEL-122.
         hero.MoveDamage(damage, target, effect)
 
     return [
