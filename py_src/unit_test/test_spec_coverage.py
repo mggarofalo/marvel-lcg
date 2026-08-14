@@ -233,3 +233,76 @@ class TestDepthIsReportedBesideCoverage(unittest.TestCase):
         self.assertEqual(data["totals"]["covered"], 1)
         self.assertEqual(data["totals"]["at_depth"], 0)
         self.assertEqual(data["by_tier"]["interactive"]["at_depth"], 0)
+
+
+class TestTheDepthGapIsListable(unittest.TestCase):
+    """The gap between `covered` and `at depth` had no names in it.
+
+    The tier table has printed both numbers since MARVEL-87 and `Uncovered`
+    lists the cards behind one of them. The cards behind the other -- looked at
+    once and reported done -- could only be counted, never read, so the one
+    thing the campaign most needed to act on was the one thing it could not
+    enumerate.
+    """
+
+    SCRIPTS = {"interactive": lambda: Script(player_choice_calls=["ChooseAbilities"]),
+               "imperative": lambda: Script(has_imperative_handler=True),
+               "declarative": Script}
+
+    def Coverage(self, counts, tier="interactive"):
+        """counts: {card_id: how many trusted scenarios tag it}."""
+        cards = [MakeCard(card_id=card_id, script=self.SCRIPTS[tier]())
+                 for card_id in counts]
+        tagged = {f"{card_id} case {n}": [card_id]
+                  for card_id, total in counts.items() for n in range(total)}
+        return Coverage(cards, tagged, trusted=list(tagged), quarantined=[])
+
+    def test_a_card_short_of_its_plan_is_listed(self):
+        rows = self.Coverage({"X1": 1}).Shallow()
+        self.assertEqual([r["card_id"] for r in rows], ["X1"])
+        self.assertEqual(rows[0]["scenarios"], 1)
+        self.assertEqual(rows[0]["planned"], 4)
+        self.assertEqual(rows[0]["short"], 3)
+
+    def test_a_card_at_depth_is_not_listed(self):
+        self.assertEqual(self.Coverage({"X1": 4}).Shallow(), [])
+
+    def test_an_uncovered_card_is_not_listed(self):
+        # It belongs to `Uncovered`. A card in both lists would be counted
+        # twice by anyone adding the two to size the campaign.
+        shallow = self.Coverage({"X1": 0}).Shallow()
+        self.assertEqual(shallow, [])
+
+    def test_the_two_lists_partition_the_specifiable_population(self):
+        coverage = self.Coverage({"X1": 0, "X2": 1, "X3": 4})
+        names = lambda rows: sorted(r["card_id"] for r in rows)
+        self.assertEqual(names(coverage.Uncovered()), ["X1"])
+        self.assertEqual(names(coverage.Shallow()), ["X2"])
+        # X3 is in neither, and that is the only card that should be.
+        self.assertEqual(len(coverage.Uncovered()) + len(coverage.Shallow()) + 1,
+                         len(coverage.Specifiable()))
+
+    def test_the_biggest_shortfall_leads(self):
+        rows = self.Coverage({"X1": 3, "X2": 1, "X3": 2}).Shallow()
+        self.assertEqual([r["card_id"] for r in rows], ["X2", "X3", "X1"])
+
+    def test_the_shortfall_is_measured_against_the_card_s_own_tier(self):
+        # An imperative card is planned for two, so one scenario leaves it one
+        # short -- not three. Reading the plan from a fixed number instead of
+        # from the card's tier passes every interactive case and is wrong
+        # everywhere else, which is exactly the shape that survives a test
+        # suite built out of one tier.
+        rows = self.Coverage({"X1": 1}, tier="imperative").Shallow()
+        self.assertEqual(rows[0]["planned"], 2)
+        self.assertEqual(rows[0]["short"], 1)
+
+    def test_a_one_scenario_tier_is_never_short(self):
+        # declarative plans for one, so its covered set and its at-depth set
+        # are the same set and nothing can sit between them.
+        self.assertEqual(self.Coverage({"X1": 1}, tier="declarative").Shallow(), [])
+
+    def test_the_listed_count_matches_the_gap_the_tier_table_prints(self):
+        coverage = self.Coverage({"X1": 0, "X2": 1, "X3": 4})
+        row = coverage.ToDict()["by_tier"]["interactive"]
+        self.assertEqual(len(coverage.Shallow()),
+                         row["covered"] - row["at_depth"])

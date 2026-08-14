@@ -264,6 +264,50 @@ class Coverage:
                                  r["card_id"]))
         return rows
 
+    def Shallow(self, tier: str = "", pack: str = "") -> List[Dict[str, Any]]:
+        """Covered cards short of their tier's plan, biggest shortfall first.
+
+        `Uncovered` answers "what has nobody looked at". This answers the other
+        half of the same question -- what got looked at once and reported as
+        done. The tier table has printed that gap as two numbers since
+        MARVEL-87, with no way to list what is in it, so the only thing anyone
+        could act on was the total.
+
+        That is the wrong way round for a delegated campaign. An uncovered card
+        announces itself; a card sitting at one scenario of four does not, and
+        it is the cheaper of the two to finish because whoever wrote the first
+        scenario already read the script.
+        """
+        rows: List[Dict[str, Any]] = []
+        for card_id in self.Specifiable():
+            if not self.Covered(card_id) or self.AtDepth(card_id):
+                continue
+            card = self.cards[card_id]
+            card_tier = self.tier[card_id]
+            if tier and card_tier != tier:
+                continue
+            if pack and str(card.get("pack") or "") != pack:
+                continue
+            script = (card.get("engine") or {}).get("script") or {}
+            have = len(self.trusted.get(card_id, ()))
+            planned = TIERS[card_tier][0]
+            rows.append({
+                "card_id": card_id,
+                "name": card.get("name") or "",
+                "type": card.get("type_name") or "",
+                "pack": card.get("pack") or "",
+                "tier": card_tier,
+                "lines": int(script.get("lines") or 0),
+                "asks": list(script.get("player_choice_calls") or ()),
+                "scenarios": have,
+                "planned": planned,
+                "short": planned - have,
+                "quarantined": len(self.quarantined.get(card_id, ())),
+            })
+        rows.sort(key=lambda r: (TIER_ORDER.index(r["tier"]), -r["short"],
+                                 r["card_id"]))
+        return rows
+
     def ToDict(self) -> Dict[str, Any]:
         specifiable = self.Specifiable()
         covered = [card_id for card_id in specifiable if self.Covered(card_id)]
@@ -303,7 +347,8 @@ def Percent(part: int, whole: int) -> str:
     return f"{100.0 * part / whole:.1f}%" if whole else "n/a"
 
 
-def Report(coverage: Coverage, tier: str, pack: str, top: int) -> None:
+def Report(coverage: Coverage, tier: str, pack: str, top: int,
+           shallow: bool = False) -> None:
     data = coverage.ToDict()
     totals = data["totals"]
 
@@ -339,12 +384,30 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int) -> None:
             print(f"  {case_id}: {', '.join(ids)}")
         print()
 
+    label = " ".join(x for x in (tier, pack) if x) or "all tiers"
+
+    if shallow:
+        rows = coverage.Shallow(tier=tier, pack=pack)
+        if not rows:
+            print("nothing covered matches that filter is short of its plan")
+            return
+        print(f"short of plan ({label}) -- {len(rows)} covered but not at depth,"
+              f"\nbiggest shortfall first:")
+        for row in rows[:top]:
+            asks = f"  asks: {', '.join(row['asks'])}" if row["asks"] else ""
+            flag = "  QUARANTINED" if row["quarantined"] else ""
+            print(f"  {row['card_id']:<8} {row['tier']:<12} "
+                  f"{row['scenarios']}/{row['planned']:<6} "
+                  f"{row['pack']:<10} {row['name'][:34]:<34}{asks}{flag}")
+        if len(rows) > top:
+            print(f"  ... {len(rows) - top} more")
+        return
+
     rows = coverage.Uncovered(tier=tier, pack=pack)
     if not rows:
         print("nothing uncovered matches that filter")
         return
 
-    label = " ".join(x for x in (tier, pack) if x) or "all tiers"
     print(f"next up ({label}) -- {len(rows)} uncovered, "
           f"largest script first:")
     for row in rows[:top]:
@@ -365,15 +428,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--pack", default="", help="only list this pack")
     parser.add_argument("--top", type=int, default=25,
                         help="how many uncovered cards to list (default 25)")
+    parser.add_argument("--shallow", action="store_true",
+                        help="list covered cards short of their tier's plan "
+                             "instead of uncovered ones")
     parser.add_argument("--out", default="", help="write the full report as JSON")
     args = parser.parse_args(argv)
 
     coverage = Build()
-    Report(coverage, tier=args.tier, pack=args.pack, top=args.top)
+    Report(coverage, tier=args.tier, pack=args.pack, top=args.top,
+           shallow=args.shallow)
 
     if args.out:
         payload = coverage.ToDict()
         payload["uncovered"] = coverage.Uncovered(tier=args.tier, pack=args.pack)
+        payload["shallow"] = coverage.Shallow(tier=args.tier, pack=args.pack)
         with open(args.out, "w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2, sort_keys=True)
             handle.write("\n")

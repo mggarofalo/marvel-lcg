@@ -11,6 +11,7 @@ how many to write, for which cards, and when to stop.
 cd py_src
 python -m tools.spec.coverage
 python -m tools.spec.coverage --tier interactive --pack core
+python -m tools.spec.coverage --shallow          # covered, but short of plan
 python -m tools.spec.coverage --out coverage.json
 ```
 
@@ -159,7 +160,10 @@ either direction. Mutation does.
   both. `covered` credits a card for one trusted scenario whatever its tier
   plans; the gap between the two columns is how much of the covered set is one
   scenario deep, which is exactly what mass delegation produces if nothing
-  watches for it.
+  watches for it. `--shallow` lists what is in that gap, biggest shortfall
+  first, the way the default listing does for uncovered cards. Finishing a card
+  from that list is cheaper than starting one, because whoever wrote its first
+  scenario already read the script — so clear it before opening a new shard.
 
 ## Triage is not optional
 
