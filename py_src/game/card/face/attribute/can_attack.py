@@ -38,6 +38,10 @@ class HasAttack(HasAttribute):
     @override
     def __init__(self, paper: 'Paper') -> None:
         self.base_attack = 0
+        # Every live "has a base ATK of N" grant on this face, oldest first, one
+        # entry per granting `Effect`. `base_attack` is the last entry's value,
+        # or `printed_attack` when there is none. See `PushBaseAttack`.
+        self.base_attack_grants: List[Tuple['Effect', int]] = []
 
         self.printed_attack = 0
         self.printed_attack_consequential_damage = 0
@@ -61,6 +65,11 @@ class HasAttack(HasAttribute):
 
     @override
     def OnResetKeywords(self, by_effect: 'Effect'):
+        # `ResetKeywords` throws away every keyword contribution from every
+        # source, so the record of who granted a base has to go with them --
+        # otherwise a grant that no longer contributes anything would still be
+        # picked as the value to fall back to. See MARVEL-111.
+        self.base_attack_grants = []
         self.base_attack = self.printed_attack
         self.GainAttack(self.base_attack, by_effect)
         return super().OnResetKeywords(by_effect)
@@ -68,6 +77,40 @@ class HasAttack(HasAttribute):
     @final
     def GainAttack(self, diff: int, by_effect: 'Effect', *, render_ui: bool=False) -> None:
         self.GainKeyword(diff, 'ATK', by_effect, render_ui=render_ui)
+
+    @final
+    def PushBaseAttack(self, value: int, by_effect: 'Effect') -> None:
+        """Add `by_effect`'s base-ATK grant. The newest live grant is the base.
+
+        Two sources can grant a base statistic to one character at once, and the
+        one applied last is the one that counts -- but the earlier one is still
+        active underneath, so when the newest ends the character falls back to it
+        rather than to its printed line. That needs the whole ordered set kept,
+        not just the value currently showing. See MARVEL-111.
+
+        A source that grants again while already on the stack moves to the top,
+        because that is a fresh application.
+        """
+        self.base_attack_grants = [
+            grant for grant in self.base_attack_grants if grant[0] is not by_effect]
+        self.base_attack_grants.append((by_effect, value))
+        self.SetBaseAttack(value, by_effect)
+
+    @final
+    def PopBaseAttack(self, by_effect: 'Effect') -> None:
+        """Drop `by_effect`'s grant -- *its own* entry, not the newest one.
+
+        The out-of-order case is the whole point: the first of two grants ending
+        must leave the second one showing, and dropping the top entry instead
+        would put the character back on the printed line with a grant still live.
+        """
+        self.base_attack_grants = [
+            grant for grant in self.base_attack_grants if grant[0] is not by_effect]
+        if self.base_attack_grants:
+            value = self.base_attack_grants[-1][1]
+        else:
+            value = self.printed_attack
+        self.SetBaseAttack(value, by_effect)
 
     @final
     def SetBaseAttack(self, value: int, by_effect: 'Effect') -> None:
