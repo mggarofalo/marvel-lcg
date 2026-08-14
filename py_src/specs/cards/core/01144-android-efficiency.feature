@@ -228,3 +228,138 @@ Feature: Android Efficiency
     When I pass
     Then I have 3 damage
     And it is round 2
+
+  # ---------------------------------------------------------------------------
+  # The [mental] and [physical] faces, brought to the same three branches the
+  # [energy] face already has: pay the cost, take the drone instead, and the
+  # board where the cost cannot be paid at all and there is nothing to choose.
+  #
+  # These are the same three scenarios per face because the face is the only
+  # input that differs, and it is the input the card reads: `cost_dict` in
+  # `cards/pack/core/ultron/01144.py` keys on `this.paper.card_id`, so an engine
+  # taking the cost from the shared ability card rather than from the face on
+  # the table offers [energy] on all three and fails every option table below.
+  # The unpayable pair is where that bites hardest -- the *same* deck that makes
+  # [mental] unaffordable pays [physical] outright, so the two faces come out of
+  # one board with opposite prompts.
+
+  @card:01144 @card:01144b
+  Scenario: the [mental] face's spend branch empties the hand and leaves the deck alone
+    # The other half of the [mental] boost. Its drone scenario above proves a
+    # drone can be made from this face; this proves the resource can be paid
+    # instead, and the two together are what "either ... or" means. The deck is
+    # untouched at 7 and Aunt May, which the drone branch takes, is still in it.
+    #
+    # 2 damage rather than 3: Rhino's printed ATK 2 with a star boost adding no
+    # icons, and no drone engaged to activate behind him.
+    Given the hero is "iron_man"
+    And I am in hero form
+    And my deck is "Genius", "Aunt May", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
+    And the encounter deck is "01144b", "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary"
+
+    When I pass
+    Then I am prompted to choose one
+      | Defense |
+
+    When I pass
+    Then I am prompted to choose one
+      | Spend [[mental]]                                                                    |
+      | Put the top card of the deck into play facedown, engaged with you as a DRONE minion |
+
+    When I choose "Spend [[mental]]"
+    Then I have 0 cards in hand
+    And I have 7 cards in my deck
+    And "Aunt May" is in the "PlayerDeck"
+    And I have 2 damage
+    And it is round 2
+
+  @card:01144 @card:01144b
+  Scenario: a [mental] cost this player cannot pay is not offered on the [mental] face
+    # The hand holds one Strength and nothing else, so the spend branch has no
+    # payment and is withheld the way a targetless option is (MARVEL-109). One
+    # branch left is no choice, so the drone is made with no prompt in between --
+    # and there is deliberately no `Then I am prompted to choose one` here: the
+    # next decision the transcript answers is the *drone's* attack, which is only
+    # reachable if the boost resolved without asking.
+    Given the hero is "iron_man"
+    And I am in hero form
+    And my deck is "Strength", "Aunt May", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
+    And the encounter deck is "01144b", "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary"
+
+    When I pass
+    Then I am prompted to choose one
+      | Defense |
+
+    When I pass
+    Then "Aunt May" is in the "EngagedEnemiesArea"
+    And I have 1 card in hand
+    And I have 6 cards in my deck
+    And I am prompted to choose one
+      | Defense |
+
+    When I pass
+    Then I have 3 damage
+    And it is round 2
+
+  @card:01144 @card:01144c
+  Scenario: the [physical] face's drone branch costs no card and adds an attacker
+    # The other half of the [physical] boost, against the spend scenario above
+    # it. Same deck, same board, opposite answer: the hand keeps its Strength,
+    # the deck is one shorter, and Aunt May is engaged rather than sitting on
+    # top of the deck.
+    #
+    # 3 damage rather than the spend branch's 2 -- Rhino's 2 plus the drone's 1,
+    # because the drone was engaged in time to activate in the same villain
+    # phase. That second Defense prompt is the drone's attack.
+    Given the hero is "iron_man"
+    And I am in hero form
+    And my deck is "Strength", "Aunt May", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
+    And the encounter deck is "01144c", "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary"
+
+    When I pass
+    Then I am prompted to choose one
+      | Defense |
+
+    When I pass
+    Then I am prompted to choose one
+      | Spend [[physical]]                                                                  |
+      | Put the top card of the deck into play facedown, engaged with you as a DRONE minion |
+
+    When I choose "Put the top card of the deck into play facedown, engaged with you as a DRONE minion"
+    Then "Aunt May" is in the "EngagedEnemiesArea"
+    And I have 1 card in hand
+    And I have 6 cards in my deck
+    And I am prompted to choose one
+      | Defense |
+
+    When I pass
+    Then I have 3 damage
+    And it is round 2
+
+  @card:01144 @card:01144c
+  Scenario: a [physical] cost this player cannot pay is not offered on the [physical] face
+    # The Genius in hand pays [mental] and nothing else, so on this face the
+    # spend branch is unaffordable and withheld. Read against the [mental]
+    # unpayable scenario above, which is this board with the resources swapped:
+    # a Genius makes [physical] impossible exactly as a Strength makes [mental]
+    # impossible, and an engine reading one cost for all three faces cannot
+    # produce both results.
+    Given the hero is "iron_man"
+    And I am in hero form
+    And my deck is "Genius", "Aunt May", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
+    And the encounter deck is "01144c", "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary"
+
+    When I pass
+    Then I am prompted to choose one
+      | Defense |
+
+    When I pass
+    Then "Aunt May" is in the "EngagedEnemiesArea"
+    And I have 1 card in hand
+    And I have 6 cards in my deck
+    And I am prompted to choose one
+      | Defense |
+
+    When I pass
+    Then I have 3 damage
+    And it is round 2

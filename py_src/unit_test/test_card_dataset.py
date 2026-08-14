@@ -6,7 +6,10 @@ are easy to get subtly wrong. A handful run against the real repository, because
 the thing that actually matters is that the checked-in dataset is reproducible
 and internally consistent.
 
-No engine bootstrap: `tools/cards/` is stdlib-only, so this runs anywhere.
+`tools/cards/` is stdlib-only, so all of this runs anywhere with one exception:
+`TestPrintedHeroTimingMatchesTheRegisteredFlag` boots the engine, because the
+`AbilityType` a card registers only exists once its script has run and reading
+the script text instead gets Holding Cell wrong. It costs about a second.
 
     python -m unittest unit_test.test_card_dataset
 """
@@ -14,6 +17,7 @@ No engine bootstrap: `tools/cards/` is stdlib-only, so this runs anywhere.
 import ast
 import dataclasses
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -1456,3 +1460,226 @@ class TestDeckbuildingAgainstTheRealDataset(unittest.TestCase):
         self.assertEqual(self.result.matched_lines, 48)
         self.assertEqual(len(deckbuilding.REVIEWED), 41)
         self.assertEqual(len(deckbuilding.RULES), 7)
+
+
+################################################################################
+# Printed hero timing against the registered flag (MARVEL-117)
+#
+
+# The label a card prints and the `AbilityType` its script registers are two
+# different things, and `CardFinder(with_texts=...)` reads the second while
+# asking a question about the first: three cards -- Phase Disruption (26011),
+# Phase Strike (32038) and Electromagnetic Blast (49008) -- print "discard an
+# attachment with the text 'Hero Action' or 'Hero Response'", and the filter
+# behind them answers by looking at `ability.flags`. So a card can print the
+# words and be invisible to it, with no error and no log line: just a shorter
+# target list. That is MARVEL-117, and it was true of fourteen cards.
+#
+# This is the cross-reference. Both populations are derived -- every record in
+# `datasets/cards/` on the printed side, every card the engine can load on the
+# registered side -- so a new card joins whichever side it belongs to with no
+# edit here.
+#
+# The forward direction (printed => registered) is the defect and has **no**
+# exemptions. The reverse direction (registered => printed) is a different
+# claim: the engine restricting an ability to hero form that the printed card
+# does not. Those are real disagreements, they are not MARVEL-117, and each one
+# is written down here with what it is instead. Shaped like
+# `REVIEWED_GUARDED_PROMPTS` above: the exemptions are enumerated, the
+# comparison is an equality, and a new one fails until somebody says why.
+REVIEWED_HERO_TIMING_WITHOUT_PRINT = {
+    "17003": "Daring Escape. The card prints 'Hero Action:' and the vendored "
+             "MarvelSDB text drops the colon -- 'Hero Action Deal yourself 1 "
+             "facedown encounter card'. A source-text defect, not an engine "
+             "one: the script is right and the label detector cannot see it",
+    "41002a": "Psi-Knife prints 'Hero Resource: Exhaust Psi-Knife -> generate "
+              "a [mental] resource. You may flip this card.' The engine models "
+              "the flip as its own Hero Action, which the card does not print "
+              "as a separate ability",
+    "41002b": "Psi-Katana, the other face of 41002a, for the same reason",
+    "32004": "Iron Will prints 'Response:' and the script registers "
+             "HeroResponse. The trigger is a tough card leaving Colossus, "
+             "which only happens in hero form, so the restriction is "
+             "unobservable -- but the printed word is 'Response'",
+    "32018": "Defensive Energy prints 'Hero Interrupt:' and the script "
+             "registers HeroResponse. Interrupt against Response is a timing "
+             "disagreement of its own and wants its own issue",
+    "38017": "Defensive Energy's reprint, same script as 32018",
+    "34020": "Passion for Justice prints 'Interrupt:' and the script registers "
+             "HeroResponse -- wrong on both halves, and again a timing "
+             "question rather than a hero-form one",
+    "37016": "Passion for Justice's reprint, same script as 34020",
+}
+
+# "Hero Action:", "Hero Action (attack):", "Hero Action(attack):" -- the
+# parenthetical names the basic power the ability counts as and is part of the
+# label. Anchored on the colon, which is what separates a label from the two
+# cards that quote the words inside a sentence.
+HERO_TIMING_LABEL = {
+    "Hero Action": re.compile(r"Hero Action\s*(\([^)\n]*\))?\s*:"),
+    "Hero Response": re.compile(r"Hero Response\s*(\([^)\n]*\))?\s*:"),
+}
+
+
+class TestPrintedHeroTimingMatchesTheRegisteredFlag(unittest.TestCase):
+    """A card that prints "Hero Action:" is visible to the filter that looks
+    for one.
+
+    Unlike the rest of this module this one boots the engine, because what a
+    card registers only exists once its script has run. Reading the script text
+    instead was tried and is not sound: Holding Cell (50105a-50108a) registers
+    its Hero Action inside `cards/pack/aos/modok/__init__.py`, so a scan of the
+    four card files finds no `AbilityType` at all and calls them broken.
+
+    The registered side is measured by building each card's face and running
+    the **real** `CardFinder(with_texts=...)` over it, rather than by restating
+    its predicate here. That is what makes this a guard on the behaviour rather
+    than on a spelling: it fails if a card script names the wrong type, if a
+    factory swallows the right one, and if the checker stops reading either
+    signal. Booting and sweeping the whole pool costs about two seconds.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        dataset = REPO / extract.OUTPUT_DIR / extract.CARDS_FILE
+        if not dataset.exists():
+            raise unittest.SkipTest("run from py_src/ -- datasets/cards missing")
+
+        from tools.determinism.headless import _initialize_engine
+        _initialize_engine()
+        from cards.database import CardsDB
+        from game.card.card_finder import CardFinder
+        from game.card.factory import CardFactory
+
+        class StubWorld:
+            """All of `World` that building a face reads."""
+
+            def GetPlayerNumIcon(self):
+                return 1
+
+        cls.records = json.loads(dataset.read_text(encoding="utf-8"))["cards"]
+        cls.registered = {label: set() for label in HERO_TIMING_LABEL}
+        cls.unloadable = set()
+
+        finders = {label: CardFinder(with_texts=[label])
+                   for label in HERO_TIMING_LABEL}
+        for card_id, paper in CardsDB.papers.items():
+            try:
+                face = CardFactory.CreateFace(paper, StubWorld())
+            except Exception:
+                cls.unloadable.add(card_id)
+                continue
+            for label, finder in finders.items():
+                if finder.Check(face):
+                    cls.registered[label].add(card_id)
+
+    def Printed(self, label):
+        pattern = HERO_TIMING_LABEL[label]
+        return {c["card_id"] for c in self.records
+                if pattern.search(c.get("text_plain") or "")}
+
+    def Scripted(self):
+        # A card the engine has no script for registers nothing because nothing
+        # ran. That is the whole exclusion rule for the forward direction, and
+        # it is read off the dataset rather than listed, so a card that gains a
+        # script starts being checked on the next run.
+        return {c["card_id"] for c in self.records
+                if (c["engine"] or {}).get("script")}
+
+    def test_a_printed_hero_label_is_visible_to_the_filter(self):
+        scripted = self.Scripted()
+        missing = {}
+        for label in HERO_TIMING_LABEL:
+            for card_id in sorted(self.Printed(label) & scripted):
+                if card_id not in self.registered[label]:
+                    missing[card_id] = label
+        self.assertEqual(
+            missing, {},
+            "these cards print a hero timing label and do not register it, so "
+            "CardFinder(with_texts=...) cannot see them -- MARVEL-117. Either "
+            "the card script names the wrong AbilityType, or it hands the "
+            "right one to a factory that wraps it in a DelayAbility without "
+            "calling SetSecondType")
+
+    def test_a_card_the_filter_sees_prints_the_label(self):
+        unexplained = {}
+        for label in HERO_TIMING_LABEL:
+            printed = self.Printed(label)
+            for card_id in sorted(self.registered[label]):
+                if card_id in printed:
+                    continue
+                if card_id in REVIEWED_HERO_TIMING_WITHOUT_PRINT:
+                    continue
+                unexplained[card_id] = label
+        self.assertEqual(
+            unexplained, {},
+            "the engine restricts these to hero form and the printed card does "
+            "not say so. If that is right, add it to "
+            "REVIEWED_HERO_TIMING_WITHOUT_PRINT with the reason")
+
+    def test_every_reviewed_exemption_is_still_needed(self):
+        # The equality half. An exemption that stopped applying is a card that
+        # was fixed and a note nobody deleted, and it hides the next one.
+        stale = []
+        for card_id in sorted(REVIEWED_HERO_TIMING_WITHOUT_PRINT):
+            diverges = any(
+                card_id in self.registered[label]
+                and card_id not in self.Printed(label)
+                for label in HERO_TIMING_LABEL)
+            if not diverges:
+                stale.append(card_id)
+        self.assertEqual(stale, [],
+                         "no longer diverge -- drop them from the table")
+
+    def test_a_card_that_prints_the_label_and_will_not_load_is_reported(self):
+        # A face that will not build registers nothing, which reads exactly
+        # like a clean pass. `56200b` does not build today and prints no hero
+        # label, so the two questions are separable and this keeps them that
+        # way: a card that stops building and prints one fails here.
+        printed = set()
+        for label in HERO_TIMING_LABEL:
+            printed |= self.Printed(label)
+        self.assertEqual(sorted(self.unloadable & printed), [])
+
+    def test_a_hero_action_behind_a_delay_wrapper_is_visible(self):
+        """Constructed, because no shipped card is shaped like this.
+
+        Nine cards hand a `HeroResponse` to a factory that wraps it in a delay
+        ability and **none** hand it a `HeroAction` -- measured over the whole
+        pool. So the sweep above exercises one half of the filter's
+        delay-wrapper read and deleting the other half survives it. That is an
+        accident of the card pool rather than of the mechanism: the wrapper
+        takes whatever type its caller passes, and the day a card is printed
+        with a Hero Action on an attack-and-defeat trigger the filter has to
+        see it. Built directly, the way `test_forced_effect_selection.py`
+        builds the batch shape the pool cannot produce.
+        """
+        from game.ability.ability_type import AbilityType
+        from game.ability.factory import AbilityFactory
+        from game.card.card_finder import CardFinder
+        from game.card.face.base.enemy import Enemy
+
+        ability = AbilityFactory.AfterUnitAttackAndDefeatUnit(
+            AbilityType.HeroAction, "You", Enemy,
+            lambda effect, message: None)
+        self.assertTrue(ability.flags.IsType(AbilityType.DelayAbility),
+                        "the factory stopped wrapping, so this proves nothing")
+        self.assertFalse(ability.flags.is_hero_action)
+
+        class StubFace:
+            class ability:
+                abilities = [ability]
+
+        self.assertTrue(
+            CardFinder(with_texts=["Hero Action"]).Check(StubFace()))
+        self.assertFalse(
+            CardFinder(with_texts=["Hero Response"]).Check(StubFace()))
+
+    def test_the_populations_are_not_empty(self):
+        # Both sides of a cross-reference can pass by measuring nothing: a
+        # pattern that matches no card, or a sweep whose faces all failed to
+        # build. Either one makes every assertion above vacuously true.
+        self.assertGreater(len(self.Printed("Hero Action")), 500)
+        self.assertGreater(len(self.Printed("Hero Response")), 100)
+        self.assertGreater(len(self.registered["Hero Action"]), 500)
+        self.assertGreater(len(self.registered["Hero Response"]), 100)
