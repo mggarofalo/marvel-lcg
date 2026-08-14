@@ -215,6 +215,176 @@ class TestRemovingTheGrantRestoresThePrintedStatistic(
         self.assertEqual(self.rhino.scheme, 1)
 
 
+class TestAGrantedBaseOfZeroIsStillAGrant(
+        TheGrantOnACharacterWithPrintedStatistics):
+    """Zero is a value a base-statistic grant can state, not the absence of one.
+
+    A base grant *replaces* the printed line, so "has a base ATK of 0" is how a
+    card would say this character cannot attack -- and it has to be
+    distinguishable from a card that grants no base attack at all. Every other
+    keyword in `Gain` draws that line with `!= None`; these three tested
+    truthiness, so a granted 0 was indistinguishable from an absent grant and was
+    silently dropped.
+
+    Nothing passes 0 today. The `int|None=None` declaration is repeated at all
+    three layers of the call chain -- `AbilityFactory.GiveKeywordToInPlayWhenApplyThis`
+    (`game/ability/factory/environment.py`), which gates building the ability at
+    all on `base_sch != None or base_atk != None or base_health != None`,
+    `GiveKeywordToInPlayWhenApplyThisInternal`
+    (`game/ability/factory/environment_helper.py`), and `Gain` itself -- and the
+    only two card scripts that reach it, Ultron Drones (`01140`) and Controlled
+    Innocents (`50032`), pass the literal 1. So "absent" already means `None`
+    everywhere the value is decided; `Gain` was the one place that also read 0
+    that way.
+
+    Hit points are included even though "a base hit points of 0" is not a card
+    anyone has printed, because it is the same guard and the same mistake. What
+    it asserts is that the grant *lands*; that landing on 0 hit points is lethal
+    is the health rules doing their job, and is asserted as such.
+    """
+
+    def test_a_granted_base_attack_of_zero_replaces_printed_attack(self):
+        self.assertEqual(self.rhino.attack, 2)
+
+        self.Apply(base_atk=0)
+
+        self.assertEqual(self.rhino.attack, 0)
+        self.assertEqual(self.rhino.base_attack, 0)
+
+    def test_a_granted_base_attack_of_zero_comes_back_off(self):
+        self.Apply(base_atk=0)
+        self.Remove(base_atk=0)
+
+        self.assertEqual(self.rhino.attack, 2)
+        self.assertEqual(self.rhino.base_attack, 2)
+
+    def test_a_granted_base_scheme_of_zero_replaces_printed_scheme(self):
+        self.assertEqual(self.rhino.scheme, 1)
+
+        self.Apply(base_sch=0)
+
+        self.assertEqual(self.rhino.scheme, 0)
+        self.assertEqual(self.rhino.base_scheme, 0)
+
+    def test_a_granted_base_scheme_of_zero_comes_back_off(self):
+        self.Apply(base_sch=0)
+        self.Remove(base_sch=0)
+
+        self.assertEqual(self.rhino.scheme, 1)
+        self.assertEqual(self.rhino.base_scheme, 1)
+
+    def test_a_granted_base_of_zero_hit_points_replaces_printed_hit_points(self):
+        self.assertEqual(self.rhino.health, 14)
+
+        self.Apply(base_health=0)
+
+        self.assertEqual(self.rhino.base_health, 0)
+
+    def test_a_character_granted_zero_hit_points_is_defeated(self):
+        # The consequence, stated separately from the grant landing: 0 hit points
+        # is 0 hit points whether it was printed or granted, so the stage the
+        # grant landed on is defeated and Rhino advances to stage II.
+        #
+        # Read through `IsThisFaceUp` on the stage-I face rather than through
+        # `IsDefeated` or `health`. Both of those go to `components.health`,
+        # which belongs to the *card* and now holds stage II's 15 hit points --
+        # so the defeated face reports itself alive with 15, and the villain
+        # standing there is a different card face than the one that was granted.
+        self.assertTrue(self.rhino.IsThisFaceUp())
+
+        self.Apply(base_health=0)
+
+        self.assertFalse(self.rhino.IsThisFaceUp())
+        self.assertIsNot(self.puzzle.FindFaceByName("Rhino"), self.rhino)
+
+    def test_an_absent_grant_is_still_absent(self):
+        # The other side of the same line, and the one that would break if the
+        # guard were widened past `!= None`: passing nothing must touch nothing.
+        self.Apply()
+        self.Remove()
+
+        self.assertEqual(self.rhino.health, 14)
+        self.assertEqual(self.rhino.attack, 2)
+        self.assertEqual(self.rhino.scheme, 1)
+        self.assertEqual(self.rhino.base_health, 14)
+        self.assertEqual(self.rhino.base_attack, 2)
+        self.assertEqual(self.rhino.base_scheme, 1)
+
+
+class TestTheGrantAtDiffZero(TheGrantOnACharacterWithPrintedStatistics):
+    """`diff == 0` is neither an application nor a removal, and must do nothing.
+
+    `diff` reaches `Gain` from `environment_helper.gain_keyword` as
+    `StoreValueDiff.diff`, the *numeric* part of one source's contribution. That
+    part is 0 whenever the source's contribution changed only in its trait list:
+    `WhenFaceApplyThisInternal.try_apply_environment` enters
+    `apply_environment_internal` on `diff.diff > 0 or diff.lst_add`, and
+    `unapply_environment_internal` on `diff.diff < 0 or diff.lst_del`, so either
+    side can arrive carrying a list and a numeric 0.
+
+    A base statistic is not carried by that list, so nothing about it changed and
+    nothing about it may move. That is the contract; the `diff > 0` / `diff < 0`
+    branching implements it, but it implements it as a side effect of asking
+    about the sign rather than by saying so. Collapsing the branches back into a
+    single unconditional call -- which is what the code looked like before
+    MARVEL-103 -- would make `diff == 0` set the base to `base_x * 0`, destroying
+    the statistic outright. This pins the no-op so that collapse fails a test
+    rather than waiting for the first card that combines `base_*` with `trait=`.
+
+    No such card exists, so this is a contract test and not a reproduction: the
+    two cards that grant a base line pass no `get_new_value`, so their
+    `StoreValue` is the default `StoreValue(1, [])` and their `diff` is only ever
+    +1 or -1. `Gain` is therefore driven directly here rather than through a
+    card, which is also the only shape available -- `cards/pack/` would have to
+    gain a card that does not exist to reach it any other way.
+    """
+
+    def test_it_does_not_move_a_base_statistic(self):
+        self.rhino.Gain(effect=self.effect, diff=0,
+                        base_sch=1, base_atk=1, base_health=1)
+
+        self.assertEqual(self.rhino.base_health, 14)
+        self.assertEqual(self.rhino.base_attack, 2)
+        self.assertEqual(self.rhino.base_scheme, 1)
+
+    def test_it_does_not_move_the_visible_statistic_either(self):
+        self.rhino.Gain(effect=self.effect, diff=0,
+                        base_sch=1, base_atk=1, base_health=1)
+
+        self.assertEqual(self.rhino.health, 14)
+        self.assertEqual(self.rhino.max_health, 14)
+        self.assertEqual(self.rhino.attack, 2)
+        self.assertEqual(self.rhino.scheme, 1)
+
+    def test_it_does_not_defeat_the_character(self):
+        # The failure mode the collapsed form had: `base_health * 0` is 0, which
+        # is a request to set Rhino's hit points to nothing.
+        self.rhino.Gain(effect=self.effect, diff=0, base_health=1)
+
+        self.assertFalse(self.rhino.IsDefeated())
+
+    def test_it_does_nothing_after_the_grant_has_been_applied(self):
+        # The same no-op, read from the other end: a trait-only update arriving
+        # while a base grant is live must leave the granted value alone rather
+        # than reverting it to printed.
+        self.Apply(base_atk=1, base_sch=1)
+
+        self.rhino.Gain(effect=self.effect, diff=0, base_atk=1, base_sch=1)
+
+        self.assertEqual(self.rhino.base_attack, 1)
+        self.assertEqual(self.rhino.base_scheme, 1)
+
+    def test_a_granted_base_of_zero_at_diff_zero_is_still_a_no_op(self):
+        # The two findings meet here: widening the guard to `!= None` must not
+        # let a granted 0 through at `diff == 0` either.
+        self.rhino.Gain(effect=self.effect, diff=0,
+                        base_sch=0, base_atk=0, base_health=0)
+
+        self.assertEqual(self.rhino.base_health, 14)
+        self.assertEqual(self.rhino.base_attack, 2)
+        self.assertEqual(self.rhino.base_scheme, 1)
+
+
 class TestADroneThatOutlivesUltronDrones(unittest.TestCase):
     """The shipped teardown, on a drone that has somewhere to land.
 
