@@ -165,6 +165,27 @@ either direction. Mutation does.
   from that list is cheaper than starting one, because whoever wrote its first
   scenario already read the script — so clear it before opening a new shard.
 
+## A reprint is not a second card of work
+
+318 specifiable cards carry a `reprint_of` link, and every one prints text
+byte-identical to the card it reprints. **308 of them also run the same script
+module**, and for those a scenario is not a second claim about a second card —
+it is the same claim about the same code and the same text, written twice.
+`coverage.py` credits the original's scenarios to them, so they do not appear as
+work to do, and the report says how many it credited rather than folding them in
+silently.
+
+The credit is earned per card by comparing `engine.script.path`, never assumed
+from the reprint link. The other **10 reprints run a script file of their own**;
+no pair is byte-identical and six of the ten disagree in behaviour, so they are
+the one group where the two ids provably do different things. They are never
+credited and the report names them (MARVEL-105, MARVEL-106).
+
+This matters most for later packs, which are substantially reprints. Without it
+`The Power of Aggression` alone is one card counted seven times, and a shard
+walking a late pack would author the same scenario against the same module six
+times with every count applauding.
+
 ## Triage is not optional
 
 Every disagreement is a spec bug or an engine bug and both are worth finding.

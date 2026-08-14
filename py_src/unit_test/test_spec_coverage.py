@@ -306,3 +306,88 @@ class TestTheDepthGapIsListable(unittest.TestCase):
         row = coverage.ToDict()["by_tier"]["interactive"]
         self.assertEqual(len(coverage.Shallow()),
                          row["covered"] - row["at_depth"])
+
+
+################################################################################
+#
+
+class TestAReprintIsNotSecondCardOfWork(unittest.TestCase):
+    """MARVEL-105: 318 cards reprint a card the campaign already counts.
+
+    Every one prints text byte-identical to the card it reprints. 308 of them
+    also run the *same* script module, so a scenario for the original is not a
+    claim about a different card -- it is the same claim about the same code
+    and the same text, and writing it twice buys nothing.
+
+    The other 10 run a script file of their own. No pair is byte-identical and
+    six of the ten disagree in behaviour (MARVEL-106), so those are the one
+    group where the two ids provably do different things. The credit is earned
+    per card by comparing script paths, never assumed from the reprint link --
+    which is what these tests pin.
+    """
+
+    ORIGINAL = "05014"
+    REPRINT = "38015"
+
+    def Coverage(self, reprint_path, covered=("05014",), original_path=None):
+        original = MakeCard(card_id=self.ORIGINAL,
+                            script=Script(path=original_path or "a.py"))
+        reprint = MakeCard(card_id=self.REPRINT, reprint_of=self.ORIGINAL,
+                           script=Script(path=reprint_path))
+        tagged = {f"case for {c}": [c] for c in covered}
+        return Coverage([original, reprint], tagged,
+                        trusted=list(tagged), quarantined=[])
+
+    def test_a_reprint_sharing_its_original_s_script_is_covered_by_it(self):
+        coverage = self.Coverage(reprint_path="a.py")
+        self.assertTrue(coverage.Covered(self.REPRINT))
+        self.assertEqual(coverage.Scenarios(self.REPRINT),
+                         ["case for 05014"])
+
+    def test_a_reprint_running_its_own_script_is_not(self):
+        # The MARVEL-106 group. Same printed text, different implementation --
+        # crediting these is the one thing this must never do.
+        coverage = self.Coverage(reprint_path="b.py")
+        self.assertFalse(coverage.Covered(self.REPRINT))
+
+    def test_the_credit_does_not_run_backwards(self):
+        # Covering the reprint says nothing about the original. The link is
+        # directional and only the reprint carries it.
+        coverage = self.Coverage(reprint_path="a.py", covered=("38015",))
+        self.assertTrue(coverage.Covered(self.REPRINT))
+        self.assertFalse(coverage.Covered(self.ORIGINAL))
+
+    def test_a_credited_reprint_is_not_listed_as_work_to_do(self):
+        coverage = self.Coverage(reprint_path="a.py")
+        self.assertNotIn(self.REPRINT,
+                         [r["card_id"] for r in coverage.Uncovered()])
+
+    def test_an_uncredited_reprint_is_still_work_to_do(self):
+        coverage = self.Coverage(reprint_path="b.py")
+        self.assertIn(self.REPRINT,
+                      [r["card_id"] for r in coverage.Uncovered()])
+
+    def test_depth_is_credited_too_or_the_two_columns_disagree(self):
+        # Covered and at-depth have to be credited by the same rule. If only
+        # one were, a credited reprint would sit in the Shallow listing for a
+        # shortfall no scenario could ever close.
+        coverage = self.Coverage(reprint_path="a.py")
+        self.assertTrue(coverage.AtDepth(self.REPRINT))
+        self.assertEqual(coverage.Shallow(), [])
+
+    def test_the_report_says_how_many_it_credited(self):
+        summary = self.Coverage(reprint_path="a.py").ToDict()["reprints"]
+        self.assertEqual(summary["credited"], 1)
+        self.assertEqual(summary["credited_and_covered"], 1)
+        self.assertEqual(summary["not_credited"], [])
+
+    def test_the_report_names_the_ones_it_refused_to_credit(self):
+        summary = self.Coverage(reprint_path="b.py").ToDict()["reprints"]
+        self.assertEqual(summary["credited"], 0)
+        self.assertEqual(summary["not_credited"], [self.REPRINT])
+
+    def test_a_reprint_of_a_card_the_dataset_does_not_have_is_ignored(self):
+        orphan = MakeCard(card_id="99999", reprint_of="00000",
+                          script=Script(path="a.py"))
+        coverage = Coverage([orphan], {}, trusted=[], quarantined=[])
+        self.assertEqual(coverage.credited_to, {})
