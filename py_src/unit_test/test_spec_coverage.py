@@ -32,6 +32,12 @@ def MakeCard(card_id="01001", name="A card", pack="core", in_engine=True,
         "type_name": "Minion",
         "in_engine": in_engine,
         "engine": engine,
+        # Distinct per card unless a test deliberately makes two cards alike.
+        # Left identical, every fixture card would print the same text, run the
+        # same default script path and carry the same stats -- which is exactly
+        # the condition `Equivalents` credits on, so the whole fixture set would
+        # silently collapse into one covered card.
+        "text_plain": f"printed text of {card_id}",
     }
     card.update(extra)
     return card
@@ -329,10 +335,18 @@ class TestAReprintIsNotSecondCardOfWork(unittest.TestCase):
     ORIGINAL = "05014"
     REPRINT = "38015"
 
-    def Coverage(self, reprint_path, covered=("05014",), original_path=None):
-        original = MakeCard(card_id=self.ORIGINAL,
+    TEXT = "Hero Interrupt (defense): cancel all boost icons on that card."
+
+    def Coverage(self, reprint_path, covered=("05014",), original_path=None,
+                 reprint_attributes=None):
+        # A reprint prints text byte-identical to its original -- all 318 in the
+        # dataset do -- so the fixture has to as well, or it is not testing the
+        # thing the rule keys on.
+        original = MakeCard(card_id=self.ORIGINAL, text_plain=self.TEXT,
                             script=Script(path=original_path or "a.py"))
         reprint = MakeCard(card_id=self.REPRINT, reprint_of=self.ORIGINAL,
+                           text_plain=self.TEXT,
+                           attributes=reprint_attributes,
                            script=Script(path=reprint_path))
         tagged = {f"case for {c}": [c] for c in covered}
         return Coverage([original, reprint], tagged,
@@ -376,13 +390,13 @@ class TestAReprintIsNotSecondCardOfWork(unittest.TestCase):
         self.assertEqual(coverage.Shallow(), [])
 
     def test_the_report_says_how_many_it_credited(self):
-        summary = self.Coverage(reprint_path="a.py").ToDict()["reprints"]
+        summary = self.Coverage(reprint_path="a.py").ToDict()["duplicates"]
         self.assertEqual(summary["credited"], 1)
         self.assertEqual(summary["credited_and_covered"], 1)
         self.assertEqual(summary["not_credited"], [])
 
     def test_the_report_names_the_ones_it_refused_to_credit(self):
-        summary = self.Coverage(reprint_path="b.py").ToDict()["reprints"]
+        summary = self.Coverage(reprint_path="b.py").ToDict()["duplicates"]
         self.assertEqual(summary["credited"], 0)
         self.assertEqual(summary["not_credited"], [self.REPRINT])
 
@@ -391,3 +405,89 @@ class TestAReprintIsNotSecondCardOfWork(unittest.TestCase):
                           script=Script(path="a.py"))
         coverage = Coverage([orphan], {}, trusted=[], quarantined=[])
         self.assertEqual(coverage.credited_to, {})
+
+
+class TestWhatTheEquivalenceRuleRefusesToCredit(unittest.TestCase):
+    """The two populations that look creditable and are not.
+
+    Both were found by measuring rather than by reasoning, and both would have
+    been credited by the obvious version of this rule -- "same printed text and
+    the same script is the same card". They are the reason the rule reads
+    statistics as well as text, and the reason a card with no script at all
+    needs a `reprint_of` link rather than a structural match.
+    """
+
+    STAGE_TEXT = "Forced Interrupt: When this villain attacks, give him 1 boost."
+
+    def test_two_villain_stages_are_not_one_card(self):
+        """34 same-text same-module groups in the dataset are villain stages.
+
+        Same ability text, same script, different HP, ATK and SCH. A scenario
+        asserting hit points does not transfer from stage 1 to stage 2, so text
+        and code together are not enough to credit on.
+        """
+        stage_one = MakeCard(card_id="01096a", text_plain=self.STAGE_TEXT,
+                             attributes={"HP": "14*", "ATK": "2", "Stage": "1"},
+                             script=Script(path="rhino.py"))
+        stage_two = MakeCard(card_id="01096b", text_plain=self.STAGE_TEXT,
+                             attributes={"HP": "16*", "ATK": "3", "Stage": "2"},
+                             script=Script(path="rhino.py"))
+        tagged = {"case": ["01096a"]}
+        coverage = Coverage([stage_one, stage_two], tagged,
+                            trusted=["case"], quarantined=[])
+        self.assertEqual(coverage.credited_to, {})
+        self.assertFalse(coverage.Covered("01096b"))
+
+    def test_the_same_stat_line_and_text_is_enough_when_the_code_matches(self):
+        # The positive control for the test above: identical statistics, and
+        # the credit is granted. Without this, deleting the attribute
+        # comparison entirely would still pass the negative case.
+        one = MakeCard(card_id="07011", text_plain="Chaos In the Prison",
+                       script=Script(path="chaos.py"))
+        two = MakeCard(card_id="07026", text_plain="Chaos In the Prison",
+                       script=Script(path="chaos.py"))
+        coverage = Coverage([one, two], {"case": ["07011"]},
+                            trusted=["case"], quarantined=[])
+        self.assertEqual(coverage.credited_to, {"07026": "07011"})
+        self.assertTrue(coverage.Covered("07026"))
+
+    def test_two_scriptless_cards_sharing_boilerplate_are_not_one_card(self):
+        """44 unrelated cards print "Max 1 per deck." with one stat block.
+
+        With no module to compare, the structural rule has nothing left that
+        distinguishes them, so a scriptless card is credited only on an
+        explicit `reprint_of` link.
+        """
+        a = MakeCard(card_id="01100", text_plain="Max 1 per deck.", script=None)
+        b = MakeCard(card_id="02100", text_plain="Max 1 per deck.", script=None)
+        coverage = Coverage([a, b], {"case": ["01100"]},
+                            trusted=["case"], quarantined=[])
+        self.assertEqual(coverage.credited_to, {})
+        self.assertFalse(coverage.Covered("02100"))
+
+    def test_a_scriptless_reprint_is_credited_on_the_link(self):
+        a = MakeCard(card_id="01100", text_plain="Max 1 per deck.", script=None)
+        b = MakeCard(card_id="02100", text_plain="Max 1 per deck.", script=None,
+                     reprint_of="01100")
+        coverage = Coverage([a, b], {"case": ["01100"]},
+                            trusted=["case"], quarantined=[])
+        self.assertEqual(coverage.credited_to, {"02100": "01100"})
+        self.assertTrue(coverage.Covered("02100"))
+
+    def test_the_credit_never_chains(self):
+        """`Scenarios` takes one hop, so a chain would drop coverage silently.
+
+        Three ids on one module: the lowest is canonical and the other two both
+        point at it, rather than forming a line where the last one's credit
+        stops at a card that is itself uncredited.
+        """
+        cards = [MakeCard(card_id=cid, text_plain="Chaos In the Prison",
+                          script=Script(path="chaos.py"))
+                 for cid in ("07056", "07011", "07026")]
+        coverage = Coverage(cards, {"case": ["07011"]},
+                            trusted=["case"], quarantined=[])
+        self.assertEqual(coverage.credited_to,
+                         {"07026": "07011", "07056": "07011"})
+        for card_id in ("07026", "07056"):
+            self.assertNotIn(coverage.credited_to[card_id], coverage.credited_to)
+            self.assertTrue(coverage.Covered(card_id))

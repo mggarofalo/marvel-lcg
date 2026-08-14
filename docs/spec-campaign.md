@@ -165,21 +165,32 @@ either direction. Mutation does.
   from that list is cheaper than starting one, because whoever wrote its first
   scenario already read the script — so clear it before opening a new shard.
 
-## A reprint is not a second card of work
+## A second id printing the same card is not a second card of work
 
-318 specifiable cards carry a `reprint_of` link, and every one prints text
-byte-identical to the card it reprints. **308 of them also run the same script
-module**, and for those a scenario is not a second claim about a second card —
-it is the same claim about the same code and the same text, written twice.
-`coverage.py` credits the original's scenarios to them, so they do not appear as
-work to do, and the report says how many it credited rather than folding them in
-silently.
+**356 specifiable card ids are another id's card.** Reprints across packs, and
+encounter cards that appear at several positions in one pack — "Chaos In the
+Prison" is 07011, 07026 and 07056, three ids with no reprint link between them.
+For all of them a scenario is not a second claim about a second card; it is the
+same claim about the same code and the same printed card, written twice.
+`coverage.py` credits the first id's scenarios to the rest, so they do not
+appear as work to do, and the report says how many it credited rather than
+folding them in silently.
 
-The credit is earned per card by comparing `engine.script.path`, never assumed
-from the reprint link. The other **10 reprints run a script file of their own**;
-no pair is byte-identical and six of the ten disagree in behaviour, so they are
-the one group where the two ids provably do different things. They are never
-credited and the report names them (MARVEL-105, MARVEL-106).
+The credit is earned per card, never assumed from a name or a link:
+
+- **With a script**, two ids must run the same module *and* agree on printed
+  text *and* on the engine's attributes. The statistics are load-bearing — 34
+  same-text same-module groups are **villain stages**, same ability text and
+  same script with different HP, ATK and SCH, and a scenario asserting hit
+  points does not transfer from stage 1 to stage 2.
+- **With no script**, an explicit `reprint_of` link is required. Without a
+  module to compare there is nothing structural left, and 44 unrelated cards
+  share the text "Max 1 per deck." with an identical stat block.
+
+Never credited: the **10 reprints that run a script file of their own**. No
+pair is byte-identical and six of the ten disagree in behaviour, so they are the
+one group where two ids provably do different things. The report names all ten
+(MARVEL-105, MARVEL-106).
 
 This matters most for later packs, which are substantially reprints. Without it
 `The Power of Aggression` alone is one card counted seven times, and a shard

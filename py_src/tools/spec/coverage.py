@@ -173,36 +173,90 @@ class Coverage:
                 elif case_id in quarantined:
                     self.quarantined[card_id].append(case_id)
 
-        self.credited_to = self.Reprints()
+        self.credited_to = self.Equivalents()
 
     def ScriptPath(self, card_id: str) -> str:
         card = self.cards.get(card_id) or {}
         return str(((card.get("engine") or {}).get("script") or {}).get("path")
                    or "")
 
-    def Reprints(self) -> Dict[str, str]:
+    def Identity(self, card_id: str) -> Tuple[str, str]:
+        """What a scenario about this card would actually be asserting.
+
+        Printed text and the statistics the engine gives it. Two cards agreeing
+        on both, and running the same code, cannot disagree about anything a
+        scenario can say.
+
+        The dataset's own `stats` block is deliberately *not* compared. It
+        distinguishes exactly one group in 3,996 -- the `cap` printing of Hail
+        Hydra! carries an empty `stats` while the two `trors` printings record
+        `boost: 2` -- and all three agree on `Boost: "2"` in the engine
+        attributes, which is what the engine actually reads. Comparing it would
+        refuse a credit over a hole in the metadata rather than a difference in
+        behaviour.
+        """
+        card = self.cards.get(card_id) or {}
+        return (
+            str(card.get("text_plain") or ""),
+            json.dumps((card.get("engine") or {}).get("attributes") or {},
+                       sort_keys=True),
+        )
+
+    def Equivalents(self) -> Dict[str, str]:
         """card_id -> the id whose scenarios also cover it, where one exists.
 
-        318 cards carry a `reprint_of` link and print text byte-identical to the
-        card they reprint. 308 of them either run the *same* script module as
-        that card or have no script at all, and for those a scenario is not a
-        second claim about a second card -- it is the same claim about the same
-        code and the same text, written twice (MARVEL-105).
+        Two rules, because the evidence differs (MARVEL-105).
 
-        The link has to be earned per card, not assumed from `reprint_of`: the
-        other 10 reprints run a script file of their own, no pair is
-        byte-identical, and six of the ten disagree in behaviour (MARVEL-106).
-        Those are the one group where the two ids provably do different things,
-        so they are never credited -- which is why this reads `script.path` and
-        does not stop at the reprint link.
+        **A shared script module.** 226 card ids run a module another card
+        already runs while printing identical text, identical engine attributes
+        and identical stats. Same code and same card means a scenario cannot
+        distinguish them, so it is one claim written twice. This is the rule
+        that catches "Chaos In the Prison" at 07011, 07026 and 07056 -- three
+        ids, one card, no `reprint_of` link between them.
+
+        The statistics are load-bearing here and were nearly left out. 34
+        same-text, same-module groups are **villain stages**: same ability text,
+        same script, different HP, ATK and SCH. A scenario asserting hit points
+        does not transfer from stage 1 to stage 2, so text and code alone are
+        not enough to credit on.
+
+        **A `reprint_of` link, for cards with no script at all.** 129 of these,
+        `stats_only` cards whose behaviour is printed keywords the engine
+        applies from `game/card/face/attribute/`. The link is doing real work:
+        without a module to compare, the structural rule alone would credit any
+        two scriptless cards agreeing on text and stats, and 44 unrelated cards
+        share the text "Max 1 per deck." with an identical stat block.
+
+        Never credited either way: the 10 reprints that run a script file of
+        their own. No pair is byte-identical and six of the ten disagree in
+        behaviour (MARVEL-106) -- the one group where two ids provably do
+        different things.
         """
         credited: Dict[str, str] = {}
-        for card_id, card in self.cards.items():
-            original = str(card.get("reprint_of") or "")
-            if not original or original not in self.cards:
+
+        groups: Dict[Any, List[str]] = collections.defaultdict(list)
+        for card_id in self.cards:
+            path = self.ScriptPath(card_id)
+            if path:
+                groups[(path,) + self.Identity(card_id)].append(card_id)
+        for members in groups.values():
+            if len(members) < 2:
                 continue
-            if self.ScriptPath(card_id) == self.ScriptPath(original):
+            # Lowest id is the canonical one, so a group can never form a chain
+            # and `Scenarios` needs only one hop.
+            canonical, *rest = sorted(members)
+            for card_id in rest:
+                credited[card_id] = canonical
+
+        for card_id, card in self.cards.items():
+            if card_id in credited or self.ScriptPath(card_id):
+                continue
+            original = str(card.get("reprint_of") or "")
+            if original not in self.cards or self.ScriptPath(original):
+                continue
+            if self.Identity(card_id) == self.Identity(original):
                 credited[card_id] = original
+
         return credited
 
     def Specifiable(self) -> List[str]:
@@ -346,7 +400,7 @@ class Coverage:
                                  r["card_id"]))
         return rows
 
-    def ReprintSummary(self) -> Dict[str, Any]:
+    def DuplicateSummary(self) -> Dict[str, Any]:
         """The reprint join, over specifiable cards only.
 
         Scoped deliberately. 13 more cards reprint a card the engine *does*
@@ -382,7 +436,7 @@ class Coverage:
                 "scenarios": sum(len(v) for v in self.trusted.values()),
                 "quarantined": sum(len(v) for v in self.quarantined.values()),
             },
-            "reprints": self.ReprintSummary(),
+            "duplicates": self.DuplicateSummary(),
             "by_tier": self.ByTier(),
             "by_pack": self.ByPack(),
             "unknown_tags": {k: v for k, v in self.unknown_tags.items()},
@@ -416,16 +470,16 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int,
     print(f"covered           {totals['covered']} "
           f"({Percent(totals['covered'], totals['specifiable'])})")
     print(f"trusted scenarios {totals['scenarios']}")
-    reprints = data["reprints"]
-    if reprints["credited"]:
-        print(f"  of which credited {reprints['credited_and_covered']} "
-              f"reprint(s) covered by the card they reprint, of "
-              f"{reprints['credited']} that share its script")
-    if reprints["not_credited"]:
-        print(f"  not credited      {len(reprints['not_credited'])} reprint(s) "
+    duplicates = data["duplicates"]
+    if duplicates["credited"]:
+        print(f"  of which credited {duplicates['credited_and_covered']}, "
+              f"covered by another id printing the same card, of "
+              f"{duplicates['credited']} that do")
+    if duplicates["not_credited"]:
+        print(f"  not credited      {len(duplicates['not_credited'])} reprint(s) "
               f"that run a script of their own (MARVEL-106):"
               f"\n                    "
-              f"{', '.join(reprints['not_credited'])}")
+              f"{', '.join(duplicates['not_credited'])}")
     if totals["quarantined"]:
         print(f"quarantined       {totals['quarantined']} "
               f"(claims that failed -- not coverage)")
