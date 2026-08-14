@@ -33,6 +33,16 @@ class Players:
             unregister_after_exec=True,
         )
 
+    # The label the hand discard is offered under. Same rule as
+    # `DISCARD_ATTACHMENT_PROMPT` below and `SearchInternal.MAY_SEARCH_PROMPT`
+    # (MARVEL-112): nameless, this one rendered as the binding effect's name, so
+    # 02041 Power Drain asked "When_Defeated?" and 02047 Running Interference
+    # asked "Forced_Response?" for what is a hand discard. The icon count is in
+    # the label because it is the whole constraint on the answer -- which cards
+    # are legal is decided by it -- and because the house style for a choice
+    # label is the printed clause, amount included ("Place 2 threat here").
+    DISCARD_RESOURCE_ICONS_PROMPT = "Discard {size} resource icons from your hand"
+
     @staticmethod
     def DiscardResourceIconFromHand(player: 'Player', size: int, effect: 'Effect', *, color: List["Resources.RBYG"]=Resources.RBYG_LIST):
         from game.card.face.base import ClassCard
@@ -52,7 +62,7 @@ class Players:
             discard_effect = player.ChooseAbilities(
                 effect,
                 AbilityFactory.ForChoiceAbility(
-                    "",
+                    Players.DISCARD_RESOURCE_ICONS_PROMPT.format(size=size),
                     lambda targets:
                         Faces.DiscardAll(targets, effect)
                 ).SetTarget(ClassCard,
@@ -100,6 +110,24 @@ class Players:
 
     ################################################################################
     # Discard "Hero Action", "Hero Response" Attachment
+
+    # The label the attachment discard is offered under.
+    #
+    # Same rule as `SearchInternal.MAY_SEARCH_PROMPT` (MARVEL-112): an option
+    # with no name cannot be answered by anyone, because `Effect.Render` falls
+    # back to the *binding* effect's display name when a `ForChoiceAbility` has
+    # none. Nameless, this clause was offered as "Play" -- the name of the event
+    # being played -- so 49008 Electromagnetic Blast and 32038 Phase Strike asked
+    # "Play?" and expected the player to know from elsewhere that yes discards an
+    # attachment.
+    #
+    # Card-independent on purpose: all three callers print "discard an attachment
+    # with the text "Hero Action" or "Hero Response"", so one label covers the
+    # opt-in half (49008, 32038) and the forced half (26011 Phase Disruption)
+    # alike. The attachment itself is named by the option's target list, so the
+    # label states the action and nothing else.
+    DISCARD_ATTACHMENT_PROMPT = "Discard an attachment"
+
     @staticmethod
     def DiscardHeroActionAttachment(player: 'Player', enemies: List['CardFace']|None, effect: 'Effect', *, may: bool):
         from game.operate.faces import Faces
@@ -107,13 +135,13 @@ class Players:
         if enemies:
             attachments = [y for x in enemies for y in x.GetAttachedAttachments()]
             ability = AbilityFactory.ForChoiceAbility(
-                "",
+                Players.DISCARD_ATTACHMENT_PROMPT,
                 lambda targets:
                     Faces.DiscardAll(targets, effect)
             ).SetTarget(attachments, with_texts=["Hero Action", "Hero Response"], canbe_discard=True)
         else:
             ability = AbilityFactory.ForChoiceAbility(
-                "",
+                Players.DISCARD_ATTACHMENT_PROMPT,
                 lambda targets:
                     Faces.DiscardAll(targets, effect)
             ).SetTarget(Attachment, with_texts=["Hero Action", "Hero Response"], canbe_discard=True)
