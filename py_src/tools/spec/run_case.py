@@ -27,8 +27,10 @@ from tools.spec.gherkin import LoadFeatureFile, NormalisePath
 CASE_SUFFIXES = (".feature", ".json")
 
 # JSON files that live beside the scenarios but are not scenarios: the checked-in
-# step vocabulary and the manifests the validation runner writes.
-RESERVED_JSON = ("steps.catalogue.json", "trusted.json", "quarantine.json")
+# step vocabulary, the hand-authored record of decision paths the vocabulary
+# cannot reach, and the manifests the validation runner writes.
+RESERVED_JSON = ("steps.catalogue.json", "trusted.json", "quarantine.json",
+                 "unreachable.json")
 
 
 def LoadCases(path: str) -> List[SpecCase]:

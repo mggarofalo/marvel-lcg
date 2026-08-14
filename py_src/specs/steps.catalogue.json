@@ -9,10 +9,12 @@
       "the difficulty is expert",
       "my hand is \"<a>\", \"<b>\"",
       "my deck is \"<a>\", \"<b>\"",
+      "my deck at setup is \"<a>\", \"<b>\"",
       "my discard pile is \"<a>\", \"<b>\"",
       "my set aside deck is \"<a>\", \"<b>\"",
       "player <n>'s deck is \"<a>\", \"<b>\"",
       "the encounter deck is \"<a>\", \"<b>\"",
+      "the encounter deck at setup is \"<a>\", \"<b>\"",
       "the encounter discard pile is \"<a>\", \"<b>\"",
       "\"<card>\" has <n> damage",
       "\"<card>\" is healed <n>",
@@ -43,6 +45,7 @@
       "the main scheme has <n> threat",
       "\"<card>\" has <n> \"<name>\" counters",
       "\"<card>\" has <n> \"<name>\" tokens",
+      "\"<card>\" has <n> \"<icon>\" resource icons",
       "\"<card>\" is in the \"<zone>\"",
       "\"<card>\" is [not] in play",
       "\"<card>\" is [not] exhausted",
@@ -66,7 +69,8 @@
       "it is the <player|villain|end> phase",
       "it is the \"<phase>\" phase",
       "I cannot choose \"<option>\" targeting \"<card>\"",
-      "the legal targets for \"<option>\" are"
+      "the legal targets for \"<option>\" are",
+      "the target maximum for \"<option>\" is <n>"
     ],
     "when": [
       "I play \"<card>\"",

@@ -16,12 +16,14 @@ the *number of prompts* implicitly. A scenario written that way passes against
 an engine that asks a different set of questions and lands on the same final
 state, which is exactly the failure the format exists to prevent (MARVEL-22).
 
-Five kinds of beat:
+Seven kinds of beat:
 
 - `WhenStep`      answer the decision the engine is currently asking
 - `PromptStep`    assert what the engine is asking, and with which options
 - `NoPromptStep`  assert the resolution is over -- no further mid-resolution ask
 - `CannotStep`    assert an action will not take a card as its target
+- `TargetsStep`   assert which cards an offered option will take
+- `LimitStep`     assert how many of them it will take
 - `ThenStep`      assert one thing about readable state
 
 `GivenStep` stays a block ahead of the transcript: it builds the board before
@@ -264,6 +266,54 @@ class TargetsStep:
 
 
 @dataclass(frozen=True)
+class LimitStep:
+    """Assert the most targets an offered option will take.
+
+    The printed word is "up to": Ancestral Knowledge (01042) searches for "up to
+    **3** different cards". `TargetsStep` pins *which* cards may be chosen and a
+    `When` naming three of them pins that three is reachable, but neither says
+    three is the ceiling. Offering a fourth is refused with `Play takes 1..3
+    target(s)`, which is the engine being right and the transcript having no
+    passing way to say so: the printed number was pinned from below only.
+
+    The ceiling is `target_num_range[1]` at the decision, and it is the
+    *effective* one -- `Selector.GetTargetRange` clamps it to the number of
+    legal targets on the board. So the claim only bites on a board offering more
+    candidates than the ceiling, which is exactly the board the printed number
+    is about; with three candidates and a printed maximum of three, an engine
+    that had lost the maximum entirely would answer 3 as well.
+
+    **The sentence is "the target maximum for X is N", not "X takes at most N
+    targets", deliberately.** This is an equality like every other `Then` in the
+    vocabulary, and a ceiling of 2 does not satisfy it. The "at most" spelling
+    promises an inequality that a clamped board would meet vacuously, and a step
+    whose text means something looser than its check is exactly the kind of
+    thing a second runner reimplements the other way. It also reads beside `the
+    legal targets for "<option>" are`, which is the step it completes.
+    """
+
+    option: str
+    maximum: int
+
+    kind = "limit"
+
+    def __post_init__(self) -> None:
+        if not self.option:
+            raise SpecCaseError("a target-maximum assertion needs an option")
+        if self.maximum < 1:
+            raise SpecCaseError(
+                f"the target maximum for {self.option!r} is {self.maximum}; a "
+                f"maximum below 1 is 'this option takes no target', which is "
+                f"'I cannot choose' rather than a printed 'up to N'")
+
+    def Describe(self) -> str:
+        return f"the target maximum for {self.option!r} is {self.maximum}"
+
+    def ToDict(self) -> Dict[str, Any]:
+        return {"kind": "limit", "option": self.option, "maximum": self.maximum}
+
+
+@dataclass(frozen=True)
 class PromptStep:
     """Assert the engine is asking, and with exactly these options.
 
@@ -397,9 +447,9 @@ class ThenStep:
                 "op": self.op, "value": self.value}
 
 
-Beat = Union[WhenStep, PromptStep, NoPromptStep, CannotStep, ThenStep]
+Beat = Union[WhenStep, PromptStep, NoPromptStep, CannotStep, LimitStep, ThenStep]
 
-ASSERTION_KINDS = ("prompt", "no_prompt", "cannot", "targets", "then")
+ASSERTION_KINDS = ("prompt", "no_prompt", "cannot", "targets", "limit", "then")
 
 
 def IsAction(beat: Beat) -> bool:
@@ -429,6 +479,12 @@ class SpecCase:
     beats: Tuple[Beat, ...] = ()
     seed: int = 1
     expert: bool = False
+    # Decks that exist *before* `GameSetup()` runs, so a setup ability can see
+    # them. Every `given` step is applied after setup returns, which is right
+    # for a board a scenario is building and wrong for the deck a player
+    # brought to the table -- see `SETUP_DECKS` and MARVEL-121.
+    setup_player_deck: Tuple[str, ...] = ()
+    setup_encounter_deck: Tuple[str, ...] = ()
     feature: str = ""
     # Provenance, used by the validation runner's quarantine.
     source_path: str = ""
@@ -475,6 +531,8 @@ class SpecCase:
             "heroes": list(self.heroes),
             "seed": self.seed,
             "expert": self.expert,
+            "setup_player_deck": list(self.setup_player_deck),
+            "setup_encounter_deck": list(self.setup_encounter_deck),
             "tags": list(self.tags),
             "source_path": self.source_path,
             "source_sha256": self.source_sha256,
@@ -495,6 +553,10 @@ class SpecCase:
                 heroes=tuple(str(x) for x in data["heroes"]),
                 seed=int(data.get("seed", 1)),
                 expert=bool(data.get("expert", False)),
+                setup_player_deck=tuple(
+                    str(x) for x in data.get("setup_player_deck", ())),
+                setup_encounter_deck=tuple(
+                    str(x) for x in data.get("setup_encounter_deck", ())),
                 tags=tuple(str(x) for x in data.get("tags", ())),
                 source_path=str(data.get("source_path", "")),
                 source_sha256=str(data.get("source_sha256", "")),
@@ -532,9 +594,19 @@ def BeatFromDict(item: Dict[str, Any]) -> Beat:
         return PromptStep(options=tuple(str(o) for o in item.get("options", ())))
     if kind == "no_prompt":
         return NoPromptStep()
+    # `targets` has been serialisable and not loadable since MARVEL-94 added it:
+    # `TargetsStep.ToDict` writes this kind and nothing here read it, so a JSON
+    # case round trip raised "unknown beat kind 'targets'". Noticed while adding
+    # `limit` beside it.
+    if kind == "targets":
+        return TargetsStep(option=str(item.get("option", "")),
+                           targets=tuple(str(t) for t in item.get("targets", ())))
     if kind == "cannot":
         return CannotStep(option=str(item.get("option", "")),
                           card=str(item.get("card", "")))
+    if kind == "limit":
+        return LimitStep(option=str(item.get("option", "")),
+                         maximum=int(item.get("maximum", 0)))
     if kind == "then":
         return ThenStep(
             subject=str(item["subject"]),
