@@ -136,9 +136,19 @@ class ReplayVerifier:
         writes.
 
         A flat folder expands to itself, so pointing at `./replays/` is
-        unchanged. Folders that hold no JSON at all are dropped, which keeps an
-        intermediate directory out of the reported folder list without hiding
-        an empty corpus -- `Run` still fails when nothing was verified.
+        unchanged. The intermediate directories of a tree are dropped, which
+        keeps an ancestor that merely contains case folders out of the reported
+        folder list.
+
+        **A folder that contributes nothing survives as itself**, whether it is
+        missing or merely empty. Both are kept for the same reason: the caller
+        named it, so the run has to be able to say by name where it found
+        nothing rather than resolving to an empty list that reads as "you asked
+        for nothing". Nothing is hidden by that -- `Run` still fails when no
+        scene was verified, which is the backstop for an empty corpus either
+        way. The two cases used to disagree, and the disagreement was invisible
+        in CI because `./replays/` is gitignored and so is absent rather than
+        empty in a fresh checkout (MARVEL-110).
 
         Sorted, and symlinks are not followed: a verification report has to be
         the same on two machines, and a link back up the tree would otherwise
@@ -153,10 +163,15 @@ class ReplayVerifier:
                 # silently verifying nothing.
                 found.append(folder)
                 continue
+            holding: List[str] = []
             for current, subfolders, names in os.walk(folder):
                 subfolders.sort()
                 if any(name.endswith(".json") for name in names):
-                    found.append(current)
+                    holding.append(current)
+            # Dropping only applies to a tree that yielded something to drop in
+            # favour of. A subtree with no JSON anywhere under it expands to the
+            # folder that was named, exactly as a missing one does.
+            found.extend(holding or [folder])
         return sorted(set(found))
 
     @staticmethod
