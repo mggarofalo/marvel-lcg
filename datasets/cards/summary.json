@@ -57,6 +57,19 @@
       ],
       "scripts": 441,
       "cards": 480
+    },
+    "suspends_through_a_helper": {
+      "rule": "Card scripts calling a game/operate/ helper which, with the arguments passed at that call site, reaches a prompt on every path through it (MARVEL-114). cards_that_name_no_prompt_themselves is the subset whose only question is asked inside the helper -- the population the depth tier was getting wrong. Deliberately an under-approximation: helpers whose prompt depends on board state -- Faces.DiscardAll under simultaneous=True, Worlds.FindMainScheme when more than one main scheme is in play -- are not counted, because a false 'this card asks' is as wrong in this dataset as a false 'it does not'. The rule is in tools/cards/helper_prompts.py.",
+      "helpers": [
+        "Players.DiscardHeroActionAttachment",
+        "Search.Collection",
+        "Search.PlayerCard",
+        "Utility.DealDamageToCharacterYouControl",
+        "Utility.PlaceThreatOnOneScheme"
+      ],
+      "scripts": 14,
+      "cards": 14,
+      "cards_that_name_no_prompt_themselves": 13
     }
   },
   "scripts": {
