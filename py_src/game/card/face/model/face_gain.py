@@ -322,16 +322,40 @@ class ModelGain(ModelBase):
                     check_effect.cost_func.Del(additional_cost_for_basic_defend)
             return_val += 1
 
+        # `SetBaseScheme`, `SetBaseAttack` and `SetBaseHealth` all take the value
+        # to set the base statistic *to*, not an amount to move it by -- and the
+        # card text they serve says the same thing: Ultron Drones (01140) reads
+        # "has a base SCH of 1, a base ATK of 1, and a base hit points of 1".
+        # So `diff` selects a direction here, it does not scale the value: on
+        # application the base becomes what the card states, and on removal it
+        # goes back to the printed statistic, which is the same value
+        # `OnResetKeywords` and `ResetHealth` restore it to.
+        #
+        # Multiplying by `diff` was both halves wrong. It read a granted base as
+        # an increment on application -- correct only because the one shipped
+        # character with a granted base line, a facedown Drone Minion, prints
+        # zeroes -- and on removal it passed the *negated* value as a target, so
+        # tearing down a grant of 1 moved the base by -2 and left it at -1. See
+        # MARVEL-103.
         if base_sch and HasScheme.IsType(unit):
-            unit.SetBaseScheme(base_sch * diff, effect)
+            if diff > 0:
+                unit.SetBaseScheme(base_sch, effect)
+            elif diff < 0:
+                unit.SetBaseScheme(unit.printed_scheme, effect)
             return_val += base_sch
 
         if base_atk and HasAttack.IsType(unit):
-            unit.SetBaseAttack(base_atk * diff, effect)
+            if diff > 0:
+                unit.SetBaseAttack(base_atk, effect)
+            elif diff < 0:
+                unit.SetBaseAttack(unit.printed_attack, effect)
             return_val += base_atk
 
         if base_health and CanHealth.IsType(unit):
-            unit.SetBaseHealth(base_health * diff, effect)
+            if diff > 0:
+                unit.SetBaseHealth(base_health, effect)
+            elif diff < 0:
+                unit.SetBaseHealth(unit.printed_health, effect)
             return_val += base_health
 
         return return_val * diff
