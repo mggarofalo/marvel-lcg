@@ -16,7 +16,7 @@ def GetAbilities() -> Sequence['Ability']:
                     include_player_deck=True,
                     include_discard_pile=True,
                     card_type=Support,
-                    cost_less_than=3,
+                    cost_equal_or_less=3,
                 )
                 if face:
                     face.PutIntoPlay(player, effect)

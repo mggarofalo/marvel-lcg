@@ -16,7 +16,7 @@ def GetAbilities() -> Sequence['Ability']:
                 include_discard_pile=True,
                 trait="WEAPON",
                 card_type=Upgrade,
-                cost_less_than=3,
+                cost_equal_or_less=3,
                 may=True,
             )
             if face:
