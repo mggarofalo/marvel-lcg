@@ -8,8 +8,12 @@ def GetAbilities() -> Sequence['Ability']:
         this = effect.this.CastTo(Event)
         Unused(this)
 
-        damage = message.original_boost_icons
-        message.CancelAllBoostIcons(effect)
+        # "for each boost icon **cancelled this way**" -- the return value of
+        # `CancelAllBoostIcons` is what this copy actually removed, which is 0
+        # once another effect has already cancelled them.
+        # `message.original_boost_icons` is the snapshot taken when the boost
+        # card was turned face up and keeps paying out after the icons are gone.
+        damage = message.CancelAllBoostIcons(effect)
 
         this.DealDamage(effect.targets, damage, effect)
 

@@ -9,9 +9,10 @@ def GetAbilities() -> Sequence['Ability']:
         Unused(this)
 
         initiator = effect.GetInitiator()
-        for target in effect.targets:
-            villain = target.CastTo(Villain)
-            villain.DoAttackYou(initiator, effect, property=AttackProperty(other_characters_cannot_defend=True))
+
+        villain = Worlds.FindVillain(effect)
+        if villain:
+            villain.DoAttackYou(initiator, effect, other_characters_cannot_defend=True)
 
         initiator.DrawUp(3, effect)
 
@@ -20,7 +21,6 @@ def GetAbilities() -> Sequence['Ability']:
         AbilityFactory.WhenInYourPlayTurn(
             AbilityType.HeroAction,
             taunt
-        ).SetPlay().SetLabel()
-        .SetTarget(Villain),
+        ).SetPlay().SetLabel(),
     ]
 
