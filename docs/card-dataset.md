@@ -130,6 +130,7 @@ Every record has every field; absence is a value, never a missing key.
       "lines": 27,
       "has_imperative_handler": true,
       "player_choice_calls": ["ChooseAbilities"],
+      "player_choice_helpers": [],
       "ability_factories": ["AfterPlayerPlayedCard"]
     }
   }
@@ -160,6 +161,25 @@ Notes on the fields that are easy to misread:
   printed. Upstream stores the trait line as one string, `"Location.
   S.H.I.E.L.D."`, and the separator is a period *and a space* — splitting on
   every period shredded both acronyms into single letters until MARVEL-85.
+- **`player_choice_calls` and `player_choice_helpers` answer the same question
+  with different evidence.** The first is the set of prompt APIs the script
+  itself names. The second is the `game/operate/` helpers it calls that reach a
+  prompt on *every* path given the arguments passed at that call site --
+  fourteen cards ask a question they never write down, and reading only the
+  first tiered them as cards that never suspend (MARVEL-114). They are kept
+  apart rather than merged because one is a fact about the file and the other
+  is an inference about somebody else's function. **A card asks the player
+  something when either is non-empty**; that is the rule `tools/spec/coverage.py`
+  tiers on.
+
+  The second field is deliberately an **under-approximation**. A helper whose
+  prompt depends on board state -- `Faces.DiscardAll` under `simultaneous=True`,
+  `Worlds.FindMainScheme` when more than one main scheme is in play -- is not
+  counted, even though those cards genuinely may ask. 512 cards are in that
+  residual. Crediting them would make `--tier interactive` useless as a work
+  list, and a false "this card asks" is exactly as wrong in a cross-language
+  contract as a false "it does not". The rule and its measurements are in
+  `tools/cards/helper_prompts.py`.
 - **`reprint_of` and `engine.link` are different relationships.** The first is
   MarvelSDB's `duplicate_of`, a card printed again in a later pack. The second
   is the engine's `full_link`/`ability_link`, which also decides which script

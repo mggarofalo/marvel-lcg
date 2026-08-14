@@ -8,10 +8,19 @@ Two jobs:
    Mirrored here so the dataset can state, per card, which file implements it.
 
 2. **Describe the script.** Enough shape to plan the port and to vary spec depth
-   by card complexity, without pretending to understand the ability. Three
+   by card complexity, without pretending to understand the ability. Four
    signals, each a fact about the syntax tree rather than a judgement:
    whether the script contains an imperative handler, which player-choice APIs
-   it calls, and which `AbilityFactory` triggers it registers.
+   it calls, which `game/operate/` helpers it calls that are certain to ask the
+   player something, and which `AbilityFactory` triggers it registers.
+
+The third of those is `player_choice_helpers` and it is a **separate** field
+from `player_choice_calls` rather than folded into it (MARVEL-114). The two
+carry different evidence -- one is a name the script itself writes down, the
+other is an inference about a helper's body -- and a reader of the dataset, in
+Python or in C#, should be able to tell which is which. `tools/spec/coverage.py`
+tiers a card `interactive` when either is non-empty; the rule that decides the
+second lives in `tools/cards/helper_prompts.py`.
 """
 
 from __future__ import annotations
@@ -20,6 +29,8 @@ import ast
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Set
+
+from tools.cards.helper_prompts import HelperPrompts
 
 PACK_ROOT = Path("cards/pack")
 PLAYER_ASK_SOURCE = Path("game/player/model/player_ask.py")
@@ -74,7 +85,17 @@ class ScriptFacts:
     # nested function, so nothing imperative to port by hand.
     has_imperative_handler: bool
     player_choice_calls: List[str] = field(default_factory=list)
+    # Qualified `game/operate/` helpers this script calls that are certain to
+    # prompt with the arguments it passes -- `Search.Collection`,
+    # `Search.PlayerCard` under `may=True`. Never merged into
+    # `player_choice_calls`: that field says what the script names, this one
+    # says what the script reaches.
+    player_choice_helpers: List[str] = field(default_factory=list)
     ability_factories: List[str] = field(default_factory=list)
+
+    def AsksThePlayer(self) -> bool:
+        """Does resolving this card stop for an answer, by either route?"""
+        return bool(self.player_choice_calls or self.player_choice_helpers)
 
 
 def _CalledNames(tree: ast.AST) -> Set[str]:
@@ -124,7 +145,8 @@ def _HasNestedFunction(tree: ast.AST) -> bool:
     return False
 
 
-def Analyse(path: Path, relative: str, choice_api: Set[str]) -> ScriptFacts:
+def Analyse(path: Path, relative: str, choice_api: Set[str],
+            helpers: HelperPrompts) -> ScriptFacts:
     source = path.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=relative)
 
@@ -136,6 +158,7 @@ def Analyse(path: Path, relative: str, choice_api: Set[str]) -> ScriptFacts:
         # inside it is a handler the engine calls back into.
         has_imperative_handler=_HasNestedFunction(tree),
         player_choice_calls=sorted(called & choice_api),
+        player_choice_helpers=helpers.Credited(tree),
         ability_factories=sorted(_AbilityFactories(tree)),
     )
 
@@ -171,9 +194,10 @@ class ScriptIndex:
 def Index(root: Path = Path(".")) -> ScriptIndex:
     index = ScriptIndex(choice_api=PlayerChoiceApi(root))
     choice_api = set(index.choice_api)
+    helpers = HelperPrompts(root, choice_api)
     for path in sorted((root / PACK_ROOT).rglob("*.py")):
         if path.name == "__init__.py":
             continue
         relative = path.relative_to(root).as_posix()
-        index.facts[relative] = Analyse(path, relative, choice_api)
+        index.facts[relative] = Analyse(path, relative, choice_api, helpers)
     return index

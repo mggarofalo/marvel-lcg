@@ -20,13 +20,15 @@ when authoring goes wrong.
 
 ## Depth comes from the script, not from a quota
 
-"Three scenarios per card" is the wrong rule -- it over-serves 531 declarative
-scripts and under-serves the 440 that stop mid-resolution to ask a question.
+"Three scenarios per card" is the wrong rule -- it over-serves 602 declarative
+scripts and under-serves the 493 that stop mid-resolution to ask a question.
 `datasets/cards/cards.json` carries `engine.script` per card, built by
 `tools/cards/extract.py`, and the tier is read from it:
 
     interactive   calls PlayerAsk / ChooseAbilities / MayChooseOneAbility /
-                  AskSpendResources, so the card asks the player a question
+                  AskSpendResources, so the card asks the player a question --
+                  or reaches one of those through a `game/operate/` helper that
+                  cannot avoid asking (MARVEL-114)
     imperative    a handler that does something, but never suspends
     declarative   a script with no function defined inside another, so no
                   branch a scenario could take differently
@@ -93,7 +95,13 @@ def Tier(card: Dict[str, Any]) -> str:
     engine = card.get("engine") or {}
     script = engine.get("script")
     if script:
-        if script.get("player_choice_calls"):
+        # Either kind of evidence. `player_choice_calls` is a prompt the script
+        # names; `player_choice_helpers` is one it reaches through a
+        # `game/operate/` helper that cannot avoid asking. Reading only the
+        # first put cards that stop and ask into the `imperative` list, under a
+        # description -- "never suspends" -- that was flatly false for them
+        # (MARVEL-114).
+        if script.get("player_choice_calls") or script.get("player_choice_helpers"):
             return "interactive"
         if script.get("has_imperative_handler"):
             return "imperative"
@@ -350,6 +358,7 @@ class Coverage:
                 "tier": card_tier,
                 "lines": int(script.get("lines") or 0),
                 "asks": list(script.get("player_choice_calls") or ()),
+                "via": list(script.get("player_choice_helpers") or ()),
                 "quarantined": len(self.quarantined.get(card_id, ())),
             })
         rows.sort(key=lambda r: (TIER_ORDER.index(r["tier"]), -r["lines"],
@@ -391,6 +400,7 @@ class Coverage:
                 "tier": card_tier,
                 "lines": int(script.get("lines") or 0),
                 "asks": list(script.get("player_choice_calls") or ()),
+                "via": list(script.get("player_choice_helpers") or ()),
                 "scenarios": have,
                 "planned": planned,
                 "short": planned - have,
@@ -456,6 +466,18 @@ def Build() -> Coverage:
     )
 
 
+def _Asks(row: Dict[str, Any]) -> str:
+    """What this card stops to ask, and whether it does so through a helper.
+
+    The helper is worth printing rather than flattening into `asks`. An author
+    walking `--tier interactive` needs to know that 40018's question is asked by
+    `Search.PlayerCard` and is not written anywhere in the card's own script.
+    """
+    parts = list(row.get("asks") or ())
+    parts += [f"via {name}" for name in (row.get("via") or ())]
+    return f"  asks: {', '.join(parts)}" if parts else ""
+
+
 def Percent(part: int, whole: int) -> str:
     return f"{100.0 * part / whole:.1f}%" if whole else "n/a"
 
@@ -517,7 +539,7 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int,
         print(f"short of plan ({label}) -- {len(rows)} covered but not at depth,"
               f"\nbiggest shortfall first:")
         for row in rows[:top]:
-            asks = f"  asks: {', '.join(row['asks'])}" if row["asks"] else ""
+            asks = _Asks(row)
             flag = "  QUARANTINED" if row["quarantined"] else ""
             print(f"  {row['card_id']:<8} {row['tier']:<12} "
                   f"{row['scenarios']}/{row['planned']:<6} "
@@ -534,7 +556,7 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int,
     print(f"next up ({label}) -- {len(rows)} uncovered, "
           f"largest script first:")
     for row in rows[:top]:
-        asks = f"  asks: {', '.join(row['asks'])}" if row["asks"] else ""
+        asks = _Asks(row)
         flag = "  QUARANTINED" if row["quarantined"] else ""
         print(f"  {row['card_id']:<8} {row['tier']:<12} {row['lines']:>4}L "
               f"{row['pack']:<10} {row['name'][:34]:<34}{asks}{flag}")
