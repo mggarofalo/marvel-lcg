@@ -151,6 +151,18 @@ class PlayerState:
     discard_size: int
     eliminated: bool
     resources: str
+    identity_object_id: Optional[int] = None
+    """Which card in `StateView.cards` is this seat's identity.
+
+    The seat -> card link, and the only thing in the view that carries it: a
+    `CardState` knows it *is* an identity but not whose. `I am in hero form`
+    resolves through this rather than by picking the first identity out of
+    `cards`, which is object-id order and not seat order -- see
+    `assertions.ResolveSelf` and MARVEL-107.
+
+    `None` when the seat has no identity card yet, which is every snapshot taken
+    before identity selection has run.
+    """
 
     def Get(self, prop: str) -> Any:
         key = prop.strip().lower()
@@ -259,12 +271,31 @@ class StateView:
                 found = [card for card in found if card.zone.lower() == target.lower()]
         return found
 
-    def Player(self, player_id: int) -> PlayerState:
-        for player in self.players:
-            if player.player_id == player_id:
-                return player
-        raise UnknownProperty(
-            f"no player {player_id}; this game has {len(self.players)} player(s)")
+    def Player(self, seat: int) -> PlayerState:
+        """The player in seat `seat`, 0-based. Same seats `harness.SeatOf` names.
+
+        **By position, not by `player_id`.** `players` is built from
+        `world.const_seat_order_players`, which is built once and never
+        reordered, so position *is* the seat. `player_id` is a number the engine
+        stamps on a `Player`; it happens to be the seat index today, because
+        `World.__init__` passes the loop index as it fills both lists. Reading
+        the position makes `player 2`, seat 2 and `I` one rule instead of three
+        that agree by construction elsewhere (MARVEL-107).
+
+        The lower bound is not decoration: `player 0` in a scenario compiles to
+        seat -1, and a bare `self.players[-1]` would quietly answer with the
+        last seat.
+        """
+        if seat < 0 or seat >= len(self.players):
+            raise UnknownProperty(
+                f"no player {seat + 1}; this game has {len(self.players)} player(s)")
+        return self.players[seat]
+
+    def CardByObjectId(self, object_id: int) -> Optional[CardState]:
+        for card in self.cards:
+            if card.object_id == object_id:
+                return card
+        return None
 
     def ToDict(self) -> Dict[str, Any]:
         return {
@@ -274,7 +305,8 @@ class StateView:
             "game_over_reason": self.game_over_reason,
             "players_won": self.players_won,
             "players": [
-                {"player_id": p.player_id, "identity": p.identity, "hand_size": p.hand_size,
+                {"player_id": p.player_id, "identity": p.identity,
+                 "identity_object_id": p.identity_object_id, "hand_size": p.hand_size,
                  "deck_size": p.deck_size, "discard_size": p.discard_size,
                  "eliminated": p.eliminated, "resources": p.resources}
                 for p in self.players
@@ -383,14 +415,31 @@ def CaptureCard(card: Any, engine_allocated: bool = False) -> CardState:
 
 
 def CapturePlayer(player: Any) -> PlayerState:
+    # The identity card, not only its name. `GetIdentity()` returns the face
+    # this seat is presenting; both forms live on one card object, so the id is
+    # the same in either form and survives a change of form mid-transcript.
+    #
+    # A player with no identity card yet answers with `world.insert`, a rules
+    # card standing in for one. `Identity.IsType` is the same predicate
+    # `CaptureCard` sets `is_identity` from, so the card a seat points at always
+    # reads as an identity and a seat that has none says so instead of naming
+    # the stand-in. A snapshot must never be the thing that raises either.
+    from game.card.face.card_type import Identity
+
     identity = ""
+    identity_object_id: Optional[int] = None
     try:
-        identity = str(player.GetIdentity().name)
+        face = player.GetIdentity()
+        identity = str(face.name)
+        if Identity.IsType(face):
+            identity_object_id = int(face.card.object_id)
     except Exception:
-        identity = str(player.name)
+        if not identity:
+            identity = str(player.name)
     return PlayerState(
         player_id=int(player.player_id),
         identity=identity,
+        identity_object_id=identity_object_id,
         hand_size=int(player.hand_cards.GetSize()),
         deck_size=int(player.player_deck.GetSize()),
         discard_size=int(player.discard_pile.GetSize()),

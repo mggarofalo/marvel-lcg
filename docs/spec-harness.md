@@ -453,6 +453,68 @@ Note that `"<card>" is in the "<zone>"` still reports a zone *type*, so it canno
 say whose area a card reached; in a two-player scenario, tell the two drones
 apart by the printed identity of the card each was made from.
 
+**The `Then` subject is seat 1 as well** (MARVEL-107) — the `I` in
+`I am in hero form` and `I have 3 damage`, which is a third place the word is
+resolved and was the last one not to name a seat. It picked the first
+`is_identity` card out of `StateView.cards`, and that tuple is in **object-id
+order**: `resolve.AllCards` sorts by object id so its results are stable, which
+is what that function needs and is not what a seat is.
+
+It named seat 1 anyway, on every board this engine can build. Identity cards are
+the first things allocated during setup, one per seat in seat order, so the
+lowest-id identity is seat 1's and the three readings coincided. That is a port
+hazard rather than a Python bug, and the kind [migration.md](migration.md) says
+the two engines have to be *made* to agree on rather than assumed to: an engine
+that numbered identities by pack, by hero name, or alter-ego before hero would
+move `I am in hero form` to another player while `I have 3 cards in hand` and
+`"me"` stayed on seat 1. The scenario would pass in Python, fail in C#, and read
+as an engine disagreement. It is the same thing MARVEL-42 already refuses to let
+a scenario lean on for `#N`.
+
+So the three readings are now one rule, and it is a **seat**:
+
+| Written | Resolved by |
+|---|---|
+| `I have <n> cards in hand`, `my deck is` | `harness.SeatOf(world, 0)` |
+| `"me"` as a card ref | `harness.SeatOf(world, 0)` |
+| `I` as a `Then` subject | `StateView.players[0].identity_object_id` |
+
+The `Then` side holds a `StateView` rather than a world, so it cannot call
+`SeatOf`; what it reads instead is the same seat order, because
+`StateView.players` is captured from `world.const_seat_order_players`. The one
+thing missing from the view was **which card each seat's identity is**, and
+`PlayerState.identity_object_id` now carries it. Giving every `CardState` an
+owner or a seat was the alternative and is bigger for no gain: only identities
+need the link, and a seat is already a thing the view has. Both forms are faces
+of one card object, so the id is the same in either form and the link survives a
+change of form mid-transcript.
+
+**Seats are read by position, not by `player_id`.** `StateView.Player(n)` used to
+scan for a `PlayerState` whose `player_id` matched, which is a fourth reading of
+the same idea and was true only by coincidence — `World.__init__` passes its loop
+index as `player_id` while it fills `const_seat_order_players`, so the number and
+the position agree today. Position is the seat by construction, so that is what
+is read; `unit_test/test_spec_harness.py` records the engine's numbering as an
+observation rather than depending on it. `player 0` compiles to seat -1 and is
+refused, which a plain index would have answered with the *last* seat.
+
+Two first-person steps are **not** about a seat and are unchanged.
+`I am prompted to choose one` and `I cannot attack "<card>"` read the options
+the engine is offering at the decision in front of the transcript, so their "I"
+is whoever the engine is asking. That is the right reading for them — a
+transcript answers decisions in the order they are put — but it means a
+two-player scenario can have `I am prompted` about seat 2 and `I am in hero
+form` about seat 1 in adjacent lines. Say which hero you mean by name when that
+matters.
+
+Nothing about this is observable in a scenario you can write today, and it is
+pinned as a **property test rather than a reproduction**, deliberately: object
+ids ascend from 1, identities are allocated first, and a card a `Given` creates
+later gets a higher id, so no board reachable from a spec makes the two orders
+disagree. What the tests do instead is capture a real two-player board and
+relabel it the way another allocator would number it — each seat keeps its own
+hero, only the numbers move — and require that `I` still means seat 1.
+
 A step that matches nothing is a parse error naming the line. A scenario
 compiles completely or not at all.
 

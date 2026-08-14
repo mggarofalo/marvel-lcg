@@ -57,6 +57,39 @@ def MakeCard(**overrides):
     return CardState(**fields)
 
 
+def MakeIdentity(**overrides):
+    """An identity card. Seat 1's unless a test says otherwise."""
+    fields = {
+        "object_id": 1,
+        "name": "Spider-Man",
+        "card_id": "01001a",
+        "card_ids": ("01001a", "01001b"),
+        "names": ("spider-man", "peter parker"),
+        "zone": "HeroArea",
+        "health": 10,
+        "max_health": 10,
+        "is_identity": True,
+        "is_hero_form": True,
+    }
+    fields.update(overrides)
+    return MakeCard(**fields)
+
+
+def MakePlayer(**overrides):
+    fields = {
+        "player_id": 0,
+        "identity": "Spider-Man",
+        "hand_size": 5,
+        "deck_size": 10,
+        "discard_size": 0,
+        "eliminated": False,
+        "resources": "",
+        "identity_object_id": 1,
+    }
+    fields.update(overrides)
+    return PlayerState(**fields)
+
+
 def MakeState(cards=(), players=(), phase="Player Turn"):
     return StateView(
         round_id=1,
@@ -262,13 +295,13 @@ class TestAssertions(unittest.TestCase):
         self.assertIn("it is in VillainArea", result.message)
 
     def test_me_resolves_to_the_identity(self):
-        state = MakeState(cards=[
-            MakeCard(),
-            MakeCard(object_id=1, name="Spider-Man", card_id="01001a",
-                     card_ids=("01001a", "01001b"), names=("spider-man", "peter parker"),
-                     zone="HeroArea", health=10, max_health=10,
-                     is_identity=True, is_hero_form=True),
-        ])
+        state = MakeState(
+            cards=[
+                MakeCard(),
+                MakeIdentity(object_id=1),
+            ],
+            players=[MakePlayer(identity_object_id=1)],
+        )
         self.assertTrue(Evaluate(state, ThenStep("me", "hero_form", True)).passed)
         self.assertTrue(Evaluate(state, ThenStep("me", "damage", 0)).passed)
 
@@ -1268,6 +1301,270 @@ class TestSelfAfterTheTokenMoves(unittest.TestCase):
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+
+################################################################################
+#
+
+class TestSelfOnTheAssertionSide(unittest.TestCase):
+    """`I` in a `Then` is seat 1's identity, by seat and not by object id (MARVEL-107).
+
+    The third reading of the first person. `assertions.ResolveSubject` picked
+    the first `is_identity` card out of `StateView.cards`, which
+    `resolve.AllCards` builds in **object-id order** -- stable, which is what
+    that function needs, and not seat order. It named seat 1 anyway because this
+    engine allocates identity cards seat by seat during setup, so the three
+    readings agreed by coincidence rather than by construction.
+
+    **These are property tests, not a reproduction.** No board this engine can
+    build makes the two orders disagree: object ids ascend from 1, identity
+    cards are the first things allocated, and they are allocated in
+    `world.players` order, which is still seat order at setup. A card created
+    later by a `Given` -- even an identity card stocked into a deck -- gets a
+    *higher* id and so cannot displace seat 1. What is pinned instead is the
+    property the C# port needs: relabel the same board the way another allocator
+    would number it, and `I` still means seat 1.
+    """
+
+    def LiveTwoPlayerView(self):
+        """A real two-player board, captured. Returns (world, view)."""
+        from tools.spec.harness import ApplyGiven, EnsureEngine, NewGameForCase
+        from tools.spec.policy import TranscriptPolicy
+        from tools.spec.state import Capture
+
+        EnsureEngine()
+        case = MakeCase(name="two seats", heroes=("spider_man", "captain_marvel"))
+        game = NewGameForCase(case, TranscriptPolicy())
+        self.assertTrue(game.GameSetup())
+        ApplyGiven(game.world, case)
+        return game.world, Capture(game.world)
+
+    @staticmethod
+    def AllocatedTheOtherWay(view):
+        """The same board, numbered by an engine that allocated the identities
+        in the other order.
+
+        Only the *numbers* move: each seat keeps the identity card it had, so
+        `identity_object_id` follows its card to the card's new id. That is what
+        a different allocator does -- it does not hand seat 1 another hero.
+        """
+        from dataclasses import replace
+
+        identities = [card for card in view.cards if card.is_identity]
+        assert len(identities) == 2, identities
+        swap = {identities[0].object_id: identities[1].object_id,
+                identities[1].object_id: identities[0].object_id}
+        cards = tuple(sorted(
+            (replace(card, object_id=swap.get(card.object_id, card.object_id))
+             for card in view.cards),
+            key=lambda card: card.object_id))
+        players = tuple(
+            replace(player, identity_object_id=swap.get(player.identity_object_id,
+                                                        player.identity_object_id))
+            for player in view.players)
+        return replace(view, cards=cards, players=players)
+
+    def test_the_three_readings_of_the_first_person_agree_on_a_real_board(self):
+        # The baseline: on a board this engine can actually build, the `Then`
+        # subject, the card ref and the seat list are one hero.
+        from tools.spec.harness import SeatOf
+        from tools.spec.resolve import ResolveCard
+
+        world, view = self.LiveTwoPlayerView()
+        _, card, error = ResolveSubject(view, "I")
+        self.assertEqual(error, "")
+        self.assertEqual(card.object_id, SeatOf(world, 0).GetIdentity().card.object_id)
+        self.assertEqual(card.object_id, ResolveCard(world, "me").object_id)
+
+    def test_todays_agreement_rests_on_allocation_order(self):
+        """The premise, measured rather than asserted.
+
+        If this ever stops holding, the old implementation was already wrong and
+        the failure belongs here rather than in whichever scenario noticed.
+        """
+        world, view = self.LiveTwoPlayerView()
+        identities = [card for card in view.cards if card.is_identity]
+        seat_identities = [player.identity_object_id for player in view.players]
+        self.assertEqual([card.object_id for card in identities], seat_identities)
+        self.assertEqual(seat_identities, sorted(seat_identities))
+
+    def test_i_still_means_seat_one_under_another_allocation_order(self):
+        # The property the port needs. Under the object-id reading this view
+        # answers with the other hero, so the assertion below is the whole
+        # difference between the two implementations.
+        world, view = self.LiveTwoPlayerView()
+        seat_one = view.players[0].identity
+        relabelled = self.AllocatedTheOtherWay(view)
+
+        first_by_id = [card for card in relabelled.cards if card.is_identity][0]
+        self.assertNotEqual(first_by_id.name, seat_one,
+                            "the relabelling did not move the identities apart")
+
+        _, card, error = ResolveSubject(relabelled, "I")
+        self.assertEqual(error, "")
+        self.assertEqual(card.name, seat_one)
+        self.assertEqual(card.object_id, relabelled.players[0].identity_object_id)
+
+    def test_the_zone_steps_and_the_subject_name_one_seat_under_relabelling(self):
+        # Both halves of a transcript on the same view: `player 1`/`I have ...`
+        # reads the seat list, `I am ...` reads the identity. They have to be
+        # the same hero or a scenario means two things.
+        world, view = self.LiveTwoPlayerView()
+        relabelled = self.AllocatedTheOtherWay(view)
+
+        _, card, _ = ResolveSubject(relabelled, "I")
+        _, player, _ = ResolveSubject(relabelled, "player 1")
+        self.assertEqual(player.identity_object_id, card.object_id)
+
+    def test_every_spelling_of_the_first_person_reads_the_same_seat(self):
+        from tools.spec.resolve import SELF_NAMES
+
+        state = MakeState(
+            cards=[MakeIdentity(object_id=2, name="Carol Danvers", card_id="01043b",
+                                card_ids=("01043a", "01043b"),
+                                names=("carol danvers", "captain marvel"),
+                                is_hero_form=False),
+                   MakeIdentity(object_id=5)],
+            players=[MakePlayer(identity_object_id=5),
+                     MakePlayer(player_id=1, identity="Carol Danvers",
+                                identity_object_id=2)],
+        )
+        for name in SELF_NAMES:
+            _, card, error = ResolveSubject(state, name)
+            self.assertEqual(error, "", name)
+            self.assertEqual(card.object_id, 5, name)
+
+    def test_the_seat_list_is_read_by_position_not_by_player_id(self):
+        """`player_id` is data, position is the seat.
+
+        The engine numbers players by seat index today -- `World.__init__`
+        passes the loop index while it fills `const_seat_order_players` -- so
+        the two agreed. A view whose ids are anything else still has to answer
+        by seat, or `player 2` is a fourth reading of the same idea.
+        """
+        state = MakeState(
+            cards=[MakeIdentity(object_id=5)],
+            players=[MakePlayer(player_id=41, identity_object_id=5),
+                     MakePlayer(player_id=17, identity="Carol Danvers",
+                                hand_size=6, identity_object_id=2)],
+        )
+        self.assertTrue(Evaluate(state, ThenStep("player 1", "hand_size", 5)).passed)
+        self.assertTrue(Evaluate(state, ThenStep("player 2", "hand_size", 6)).passed)
+        _, card, error = ResolveSubject(state, "I")
+        self.assertEqual(error, "")
+        self.assertEqual(card.object_id, 5)
+
+    def test_player_zero_is_not_the_last_seat(self):
+        # `player 0` compiles to seat -1, which a plain index would answer with
+        # the *last* seat rather than refusing.
+        state = MakeState(players=[MakePlayer(),
+                                   MakePlayer(player_id=1, hand_size=6)])
+        result = Evaluate(state, ThenStep("player 0", "hand_size", 6))
+        self.assertFalse(result.passed)
+        self.assertTrue(result.unresolvable)
+        self.assertIn("no player 0", result.message)
+
+    def test_a_missing_seat_is_reported_the_way_the_author_wrote_it(self):
+        # "player 3" in a one-player game says three, not the seat index two.
+        state = MakeState(players=[MakePlayer()])
+        _, target, error = ResolveSubject(state, "player 3")
+        self.assertIsNone(target)
+        self.assertIn("no player 3", error)
+        self.assertIn("1 player(s)", error)
+
+    def test_a_seat_with_no_identity_says_so_rather_than_finding_one(self):
+        # Any identity on the board used to answer for `I`. A seat that has no
+        # identity card is not a seat whose identity is somebody else's.
+        state = MakeState(
+            cards=[MakeIdentity(object_id=2, name="Carol Danvers", card_id="01043b",
+                                card_ids=("01043a", "01043b"),
+                                names=("carol danvers",))],
+            players=[MakePlayer(identity_object_id=None)],
+        )
+        result = Evaluate(state, ThenStep("I", "hero_form", True))
+        self.assertTrue(result.unresolvable)
+        self.assertIn("no identity", result.message)
+
+    def test_the_first_person_in_a_game_with_no_players(self):
+        state = MakeState(cards=[MakeIdentity()])
+        result = Evaluate(state, ThenStep("I", "hero_form", True))
+        self.assertTrue(result.unresolvable)
+        self.assertIn("0 player(s)", result.message)
+
+    def test_a_seat_pointing_at_a_card_the_snapshot_lacks_refuses_to_guess(self):
+        """The error path, pinned so it cannot become a fallback.
+
+        Seat 1 names an identity that is not in `cards`. The tempting repair is
+        to fall back to "the first identity on the board" when the lookup
+        misses -- which is the object-id reading this change removed, restored
+        on a branch nothing tests. Left unpinned, that branch reintroduces
+        MARVEL-107 silently and only on the boards where it matters.
+
+        Unreachable from a real capture, since `CapturePlayer` reads the id off
+        a card `AllCards` also walks. It is a test about the seam, not the
+        engine.
+        """
+        state = MakeState(
+            cards=[MakeIdentity(object_id=2, name="Carol Danvers",
+                                card_id="01043b", card_ids=("01043a", "01043b"),
+                                names=("carol danvers",))],
+            players=[MakePlayer(identity_object_id=99)],
+        )
+        _, card, error = ResolveSubject(state, "I")
+        self.assertIsNone(card)
+        self.assertIn("not in this snapshot", error)
+        # Emphatically not the other identity that happens to be lying around.
+        result = Evaluate(state, ThenStep("I", "hero_form", True))
+        self.assertTrue(result.unresolvable)
+
+    def test_the_capture_links_each_seat_to_its_own_identity_card(self):
+        # The seat -> card link, against the engine. Two seats, two different
+        # cards, each one the card that seat's `GetIdentity()` sits on.
+        world, view = self.LiveTwoPlayerView()
+        seats = world.const_seat_order_players
+        self.assertEqual(len(view.players), 2)
+        for index, player in enumerate(view.players):
+            self.assertEqual(player.identity_object_id,
+                             seats[index].GetIdentity().card.object_id)
+            # The card it names is one the view calls an identity, so `I` and
+            # `"<card>" is an identity` cannot disagree about the same card.
+            named = view.CardByObjectId(player.identity_object_id)
+            self.assertIsNotNone(named)
+            self.assertTrue(named.is_identity)
+        self.assertNotEqual(view.players[0].identity_object_id,
+                            view.players[1].identity_object_id)
+
+    def test_player_ids_are_seat_indices_in_this_engine(self):
+        # Recorded, not relied on: `StateView.Player` reads the position. If
+        # this ever stops holding, the harness is unaffected and the *engine*
+        # has changed something worth knowing about.
+        world, view = self.LiveTwoPlayerView()
+        self.assertEqual([player.player_id for player in view.players], [0, 1])
+        self.assertEqual([player.player_id
+                          for player in world.const_seat_order_players], [0, 1])
+
+    def test_the_identity_link_survives_a_change_of_form(self):
+        # Both forms are faces of one card, so the link is form-independent --
+        # which is what lets `I am in hero form` be about a seat rather than
+        # about whichever card is showing.
+        from tools.spec.harness import ApplyGiven, EnsureEngine, NewGameForCase
+        from tools.spec.policy import TranscriptPolicy
+        from tools.spec.state import Capture
+
+        EnsureEngine()
+        case = MakeCase(name="forms", heroes=("spider_man", "captain_marvel"),
+                        given=(GivenStep("alter_ego_form", ("me",)),))
+        game = NewGameForCase(case, TranscriptPolicy())
+        self.assertTrue(game.GameSetup())
+        world = game.world
+        before = Capture(world).players[0].identity_object_id
+        ApplyGiven(world, case)
+        after = Capture(world)
+
+        self.assertEqual(after.players[0].identity_object_id, before)
+        _, card, error = ResolveSubject(after, "I")
+        self.assertEqual(error, "")
+        self.assertFalse(card.is_hero_form)
 
 
 ################################################################################
