@@ -113,6 +113,13 @@ class AbilityFactoryForChoice:
                                  *,
                                  conditions: ConditionsType[Message.WhenPlayerChooseAbility]=[],
                                  ) -> 'Ability':
+        """An option whose resources are a **cost**: "spend X -> do Y".
+
+        A cost is paid in full or the option is not taken, so this option is
+        offered only when the player can pay it and is never partially
+        resolved. Use `ForChoiceAbilityToSpend` when the printed option is the
+        spending itself.
+        """
         if operation == None:
             operation = lambda targets, res: None
 
@@ -126,4 +133,29 @@ class AbilityFactoryForChoice:
                 operation(targets, res),
             conditions=conditions
         ).SetFuncName("ForChoiceAbilityWithCost")
+
+    @staticmethod
+    def ForChoiceAbilityToSpend(cost: 'Cost',
+                                name: str|None=None,
+                                *,
+                                conditions: ConditionsType[Message.WhenPlayerChooseAbility]=[],
+                                ) -> 'Ability':
+        """An option whose resources are the **effect**: "either spend X or ...".
+
+        Sonic Boom (01123) is the card the distinction is written on: *"you must
+        choose an option that you can fulfill. If you cannot fulfill either
+        option, then you must do as much as you can, which typically means
+        discarding one or two different resource icons from your hand."* An
+        effect is resolved as far as it can be; a cost is not. So this option,
+        and only this option, can be forced to resolve at a reduced cost when
+        the whole choice has nothing anyone can fulfil.
+
+        Which of the two a card prints is the card's to say -- there is no way
+        to read it off the resources -- so it is said here, at the call site.
+        """
+        return AbilityFactoryForChoice.ForChoiceAbilityWithCost(
+            cost,
+            name,
+            conditions=conditions,
+        ).SetSpendIsTheEffect()
 

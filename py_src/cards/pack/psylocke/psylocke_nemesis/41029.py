@@ -25,7 +25,7 @@ def GetAbilities() -> Sequence['Ability']:
         identity = player.GetIdentity()
         player.ChooseAbilities(
             effect,
-            AbilityFactory.ForChoiceAbilityWithCost(
+            AbilityFactory.ForChoiceAbilityToSpend(
                 Cost("B")
             ),
             AbilityFactory.ForChoiceAbility(

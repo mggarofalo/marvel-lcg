@@ -360,6 +360,24 @@ class EffectChecker:
                 assert False, f"{self=}"
             self.UpdatePayResources(asked_player)
 
+            # An option in a "choose one" that costs resources is filtered on
+            # affordability the same way `UpdateLegalTargets` above filters one
+            # that needs a target on having any: offering a player something
+            # they cannot pay for, and then refusing it when they pick it, is
+            # not a decision (MARVEL-109).
+            #
+            # Only choose-abilities. Playing a card from hand answers "can I
+            # afford this" through `HasCost.CanPlayBy` and its own UI, and this
+            # is not that path.
+            if self.ability.flags.is_choose_ability:
+                if self.effect.context.pay_as_much_as_possible:
+                    self.cost_for_different_target.ReduceToMaxPayable()
+                    self.effect.display_name_override = \
+                        f"Spend {self.cost_for_different_target.GetCost(None).GetSpendText()}"
+                elif not self.cost_for_different_target.CanPayAnyTarget():
+                    self.failures.Set(asked_player, EffectFailure.CannotPay)
+                    return False
+
         if self.ability.is_label_defense:
             # from game.message.message_type import AttackerMessageInternal
             if isinstance(message, AttackerMessageInternal):

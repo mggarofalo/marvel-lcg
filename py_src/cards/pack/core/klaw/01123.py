@@ -15,8 +15,12 @@ def GetAbilities() -> Sequence['Ability']:
 
         player.ChooseAbilities(
             effect,
-            # TODO: Sonic Boom is a choice, but you must choose an option that you can fulfill. If you cannot fulfill either option, then you must do as much as you can, which typically means discarding one or two different resource icons from your hand.
-            AbilityFactory.ForChoiceAbilityWithCost(
+            # "You must choose an option that you can fulfill. If you cannot
+            # fulfill either option, then you must do as much as you can, which
+            # typically means discarding one or two different resource icons
+            # from your hand." -- which is what `ForChoiceAbilityToSpend` says
+            # here and `ChooseAbilitiesHelper` carries out (MARVEL-109).
+            AbilityFactory.ForChoiceAbilityToSpend(
                 Cost("YBR"),
             ),
             AbilityFactory.ForChoiceAbility(

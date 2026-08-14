@@ -62,6 +62,11 @@ class Ability:
         self.cost_fn: Callable[['Effect', List['CardFace']], Cost]|None = None
         self.play_cost: Cost|None = None
 
+        # "Either spend X or ..." -- the spending is this option's effect, not
+        # a cost gating one, so it is resolved as far as it can be rather than
+        # all-or-nothing. Set by `AbilityFactory.ForChoiceAbilityToSpend`.
+        self.spend_is_the_effect = False
+
         self.default_choose = False
 
         self.selectors: List['Selector|None'] = [] # Only use the first one, the others are used to check if it has the legal target, remove "Zero" in range
@@ -324,6 +329,12 @@ class Ability:
             self.cost_fn = lambda effect, face: res
         else:
             self.cost_fn = res
+        return self
+
+    def SetSpendIsTheEffect(self) -> 'Ability':
+        assert self.flags.is_choose_ability, f"{self.flags=}"
+        assert self.NeedCost(), f"{self=}"
+        self.spend_is_the_effect = True
         return self
 
     def SetPlayCost(self, cost: 'Cost') -> 'Ability':

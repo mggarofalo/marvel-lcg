@@ -20,7 +20,7 @@ def GetAbilities() -> Sequence['Ability']:
         player = message.GetToPlayer()
         player.ChooseAbilities(
             effect,
-            AbilityFactory.ForChoiceAbilityWithCost(
+            AbilityFactory.ForChoiceAbilityToSpend(
                 Cost("RR")
             ),
             AbilityFactory.ForChoiceAbility(
