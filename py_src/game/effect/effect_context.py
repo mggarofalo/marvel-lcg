@@ -24,6 +24,11 @@ class EffectContext:
         self.is_must_choose = False
         self.only_work_when_no_other_options = False
 
+        # Set by `PlayerAction.ChooseAbilitiesHelper` on the second pass of a
+        # forced choice that nothing could fulfil: the option's cost is cut
+        # down to whatever the player can actually spend (MARVEL-109).
+        self.pay_as_much_as_possible = False
+
         self.target_range: Tuple[int, int] = (0, 0)
         self.all_legal_targets: List['CardFace'] = []
         self.ignore_resource_cost: bool = False

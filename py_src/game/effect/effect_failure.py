@@ -14,6 +14,7 @@ class EffectFailure(str, Enum):
     TypeCountNotEnough      = "type count not enough",
     CheckTarget             = "check target",
     CheckPay                = "check pay",
+    CannotPay               = "cannot pay this cost",
     AlreadyProcessed        = "already processed in this message",
     TreatAsBlank            = "treat as blank",
     IsRemoved               = "is removed",

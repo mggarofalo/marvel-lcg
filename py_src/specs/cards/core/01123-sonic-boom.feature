@@ -43,9 +43,14 @@ Feature: Sonic Boom
   Scenario: the exhaust branch exhausts the ally as well as the hero
     # "each character you control" is the claim -- a scenario with only a hero
     # in play would pass on an engine that exhausted just the hero.
+    #
+    # The hand pays [energy][mental][physical] so that both options are on
+    # offer: an option that cannot be paid for is not offered at all
+    # (MARVEL-109), and a five-Backflip hand -- which is what this scenario used
+    # to hold -- makes the spend branch disappear and leaves nothing to choose.
     Given I am in hero form
     And "Black Cat" is in play
-    And my hand is "Backflip", "Backflip", "Backflip", "Backflip", "Backflip"
+    And my hand is "Haymaker", "Enhanced Spider-Sense", "Backflip", "Backflip", "Backflip"
     And "Sonic Boom" is revealed
 
     Then I am prompted to choose one
@@ -74,6 +79,60 @@ Feature: Sonic Boom
     # all: "not exhausted" is the state the board was already in. Three
     # resources spent is three cards out of a five-card hand.
     And I have 2 cards in hand
+
+  @card:01123
+  Scenario: an unpayable spend is not offered
+    # "You must choose an option that you can fulfill." The hand is three
+    # physical icons against a cost of [energy][mental][physical], so the spend
+    # branch is not a thing this player can do -- and an option that will be
+    # refused the moment it is picked is not a decision. It is withheld the way
+    # a targetless option is, and the prompt is the exhaust branch alone.
+    Given I am in hero form
+    And "Black Cat" is in play
+    And my hand is "Backflip", "Backflip", "Enhanced Spider-Sense"
+    And "Sonic Boom" is revealed
+
+    Then I am prompted to choose one
+      | Exhaust each character you control |
+
+    When I choose "Exhaust each character you control"
+    Then I am exhausted
+    And "Black Cat" is exhausted
+    # Nothing was spent: the branch that was withheld is also the branch that
+    # did not happen.
+    And I have 3 cards in hand
+
+  @card:01123
+  Scenario: neither option fulfillable spends as much as it can
+    # The ruling this card is written on: "you must choose an option that you
+    # can fulfill. If you cannot fulfill either option, then you must do as much
+    # as you can, which typically means discarding one or two different resource
+    # icons from your hand."
+    #
+    # Both branches are out of reach. The hero is already exhausted and controls
+    # nothing else, so "exhaust each character you control" has no target; the
+    # hand is [mental][physical][physical] against [energy][mental][physical],
+    # so the spend cannot be paid in full. What is left is the part of the spend
+    # that *can* be paid, and the prompt says so -- it names
+    # [[mental]][[physical]], not the printed three.
+    #
+    # Declining is what this scenario exists to rule out. Before MARVEL-109 the
+    # engine accepted a decline here and the treachery resolved to nothing at
+    # all: hand still three cards, board untouched.
+    Given I am in hero form
+    And "me" is exhausted
+    And my hand is "Enhanced Spider-Sense", "Backflip", "Backflip"
+    And "Sonic Boom" is revealed
+
+    Then I am prompted to choose one
+      | Spend [[mental]][[physical]] |
+
+    When I choose "Spend [[mental]][[physical]]"
+    Then I have 1 card in hand
+    # One physical icon and one mental icon left the hand; the second Backflip
+    # is what stayed, which is the "as much as you can" and no more.
+    And "Backflip #2" is in the "HandsArea"
+    And I am not prompted again
 
   @card:01123
   Scenario: as a boost card it exhausts the hero the activation damaged

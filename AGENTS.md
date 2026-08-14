@@ -237,7 +237,8 @@ python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
                    unit_test.test_card_coverage_play unit_test.test_card_removal \
                    unit_test.test_cannot_defend unit_test.test_probe_temp0_order \
                    unit_test.test_base_health_grant \
-                   unit_test.test_base_stat_grant
+                   unit_test.test_base_stat_grant \
+                   unit_test.test_choice_cost
 python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
 python -m tools.determinism.check_runs --runs 4 --matrix wide --policy first  # ...on games that play cards
 python -m tools.determinism.probe_forced_selection  # self-play still reaches the forced-ability tie-break

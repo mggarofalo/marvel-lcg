@@ -11,7 +11,7 @@ def GetAbilities() -> Sequence['Ability']:
         initiator = effect.GetInitiator()
         initiator.ChooseAbilities(
             effect,
-            AbilityFactory.ForChoiceAbilityWithCost(
+            AbilityFactory.ForChoiceAbilityToSpend(
                 Cost("R", from_hand=True)
             ),
             AbilityFactory.ForChoiceAbility(

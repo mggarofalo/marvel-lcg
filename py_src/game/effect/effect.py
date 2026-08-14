@@ -35,6 +35,13 @@ class Effect(Object):
 
         self.checker = EffectChecker(self)
         self.failures = self.checker.failures
+
+        # An option that is being resolved at a reduced cost is not the option
+        # the ability was named for. Set by `EffectChecker` when a forced
+        # "either spend X or ..." falls back to spending as much as it can, so
+        # the prompt names the resources that will actually be spent
+        # (MARVEL-109).
+        self.display_name_override: 'str|None' = None
         self.cost_func = EffectCostFunction(self)
         self.context = EffectContext(self)
 
@@ -428,6 +435,8 @@ class Effect(Object):
         from game.card.face.card_type import Ally
         from game.card.face.card_type import Identity
         def get_name() -> str:
+            if self.display_name_override != None:
+                return self.display_name_override
             if Identity.IsType(self.this) or Ally.IsType(self.this):
                 if self.ability.IsFunction("ATK"):
                     return "Attack"

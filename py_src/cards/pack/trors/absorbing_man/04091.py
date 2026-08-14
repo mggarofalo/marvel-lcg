@@ -20,7 +20,7 @@ def GetAbilities() -> Sequence['Ability']:
         def action(player: 'Player'):
             player.ChooseAbilities(
                 effect,
-                AbilityFactory.ForChoiceAbilityWithCost(
+                AbilityFactory.ForChoiceAbilityToSpend(
                     Cost("Y")
                 ),
                 AbilityFactory.ForChoiceAbility(

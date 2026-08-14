@@ -12,7 +12,7 @@ def GetAbilities() -> Sequence['Ability']:
         player.ChooseAbilities(
             effect,
             ExhaustTheMilanoForChoiceAbility(effect),
-            AbilityFactory.ForChoiceAbilityWithCost(
+            AbilityFactory.ForChoiceAbilityToSpend(
                 Cost("RR"),
             ),
             AbilityFactory.ForChoiceAbility(

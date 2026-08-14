@@ -28,7 +28,7 @@ def GetAbilities() -> Sequence['Ability']:
                     lambda targets:
                         this.DealDamage(targets, 1, effect)
                 ).SetTarget("YourAlly", name="Morlock"),
-                AbilityFactory.ForChoiceAbilityWithCost(
+                AbilityFactory.ForChoiceAbilityToSpend(
                     Cost("1")
                 )
             )

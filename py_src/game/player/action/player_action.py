@@ -210,21 +210,54 @@ class PlayerAction:
                 priority = TimingPriority.Response
 
         player = self.GetPlayer()
-        player.world.object_manager.ResetChooseEffect()
-        effects: List['Effect'] = []
-        identity = player.GetIdentity()
-        for ability in abilities:
-            if ability == None:
-                continue
-            effect = Effect(identity, ability, world=by_effect.world)
-            effects.append(effect)
 
-            if "ForChoiceAbilityWithCost" in ability.func_names:
-                forced = False
+        # Whether declining is legal is the caller's to state and nothing here
+        # may override it. It used to: any option built by
+        # `ForChoiceAbilityWithCost` unforced the whole choice, which made every
+        # printed "choose to either X or Y" escapable -- wrong for 26 of the 30
+        # cards it reached (MARVEL-109). The two clauses are already told apart
+        # one level up: `ChooseAbilities` is the forced choice, and
+        # `MayChooseOneAbility` is the opt-in, which offers its "no" as an
+        # explicit `Cancel` option rather than as a cancelled prompt.
+        #
+        # "39019" Erratic Teleportation, which the comment here used to name, is
+        # a real "you may spend" and still is one: it reaches this through
+        # `AskSpendResources`, which passes `forced=False` itself.
+
+        def build() -> List['Effect']:
+            player.world.object_manager.ResetChooseEffect()
+            effects: List['Effect'] = []
+            identity = player.GetIdentity()
+            for ability in abilities:
+                if ability == None:
+                    continue
+                effects.append(Effect(identity, ability, world=by_effect.world))
+            return effects
+
+        effects = build()
 
         message = Message.WhenPlayerChooseAbility(player, by_effect, step, for_second_target)
         message.Send()
-        # Cannot set `forced=True`, see "39019"
+        effect = self.ChooseEffects(effects, message, forced=forced, priority=priority)
+        if effect != None or not forced:
+            return effect
+
+        # Nothing was fulfillable and the player was not allowed to decline, so
+        # the choice resolved to nothing at all. Printed rules say to do as much
+        # as can be done instead: an option that *is* a spend gets its cost cut
+        # to what the player can actually spend and is offered again. An option
+        # whose spend is a cost for something else is not reoffered -- a cost is
+        # paid in full or not at all.
+        partial = [x for x in abilities if x != None and x.spend_is_the_effect]
+        if partial == []:
+            return None
+
+        effects = build()
+        for effect in effects:
+            effect.context.pay_as_much_as_possible = effect.ability.spend_is_the_effect
+
+        message = Message.WhenPlayerChooseAbility(player, by_effect, step, for_second_target)
+        message.Send()
         return self.ChooseEffects(effects, message, forced=forced, priority=priority)
 
     def MayChooseOneAbility(self, by_effect: 'Effect', *abilities: 'Ability') -> 'Effect|None':
@@ -264,9 +297,15 @@ class PlayerAction:
                     min_target_num = fallthrough_effect.context.target_range[0]
                     max_target_num = fallthrough_effect.context.target_range[1]
                     fallthrough_effect.context.targets_internal = fallthrough_effect.context.all_legal_targets[:min_target_num]
-                    if not forced:
-                        assert not fallthrough_effect.ability.NeedCost(), f"{fallthrough_effect.ability}"
-                    if min_target_num == max_target_num:
+                    if fallthrough_effect.ability.NeedCost():
+                        # There is no minimum-selection for a payment the way
+                        # there is for targets: which cards are spent is the
+                        # player's, so a cost-bearing option is always asked
+                        # even when it is the only one. Before MARVEL-109 this
+                        # was unreachable, because a cost-bearing option always
+                        # arrived here with `forced` already forced off.
+                        need_choose = True
+                    elif min_target_num == max_target_num:
                         if min_target_num <= 1:
                             if len(find_effect.context.all_legal_targets) <= find_effect.context.target_range[0]:
                                 need_choose = False
@@ -886,11 +925,14 @@ class PlayerAction:
     def AskSpendResourcesInternal(self, cost: 'Cost', by_effect: 'Effect') -> 'Resources|None':
         player = self.GetPlayer()
 
+        # "You *may* spend" -- 39019 Erratic Teleportation is the card this is
+        # written for, and declining has to stay legal for all three callers.
         effects = player.ChooseAbilities(
             by_effect,
             AbilityFactory.ForChoiceAbilityWithCost(
                 cost,
-            )
+            ),
+            forced=False,
         )
         if effects:
             return effects[0].context.paid_this_resources

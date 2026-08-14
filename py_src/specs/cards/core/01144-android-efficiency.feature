@@ -135,9 +135,14 @@ Feature: Android Efficiency
     # 3 damage, against the 2 above: Rhino's undefended 2 plus 1 from the drone,
     # which was engaged with the hero in time to activate in the same villain
     # phase. That second Defense prompt is the drone's attack.
+    #
+    # The deck is led with a Genius rather than an Energy so that the card drawn
+    # at the end of the turn can actually pay [mental]. With an Energy there the
+    # spend branch is unaffordable and is not offered, which is the scenario
+    # below rather than this one.
     Given the hero is "iron_man"
     And I am in hero form
-    And my deck is "Energy", "Aunt May", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
+    And my deck is "Genius", "Aunt May", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
     And the encounter deck is "01144b", "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary"
 
     When I pass
@@ -185,4 +190,41 @@ Feature: Android Efficiency
     Then I have 0 cards in hand
     And "Aunt May" is in the "PlayerDeck"
     And I have 2 damage
+    And it is round 2
+
+  @card:01144 @card:01144a
+  Scenario: a cost this player cannot pay is not offered, and the other branch just happens
+    # The [energy] face against a hand that holds a physical icon and nothing
+    # else. "Choose to either spend a [energy] resource or put the top card of
+    # the deck into play" has one branch this player can fulfill, so there is no
+    # choice to make: the option that cannot be paid for is withheld the way a
+    # targetless option is, and the drone is made without a prompt (MARVEL-109).
+    #
+    # There is no `Then I am prompted to choose one` here on purpose. The step
+    # after the Defense is the *drone's* attack, which is only reachable if the
+    # boost resolved with no question in between -- an engine that still asked
+    # would stop the transcript at a decision it does not answer, which is the
+    # harness's `FAIL-spec-wrong`.
+    #
+    # Before the fix both rows were offered here, and picking the [energy] one
+    # was then refused with "Spend_[[energy]] is offered but cannot be paid for".
+    Given the hero is "iron_man"
+    And I am in hero form
+    And my deck is "Strength", "Aunt May", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
+    And the encounter deck is "01144a", "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary"
+
+    When I pass
+    Then I am prompted to choose one
+      | Defense |
+
+    When I pass
+    Then "Aunt May" is in the "EngagedEnemiesArea"
+    # The Strength is still in hand: nothing was spent, because nothing could be.
+    And I have 1 card in hand
+    And I have 6 cards in my deck
+    And I am prompted to choose one
+      | Defense |
+
+    When I pass
+    Then I have 3 damage
     And it is round 2
