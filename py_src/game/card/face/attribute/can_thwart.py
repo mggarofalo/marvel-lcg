@@ -12,6 +12,9 @@ class ThwartProperty(PowerProperty):
 class HasThwart(HasAttribute):
     @override
     def __init__(self, paper: 'Paper') -> None:
+        # No `base_thwart_grants` here, unlike the `base_scheme`, `base_attack`
+        # and `base_health` this parallels. That is a decision, not an
+        # oversight -- see `SetBaseThwart`.
         self.base_thwart = 0
 
         self.printed_thwart = 0
@@ -38,6 +41,39 @@ class HasThwart(HasAttribute):
     #
     @final
     def SetBaseThwart(self, value: int, by_effect: 'Effect') -> None:
+        """Set the base THW. **Nothing calls this, and that is deliberate.**
+
+        Its three counterparts -- `SetBaseScheme`, `SetBaseAttack`,
+        `SetBaseHealth` -- each sit under a `PushBaseX`/`PopBaseX` pair backed by
+        an ordered stack of live grants, so that two sources granting a base line
+        to one character stop wiping each other (MARVEL-111). This setter has no
+        such pair because it has no caller that would need one, and adding the
+        pair would not be symmetry: it would be an unreachable stack that no test
+        could exercise except by calling it.
+
+        The asymmetry lives in the plumbing, not here. `ModelGain.Gain`,
+        `AbilityFactory.GiveKeywordToInPlayWhenApplyThis` and
+        `GiveKeywordToInPlayWhenApplyThisInternal` all take `base_sch`,
+        `base_atk` and `base_health` and no thwart equivalent, because "has a
+        base SCH of 1, a base ATK of 1, and a base hit points of 1" is the only
+        base-grant text ever printed -- Ultron Drones (`01140`, reprinted
+        `26031`) and Controlled Innocents (`50032`) -- and all of it is aimed at
+        facedown minions, which carry a SCH and no THW. The single card in the
+        game whose text says "base THW", Hope Summers (`40130`), sets it *equal
+        to* the hero's rather than to a number, prints no THW of her own, and is
+        implemented as an ordinary `thwart=` keyword gain, which is the same
+        thing when the printed line is blank. Nothing routes through here.
+
+        So MARVEL-111's layering is not missing from this statistic; there is
+        nothing yet to layer. **If you are writing the first card that grants a
+        base THW, do not have the new plumbing call this setter.** Setting the
+        base on application and passing `printed_thwart` back on removal is
+        MARVEL-111 verbatim, on the one statistic nobody thinks to check. Give
+        this a `PushBaseThwart`/`PopBaseThwart` pair shaped like the other three,
+        clear the stack in `OnResetKeywords` next to `base_thwart`, and call the
+        pair. `unit_test/test_base_thwart_unreachable.py` fails the moment either
+        half of that plumbing appears, and says the same thing there.
+        """
         if self.base_thwart != value:
             diff = value - self.base_thwart
             self.base_thwart = value
