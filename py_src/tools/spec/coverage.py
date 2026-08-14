@@ -173,13 +173,51 @@ class Coverage:
                 elif case_id in quarantined:
                     self.quarantined[card_id].append(case_id)
 
+        self.credited_to = self.Reprints()
+
+    def ScriptPath(self, card_id: str) -> str:
+        card = self.cards.get(card_id) or {}
+        return str(((card.get("engine") or {}).get("script") or {}).get("path")
+                   or "")
+
+    def Reprints(self) -> Dict[str, str]:
+        """card_id -> the id whose scenarios also cover it, where one exists.
+
+        318 cards carry a `reprint_of` link and print text byte-identical to the
+        card they reprint. 308 of them either run the *same* script module as
+        that card or have no script at all, and for those a scenario is not a
+        second claim about a second card -- it is the same claim about the same
+        code and the same text, written twice (MARVEL-105).
+
+        The link has to be earned per card, not assumed from `reprint_of`: the
+        other 10 reprints run a script file of their own, no pair is
+        byte-identical, and six of the ten disagree in behaviour (MARVEL-106).
+        Those are the one group where the two ids provably do different things,
+        so they are never credited -- which is why this reads `script.path` and
+        does not stop at the reprint link.
+        """
+        credited: Dict[str, str] = {}
+        for card_id, card in self.cards.items():
+            original = str(card.get("reprint_of") or "")
+            if not original or original not in self.cards:
+                continue
+            if self.ScriptPath(card_id) == self.ScriptPath(original):
+                credited[card_id] = original
+        return credited
+
     def Specifiable(self) -> List[str]:
         """Cards a scenario could be written for -- everything the engine has."""
         return [card_id for card_id, tier in self.tier.items()
                 if tier in SPECIFIABLE]
 
+    def Scenarios(self, card_id: str) -> List[str]:
+        """The scenarios covering this card, its original's included."""
+        own = self.trusted.get(card_id, [])
+        original = self.credited_to.get(card_id)
+        return own + self.trusted.get(original, []) if original else own
+
     def Covered(self, card_id: str) -> bool:
-        return bool(self.trusted.get(card_id))
+        return bool(self.Scenarios(card_id))
 
     def AtDepth(self, card_id: str) -> bool:
         """Covered to the depth its tier plans for, not merely covered.
@@ -200,7 +238,7 @@ class Coverage:
         reported beside `covered`, not instead of it.
         """
         planned = TIERS[self.tier.get(card_id, "")][0] if card_id in self.tier else 0
-        return len(self.trusted.get(card_id, ())) >= planned > 0
+        return len(self.Scenarios(card_id)) >= planned > 0
 
     def ByTier(self) -> Dict[str, Dict[str, int]]:
         rows: Dict[str, Dict[str, int]] = {
@@ -289,7 +327,7 @@ class Coverage:
             if pack and str(card.get("pack") or "") != pack:
                 continue
             script = (card.get("engine") or {}).get("script") or {}
-            have = len(self.trusted.get(card_id, ()))
+            have = len(self.Scenarios(card_id))
             planned = TIERS[card_tier][0]
             rows.append({
                 "card_id": card_id,
@@ -308,6 +346,26 @@ class Coverage:
                                  r["card_id"]))
         return rows
 
+    def ReprintSummary(self) -> Dict[str, Any]:
+        """The reprint join, over specifiable cards only.
+
+        Scoped deliberately. 13 more cards reprint a card the engine *does*
+        implement while having no script of their own, so they tier as `absent`
+        and sit outside the campaign entirely. Listing them beside the ones that
+        run a rival implementation would read as though the engine disagreed
+        with itself about them, when what it does is not have them at all.
+        """
+        specifiable = set(self.Specifiable())
+        credited = [c for c in self.credited_to if c in specifiable]
+        return {
+            "credited": len(credited),
+            "credited_and_covered": sum(1 for c in credited if self.Covered(c)),
+            "not_credited": sorted(
+                card_id for card_id in specifiable
+                if str(self.cards[card_id].get("reprint_of") or "") in self.cards
+                and card_id not in self.credited_to),
+        }
+
     def ToDict(self) -> Dict[str, Any]:
         specifiable = self.Specifiable()
         covered = [card_id for card_id in specifiable if self.Covered(card_id)]
@@ -324,6 +382,7 @@ class Coverage:
                 "scenarios": sum(len(v) for v in self.trusted.values()),
                 "quarantined": sum(len(v) for v in self.quarantined.values()),
             },
+            "reprints": self.ReprintSummary(),
             "by_tier": self.ByTier(),
             "by_pack": self.ByPack(),
             "unknown_tags": {k: v for k, v in self.unknown_tags.items()},
@@ -357,6 +416,16 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int,
     print(f"covered           {totals['covered']} "
           f"({Percent(totals['covered'], totals['specifiable'])})")
     print(f"trusted scenarios {totals['scenarios']}")
+    reprints = data["reprints"]
+    if reprints["credited"]:
+        print(f"  of which credited {reprints['credited_and_covered']} "
+              f"reprint(s) covered by the card they reprint, of "
+              f"{reprints['credited']} that share its script")
+    if reprints["not_credited"]:
+        print(f"  not credited      {len(reprints['not_credited'])} reprint(s) "
+              f"that run a script of their own (MARVEL-106):"
+              f"\n                    "
+              f"{', '.join(reprints['not_credited'])}")
     if totals["quarantined"]:
         print(f"quarantined       {totals['quarantined']} "
               f"(claims that failed -- not coverage)")
