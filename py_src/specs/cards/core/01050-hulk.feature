@@ -91,6 +91,35 @@ Feature: Hulk
     And I am not prompted again
 
   @card:01050
+  Scenario: an empty deck discards nothing and the response still finishes
+    # MARVEL-119. A puzzle board starts with no player deck, and with the
+    # discard pile empty as well there is nothing to reshuffle -- so the forced
+    # response is asked to discard a card that does not exist. The rule is that
+    # the ability does as much as it can: nothing is discarded, no printed
+    # resource is seen, and none of the four branches fires.
+    #
+    # `PlayerAction.DiscardDeckTopCard` indexed the result of
+    # `DiscardDeckTopCards` unguarded, so this raised `IndexError` in the middle
+    # of the response. Nothing about the board says so -- every assertion below
+    # held before the fix as well, because all four branches are conditional on
+    # a card that was never discarded, so the abort and the correct resolution
+    # land on the same state. What fails is the *verdict*: the engine's broad
+    # handlers log the traceback and play on, and `Log.HasError` demotes the
+    # case to ERROR. That demotion is the whole guard here, which is why this
+    # scenario is paired with 40040 A Good Workout in specs/cards/search/ --
+    # there the same bug is visible on the board.
+    #
+    # This is the one scenario in the file that stocks no deck, deliberately.
+
+    When I choose "attack" on "Hulk" targeting "Rhino"
+    Then "Rhino" has 3 damage
+    And "Hulk" has 1 damage
+    And "Hulk" is in play
+    And I have 0 cards in my deck
+    And I have 0 cards in my discard pile
+    And I am not prompted again
+
+  @card:01050
   Scenario: the forced response fires on every attack, not only the first
     # "Forced" means the player never gets to decline it, and the transcript is
     # how that is checked: a second attack would have to be answered a second

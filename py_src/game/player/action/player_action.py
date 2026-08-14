@@ -837,9 +837,24 @@ class PlayerAction:
         )
         return faces
 
-    def DiscardDeckTopCard(self, by_effect: 'Effect') -> 'CardFace':
+    def DiscardDeckTopCard(self, by_effect: 'Effect') -> 'CardFace|None':
+        # `None` when there was nothing to discard, exactly as the encounter-deck
+        # twin `Worlds.DiscardEncounterTopCard` has always answered. Three board
+        # states reach it, all of them legal: a player deck and discard pile that
+        # are both empty (every card is in hand or in play, so there is nothing
+        # to reshuffle), an eliminated owner, and a game that has already ended --
+        # `DiscardDeckTopCards` returns `[]` for the second and `Deck.PopInternal`
+        # breaks out for the other two.
+        #
+        # Callers pass the result straight into `FacesCounter` or an `IsType`
+        # check, both of which read an absent card as contributing nothing, which
+        # is the printed rule: there is no card to discard, so the ability does
+        # as much as it can and the part that does not depend on the discard
+        # still happens.
         faces = self.DiscardDeckTopCards(1, by_effect)
-        return faces[0]
+        if faces:
+            return faces[0]
+        return None
 
     def DiscardDeckUntil(self,
                          by_effect: 'Effect',
