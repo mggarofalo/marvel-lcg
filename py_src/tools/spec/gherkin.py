@@ -58,8 +58,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
 
 from tools.spec.case import (
-    CannotStep, GivenStep, NoPromptStep, PromptStep, SourceDigest, SpecCase,
-    TargetsStep,
+    CannotStep, GivenStep, LimitStep, NoPromptStep, PromptStep, SourceDigest,
+    SpecCase, TargetsStep,
     SpecCaseError, ThenStep, WhenStep)
 from tools.spec.resolve import SplitRefs
 from tools.spec.state import PHASE_NAMES
@@ -114,9 +114,28 @@ GIVEN_TABLE: Table = [
     ('the seed is <n>',
      Rx(r'the seed is ' + N),
      lambda value: ("setting", "seed", int(value))),
+    # Flips `campaign.expert`, which is what `Worlds.IsExpert` and every
+    # `expert_mode_only` ability read. It does **not** swap the villain deck,
+    # and it is not how a real game reaches expert content: standard and expert
+    # are two scenario files with different villain stages and different
+    # encounter sets, so the spelling for "play the expert scenario" is
+    # `the scenario is "rhino_expert"`. See spec-harness.md, "Expert is a
+    # scenario, not a flag".
     ('the difficulty is expert',
      Rx(r'the difficulty is expert'),
      lambda: ("setting", "expert", True)),
+
+    # -- decks that exist before GameSetup() -------------------------------
+    # A setup ability fires inside `GameSetup()`, before any `Given` has run,
+    # so a deck it searches has to be part of the scene rather than stacked
+    # afterwards. Shuffled at setup like a real game's, so unlike `my deck is`
+    # these do not pin an order. `tools/spec/harness.py`, `SETUP_DECKS`.
+    ('my deck at setup is "<a>", "<b>"',
+     Rx(r'my deck at setup is ' + LIST),
+     lambda cards: ("setting", "setup_player_deck", SplitRefs(cards))),
+    ('the encounter deck at setup is "<a>", "<b>"',
+     Rx(r'the encounter deck at setup is ' + LIST),
+     lambda cards: ("setting", "setup_encounter_deck", SplitRefs(cards))),
 
     # -- zone fills --------------------------------------------------------
     ('my hand is "<a>", "<b>"',
@@ -272,6 +291,16 @@ THEN_TABLE: Table = [
     ('the legal targets for "<option>" are',
      Rx(r'the legal targets for ' + Q + r' are'),
      lambda option: ("then", ("targets", option))),
+    # How many of them may be taken, which is the other half of "up to N" and
+    # the half nothing could say. Naming a fourth target for Ancestral
+    # Knowledge's "up to 3" is refused with `Play takes 1..3 target(s)` -- the
+    # engine right and the transcript with no passing spelling, so the printed
+    # number was pinned from below only. An equality, and worded as one: see
+    # `LimitStep` for why it is not spelled "takes at most <n> targets".
+    ('the target maximum for "<option>" is <n>',
+     Rx(r'the target maximum for ' + Q + r' is ' + N),
+     lambda option, value: ("then", LimitStep(option=option,
+                                              maximum=int(value)))),
 
     # -- card state --------------------------------------------------------
     ('"<card>" has <n> health',
@@ -292,6 +321,21 @@ THEN_TABLE: Table = [
     ('"<card>" has <n> "<name>" tokens',
      Rx(Q + r' has ' + N + r' ' + Q + r' tokens?'),
      lambda card, value, name: ("then", ThenStep(card, f"token:{name}", int(value)))),
+    # The printed icons, by the name the card prints -- physical, mental, energy
+    # or wild. `RES` was the one printed attribute in the payment path with no
+    # reader, and it is the only thing telling 01043a/b/c/d apart: four ids, one
+    # printed text, one script, four different icons. `coverage.Equivalents()`
+    # rightly declines to credit them to each other over it, so the tool says
+    # four cards of work while the vocabulary could express one.
+    #
+    # The count is of icons *printed*, not of costs payable: a wild icon pays a
+    # physical cost and this still answers 0 physical. What an icon buys is
+    # already observable the ordinary way -- play a card and see what the engine
+    # took.
+    ('"<card>" has <n> "<icon>" resource icons',
+     Rx(Q + r' has ' + N + r' ' + Q + r' resource icons?'),
+     lambda card, value, icon: ("then", ThenStep(card, f"resource:{icon}",
+                                                 int(value)))),
     ('"<card>" is in the "<zone>"',
      Rx(Q + r' is in the ' + Q),
      lambda card, zone: ("then", ThenStep(card, "zone", zone))),
@@ -614,6 +658,8 @@ def Build(draft: Draft, feature: str, path: str, digest: str, where: str) -> Spe
     heroes: List[str] = []
     seed = 1
     expert = False
+    setup_player_deck: List[str] = []
+    setup_encounter_deck: List[str] = []
     given: List[GivenStep] = []
     beats: List[Any] = []
 
@@ -623,7 +669,17 @@ def Build(draft: Draft, feature: str, path: str, digest: str, where: str) -> Spe
                 f"{where}:{number}: {text!r} still has a <placeholder>; "
                 f"a Scenario Outline needs an Examples table")
 
-        compiled = CompileStep(clause, text)
+        # A builder that constructs its beat inline -- `LimitStep`, `WhenStep` --
+        # validates in `__post_init__`, and that runs here rather than in the
+        # block below. Unwrapped, its `SpecCaseError` escapes without the line
+        # number, which is the one thing this parser promises every failure has.
+        try:
+            compiled = CompileStep(clause, text)
+        except GherkinError:
+            raise
+        except SpecCaseError as exc:
+            raise GherkinError(f"{where}:{number}: {exc}") from exc
+
         if compiled is None:
             raise GherkinError(
                 f"{where}:{number}: no {clause.title()} step matches {text!r}. "
@@ -643,6 +699,13 @@ def Build(draft: Draft, feature: str, path: str, digest: str, where: str) -> Spe
                     seed = int(value)
                 elif key == "expert":
                     expert = bool(value)
+                elif key == "setup_player_deck":
+                    # Accumulates, like the `Given` deck steps it is the
+                    # setup-time twin of: a deck is stocked by naming what goes
+                    # into it, wherever the naming happens.
+                    setup_player_deck += [str(x) for x in value]
+                elif key == "setup_encounter_deck":
+                    setup_encounter_deck += [str(x) for x in value]
             elif kind == "given":
                 if beats:
                     raise GherkinError(
@@ -680,6 +743,8 @@ def Build(draft: Draft, feature: str, path: str, digest: str, where: str) -> Spe
             heroes=tuple(heroes),
             seed=seed,
             expert=expert,
+            setup_player_deck=tuple(setup_player_deck),
+            setup_encounter_deck=tuple(setup_encounter_deck),
             tags=tuple(draft.tags),
             given=tuple(given),
             beats=tuple(beats),

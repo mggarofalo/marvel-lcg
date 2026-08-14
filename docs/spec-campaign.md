@@ -12,6 +12,7 @@ cd py_src
 python -m tools.spec.coverage
 python -m tools.spec.coverage --tier interactive --pack core
 python -m tools.spec.coverage --shallow          # covered, but short of plan
+python -m tools.spec.coverage --done core        # is this shard finished? exit code says
 python -m tools.spec.coverage --out coverage.json
 ```
 
@@ -32,6 +33,16 @@ Mercenary's Guard and Sandman's Toughness, and **neither card has a script**. A
 rule that read "no script" as "nothing to specify" — which is what the first
 version of `tools/spec/coverage.py` did — put both of them, and 561 others,
 outside the campaign while the suite already had specs for them.
+
+That argument had a hole in it until MARVEL-120: the file carried no `@card:`
+tags, so the two cards it is quoted for were counted in the denominator and
+credited to nobody in the numerator. Tagging it was the fix, and it is a
+measurement correction rather than new coverage — the scenarios already existed
+and already passed. The rule the file applies is **tag the card whose printed
+text the scenario is written to measure**, not every card whose printed number
+enters the arithmetic; tagging on contact would credit deck filler.
+`specs/rules/crisis-bypass.feature` has tagged card ids since MARVEL-90, so a
+rules file crediting cards is settled practice.
 
 What is genuinely out of scope is `absent`: **348 cards the engine does not
 implement**. A scenario cannot name a card the engine has never heard of.
@@ -236,6 +247,55 @@ the same one, forgetting that a villain's activation is boosted. That is the
 expected ratio, and it is why `FAIL-engine-suspected` deserves attention when it
 does appear.
 
+## A decision path nothing can reach is a record, not a comment
+
+Some printed clauses have no spelling in the step vocabulary. "Deal 1 damage to
+each hero" needs two heroes in hero form and `I am in hero form` speaks for seat
+1 only, so a two-player board measures the same one hero and reads identically
+to the solo one. That is not a scenario that fails — it is a scenario that
+proves nothing, and the honest move is not to write it.
+
+**The problem is what happens next.** The card still has its other scenarios, so
+it is `covered`, so it is not on the uncovered list, so
+`python -m tools.spec.coverage --pack core` reports nothing wrong. Three core
+spec files carried a gap of exactly this kind as prose in their file header and
+the tool saw none of them. A shard reported complete with silent holes is the
+MARVEL-16 failure shape again: a missed population does not look like a bug, it
+looks like a smaller universe.
+
+So it goes in `specs/unreachable.json`, one entry per path:
+
+```json
+{
+  "card": "01103",
+  "feature": "specs/cards/core/01103-shocker.feature",
+  "path": "the loop in \"deal 1 damage to each hero\"",
+  "why": "…",
+  "blocked_by": "no `player <n> is in hero form` step",
+  "issue": "MARVEL-121"
+}
+```
+
+Unlike `trusted.json` and `quarantine.json`, **nothing generates this file**.
+The validation runner writes down what it observed; nothing observes "the
+vocabulary has no way to say this", so somebody has to.
+
+**An entry is a debt, not a discount.** It never raises `covered`, never lowers
+a tier's plan, and never turns a `--shallow` row green. All it does is refuse to
+disappear: `--pack <p>` prints it above the work list, and `--done <p>` exits
+non-zero while one is open. `unit_test/test_spec_coverage.py` checks that every
+entry names a specifiable card and a feature file that exists and tags it, so an
+entry cannot outlive the file it describes.
+
+**Close an entry by deleting it.** It is a statement about today's vocabulary,
+not a permanent judgement, and three of the first four candidates turned out not
+to belong: 01040b, 01116a and 01137a were all unreachable until `my deck at
+setup is` / `the encounter deck at setup is` reached them, and 01096 Rhino III
+was recorded on a claim — that no step can put an expert-only stage into play —
+that turned out to be false. **Check before adding, and check again before
+trusting**, because an entry that has stopped being true is worse than no entry:
+it is read as evidence.
+
 ## What "done" means for a shard
 
 - every `interactive` card in the pack has a scenario per decision path
@@ -243,3 +303,6 @@ does appear.
 - every card on MARVEL-16's unreachable list for that pack has one
 - `python -m tools.spec.coverage --pack <p>` reports no uncovered card that is
   not quarantined with a recorded reason
+- `python -m tools.spec.coverage --done <p>` exits zero — which additionally
+  requires that no card in the pack is short of its tier's plan and that
+  `specs/unreachable.json` holds no open entry against it

@@ -67,6 +67,7 @@ CARD_DATASET = "../datasets/cards/cards.json"
 SPEC_ROOT = "specs"
 TRUSTED = "specs/trusted.json"
 QUARANTINE = "specs/quarantine.json"
+UNREACHABLE = "specs/unreachable.json"
 
 # tier -> (scenarios a card of this tier is planned for, why)
 TIERS: Dict[str, Tuple[int, str]] = {
@@ -136,6 +137,30 @@ def Manifest(path: str) -> Dict[str, Any]:
     return dict(ReadJson(path).get("scenarios") or {})
 
 
+def Unreachable(path: str = UNREACHABLE) -> List[Dict[str, Any]]:
+    """The recorded dispositions: decision paths no scenario can reach.
+
+    Hand-authored, unlike every other file this module reads. `trusted.json`
+    and `quarantine.json` are written by the validation runner from what it
+    observed; nothing observes "the vocabulary has no way to say this", so
+    somebody has to write it down.
+
+    It exists because the alternative was tried and does not work. Three core
+    spec files carried a gap like this as prose in their header -- 01040b's
+    Foresight, 01116a's encounter-deck search, 01096's expert-only stage -- and
+    `--pack core` counted all three as covered and reported nothing missing.
+    That is the MARVEL-16 failure shape: a missed population does not look like
+    a bug, it looks like a smaller universe.
+
+    **An entry is a debt, not a discount.** It never raises `covered`, never
+    lowers a tier's plan, and never turns a `--shallow` row green. All it does
+    is refuse to disappear.
+    """
+    if not os.path.exists(path):
+        return []
+    return list(ReadJson(path).get("unreachable") or [])
+
+
 def TaggedCards(root: str = SPEC_ROOT) -> Dict[str, List[str]]:
     """case_id -> the card ids its `@card:` tags name.
 
@@ -161,9 +186,16 @@ class Coverage:
 
     def __init__(self, cards: Sequence[Dict[str, Any]],
                  tagged: Dict[str, List[str]],
-                 trusted: Iterable[str], quarantined: Iterable[str]) -> None:
+                 trusted: Iterable[str], quarantined: Iterable[str],
+                 unreachable: Sequence[Dict[str, Any]] = ()) -> None:
         self.cards = {card["card_id"]: card for card in cards}
         self.tier = {card_id: Tier(card) for card_id, card in self.cards.items()}
+
+        # card_id -> the recorded dispositions against it. A card can have more
+        # than one unreachable path, and each is its own debt.
+        self.unreachable: Dict[str, List[Dict[str, Any]]] = collections.defaultdict(list)
+        for entry in unreachable:
+            self.unreachable[str(entry.get("card") or "")].append(dict(entry))
 
         trusted, quarantined = set(trusted), set(quarantined)
         self.trusted: Dict[str, List[str]] = collections.defaultdict(list)
@@ -410,6 +442,58 @@ class Coverage:
                                  r["card_id"]))
         return rows
 
+    def UnreachableRows(self, pack: str = "") -> List[Dict[str, Any]]:
+        """The recorded dispositions, optionally for one pack.
+
+        An entry naming a card the dataset does not have is kept and flagged
+        rather than dropped. A record that silently forgets its own stale
+        entries is the failure it exists to prevent, one level up.
+        """
+        rows: List[Dict[str, Any]] = []
+        for card_id, entries in sorted(self.unreachable.items()):
+            card = self.cards.get(card_id)
+            card_pack = str((card or {}).get("pack") or "")
+            if pack and card_pack != pack:
+                continue
+            for entry in entries:
+                rows.append({
+                    "card_id": card_id,
+                    "name": (card or {}).get("name") or "",
+                    "pack": card_pack,
+                    "tier": self.tier.get(card_id, ""),
+                    "known_card": card is not None,
+                    "covered": self.Covered(card_id),
+                    "path": entry.get("path") or "",
+                    "why": entry.get("why") or "",
+                    "blocked_by": entry.get("blocked_by") or "",
+                    "feature": entry.get("feature") or "",
+                    "issue": entry.get("issue") or "",
+                })
+        return rows
+
+    def Done(self, pack: str) -> Tuple[bool, List[str]]:
+        """Whether a shard may be called done, and what is in the way.
+
+        `spec-campaign.md` defines done as every card in the pack having a
+        scenario. That definition was checkable only against the uncovered
+        list, which a card with a covered-but-incomplete decision path drops
+        straight out of -- so a shard could be reported complete over a hole
+        nobody could see. A recorded disposition is the hole made visible, and
+        it counts against done until somebody deletes it.
+        """
+        reasons: List[str] = []
+        uncovered = self.Uncovered(pack=pack)
+        if uncovered:
+            reasons.append(f"{len(uncovered)} uncovered card(s)")
+        shallow = self.Shallow(pack=pack)
+        if shallow:
+            reasons.append(f"{len(shallow)} card(s) short of their tier's plan")
+        recorded = self.UnreachableRows(pack=pack)
+        if recorded:
+            reasons.append(
+                f"{len(recorded)} recorded unreachable decision path(s)")
+        return (not reasons), reasons
+
     def DuplicateSummary(self) -> Dict[str, Any]:
         """The reprint join, over specifiable cards only.
 
@@ -445,7 +529,10 @@ class Coverage:
                 "at_depth": len(at_depth),
                 "scenarios": sum(len(v) for v in self.trusted.values()),
                 "quarantined": sum(len(v) for v in self.quarantined.values()),
+                # Paths, not cards: one card can hold more than one.
+                "unreachable": sum(len(v) for v in self.unreachable.values()),
             },
+            "unreachable": self.UnreachableRows(),
             "duplicates": self.DuplicateSummary(),
             "by_tier": self.ByTier(),
             "by_pack": self.ByPack(),
@@ -463,6 +550,7 @@ def Build() -> Coverage:
         tagged=TaggedCards(),
         trusted=Manifest(TRUSTED),
         quarantined=Manifest(QUARANTINE),
+        unreachable=Unreachable(),
     )
 
 
@@ -505,6 +593,9 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int,
     if totals["quarantined"]:
         print(f"quarantined       {totals['quarantined']} "
               f"(claims that failed -- not coverage)")
+    if totals["unreachable"]:
+        print(f"unreachable       {totals['unreachable']} decision path(s) "
+              f"recorded in {UNREACHABLE}")
     print()
 
     print(f"{'tier':<13} {'cards':>6} {'covered':>8} {'at depth':>9} "
@@ -530,6 +621,26 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int,
         print()
 
     label = " ".join(x for x in (tier, pack) if x) or "all tiers"
+
+    # Before the work list, not after it. A recorded disposition is a card that
+    # already has scenarios, so it is in neither the uncovered nor -- once its
+    # reachable paths are written -- the shallow list, and printing it last
+    # would let "nothing uncovered matches that filter" be the last word.
+    recorded = coverage.UnreachableRows(pack=pack)
+    if recorded:
+        print(f"unreachable decision paths ({pack or 'all packs'}) -- "
+              f"{len(recorded)} recorded in {UNREACHABLE}.")
+        print("These do not count as coverage and do not go away on their own;"
+              "\na pack holding one is not done. Delete the entry when the"
+              "\nvocabulary reaches the path.")
+        for row in recorded:
+            stale = "" if row["known_card"] else "  NO SUCH CARD"
+            print(f"  {row['card_id']:<8} {row['pack']:<10} "
+                  f"{row['name'][:28]:<28} {row['path']}{stale}")
+            if row["blocked_by"]:
+                print(f"           blocked by: {row['blocked_by']}"
+                      + (f"  ({row['issue']})" if row["issue"] else ""))
+        print()
 
     if shallow:
         rows = coverage.Shallow(tier=tier, pack=pack)
@@ -577,9 +688,29 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="list covered cards short of their tier's plan "
                              "instead of uncovered ones")
     parser.add_argument("--out", default="", help="write the full report as JSON")
+    parser.add_argument("--done", default="", metavar="PACK",
+                        help="verdict on whether a shard is finished; exits "
+                             "non-zero while anything is in the way, including "
+                             "a recorded unreachable decision path")
     args = parser.parse_args(argv)
 
     coverage = Build()
+
+    # A machine-readable answer to the one question `spec-campaign.md` asks of
+    # a shard. It is a separate flag rather than an exit code on `--pack`
+    # because `--pack` is a work list somebody reads, and a work list that
+    # exits 1 gets its exit code ignored.
+    if args.done:
+        done, reasons = coverage.Done(args.done)
+        if done:
+            print(f"{args.done}: done")
+            return 0
+        print(f"{args.done}: not done -- {'; '.join(reasons)}")
+        for row in coverage.UnreachableRows(pack=args.done):
+            print(f"  unreachable  {row['card_id']} {row['path']}"
+                  f" -- {row['blocked_by'] or row['why']}")
+        return 1
+
     Report(coverage, tier=args.tier, pack=args.pack, top=args.top,
            shallow=args.shallow)
 

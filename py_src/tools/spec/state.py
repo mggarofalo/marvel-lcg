@@ -22,6 +22,12 @@ class UnknownProperty(Exception):
     """A `Then` step naming a property the harness does not know how to read."""
 
 
+# The four resource icons, named the way the card prints them rather than the
+# way the engine spells them. `Resources` is `rbyg` internally -- R physical,
+# B mental, Y energy, G wild -- and a scenario should not have to know that.
+RESOURCE_ICONS: Tuple[str, ...] = ("physical", "mental", "energy", "wild")
+
+
 ################################################################################
 #
 
@@ -45,6 +51,23 @@ class CardState:
     counters: Dict[str, int] = field(default_factory=dict)
     tokens: Dict[str, int] = field(default_factory=dict)
     info: Dict[str, int] = field(default_factory=dict)
+    resource_icons: Optional[Dict[str, int]] = None
+    """The resource icons this printing carries, keyed by `RESOURCE_ICONS`.
+
+    `None` for a card that cannot carry them at all -- only `ClassCard`, the
+    player-card base, mixes in `HasResourceIcon`, so an encounter card answers
+    "not that kind of card" rather than "zero of each".
+
+    Read from `printed_resource_internal`, which is the `RES` attribute as
+    parsed plus any icon a `GainResIcon` effect has added to this copy
+    (`face_gain.py`). Deliberately **not** `printed_resource`: that property is
+    a `Message.WhenCountingResourcesOnCards` query, and constructing a message
+    registers an object in the world, so reading it here would make a snapshot
+    mutate the game it is snapshotting. Two cards in the whole corpus answer
+    that query (Domino 40037a, Zzzax 29038); nothing in this vocabulary can
+    reach either yet, and when something does it wants its own step rather than
+    a snapshot with a side effect.
+    """
     # Roles, so a scenario can say "I" and "the main scheme" without looking up
     # which card id either one happens to be at this point in the game.
     is_identity: bool = False
@@ -100,14 +123,37 @@ class CardState:
             return self.counters.get(key.split(":", 1)[1], 0)
         if key.startswith("token:"):
             return self.tokens.get(key.split(":", 1)[1], 0)
+        if key.startswith("resource:"):
+            return self.ResourceIcon(key.split(":", 1)[1], prop)
         if key in self.info:
             return self.info[key]
 
         raise UnknownProperty(
             f"{self.name} has no property {prop!r}. "
             f"Known: health, max_health, damage, threat, zone, in_play, exhausted, "
-            f"ready, face_up, stunned, confused, tough, counter:<name>, token:<name>"
+            f"ready, face_up, stunned, confused, tough, counter:<name>, token:<name>, "
+            f"resource:<icon>"
             + (f", plus {', '.join(sorted(self.info))}" if self.info else ""))
+
+    def ResourceIcon(self, icon: str, prop: str) -> int:
+        """How many of one printed resource icon this card carries.
+
+        The count, not "can it pay for that". A wild icon pays a physical cost
+        and this still reports zero physical, because the claim a scenario is
+        making here is about what is printed on the card -- which is what tells
+        the four printings of Wakanda Forever! apart. What an icon *buys* is
+        already observable the way every other cost is: play a card and see
+        whether the engine took the payment.
+        """
+        if icon not in RESOURCE_ICONS:
+            raise UnknownProperty(
+                f"there is no {icon!r} resource icon; the four are "
+                f"{', '.join(RESOURCE_ICONS)}")
+        if self.resource_icons is None:
+            raise UnknownProperty(
+                f"{self.name} ({self.card_id}) is not a player card, so it "
+                f"prints no resource icons")
+        return self.resource_icons.get(icon, 0)
 
     def RequireIdentity(self, prop: str) -> bool:
         if not self.is_identity:
@@ -139,6 +185,10 @@ class CardState:
         for name, size in sorted(self.counters.items()):
             if size:
                 parts.append(f"{size} {name} counter(s)")
+        icons = ", ".join(f"{count} {icon}" for icon, count
+                          in (self.resource_icons or {}).items() if count)
+        if icons:
+            parts.append(f"resource icons: {icons}")
         return ", ".join(parts)
 
 
@@ -316,7 +366,8 @@ class StateView:
                  "zone": c.zone, "in_play": c.in_play, "exhausted": c.exhausted,
                  "health": c.health, "max_health": c.max_health, "threat": c.threat,
                  "stunned": c.stunned, "confused": c.confused, "tough": c.tough,
-                 "counters": dict(c.counters), "tokens": dict(c.tokens)}
+                 "counters": dict(c.counters), "tokens": dict(c.tokens),
+                 "resource_icons": dict(c.resource_icons or {})}
                 for c in self.cards
             ],
         }
@@ -330,6 +381,7 @@ def CaptureCard(card: Any, engine_allocated: bool = False) -> CardState:
     from game.card.face.attribute.can_place_counter import CanPlaceCounter
     from game.card.face.attribute.can_place_token import CanPlaceToken
     from game.card.face.attribute.can_status import CanStatus
+    from game.card.face.attribute.has_resources import HasResourceIcon
     from game.card.face.base import Scheme2
     from game.card.face.card_type import Hero, Identity, MainScheme
     from tools.spec.resolve import NameableFaces, ZoneName
@@ -365,6 +417,16 @@ def CaptureCard(card: Any, engine_allocated: bool = False) -> CardState:
     if isinstance(face, CanPlaceToken):
         for name in face.components.token.GetTokenNames():
             tokens[str(name)] = int(face.GetTokens(name))
+
+    # `rbyg` -> the names the card prints. Only player cards carry icons at all,
+    # and the difference between "no icons" and "not that kind of card" is worth
+    # keeping: a scenario asking an encounter card for its icons has misread
+    # something, and should be told so rather than answered zero.
+    resource_icons: Optional[Dict[str, int]] = None
+    if HasResourceIcon.IsType(face):
+        printed = face.printed_resource_internal
+        resource_icons = {"physical": int(printed.r), "mental": int(printed.b),
+                          "energy": int(printed.y), "wild": int(printed.g)}
 
     # Every face the card answers to, not only its printed ones. A facedown
     # DRONE keeps the printed identity of the card it was made from and presents
@@ -407,6 +469,7 @@ def CaptureCard(card: Any, engine_allocated: bool = False) -> CardState:
         counters=counters,
         tokens=tokens,
         info=info,
+        resource_icons=resource_icons,
         is_identity=is_identity,
         is_main_scheme=is_main_scheme,
         is_hero_form=is_hero_form,

@@ -100,6 +100,50 @@ class TestGherkinParsing(unittest.TestCase):
             self.assertEqual(case.scenario, "rhino")
             self.assertEqual(case.heroes, ("spider_man",))
 
+    def test_the_at_setup_deck_steps_compile_to_scene_fields(self):
+        """MARVEL-121. They are settings, not `Given` steps, and that is the point.
+
+        A `Given` is applied after `GameSetup()` returns; these have to be part
+        of the scene the engine sets up *from*, because the abilities that read
+        them fire inside `GameSetup()`. So they land beside `expert` and `seed`
+        rather than in `case.given`, and a parser that filed them as ordinary
+        deck steps would put them back on the wrong side of setup.
+        """
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    Given my deck at setup is "Backflip", "Swinging Web Kick"
+    And the encounter deck at setup is "Hydra Mercenary"
+    Then "Rhino" has 14 health
+"""))
+        case = cases[0]
+        self.assertEqual(case.setup_player_deck, ("Backflip", "Swinging Web Kick"))
+        self.assertEqual(case.setup_encounter_deck, ("Hydra Mercenary",))
+        self.assertEqual(case.given, ())
+
+    def test_an_at_setup_deck_step_accumulates_like_its_given_twin(self):
+        # `my deck is` accumulates rather than replaces (MARVEL-82's docs say so
+        # explicitly, and a Background that stocks one card is the usual way to
+        # be surprised by it). The setup-time spelling has to behave the same
+        # way or the two would be traps in opposite directions.
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    Given my deck at setup is "Backflip"
+    And my deck at setup is "Swinging Web Kick"
+    Then "Rhino" has 14 health
+"""))
+        self.assertEqual(cases[0].setup_player_deck,
+                         ("Backflip", "Swinging Web Kick"))
+
+    def test_the_ordinary_deck_step_is_still_a_given(self):
+        # The control. `my deck is` must not be swept up by the new pattern.
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    Given my deck is "Backflip"
+    Then "Rhino" has 14 health
+"""))
+        self.assertEqual(cases[0].setup_player_deck, ())
+        self.assertEqual([step.verb for step in cases[0].given], ["player_deck"])
+
     def test_case_id_carries_the_feature_name(self):
         cases = ParseFeature(Feature("""
   Scenario: one
@@ -502,6 +546,63 @@ class TestGherkinParsing(unittest.TestCase):
       | Repulsor Blast |
 """))[0]
         self.assertEqual(len(case.Assertions()), 1)
+
+    def test_the_target_ceiling_compiles_to_a_limit_beat(self):
+        """MARVEL-120. The other half of "up to N".
+
+        `the legal targets for` pins which cards are candidates and a `When`
+        naming three of them pins that three is reachable; nothing said three
+        was the maximum, and naming a fourth is refused rather than failing an
+        assertion.
+        """
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then the target maximum for "Play" is 3
+"""))[0]
+        beat = case.beats[0]
+        self.assertEqual((beat.kind, beat.option, beat.maximum),
+                         ("limit", "Play", 3))
+        self.assertEqual(len(case.Assertions()), 1)
+
+    def test_a_ceiling_below_one_is_a_parse_error(self):
+        """"This option takes no target" is `I cannot choose`, not a ceiling."""
+        with self.assertRaises(GherkinError) as caught:
+            ParseFeature(Feature("""
+  Scenario: one
+    Then the target maximum for "Play" is 0
+"""))
+        self.assertIn("I cannot choose", str(caught.exception))
+
+    def test_resource_icons_compile_to_a_property_read(self):
+        """MARVEL-120. `RES` was the one printed attribute with no step.
+
+        It is the only thing telling 01043a/b/c/d apart -- four ids, one
+        printed text, one script -- so the coverage tool counted four cards of
+        work against a vocabulary that could express one claim.
+        """
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then "01043a" has 1 "energy" resource icon
+    And "Vibranium" has 2 "wild" resource icons
+"""))[0]
+        one, two = case.beats
+        self.assertEqual((one.subject, one.prop, one.value),
+                         ("01043a", "resource:energy", 1))
+        self.assertEqual((two.subject, two.prop, two.value),
+                         ("Vibranium", "resource:wild", 2))
+
+    def test_resource_icons_do_not_shadow_the_generic_property_step(self):
+        """`"<card>" has <n> "<property>"` is the wider pattern of the two.
+
+        Both are anchored, so the suffix keeps them apart -- but the generic
+        form matching first would turn every icon assertion into a read of a
+        property called "energy" that no card has.
+        """
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then "Rhino" has 3 "scheme"
+"""))[0]
+        self.assertEqual(case.beats[0].prop, "scheme")
 
     def test_the_two_phase_forms_compile_to_different_properties(self):
         """`the villain phase` and `"Enemy Activation"` are not the same claim.

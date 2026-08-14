@@ -44,8 +44,8 @@ from engine.device.manager.bot.command import BotCommand
 from engine.device.manager.bot.policy import BotPolicy
 from tools.spec.assertions import AssertionResult, Evaluate
 from tools.spec.case import (
-    Beat, CannotStep, NoPromptStep, PromptStep, TargetsStep, ThenStep,
-    WhenStep)
+    Beat, CannotStep, LimitStep, NoPromptStep, PromptStep, TargetsStep,
+    ThenStep, WhenStep)
 from tools.spec.resolve import (
     CardRefError, DescribeOption, NormaliseLabel, ResolveCard)
 from tools.spec.state import Capture, StateView
@@ -193,12 +193,14 @@ class TranscriptPolicy(BotPolicy):
         order it writes them in should not change what they mean.
         """
         board: Optional[StateView] = None
-        while isinstance(self.Peek(), (ThenStep, CannotStep, TargetsStep)):
+        while isinstance(self.Peek(), (ThenStep, CannotStep, TargetsStep, LimitStep)):
             beat = self.beats[self.index]
             if isinstance(beat, CannotStep):
                 self.CheckCannot(beat, decision)
             elif isinstance(beat, TargetsStep):
                 self.CheckTargets(beat, decision)
+            elif isinstance(beat, LimitStep):
+                self.CheckLimit(beat, decision)
             else:
                 if decision.world is None:
                     # No board to read. Leave it queued rather than passing it:
@@ -289,6 +291,44 @@ class TranscriptPolicy(BotPolicy):
             listing = ", ".join(self.LabelTargets(world, option)) or "nothing"
             self.Record(beat, False,
                         f"{option.name} accepts {listing} ({'; '.join(parts)})")
+            return
+        self.Record(beat, False,
+                    f"the engine is not offering {beat.option!r}; it offers "
+                    f"{self.Offered(decision)}", unresolvable=True)
+
+    def CheckLimit(self, beat: LimitStep, decision: Any) -> None:
+        """Check the most targets an offered option will take.
+
+        The other half of "up to N", and the half `TargetsStep` cannot reach.
+        `the legal targets for "Play" are` pins the candidates and a `When`
+        naming three of them pins that three is allowed; the ceiling is what
+        says a fourth is not, and offering one only produces a refusal --
+        correct engine behaviour with no passing spelling.
+
+        `target_num_range[1]` is the **effective** ceiling:
+        `Selector.GetTargetRange` clamps the printed maximum to the number of
+        legal targets, so a board with three candidates answers 3 whether the
+        card prints 3 or has no maximum at all. That is why the failure message
+        says when the ceiling it found is the candidate count -- a scenario that
+        hits it has not built a board that can see the printed number.
+        """
+        wanted = NormaliseLabel(beat.option)
+        for option in decision.selectable_options:
+            if NormaliseLabel(option.name) != wanted:
+                continue
+            low = int(option.target_num_range[0])
+            high = int(option.target_num_range[1])
+            if high == beat.maximum:
+                self.Record(beat, True)
+                return
+            listing = ", ".join(self.LabelTargets(decision.world, option)) or "nothing"
+            detail = (f"{option.name} takes {low}..{high} target(s) "
+                      f"from {listing}")
+            if high == len(option.all_legal_targets) and high < beat.maximum:
+                detail += ("; that is the number of legal targets, so the board "
+                           "has no more candidates than the ceiling and cannot "
+                           "show what the ceiling is")
+            self.Record(beat, False, detail)
             return
         self.Record(beat, False,
                     f"the engine is not offering {beat.option!r}; it offers "
@@ -480,7 +520,7 @@ class TranscriptPolicy(BotPolicy):
             elif isinstance(beat, PromptStep):
                 self.Record(beat, False,
                             "the game ended before the engine asked this")
-            elif isinstance(beat, CannotStep):
+            elif isinstance(beat, (CannotStep, LimitStep)):
                 # A restriction is a claim about a decision, so with no decision
                 # left there is nothing to check. It does not pass by default:
                 # "the engine never offered the chance" and "the engine offered

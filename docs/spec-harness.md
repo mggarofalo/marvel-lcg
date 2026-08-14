@@ -351,11 +351,74 @@ Prefer both to the older workaround of building a board where the illegal
 candidate is the only one and asserting it survived. That reads like full
 coverage and is not.
 
-Two things the vocabulary still cannot say, both from the first core-set batch:
-**"gains surge" is invisible from a `Given`-time reveal** — the surged card
-stops in `DealtEncounterCardsDeck`, so surge needs a real villain phase with the
-encounter deck stacked; and `"<card>" is in the "<zone>"` reports a zone *type*,
-so in a multiplayer scenario it cannot say *whose* area a card reached.
+A third step says **how many** of those targets may be taken (MARVEL-120):
+
+```gherkin
+    Then the target maximum for "Play" is 3
+```
+
+`the legal targets for` pins which cards are candidates and a `When` naming
+three of them pins that three is reachable, so a printed "up to 3" was bounded
+from below only. Naming a fourth is refused with `Play takes 1..3 target(s)` —
+the engine being right, with no passing spelling for it.
+
+It is an **equality**, and worded as one on purpose. "takes at most 3 targets"
+is the obvious spelling and promises an inequality: it would be satisfied by an
+engine with no maximum at all whenever the board offers fewer than three
+candidates. A step whose text means something looser than its check is what a
+second runner reimplements the other way.
+
+It reads `target_num_range[1]`, which is the **effective** ceiling:
+`Selector.GetTargetRange` clamps the printed maximum to the number of legal
+targets on the board. Two consequences, both worth knowing before reaching for
+it. The claim only bites on a board offering *more* candidates than the ceiling
+— with three cards to choose from, an engine that had lost the maximum entirely
+still answers 3, and the failure message says so when the number it found is the
+candidate count. And for a selector with no printed maximum (`range=(1, "All")`,
+which is what "each X you control" compiles to) the number is the board's rather
+than the card's, which is a claim worth making in its own right:
+`specs/rules/target-counts.feature` states both shapes side by side.
+
+Three things the vocabulary still cannot say. Two are from the first core-set
+batch: **"gains surge" is invisible from a `Given`-time reveal** — the surged
+card stops in `DealtEncounterCardsDeck`, so surge needs a real villain phase with
+the encounter deck stacked; and `"<card>" is in the "<zone>"` reports a zone
+*type*, so in a multiplayer scenario it cannot say *whose* area a card reached.
+The third is **"this cost cannot be paid from this hand"** (MARVEL-120). The
+engine does not filter an unaffordable ability off the menu — Vision's
+`Spend an [energy] resource` is offered with a hand of mental cards — and a
+`When` that tries it is refused with "Action is offered but cannot be paid for",
+which is `FAIL-spec-wrong`. Right behaviour, no passing spelling, so the
+negative half of a coloured cost has to be carried by a resource-icon assertion
+instead.
+
+## A card's resource icons
+
+`Then "<card>" has <n> "<icon>" resource icons` reads what a player card prints
+in its corner — `physical`, `mental`, `energy` or `wild` (MARVEL-120).
+
+It is the same kind of claim as `"<card>" has <n> health`: a printed attribute
+the engine reads at play time. `RES` was the only one of those with no step, and
+it is the only thing distinguishing four shipped ids — **Wakanda Forever!** is
+01043a/b/c/d, one printed text and one script across all four, differing in the
+icon alone. `Coverage.Equivalents()` rightly declines to credit one's scenarios
+to the others over it, because a cost naming specific icons makes two printings
+non-interchangeable at payment time, so the tool counted four cards of work
+against a vocabulary that could express one claim.
+
+Two things it deliberately does not do. It counts icons **printed**, not costs
+payable — a wild icon pays a physical cost and this still answers 0 physical;
+what an icon *buys* is observable the ordinary way, by playing something and
+seeing what the engine took. And it reads `printed_resource_internal` rather than
+the `printed_resource` property: that property is a
+`Message.WhenCountingResourcesOnCards` query, and constructing a message
+registers an object in the world, so reading it would make a snapshot mutate the
+game it is snapshotting. Two cards in the corpus answer that query and nothing in
+this vocabulary can reach either yet.
+
+A card that cannot carry icons at all — anything that is not a `ClassCard` —
+answers "not a player card" rather than zero, so a scenario asking a villain for
+its icons is `FAIL-spec-wrong` rather than a vacuous pass.
 
 ## The step vocabulary
 
@@ -374,11 +437,14 @@ Read the catalogue for the current list. The shape:
 
 - **Given** — `the scenario is`, `the hero is`, `I am in hero form`,
   `my hand is`, `my deck is`, `player <n>'s deck is`, `"<card>" is in play`,
-  `the main scheme has <n> threat`, damage/threat/counter/status setters
+  `the main scheme has <n> threat`, damage/threat/counter/status setters, and
+  `my deck at setup is` / `the encounter deck at setup is` for the one case
+  where the deck has to exist before `GameSetup()` runs
 - **When** — `I play`, `I choose`, `I attack`, `I thwart`, `I change form`,
   `I pass`, each optionally `targeting "<card>"`
 - **Then** — `I am prompted to choose one` + table, `I am not prompted again`,
-  `I cannot attack "<card>"`, card state (`has <n> damage`,
+  `I cannot attack "<card>"`, `the target maximum for "<option>" is <n>`, card state
+  (`has <n> damage`, `has <n> "<icon>" resource icons`,
   `is in the "<zone>"`, `is [not] stunned`), my state
   (`I have <n> cards in hand`), another player's state
   (`player <n> has <m> cards in their deck`), game state (`the game is over`,
@@ -637,6 +703,97 @@ stock none. `01134-ultron.feature` and `01138b-assault-on-norad.feature` do
 exactly that, with a comment saying why: both depend on *which* card is the
 boost card, and a `Background` card sitting on top of it would have moved the
 answer without moving the scenario.
+
+### A deck that has to exist *before* setup
+
+`Given` is applied after `GameSetup()` returns. That is the right order for
+almost everything — a board is built by putting cards on it, and the engine has
+to have finished dealing before there is a board to put them on. It is the
+wrong order for exactly one thing: a **setup ability**, which fires *during*
+setup and reads a deck no `Given` has stocked yet.
+
+```gherkin
+Given my deck at setup is "Vibranium Suit", "Vibranium", "Vibranium"
+And the encounter deck at setup is "Defense Network", "Armored Guard", "Armored Guard"
+```
+
+These are not `Given` steps that run earlier; they are part of the **scene** the
+engine sets up from, alongside `the scenario is` and `the seed is`. That is why
+they read as configuration rather than as board-building.
+
+**49 cards need them.** The engine sends `Message.WhenCardSetup` from two places
+inside `GameSetup()` — `world.py` step 12 for every main scheme and villain, and
+step 16 for every identity — and 49 cards hang an ability off one of those that
+*searches* a zone a puzzle scene leaves empty: 37 main schemes, 5 alter egos, 4
+challenge cards, 2 Civil War leaders and 1 support. Three are in the core set,
+and all three had the gap written into a spec file header as prose because there
+was no way to say it in a scenario: **01040b** T'Challa's Foresight, **01116a**
+Underground Distribution's Defense Network search, **01137a** The Crimson Cowl
+putting Ultron Drones into play.
+
+The other 41 setup abilities are fine without these steps, and the difference is
+worth knowing: `SetupPutIntoPlay`, `SetupWithSetAside` and
+`BeginGameWithSetAside` take literal card ids and `CardFactory.GenerateCards`
+them, so Wolverine's Claws and Vision's mass form upgrade arrive on a puzzle
+board with nothing stocked. Only the ones that go through
+`SearchInternal.FindCards` need a deck to find.
+
+Three things this spelling costs, all of them consequences of it being a real
+deck rather than a stack the scenario placed:
+
+- **Order is not preserved.** `player_setup.SelectIdentity` shuffles the player
+  deck at setup step 6, and the encounter deck is shuffled the same way. These
+  are a *set* of cards, not a stack — which is what a real game does, and why
+  the step serves abilities that **search**. Stack the draw order with the
+  ordinary `my deck is` in the same scenario when a beat needs it; the two
+  accumulate into one deck.
+- **The cards cannot be named by ordinal.** They are allocated during setup,
+  before `MarkEngineBaseline`, so they are the engine's cards and not the
+  scenario's — the same rule that refuses `"Rhino #2"`. Name them by printed
+  name or id.
+- **Give a searching hero at least two cards.** `SelectorEnd.DoShuffle` asserts
+  the deck is non-empty, so a hero whose setup ability searches its own deck and
+  shuffles afterwards *raises* when the search emptied it. The run reports "the
+  game ended during setup: Exit". That is an engine bug rather than a harness
+  one; it is unreachable in a real game because a real deck is 40-odd cards.
+
+**Why the existing steps were not simply moved.** Making `my deck is` and `the
+encounter deck is` mean "this is the deck", full stop, is the obvious fix and it
+was measured before it was rejected: routing both verbs into the scene turns
+**102 of the 411 then-passing scenarios red and fixes none of them**. Cards the
+scene creates break every `#N` ordinal over them; the setup shuffle destroys the
+top-first order; and a card with the printed Setup keyword sitting in the deck
+enters play at step 11 and moves the board under the transcript. Both orders are
+real, so a scenario has to be able to pick.
+
+## Expert is a scenario, not a flag
+
+`data/scenarios/` holds 108 files, 52 of them `<name>_expert`, and **an expert
+file is a different encounter deck with different villain stages** — not the
+standard file with a switch thrown. The Break-In! prints it plainly: "Rhino (I)
+and Rhino (II). (Rhino (II) and Rhino (III) instead for expert mode.)"
+
+So the way to reach expert content is to name the expert scenario:
+
+```gherkin
+Given the scenario is "rhino_expert"
+```
+
+That board opens with **01095** in `VillainArea` at 15 hit points and **01096**
+in `VillainDeck`, and defeating stage II advances stage III into play with its
+printed 16 hit points and its Toughness keyword. Nothing else is needed. Of the
+**46 villain ids that appear only in an expert scenario file**, 9 stand in the
+villain area at setup and the other 37 are reached by defeating the stage before
+them.
+
+`Given the difficulty is expert` is a different thing and is easy to misread as
+this one. It flips `campaign.expert`, which is what `Worlds.IsExpert` and the
+`expert_mode_only` abilities on 25 card scripts read — on the **standard**
+villain deck. That is a board no real game produces, and it will not put a
+stage III anywhere: on the standard Rhino scene 01096 is in no zone at all, and
+`Given "01096" is in play` leaves it in the encounter discard pile. Reach for
+`the scenario is "<name>_expert"` unless you specifically mean "the expert rule
+text, on the standard board".
 
 ## Verdicts
 

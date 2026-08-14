@@ -1675,5 +1675,155 @@ class TestFacedownDroneNaming(unittest.TestCase):
         self.assertIn("matches 2 cards", result.Failures()[0].message)
 
 
+class TestDecksThatExistAtSetup(unittest.TestCase):
+    """`my deck at setup is` / `the encounter deck at setup is` (MARVEL-121).
+
+    Every `given` step is applied after `GameSetup()` returns, which is the
+    right order for a board a scenario is building and the wrong one for a
+    deck a **setup ability** reads. The engine sends `Message.WhenCardSetup`
+    from inside `GameSetup()` -- `world.py` step 12 for main schemes and
+    villains, step 16 for identities -- so on a puzzle scene those abilities
+    search decks that are still empty. 49 cards carry such an ability.
+
+    These cases are the proof that the second spelling reaches them, and that
+    the first one still cannot. The pair matters: without the negative case a
+    harness that had quietly started applying `Given` before setup would pass
+    the positive one and nothing would say the distinction had collapsed.
+    """
+
+    def test_a_setup_ability_searches_the_deck_that_existed_at_setup(self):
+        # T'Challa: "Foresight -- Setup: Search your deck for a BLACK PANTHER
+        # upgrade and add it to your hand. Shuffle your deck." Vibranium Suit
+        # is the upgrade; the two Vibraniums are not, and they are what is left
+        # in the deck afterwards.
+        case = MakeCase(
+            name="foresight",
+            heroes=("black_panther",),
+            setup_player_deck=("Vibranium Suit", "Vibranium", "Vibranium"),
+            given=(GivenStep("alter_ego_form", ("me",)),),
+            beats=(
+                ThenStep("Vibranium Suit", "zone", "HandsArea"),
+                ThenStep("player", "hand_size", 1),
+                ThenStep("player", "deck_size", 2),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_the_same_deck_stocked_by_given_is_too_late(self):
+        """The control, and the whole reason the step exists.
+
+        Identical cards, identical hero, the ordinary `my deck is` step. The
+        upgrade stays in the deck because Foresight already ran against an
+        empty one, so this is `FAIL-engine-suspected`-shaped and would be a
+        misreading of the card if anybody wrote it as a scenario.
+        """
+        case = MakeCase(
+            name="foresight, too late",
+            heroes=("black_panther",),
+            given=(
+                GivenStep("alter_ego_form", ("me",)),
+                GivenStep("player_deck", ("Vibranium Suit", "Vibranium", "Vibranium")),
+            ),
+            beats=(
+                ThenStep("Vibranium Suit", "zone", "PlayerDeck"),
+                ThenStep("player", "hand_size", 0),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_main_scheme_setup_ability_reads_the_encounter_deck(self):
+        # The second sender, and the one that is not an identity: Underground
+        # Distribution 1A searches the encounter deck for the Defense Network
+        # side scheme and reveals it. Three cards because 01116a shuffles
+        # afterwards and `SelectorEnd.DoShuffle` asserts a non-empty deck.
+        case = MakeCase(
+            name="underground distribution",
+            scenario="klaw",
+            setup_encounter_deck=("Defense Network", "Armored Guard", "Armored Guard"),
+            given=(HERO_FORM,),
+            beats=(
+                ThenStep("Defense Network", "zone", "SideSchemesArea"),
+                ThenStep("Defense Network", "threat", 3),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_without_the_step_the_scheme_finds_nothing(self):
+        # The control for the encounter-deck half. Defense Network is not in
+        # the game at all, which is why 01116a's spec file recorded its search
+        # as unreachable rather than specifying it.
+        case = MakeCase(
+            name="nothing to find",
+            scenario="klaw",
+            given=(HERO_FORM,),
+            beats=(ThenStep("Defense Network", "in_play", True),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("no card matches", result.Failures()[0].message)
+
+    def test_a_setup_deck_is_shuffled_and_so_pins_no_order(self):
+        """Unlike `my deck is`, which is written top-first (MARVEL-82).
+
+        `player_setup.SelectIdentity` calls `player_deck.Shuffle(rule)` at
+        setup step 6, so a setup deck is a *set* of cards. That is what a real
+        game does, and it is the reason these steps are for abilities that
+        search rather than for pinning what is drawn next. What survives is the
+        contents, which is what this asserts.
+        """
+        case = MakeCase(
+            name="setup deck contents",
+            setup_player_deck=("Backflip", "Swinging Web Kick", "Spider-Tracer"),
+            given=(HERO_FORM,),
+            beats=(
+                ThenStep("player", "deck_size", 3),
+                ThenStep("Swinging Web Kick", "zone", "PlayerDeck"),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_the_two_deck_steps_stack_rather_than_replace(self):
+        # A setup deck and a Given deck are two stockings of one zone, so a
+        # scenario that needs both a searchable deck and a known top card can
+        # write both. Three at setup plus one after is four.
+        case = MakeCase(
+            name="both spellings",
+            setup_player_deck=("Backflip", "Backflip", "Backflip"),
+            given=(HERO_FORM, GivenStep("player_deck", ("Swinging Web Kick",))),
+            beats=(ThenStep("player", "deck_size", 4),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_case_with_no_setup_deck_is_the_case_it_always_was(self):
+        # The additive claim, pinned. Every scenario in `specs/` predates these
+        # steps and none of them may move because the fields exist.
+        case = MakeCase(name="untouched", given=(HERO_FORM,))
+        self.assertEqual(case.setup_player_deck, ())
+        self.assertEqual(case.setup_encounter_deck, ())
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_setup_deck_survives_a_round_trip_through_json(self):
+        case = MakeCase(
+            name="round trip",
+            setup_player_deck=("Backflip",),
+            setup_encounter_deck=("Hydra Mercenary",),
+        )
+        again = SpecCase.FromJson(case.ToJson())
+        self.assertEqual(again.setup_player_deck, ("Backflip",))
+        self.assertEqual(again.setup_encounter_deck, ("Hydra Mercenary",))
+
+    def test_a_setup_deck_naming_no_card_is_refused(self):
+        case = MakeCase(name="typo", setup_player_deck=("Backflopp",))
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("no card is named", result.message)
+
+
 if __name__ == "__main__":
     unittest.main()

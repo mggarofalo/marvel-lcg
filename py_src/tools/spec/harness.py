@@ -224,12 +224,79 @@ def PreferredPacks(case: SpecCase) -> Tuple[str, ...]:
     return tuple(prefixes)
 
 
+# A deck that exists before `GameSetup()` runs, rather than one a `Given`
+# stacks afterwards. MARVEL-121.
+#
+# ## Why a second spelling exists at all
+#
+# `RunCaseInternal` applies every `Given` *after* `GameSetup()` returns, and
+# that is the right order for almost everything a scenario says: a board is
+# built by putting cards on it, and the engine has to have finished dealing
+# before there is a board to put them on.
+#
+# It is the wrong order for exactly one thing -- a **setup ability**, which
+# fires during setup and reads a deck that a `Given` has not stocked yet. The
+# engine sends `Message.WhenCardSetup` from two places inside `GameSetup()`:
+# `world.py` step 12 for every main scheme and villain, and step 16 for every
+# identity. Any ability hanging off either one runs against the empty decks a
+# puzzle scene is built with.
+#
+# Measured against `datasets/cards/cards.json`: **49 cards** carry a setup
+# ability that searches a zone the puzzle scene blanks -- 37 main schemes, 5
+# alter egos, 4 challenges, 2 Civil War leaders and 1 support. Three of them
+# are in the core set (01040b T'Challa, 01116a Underground Distribution,
+# 01137a The Crimson Cowl), and all three had the gap written into a spec file
+# header as prose because there was no way to say it in a scenario.
+#
+# ## Why the existing steps were not simply moved
+#
+# The obvious fix is to make `my deck is` and `the encounter deck is` mean
+# "this is the deck", full stop, and put them in the scene. That was measured
+# before it was rejected: routing both verbs into the scene turns **102 of the
+# 411 currently passing scenarios red and fixes none of them**, because
+#
+#   - cards the *scene* creates are allocated before `MarkEngineBaseline`, so
+#     every `"<card> #N"` ordinal over them is refused (MARVEL-42),
+#   - `player_setup.SelectIdentity` shuffles the player deck at setup step 6,
+#     which destroys the top-first order `my deck is` promises (MARVEL-82),
+#   - a card with the printed Setup keyword sitting in the deck now enters play
+#     at step 11 and changes the board out from under the transcript.
+#
+# So the two orders are both real and a scenario has to be able to pick. These
+# steps are additive: a scenario that does not write one is byte-for-byte the
+# scenario it was.
+#
+# ## What the `at setup` spelling costs
+#
+# **Order is not preserved.** `player.player_deck.Shuffle(rule)` runs at setup
+# step 6 and the encounter deck is shuffled the same way, so unlike
+# `my deck is` these are a *set* of cards, not a stack. That is what a real
+# game does, and it is why the step is for setup abilities -- which search --
+# rather than for pinning what gets drawn next. Stack the draw order with
+# `my deck is` in the same scenario if a beat needs it.
+#
+# **The cards cannot be named by ordinal.** They are allocated during setup,
+# before `MarkEngineBaseline`, so they are the engine's cards and not the
+# scenario's, exactly like the two Rhinos. Name them by printed name or id.
+#
+# **A one-card deck can end the game during setup.** `SelectorEnd.DoShuffle`
+# asserts the deck is non-empty, so a hero whose setup ability searches its own
+# deck and shuffles afterwards raises when the search emptied it. Give a
+# searching hero at least two cards. That is an engine bug rather than a
+# harness one and is reported as its own finding.
+SETUP_DECKS = ("setup_player_deck", "setup_encounter_deck")
+
+
 def BuildPuzzleScene(case: SpecCase) -> Any:
     """The scene dict `play_puzzle` builds, minus the pre-command strings.
 
     A puzzle scene deliberately has no encounter deck, no modular sets and no
     player deck: `Given` puts on the board exactly what the spec names, and
     nothing arrives that the spec did not ask for.
+
+    The two exceptions are the `at setup` decks, and they are exceptions
+    because of *when* they have to exist rather than what they contain. See
+    `SETUP_DECKS`.
     """
     from engine.lib import Json
     from game.scene.scene import Scene
@@ -237,6 +304,11 @@ def BuildPuzzleScene(case: SpecCase) -> Any:
     scenario = LoadScenarioJson(case.scenario)
     heroes = [LoadHeroJson(name) for name in case.heroes]
     version = str(scenario.get("version", ""))
+    packs = PreferredPacks(case)
+    setup_player_deck = [ResolveCardId(ref, packs)
+                         for ref in case.setup_player_deck]
+    setup_encounter_deck = [ResolveCardId(ref, packs)
+                            for ref in case.setup_encounter_deck]
 
     data = {
         "version": version,
@@ -253,7 +325,7 @@ def BuildPuzzleScene(case: SpecCase) -> Any:
             "expert": bool(case.expert),
             "schemes": list(scenario.get("schemes", [])),
             "set_aside": [],
-            "encounters": [],
+            "encounters": setup_encounter_deck,
             "encounter_sets": [],
             "modular_sets": [],
         },
@@ -266,7 +338,10 @@ def BuildPuzzleScene(case: SpecCase) -> Any:
                 "obligations": [],
                 "nemesis_set": [],
                 "set_aside": [],
-                "player_deck": [],
+                # Seat 1 only. `my deck at setup is` is first person, like every
+                # other deck-stocking step, and there is no per-seat form of it
+                # yet -- see `SETUP_DECKS`.
+                "player_deck": setup_player_deck if index == 0 else [],
             }
             for index, hero in enumerate(heroes)
         ],

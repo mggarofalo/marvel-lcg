@@ -509,3 +509,231 @@ class TestWhatTheEquivalenceRuleRefusesToCredit(unittest.TestCase):
         for card_id in ("07026", "07056"):
             self.assertNotIn(coverage.credited_to[card_id], coverage.credited_to)
             self.assertTrue(coverage.Covered(card_id))
+
+
+################################################################################
+#
+
+class TestRecordedUnreachablePaths(unittest.TestCase):
+    """MARVEL-121: a gap the vocabulary cannot reach has to be a record.
+
+    `spec-campaign.md` calls a shard done when every card in the pack has a
+    scenario, and that was checkable only against the uncovered list. A card
+    whose *reachable* paths are all written drops out of that list, so a
+    decision path nothing can reach was invisible to the tool -- three core
+    spec files carried one as prose in a header and `--pack core` reported no
+    problem. That is the MARVEL-16 failure shape: a missed population does not
+    look like a bug, it looks like a smaller universe.
+
+    The rule under test is that an entry is a **debt, not a discount**. It must
+    not move a single coverage number, and it must not go away on its own.
+    """
+
+    def Build(self, unreachable=()):
+        cards = [
+            MakeCard("01001", "Asks", script=Script(
+                has_imperative_handler=True, player_choice_calls=["ChooseAbilities"])),
+            MakeCard("01002", "Plain", script=Script()),
+            MakeCard("02001", "Another pack", pack="gob", script=Script()),
+        ]
+        # Every card is at depth, so the uncovered and shallow lists are both
+        # empty and only a recorded entry can make a pack not-done. 01001 is
+        # `interactive` and so is planned for four.
+        tagged = {f"F :: a{n}": ["01001"] for n in range(4)}
+        tagged["F :: b"] = ["01002"]
+        tagged["F :: c"] = ["02001"]
+        return Coverage(cards, tagged, trusted=list(tagged), quarantined=(),
+                        unreachable=unreachable)
+
+    ENTRY = {"card": "01002", "feature": "specs/cards/core/x.feature",
+             "path": "the loop in 'each hero'", "why": "no per-seat form step",
+             "blocked_by": "no `player <n> is in hero form` step",
+             "issue": "MARVEL-121"}
+
+    def test_a_recorded_path_does_not_change_any_coverage_number(self):
+        # The whole point. If recording a gap moved `covered` in either
+        # direction the record would be a lever on the metric, and the first
+        # thing anybody would do with it is pull it.
+        without = self.Build().ToDict()["totals"]
+        with_entry = self.Build([self.ENTRY]).ToDict()["totals"]
+        self.assertEqual(without["covered"], with_entry["covered"])
+        self.assertEqual(without["at_depth"], with_entry["at_depth"])
+        self.assertEqual(without["specifiable"], with_entry["specifiable"])
+        self.assertEqual(with_entry["unreachable"], 1)
+
+    def test_a_recorded_card_stays_covered(self):
+        coverage = self.Build([self.ENTRY])
+        self.assertTrue(coverage.Covered("01002"))
+        self.assertEqual(coverage.UnreachableRows()[0]["covered"], True)
+
+    def test_recording_a_path_never_covers_a_card(self):
+        """The load-bearing direction, and the one the fixture above misses.
+
+        Both cards in `Build` already have scenarios, so an entry against one
+        of them cannot move `covered` whatever the rule is. This builds the
+        board where it could: a card with no scenario at all, carrying a
+        recorded unreachable path. It must still read as uncovered, and it must
+        still be on the work list -- "nobody can reach one of its branches" is
+        the opposite of "somebody has written it down".
+
+        Found by mutation: making `Covered` return true for a recorded card
+        passed the whole file before this case existed.
+        """
+        cards = [MakeCard("03001", "Nothing written", script=Script())]
+        coverage = Coverage(cards, {}, trusted=(), quarantined=(),
+                            unreachable=[dict(self.ENTRY, card="03001")])
+        self.assertFalse(coverage.Covered("03001"))
+        self.assertFalse(coverage.AtDepth("03001"))
+        self.assertEqual(coverage.ToDict()["totals"]["covered"], 0)
+        self.assertEqual([r["card_id"] for r in coverage.Uncovered()], ["03001"])
+
+    def test_a_pack_with_an_open_entry_is_not_done(self):
+        """The claim the record exists to make.
+
+        Every card here is covered and at depth, so the uncovered and shallow
+        lists are both empty and the old definition of done is satisfied. The
+        entry is the only thing standing in the way, and it has to be enough.
+        """
+        clean = self.Build()
+        self.assertEqual(clean.Uncovered(pack="core"), [])
+        self.assertEqual(clean.Shallow(pack="core"), [])
+        done, reasons = clean.Done("core")
+        self.assertTrue(done, reasons)
+
+        recorded = self.Build([self.ENTRY])
+        done, reasons = recorded.Done("core")
+        self.assertFalse(done)
+        self.assertIn("unreachable", " ".join(reasons))
+
+    def test_an_entry_only_blocks_its_own_pack(self):
+        # A shard is the unit of "done", so a core gap must not hold up gob.
+        coverage = self.Build([self.ENTRY])
+        self.assertTrue(coverage.Done("gob")[0])
+        self.assertFalse(coverage.Done("core")[0])
+
+    def test_an_entry_naming_no_card_is_kept_and_flagged(self):
+        """A stale entry is reported, never dropped.
+
+        Dropping it would make the record quietly forget its own rot, which is
+        the failure it exists to prevent one level up.
+        """
+        stale = dict(self.ENTRY, card="99999")
+        rows = self.Build([stale]).UnreachableRows()
+        self.assertEqual(len(rows), 1)
+        self.assertFalse(rows[0]["known_card"])
+
+    def test_one_card_can_carry_more_than_one_unreachable_path(self):
+        second = dict(self.ENTRY, path="a different clause")
+        coverage = self.Build([self.ENTRY, second])
+        self.assertEqual(coverage.ToDict()["totals"]["unreachable"], 2)
+        self.assertEqual(len(coverage.UnreachableRows(pack="core")), 2)
+
+
+class TestTheCheckedInUnreachableRecord(unittest.TestCase):
+    """The file itself, not the mechanism.
+
+    An entry naming a card the dataset does not have, or a feature file that
+    does not exist, is a record that has rotted -- and a rotted record is worse
+    than none, because it is read as evidence.
+    """
+
+    REQUIRED = ("card", "feature", "path", "why", "blocked_by", "issue")
+
+    def setUp(self):
+        from tools.spec.coverage import UNREACHABLE
+        if not os.path.exists(CARD_DATASET) or not os.path.exists(UNREACHABLE):
+            self.skipTest("run from py_src/")
+        with open(CARD_DATASET, "r", encoding="utf-8") as handle:
+            self.cards = {c["card_id"]: c for c in json.load(handle)["cards"]}
+        with open(UNREACHABLE, "r", encoding="utf-8") as handle:
+            self.entries = json.load(handle)["unreachable"]
+
+    def test_every_entry_carries_every_field(self):
+        for entry in self.entries:
+            with self.subTest(card=entry.get("card")):
+                for field in self.REQUIRED:
+                    self.assertTrue(entry.get(field),
+                                    f"{field!r} is missing or empty")
+
+    def test_every_entry_names_a_specifiable_card(self):
+        for entry in self.entries:
+            with self.subTest(card=entry["card"]):
+                card = self.cards.get(entry["card"])
+                self.assertIsNotNone(card, "no such card in the dataset")
+                self.assertIn(Tier(card), SPECIFIABLE,
+                              "a card the engine does not have cannot have an "
+                              "unreachable decision path")
+
+    def test_every_entry_names_a_feature_file_that_exists_and_tags_the_card(self):
+        """The record and the file it describes have to stay bound together.
+
+        Without this an entry survives its own spec file being renamed,
+        rewritten or deleted, and the pack stays blocked by a claim nobody can
+        check.
+        """
+        for entry in self.entries:
+            with self.subTest(card=entry["card"]):
+                path = entry["feature"]
+                self.assertTrue(os.path.exists(path), f"{path} does not exist")
+                with open(path, "r", encoding="utf-8") as handle:
+                    text = handle.read()
+                self.assertIn(f"@card:{entry['card']}", text,
+                              f"{path} does not tag {entry['card']}")
+
+    def test_the_record_is_not_a_scenario_file(self):
+        """`LoadCases` walks `specs/` and would try to parse it.
+
+        It is JSON sitting beside the scenarios, exactly like `trusted.json`,
+        and the first run after it was added failed on 'case is missing
+        required field name' until it was reserved.
+        """
+        from tools.spec.run_case import RESERVED_JSON
+        self.assertIn("unreachable.json", RESERVED_JSON)
+
+
+class TestEveryJsonBesideTheScenariosIsAccountedFor(unittest.TestCase):
+    """A `.json` under `specs/` is either a case file or reserved. Nothing else.
+
+    `LoadCases` walks the tree and hands every `.json` it finds to
+    `SpecCase.FromDict`, so a support file dropped in beside the scenarios
+    aborts the whole run -- exit 2, no verdict for any file. That is not a
+    hypothetical: adding `unreachable.json` did exactly that, and **every
+    scoped run in the worktree stayed green** because the failure only appears
+    when something walks the whole tree.
+
+    So the guard is here rather than in the reviewer's head. `RESERVED_JSON`
+    stays an explicit list rather than "anything that fails to parse" on
+    purpose -- deriving it would turn a malformed scenario into a silently
+    skipped one, which is the failure this suite exists to refuse -- and this
+    test is what keeps the list honest as files are added.
+    """
+
+    def test_no_unreserved_json_under_specs_would_break_a_whole_tree_run(self):
+        from tools.spec.case import SpecCaseError
+        from tools.spec.run_case import LoadCases, RESERVED_JSON
+
+        if not os.path.isdir("specs"):
+            self.skipTest("run from py_src/")
+
+        for root, _dirs, files in os.walk("specs"):
+            for name in files:
+                if not name.endswith(".json") or name in RESERVED_JSON:
+                    continue
+                path = os.path.join(root, name)
+                with self.subTest(path=path):
+                    try:
+                        LoadCases(path)
+                    except (SpecCaseError, ValueError) as exc:
+                        self.fail(
+                            f"{path} is neither a loadable case file nor in "
+                            f"RESERVED_JSON, so a whole-tree run aborts on it "
+                            f"({exc}). Add it to RESERVED_JSON in "
+                            f"tools/spec/run_case.py.")
+
+    def test_the_whole_tree_loads(self):
+        # The end-to-end form of the same claim, and the one that would have
+        # caught it: a scoped run cannot see this.
+        from tools.spec.run_case import LoadCases
+        if not os.path.isdir("specs"):
+            self.skipTest("run from py_src/")
+        self.assertGreater(len(LoadCases("specs")), 0)
