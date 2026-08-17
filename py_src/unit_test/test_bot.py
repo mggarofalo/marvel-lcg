@@ -249,6 +249,15 @@ class TestCommandBuilding(unittest.TestCase):
         self.assertEqual(
             BotCommand.BuildPayment(options[0], [], amount=1), [52])
 
+    def test_a_cost_reduction_contributes_zero_to_the_explicit_amount(self):
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '1', 'rule': [], 'payment': [
+                {'51': '-1'}, {'52': 'B'},
+            ]}},
+        ))
+        self.assertEqual(
+            BotCommand.BuildPayment(options[0], [], amount=0), [51])
+
     def test_an_explicit_payment_respects_the_printed_cost(self):
         # Paying one is numerically exact, but a physical cannot meet mental.
         # The later wild is the first exact legal combination.
