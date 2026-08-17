@@ -574,6 +574,49 @@ Selector
 └── SelectorEnd       # Final processing (peek, etc.)
 ```
 
+#### Targets are chosen before the cost is paid
+
+**A selector cannot see what was paid.** Target selection completes first, and
+every card-level hook the selector offers runs inside it:
+
+| hook | when it runs | what it can read |
+|---|---|---|
+| `range=(callable, ...)` | computing the range, once | not the payment |
+| `check_again_fn(effect, targets)` | after a selection is proposed | not the payment |
+
+Measured rather than inferred (MARVEL-133): Wakanda Forever! costs 1 and is
+genuinely paid, and `effect.context.paid_this_resources.val` is `0` in every one
+of the seven `check_again_fn` invocations its spec file produces. `GetCostX()`
+is `0` at both hooks for the same reason.
+
+**This is the constraint behind a card-script pattern that looks like a bug and
+is not.** Six cards print a target count that is only knowable after the cost
+resolves — "Stun X Enemies" (`14006`), "deal 4 damage to X enemies" (`03006`),
+"Choose X schemes" (`58018`), "Choose up to X ... upgrades" (`22010`), "choose
+that many friendly characters" (`16006`), "ready 1 character for each icon"
+(`53017`). All six ask for `range=(1, "All")` and then slice the result:
+
+```python
+cost = effect.GetCostX()
+targets = effect.targets[:cost]      # 14006
+```
+
+Over-selecting and slicing is the only thing the ordering allows. It has two
+consequences, and they are real defects rather than tidiness:
+
+- the floor is 1 rather than X, so a player may select fewer targets than the
+  card obliges them to and under-apply a mandatory effect;
+- the ceiling is the board rather than X, so extras are selected and silently
+  dropped — which makes the *order of selection* decide who is affected, a
+  decision the printed card does not grant.
+
+**Neither is fixable in a card script.** It is a design input for the Engine
+Core fold: if payment and targeting are separate inputs to
+`(state, input) -> (state, prompt)` rather than one decision, the prompt for
+targets can be raised *after* the cost is known and the count becomes an
+ordinary bound. Settle it there deliberately rather than reproducing the
+workaround. See MARVEL-133.
+
 ### Effect System
 
 An `Effect` represents a single resolution of an ability:
