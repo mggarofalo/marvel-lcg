@@ -33,6 +33,7 @@ def MakeOptionJson(**overrides):
         'target_must_include_traits': [],
         'failure_reason': '',
         'is_search': False,
+        'pay_size_is_effect': False,
     }
     option.update(overrides)
     return option
@@ -96,6 +97,40 @@ class TestCommandBuilding(unittest.TestCase):
         command = BotCommand.Build(options[0])
         self.assertIsNotNone(command)
         self.assertEqual(command.targets, ['7', '8'])
+
+    def test_selects_the_maximum_when_target_count_is_the_cost_effect(self):
+        options = ParseOptions(MakeOptionJson(
+            all_legal_targets=[7, 8, 9],
+            target_num_range=[0, 3],
+            pay_size_is_effect=True,
+        ))
+        command = BotCommand.Build(options[0])
+        self.assertIsNotNone(command)
+        self.assertEqual(command.targets, ['7', '8', '9'])
+
+    def test_variable_card_cost_can_use_the_legacy_minimum(self):
+        from engine.device.manager.bot.command import PAY_VARIABLE_CARD_COST
+
+        options = ParseOptions(MakeOptionJson(
+            all_legal_targets=[7, 8, 9],
+            target_num_range=[0, 3],
+            pay_size_is_effect=True,
+        ))
+        ConfigVariables.ParseString("-no_bot_pay_variable_card_cost")
+        try:
+            self.assertFalse(PAY_VARIABLE_CARD_COST.value)
+            self.assertEqual(BotCommand.Build(options[0]).targets, [])
+        finally:
+            ConfigVariables.ParseString("-bot_pay_variable_card_cost")
+        self.assertEqual(BotCommand.Build(options[0]).targets, ['7', '8', '9'])
+
+    def test_tries_the_largest_counter_cost_first(self):
+        options = ParseOptions(*[
+            MakeOptionJson(id=value, name=str(value), pay_size_is_effect=True)
+            for value in range(1, 4)
+        ])
+        commands = BotCommand.BuildAll(options)
+        self.assertEqual([command.id for command in commands], ['3'])
 
     def test_rejects_an_option_without_enough_legal_targets(self):
         options = ParseOptions(MakeOptionJson(all_legal_targets=[7], target_num_range=[2, 2]))

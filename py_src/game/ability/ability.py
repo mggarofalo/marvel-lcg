@@ -67,6 +67,12 @@ class Ability:
         # all-or-nothing. Set by `AbilityFactory.ForChoiceAbilityToSpend`.
         self.spend_is_the_effect = False
 
+        # Set on the temporary choice abilities used to decide how many cards
+        # or counters to spend as a cost. The choice is still the player's;
+        # this only tells non-human policies that the size of the answer is the
+        # effect of the payment rather than ordinary effect targeting.
+        self.pay_size_is_effect = False
+
         self.default_choose = False
 
         self.selectors: List['Selector|None'] = [] # Only use the first one, the others are used to check if it has the legal target, remove "Zero" in range
@@ -335,6 +341,11 @@ class Ability:
         assert self.flags.is_choose_ability, f"{self.flags=}"
         assert self.NeedCost(), f"{self=}"
         self.spend_is_the_effect = True
+        return self
+
+    def SetPaySizeIsTheEffect(self, value: bool=True) -> 'Ability':
+        assert self.flags.is_choose_ability, f"{self.flags=}"
+        self.pay_size_is_effect = value
         return self
 
     def SetPlayCost(self, cost: 'Cost') -> 'Ability':
@@ -1126,4 +1137,3 @@ class Ability:
                 self.conditions.append(condition)
         self.selectors = [x for x in effect.ability.selectors]
         effect.delay_ability = self
-

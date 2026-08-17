@@ -644,9 +644,24 @@ option is unaffordable.
 
 The same shape reaches costs that are not resources at all — `CostFunc.Discard`,
 `CostFunc.Counter` and `CostFunc.Exhaust` all take ranges, and a range with a
-floor of 0 is answered by the bot's minimum-target rule rather than by any of
-this. Shield Toss (`03006`) pays `CostFunc.Discard(range=(0, "All"))` and is
-still discarding nothing. See MARVEL-138.
+floor of 0 used to be answered by the bot's minimum-target rule rather than by
+any of this. Shield Toss (`03006`) paid `CostFunc.Discard(range=(0, "All"))`,
+discarded nothing, and dealt damage to nobody.
+
+There are 20 ranged uses across those three cost functions: seven discards,
+eleven exhausts and two counter removals. The boundary is not a list of cards.
+`CostFunc.Base.PayCost` marks the temporary choice it raises with
+`pay_size_is_effect`; ranged counters put the same marker on their numeric
+choice. `BotCommand` maximises only a marked choice. Ordinary effect targeting
+keeps the engine's minimum-selection rule, and an exact cost has the same floor
+and ceiling so the marker changes nothing. `-no_bot_pay_variable_card_cost`
+restores the pre-MARVEL-138 planner for old replays. See MARVEL-138.
+
+The behavior bound used Captain America against Rhino, seeds 1 through 30,
+with the flag on and off. Three scenes moved (seeds 4, 5 and 11); the other 27
+were byte-identical. Seed 4 reproduced byte-identically in two fresh processes
+at 33 decisions. The Shield Toss spec separately pins the card's result when a
+ranged discard is chosen explicitly.
 
 ### Effect System
 

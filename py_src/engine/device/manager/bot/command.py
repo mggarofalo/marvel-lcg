@@ -27,6 +27,10 @@ NO_COST_TEXTS = ("", "0", "*")
 # question this planner is not the right place to answer well.
 PAY_VARIABLE_COST = ConfigVariables.Bool('bot_pay_variable_cost', True)
 
+# Off restores the pre-MARVEL-138 planner: a ranged card/counter cost is paid
+# at its floor. Replays generated before this change were made that way.
+PAY_VARIABLE_CARD_COST = ConfigVariables.Bool('bot_pay_variable_card_cost', True)
+
 class BotCommand:
 
     ################################################################################
@@ -75,10 +79,12 @@ class BotCommand:
         if not option.is_selectable:
             return None
 
-        min_targets = option.target_num_range[0]
-        if len(option.all_legal_targets) < min_targets:
+        target_count = option.target_num_range[0]
+        if option.pay_size_is_effect and PAY_VARIABLE_CARD_COST.value:
+            target_count = option.target_num_range[1]
+        if len(option.all_legal_targets) < target_count:
             return None
-        targets = option.all_legal_targets[:min_targets]
+        targets = option.all_legal_targets[:target_count]
 
         resources = BotCommand.BuildPayment(option, targets)
         if resources is None:
@@ -198,6 +204,15 @@ class BotCommand:
     @staticmethod
     def BuildAll(options: List['BotOption']) -> List['CommandDescriptor']:
         """Every option the bot can legally answer with, in engine order."""
+        # `DeclareNumber` is represented as one targetless option per number,
+        # in ascending order. When those numbers are the size of a counter
+        # cost, the maximum is the one answer this neutral planner emits --
+        # just as `BuildMaximalPayment` emits one maximal resource payment.
+        if options and PAY_VARIABLE_CARD_COST.value and all(
+            option.pay_size_is_effect for option in options
+        ):
+            options = options[-1:]
+
         commands: List['CommandDescriptor'] = []
         for option in options:
             command = BotCommand.Build(option)
