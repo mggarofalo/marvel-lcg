@@ -23,6 +23,4 @@ def GetAbilities() -> Sequence['Ability']:
             1,
             uncontrollable_power
         ),
-        AbilityFactory.IfThisSchemeStageIsCompletedPlayersLoseTheGame()
     ]
-
