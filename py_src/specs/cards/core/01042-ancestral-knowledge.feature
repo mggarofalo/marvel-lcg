@@ -14,25 +14,17 @@
 # each card ended in and how many are in each. That is deliberate -- a scenario
 # that pinned deck positions here would be pinning the RNG.
 #
-# ---------------------------------------------------------------------------
-# The last scenario in this file is expected to FAIL, and is left in quarantine
-# on purpose.
-#
-# `select_rule="DifferentCards"` is passed by the card script and is declared in
-# `SelectorRule.RULE_BASE`, but nothing in `game/selector/selector_rule.py`
-# enforces it -- neither `Process` nor `AfterSelectTargets` looks at it. The only
-# implementation in the repository is in the web client, at
-# `public/js/marvel/effect.ts:377`. So a player who is not a browser -- the bot,
-# the spec harness, and any future C# runner -- can choose two copies of the same
-# title, which the card's own script comments quote the FAQ to forbid:
+# `select_rule="DifferentCards"` enforces the printed restriction in both the
+# Python engine and the browser. The engine rejects a selection containing two
+# copies of one title; it does not trim the illegal selection to one copy. The
+# current spec vocabulary can inspect individual legal targets and the target
+# ceiling, but cannot assert that a combination of two otherwise legal targets
+# is forbidden. `unit_test.test_select_rules` pins that relational rule directly:
 #
 #     # A: Can Ancestral Knowledge shuffle different versions of Wakanda Forever
 #     #    into Black Panther's deck?
 #     # Q: No. Cards with the same title are considered to be the same card for
 #     #    the purpose of card abilities.
-#
-# This is not the only card affected -- `TeamUp` targets carry the same rule --
-# so it is reported rather than written around.
 
 Feature: Ancestral Knowledge
 
@@ -90,17 +82,3 @@ Feature: Ancestral Knowledge
     Then I am prompted to choose one
       | Attack      |
       | Change Form |
-
-  @card:01042
-  Scenario: two copies of one title are one card and cannot both be chosen
-    # EXPECTED TO FAIL -- see the note at the top of this file. The engine
-    # accepts both copies and shuffles both in; under the printed rule the
-    # second copy is not an available second choice, so at most one of the pair
-    # can reach the deck.
-    Given I am in alter-ego form
-    And my hand is "01042", "Vibranium"
-    And my discard pile is "Panther Claws", "Panther Claws", "Tactical Genius"
-
-    When I choose "Play" on "01042" targeting "Panther Claws #1", "Panther Claws #2"
-    Then "Panther Claws #2" is in the "DiscardPile"
-    And I have 1 cards in my deck

@@ -1,12 +1,6 @@
 {
   "note": "Scenarios that did not pass against the Python engine. They are not part of the trusted suite. Each one is either a spec bug or an engine bug; both are worth finding.",
   "scenarios": {
-    "Ancestral Knowledge :: two copies of one title are one card and cannot both be chosen": {
-      "reason": "FAIL player deck_size == 1 expected 1, got 0 player 0 (T'Challa): 0 in hand, 0 in deck, 5 in discard",
-      "sha256": "20c0d32d6bd378b3d35b25b2ac765841e845be34b77087042e91135ad6cfe369",
-      "source": "specs/cards/core/01042-ancestral-knowledge.feature",
-      "verdict": "FAIL-engine-suspected"
-    },
     "Quarantine self-test :: a legal-targets list that disagrees is FAIL-engine-suspected": {
       "reason": "FAIL the legal targets for 'Attack' are 'Galactus' Attack accepts Rhino (01094) in VillainArea (missing 'galactus'; unexpected 'rhino')",
       "sha256": "962950ac0709e17b354caf640ebde9facac3c02cc70159317844d616b6f3f438",
