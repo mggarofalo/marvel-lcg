@@ -177,6 +177,41 @@ class SelectorRule:
                 effect.failures.Set(effect.initiator, EffectFailure.SameCardChosen)
                 return False
 
+        # "Exhaust an AVENGER and a GUARDIAN" -- the *chosen pair* has to cover
+        # both traits. `EffectChecker.UpdateLegalTargets` asks whether the pool
+        # could, so an impossible cost is never offered; nothing asked whether
+        # the selection did, and `SelectorFactory.Alliance` passes a
+        # `CardFinder(traits=...)` whose traits are an **OR**. So the pool for
+        # every Alliance card is "friends who are AVENGER *or* GUARDIAN", two
+        # AVENGERs satisfied the finder and the feasibility check alike, and a
+        # player who was not a browser could pay the cost with them (MARVEL-127).
+        #
+        # Traits are struck off the required list as they are found, matching
+        # `check_select_rule` in `public/js/marvel/effect.ts` -- so one card
+        # carrying both required traits covers both, on either side.
+        if self.select_rule == "MustIncludeTraits":
+            left_must_include_traits = list(self.target_must_include_traits)
+            for face in targets:
+                if not left_must_include_traits:
+                    break
+                found = face.FindHasTrait(*left_must_include_traits)
+                left_must_include_traits = [x for x in left_must_include_traits
+                                            if x not in found]
+            if left_must_include_traits:
+                effect.failures.Set(effect.initiator, EffectFailure.MissingRequiredTrait)
+                return False
+
+        # "Choose two cards of different types". The same shape as
+        # `DifferentCards` above and the same gap it had: the pool was checked
+        # and the selection was not. Its one user (`45017`) hand-rolled the
+        # pairing in a `check_again_fn`, which is why nothing was visibly broken
+        # -- and a rule whose correctness depends on every caller
+        # re-implementing it is not a rule. MARVEL-127.
+        if self.select_rule == "DifferentType":
+            if FacesCounter.GetDifferentTypesCount(targets) != len(targets):
+                effect.failures.Set(effect.initiator, EffectFailure.SameTypeChosen)
+                return False
+
         if self.combined_resource_cost:
             cost = FacesCounter.GetPrintedCost(targets)
             if cost < self.combined_resource_cost[0]:

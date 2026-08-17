@@ -14,6 +14,8 @@ class EffectFailure(str, Enum):
     TypeCountNotEnough      = "type count not enough",
     CardCountNotEnough      = "different card count not enough",
     SameCardChosen          = "two cards with the same title chosen",
+    SameTypeChosen          = "two cards of the same type chosen",
+    MissingRequiredTrait    = "the chosen cards do not cover the required traits",
     CheckTarget             = "check target",
     CheckPay                = "check pay",
     CannotPay               = "cannot pay this cost",
