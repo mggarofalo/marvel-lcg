@@ -16,6 +16,9 @@ def GetAbilities() -> Sequence['Ability']:
         # .SetDesc("Exhaust War Machine and deal 2 damage to him → deal 1 damage to each enemy")
         .SetCostFunc(CostFunc.Exhaust("This"))
         .SetCostFunc(CostFunc.DealDamage(2, "This"))
-        .SetTarget(Enemy, range=(1, "All"))
+        # "deal 1 damage to each enemy" -- every enemy, not a choice of them.
+        # Found by the MARVEL-129 grep for `(1, "All")` against printed "each":
+        # this is the second card of the two that spelling was wrong on.
+        .SetTarget(Enemy, range="All")
     ]
 

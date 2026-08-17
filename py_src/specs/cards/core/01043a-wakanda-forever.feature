@@ -94,6 +94,43 @@ Feature: Wakanda Forever!
     And I am not prompted again
 
   @card:01043a
+  Scenario: each means each -- naming no order resolves every upgrade
+    # MARVEL-129. The card script spelled its selector `range=(1, "All")`,
+    # which means "some or all", so a player controlling three upgrades could
+    # resolve one and stop -- and self-play did exactly that, because
+    # `BotCommand.Build` always submits `min_targets`. `range="All"` fixes the
+    # count at the whole candidate set.
+    #
+    # The claim is the *count*, so this transcript deliberately names no
+    # targets: the numbers below are what a run that resolves both steps
+    # produces, and a minimum of 1 resolves only Panther Claws -- as the sole
+    # and therefore final step of its sequence, dealing 4 and removing no
+    # threat. Every number here moves if the minimum comes back.
+    Given my hand is "01043a", "Vibranium"
+    And "Panther Claws" is in play
+    And "Tactical Genius" is in play
+    And the main scheme has 5 threat
+
+    When I play "01043a"
+    Then "Rhino" has 2 damage
+    And the main scheme has 3 threat
+    And I am not prompted again
+
+  # The claim this file cannot make: that naming *one* of the two upgrades is
+  # refused. The scenario above shows the engine resolving both when told
+  # nothing, which is the behaviour that matters, but the direct form -- submit
+  # a target list shorter than the minimum and require a refusal -- has no
+  # spelling. `I cannot choose "<option>" targeting "<card>"` is about a card
+  # not being a legal target, and Panther Claws is one; it just cannot be the
+  # only one. `the target maximum for "<option>" is <n>` (MARVEL-120) reads
+  # `target_num_range[1]` and has no counterpart reading `[0]`.
+  #
+  # So the floor is pinned by consequence and not by assertion. Filed as its
+  # own issue rather than papered over -- a step added to the closed vocabulary
+  # is a step the C# runner must bind too, and that is not a decision to make
+  # inside a card fix.
+
+  @card:01043a
   Scenario: with no Black Panther upgrade in play the event is not offered
     # "each [[Black Panther]] upgrade you control" needs at least one, and the
     # engine enforces that by filtering the play out of the menu rather than by

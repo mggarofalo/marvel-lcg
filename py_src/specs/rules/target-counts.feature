@@ -77,10 +77,16 @@ Feature: Target counts
   # "Hero Action: Resolve the "Special" ability on each [[Black Panther]]
   #  upgrade you control in any order."
   #
-  # `range=(1, "All")` in the card script. "Each" is not a number, so the
-  # ceiling is however many upgrades are in play -- which is the contrast that
-  # makes the two scenarios above a claim about Ancestral Knowledge and not
-  # about selectors in general.
+  # `range="All"` in the card script. "Each" is not a number, so the ceiling is
+  # however many upgrades are in play -- which is the contrast that makes the
+  # two scenarios above a claim about Ancestral Knowledge and not about
+  # selectors in general.
+  #
+  # It was `range=(1, "All")` when this file was written, and the ceiling below
+  # is the half of that spelling which was right. The other half -- a minimum
+  # of 1, so "each" was resolvable one at a time -- is MARVEL-129, and the
+  # count is pinned in `specs/cards/core/01043a-wakanda-forever.feature`. Both
+  # scenarios here are unaffected: "All" moves the floor and not the ceiling.
 
   @card:01043a
   Scenario: an each-you-control effect takes as many targets as the board offers
