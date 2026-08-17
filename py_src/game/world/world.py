@@ -631,7 +631,11 @@ class World(WorldAction, WorldFind):
             scheme.PlaceAccelerationToken(acceleration_token, GameRule(scheme))
             scheme.Reveal(None, by_effect)
         elif self.area_schemes_main.GetSize() == 1:
-            self.game_over.SetGameOverByRule("The Final Stage of the Main Scheme was Completed")
+            # Completion loss is owned by the main scheme's printed or
+            # scenario ability.  Reaching the end of the deck without one is
+            # a broken card definition, not a second way to end the game.
+            assert self.is_game_over, \
+                f"final main scheme completed without a loss ability: {prev_scheme}"
         after_message = Message.AfterMainSchemeAdvanced(message)
         after_message.Send()
 
@@ -657,4 +661,3 @@ class World(WorldAction, WorldFind):
             # was already correct and stays byte-identical; only Python-side
             # formatting was wrong.
             return self.phase.state.value
-

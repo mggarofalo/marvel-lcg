@@ -6,7 +6,7 @@
     "engine_text_corrupt": 36,
     "engine_markup_escaped": 5,
     "card_not_in_marvelsdb": 46,
-    "card_not_implemented": 549,
+    "card_not_implemented": 548,
     "script_without_text": 7,
     "no_text_anywhere": 43,
     "unclaimed_script": 4,
@@ -1516,7 +1516,7 @@
     {
       "kind": "card_not_implemented",
       "description": "MarvelSDB has this card and no engine script implements it.",
-      "count": 549,
+      "count": 548,
       "cards": [
         {
           "id": "01014",
@@ -1917,10 +1917,6 @@
         {
           "id": "21114a",
           "detail": "The Infinity Stones"
-        },
-        {
-          "id": "21115b",
-          "detail": "Balance the Scales"
         },
         {
           "id": "21180a",

@@ -25,5 +25,7 @@ def GetAbilities() -> Sequence['Ability']:
             Villain,
             all_hail_king_loki
         ),
+        # The engine's imported card text omits this printed sentence:
+        # "If this stage is completed, the players lose the game."
+        AbilityFactory.IfThisSchemeStageIsCompletedPlayersLoseTheGame(),
     ]
-

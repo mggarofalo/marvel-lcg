@@ -27,12 +27,22 @@ class MainScheme(Scheme2, HasStage, EncounterCard, FinalType):
     @override
     def GetAbilities(self) -> List['Ability']:
         abilities: List['Ability'] = []
-        if "<b>If this stage is completed, the players lose the game" in self.paper.text or \
-            "<b>If this scheme is completed, the players lose the game" in self.paper.text:
+        if self.PrintsPlayersLoseOnCompletion(self.paper.text):
             abilities = [
                 AbilityFactory.IfThisSchemeStageIsCompletedPlayersLoseTheGame()
             ]
         return abilities + super().GetAbilities()
+
+    @staticmethod
+    def PrintsPlayersLoseOnCompletion(text: str) -> bool:
+        """Recognise the standard printed loss sentence, not its HTML spacing."""
+        normalised = " ".join(
+            text.replace("<b>", " ").replace("</b>", " ").split()
+        )
+        return any(sentence in normalised for sentence in (
+            "If this stage is completed, the players lose the game",
+            "If this scheme is completed, the players lose the game",
+        ))
 
     @override
     def CheckPrintedValue(self):
@@ -213,4 +223,3 @@ class MainScheme(Scheme2, HasStage, EncounterCard, FinalType):
     def GainTargetThreatValue(self, value: int, effect: 'Effect'):
         if self.target_threat != None:
             self.target_threat += value
-

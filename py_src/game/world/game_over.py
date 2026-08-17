@@ -7,7 +7,6 @@ GAME_OVER_REASON_RULE = Literal[
     "There were no cards in either the encounter deck or the encounter discard pile",
     "All players were eliminated",
     "The Final Stage of the Villain was Defeated",
-    "The Final Stage of the Main Scheme was Completed",
     "The Main Scheme was Completed",
 ]
 
@@ -27,7 +26,6 @@ GAME_OVER_REASON_MAP: Dict[GAME_OVER_REASON, bool|None] = {
     "There were no cards in either the encounter deck or the encounter discard pile": False,
     "All players were eliminated": False,
     "The Final Stage of the Villain was Defeated": True,
-    "The Final Stage of the Main Scheme was Completed": False,
     "The Main Scheme was Completed": False,
     "Players Won": True,
     "Players Lost": False,
@@ -104,4 +102,3 @@ class GameOverReason:
     @property
     def is_exit(self) -> bool:
         return self.reason == "Exit"
-

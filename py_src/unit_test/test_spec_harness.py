@@ -14,6 +14,7 @@ behavior can be expressed as a scenario and run. They must be run from
 """
 
 import unittest
+from unittest import mock
 from types import SimpleNamespace
 
 from tools.spec.assertions import Evaluate, ResolveSubject
@@ -707,6 +708,40 @@ class TestAgainstTheEngine(unittest.TestCase):
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_final_scheme_loss_has_no_world_level_rescue_path(self):
+        """Mutation control: suppressing the printed rule must kill the case."""
+        from game.world.game_over import GameOverReason
+
+        case = MakeCase(
+            name="final scheme completion owner",
+            scenario="klaw",
+            heroes=("captain_marvel",),
+            given=(
+                HERO_FORM,
+                GivenStep("encounter_deck", (
+                    "Armored Guard", "Armored Guard", "Armored Guard")),
+                GivenStep("threat", ("the main scheme",), value=6),
+                GivenStep("threat", ("the main scheme",), value=8),
+            ),
+            beats=(
+                ThenStep("game", "game_over", True),
+                ThenStep("game", "players_won", False),
+            ),
+        )
+        original = GameOverReason.SetGameOver
+
+        def SuppressPrintedLoss(reason, value, by_effect):
+            if value == "The Main Scheme was Completed":
+                return None
+            return original(reason, value, by_effect)
+
+        with mock.patch.object(GameOverReason, "SetGameOver", SuppressPrintedLoss):
+            result = RunCase(case)
+
+        self.assertNotEqual(result.outcome, OUTCOME_PASS, result.Describe())
+        self.assertIn("final main scheme completed without a loss ability",
+                      result.Describe())
 
     def test_a_restriction_passes_when_the_target_is_filtered_out(self):
         """Guard: the option stays, the villain leaves its legal targets."""

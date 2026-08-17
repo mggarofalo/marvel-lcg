@@ -6,7 +6,7 @@
     "engine_only": 46,
     "marvelsdb_only": 345,
     "with_printed_text": 4294,
-    "with_script": 3781
+    "with_script": 3782
   },
   "engine_text_agreement": {
     "rule": "Engine text compared against the printed text. 'exact' is byte equality; 'formatting' means equal after HTML tags, entities and whitespace are normalised; 'wording' means the words differ.",
@@ -20,15 +20,15 @@
   },
   "script_text_cross_tab": {
     "no_script_no_text": 43,
-    "no_script_text": 520,
+    "no_script_text": 519,
     "script_no_text": 7,
-    "script_text": 3774
+    "script_text": 3775
   },
   "stratification": {
     "no_imperative_handler": {
       "rule": "Card scripts whose syntax tree contains no function defined inside another -- purely declarative AbilityFactory calls, so the least spec attention is needed.",
-      "scripts": 532,
-      "cards": 604
+      "scripts": 533,
+      "cards": 605
     },
     "suspends_for_player_choice": {
       "rule": "Card scripts calling a method of PlayerAsk (game/player/model/player_ask.py) or one of ChooseAbilities / MayChooseOneAbility / AskSpendResources (game/player/action/player_action.py). These suspend mid-resolution for a player answer and deserve the most spec attention. Random-choice helpers are excluded -- they suspend nothing.",
@@ -73,10 +73,10 @@
     }
   },
   "scripts": {
-    "files": 3457,
-    "claimed_by_a_card": 3453,
+    "files": 3458,
+    "claimed_by_a_card": 3454,
     "unclaimed": 4,
-    "total_lines": 98081,
+    "total_lines": 98093,
     "distinct_ability_factories": 304,
     "ability_factories": {
       "WhenThisRevealed": 683,
@@ -189,6 +189,7 @@
       "AfterPhaseEnd": 5,
       "AfterSchemeRemoveThreat": 5,
       "DiscardThisWhenRoundEnd": 5,
+      "IfThisSchemeStageIsCompletedPlayersLoseTheGame": 5,
       "SchemeCannotLeavlPlayWhile": 5,
       "ThisGainKeywordWhileFaceIsInPlay": 5,
       "WhenCardWouldMoveToArea": 5,
@@ -206,7 +207,6 @@
       "AttachedCardCanPlayLikeInHand": 4,
       "EnemyCannotActivate": 4,
       "IfExpertModeThisCannotBeCanceled": 4,
-      "IfThisSchemeStageIsCompletedPlayersLoseTheGame": 4,
       "PlayersCannotAttackWhile": 4,
       "ReduceCostToPlayFaceWhen": 4,
       "ThisGainKeywordForEachFaceInPlay": 4,
@@ -588,7 +588,7 @@
     "engine_text_corrupt": 36,
     "engine_markup_escaped": 5,
     "card_not_in_marvelsdb": 46,
-    "card_not_implemented": 549,
+    "card_not_implemented": 548,
     "script_without_text": 7,
     "no_text_anywhere": 43,
     "unclaimed_script": 4,
