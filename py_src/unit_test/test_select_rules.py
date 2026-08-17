@@ -58,12 +58,18 @@ import re
 import unittest
 from pathlib import Path
 from typing import get_args
+from unittest.mock import patch
 
 # The `game.*` packages import each other circularly and only resolve once the
 # `engine` package has been imported.
 import engine  # noqa: F401  pylint: disable=unused-import
 
 from game.selector.selector_rule import SelectorRule
+from game.card.face.base import Villain
+from game.card.face.card_type import Minion
+from game.effect.effect_failure import EffectFailure
+from game.operate.faces_counter import FacesCounter
+from game.selector.factory import Select
 
 PY_SRC = Path(__file__).resolve().parent.parent
 GAME = PY_SRC / "game"
@@ -312,18 +318,18 @@ REVIEWED_SELECT_RULES = {
     "CombinedResourceCost": (ENFORCED, frozenset({FEASIBILITY, SELECTION}),
         "`SelectorRule.Process` drops a pool that cannot reach the minimum and "
         "`AfterSelectTargets` bounds the chosen set both ways, on "
-        "`FacesCounter.GetPrintedCost`"),
+        "`FacesCounter.GetPrintedCost`. This remains a distinct descriptor "
+        "name because shipped card scripts and saved inputs use it"),
     "CombinedPrintedCost": (ENFORCED, frozenset({FEASIBILITY, SELECTION}),
-        "same two sites, and -- worth knowing -- the same `GetPrintedCost` "
-        "call, so this rule and `CombinedResourceCost` are behaviourally one "
-        "rule under two names, exactly as `effect.ts` treats them"),
+        "same two sites and the same `GetPrintedCost` call. MARVEL-128 kept "
+        "both names as compatibility aliases: both have shipped callers, are "
+        "rendered to clients and saved inputs, and `effect.ts` accepts both"),
     "CombinedResourceIcons": (ENFORCED, frozenset({FEASIBILITY, SELECTION}),
         "`Process` and `AfterSelectTargets`, on "
         "`FacesCounter.GetPrintedResourcesIcon`. `effect.ts` returns true for "
-        "this one unconditionally, so here the browser is the lenient side. No "
-        "card in `cards/pack/` passes `combined_resource_icons`, and the upper "
-        "bound in `AfterSelectTargets` reads index 0 where the other two read "
-        "index 1 -- both reported under MARVEL-118, still open as MARVEL-128"),
+        "this one unconditionally, so here the browser is the lenient side. "
+        "`Players.DiscardResourceIconFromHand` supplies it for three shipped "
+        "cards; MARVEL-128 fixed its upper-bound check to read index 1"),
 
     # RULE_FOR_UI
     "VillainAndMinionsEngagedSamePlayer": (ENFORCED, frozenset({SELECTION}),
@@ -332,12 +338,11 @@ REVIEWED_SELECT_RULES = {
         "minions are not all engaged with one player. Selection only, and "
         "correctly so: there is no pool that makes this infeasible in advance"),
     "VillainAndMinionsEngagedWithYou": (ENFORCED, frozenset({SELECTION}),
-        "the same `startswith` branch, which is why it is credited. It is a "
-        "weaker check than the browser's: `effect.ts` requires the engaged "
-        "player to be *you* and requires exactly one villain, and Python "
-        "requires neither. Reported under MARVEL-118, open as MARVEL-128 -- "
-        "note that this is a rule enforced at the right site and too leniently, "
-        "which no site comparison can catch"),
+        "the same `startswith` branch. Since MARVEL-128 it matches the browser "
+        "and the four printed cards: exactly one Villain (including a Leader) "
+        "and only minions engaged with `Select.GetYou(effect)`. The target "
+        "helper already builds that pool, and this selection check also binds "
+        "non-browser inputs"),
 }
 
 
@@ -860,6 +865,129 @@ class TestDifferentCardsFeasibility(unittest.TestCase):
     def test_a_selector_without_the_rule_is_not_filtered(self):
         checker = self.Checker("", ["Panther Claws"] * 4, (2, 2))
         self.assertTrue(checker.UpdateLegalTargets())
+
+
+class TestCombinedValueRules(unittest.TestCase):
+    """The two MARVEL-128 findings among parameterised rules.
+
+    Resource-icon selection used the lower bound twice, turning every range
+    into an exact value. The two printed-cost spellings really are aliases, but
+    both are shipped descriptor names, so their compatibility and equal
+    behaviour are pinned rather than one name being silently removed.
+    """
+
+    def Effect(self):
+        return TestDifferentCardsIsEnforced().Effect()
+
+    def test_resource_icons_accept_a_total_between_distinct_bounds(self):
+        rule = SelectorRule(combined_resource_icons=(1, 3))
+        with patch.object(FacesCounter, "GetPrintedResourcesIcon", return_value=2):
+            self.assertTrue(rule.AfterSelectTargets(self.Effect(), [object()], (1, 3)))
+
+    def test_resource_icons_reject_a_total_above_the_upper_bound(self):
+        rule = SelectorRule(combined_resource_icons=(1, 3))
+        with patch.object(FacesCounter, "GetPrintedResourcesIcon", return_value=4):
+            self.assertFalse(rule.AfterSelectTargets(self.Effect(), [object()], (1, 3)))
+
+    def test_printed_cost_aliases_keep_their_descriptor_names(self):
+        resource = SelectorRule(combined_resource_cost=(1, 3))
+        printed = SelectorRule(combined_printed_cost=(1, 3))
+
+        self.assertEqual(resource.GetRuleAndParam(),
+                         ("CombinedResourceCost", (1, 3)))
+        self.assertEqual(printed.GetRuleAndParam(),
+                         ("CombinedPrintedCost", (1, 3)))
+
+    def test_printed_cost_aliases_make_the_same_decisions(self):
+        rules = [SelectorRule(combined_resource_cost=(1, 3)),
+                 SelectorRule(combined_printed_cost=(1, 3))]
+
+        for total, expected in ((0, False), (1, True), (2, True),
+                                (3, True), (4, False)):
+            with self.subTest(total=total), \
+                    patch.object(FacesCounter, "GetPrintedCost", return_value=total):
+                actual = [rule.AfterSelectTargets(self.Effect(), [object()], (1, 3))
+                          for rule in rules]
+                self.assertEqual(actual, [expected, expected])
+
+
+class TestVillainAndMinionRules(unittest.TestCase):
+    """Python must enforce the same choice the browser and printed cards do."""
+
+    class FakeFace:
+        def __init__(self, kind, engaged_player=None):
+            self.kind = kind
+            self.engaged_player = engaged_player
+            self.name = kind
+
+        def GetEngagedPlayer(self):
+            return self.engaged_player
+
+    def Check(self, rule_name, targets, you=None):
+        effect = TestDifferentCardsIsEnforced().Effect()
+        rule = SelectorRule(select_rule=rule_name)
+        with patch.object(Villain, "IsType",
+                          side_effect=lambda face: face.kind in {"villain", "leader"}), \
+                patch.object(Minion, "IsType",
+                             side_effect=lambda face: face.kind == "minion"), \
+                patch.object(Select, "GetYou", return_value=you):
+            return rule.AfterSelectTargets(effect, targets, (0, 99)), effect
+
+    def test_with_you_requires_one_villain(self):
+        you = object()
+        minion = self.FakeFace("minion", you)
+
+        accepted, _ = self.Check("VillainAndMinionsEngagedWithYou", [minion], you)
+        self.assertFalse(accepted)
+
+        accepted, _ = self.Check(
+            "VillainAndMinionsEngagedWithYou",
+            [self.FakeFace("villain"), self.FakeFace("villain"), minion],
+            you,
+        )
+        self.assertFalse(accepted)
+
+    def test_with_you_rejects_a_minion_engaged_with_someone_else(self):
+        you = object()
+        targets = [self.FakeFace("villain"),
+                   self.FakeFace("minion", object())]
+
+        accepted, effect = self.Check(
+            "VillainAndMinionsEngagedWithYou", targets, you)
+
+        self.assertFalse(accepted)
+        self.assertIn(EffectFailure.EngagedDifferentPlayer,
+                      effect.failures.reasons)
+
+    def test_with_you_accepts_one_villain_and_your_minions(self):
+        you = object()
+        targets = [self.FakeFace("villain"),
+                   self.FakeFace("minion", you),
+                   self.FakeFace("minion", you)]
+
+        accepted, _ = self.Check(
+            "VillainAndMinionsEngagedWithYou", targets, you)
+
+        self.assertTrue(accepted)
+
+    def test_a_leader_counts_as_the_one_villain(self):
+        you = object()
+        targets = [self.FakeFace("leader"), self.FakeFace("minion", you)]
+
+        accepted, _ = self.Check(
+            "VillainAndMinionsEngagedWithYou", targets, you)
+
+        self.assertTrue(accepted)
+
+    def test_same_player_rule_still_allows_another_players_minions(self):
+        another_player = object()
+        targets = [self.FakeFace("villain"),
+                   self.FakeFace("minion", another_player)]
+
+        accepted, _ = self.Check(
+            "VillainAndMinionsEngagedSamePlayer", targets)
+
+        self.assertTrue(accepted)
 
 
 class TestDifferentCardsCount(unittest.TestCase):

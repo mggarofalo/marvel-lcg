@@ -145,25 +145,39 @@ class SelectorRule:
 
     def AfterSelectTargets(self, effect: 'Effect', targets: Sequence['CardFace'], range: Tuple[int, int]) -> bool:
         from game.operate.faces_counter import FacesCounter
+        from game.card.face.base import Villain
         from game.card.face.card_type import Minion
         from game.effect.effect_failure import EffectFailure
+        from game.selector.factory import Select
 
         if not self.select_rule.startswith('VillainAndMinions'):
             if not (range[0] <= len(targets) <= range[1]):
                 effect.failures.Set(None, EffectFailure.TargetNum)
                 return False
         else:
-            player = None
-            for face in targets:
-                if Minion.IsType(face):
-                    player = face.GetEngagedPlayer()
-                    break
+            # The browser treats EncounterVillain and Leader as the villain;
+            # both derive from Villain in Python. These selectors deliberately
+            # skip the ordinary numeric range because they mean "the villain
+            # and every matching minion", but that still requires exactly one
+            # villain (MARVEL-128).
+            if sum(Villain.IsType(face) for face in targets) != 1:
+                effect.failures.Set(None, EffectFailure.TargetNum)
+                return False
+
+            if self.select_rule == "VillainAndMinionsEngagedWithYou":
+                player = Select.GetYou(effect)
+            else:
+                player = next(
+                    (face.GetEngagedPlayer() for face in targets
+                     if Minion.IsType(face)),
+                    None,
+                )
+
             for face in targets:
                 if Minion.IsType(face):
                     if player != face.GetEngagedPlayer():
                         effect.failures.Set(player, EffectFailure.EngagedDifferentPlayer)
                         return False
-            pass
 
         # "Choose up to 3 *different* cards". Two copies of one title are one
         # card for the purpose of card abilities, so the second copy is not an
@@ -230,8 +244,7 @@ class SelectorRule:
             icon = FacesCounter.GetPrintedResourcesIcon(targets, "Auto")
             if icon < self.combined_resource_icons[0]:
                 return False
-            if icon > self.combined_resource_icons[0]:
+            if icon > self.combined_resource_icons[1]:
                 return False
 
         return True
-
