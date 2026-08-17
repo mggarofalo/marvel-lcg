@@ -17,8 +17,8 @@ import unittest
 
 from tools.spec.assertions import Evaluate, ResolveSubject
 from tools.spec.case import (
-    CannotStep, GivenStep, LoadJsonCases, NoPromptStep, PromptStep, SourceDigest,
-    SpecCase, SpecCaseError, ThenStep, WhenStep)
+    CannotStep, GivenStep, LoadJsonCases, NoPromptStep, NotOfferedStep,
+    PromptStep, SourceDigest, SpecCase, SpecCaseError, ThenStep, WhenStep)
 from tools.spec.harness import (
     OUTCOME_ASSERTION, OUTCOME_PASS, OUTCOME_UNPLAYABLE, RunCase)
 from tools.spec.resolve import CardRef, CardRefError, NormaliseLabel
@@ -470,6 +470,18 @@ class TestDecisionBudget(unittest.TestCase):
         # The failure is recorded once, not re-reported per unwinding decision.
         self.assertEqual(policy.failure.count("gave up"), 1)
 
+    def test_not_offered_needs_a_decision_to_observe(self):
+        """A game ending first cannot prove that an option was absent."""
+        from tools.spec.policy import TranscriptPolicy
+        policy = TranscriptPolicy(
+            beats=(NotOfferedStep(option="Action", card="Vision"),))
+
+        policy.Finish(None)
+
+        self.assertEqual(len(policy.results), 1)
+        self.assertFalse(policy.results[0].passed)
+        self.assertTrue(policy.results[0].unresolvable)
+
 
 ################################################################################
 # End to end -- these boot the engine.
@@ -595,6 +607,61 @@ class TestAgainstTheEngine(unittest.TestCase):
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_an_unaffordable_card_action_is_not_offered(self):
+        """Vision needs energy; two mental cards cannot pay that cost."""
+        case = MakeCase(
+            name="unaffordable action",
+            given=(
+                HERO_FORM,
+                GivenStep("in_play", ("Vision",)),
+                GivenStep("hand", ("Enhanced Spider-Sense",
+                                   "Enhanced Spider-Sense")),
+            ),
+            beats=(NotOfferedStep(option="Action", card="Vision"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_not_offered_fails_when_the_card_action_is_affordable(self):
+        """The negative assertion must not pass merely because it exists."""
+        case = MakeCase(
+            name="affordable action",
+            given=(
+                HERO_FORM,
+                GivenStep("in_play", ("Vision",)),
+                GivenStep("hand", ("Energy",)),
+            ),
+            beats=(NotOfferedStep(option="Action", card="Vision"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
+        self.assertIn("offered", result.Failures()[0].message)
+
+    def test_unaffordable_event_play_remains_offered(self):
+        """Event Play entries keep the established visible-menu contract."""
+        case = MakeCase(
+            name="unaffordable event remains visible",
+            given=(
+                HERO_FORM,
+                GivenStep("hand", ("Swinging Web Kick",)),
+            ),
+            beats=(NotOfferedStep(option="Play", card="Swinging Web Kick"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
+        self.assertIn("offered", result.Failures()[0].message)
+
+    def test_not_offered_requires_the_named_card_to_exist(self):
+        """An absent card cannot make an absent option pass vacuously."""
+        case = MakeCase(
+            name="missing card option",
+            given=(HERO_FORM,),
+            beats=(NotOfferedStep(option="Action", card="Galactus"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertTrue(result.Failures()[0].unresolvable)
 
     def test_a_deck_literal_is_written_top_first(self):
         """The first card named is the next one drawn (MARVEL-82).

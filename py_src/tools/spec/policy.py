@@ -44,8 +44,8 @@ from engine.device.manager.bot.command import BotCommand
 from engine.device.manager.bot.policy import BotPolicy
 from tools.spec.assertions import AssertionResult, Evaluate
 from tools.spec.case import (
-    Beat, CannotStep, LimitStep, NoPromptStep, PromptStep, TargetsStep,
-    ThenStep, WhenStep)
+    Beat, CannotStep, LimitStep, NoPromptStep, NotOfferedStep, PromptStep,
+    TargetsStep, ThenStep, WhenStep)
 from tools.spec.resolve import (
     CardRefError, DescribeOption, NormaliseLabel, ResolveCard)
 from tools.spec.state import Capture, StateView
@@ -193,9 +193,13 @@ class TranscriptPolicy(BotPolicy):
         order it writes them in should not change what they mean.
         """
         board: Optional[StateView] = None
-        while isinstance(self.Peek(), (ThenStep, CannotStep, TargetsStep, LimitStep)):
+        while isinstance(self.Peek(),
+                         (ThenStep, NotOfferedStep, CannotStep, TargetsStep,
+                          LimitStep)):
             beat = self.beats[self.index]
-            if isinstance(beat, CannotStep):
+            if isinstance(beat, NotOfferedStep):
+                self.CheckNotOffered(beat, decision)
+            elif isinstance(beat, CannotStep):
                 self.CheckCannot(beat, decision)
             elif isinstance(beat, TargetsStep):
                 self.CheckTargets(beat, decision)
@@ -213,6 +217,32 @@ class TranscriptPolicy(BotPolicy):
                     board = Capture(decision.world)
                 self.results.append(Evaluate(board, beat))
             self.index += 1
+
+    def CheckNotOffered(self, beat: NotOfferedStep, decision: Any) -> None:
+        """Check that the live decision omits one option on one known card."""
+        world = decision.world
+        if world is None:
+            self.Record(beat, False,
+                        "no board to check the option against", unresolvable=True)
+            return
+
+        try:
+            card = ResolveCard(world, beat.card)
+        except CardRefError as exc:
+            self.Record(beat, False, str(exc), unresolvable=True)
+            return
+
+        wanted = NormaliseLabel(beat.option)
+        object_id = int(card.object_id)
+        for option in decision.selectable_options:
+            if NormaliseLabel(option.name) != wanted:
+                continue
+            if int(option.bind_id) == object_id:
+                self.Record(
+                    beat, False,
+                    f"the engine offered {DescribeOption(world, option)}")
+                return
+        self.Record(beat, True)
 
     def CheckCannot(self, beat: CannotStep, decision: Any) -> None:
         """Check that no offered option performs `beat.option` on `beat.card`.
@@ -520,7 +550,7 @@ class TranscriptPolicy(BotPolicy):
             elif isinstance(beat, PromptStep):
                 self.Record(beat, False,
                             "the game ended before the engine asked this")
-            elif isinstance(beat, (CannotStep, LimitStep)):
+            elif isinstance(beat, (NotOfferedStep, CannotStep, LimitStep)):
                 # A restriction is a claim about a decision, so with no decision
                 # left there is nothing to check. It does not pass by default:
                 # "the engine never offered the chance" and "the engine offered

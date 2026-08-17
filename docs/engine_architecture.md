@@ -678,6 +678,12 @@ class Effect:
     failures: EffectFailure     # Why the effect failed
 ```
 
+`EffectChecker.CheckCondition` decides whether an effect is available before a
+player sees it. For nested choices and action abilities, that includes resource
+affordability: an option with no payable target is withheld rather than offered
+and rejected after selection. Card-play, interrupt and response menus retain
+their existing presentation rules; MARVEL-130 did not redefine those surfaces.
+
 ### Message System
 
 Messages broadcast game events to all cards in play:

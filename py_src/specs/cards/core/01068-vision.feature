@@ -32,6 +32,18 @@ Feature: Vision
     And the hero is "spider_man"
 
   @card:01068
+  Scenario: the Action is not offered when its energy cost cannot be paid
+    # Affordability belongs to this option on this board, not to the hand by
+    # itself: generators and discounts in play would also count. Here the only
+    # resources are mental, so Vision's energy cost cannot be met and the turn
+    # menu must omit the Action instead of offering a choice it later refuses.
+    Given I am in hero form
+    And "Vision" is in play
+    And my hand is "Enhanced Spider-Sense", "Enhanced Spider-Sense"
+
+    Then I am not offered "Action" on "Vision"
+
+  @card:01068
   Scenario: the THW branch raises thwart by 2 and leaves attack alone
     # The follow-up option table is the "(Limit once per round.)" assertion.
     # The menu that comes back after the Action has resolved carries Attack,

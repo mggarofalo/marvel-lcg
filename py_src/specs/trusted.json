@@ -994,27 +994,27 @@
       "source": "specs/cards/core/01146-repair-sequence.feature"
     },
     "Resource icons :: Vibranium carries two wild icons": {
-      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
       "source": "specs/rules/resource-icons.feature"
     },
     "Resource icons :: an energy icon pays a cost that names energy": {
-      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
       "source": "specs/rules/resource-icons.feature"
     },
     "Resource icons :: the first printing carries one energy icon and nothing else": {
-      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
       "source": "specs/rules/resource-icons.feature"
     },
     "Resource icons :: the fourth printing carries one wild icon and nothing else": {
-      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
       "source": "specs/rules/resource-icons.feature"
     },
     "Resource icons :: the second printing carries one mental icon and nothing else": {
-      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
       "source": "specs/rules/resource-icons.feature"
     },
     "Resource icons :: the third printing carries one physical icon and nothing else": {
-      "sha256": "35ea443dde1e61a08e3e9a847f6364e8398a18e8bcfcd6bf416795d5e75042d1",
+      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
       "source": "specs/rules/resource-icons.feature"
     },
     "Rhino (I) :: at one hero the villain has its printed 14 hit points": {
@@ -1690,19 +1690,23 @@
       "source": "specs/cards/core/01049-vibranium-suit.feature"
     },
     "Vision :: the ATK branch raises attack by 2 and leaves thwart alone": {
-      "sha256": "3fdaaa534d8c4fee3e19c02f8eb2ac8b5228ccab63b69c11ba5dee9482a8ef2f",
+      "sha256": "d52797d0e80bcad1775bfb52b152074ddb9f4e4cde61dae86a710dc5b2137ae7",
+      "source": "specs/cards/core/01068-vision.feature"
+    },
+    "Vision :: the Action is not offered when its energy cost cannot be paid": {
+      "sha256": "d52797d0e80bcad1775bfb52b152074ddb9f4e4cde61dae86a710dc5b2137ae7",
       "source": "specs/cards/core/01068-vision.feature"
     },
     "Vision :: the THW branch raises thwart by 2 and leaves attack alone": {
-      "sha256": "3fdaaa534d8c4fee3e19c02f8eb2ac8b5228ccab63b69c11ba5dee9482a8ef2f",
+      "sha256": "d52797d0e80bcad1775bfb52b152074ddb9f4e4cde61dae86a710dc5b2137ae7",
       "source": "specs/cards/core/01068-vision.feature"
     },
     "Vision :: without the Action Vision attacks for its printed 2": {
-      "sha256": "3fdaaa534d8c4fee3e19c02f8eb2ac8b5228ccab63b69c11ba5dee9482a8ef2f",
+      "sha256": "d52797d0e80bcad1775bfb52b152074ddb9f4e4cde61dae86a710dc5b2137ae7",
       "source": "specs/cards/core/01068-vision.feature"
     },
     "Vision :: without the Action Vision thwarts for its printed 1": {
-      "sha256": "3fdaaa534d8c4fee3e19c02f8eb2ac8b5228ccab63b69c11ba5dee9482a8ef2f",
+      "sha256": "d52797d0e80bcad1775bfb52b152074ddb9f4e4cde61dae86a710dc5b2137ae7",
       "source": "specs/cards/core/01068-vision.feature"
     },
     "Wakanda Forever! :: a lone upgrade is the final step of the sequence": {
