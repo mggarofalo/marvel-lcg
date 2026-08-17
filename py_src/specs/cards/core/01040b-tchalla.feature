@@ -21,12 +21,17 @@
 #
 # is part of the **scene** the engine sets up from, alongside `the scenario is`,
 # so the deck exists before step 16 rather than after it. It was one of 49 cards
-# measured with this gap. Three consequences, all of them consequences of it
+# measured with this gap. Two consequences, both of them consequences of it
 # being a real deck rather than a stack a `Given` placed: the setup shuffle
-# destroys the written order, the cards are the engine's rather than the
-# scenario's so `#N` cannot name them, and a searching hero needs at least two
-# cards because `SelectorEnd.DoShuffle` asserts the deck is non-empty and raises
-# when the search emptied it.
+# destroys the written order, and the cards are the engine's rather than the
+# scenario's so `#N` cannot name them.
+#
+# There used to be a third -- "a searching hero needs at least two cards" -- and
+# it was not a property of the step at all. `SelectorEnd.DoShuffle` asserted its
+# source deck was non-empty, so a one-card deck raised. That is MARVEL-131, it
+# is fixed, and the last Foresight scenario below is the board it used to fail
+# on. An authoring rule that is really a bug wearing a rule's clothes is worth
+# deleting loudly: the next author would have read it as arbitrary.
 #
 # The two Foresight scenarios are the two arms of the script's `if face:`. The
 # printed sentence does not spell the second one out, which is exactly why it is
@@ -72,6 +77,24 @@ Feature: T'Challa
     Then I have 0 cards in hand
     And I have 3 cards in my deck
     And "Combat Training" is in the "PlayerDeck"
+    And I am not prompted again
+
+  @card:01040b
+  Scenario: Foresight may take the only card in the deck
+    # "Shuffle your deck" with nothing left to shuffle. MARVEL-131:
+    # `SelectorEnd.DoShuffle` asserted its source deck was non-empty directly
+    # above a branch written to handle it being empty, so this board raised --
+    # and `Log.OnCrash` swallows on a release build, so what a run actually
+    # produced was Vibranium Suit stranded in the processing area, no message,
+    # and a game that carried on around it.
+    #
+    # This is the scenario the authoring rule "give a searching hero at least
+    # two cards" existed to avoid. It was never a harness rule.
+    Given my deck at setup is "Vibranium Suit"
+
+    Then "Vibranium Suit" is in the "HandsArea"
+    And I have 1 cards in hand
+    And I have 0 cards in my deck
     And I am not prompted again
 
   @card:01040b

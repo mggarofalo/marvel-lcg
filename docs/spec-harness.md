@@ -738,7 +738,7 @@ them, so Wolverine's Claws and Vision's mass form upgrade arrive on a puzzle
 board with nothing stocked. Only the ones that go through
 `SearchInternal.FindCards` need a deck to find.
 
-Three things this spelling costs, all of them consequences of it being a real
+Two things this spelling costs, both of them consequences of it being a real
 deck rather than a stack the scenario placed:
 
 - **Order is not preserved.** `player_setup.SelectIdentity` shuffles the player
@@ -751,11 +751,15 @@ deck rather than a stack the scenario placed:
   before `MarkEngineBaseline`, so they are the engine's cards and not the
   scenario's — the same rule that refuses `"Rhino #2"`. Name them by printed
   name or id.
-- **Give a searching hero at least two cards.** `SelectorEnd.DoShuffle` asserts
-  the deck is non-empty, so a hero whose setup ability searches its own deck and
-  shuffles afterwards *raises* when the search emptied it. The run reports "the
-  game ended during setup: Exit". That is an engine bug rather than a harness
-  one; it is unreachable in a real game because a real deck is 40-odd cards.
+
+There used to be a third: *"give a searching hero at least two cards."*
+**Ignore it if you see it repeated anywhere** — it was never a property of this
+step. `SelectorEnd.DoShuffle` asserted its source deck was non-empty, so a hero
+whose setup ability searched its own deck and shuffled afterwards raised when
+the search emptied it, and `Log.OnCrash` swallowed the raise on a release build:
+the card was left stranded in the processing area and the game carried on.
+That is MARVEL-131 and it is fixed — a one-card setup deck is now an ordinary
+board, pinned by `specs/cards/core/01040b-tchalla.feature`.
 
 **Why the existing steps were not simply moved.** Making `my deck is` and `the
 encounter deck is` mean "this is the deck", full stop, is the obvious fix and it
