@@ -640,6 +640,18 @@ class TestGherkinParsing(unittest.TestCase):
                          ("minimum", "Play", 2))
         self.assertEqual(len(case.Assertions()), 1)
 
+    def test_a_target_floor_can_bind_the_option_to_its_card(self):
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then the target minimum for "Play" on "Wakanda Forever!" is 2
+    And the target maximum for "Play" on "Wakanda Forever!" is 2
+"""))[0]
+        floor, ceiling = case.beats
+        self.assertEqual((floor.option, floor.card, floor.minimum),
+                         ("Play", "Wakanda Forever!", 2))
+        self.assertEqual((ceiling.option, ceiling.card, ceiling.maximum),
+                         ("Play", "Wakanda Forever!", 2))
+
     def test_a_floor_below_one_is_a_parse_error(self):
         """Optional/no-target selectors are not printed target requirements."""
         with self.assertRaises(GherkinError) as caught:

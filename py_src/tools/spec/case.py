@@ -309,6 +309,7 @@ class LimitStep:
 
     option: str
     maximum: int
+    card: str = ""
 
     kind = "limit"
 
@@ -322,10 +323,16 @@ class LimitStep:
                 f"'I cannot choose' rather than a printed 'up to N'")
 
     def Describe(self) -> str:
-        return f"the target maximum for {self.option!r} is {self.maximum}"
+        bound = f" on {self.card!r}" if self.card else ""
+        return (f"the target maximum for {self.option!r}{bound} is "
+                f"{self.maximum}")
 
     def ToDict(self) -> Dict[str, Any]:
-        return {"kind": "limit", "option": self.option, "maximum": self.maximum}
+        result = {"kind": "limit", "option": self.option,
+                  "maximum": self.maximum}
+        if self.card:
+            result["card"] = self.card
+        return result
 
 
 @dataclass(frozen=True)
@@ -347,6 +354,7 @@ class MinimumStep:
 
     option: str
     minimum: int
+    card: str = ""
 
     kind = "minimum"
 
@@ -360,11 +368,16 @@ class MinimumStep:
                 f"than a printed target requirement")
 
     def Describe(self) -> str:
-        return f"the target minimum for {self.option!r} is {self.minimum}"
+        bound = f" on {self.card!r}" if self.card else ""
+        return (f"the target minimum for {self.option!r}{bound} is "
+                f"{self.minimum}")
 
     def ToDict(self) -> Dict[str, Any]:
-        return {"kind": "minimum", "option": self.option,
-                "minimum": self.minimum}
+        result = {"kind": "minimum", "option": self.option,
+                  "minimum": self.minimum}
+        if self.card:
+            result["card"] = self.card
+        return result
 
 
 @dataclass(frozen=True)
@@ -700,10 +713,12 @@ def BeatFromDict(item: Dict[str, Any]) -> Beat:
                           card=str(item.get("card", "")))
     if kind == "limit":
         return LimitStep(option=str(item.get("option", "")),
-                         maximum=int(item.get("maximum", 0)))
+                         maximum=int(item.get("maximum", 0)),
+                         card=str(item.get("card", "")))
     if kind == "minimum":
         return MinimumStep(option=str(item.get("option", "")),
-                           minimum=int(item.get("minimum", 0)))
+                           minimum=int(item.get("minimum", 0)),
+                           card=str(item.get("card", "")))
     if kind == "then":
         return ThenStep(
             subject=str(item["subject"]),

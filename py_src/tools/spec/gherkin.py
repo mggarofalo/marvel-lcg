@@ -317,6 +317,10 @@ THEN_TABLE: Table = [
      Rx(r'the target maximum for ' + Q + r' is ' + N),
      lambda option, value: ("then", LimitStep(option=option,
                                               maximum=int(value)))),
+    ('the target maximum for "<option>" on "<card>" is <n>',
+     Rx(r'the target maximum for ' + Q + r' on ' + Q + r' is ' + N),
+     lambda option, card, value: (
+         "then", LimitStep(option=option, maximum=int(value), card=card))),
     # The floor counterpart. It reads the live effective range, not the raw
     # selector spelling: see `MinimumStep` for the clamp and `range="All"`
     # semantics that the C# binding must reproduce.
@@ -324,6 +328,10 @@ THEN_TABLE: Table = [
      Rx(r'the target minimum for ' + Q + r' is ' + N),
      lambda option, value: ("then", MinimumStep(option=option,
                                                 minimum=int(value)))),
+    ('the target minimum for "<option>" on "<card>" is <n>',
+     Rx(r'the target minimum for ' + Q + r' on ' + Q + r' is ' + N),
+     lambda option, card, value: (
+         "then", MinimumStep(option=option, minimum=int(value), card=card))),
 
     # -- card state --------------------------------------------------------
     ('"<card>" has <n> health',

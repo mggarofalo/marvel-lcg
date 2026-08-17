@@ -350,27 +350,24 @@ class TranscriptPolicy(BotPolicy):
         says when the ceiling it found is the candidate count -- a scenario that
         hits it has not built a board that can see the printed number.
         """
-        wanted = NormaliseLabel(beat.option)
-        for option in decision.selectable_options:
-            if NormaliseLabel(option.name) != wanted:
-                continue
-            low = int(option.target_num_range[0])
-            high = int(option.target_num_range[1])
-            if high == beat.maximum:
-                self.Record(beat, True)
-                return
-            listing = ", ".join(self.LabelTargets(decision.world, option)) or "nothing"
-            detail = (f"{option.name} takes {low}..{high} target(s) "
-                      f"from {listing}")
-            if high == len(option.all_legal_targets) and high < beat.maximum:
-                detail += ("; that is the number of legal targets, so the board "
-                           "has no more candidates than the ceiling and cannot "
-                           "show what the ceiling is")
-            self.Record(beat, False, detail)
+        options, error = self.TargetCountOptions(beat, decision)
+        if error:
+            self.Record(beat, False, error, unresolvable=True)
             return
-        self.Record(beat, False,
-                    f"the engine is not offering {beat.option!r}; it offers "
-                    f"{self.Offered(decision)}", unresolvable=True)
+        option = options[0]
+        low = int(option.target_num_range[0])
+        high = int(option.target_num_range[1])
+        if high == beat.maximum:
+            self.Record(beat, True)
+            return
+        listing = ", ".join(self.LabelTargets(decision.world, option)) or "nothing"
+        detail = (f"{option.name} takes {low}..{high} target(s) "
+                  f"from {listing}")
+        if high == len(option.all_legal_targets) and high < beat.maximum:
+            detail += ("; that is the number of legal targets, so the board "
+                       "has no more candidates than the ceiling and cannot "
+                       "show what the ceiling is")
+        self.Record(beat, False, detail)
 
     def CheckMinimum(self, beat: MinimumStep, decision: Any) -> None:
         """Check the fewest targets an offered option will take.
@@ -381,23 +378,46 @@ class TranscriptPolicy(BotPolicy):
         Reading the live tuple is therefore the only contract the browser and
         future C# runner can share without reaching into Python card scripts.
         """
-        wanted = NormaliseLabel(beat.option)
-        for option in decision.selectable_options:
-            if NormaliseLabel(option.name) != wanted:
-                continue
-            low = int(option.target_num_range[0])
-            high = int(option.target_num_range[1])
-            if low == beat.minimum:
-                self.Record(beat, True)
-                return
-            listing = ", ".join(self.LabelTargets(decision.world, option)) or "nothing"
-            self.Record(
-                beat, False,
-                f"{option.name} takes {low}..{high} target(s) from {listing}")
+        options, error = self.TargetCountOptions(beat, decision)
+        if error:
+            self.Record(beat, False, error, unresolvable=True)
             return
-        self.Record(beat, False,
-                    f"the engine is not offering {beat.option!r}; it offers "
-                    f"{self.Offered(decision)}", unresolvable=True)
+        option = options[0]
+        low = int(option.target_num_range[0])
+        high = int(option.target_num_range[1])
+        if low == beat.minimum:
+            self.Record(beat, True)
+            return
+        listing = ", ".join(self.LabelTargets(decision.world, option)) or "nothing"
+        self.Record(
+            beat, False,
+            f"{option.name} takes {low}..{high} target(s) from {listing}")
+
+    def TargetCountOptions(self, beat: Any, decision: Any) -> Tuple[List[Any], str]:
+        """Resolve one option for a range assertion without trusting ordering."""
+        wanted = NormaliseLabel(beat.option)
+        options = [option for option in decision.selectable_options
+                   if NormaliseLabel(option.name) == wanted]
+
+        if beat.card:
+            if decision.world is None:
+                return [], f"there is no board to resolve {beat.card!r} against"
+            try:
+                card = ResolveCard(decision.world, beat.card)
+            except CardRefError as exc:
+                return [], str(exc)
+            options = [option for option in options
+                       if int(option.bind_id) == int(card.object_id)]
+
+        subject = (f"{beat.option!r} on {beat.card!r}" if beat.card
+                   else repr(beat.option))
+        if not options:
+            return [], (f"the engine is not offering {subject}; it offers "
+                        f"{self.Offered(decision)}")
+        if len(options) > 1:
+            return [], (f"{subject} matches {len(options)} offered options; "
+                        f"bind the assertion to a card")
+        return options, ""
 
     def CheckPrompt(self, beat: PromptStep, decision: Any) -> None:
         expected = sorted(NormaliseLabel(option) for option in beat.options)

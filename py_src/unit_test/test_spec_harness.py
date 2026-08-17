@@ -135,7 +135,8 @@ class TestCaseFormat(unittest.TestCase):
                 WhenStep(option="play", card="Nick Fury"),
                 PromptStep(options=("Draw 3 cards", "Deal 4 damage to an enemy")),
                 WhenStep(option="Deal 4 damage to an enemy", targets=("Shocker",)),
-                MinimumStep(option="Deal 4 damage to an enemy", minimum=1),
+                MinimumStep(option="Deal 4 damage to an enemy", minimum=1,
+                            card="Nick Fury"),
                 ThenStep("Shocker", "damage", 4),
                 NoPromptStep(),
             ),
@@ -526,17 +527,18 @@ class TestAgainstTheEngine(unittest.TestCase):
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
 
     def test_an_each_selector_exposes_the_candidate_count_as_its_floor(self):
-        """Wakanda Forever's `range="All"` is effectively 2..2 here."""
+        """The card binding ignores another Play option listed first."""
         case = MakeCase(
             name="each target minimum",
             heroes=("black_panther",),
             given=(
                 HERO_FORM,
-                GivenStep("hand", ("01043a", "Vibranium")),
+                GivenStep("hand", (
+                    "Haymaker", "01043a", "Vibranium", "Vibranium")),
                 GivenStep("in_play", ("Panther Claws",)),
                 GivenStep("in_play", ("Tactical Genius",)),
             ),
-            beats=(MinimumStep(option="Play", minimum=2),),
+            beats=(MinimumStep(option="Play", minimum=2, card="01043a"),),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
@@ -548,15 +550,50 @@ class TestAgainstTheEngine(unittest.TestCase):
             heroes=("black_panther",),
             given=(
                 HERO_FORM,
-                GivenStep("hand", ("01043a", "Vibranium")),
+                GivenStep("hand", (
+                    "Haymaker", "01043a", "Vibranium", "Vibranium")),
                 GivenStep("in_play", ("Panther Claws",)),
                 GivenStep("in_play", ("Tactical Genius",)),
             ),
-            beats=(MinimumStep(option="Play", minimum=1),),
+            beats=(MinimumStep(option="Play", minimum=1, card="01043a"),),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
         self.assertIn("Play takes 2..2 target(s)", result.Failures()[0].message)
+
+    def test_a_card_bound_floor_does_not_inspect_an_unrelated_play_option(self):
+        """Wakanda is filtered out; Haymaker must not satisfy its assertion."""
+        case = MakeCase(
+            name="filtered each target minimum",
+            heroes=("black_panther",),
+            given=(
+                HERO_FORM,
+                GivenStep("hand", (
+                    "01043a", "Haymaker", "Vibranium", "Vibranium")),
+            ),
+            beats=(MinimumStep(option="Play", minimum=1, card="01043a"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("not offering 'Play' on '01043a'", result.Describe())
+
+    def test_an_unbound_floor_with_two_matching_options_is_unresolvable(self):
+        """Enumeration order cannot decide which card an assertion reads."""
+        case = MakeCase(
+            name="ambiguous target minimum",
+            heroes=("black_panther",),
+            given=(
+                HERO_FORM,
+                GivenStep("hand", (
+                    "Haymaker", "01043a", "Vibranium", "Vibranium")),
+                GivenStep("in_play", ("Panther Claws",)),
+                GivenStep("in_play", ("Tactical Genius",)),
+            ),
+            beats=(MinimumStep(option="Play", minimum=2),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("matches 2 offered options", result.Describe())
 
     def test_an_explicit_variable_payment_controls_the_effect(self):
         case = MakeCase(

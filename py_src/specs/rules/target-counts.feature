@@ -6,6 +6,10 @@
 # equalities over the live option range rather than inequalities inferred from
 # whether one particular selection resolved.
 #
+# The scenarios use the `... on "<card>" ...` forms because `Play` is a shared
+# label. An option assertion that names only `Play` is unresolvable when more
+# than one card offers it; enumeration order must not decide which range wins.
+#
 # `Then the target maximum for "<option>" is <n>` is an equality rather than the
 # "at most N" it is tempting to spell it as: a ceiling of 2 does not satisfy it.
 # The minimum spelling follows the same rule: "at least N" would wrongly accept
@@ -64,8 +68,8 @@ Feature: Target counts
       | Tactical Genius |
       | Energy Daggers |
       | Vibranium Suit |
-    And the target minimum for "Play" is 1
-    And the target maximum for "Play" is 3
+    And the target minimum for "Play" on "01042" is 1
+    And the target maximum for "Play" on "01042" is 3
 
   @card:01042
   Scenario: a fifth card in the pile does not raise the ceiling
@@ -75,7 +79,7 @@ Feature: Target counts
     And my hand is "01042", "Vibranium"
     And my discard pile is "Panther Claws", "Tactical Genius", "Energy Daggers", "Vibranium Suit", "Combat Training"
 
-    Then the target maximum for "Play" is 3
+    Then the target maximum for "Play" on "01042" is 3
 
   # --------------------------------------------------------------------------
   # No printed ceiling: Wakanda Forever! (01043a)
@@ -99,8 +103,8 @@ Feature: Target counts
     And "Panther Claws" is in play
     And "Tactical Genius" is in play
 
-    Then the target minimum for "Play" is 2
-    And the target maximum for "Play" is 2
+    Then the target minimum for "Play" on "01043a" is 2
+    And the target maximum for "Play" on "01043a" is 2
 
   @card:01043a
   Scenario: a third upgrade raises that ceiling to three
@@ -114,5 +118,5 @@ Feature: Target counts
     And "Energy Daggers" is in play
     And "Combat Training" is in play
 
-    Then the target minimum for "Play" is 3
-    And the target maximum for "Play" is 3
+    Then the target minimum for "Play" on "01043a" is 3
+    And the target maximum for "Play" on "01043a" is 3

@@ -111,7 +111,7 @@ Feature: Wakanda Forever!
     And "Tactical Genius" is in play
     And the main scheme has 5 threat
 
-    Then the target minimum for "Play" is 2
+    Then the target minimum for "Play" on "01043a" is 2
 
     When I play "01043a"
     Then "Rhino" has 2 damage
