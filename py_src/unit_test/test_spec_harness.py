@@ -577,6 +577,27 @@ class TestAgainstTheEngine(unittest.TestCase):
             "required exactly 2 resources, but the selected payment effects "
             "generated 1", result.Describe())
 
+    def test_reusing_an_effect_keeps_each_exact_payment_separate(self):
+        case = MakeCase(
+            name="same effect twice",
+            heroes=("captain_marvel",),
+            given=(
+                HERO_FORM,
+                GivenStep("in_play", ("Energy Channel",)),
+                GivenStep("hand", (
+                    "Crisis Interdiction", "Crisis Interdiction",
+                    "Crisis Interdiction")),
+            ),
+            beats=(
+                WhenStep(option="Action", card="Energy Channel", payment=1),
+                ThenStep("Energy Channel", "counter:energy", 1),
+                WhenStep(option="Action", card="Energy Channel", payment=2),
+                ThenStep("Energy Channel", "counter:energy", 3),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
     def test_given_steps_put_cards_where_the_scenario_says(self):
         case = MakeCase(
             name="given builds the board",
