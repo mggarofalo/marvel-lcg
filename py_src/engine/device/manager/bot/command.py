@@ -202,16 +202,29 @@ class BotCommand:
     ################################################################################
     #
     @staticmethod
+    def ApplyCostPreference(options: List['BotOption']) -> List['BotOption']:
+        """Keep only the maximal option when an option list declares a cost size.
+
+        `DeclareNumber` represents each number as its own targetless option.
+        This filtering belongs before policy-specific ordering so `first`,
+        `heuristic`, `random` and `mixed` all inherit the same payment rule.
+        """
+        if options and PAY_VARIABLE_CARD_COST.value and all(
+            option.pay_size_is_effect for option in options
+        ):
+            return options[-1:]
+        return options
+
+    ################################################################################
+    #
+    @staticmethod
     def BuildAll(options: List['BotOption']) -> List['CommandDescriptor']:
         """Every option the bot can legally answer with, in engine order."""
         # `DeclareNumber` is represented as one targetless option per number,
         # in ascending order. When those numbers are the size of a counter
         # cost, the maximum is the one answer this neutral planner emits --
         # just as `BuildMaximalPayment` emits one maximal resource payment.
-        if options and PAY_VARIABLE_CARD_COST.value and all(
-            option.pay_size_is_effect for option in options
-        ):
-            options = options[-1:]
+        options = BotCommand.ApplyCostPreference(options)
 
         commands: List['CommandDescriptor'] = []
         for option in options:

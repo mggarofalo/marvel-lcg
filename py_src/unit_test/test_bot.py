@@ -132,6 +132,16 @@ class TestCommandBuilding(unittest.TestCase):
         commands = BotCommand.BuildAll(options)
         self.assertEqual([command.id for command in commands], ['3'])
 
+    def test_first_and_random_policies_both_use_the_largest_counter_cost(self):
+        options = ParseOptions(*[
+            MakeOptionJson(id=value, name=str(value), pay_size_is_effect=True)
+            for value in range(1, 4)
+        ])
+        decision = MakeDecision(options, can_cancel=False)
+
+        self.assertEqual(FirstLegalPolicy().Choose(decision).id, '3')
+        self.assertEqual(SeededRandomPolicy(7).Choose(decision).id, '3')
+
     def test_rejects_an_option_without_enough_legal_targets(self):
         options = ParseOptions(MakeOptionJson(all_legal_targets=[7], target_num_range=[2, 2]))
         self.assertIsNone(BotCommand.Build(options[0]))

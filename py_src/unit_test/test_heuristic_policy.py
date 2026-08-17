@@ -24,7 +24,7 @@ from engine.device.manager.bot.policies import (ASK, MixedPolicy, NO_OP_VERBS,
 from engine.device.manager.bot.policy import BotOption
 
 
-def Option(name, option_id=1):
+def Option(name, option_id=1, *, pay_size_is_effect=False):
     return BotOption(
         id=option_id,
         name=name,
@@ -37,11 +37,13 @@ def Option(name, option_id=1):
         target_must_include_traits=[],
         failure_reason="",
         is_search=False,
+        pay_size_is_effect=pay_size_is_effect,
     )
 
 
-def Decision(*names, attempt=0, can_cancel=True):
-    options = [Option(name, option_id=100 - index)
+def Decision(*names, attempt=0, can_cancel=True, pay_size_is_effect=False):
+    options = [Option(name, option_id=100 - index,
+                      pay_size_is_effect=pay_size_is_effect)
                for index, name in enumerate(names)]
     decision = mock.Mock()
     decision.selectable_options = options
@@ -102,6 +104,10 @@ class TestNoOpsGoLast(unittest.TestCase):
     def test_engine_order_survives_inside_the_no_op_group(self):
         first, second = f"{ASK}_1", ASK
         self.assertEqual(ChooseName(self.policy, Decision(first, second)), first)
+
+    def test_a_counter_cost_uses_the_maximum_before_policy_ordering(self):
+        decision = Decision("1", "2", "3", pay_size_is_effect=True)
+        self.assertEqual(ChooseName(self.policy, decision), "3")
 
 
 class TestTheNoOpSet(unittest.TestCase):
@@ -175,6 +181,14 @@ class TestMixedRotation(unittest.TestCase):
                                return_value="answer") as choose:
             self.assertEqual(policy.Choose("a decision"), "answer")
         choose.assert_called_once_with("a decision")
+
+    def test_heuristic_rotation_uses_the_largest_counter_cost(self):
+        policy = self.Policy()
+        policy.OnGameStart(1)  # first
+        policy.OnGameStart(2)  # heuristic
+
+        decision = Decision("1", "2", "3", pay_size_is_effect=True)
+        self.assertEqual(ChooseName(policy, decision), "3")
 
 
 if __name__ == "__main__":
