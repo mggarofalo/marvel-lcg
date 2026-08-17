@@ -17,11 +17,11 @@
 # and have the planner spend against it. `unit_test/test_bot.py` pins the
 # planner; these scenarios pin what the card does with what it is given.
 #
-# **The transcript does not state the payment, and does not need to.** The
-# runner spends everything the option offers, in engine order, so the hand *is*
-# the payment: three cards in hand, one of them this card, means X is 2. That is
-# why every scenario below sets the hand exactly. MARVEL-136 asks for a step
-# that states an amount directly; these show what can be pinned without one.
+# The transcript now states the payment in resource icons. The runner chooses
+# the concrete cards in engine order, but it must find a legal combination
+# whose icons total exactly the named amount. This keeps X visible in the
+# behavior contract instead of making the exact contents of the hand stand in
+# for it.
 #
 # Always Be Running (14003) is the filler. It is in Quicksilver's own deck, it
 # prints one [[energy]], and it is never playable here -- its own Hero Action
@@ -44,7 +44,7 @@ Feature: Speed Cyclone
   Scenario: two resources spent stuns two enemies
     Given my hand is "Speed Cyclone", "Always Be Running", "Always Be Running"
 
-    When I choose "Play" on "Speed Cyclone" targeting "Rhino", "Hydra Mercenary"
+    When I choose "Play" on "Speed Cyclone" paying 2 resources targeting "Rhino", "Hydra Mercenary"
     Then "Rhino" is stunned
     And "Hydra Mercenary" is stunned
     And I have 0 cards in hand
@@ -64,7 +64,7 @@ Feature: Speed Cyclone
     # behaviour changed.
     Given my hand is "Speed Cyclone", "Always Be Running"
 
-    When I choose "Play" on "Speed Cyclone" targeting "Rhino", "Hydra Mercenary"
+    When I choose "Play" on "Speed Cyclone" paying 1 resources targeting "Rhino", "Hydra Mercenary"
     Then "Rhino" is stunned
     And "Hydra Mercenary" is not stunned
     And I am not prompted again
@@ -76,7 +76,7 @@ Feature: Speed Cyclone
     # "the villain first" or "whatever the engine had at index 0".
     Given my hand is "Speed Cyclone", "Always Be Running"
 
-    When I choose "Play" on "Speed Cyclone" targeting "Hydra Mercenary", "Rhino"
+    When I choose "Play" on "Speed Cyclone" paying 1 resources targeting "Hydra Mercenary", "Rhino"
     Then "Hydra Mercenary" is stunned
     And "Rhino" is not stunned
     And I am not prompted again
@@ -88,10 +88,24 @@ Feature: Speed Cyclone
     # being unaffordable, because a cost of X is affordable with an empty hand.
     #
     # This is exactly what every game did before MARVEL-135, on every board.
-    Given my hand is "Speed Cyclone"
+    Given my hand is "Speed Cyclone", "Always Be Running"
 
-    When I choose "Play" on "Speed Cyclone" targeting "Rhino"
+    When I choose "Play" on "Speed Cyclone" paying 0 resources targeting "Rhino"
     Then "Rhino" is not stunned
     And "Hydra Mercenary" is not stunned
+    And I have 1 cards in hand
     And "Speed Cyclone" is in the "DiscardPile"
+    And I am not prompted again
+
+  @card:14006
+  Scenario: an explicit payment leaves excess resources unspent
+    # Three icons are offered, but the transcript names two. If the ordinary
+    # maximal X-cost planner leaks into explicit mode this empties the hand and
+    # the assertion below catches it.
+    Given my hand is "Speed Cyclone", "Always Be Running", "Always Be Running", "Always Be Running"
+
+    When I choose "Play" on "Speed Cyclone" paying 2 resources targeting "Rhino", "Hydra Mercenary"
+    Then "Rhino" is stunned
+    And "Hydra Mercenary" is stunned
+    And I have 1 cards in hand
     And I am not prompted again

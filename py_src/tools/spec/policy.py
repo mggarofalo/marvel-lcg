@@ -438,9 +438,15 @@ class TranscriptPolicy(BotPolicy):
             # Cost depends on which target was chosen, so payment has to be
             # planned against the transcript's targets rather than
             # `BotCommand.Build`'s default first-N pick.
-            resources = BotCommand.BuildPayment(option, targets)
+            resources = BotCommand.BuildPayment(option, targets, beat.payment)
             if resources is None:
-                reasons.append(f"{option.name} is offered but cannot be paid for")
+                if beat.payment is None:
+                    reasons.append(
+                        f"{option.name} is offered but cannot be paid for")
+                else:
+                    reasons.append(
+                        f"{option.name} is offered but cannot be paid with "
+                        f"exactly {beat.payment} resources")
                 continue
 
             return CommandDescriptor(

@@ -79,6 +79,8 @@
       "I choose \"<option>\"",
       "I choose \"<option>\" targeting \"<a>\", \"<b>\"",
       "I choose \"<option>\" on \"<card>\"",
+      "I choose \"<option>\" on \"<card>\" paying <n> resources",
+      "I choose \"<option>\" on \"<card>\" paying <n> resources targeting \"<a>\", \"<b>\"",
       "I choose \"<option>\" on \"<card>\" targeting \"<a>\", \"<b>\"",
       "I attack \"<target>\"",
       "I thwart \"<target>\"",

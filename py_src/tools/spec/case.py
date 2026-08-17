@@ -192,21 +192,31 @@ class WhenStep:
 
     `card` disambiguates when several options share a label, which is normal for
     the turn menu: one `play` entry per playable card, one `attack` per attacker.
+
+    `payment` states how many resource icons the command spends. It does not
+    name the cards or resource abilities used to make them; the runner chooses
+    the first exact legal combination in engine order. `None` means use the
+    ordinary payment planner, while `0` is an explicit choice to spend nothing.
     """
 
     option: str = ""
     card: str = ""
     targets: Tuple[str, ...] = ()
+    payment: Optional[int] = None
     pass_priority: bool = False
 
     kind = "when"
 
     def __post_init__(self) -> None:
         if self.pass_priority:
-            if self.option or self.card or self.targets:
-                raise SpecCaseError("a pass step takes no option, card or targets")
+            if self.option or self.card or self.targets or self.payment is not None:
+                raise SpecCaseError(
+                    "a pass step takes no option, card, targets or payment")
         elif not self.option and not self.card:
             raise SpecCaseError("a When step needs an option or a card")
+        if self.payment is not None and self.payment < 0:
+            raise SpecCaseError(
+                f"a payment cannot be negative: {self.payment} resources")
 
     def Describe(self) -> str:
         if self.pass_priority:
@@ -214,13 +224,16 @@ class WhenStep:
         text = f"I choose {self.option!r}" if self.option else "I choose"
         if self.card:
             text += f" on {self.card!r}"
+        if self.payment is not None:
+            text += f" paying {self.payment} resources"
         if self.targets:
             text += f" targeting {', '.join(repr(t) for t in self.targets)}"
         return text
 
     def ToDict(self) -> Dict[str, Any]:
         return {"kind": "when", "option": self.option, "card": self.card,
-                "targets": list(self.targets), "pass_priority": self.pass_priority}
+                "targets": list(self.targets), "payment": self.payment,
+                "pass_priority": self.pass_priority}
 
 
 @dataclass(frozen=True)
@@ -624,6 +637,8 @@ def BeatFromDict(item: Dict[str, Any]) -> Beat:
             option=str(item.get("option", "")),
             card=str(item.get("card", "")),
             targets=tuple(str(t) for t in item.get("targets", ())),
+            payment=(None if item.get("payment") is None
+                     else int(item["payment"])),
             pass_priority=bool(item.get("pass_priority", False)),
         )
     if kind == "prompt":

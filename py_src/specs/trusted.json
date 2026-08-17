@@ -526,19 +526,23 @@
       "source": "specs/cards/reprints/17030-42015-ever-vigilant.feature"
     },
     "Everywhere All at Once :: X schemes chosen for X paid removes 2 threat from each": {
-      "sha256": "8a33a0a049fec69908301057c81018bdda73327346275d591a5b98e58de4a389",
+      "sha256": "8dc1b411068439236f3ded0450fb4153bb237ebd75833bb6ba03a0db706a78ee",
+      "source": "specs/cards/wonder_man/58018-everywhere-all-at-once.feature"
+    },
+    "Everywhere All at Once :: an explicit overpayment leaves excess resources unspent": {
+      "sha256": "8dc1b411068439236f3ded0450fb4153bb237ebd75833bb6ba03a0db706a78ee",
       "source": "specs/cards/wonder_man/58018-everywhere-all-at-once.feature"
     },
     "Everywhere All at Once :: paying more than the schemes chosen removes 3 instead": {
-      "sha256": "8a33a0a049fec69908301057c81018bdda73327346275d591a5b98e58de4a389",
+      "sha256": "8dc1b411068439236f3ded0450fb4153bb237ebd75833bb6ba03a0db706a78ee",
       "source": "specs/cards/wonder_man/58018-everywhere-all-at-once.feature"
     },
     "Everywhere All at Once :: two resources of one type are still two resources": {
-      "sha256": "8a33a0a049fec69908301057c81018bdda73327346275d591a5b98e58de4a389",
+      "sha256": "8dc1b411068439236f3ded0450fb4153bb237ebd75833bb6ba03a0db706a78ee",
       "source": "specs/cards/wonder_man/58018-everywhere-all-at-once.feature"
     },
     "Everywhere All at Once :: with nothing to spend no scheme is chosen and no threat moves": {
-      "sha256": "8a33a0a049fec69908301057c81018bdda73327346275d591a5b98e58de4a389",
+      "sha256": "8dc1b411068439236f3ded0450fb4153bb237ebd75833bb6ba03a0db706a78ee",
       "source": "specs/cards/wonder_man/58018-everywhere-all-at-once.feature"
     },
     "Eviction Notice :: declining the flip leaves only the random discard, and it resolves unasked": {
@@ -1197,20 +1201,24 @@
       "sha256": "6e78c8f1607a9b2e3f8447c5ae75a465b362fd9f589c015e35e330744a581ef1",
       "source": "specs/cards/core/01124-sound-manipulation.feature"
     },
+    "Speed Cyclone :: an explicit payment leaves excess resources unspent": {
+      "sha256": "5e89643e08689182d2d3e9cd5af80ea7453575207e098c91b1d698c792f10389",
+      "source": "specs/cards/qsv/14006-speed-cyclone.feature"
+    },
     "Speed Cyclone :: one resource spent stuns only the first enemy named": {
-      "sha256": "4aeb6cc719ecf9bb04b72ec5e223604b2e13e568bf142a40044cb7e932cfc335",
+      "sha256": "5e89643e08689182d2d3e9cd5af80ea7453575207e098c91b1d698c792f10389",
       "source": "specs/cards/qsv/14006-speed-cyclone.feature"
     },
     "Speed Cyclone :: one resource spent stuns whichever enemy is named first": {
-      "sha256": "4aeb6cc719ecf9bb04b72ec5e223604b2e13e568bf142a40044cb7e932cfc335",
+      "sha256": "5e89643e08689182d2d3e9cd5af80ea7453575207e098c91b1d698c792f10389",
       "source": "specs/cards/qsv/14006-speed-cyclone.feature"
     },
     "Speed Cyclone :: two resources spent stuns two enemies": {
-      "sha256": "4aeb6cc719ecf9bb04b72ec5e223604b2e13e568bf142a40044cb7e932cfc335",
+      "sha256": "5e89643e08689182d2d3e9cd5af80ea7453575207e098c91b1d698c792f10389",
       "source": "specs/cards/qsv/14006-speed-cyclone.feature"
     },
     "Speed Cyclone :: with nothing to spend X is zero and the card stuns nothing": {
-      "sha256": "4aeb6cc719ecf9bb04b72ec5e223604b2e13e568bf142a40044cb7e932cfc335",
+      "sha256": "5e89643e08689182d2d3e9cd5af80ea7453575207e098c91b1d698c792f10389",
       "source": "specs/cards/qsv/14006-speed-cyclone.feature"
     },
     "Stampede :: a character the attack does not damage is not stunned": {

@@ -505,6 +505,50 @@ class TestAgainstTheEngine(unittest.TestCase):
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
 
+    def test_an_explicit_variable_payment_controls_the_effect(self):
+        case = MakeCase(
+            name="explicit variable payment",
+            heroes=("quicksilver",),
+            given=(
+                HERO_FORM,
+                GivenStep("in_play", ("Hydra Mercenary",)),
+                GivenStep("hand", (
+                    "Speed Cyclone", "Always Be Running", "Always Be Running")),
+            ),
+            beats=(
+                WhenStep(
+                    option="Play", card="Speed Cyclone", payment=1,
+                    targets=("Rhino", "Hydra Mercenary")),
+                ThenStep("Rhino", "stunned", True),
+                ThenStep("Hydra Mercenary", "stunned", False),
+                ThenStep("player", "hand_size", 1),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_an_unaffordable_explicit_payment_is_unplayable(self):
+        """The runner must not fall back to its maximal variable payment."""
+        case = MakeCase(
+            name="unaffordable explicit payment",
+            heroes=("quicksilver",),
+            given=(
+                HERO_FORM,
+                GivenStep("in_play", ("Hydra Mercenary",)),
+                GivenStep("hand", (
+                    "Speed Cyclone", "Always Be Running", "Always Be Running")),
+            ),
+            beats=(
+                WhenStep(
+                    option="Play", card="Speed Cyclone", payment=3,
+                    targets=("Rhino", "Hydra Mercenary")),
+                ThenStep("player", "hand_size", 0),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("cannot be paid with exactly 3 resources", result.Describe())
+
     def test_given_steps_put_cards_where_the_scenario_says(self):
         case = MakeCase(
             name="given builds the board",

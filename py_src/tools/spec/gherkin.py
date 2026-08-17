@@ -242,6 +242,16 @@ WHEN_TABLE: Table = [
     ('I choose "<option>" on "<card>"',
      Rx(r'i choose ' + Q + r' on ' + Q),
      lambda option, card: ("when", WhenStep(option=option, card=card))),
+    ('I choose "<option>" on "<card>" paying <n> resources',
+     Rx(r'i choose ' + Q + r' on ' + Q + r' paying ' + N + r' resources?'),
+     lambda option, card, payment: ("when", WhenStep(
+         option=option, card=card, payment=int(payment)))),
+    ('I choose "<option>" on "<card>" paying <n> resources targeting "<a>", "<b>"',
+     Rx(r'i choose ' + Q + r' on ' + Q + r' paying ' + N +
+        r' resources? targeting ' + LIST),
+     lambda option, card, payment, targets: ("when", WhenStep(
+         option=option, card=card, payment=int(payment),
+         targets=SplitRefs(targets)))),
     ('I choose "<option>" on "<card>" targeting "<a>", "<b>"',
      Rx(r'i choose ' + Q + r' on ' + Q + r' targeting ' + LIST),
      lambda option, card, targets: ("when", WhenStep(

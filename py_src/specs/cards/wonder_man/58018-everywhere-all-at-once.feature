@@ -27,9 +27,11 @@
 #
 # ## What is paid, and what is chosen
 #
-# The runner spends everything on offer, so the two filler cards are the
-# payment: X is 2 in every scenario below except the last. What changes is how
-# many schemes are named, and that is what decides overpaying.
+# The transcript states the exact payment in resource icons. The runner still
+# chooses the concrete filler cards in engine order, but it may not spend more
+# or less than the named amount. X is 2 in every scenario below except the
+# explicit-zero case. What changes is how many schemes are named, and that is
+# what decides overpaying.
 #
 # Enhanced Spider-Sense (01004) is the filler -- one [[mental]], never playable
 # here. The Break-In! starts at 0 threat and Breakin' & Takin' at 3, so both are
@@ -52,7 +54,7 @@ Feature: Everywhere All at Once
     # applies to both, which is the "each chosen scheme" half.
     Given my hand is "Everywhere All at Once", "Enhanced Spider-Sense", "Enhanced Spider-Sense"
 
-    When I choose "Play" on "Everywhere All at Once" targeting "the main scheme", "Breakin' & Takin'"
+    When I choose "Play" on "Everywhere All at Once" paying 2 resources targeting "the main scheme", "Breakin' & Takin'"
     When I pass
     Then the main scheme has 3 threat
     And "Breakin' & Takin'" has 3 threat
@@ -64,7 +66,7 @@ Feature: Everywhere All at Once
     # two, and the difference is one threat.
     Given my hand is "Everywhere All at Once", "Enhanced Spider-Sense", "Enhanced Spider-Sense"
 
-    When I choose "Play" on "Everywhere All at Once" targeting "the main scheme"
+    When I choose "Play" on "Everywhere All at Once" paying 2 resources targeting "the main scheme"
     When I pass
     Then the main scheme has 2 threat
     And "Breakin' & Takin'" has 5 threat
@@ -82,7 +84,7 @@ Feature: Everywhere All at Once
     # differ in colour, and an author picking fillers is not thinking about it.
     Given my hand is "Everywhere All at Once", "Enhanced Spider-Sense", "Enhanced Spider-Sense"
 
-    When I choose "Play" on "Everywhere All at Once" targeting "Breakin' & Takin'", "the main scheme"
+    When I choose "Play" on "Everywhere All at Once" paying 2 resources targeting "Breakin' & Takin'", "the main scheme"
     When I pass
     Then "Breakin' & Takin'" has 3 threat
     And the main scheme has 3 threat
@@ -93,11 +95,26 @@ Feature: Everywhere All at Once
     # X = 0. The card is still playable -- a cost of X is affordable with an
     # empty hand -- and it is still discarded. A scheme has to be named because
     # the selector's floor is 1, and then `effect.targets[0:0]` drops it.
-    Given my hand is "Everywhere All at Once"
+    Given my hand is "Everywhere All at Once", "Backflip"
 
-    When I choose "Play" on "Everywhere All at Once" targeting "the main scheme"
+    When I choose "Play" on "Everywhere All at Once" paying 0 resources targeting "the main scheme"
     When I pass
     Then the main scheme has 5 threat
     And "Breakin' & Takin'" has 5 threat
+    And I have 1 cards in hand
     And "Everywhere All at Once" is in the "DiscardPile"
+    And I am not prompted again
+
+  @card:58018
+  Scenario: an explicit overpayment leaves excess resources unspent
+    # The two Enhanced Spider-Sense cards appear first and satisfy the named
+    # amount. Backflip proves the runner does not fall back to spending every
+    # resource offered by the hand.
+    Given my hand is "Everywhere All at Once", "Enhanced Spider-Sense", "Enhanced Spider-Sense", "Backflip"
+
+    When I choose "Play" on "Everywhere All at Once" paying 2 resources targeting "the main scheme"
+    When I pass
+    Then the main scheme has 2 threat
+    And "Breakin' & Takin'" has 5 threat
+    And I have 1 cards in hand
     And I am not prompted again
