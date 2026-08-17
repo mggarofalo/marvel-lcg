@@ -53,7 +53,7 @@ class PlayerAsk:
             text_list2 = None
         return self.AskChooseOneText(item_list2, text_list2)
 
-    def AskChooseOneText(self, item_list: Sequence[T], text_list: Sequence[str]|None=None) -> T:
+    def AskChooseOneText(self, item_list: Sequence[T], text_list: Sequence[str]|None=None, *, pay_size_is_effect: bool=False) -> T:
         from game.card.face.card_face import CardFace
         from game.effect.rule import GameRule
 
@@ -68,7 +68,7 @@ class PlayerAsk:
                 text,
                 lambda targets:
                     invoke_select()
-            )
+            ).SetPaySizeIsTheEffect(pay_size_is_effect)
             return ability
 
         for item in item_list:
@@ -120,8 +120,11 @@ class PlayerAsk:
         return self.AskChooseOneText(item_list, text_list)
 
     # [min, max]
-    def DeclareNumber(self, min: int, max: int) -> int:
-        return self.AskChooseOneText(list(range(min, max+1)))
+    def DeclareNumber(self, min: int, max: int, *, pay_size_is_effect: bool=False) -> int:
+        return self.AskChooseOneText(
+            list(range(min, max+1)),
+            pay_size_is_effect=pay_size_is_effect,
+        )
 
     def DeclareResourceType(self, r:bool=True, b:bool=True, y:bool=True, g:bool=True) -> "Resources.RBYG":
         text: List["Resources.RBYG"] = []
@@ -184,6 +187,7 @@ class PlayerAsk:
                         # peek: bool=True,
                         labels: List['Ability.LABEL']=[],
                         for_second_target: bool=False,
+                        pay_size_is_effect: bool=False,
                         ) -> List['CardFace']:
         player = self.GetPlayer()
 
@@ -208,7 +212,7 @@ class PlayerAsk:
         ).SetLabel(*labels) \
         .SetTargetInternal(
             selector
-        )
+        ).SetPaySizeIsTheEffect(pay_size_is_effect)
 
         if forced:
             effects = player.ChooseAbilities(
@@ -239,6 +243,7 @@ class PlayerAsk:
                         not_move: bool=False,
                         not_shuffle: bool=False,
                         repeat_rules: List['SELECT.REPEAT_RULE']|'SELECT.REPEAT_RULE'=[],
+                        pay_size_is_effect: bool=False,
                         ) -> List['TC']:
         player = self.GetPlayer()
 
@@ -249,7 +254,13 @@ class PlayerAsk:
                             not_shuffle=not_shuffle,
                             repeat_rules=repeat_rules)
 
-        return_faces = player.AskChooseSelect(selector, by_effect, prompt=prompt, forced=forced)
+        return_faces = player.AskChooseSelect(
+            selector,
+            by_effect,
+            prompt=prompt,
+            forced=forced,
+            pay_size_is_effect=pay_size_is_effect,
+        )
         return return_faces # type: ignore
 
     def AskChooseFace(self,
@@ -413,4 +424,3 @@ class PlayerAsk:
             return faces[0]
         else:
             return None
-

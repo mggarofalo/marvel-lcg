@@ -59,6 +59,7 @@ class BotOption:
     target_must_include_traits: List[str]
     failure_reason: str
     is_search: bool
+    pay_size_is_effect: bool = False
 
     @property
     def is_selectable(self) -> bool:
@@ -129,6 +130,7 @@ class BotOptionParser:
             target_must_include_traits  = [str(x) for x in (item.get('target_must_include_traits') or [])],
             failure_reason              = str(item.get('failure_reason', "") or ""),
             is_search                   = bool(item.get('is_search', False)),
+            pay_size_is_effect          = bool(item.get('pay_size_is_effect', False)),
         )
 
 ################################################################################

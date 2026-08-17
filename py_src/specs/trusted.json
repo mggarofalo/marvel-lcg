@@ -1101,6 +1101,10 @@
       "sha256": "bfef7005036a840449ce87e85e7c0570faa718037bf4d8528b6f118cf39ea388",
       "source": "specs/cards/core/01117b-secret-rendezvous.feature"
     },
+    "Shield Toss :: the ranged discard cost is paid above its zero floor": {
+      "sha256": "c8d40f4849ef5260a0ec122e9520c45dfdec141fb5ea4da2121627876c84b2a7",
+      "source": "specs/cards/cap/03006-shield-toss.feature"
+    },
     "Shocker :: an alter-ego is not a hero and takes nothing": {
       "sha256": "5d2252d9d7e20399d0cee4a5df079ba47358bc890e7f3d735f9d4ed6f79a6c68",
       "source": "specs/cards/core/01103-shocker.feature"

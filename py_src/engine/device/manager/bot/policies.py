@@ -289,7 +289,8 @@ class NoOpAwarePolicy(BotPolicy):
         # stable, so this is a partition rather than a re-rank: everything that
         # does something, in engine order, then everything that does not.
         pairs = []
-        for position, option in enumerate(decision.selectable_options):
+        options = BotCommand.ApplyCostPreference(decision.selectable_options)
+        for position, option in enumerate(options):
             command = BotCommand.Build(option)
             if command is not None:
                 pairs.append((1 if self.IsNoOp(option) else 0, position, command))

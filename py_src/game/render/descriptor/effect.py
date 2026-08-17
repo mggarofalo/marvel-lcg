@@ -24,6 +24,6 @@ class EffectDescriptor:
 
     failure_reason: str             # not null if fail
     is_search: bool
+    pay_size_is_effect: bool        # selecting more is the size of a cost's effect
 
     # is_ex_effect check `AskOption`
-

@@ -600,6 +600,6 @@ class Effect(Object):
             select_rule_param=select_rule_param,
             target_must_include_traits=[f"t_{x}" for x in target_must_include_traits],
             failure_reason=failure_reason,
-            is_search=is_search
+            is_search=is_search,
+            pay_size_is_effect=self.ability.pay_size_is_effect,
         )
-

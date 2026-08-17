@@ -77,7 +77,13 @@ class CostFunc:
                             targets = self.selector.GetRandomTarget(targets, effect)
                             targets = targets[:num_range[0]]
                         elif isinstance(player, Player):
-                            targets = player.AskChooseFaces(targets, num_range, effect, prompt=f"Pay cost {self}")
+                            targets = player.AskChooseFaces(
+                                targets,
+                                num_range,
+                                effect,
+                                prompt=f"Pay cost {self}",
+                                pay_size_is_effect=True,
+                            )
                 else:
                     targets = []
 
@@ -802,7 +808,11 @@ class CostFunc:
                         max_size = min(max_size, this.GetCounters(name))
                         if not player:
                             return False
-                        result_num = player.DeclareNumber(min_size, max_size)
+                        result_num = player.DeclareNumber(
+                            min_size,
+                            max_size,
+                            pay_size_is_effect=True,
+                        )
                     else:
                         result_num = max_size
 
@@ -1141,4 +1151,3 @@ class CostFunc:
             else:
                 target = Select.From(target)
             super().__init__(target, on_call)
-
