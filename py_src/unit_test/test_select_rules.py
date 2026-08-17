@@ -23,6 +23,23 @@ equality, against a table somebody had to write a sentence in:
     and a scan for the literal would have called it implemented.
   * `REVIEWED_SELECT_RULES` says, per rule, which side enforces it and why.
 
+MARVEL-127 is why the scan reports a *site* rather than a bare name. "The
+engine branches on this rule somewhere" was the whole claim, and two rules
+passed it while enforcing half of what they say:
+
+  * **Feasibility** asks whether the *pool* could satisfy the rule, so an
+    impossible effect is never offered. `EffectChecker.UpdateLegalTargets` and
+    `SelectorRule.Process` are the two sites that do it.
+  * **Selection** asks whether the *chosen set* does. `AfterSelectTargets` is
+    the only site that does it, and it is the one that decides whether a rule
+    binds a player who is not clicking in the browser.
+
+`MustIncludeTraits` and `DifferentType` had the first and not the second, which
+is indistinguishable from a working rule if all you ask is "is it named in a
+branch". So the table names the sites, the scan finds them, and the comparison
+is per site -- a rule that gains a feasibility check and no selection check is
+now `FEASIBILITY_ONLY` in writing, or the test fails.
+
 Shaped after `REVIEWED_ABSORBERS` in `test_integrity_errors.py` and
 `REVIEWED_GUARDED_PROMPTS` in `test_card_dataset.py`, and for their reason: the
 comparison is an equality, so it fails in both directions. Declaring a rule
@@ -57,6 +74,19 @@ CLIENT = PY_SRC / "public" / "js" / "marvel" / "effect.ts"
 # `SelectorRange` copies the resolved one under the same name.
 RULE_ATTRS = frozenset({"select_rule", "raw_select_rule"})
 
+# The two enforcement sites, keyed by the *outermost* enclosing function -- the
+# outermost rather than the innermost so that renaming a nested helper does not
+# move a site. `UpdateLegalTargets` holds its branches in a nested
+# `get_all_legal_targets`, and that name is deliberately not written here.
+FEASIBILITY = "feasibility"
+SELECTION = "selection"
+
+SITE_FUNCTIONS = {
+    "UpdateLegalTargets": FEASIBILITY,   # EffectChecker: is the pool capable?
+    "Process": FEASIBILITY,              # SelectorRule: drop an incapable pool
+    "AfterSelectTargets": SELECTION,     # SelectorRule: is the choice legal?
+}
+
 
 def Declared():
     """Every rule name the engine declares, from the `Literal`s themselves."""
@@ -69,6 +99,18 @@ def Declared():
 
 
 DECLARED = Declared()
+
+# The attribute-truth-test shape (`if self.combined_resource_cost:`) is only
+# evidence for `RULE_WITH_PARAM`, because only there does `SelectorRule` derive
+# the rule name *from* the attribute. Applied to the other groups it reads any
+# same-named attribute anywhere in `game/` as enforcement, and there is one:
+# `CostRule.different_type` is "spend resources of different types", a resource
+# rule with no relationship to the `DifferentType` *select* rule, and
+# `cost.py:149` and `resources.py:117` both branch on it. That credited the
+# select rule with two branches it does not have. Harmless while the scan only
+# asked *whether* a rule was branched on -- `DifferentType` was independently
+# found in `EffectChecker` -- and not harmless once it reports *where*.
+DECLARED_WITH_PARAM = frozenset(get_args(SelectorRule.RULE_WITH_PARAM))
 
 
 def SnakeCase(name):
@@ -93,12 +135,35 @@ class RuleBranchScan(ast.NodeVisitor):
 
     A rule name that merely appears -- declared, passed as an argument, written
     in a comment -- is not a branch and is deliberately not collected.
+
+    Each is recorded against the enforcement *site* it was found in -- see
+    `SITE_FUNCTIONS` and the module docstring. A branch outside both sites is
+    recorded under `None`, which no table entry can claim, so a rule enforced
+    somewhere unexpected fails the comparison rather than passing as either.
     """
 
     def __init__(self):
-        self.names = set()
-        self.prefixes = set()
-        self.attributes = set()
+        self.names = {}
+        self.prefixes = {}
+        self.attributes = {}
+        self.functions = []
+
+    def Site(self):
+        """The outermost enclosing function that is an enforcement site."""
+        for name in self.functions:
+            if name in SITE_FUNCTIONS:
+                return SITE_FUNCTIONS[name]
+        return None
+
+    def Record(self, table, value):
+        table.setdefault(self.Site(), set()).add(value)
+
+    def visit_FunctionDef(self, node):
+        self.functions.append(node.name)
+        self.generic_visit(node)
+        self.functions.pop()
+
+    visit_AsyncFunctionDef = visit_FunctionDef
 
     @staticmethod
     def IsRuleExpression(node):
@@ -116,7 +181,7 @@ class RuleBranchScan(ast.NodeVisitor):
             for operand in operands:
                 text = self.StringOf(operand)
                 if text is not None:
-                    self.names.add(text)
+                    self.Record(self.names, text)
         self.generic_visit(node)
 
     def visit_Call(self, node):
@@ -126,11 +191,12 @@ class RuleBranchScan(ast.NodeVisitor):
             for argument in node.args:
                 text = self.StringOf(argument)
                 if text:
-                    self.prefixes.add(text)
+                    self.Record(self.prefixes, text)
         self.generic_visit(node)
 
     def visit_If(self, node):
-        self.attributes.update(TestedAttributes(node.test))
+        for attribute in TestedAttributes(node.test):
+            self.Record(self.attributes, attribute)
         self.generic_visit(node)
 
 
@@ -154,23 +220,36 @@ def TestedAttributes(test):
 
 
 def BranchedOnRules(root=GAME):
-    """Declared rules the engine dispatches on, anywhere under `root`."""
+    """Declared rules the engine dispatches on, and where.
+
+    Returns `{rule: frozenset(sites)}` for every declared rule branched on
+    anywhere under `root`. A rule with no branch at all is absent, so the
+    mapping's keys are still "the rules Python enforces" and its values are the
+    MARVEL-127 half: *which* question each branch answers.
+    """
     scan = RuleBranchScan()
     for path in sorted(Path(root).rglob("*.py")):
         scan.visit(ast.parse(path.read_text(encoding="utf-8"), filename=str(path)))
 
-    found = set()
+    found = {}
     for rule in DECLARED:
         if not rule:
             # The empty rule is "no rule". There is nothing to branch on and
             # nothing to enforce; it is classified below rather than scanned.
             continue
-        if rule in scan.names:
-            found.add(rule)
-        elif any(rule.startswith(prefix) for prefix in scan.prefixes):
-            found.add(rule)
-        elif SnakeCase(rule) in scan.attributes:
-            found.add(rule)
+        sites = set()
+        for site, names in scan.names.items():
+            if rule in names:
+                sites.add(site)
+        for site, prefixes in scan.prefixes.items():
+            if any(rule.startswith(prefix) for prefix in prefixes):
+                sites.add(site)
+        if rule in DECLARED_WITH_PARAM:
+            for site, attributes in scan.attributes.items():
+                if SnakeCase(rule) in attributes:
+                    sites.add(site)
+        if sites:
+            found[rule] = frozenset(sites)
     return found
 
 
@@ -178,67 +257,87 @@ def BranchedOnRules(root=GAME):
 # The reviewed table (MARVEL-118)
 # --------------------------------------------------------------------------
 
-# `PYTHON` -- the engine enforces it, and `BranchedOnRules` must find the
-# branch. `UI_ONLY` -- the engine deliberately does not, the browser does, and
-# `effect.ts` must contain the name. `NO_RULE` -- reserved for the empty string,
-# and asserted to hold nothing else, so "there is no rule here" cannot be used
-# to wave a real one through.
-PYTHON = "python"
+# `ENFORCED` -- the engine validates the *chosen set*, so the rule binds every
+# player and not only one clicking in the browser. `FEASIBILITY_ONLY` -- the
+# engine branches on the rule but only ever asks whether the pool could satisfy
+# it, which is what MARVEL-127 found two of; the browser is then the sole
+# enforcer of the actual selection, exactly as in the MARVEL-118 bug.
+# `UI_ONLY` -- the engine deliberately does not enforce it, the browser does,
+# and `effect.ts` must contain the name. `NO_RULE` -- reserved for the empty
+# string, and asserted to hold nothing else, so "there is no rule here" cannot
+# be used to wave a real one through.
+#
+# The state is *derived* from the sites rather than believed: a rule claiming
+# `ENFORCED` with no `SELECTION` site fails, and so does one claiming
+# `FEASIBILITY_ONLY` that has grown a selection check. Nothing is
+# `FEASIBILITY_ONLY` today, and that is a result rather than a design -- both
+# members were fixed by MARVEL-127 and the state stays so the next one has a
+# name to be written down under.
+ENFORCED = "enforced"
+FEASIBILITY_ONLY = "feasibility-only"
 UI_ONLY = "ui-only"
 NO_RULE = "no-rule"
 
 REVIEWED_SELECT_RULES = {
-    "": (NO_RULE,
+    "": (NO_RULE, frozenset(),
          "the absence of a rule. Every selector that names no rule carries "
          "this, and there is nothing to enforce"),
 
     # RULE_BASE
-    "DifferentCards": (PYTHON,
+    "DifferentCards": (ENFORCED, frozenset({FEASIBILITY, SELECTION}),
         "`SelectorRule.AfterSelectTargets` rejects a selection holding two "
         "faces with one title, via `FacesCounter.GetDifferentCardsCount`, and "
         "`EffectChecker.UpdateLegalTargets` refuses to offer an effect whose "
         "minimum cannot be met by distinct titles. MARVEL-118 -- before that "
         "this rule was enforced only by `effect.ts`"),
-    "DifferentType": (PYTHON,
-        "`EffectChecker.UpdateLegalTargets` refuses the effect when the legal "
-        "pool holds fewer distinct card types than the minimum. NOTE: that is "
-        "a feasibility check on the *pool*; nothing validates the chosen set, "
-        "which `effect.ts` does. See the module docstring of this file and the "
-        "MARVEL-118 report -- the gap is recorded, not fixed here"),
-    "MustIncludeTraits": (PYTHON,
-        "`EffectChecker.UpdateLegalTargets` refuses the effect when the legal "
-        "pool cannot cover the required traits. Same caveat as `DifferentType`: "
-        "the pool is checked, the selection is not"),
+    "DifferentType": (ENFORCED, frozenset({FEASIBILITY, SELECTION}),
+        "`UpdateLegalTargets` refuses the effect when the legal pool holds "
+        "fewer distinct card types than the minimum, and since MARVEL-127 "
+        "`AfterSelectTargets` refuses a chosen set with a repeated type, via "
+        "`FacesCounter.GetDifferentTypesCount`. Until then only the pool was "
+        "checked and its single user (`45017`) hand-rolled the pairing in a "
+        "`check_again_fn` -- so the rule looked enforced and enforced nothing"),
+    "MustIncludeTraits": (ENFORCED, frozenset({FEASIBILITY, SELECTION}),
+        "`UpdateLegalTargets` refuses the effect when the legal pool cannot "
+        "cover the required traits, and since MARVEL-127 `AfterSelectTargets` "
+        "strikes each chosen card's traits off the required list and refuses a "
+        "selection that leaves any standing. That second half is the live one: "
+        "`SelectorFactory.Alliance` builds every Alliance card's cost from a "
+        "`CardFinder(traits=...)` whose traits are an OR, so two AVENGERs "
+        "satisfied a pool that had to cover AVENGER *and* GUARDIAN"),
 
     # RULE_WITH_PARAM -- never passed as `select_rule=`; `SelectorRule.__init__`
     # derives the name from the matching `combined_*` argument, so the argument
     # is the rule and the branch on it is the enforcement.
-    "CombinedResourceCost": (PYTHON,
+    "CombinedResourceCost": (ENFORCED, frozenset({FEASIBILITY, SELECTION}),
         "`SelectorRule.Process` drops a pool that cannot reach the minimum and "
         "`AfterSelectTargets` bounds the chosen set both ways, on "
         "`FacesCounter.GetPrintedCost`"),
-    "CombinedPrintedCost": (PYTHON,
+    "CombinedPrintedCost": (ENFORCED, frozenset({FEASIBILITY, SELECTION}),
         "same two sites, and -- worth knowing -- the same `GetPrintedCost` "
         "call, so this rule and `CombinedResourceCost` are behaviourally one "
         "rule under two names, exactly as `effect.ts` treats them"),
-    "CombinedResourceIcons": (PYTHON,
+    "CombinedResourceIcons": (ENFORCED, frozenset({FEASIBILITY, SELECTION}),
         "`Process` and `AfterSelectTargets`, on "
         "`FacesCounter.GetPrintedResourcesIcon`. `effect.ts` returns true for "
         "this one unconditionally, so here the browser is the lenient side. No "
         "card in `cards/pack/` passes `combined_resource_icons`, and the upper "
         "bound in `AfterSelectTargets` reads index 0 where the other two read "
-        "index 1 -- both reported under MARVEL-118, neither changed here"),
+        "index 1 -- both reported under MARVEL-118, still open as MARVEL-128"),
 
     # RULE_FOR_UI
-    "VillainAndMinionsEngagedSamePlayer": (PYTHON,
+    "VillainAndMinionsEngagedSamePlayer": (ENFORCED, frozenset({SELECTION}),
         "`AfterSelectTargets` takes this branch through "
         "`startswith('VillainAndMinions')` and rejects a selection whose "
-        "minions are not all engaged with one player"),
-    "VillainAndMinionsEngagedWithYou": (PYTHON,
+        "minions are not all engaged with one player. Selection only, and "
+        "correctly so: there is no pool that makes this infeasible in advance"),
+    "VillainAndMinionsEngagedWithYou": (ENFORCED, frozenset({SELECTION}),
         "the same `startswith` branch, which is why it is credited. It is a "
         "weaker check than the browser's: `effect.ts` requires the engaged "
         "player to be *you* and requires exactly one villain, and Python "
-        "requires neither. Reported under MARVEL-118, not changed here"),
+        "requires neither. Reported under MARVEL-118, open as MARVEL-128 -- "
+        "note that this is a rule enforced at the right site and too leniently, "
+        "which no site comparison can catch"),
 }
 
 
@@ -259,24 +358,58 @@ class TestEverySelectRuleIsAccountedFor(unittest.TestCase):
             "enforces it and why. See MARVEL-118.")
 
     def test_rules_claimed_for_python_are_the_rules_python_branches_on(self):
-        claimed = {rule for rule, (side, _) in REVIEWED_SELECT_RULES.items()
-                   if side == PYTHON}
+        claimed = {rule: sites for rule, (_, sites, _) in
+                   REVIEWED_SELECT_RULES.items() if sites}
 
         self.assertEqual(
             BranchedOnRules(), claimed,
-            "the rules the engine dispatches on and the rules claimed as "
-            "enforced in Python disagree. A rule listed as `PYTHON` with no "
-            "branch is the MARVEL-118 bug again: declared, rendered, passed by "
-            "cards, and implemented by nothing but `effect.ts`. A rule the "
-            "engine branches on but that is listed `UI_ONLY` is the entry "
-            "being wrong.")
+            "the rules the engine dispatches on -- and where it dispatches on "
+            "them -- disagree with the table. A rule claimed with a branch it "
+            "does not have is the MARVEL-118 bug again: declared, rendered, "
+            "passed by cards, and implemented by nothing but `effect.ts`. A "
+            "rule claiming a `SELECTION` site it does not have is MARVEL-127: "
+            "the pool is checked, the chosen set is not, and the rule binds "
+            "nobody who is not clicking in the browser.")
+
+    def test_the_state_of_a_rule_follows_from_where_it_is_enforced(self):
+        """The third state, and the reason it is derived rather than declared.
+
+        `ENFORCED` is a claim about the *selection* being validated. Before
+        MARVEL-127 both `DifferentType` and `MustIncludeTraits` were written
+        down as enforced in Python, truthfully -- the engine did branch on them
+        -- and the word covered a rule that checked the pool and let any
+        selection through. Deriving the word from the sites is what stops the
+        next one reading the same.
+        """
+        for rule, (state, sites, _) in sorted(REVIEWED_SELECT_RULES.items()):
+            with self.subTest(rule=rule):
+                if not rule:
+                    expected = NO_RULE
+                elif SELECTION in sites:
+                    expected = ENFORCED
+                elif sites:
+                    expected = FEASIBILITY_ONLY
+                else:
+                    expected = UI_ONLY
+                self.assertEqual(
+                    state, expected,
+                    f"{rule} is written down as {state!r} but its enforcement "
+                    f"sites {sorted(sites)} say {expected!r}")
+
+    def test_no_entry_claims_an_unknown_enforcement_site(self):
+        # `RuleBranchScan` files a branch found outside both sites under
+        # `None`, so an entry could only match it by naming `None` here. The
+        # sites are a closed set for the same reason the step catalogue is.
+        for rule, (_, sites, _) in sorted(REVIEWED_SELECT_RULES.items()):
+            with self.subTest(rule=rule):
+                self.assertLessEqual(set(sites), {FEASIBILITY, SELECTION})
 
     def test_ui_only_rules_are_really_enforced_by_the_client(self):
         # "Deliberately UI-only" has to be a claim about code that exists,
         # or it is indistinguishable from the rule nobody wrote.
         client = CLIENT.read_text(encoding="utf-8")
-        for rule, (side, reason) in sorted(REVIEWED_SELECT_RULES.items()):
-            if side != UI_ONLY:
+        for rule, (state, _, reason) in sorted(REVIEWED_SELECT_RULES.items()):
+            if state != UI_ONLY:
                 continue
             with self.subTest(rule=rule):
                 self.assertIn(
@@ -286,13 +419,30 @@ class TestEverySelectRuleIsAccountedFor(unittest.TestCase):
                 self.assertTrue(reason.strip(),
                                 f"{rule} is listed UI-only with no reason")
 
+    def test_a_feasibility_only_rule_is_still_enforced_by_the_client(self):
+        # The half-enforced state is not a licence to stop caring: whatever
+        # Python declines to check about the selection, the browser is then the
+        # only thing checking, and that has to be true rather than assumed.
+        client = CLIENT.read_text(encoding="utf-8")
+        for rule, (state, _, reason) in sorted(REVIEWED_SELECT_RULES.items()):
+            if state != FEASIBILITY_ONLY:
+                continue
+            with self.subTest(rule=rule):
+                self.assertIn(
+                    f'"{rule}"', client,
+                    f"{rule} checks only the pool in Python and "
+                    f"{CLIENT.name} does not check the selection either, so "
+                    f"nothing enforces it anywhere")
+                self.assertTrue(reason.strip(),
+                                f"{rule} is listed feasibility-only with no reason")
+
     def test_only_the_empty_rule_may_claim_there_is_no_rule(self):
-        no_rule = {rule for rule, (side, _) in REVIEWED_SELECT_RULES.items()
-                   if side == NO_RULE}
+        no_rule = {rule for rule, (state, _, _) in REVIEWED_SELECT_RULES.items()
+                   if state == NO_RULE}
         self.assertEqual(no_rule, {""})
 
     def test_every_entry_states_a_reason(self):
-        for rule, (_, reason) in sorted(REVIEWED_SELECT_RULES.items()):
+        for rule, (_, _, reason) in sorted(REVIEWED_SELECT_RULES.items()):
             with self.subTest(rule=rule):
                 self.assertTrue(reason.strip(), f"{rule} has no stated reason")
 
@@ -315,7 +465,7 @@ class TestEverySelectRuleIsAccountedFor(unittest.TestCase):
         """
         # A real declared name, because the scan only ever reports declared
         # ones -- a made-up name would make this pass for the wrong reason.
-        self.assertEqual(set(), self.ScanOf(
+        self.assertEqual({}, self.ScanOf(
             'RULE = Literal["", "DifferentCards"]\n'
             'MAP = {"TeamUp": ((2, 2), "DifferentCards")}\n'
             'def f(x):\n'
@@ -332,6 +482,71 @@ class TestEverySelectRuleIsAccountedFor(unittest.TestCase):
         self.assertIn("CombinedResourceIcons", self.ScanOf(
             'if self.combined_resource_icons:\n'
             '    pass\n'))
+
+    def test_an_unrelated_attribute_of_the_same_name_is_not_enforcement(self):
+        """`CostRule.different_type`, which is not `DifferentType`.
+
+        "Spend two resources of different types" and "choose two cards of
+        different types" are unrelated rules that snake-case to one attribute
+        name, and `game/element/cost.py` and `game/element/resources.py` both
+        branch on the resource one. The attribute shape is evidence only for
+        `RULE_WITH_PARAM`, where the rule name is *derived* from the attribute;
+        anywhere else it is a name collision.
+        """
+        found = self.ScanOf(
+            'def Pay(self):\n'
+            '    if self.rule.different_type:\n'
+            '        pass\n')
+        self.assertNotIn("DifferentType", found)
+
+        # ...and the shape still works for the group it was written for.
+        found = self.ScanOf(
+            'def Process(self):\n'
+            '    if self.combined_resource_cost:\n'
+            '        pass\n')
+        self.assertEqual(found["CombinedResourceCost"], frozenset({FEASIBILITY}))
+
+    def test_a_branch_is_filed_under_the_function_that_holds_it(self):
+        """The MARVEL-127 half: *where* a rule is checked is the finding.
+
+        The same comparison in two methods means two different things, and
+        before this the scan could not tell them apart.
+        """
+        feasibility = self.ScanOf(
+            'def UpdateLegalTargets(self):\n'
+            '    if self.select_rule == "DifferentType":\n'
+            '        pass\n')
+        self.assertEqual(feasibility["DifferentType"], frozenset({FEASIBILITY}))
+
+        selection = self.ScanOf(
+            'def AfterSelectTargets(self):\n'
+            '    if self.select_rule == "DifferentType":\n'
+            '        pass\n')
+        self.assertEqual(selection["DifferentType"], frozenset({SELECTION}))
+
+    def test_a_nested_helper_does_not_move_the_site(self):
+        """`UpdateLegalTargets` holds its branches in a nested function.
+
+        The site is taken from the outermost enclosing function that names one,
+        so renaming the helper is not a silent reclassification -- which is the
+        failure mode of writing the helper's name into `SITE_FUNCTIONS`.
+        """
+        found = self.ScanOf(
+            'def UpdateLegalTargets(self):\n'
+            '    def whatever_this_helper_is_called(selector):\n'
+            '        if selector.selector_rule.select_rule == "DifferentCards":\n'
+            '            pass\n')
+        self.assertEqual(found["DifferentCards"], frozenset({FEASIBILITY}))
+
+    def test_a_branch_outside_both_sites_is_not_credited_to_either(self):
+        # It is still *found* -- suppressing it would let a rule enforced in
+        # some third place read as enforced nowhere -- but it is filed under a
+        # site no table entry may claim, so it fails the comparison loudly.
+        found = self.ScanOf(
+            'def SomewhereElse(self):\n'
+            '    if self.select_rule == "DifferentCards":\n'
+            '        pass\n')
+        self.assertEqual(found["DifferentCards"], frozenset({None}))
 
     @staticmethod
     def ScanOf(source):
@@ -412,6 +627,140 @@ class TestDifferentCardsIsEnforced(unittest.TestCase):
         rule = SelectorRule()
         targets = [self.FakeFace("Panther Claws"), self.FakeFace("Panther Claws")]
         self.assertTrue(rule.AfterSelectTargets(self.Effect(), targets, (1, 3)))
+
+
+class TestMustIncludeTraitsIsEnforced(unittest.TestCase):
+    """The live half of MARVEL-127.
+
+    `SelectorFactory.Alliance` gives every Alliance-keyword card a `(2, 2)`
+    selector over `CardFinder(traits=["AVENGER", "GUARDIAN"], ...)`, and that
+    finder's traits are an **OR** -- so the pool is "friends who are either",
+    the feasibility check passes on any board holding one of each, and nothing
+    then asked what the player actually picked. Two AVENGERs paid a cost
+    printed as one AVENGER and one GUARDIAN, through `cost_func.py` and a path
+    the bot reaches.
+
+    Stand-ins for the same reason as the class above: `AfterSelectTargets`
+    reads exactly one thing off a target here -- `FindHasTrait` -- so a fake
+    that answers it fails on the rule rather than on scenario setup.
+    """
+
+    class FakeFace:
+        def __init__(self, *traits):
+            self.name = "-".join(traits) or "no traits"
+            self.traits = frozenset(traits)
+
+        def FindHasTrait(self, *traits):
+            # The engine's own contract: the subset of what was asked for that
+            # this face actually carries.
+            return [x for x in traits if x in self.traits]
+
+    def Rule(self, *traits):
+        return SelectorRule(select_rule="MustIncludeTraits",
+                            target_must_include_traits=list(traits))
+
+    def Effect(self):
+        return TestDifferentCardsIsEnforced().Effect()
+
+    def test_two_avengers_do_not_pay_an_avenger_and_a_guardian(self):
+        # The exploit, stated as a test.
+        rule = self.Rule("AVENGER", "GUARDIAN")
+        effect = self.Effect()
+        targets = [self.FakeFace("AVENGER"), self.FakeFace("AVENGER")]
+
+        self.assertFalse(rule.AfterSelectTargets(effect, targets, (2, 2)))
+        self.assertTrue(effect.failures.reasons)
+
+    def test_one_of_each_pays(self):
+        rule = self.Rule("AVENGER", "GUARDIAN")
+        targets = [self.FakeFace("AVENGER"), self.FakeFace("GUARDIAN")]
+
+        self.assertTrue(rule.AfterSelectTargets(self.Effect(), targets, (2, 2)))
+
+    def test_the_order_the_traits_are_chosen_in_does_not_matter(self):
+        rule = self.Rule("AVENGER", "GUARDIAN")
+        targets = [self.FakeFace("GUARDIAN"), self.FakeFace("AVENGER")]
+
+        self.assertTrue(rule.AfterSelectTargets(self.Effect(), targets, (2, 2)))
+
+    def test_one_card_carrying_both_traits_covers_both(self):
+        # `effect.ts` strikes every matching trait off the required list for
+        # each chosen card, so a single AVENGER GUARDIAN satisfies the pair.
+        # Python has to agree, or the two enforcers disagree in the other
+        # direction and a legal browser click becomes an illegal engine input.
+        rule = self.Rule("AVENGER", "GUARDIAN")
+        targets = [self.FakeFace("AVENGER", "GUARDIAN"), self.FakeFace("XMEN")]
+
+        self.assertTrue(rule.AfterSelectTargets(self.Effect(), targets, (2, 2)))
+
+    def test_a_missing_trait_is_refused_however_many_cards_are_chosen(self):
+        rule = self.Rule("AVENGER", "GUARDIAN")
+        targets = [self.FakeFace("AVENGER")] * 5
+
+        self.assertFalse(rule.AfterSelectTargets(self.Effect(), targets, (5, 5)))
+
+    def test_a_selector_without_the_rule_does_not_get_it(self):
+        # `SelectorRule.__init__` drops `target_must_include_traits` unless the
+        # rule is named, so this cannot be enforced by accident.
+        rule = SelectorRule(target_must_include_traits=["AVENGER", "GUARDIAN"])
+        targets = [self.FakeFace("AVENGER"), self.FakeFace("AVENGER")]
+
+        self.assertTrue(rule.AfterSelectTargets(self.Effect(), targets, (2, 2)))
+
+
+class TestDifferentTypeIsEnforced(unittest.TestCase):
+    """The other half of MARVEL-127, and the one that was invisible.
+
+    `DifferentType`'s single user (`45017`, Suit Up) passes a `check_again_fn`
+    that hand-rolls the one-ally-one-upgrade pairing, so the rule enforcing
+    nothing cost nothing and showed up nowhere. That callback stays -- it also
+    checks `CanAttachTo`, which no select rule can express -- so these tests
+    are what says the rule itself works.
+
+    `FacesCounter.GetDifferentTypesCount` keys on `type(face)`, and card faces
+    are the final concrete classes (`Ally`, `Upgrade`, ... all carry
+    `FinalType`, whose `type_name` *is* `__class__.__name__`), so distinct fake
+    classes are the honest stand-in for distinct card types.
+    """
+
+    class FakeAlly:
+        name = "an ally"
+
+    class FakeUpgrade:
+        name = "an upgrade"
+
+    def Effect(self):
+        return TestDifferentCardsIsEnforced().Effect()
+
+    def test_two_cards_of_one_type_are_refused(self):
+        rule = SelectorRule(select_rule="DifferentType")
+        effect = self.Effect()
+        targets = [self.FakeAlly(), self.FakeAlly()]
+
+        self.assertFalse(rule.AfterSelectTargets(effect, targets, (2, 2)))
+        self.assertTrue(effect.failures.reasons)
+
+    def test_two_cards_of_different_types_are_allowed(self):
+        rule = SelectorRule(select_rule="DifferentType")
+        targets = [self.FakeAlly(), self.FakeUpgrade()]
+
+        self.assertTrue(rule.AfterSelectTargets(self.Effect(), targets, (2, 2)))
+
+    def test_distinct_objects_of_one_type_are_still_one_type(self):
+        first, second = self.FakeAlly(), self.FakeAlly()
+        self.assertIsNot(first, second)
+
+        rule = SelectorRule(select_rule="DifferentType")
+        self.assertFalse(rule.AfterSelectTargets(self.Effect(), [first, second], (2, 2)))
+
+    def test_a_single_target_is_always_allowed(self):
+        rule = SelectorRule(select_rule="DifferentType")
+        self.assertTrue(rule.AfterSelectTargets(self.Effect(), [self.FakeAlly()], (1, 1)))
+
+    def test_a_selector_without_the_rule_does_not_get_it(self):
+        rule = SelectorRule()
+        targets = [self.FakeAlly(), self.FakeAlly()]
+        self.assertTrue(rule.AfterSelectTargets(self.Effect(), targets, (2, 2)))
 
 
 class TestDifferentCardsFeasibility(unittest.TestCase):

@@ -70,6 +70,14 @@ def GetAbilities() -> Sequence['Ability']:
     #         return False
     #     return [x for x in deck_cards if Ally.IsType(x) and has_upgrade(x)]
 
+    # Kept after MARVEL-127, which made `select_rule="DifferentType"` enforce
+    # the chosen pair rather than only the pool. The one-of-each half of this
+    # callback is now redundant -- with two targets over `Upgrade|Ally`, two
+    # distinct types *is* one of each -- but the `CanAttachTo` half is not, and
+    # no select rule can express it. So this is not the redundant callback the
+    # issue expected to delete: removing it would drop a real restriction, and
+    # the proof that `DifferentType` works lives in `test_select_rules.py`
+    # against stand-ins instead.
     def has_one_ally_and_one_attachable_upgrade(effect: 'Effect', targets: Sequence['CardFace']) -> bool:
         allies = Filter.ByType(targets, Ally)
         upgrades = Filter.ByType(targets, Upgrade)

@@ -23,3 +23,4 @@
 {"counts": {"ERROR": 0, "FAIL-engine-suspected": 5, "FAIL-spec-wrong": 7, "PASS": 221}, "disagreement_rate": 0.0515, "label": "validate", "timestamp": "2026-08-14T14:46:36+00:00", "total": 233}
 {"counts": {"ERROR": 0, "FAIL-engine-suspected": 5, "FAIL-spec-wrong": 7, "PASS": 226}, "disagreement_rate": 0.0504, "label": "validate", "timestamp": "2026-08-14T15:52:40+00:00", "total": 238}
 {"counts": {"ERROR": 0, "FAIL-engine-suspected": 6, "FAIL-spec-wrong": 7, "PASS": 416}, "disagreement_rate": 0.0303, "label": "validate", "timestamp": "2026-08-14T17:35:29+00:00", "total": 429}
+{"counts": {"ERROR": 0, "FAIL-engine-suspected": 6, "FAIL-spec-wrong": 7, "PASS": 420}, "disagreement_rate": 0.03, "label": "validate", "timestamp": "2026-08-17T13:26:04+00:00", "total": 433}
