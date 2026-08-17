@@ -138,6 +138,18 @@ action. `decision.world` is the board right after the previous decision
 resolved, and it is the only place an intermediate `Then` is observable — once
 the engine unwinds, those states are gone.
 
+**The transcript states the choice and the targets; the payment follows from the
+hand.** There is no step that says how much was spent — the runner delegates to
+`BotCommand.BuildPayment`, which walks the hand in engine order. For a fixed
+cost that is unambiguous and several files lean on it. For a cost whose *size*
+is the effect — a printed X, or "spend up to N" — it means **the hand is the
+payment**: everything on offer is spent, up to the ceiling, so a hand of the
+card plus two fillers is X = 2. That is what makes `14006`, `22010`, `58018` and
+`26022` specifiable at all (MARVEL-135), and it is why their scenarios set the
+hand exactly and differ from each other by one card. MARVEL-136 asks for a step
+that states an amount outright; until it lands, say it with the hand and say so
+in the header.
+
 ## Naming cards
 
 Scenarios name cards by **printed name**; the runner resolves. Object ids never

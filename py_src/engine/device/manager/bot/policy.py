@@ -38,8 +38,11 @@ class BotPayment:
 @dataclass(frozen=True)
 class BotTargetCost:
     """What paying for one particular target looks like."""
+    # "0" is also what a printed X renders as -- `Variable` in `rule` is the
+    # only thing that separates the two. See `BotCommand.IsSpendItsOwnEffect`.
     cost: str               # "0", "3", "R", "RR", "*" (cost ignored), "" (none)
-    rule: List[str]         # subset of "UpTo" "FromHand" "SameType" "DifferentType"
+    rule: List[str]         # subset of "UpTo" "FromHand" "SameType"
+                            #           "DifferentType" "Variable"
     payment: List[BotPayment]
 
 @dataclass(frozen=True)

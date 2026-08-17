@@ -10,27 +10,36 @@ class CostRule:
                 same_type: bool|None=None,
                 different_type: bool|None=None,
                 from_hand: bool|None=None,
+                variable: bool|None=None,
                 requirement: str|None=None,
                 or_res: 'Cost|None'=None) -> None:
         self.up_to = up_to
         self.same_type = same_type
         self.different_type = different_type
         self.from_hand = from_hand
+        # A printed cost of X: the amount is the player's to choose, and the
+        # card's effect is measured from it (`Effect.GetCostX`). The number in
+        # `rbyga` is 0 for such a cost and cannot say so -- see `HasCost.parse`.
+        self.variable = variable
         self.requirement = requirement
         self.or_res = or_res
 
+        # Appended at the end: `EffectDescriptor.Payment.rule` is a wire field
+        # read by `data.ts:getRule` and by `BotCommand`, both by membership, so
+        # a new name is additive but the existing order is not worth moving.
         self.rule_texts = [rule for rule, condition in {
             "UpTo": self.up_to,
             "FromHand": self.from_hand,
             "SameType": self.same_type,
-            "DifferentType": self.different_type
+            "DifferentType": self.different_type,
+            "Variable": self.variable,
         }.items() if condition]
 
 class Cost:
 
     @staticmethod
-    def FromText(text: str, up_to: bool|None=None,) -> 'Cost':
-        return Cost(Cast(Any, text), up_to=up_to)
+    def FromText(text: str, up_to: bool|None=None, variable: bool|None=None) -> 'Cost':
+        return Cost(Cast(Any, text), up_to=up_to, variable=variable)
 
     def __init__(self, rbyga: Literal[
                     "R", "B", "Y", "G",
@@ -45,6 +54,7 @@ class Cost:
                  same_type      : bool|None=None,
                  different_type : bool|None=None,
                  from_hand      : bool|None=None,
+                 variable       : bool|None=None,   # Printed "X"
                  or_cost        : 'Cost|None'=None,
                  ) -> None:
         
@@ -61,6 +71,7 @@ class Cost:
                 same_type       = same_type,
                 different_type  = different_type,
                 from_hand       = from_hand,
+                variable        = variable,
                 or_res          = or_cost,
             )
 
