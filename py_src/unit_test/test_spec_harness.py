@@ -14,11 +14,13 @@ behavior can be expressed as a scenario and run. They must be run from
 """
 
 import unittest
+from types import SimpleNamespace
 
 from tools.spec.assertions import Evaluate, ResolveSubject
 from tools.spec.case import (
-    CannotStep, GivenStep, LoadJsonCases, NoPromptStep, NotOfferedStep,
-    PromptStep, SourceDigest, SpecCase, SpecCaseError, ThenStep, WhenStep)
+    CannotStep, GivenStep, LoadJsonCases, MinimumStep, NoPromptStep,
+    NotOfferedStep, PromptStep, SourceDigest, SpecCase, SpecCaseError, ThenStep,
+    WhenStep)
 from tools.spec.harness import (
     OUTCOME_ASSERTION, OUTCOME_PASS, OUTCOME_UNPLAYABLE, RunCase)
 from tools.spec.resolve import CardRef, CardRefError, NormaliseLabel
@@ -133,6 +135,8 @@ class TestCaseFormat(unittest.TestCase):
                 WhenStep(option="play", card="Nick Fury"),
                 PromptStep(options=("Draw 3 cards", "Deal 4 damage to an enemy")),
                 WhenStep(option="Deal 4 damage to an enemy", targets=("Shocker",)),
+                MinimumStep(option="Deal 4 damage to an enemy", minimum=1,
+                            card="Nick Fury"),
                 ThenStep("Shocker", "damage", 4),
                 NoPromptStep(),
             ),
@@ -140,7 +144,8 @@ class TestCaseFormat(unittest.TestCase):
         again = SpecCase.FromJson(case.ToJson())
         self.assertEqual(again.ToDict(), case.ToDict())
         self.assertEqual([beat.kind for beat in again.beats],
-                         ["when", "prompt", "when", "then", "no_prompt"])
+                         ["when", "prompt", "when", "minimum", "then",
+                          "no_prompt"])
 
     def test_load_json_stamps_provenance_on_every_case(self):
         text = ('[{"name": "one", "scenario": "rhino", "heroes": ["spider_man"], '
@@ -486,6 +491,22 @@ class TestDecisionBudget(unittest.TestCase):
 ################################################################################
 # End to end -- these boot the engine.
 
+class TestEffectiveTargetRange(unittest.TestCase):
+    """The transcript contract is the range the selector presents to clients."""
+
+    def test_a_raw_floor_above_the_clamped_ceiling_becomes_the_ceiling(self):
+        """`Selector.GetTargetRange` crosses 3..2 into the effective 2..2."""
+        from game.selector.selector import Selector
+
+        selector = SimpleNamespace(selector_range=SimpleNamespace(
+            GetTargetMin=lambda effect, faces: 3,
+            GetTargetMax=lambda effect, faces: 2,
+        ))
+        self.assertEqual(
+            Selector.GetTargetRange(selector, object(), [object()] * 4),
+            (2, 2))
+
+
 class TestAgainstTheEngine(unittest.TestCase):
     """A card behavior, expressed as a transcript and run against the engine."""
 
@@ -504,6 +525,75 @@ class TestAgainstTheEngine(unittest.TestCase):
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_an_each_selector_exposes_the_candidate_count_as_its_floor(self):
+        """The card binding ignores another Play option listed first."""
+        case = MakeCase(
+            name="each target minimum",
+            heroes=("black_panther",),
+            given=(
+                HERO_FORM,
+                GivenStep("hand", (
+                    "Haymaker", "01043a", "Vibranium", "Vibranium")),
+                GivenStep("in_play", ("Panther Claws",)),
+                GivenStep("in_play", ("Tactical Genius",)),
+            ),
+            beats=(MinimumStep(option="Play", minimum=2, card="01043a"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_wrong_each_selector_floor_fails_the_assertion(self):
+        """Mutation control: the new assertion must not pass unconditionally."""
+        case = MakeCase(
+            name="wrong each target minimum",
+            heroes=("black_panther",),
+            given=(
+                HERO_FORM,
+                GivenStep("hand", (
+                    "Haymaker", "01043a", "Vibranium", "Vibranium")),
+                GivenStep("in_play", ("Panther Claws",)),
+                GivenStep("in_play", ("Tactical Genius",)),
+            ),
+            beats=(MinimumStep(option="Play", minimum=1, card="01043a"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
+        self.assertIn("Play takes 2..2 target(s)", result.Failures()[0].message)
+
+    def test_a_card_bound_floor_does_not_inspect_an_unrelated_play_option(self):
+        """Wakanda is filtered out; Haymaker must not satisfy its assertion."""
+        case = MakeCase(
+            name="filtered each target minimum",
+            heroes=("black_panther",),
+            given=(
+                HERO_FORM,
+                GivenStep("hand", (
+                    "01043a", "Haymaker", "Vibranium", "Vibranium")),
+            ),
+            beats=(MinimumStep(option="Play", minimum=1, card="01043a"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("not offering 'Play' on '01043a'", result.Describe())
+
+    def test_an_unbound_floor_with_two_matching_options_is_unresolvable(self):
+        """Enumeration order cannot decide which card an assertion reads."""
+        case = MakeCase(
+            name="ambiguous target minimum",
+            heroes=("black_panther",),
+            given=(
+                HERO_FORM,
+                GivenStep("hand", (
+                    "Haymaker", "01043a", "Vibranium", "Vibranium")),
+                GivenStep("in_play", ("Panther Claws",)),
+                GivenStep("in_play", ("Tactical Genius",)),
+            ),
+            beats=(MinimumStep(option="Play", minimum=2),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("matches 2 offered options", result.Describe())
 
     def test_an_explicit_variable_payment_controls_the_effect(self):
         case = MakeCase(

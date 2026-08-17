@@ -1330,19 +1330,19 @@
       "source": "specs/cards/core/01048-tactical-genius.feature"
     },
     "Target counts :: a fifth card in the pile does not raise the ceiling": {
-      "sha256": "96e8606504a22a28857a9585247b0a411674b0f493066cdd8278388c4d68e1b9",
+      "sha256": "42ec1bb44ca07890fc1ee7ade23ab8a6d3a11976bbc04d14f1a1b98e4334043e",
       "source": "specs/rules/target-counts.feature"
     },
     "Target counts :: a third upgrade raises that ceiling to three": {
-      "sha256": "96e8606504a22a28857a9585247b0a411674b0f493066cdd8278388c4d68e1b9",
+      "sha256": "42ec1bb44ca07890fc1ee7ade23ab8a6d3a11976bbc04d14f1a1b98e4334043e",
       "source": "specs/rules/target-counts.feature"
     },
     "Target counts :: an each-you-control effect takes as many targets as the board offers": {
-      "sha256": "96e8606504a22a28857a9585247b0a411674b0f493066cdd8278388c4d68e1b9",
+      "sha256": "42ec1bb44ca07890fc1ee7ade23ab8a6d3a11976bbc04d14f1a1b98e4334043e",
       "source": "specs/rules/target-counts.feature"
     },
     "Target counts :: up to 3 is a ceiling of 3 even with four cards to choose from": {
-      "sha256": "96e8606504a22a28857a9585247b0a411674b0f493066cdd8278388c4d68e1b9",
+      "sha256": "42ec1bb44ca07890fc1ee7ade23ab8a6d3a11976bbc04d14f1a1b98e4334043e",
       "source": "specs/rules/target-counts.feature"
     },
     "Taunt :: 42016 makes the villain attack, only the hero may defend, and draws 3": {
@@ -1718,35 +1718,35 @@
       "source": "specs/cards/core/01068-vision.feature"
     },
     "Wakanda Forever! :: a lone upgrade is the final step of the sequence": {
-      "sha256": "3dfbbb25d8cc979618018824af337afb0a6efa3319029f0ed78e4e3854989a6a",
+      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: each means each -- naming no order resolves every upgrade": {
-      "sha256": "3dfbbb25d8cc979618018824af337afb0a6efa3319029f0ed78e4e3854989a6a",
+      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: the mental printing resolves the same ability": {
-      "sha256": "3dfbbb25d8cc979618018824af337afb0a6efa3319029f0ed78e4e3854989a6a",
+      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: the order named decides which upgrade gets the final step": {
-      "sha256": "3dfbbb25d8cc979618018824af337afb0a6efa3319029f0ed78e4e3854989a6a",
+      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: the physical printing resolves the same ability": {
-      "sha256": "3dfbbb25d8cc979618018824af337afb0a6efa3319029f0ed78e4e3854989a6a",
+      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: the same two upgrades in the other order swap both numbers": {
-      "sha256": "3dfbbb25d8cc979618018824af337afb0a6efa3319029f0ed78e4e3854989a6a",
+      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: the wild printing resolves the same ability": {
-      "sha256": "3dfbbb25d8cc979618018824af337afb0a6efa3319029f0ed78e4e3854989a6a",
+      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: with no Black Panther upgrade in play the event is not offered": {
-      "sha256": "3dfbbb25d8cc979618018824af337afb0a6efa3319029f0ed78e4e3854989a6a",
+      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "War Machine :: a minion in play is damaged too, without being named": {

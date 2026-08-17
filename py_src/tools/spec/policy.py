@@ -44,8 +44,8 @@ from engine.device.manager.bot.command import BotCommand
 from engine.device.manager.bot.policy import BotPolicy
 from tools.spec.assertions import AssertionResult, Evaluate
 from tools.spec.case import (
-    Beat, CannotStep, LimitStep, NoPromptStep, NotOfferedStep, PromptStep,
-    TargetsStep, ThenStep, WhenStep)
+    Beat, CannotStep, LimitStep, MinimumStep, NoPromptStep, NotOfferedStep,
+    PromptStep, TargetsStep, ThenStep, WhenStep)
 from tools.spec.resolve import (
     CardRefError, DescribeOption, NormaliseLabel, ResolveCard)
 from tools.spec.state import Capture, StateView
@@ -201,7 +201,7 @@ class TranscriptPolicy(BotPolicy):
         board: Optional[StateView] = None
         while isinstance(self.Peek(),
                          (ThenStep, NotOfferedStep, CannotStep, TargetsStep,
-                          LimitStep)):
+                          MinimumStep, LimitStep)):
             beat = self.beats[self.index]
             if isinstance(beat, NotOfferedStep):
                 self.CheckNotOffered(beat, decision)
@@ -211,6 +211,8 @@ class TranscriptPolicy(BotPolicy):
                 self.CheckTargets(beat, decision)
             elif isinstance(beat, LimitStep):
                 self.CheckLimit(beat, decision)
+            elif isinstance(beat, MinimumStep):
+                self.CheckMinimum(beat, decision)
             else:
                 if decision.world is None:
                     # No board to read. Leave it queued rather than passing it:
@@ -348,27 +350,74 @@ class TranscriptPolicy(BotPolicy):
         says when the ceiling it found is the candidate count -- a scenario that
         hits it has not built a board that can see the printed number.
         """
-        wanted = NormaliseLabel(beat.option)
-        for option in decision.selectable_options:
-            if NormaliseLabel(option.name) != wanted:
-                continue
-            low = int(option.target_num_range[0])
-            high = int(option.target_num_range[1])
-            if high == beat.maximum:
-                self.Record(beat, True)
-                return
-            listing = ", ".join(self.LabelTargets(decision.world, option)) or "nothing"
-            detail = (f"{option.name} takes {low}..{high} target(s) "
-                      f"from {listing}")
-            if high == len(option.all_legal_targets) and high < beat.maximum:
-                detail += ("; that is the number of legal targets, so the board "
-                           "has no more candidates than the ceiling and cannot "
-                           "show what the ceiling is")
-            self.Record(beat, False, detail)
+        options, error = self.TargetCountOptions(beat, decision)
+        if error:
+            self.Record(beat, False, error, unresolvable=True)
             return
-        self.Record(beat, False,
-                    f"the engine is not offering {beat.option!r}; it offers "
-                    f"{self.Offered(decision)}", unresolvable=True)
+        option = options[0]
+        low = int(option.target_num_range[0])
+        high = int(option.target_num_range[1])
+        if high == beat.maximum:
+            self.Record(beat, True)
+            return
+        listing = ", ".join(self.LabelTargets(decision.world, option)) or "nothing"
+        detail = (f"{option.name} takes {low}..{high} target(s) "
+                  f"from {listing}")
+        if high == len(option.all_legal_targets) and high < beat.maximum:
+            detail += ("; that is the number of legal targets, so the board "
+                       "has no more candidates than the ceiling and cannot "
+                       "show what the ceiling is")
+        self.Record(beat, False, detail)
+
+    def CheckMinimum(self, beat: MinimumStep, decision: Any) -> None:
+        """Check the fewest targets an offered option will take.
+
+        The client receives only the effective range. In particular,
+        `range="All"` becomes `(candidate count, candidate count)`, and a
+        dynamic maximum below a raw minimum clamps both ends to that maximum.
+        Reading the live tuple is therefore the only contract the browser and
+        future C# runner can share without reaching into Python card scripts.
+        """
+        options, error = self.TargetCountOptions(beat, decision)
+        if error:
+            self.Record(beat, False, error, unresolvable=True)
+            return
+        option = options[0]
+        low = int(option.target_num_range[0])
+        high = int(option.target_num_range[1])
+        if low == beat.minimum:
+            self.Record(beat, True)
+            return
+        listing = ", ".join(self.LabelTargets(decision.world, option)) or "nothing"
+        self.Record(
+            beat, False,
+            f"{option.name} takes {low}..{high} target(s) from {listing}")
+
+    def TargetCountOptions(self, beat: Any, decision: Any) -> Tuple[List[Any], str]:
+        """Resolve one option for a range assertion without trusting ordering."""
+        wanted = NormaliseLabel(beat.option)
+        options = [option for option in decision.selectable_options
+                   if NormaliseLabel(option.name) == wanted]
+
+        if beat.card:
+            if decision.world is None:
+                return [], f"there is no board to resolve {beat.card!r} against"
+            try:
+                card = ResolveCard(decision.world, beat.card)
+            except CardRefError as exc:
+                return [], str(exc)
+            options = [option for option in options
+                       if int(option.bind_id) == int(card.object_id)]
+
+        subject = (f"{beat.option!r} on {beat.card!r}" if beat.card
+                   else repr(beat.option))
+        if not options:
+            return [], (f"the engine is not offering {subject}; it offers "
+                        f"{self.Offered(decision)}")
+        if len(options) > 1:
+            return [], (f"{subject} matches {len(options)} offered options; "
+                        f"bind the assertion to a card")
+        return options, ""
 
     def CheckPrompt(self, beat: PromptStep, decision: Any) -> None:
         expected = sorted(NormaliseLabel(option) for option in beat.options)
@@ -574,7 +623,8 @@ class TranscriptPolicy(BotPolicy):
             elif isinstance(beat, PromptStep):
                 self.Record(beat, False,
                             "the game ended before the engine asked this")
-            elif isinstance(beat, (NotOfferedStep, CannotStep, LimitStep)):
+            elif isinstance(beat, (NotOfferedStep, CannotStep, MinimumStep,
+                                   LimitStep)):
                 # A restriction is a claim about a decision, so with no decision
                 # left there is nothing to check. It does not pass by default:
                 # "the engine never offered the chance" and "the engine offered

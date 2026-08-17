@@ -1,20 +1,27 @@
-# How many targets an effect takes. MARVEL-120.
+# How many targets an effect takes. MARVEL-120 / MARVEL-134.
 #
 # A selector has a floor and a ceiling, and the two are pinned by different
-# things. The floor is pinned by playing the effect: name one target and see it
-# resolve. The ceiling was not pinnable at all -- naming a fourth target for an
-# effect printed "up to 3" is refused with `Play takes 1..3 target(s)`, which is
-# the engine being right and the transcript having no passing spelling for it.
-# So a printed maximum was only ever bounded from below.
+# assertions. `Then the target minimum for "<option>" is <n>` reads the floor;
+# `Then the target maximum for "<option>" is <n>` reads the ceiling. Both are
+# equalities over the live option range rather than inequalities inferred from
+# whether one particular selection resolved.
 #
-# `Then the target maximum for "<option>" is <n>` is the step that says it, and
-# it is an equality rather than the "at most N" it is tempting to spell it as:
-# a ceiling of 2 does not satisfy it, because on a board that offers only two
-# candidates "at most 3" is true of an engine that has no maximum at all.
+# The scenarios use the `... on "<card>" ...` forms because `Play` is a shared
+# label. An option assertion that names only `Play` is unresolvable when more
+# than one card offers it; enumeration order must not decide which range wins.
 #
-# It reads `target_num_range[1]` at the decision, which is the **effective**
-# ceiling: `Selector.GetTargetRange` clamps the printed maximum to the number of
-# legal targets on the board. Two consequences, and both are in this file:
+# `Then the target maximum for "<option>" is <n>` is an equality rather than the
+# "at most N" it is tempting to spell it as: a ceiling of 2 does not satisfy it.
+# The minimum spelling follows the same rule: "at least N" would wrongly accept
+# a floor that had become too high.
+#
+# The steps read `target_num_range[0]` and `[1]` at the decision: the
+# **effective** range the browser receives. `Selector.GetTargetRange` clamps the
+# printed maximum to the board, and if a dynamic floor crosses that ceiling it
+# lowers the floor to the same value. `range="All"` computes both ends from the
+# number of legal candidates. A raw floor that cannot be satisfied filters the
+# option out before a decision, so a minimum assertion is unresolvable rather
+# than pretending to expose a raw card-script value. Consequences in this file:
 #
 #   * the claim only bites on a board offering **more** candidates than the
 #     ceiling. With three cards in the pile an engine that had lost the maximum
@@ -22,6 +29,8 @@
 #   * for a selector with no printed maximum the number is the board's, not the
 #     card's -- which is a claim worth making too, because "each X you control"
 #     and "up to 3 X" differ in exactly that.
+#   * for "each," the minimum moves with the maximum: a two-upgrade board is
+#     2..2 and a three-upgrade board is 3..3.
 #
 # ---------------------------------------------------------------------------
 # Under specs/rules/ rather than specs/cards/ because the claim is about how a
@@ -59,7 +68,8 @@ Feature: Target counts
       | Tactical Genius |
       | Energy Daggers |
       | Vibranium Suit |
-    And the target maximum for "Play" is 3
+    And the target minimum for "Play" on "01042" is 1
+    And the target maximum for "Play" on "01042" is 3
 
   @card:01042
   Scenario: a fifth card in the pile does not raise the ceiling
@@ -69,7 +79,7 @@ Feature: Target counts
     And my hand is "01042", "Vibranium"
     And my discard pile is "Panther Claws", "Tactical Genius", "Energy Daggers", "Vibranium Suit", "Combat Training"
 
-    Then the target maximum for "Play" is 3
+    Then the target maximum for "Play" on "01042" is 3
 
   # --------------------------------------------------------------------------
   # No printed ceiling: Wakanda Forever! (01043a)
@@ -82,11 +92,9 @@ Feature: Target counts
   # two scenarios above a claim about Ancestral Knowledge and not about
   # selectors in general.
   #
-  # It was `range=(1, "All")` when this file was written, and the ceiling below
-  # is the half of that spelling which was right. The other half -- a minimum
-  # of 1, so "each" was resolvable one at a time -- is MARVEL-129, and the
-  # count is pinned in `specs/cards/core/01043a-wakanda-forever.feature`. Both
-  # scenarios here are unaffected: "All" moves the floor and not the ceiling.
+  # It was `range=(1, "All")` before MARVEL-129, making "each" resolvable one at
+  # a time. `range="All"` moves both ends together; the paired assertions below
+  # are the direct control that the old 1..N range cannot satisfy.
 
   @card:01043a
   Scenario: an each-you-control effect takes as many targets as the board offers
@@ -95,7 +103,8 @@ Feature: Target counts
     And "Panther Claws" is in play
     And "Tactical Genius" is in play
 
-    Then the target maximum for "Play" is 2
+    Then the target minimum for "Play" on "01043a" is 2
+    And the target maximum for "Play" on "01043a" is 2
 
   @card:01043a
   Scenario: a third upgrade raises that ceiling to three
@@ -109,4 +118,5 @@ Feature: Target counts
     And "Energy Daggers" is in play
     And "Combat Training" is in play
 
-    Then the target maximum for "Play" is 3
+    Then the target minimum for "Play" on "01043a" is 3
+    And the target maximum for "Play" on "01043a" is 3
