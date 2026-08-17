@@ -367,23 +367,28 @@ class EffectChecker:
                 assert False, f"{self=}"
             self.UpdatePayResources(asked_player)
 
-            # An option in a "choose one" that costs resources is filtered on
-            # affordability the same way `UpdateLegalTargets` above filters one
-            # that needs a target on having any: offering a player something
-            # they cannot pay for, and then refusing it when they pick it, is
-            # not a decision (MARVEL-109).
+            # An action whose cost cannot be paid is not an available option.
+            # The same check already withheld unaffordable nested choices;
+            # regular actions go through this checker too and must not be
+            # offered only to fail in `CheckBeforeActive` after the player
+            # picks them (MARVEL-130).
             #
-            # Only choose-abilities. Playing a card from hand answers "can I
-            # afford this" through `HasCost.CanPlayBy` and its own UI, and this
-            # is not that path.
-            if self.ability.flags.is_choose_ability:
-                if self.effect.context.pay_as_much_as_possible:
-                    self.cost_for_different_target.ReduceToMaxPayable()
-                    self.effect.display_name_override = \
-                        f"Spend {self.cost_for_different_target.GetCost(None).GetSpendText()}"
-                elif not self.cost_for_different_target.CanPayAnyTarget():
-                    self.failures.Set(asked_player, EffectFailure.CannotPay)
-                    return False
+            # `pay_as_much_as_possible` belongs to the narrower printed rule
+            # where spending is itself the effect. That remains a choose-only
+            # exception: reduce its demand before applying the shared check.
+            requires_affordability = (
+                self.ability.flags.is_choose_ability or
+                self.ability.flags.is_action
+            )
+            if self.effect.context.pay_as_much_as_possible:
+                assert self.ability.flags.is_choose_ability
+                self.cost_for_different_target.ReduceToMaxPayable()
+                self.effect.display_name_override = \
+                    f"Spend {self.cost_for_different_target.GetCost(None).GetSpendText()}"
+            elif (requires_affordability and
+                  not self.cost_for_different_target.CanPayAnyTarget()):
+                self.failures.Set(asked_player, EffectFailure.CannotPay)
+                return False
 
         if self.ability.is_label_defense:
             # from game.message.message_type import AttackerMessageInternal
@@ -395,4 +400,3 @@ class EffectChecker:
 
         self.failures.Set(asked_player, EffectFailure.OK)
         return True
-

@@ -58,8 +58,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
 
 from tools.spec.case import (
-    CannotStep, GivenStep, LimitStep, NoPromptStep, PromptStep, SourceDigest,
-    SpecCase, TargetsStep,
+    CannotStep, GivenStep, LimitStep, NoPromptStep, NotOfferedStep, PromptStep,
+    SourceDigest, SpecCase, TargetsStep,
     SpecCaseError, ThenStep, WhenStep)
 from tools.spec.resolve import SplitRefs
 from tools.spec.state import PHASE_NAMES
@@ -268,6 +268,12 @@ THEN_TABLE: Table = [
     ('I am not prompted again',
      Rx(r'i am not prompted again'),
      lambda: ("then", NoPromptStep())),
+    # A negative assertion over one card-bound option. Affordability cannot be
+    # reduced to the hand: generators, discounts, targets and group payments
+    # all contribute. Observe the option set the engine exposes instead.
+    ('I am not offered "<option>" on "<card>"',
+     Rx(r'i am not offered ' + Q + r' on ' + Q),
+     lambda option, card: ("then", NotOfferedStep(option=option, card=card))),
 
     # The third assertion: something the engine will not let you do. A
     # restriction that filters an option's *targets* rather than removing the

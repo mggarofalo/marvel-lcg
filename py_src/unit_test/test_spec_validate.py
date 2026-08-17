@@ -16,7 +16,8 @@ import tempfile
 import unittest
 
 from tools.spec.case import (
-    GivenStep, NoPromptStep, PromptStep, SourceDigest, SpecCase, ThenStep, WhenStep)
+    GivenStep, NoPromptStep, NotOfferedStep, PromptStep, SourceDigest, SpecCase,
+    ThenStep, WhenStep)
 from tools.spec.gherkin import GherkinError, ParseFeature, Vocabulary
 from tools.spec.harness import (
     CaseResult, OUTCOME_ASSERTION, OUTCOME_ERROR, OUTCOME_PASS, OUTCOME_UNPLAYABLE)
@@ -496,6 +497,22 @@ class TestGherkinParsing(unittest.TestCase):
         beat = case.beats[0]
         self.assertEqual((beat.kind, beat.option, beat.card),
                          ("cannot", "Futurist", "Backflip"))
+
+    def test_a_not_offered_step_names_the_option_and_its_card(self):
+        """Affordability is observed on the option, not recomputed from a hand."""
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then I am not offered "Action" on "Vision"
+"""))[0]
+        beat = case.beats[0]
+        self.assertEqual((beat.kind, beat.option, beat.card),
+                         ("not_offered", "Action", "Vision"))
+        self.assertEqual(len(case.Assertions()), 1)
+
+    def test_a_not_offered_step_survives_a_json_round_trip(self):
+        case = MakeCase(beats=(NotOfferedStep("Action", "Vision"),))
+        again = SpecCase.FromJson(case.ToJson())
+        self.assertEqual(again.beats, case.beats)
 
     def test_the_two_restriction_forms_describe_themselves_differently(self):
         """The failure message is the thing an author acts on.

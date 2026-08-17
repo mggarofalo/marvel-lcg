@@ -16,11 +16,12 @@ the *number of prompts* implicitly. A scenario written that way passes against
 an engine that asks a different set of questions and lands on the same final
 state, which is exactly the failure the format exists to prevent (MARVEL-22).
 
-Seven kinds of beat:
+Eight kinds of beat:
 
 - `WhenStep`      answer the decision the engine is currently asking
 - `PromptStep`    assert what the engine is asking, and with which options
 - `NoPromptStep`  assert the resolution is over -- no further mid-resolution ask
+- `NotOfferedStep` assert an option bound to a card is absent
 - `CannotStep`    assert an action will not take a card as its target
 - `TargetsStep`   assert which cards an offered option will take
 - `LimitStep`     assert how many of them it will take
@@ -361,6 +362,39 @@ class NoPromptStep:
 
 
 @dataclass(frozen=True)
+class NotOfferedStep:
+    """Assert that one card-bound option is absent from the live decision.
+
+    Affordability is a property of an option in the current game state, not of
+    the cards in hand alone. Resource abilities in play, cost reductions,
+    targets and other players can all change what can be paid. This assertion
+    therefore observes the engine's decision instead of reimplementing payment
+    rules in the spec runner.
+
+    The card must resolve on the board. Otherwise a misspelled or absent card
+    would make every option look absent and turn a vacuous claim into a pass.
+    """
+
+    option: str
+    card: str
+
+    kind = "not_offered"
+
+    def __post_init__(self) -> None:
+        if not self.option:
+            raise SpecCaseError("a not-offered assertion needs an option")
+        if not self.card:
+            raise SpecCaseError(
+                f"a not-offered assertion needs a card; {self.option!r} names none")
+
+    def Describe(self) -> str:
+        return f"I am not offered {self.option!r} on {self.card!r}"
+
+    def ToDict(self) -> Dict[str, Any]:
+        return {"kind": "not_offered", "option": self.option, "card": self.card}
+
+
+@dataclass(frozen=True)
 class CannotStep:
     """Assert the engine will not let this action name this card.
 
@@ -447,9 +481,11 @@ class ThenStep:
                 "op": self.op, "value": self.value}
 
 
-Beat = Union[WhenStep, PromptStep, NoPromptStep, CannotStep, LimitStep, ThenStep]
+Beat = Union[WhenStep, PromptStep, NoPromptStep, NotOfferedStep, CannotStep,
+             TargetsStep, LimitStep, ThenStep]
 
-ASSERTION_KINDS = ("prompt", "no_prompt", "cannot", "targets", "limit", "then")
+ASSERTION_KINDS = ("prompt", "no_prompt", "not_offered", "cannot", "targets",
+                   "limit", "then")
 
 
 def IsAction(beat: Beat) -> bool:
@@ -594,6 +630,9 @@ def BeatFromDict(item: Dict[str, Any]) -> Beat:
         return PromptStep(options=tuple(str(o) for o in item.get("options", ())))
     if kind == "no_prompt":
         return NoPromptStep()
+    if kind == "not_offered":
+        return NotOfferedStep(option=str(item.get("option", "")),
+                              card=str(item.get("card", "")))
     # `targets` has been serialisable and not loadable since MARVEL-94 added it:
     # `TargetsStep.ToDict` writes this kind and nothing here read it, so a JSON
     # case round trip raised "unknown beat kind 'targets'". Noticed while adding

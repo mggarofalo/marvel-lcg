@@ -38,15 +38,13 @@
 # four cards of work while the vocabulary could express one claim.
 #
 # ---------------------------------------------------------------------------
-# What is still missing, and is not worked around here
+# How unaffordable options are asserted
 #
-# There is no way to say **"this cost cannot be paid from this hand"**. An
-# ability whose cost the hand cannot cover is still offered on the menu -- the
-# engine does not filter it out -- and a `When` that tries it is refused with
-# "Action is offered but cannot be paid for", which is `FAIL-spec-wrong`: right
-# behaviour, no passing spelling. So the last scenario states the positive
-# direction only, and the negative one is carried by the icon assertions above
-# it: 01043b prints no energy icon at all.
+# `I am not offered "<option>" on "<card>"` observes the menu rather than
+# declaring what a hand can pay. That distinction matters because resources in
+# play, discounts, targets and other players can change affordability. Vision's
+# negative case lives in `01068-vision.feature`; this file keeps its focus on
+# what each card prints and the positive proof that an energy icon pays energy.
 
 Feature: Resource icons
 

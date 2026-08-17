@@ -391,18 +391,23 @@ which is what "each X you control" compiles to) the number is the board's rather
 than the card's, which is a claim worth making in its own right:
 `specs/rules/target-counts.feature` states both shapes side by side.
 
-Three things the vocabulary still cannot say. Two are from the first core-set
+One more decision assertion says a card-bound option is absent (MARVEL-130):
+
+```gherkin
+    Then I am not offered "Action" on "Vision"
+```
+
+This is option-shaped rather than hand-shaped. The hand is not the full answer
+to affordability: resource generators, discounts, targets and group payments
+also contribute. The step resolves the named card first, then asserts that the
+live decision has no matching option bound to it. A missing card is an error,
+not a vacuous pass.
+
+Two things the vocabulary still cannot say. Both are from the first core-set
 batch: **"gains surge" is invisible from a `Given`-time reveal** — the surged
 card stops in `DealtEncounterCardsDeck`, so surge needs a real villain phase with
 the encounter deck stacked; and `"<card>" is in the "<zone>"` reports a zone
 *type*, so in a multiplayer scenario it cannot say *whose* area a card reached.
-The third is **"this cost cannot be paid from this hand"** (MARVEL-120). The
-engine does not filter an unaffordable ability off the menu — Vision's
-`Spend an [energy] resource` is offered with a hand of mental cards — and a
-`When` that tries it is refused with "Action is offered but cannot be paid for",
-which is `FAIL-spec-wrong`. Right behaviour, no passing spelling, so the
-negative half of a coloured cost has to be carried by a resource-icon assertion
-instead.
 
 ## A card's resource icons
 
