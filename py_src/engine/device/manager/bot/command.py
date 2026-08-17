@@ -97,21 +97,73 @@ class BotCommand:
         )
 
     @staticmethod
-    def BuildPayment(option: 'BotOption', targets: List[int]) -> 'List[int]|None':
-        """Greedily pick resources until the cost is met. None if it cannot be met."""
+    def BuildPayment(option: 'BotOption', targets: List[int],
+                     amount: 'int|None'=None) -> 'List[int]|None':
+        """Pick a legal payment, optionally of one exact resource amount.
+
+        `amount` counts resource icons, not payment effects: a double-resource
+        card contributes two and a cost reduction contributes zero. The exact
+        mode is used by behavioral transcripts, where the author controls how
+        much X is while the runner still chooses the concrete cards.
+        """
         target_cost = option.GetTargetCost(targets)
         if target_cost is None:
-            return []
+            return [] if amount in (None, 0) else None
         if target_cost.cost in NO_COST_TEXTS and not target_cost.payment:
-            return []
+            if amount is None:
+                return []
+            return [] if amount == 0 else None
 
         try:
+            if amount is not None:
+                return BotCommand.BuildExactPayment(target_cost, amount)
             return BotCommand.BuildPaymentInternal(target_cost)
         except Exception as exc:
             # A cost we cannot re-derive from its rendered text. Treat the option
             # as unaffordable so the policy moves on instead of crashing.
             Log.Debug(CATEGORY_NAME, f"Cannot plan payment for {option.name!r} ({target_cost.cost!r}): {exc}")
             return None
+
+    @staticmethod
+    def BuildExactPayment(target_cost: 'BotTargetCost', amount: int) -> 'List[int]|None':
+        """First exact legal resource combination, preserving engine order."""
+        from game.element.cost import Cost
+        from game.element.resources import Resources
+
+        if amount < 0:
+            return None
+
+        cost = Cost(
+            Cast(Any, target_cost.cost),
+            up_to           = ("UpTo" in target_cost.rule) or None,
+            same_type       = ("SameType" in target_cost.rule) or None,
+            different_type  = ("DifferentType" in target_cost.rule) or None,
+            from_hand       = ("FromHand" in target_cost.rule) or None,
+            variable        = ("Variable" in target_cost.rule) or None,
+        )
+
+        zero = Resources.FromText("0")
+        if amount == 0 and zero.IsMatchCost(cost):
+            return []
+
+        states: List[Tuple['Resources', List[int]]] = [(zero, [])]
+        seen = {(zero.r, zero.b, zero.y, zero.g, zero.reduce)}
+        for payment in target_cost.payment:
+            resource = Resources.FromText(payment.res_text or "0")
+            for paid, chosen in states[:]:
+                combined = paid + resource
+                if combined.val > amount:
+                    continue
+                key = (combined.r, combined.b, combined.y, combined.g,
+                       combined.reduce)
+                if key in seen:
+                    continue
+                seen.add(key)
+                next_chosen = chosen + [payment.effect_id]
+                if combined.val == amount and combined.IsMatchCost(cost):
+                    return next_chosen
+                states.append((combined, next_chosen))
+        return None
 
     @staticmethod
     def IsSpendItsOwnEffect(target_cost: 'BotTargetCost') -> bool:

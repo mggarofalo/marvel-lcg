@@ -89,6 +89,7 @@ class TranscriptPolicy(BotPolicy):
     index: int = 0
     records: List[DecisionRecord] = field(default_factory=list)
     results: List[AssertionResult] = field(default_factory=list)
+    pending_exact_payments: List[Tuple[Any, int, str]] = field(default_factory=list)
     state: Optional[StateView] = None
     halted: bool = False
     failure: str = ""
@@ -107,6 +108,7 @@ class TranscriptPolicy(BotPolicy):
         self.index = 0
         self.records = []
         self.results = []
+        self.pending_exact_payments = []
         self.state = None
         self.halted = False
         self.failure = ""
@@ -117,6 +119,10 @@ class TranscriptPolicy(BotPolicy):
         if self.halted:
             # The engine is unwinding; decline whatever it still asks.
             return BotCommand.Cancel()
+
+        self.SettleExactPayments(decision)
+        if self.failure:
+            return self.Halt(decision)
 
         if len(self.records) >= self.max_decisions:
             # The budget can trip in either phase, so the message must not
@@ -405,6 +411,16 @@ class TranscriptPolicy(BotPolicy):
             self.Fail(f"{beat.Describe()} could not be played: {why}", decision)
             return self.Halt(decision)
 
+        if beat.payment is not None and decision.world is not None:
+            effect = decision.world.object_manager.effect_dict.get(int(command.id))
+            if effect is None:
+                self.Fail(
+                    f"cannot verify the realized payment for {beat.Describe()}: "
+                    f"effect {command.id} is not in the world", decision)
+                return self.Halt(decision)
+            self.pending_exact_payments.append(
+                (effect, beat.payment, beat.Describe()))
+
         self.index += 1
         return self.Answer(decision, command, beat.Describe())
 
@@ -438,9 +454,15 @@ class TranscriptPolicy(BotPolicy):
             # Cost depends on which target was chosen, so payment has to be
             # planned against the transcript's targets rather than
             # `BotCommand.Build`'s default first-N pick.
-            resources = BotCommand.BuildPayment(option, targets)
+            resources = BotCommand.BuildPayment(option, targets, beat.payment)
             if resources is None:
-                reasons.append(f"{option.name} is offered but cannot be paid for")
+                if beat.payment is None:
+                    reasons.append(
+                        f"{option.name} is offered but cannot be paid for")
+                else:
+                    reasons.append(
+                        f"{option.name} is offered but cannot be paid with "
+                        f"exactly {beat.payment} resources")
                 continue
 
             return CommandDescriptor(
@@ -535,6 +557,8 @@ class TranscriptPolicy(BotPolicy):
     #
     def Finish(self, world: Any) -> None:
         """Judge whatever is still queued once the engine has stopped asking."""
+        self.SettleExactPayments()
+
         if self.state is None and world is not None:
             self.state = Capture(world)
 
@@ -561,6 +585,38 @@ class TranscriptPolicy(BotPolicy):
             else:
                 self.Record(beat, False,
                             "the game ended before this step could be played")
+
+    def SettleExactPayments(self, decision: Any = None) -> None:
+        """Check completed payments before their reusable Effect is invoked again."""
+        # The payment descriptor states what each generator *can* produce.
+        # Some resource abilities ask a nested question and produce less than
+        # they advertised (SP//dr Suit is the shipped example). The command can
+        # only name generator ids, so exactness has to be checked against the
+        # selected effect after `SpendResource` records what was really made.
+        # `paid_this_res_effects` is cleared when the outer effect finishes; if
+        # it is still populated, another transcript failure halted resolution
+        # early and that earlier failure remains the useful diagnosis.
+        if self.failure:
+            return
+
+        still_resolving: List[Tuple[Any, int, str]] = []
+        for effect, expected, description in self.pending_exact_payments:
+            if effect.context.paid_this_res_effects:
+                still_resolving.append((effect, expected, description))
+                continue
+
+            actual = effect.context.paid_this_resources.val
+            if actual != expected:
+                message = (
+                    f"{description} required exactly {expected} resources, "
+                    f"but the selected payment effects generated {actual}")
+                if decision is None:
+                    self.failure = message
+                else:
+                    self.Fail(message, decision)
+                break
+
+        self.pending_exact_payments = still_resolving
 
     ############################################################################
     #

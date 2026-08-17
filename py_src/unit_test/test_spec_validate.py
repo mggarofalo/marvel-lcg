@@ -17,7 +17,7 @@ import unittest
 
 from tools.spec.case import (
     GivenStep, NoPromptStep, NotOfferedStep, PromptStep, SourceDigest, SpecCase,
-    ThenStep, WhenStep)
+    SpecCaseError, ThenStep, WhenStep)
 from tools.spec.gherkin import GherkinError, ParseFeature, Vocabulary
 from tools.spec.harness import (
     CaseResult, OUTCOME_ASSERTION, OUTCOME_ERROR, OUTCOME_PASS, OUTCOME_UNPLAYABLE)
@@ -163,6 +163,45 @@ class TestGherkinParsing(unittest.TestCase):
 """))
         self.assertEqual([beat.kind for beat in cases[0].beats],
                          ["when", "then", "when", "then"])
+
+    def test_a_payment_amount_is_part_of_the_same_decision(self):
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    When I choose "Play" on "Speed Cyclone" paying 2 resources targeting "Rhino", "Shocker"
+    Then "Rhino" has 14 health
+"""))
+        beat = cases[0].beats[0]
+        self.assertEqual(
+            (beat.option, beat.card, beat.payment, beat.targets),
+            ("Play", "Speed Cyclone", 2, ("Rhino", "Shocker")))
+
+    def test_a_targetless_payment_amount_is_supported(self):
+        cases = ParseFeature(Feature("""
+  Scenario: one
+    When I choose "Action" on "Some Card" paying 0 resources
+    Then "Rhino" has 14 health
+"""))
+        beat = cases[0].beats[0]
+        self.assertEqual((beat.payment, beat.targets), (0, ()))
+
+    def test_payment_uses_the_exact_catalogue_spelling(self):
+        with self.assertRaises(GherkinError):
+            ParseFeature(Feature("""
+  Scenario: one
+    When I choose "Action" on "Some Card" paying 1 resource
+    Then "Rhino" has 14 health
+"""))
+
+    def test_a_payment_amount_survives_a_json_round_trip(self):
+        case = MakeCase(beats=(WhenStep(
+            option="Play", card="Speed Cyclone", payment=2,
+            targets=("Rhino", "Shocker")), ThenStep("Rhino", "health", 14)))
+        again = SpecCase.FromJson(case.ToJson())
+        self.assertEqual(again.beats, case.beats)
+
+    def test_a_negative_payment_amount_is_rejected(self):
+        with self.assertRaises(SpecCaseError):
+            WhenStep(option="Play", card="Speed Cyclone", payment=-1)
 
     def test_and_continues_the_clause_above_it(self):
         cases = ParseFeature(Feature("""

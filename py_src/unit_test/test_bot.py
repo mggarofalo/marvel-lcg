@@ -229,6 +229,68 @@ class TestCommandBuilding(unittest.TestCase):
         self.assertIsNotNone(command)
         self.assertEqual(command.resources, ['51', '52', '53'])
 
+    def test_an_explicit_payment_takes_exactly_the_requested_amount(self):
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '0', 'rule': ['Variable'], 'payment': [
+                {'51': 'R'}, {'52': 'B'}, {'53': 'Y'},
+            ]}},
+        ))
+        payment = BotCommand.BuildPayment(options[0], [], amount=2)
+        self.assertEqual(payment, [51, 52])
+
+    def test_an_explicit_payment_counts_icons_not_cards(self):
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '0', 'rule': ['Variable'], 'payment': [
+                {'51': 'RR'}, {'52': 'B'},
+            ]}},
+        ))
+        self.assertEqual(
+            BotCommand.BuildPayment(options[0], [], amount=2), [51])
+        self.assertEqual(
+            BotCommand.BuildPayment(options[0], [], amount=1), [52])
+
+    def test_a_cost_reduction_contributes_zero_to_the_explicit_amount(self):
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '1', 'rule': [], 'payment': [
+                {'51': '-1'}, {'52': 'B'},
+            ]}},
+        ))
+        self.assertEqual(
+            BotCommand.BuildPayment(options[0], [], amount=0), [51])
+
+    def test_an_explicit_payment_respects_the_printed_cost(self):
+        # Paying one is numerically exact, but a physical cannot meet mental.
+        # The later wild is the first exact legal combination.
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': 'B', 'rule': [], 'payment': [
+                {'51': 'R'}, {'52': 'G'},
+            ]}},
+        ))
+        self.assertEqual(
+            BotCommand.BuildPayment(options[0], [], amount=1), [52])
+
+    def test_an_explicit_zero_is_not_the_default_maximal_payment(self):
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '0', 'rule': ['Variable'], 'payment': [
+                {'51': 'R'}, {'52': 'B'},
+            ]}},
+        ))
+        self.assertEqual(BotCommand.BuildPayment(options[0], [], amount=0), [])
+        self.assertEqual(BotCommand.BuildPayment(options[0], []), [51, 52])
+
+    def test_an_explicit_zero_is_valid_when_an_option_has_no_payment(self):
+        option = ParseOptions(MakeOptionJson())[0]
+        self.assertEqual(BotCommand.BuildPayment(option, [], amount=0), [])
+        self.assertIsNone(BotCommand.BuildPayment(option, [], amount=1))
+
+    def test_an_unavailable_explicit_amount_is_refused(self):
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '0', 'rule': ['Variable'], 'payment': [
+                {'51': 'RR'}, {'52': 'B'},
+            ]}},
+        ))
+        self.assertIsNone(BotCommand.BuildPayment(options[0], [], amount=4))
+
     def test_a_free_card_still_pays_nothing_for_it(self):
         # Same cost text, no rule. Nothing about "0" changed.
         options = ParseOptions(MakeOptionJson(

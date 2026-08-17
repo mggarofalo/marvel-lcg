@@ -138,17 +138,33 @@ action. `decision.world` is the board right after the previous decision
 resolved, and it is the only place an intermediate `Then` is observable — once
 the engine unwinds, those states are gone.
 
-**The transcript states the choice and the targets; the payment follows from the
-hand.** There is no step that says how much was spent — the runner delegates to
-`BotCommand.BuildPayment`, which walks the hand in engine order. For a fixed
-cost that is unambiguous and several files lean on it. For a cost whose *size*
-is the effect — a printed X, or "spend up to N" — it means **the hand is the
-payment**: everything on offer is spent, up to the ceiling, so a hand of the
-card plus two fillers is X = 2. That is what makes `14006`, `22010`, `58018` and
-`26022` specifiable at all (MARVEL-135), and it is why their scenarios set the
-hand exactly and differ from each other by one card. MARVEL-136 asks for a step
-that states an amount outright; until it lands, say it with the hand and say so
-in the header.
+**A transcript can state an exact resource payment.** The two canonical forms
+are:
+
+```gherkin
+When I choose "<option>" on "<card>" paying <n> resources
+When I choose "<option>" on "<card>" paying <n> resources targeting "<card>", "<card>"
+```
+
+The amount is the value of the resource icons sent in the same
+`CommandDescriptor` as the choice and targets. A double-resource card counts as
+two; a cost reduction counts as zero. The runner chooses the first exact legal
+combination in engine order, so a transcript stays independent of object ids.
+`paying 0 resources` is explicit and differs from omitting the clause: without
+it, `BotCommand.BuildPayment` retains its ordinary policy, including maximal
+payment for X and “spend up to N” costs.
+
+The stated amount is a requirement, not a hint. If no legal combination totals
+that amount, or if that amount does not meet the printed cost and payment
+rules, the action is unplayable. The runner does not fall back to another
+amount. A resource ability can make a nested choice and generate less than its
+affordability descriptor advertised, so the runner also checks the resources
+actually generated after resolution. Either mismatch is unplayable, and
+validation classifies the scenario as `FAIL-spec-wrong`. This exact spelling
+and behavior are the C# Reqnroll binding contract. Card and counter costs remain
+separate engine decisions whose concrete targets are named by their own
+transcript beats; this amount only controls the option's attached resource
+payment.
 
 ## Naming cards
 
@@ -458,7 +474,8 @@ Read the catalogue for the current list. The shape:
   `my deck at setup is` / `the encounter deck at setup is` for the one case
   where the deck has to exist before `GameSetup()` runs
 - **When** — `I play`, `I choose`, `I attack`, `I thwart`, `I change form`,
-  `I pass`, each optionally `targeting "<card>"`
+  `I pass`, each optionally `targeting "<card>"`; `I choose` also has exact
+  `paying <n> resources` forms with and without targets
 - **Then** — `I am prompted to choose one` + table, `I am not prompted again`,
   `I cannot attack "<card>"`, `the target maximum for "<option>" is <n>`, card state
   (`has <n> damage`, `has <n> "<icon>" resource icons`,

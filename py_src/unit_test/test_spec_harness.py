@@ -505,6 +505,99 @@ class TestAgainstTheEngine(unittest.TestCase):
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
 
+    def test_an_explicit_variable_payment_controls_the_effect(self):
+        case = MakeCase(
+            name="explicit variable payment",
+            heroes=("quicksilver",),
+            given=(
+                HERO_FORM,
+                GivenStep("in_play", ("Hydra Mercenary",)),
+                GivenStep("hand", (
+                    "Speed Cyclone", "Always Be Running", "Always Be Running")),
+            ),
+            beats=(
+                WhenStep(
+                    option="Play", card="Speed Cyclone", payment=1,
+                    targets=("Rhino", "Hydra Mercenary")),
+                ThenStep("Rhino", "stunned", True),
+                ThenStep("Hydra Mercenary", "stunned", False),
+                ThenStep("player", "hand_size", 1),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_an_unaffordable_explicit_payment_is_unplayable(self):
+        """The runner must not fall back to its maximal variable payment."""
+        case = MakeCase(
+            name="unaffordable explicit payment",
+            heroes=("quicksilver",),
+            given=(
+                HERO_FORM,
+                GivenStep("in_play", ("Hydra Mercenary",)),
+                GivenStep("hand", (
+                    "Speed Cyclone", "Always Be Running", "Always Be Running")),
+            ),
+            beats=(
+                WhenStep(
+                    option="Play", card="Speed Cyclone", payment=3,
+                    targets=("Rhino", "Hydra Mercenary")),
+                ThenStep("player", "hand_size", 0),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("cannot be paid with exactly 3 resources", result.Describe())
+
+    def test_a_dynamic_resource_ability_must_generate_the_exact_amount(self):
+        """SP//dr Suit advertises every Interface, then exhausts only those chosen."""
+        case = MakeCase(
+            name="dynamic exact payment",
+            heroes=("sp_dr",),
+            given=(
+                HERO_FORM,
+                GivenStep("in_play", ("Host Spider",)),
+                GivenStep("in_play", ("Hydra Mercenary",)),
+                GivenStep("hand", ("Speed Cyclone",)),
+            ),
+            beats=(
+                WhenStep(
+                    option="Play", card="Speed Cyclone", payment=2,
+                    targets=("Rhino", "Hydra Mercenary")),
+                WhenStep(
+                    option="Pay cost Exhaust", card="SP//dr Suit",
+                    targets=("Host Spider",)),
+                ThenStep("Rhino", "stunned", True),
+                ThenStep("Hydra Mercenary", "stunned", False),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn(
+            "required exactly 2 resources, but the selected payment effects "
+            "generated 1", result.Describe())
+
+    def test_reusing_an_effect_keeps_each_exact_payment_separate(self):
+        case = MakeCase(
+            name="same effect twice",
+            heroes=("captain_marvel",),
+            given=(
+                HERO_FORM,
+                GivenStep("in_play", ("Energy Channel",)),
+                GivenStep("hand", (
+                    "Crisis Interdiction", "Crisis Interdiction",
+                    "Crisis Interdiction")),
+            ),
+            beats=(
+                WhenStep(option="Action", card="Energy Channel", payment=1),
+                ThenStep("Energy Channel", "counter:energy", 1),
+                WhenStep(option="Action", card="Energy Channel", payment=2),
+                ThenStep("Energy Channel", "counter:energy", 3),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
     def test_given_steps_put_cards_where_the_scenario_says(self):
         case = MakeCase(
             name="given builds the board",
