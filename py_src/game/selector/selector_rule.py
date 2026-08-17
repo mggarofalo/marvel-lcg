@@ -145,25 +145,57 @@ class SelectorRule:
 
     def AfterSelectTargets(self, effect: 'Effect', targets: Sequence['CardFace'], range: Tuple[int, int]) -> bool:
         from game.operate.faces_counter import FacesCounter
+        from game.card.face.base import Villain
         from game.card.face.card_type import Minion
         from game.effect.effect_failure import EffectFailure
+        from game.selector.factory import Select
 
         if not self.select_rule.startswith('VillainAndMinions'):
             if not (range[0] <= len(targets) <= range[1]):
                 effect.failures.Set(None, EffectFailure.TargetNum)
                 return False
         else:
-            player = None
-            for face in targets:
-                if Minion.IsType(face):
-                    player = face.GetEngagedPlayer()
-                    break
+            # The browser treats EncounterVillain and Leader as the villain;
+            # both derive from Villain in Python. These selectors deliberately
+            # skip the ordinary numeric range because they mean "the villain
+            # and every matching minion", but that still requires exactly one
+            # villain (MARVEL-128).
+            if sum(Villain.IsType(face) for face in targets) != 1:
+                effect.failures.Set(None, EffectFailure.TargetNum)
+                return False
+
+            if self.select_rule == "VillainAndMinionsEngagedWithYou":
+                player = Select.GetYou(effect)
+            else:
+                player = next(
+                    (face.GetEngagedPlayer() for face in targets
+                     if Minion.IsType(face)),
+                    None,
+                )
+
             for face in targets:
                 if Minion.IsType(face):
                     if player != face.GetEngagedPlayer():
                         effect.failures.Set(player, EffectFailure.EngagedDifferentPlayer)
                         return False
-            pass
+
+            # Unlike an ordinary "All" range, SamePlayer chooses one player's
+            # group from a pool containing every player's minions. The client
+            # therefore checks the unchosen legal targets explicitly. Mirror
+            # that here: once the player is known, every minion engaged with
+            # that player must be present. WithYou already has a player before
+            # this check; SamePlayer deliberately refuses villain-only if any
+            # minion remains in the pool, matching the client's `player_id ==
+            # -1` case (MARVEL-128).
+            legal_minions = [face for face in effect.context.all_legal_targets
+                             if Minion.IsType(face)]
+            if player is None and legal_minions:
+                effect.failures.Set(None, EffectFailure.TargetNum)
+                return False
+            for face in legal_minions:
+                if face.GetEngagedPlayer() == player and face not in targets:
+                    effect.failures.Set(player, EffectFailure.TargetNum)
+                    return False
 
         # "Choose up to 3 *different* cards". Two copies of one title are one
         # card for the purpose of card abilities, so the second copy is not an
@@ -230,8 +262,7 @@ class SelectorRule:
             icon = FacesCounter.GetPrintedResourcesIcon(targets, "Auto")
             if icon < self.combined_resource_icons[0]:
                 return False
-            if icon > self.combined_resource_icons[0]:
+            if icon > self.combined_resource_icons[1]:
                 return False
 
         return True
-
