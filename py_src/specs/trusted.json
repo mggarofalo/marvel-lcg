@@ -1225,20 +1225,24 @@
       "sha256": "8b59349de222821be680a60563339e1c87a80329305569f468190a8b520550c4",
       "source": "specs/cards/core/01005-swinging-web-kick.feature"
     },
+    "T'Challa :: Foresight may take the only card in the deck": {
+      "sha256": "195692c9f02186d7d7289b09fdec1fbf147371d456e2f158923f9f8904a8a31d",
+      "source": "specs/cards/core/01040b-tchalla.feature"
+    },
     "T'Challa :: Foresight searches the deck for a Black Panther upgrade and adds it to hand": {
-      "sha256": "2ebe8a29c2668b7b512d796def1fea621331900f43abbae3cdb825e802ea78af",
+      "sha256": "195692c9f02186d7d7289b09fdec1fbf147371d456e2f158923f9f8904a8a31d",
       "source": "specs/cards/core/01040b-tchalla.feature"
     },
     "T'Challa :: Recover heals his printed REC of 4": {
-      "sha256": "2ebe8a29c2668b7b512d796def1fea621331900f43abbae3cdb825e802ea78af",
+      "sha256": "195692c9f02186d7d7289b09fdec1fbf147371d456e2f158923f9f8904a8a31d",
       "source": "specs/cards/core/01040b-tchalla.feature"
     },
     "T'Challa :: the end phase draws him back up to his printed hand size of 6": {
-      "sha256": "2ebe8a29c2668b7b512d796def1fea621331900f43abbae3cdb825e802ea78af",
+      "sha256": "195692c9f02186d7d7289b09fdec1fbf147371d456e2f158923f9f8904a8a31d",
       "source": "specs/cards/core/01040b-tchalla.feature"
     },
     "T'Challa :: with no Black Panther upgrade in the deck Foresight adds nothing": {
-      "sha256": "2ebe8a29c2668b7b512d796def1fea621331900f43abbae3cdb825e802ea78af",
+      "sha256": "195692c9f02186d7d7289b09fdec1fbf147371d456e2f158923f9f8904a8a31d",
       "source": "specs/cards/core/01040b-tchalla.feature"
     },
     "Tactical Genius :: as a step that is not the final one it removes 1": {

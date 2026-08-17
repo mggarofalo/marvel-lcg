@@ -268,7 +268,24 @@ class PlayerAction:
         effects = self.ChooseAbilities(by_effect, *abilities, cancel_ability)
         if effects and effects[0].ability == cancel_ability:
             return None
-        return effects[0]
+        # `if effects and ...` on the line above concedes the list can be empty,
+        # and this used to index it anyway (MARVEL-126) -- the same defect
+        # MARVEL-119 fixed one method away in `DiscardDeckTopCard`. The declared
+        # return is already `Effect|None`, so no caller changes.
+        #
+        # No board reaches it today, and the useful half of that is *why*.
+        # `ChooseAbilities` returns `[]` only when `ChooseAbilitiesHelper`
+        # returns `None`, which needs `ChooseEffects` to see an empty
+        # `FilterAvailableEffects`. Two things empty it wholesale and both are
+        # closed to this call site: the `CanBeInstead`/`is_be_instead` early
+        # return needs a message class `WhenPlayerChooseAbility` is not, and the
+        # `CACHE_BASED_FAST_UNDO` narrowing needs an `undo_handle`, which
+        # `ChooseEffects` passes as `None`. What is left is every effect failing
+        # `CheckCondition` -- including `cancel_ability`, which is a bare
+        # `ForChoiceAbility` with no condition, no cost and no selector to fail
+        # on. Reopen either of those two and this becomes live, which is what
+        # `unit_test/test_may_choose_one.py` is watching for.
+        return effects[0] if effects else None
 
     # effects[force_index] = fallthrough_effect
     def ChoiceAndSpellEffect(self, filtered_effects: List['Effect'], message: 'Message2', priority: 'TimingPriority', forced: bool|Literal["Forced_Action"]=False) -> Tuple['Effect|None', bool]:
