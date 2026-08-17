@@ -184,6 +184,14 @@ class TestGherkinParsing(unittest.TestCase):
         beat = cases[0].beats[0]
         self.assertEqual((beat.payment, beat.targets), (0, ()))
 
+    def test_payment_uses_the_exact_catalogue_spelling(self):
+        with self.assertRaises(GherkinError):
+            ParseFeature(Feature("""
+  Scenario: one
+    When I choose "Action" on "Some Card" paying 1 resource
+    Then "Rhino" has 14 health
+"""))
+
     def test_a_payment_amount_survives_a_json_round_trip(self):
         case = MakeCase(beats=(WhenStep(
             option="Play", card="Speed Cyclone", payment=2,
