@@ -56,7 +56,10 @@ import unittest
 import engine  # noqa: F401  pylint: disable=unused-import
 
 from game.card.card_finder import CardFinder
+from game.card.factory import CardFactory
 from game.card.face.base import Unit2
+from game.operate.enemies import Enemies
+from game.operate.faces import Faces
 from game.puzzle.puzzle import RunPuzzle
 from game.world import digest
 from tools.spec.case import SpecCase, ThenStep
@@ -70,13 +73,13 @@ AUNT_MAY = "01006"               # the filler under it: a support, no health
 DRONE = "ultron_facedown_drone"
 
 
-def NewWorld():
-    """A solo Rhino board: villain, main scheme, identity and nothing else."""
+def NewWorld(heroes=("spider_man",)):
+    """A Rhino board with the requested identities and nothing else."""
     EnsureEngine()
     case = SpecCase(
         name="a drone arrives at full health",
         scenario="rhino",
-        heroes=("spider_man",),
+        heroes=heroes,
         beats=(ThenStep("Rhino", "health", 14),),
     )
     game = NewGameForCase(case, TranscriptPolicy())
@@ -151,6 +154,69 @@ class TestTheGrantedStatLine(DroneTestCase):
 
         self.assertNotEqual(self.card.face.paper.card_id, DRONE)
         self.assertEqual(self.card.area.deck_type.name, "DiscardPile")
+
+
+class TestDefeatedDronesReturnToTheirOwners(unittest.TestCase):
+    """The generic defeat rule implements Ultron Drones' printed response.
+
+    A facedown drone keeps the card and owner it had before its face was
+    replaced. Defeat resets that printed face before choosing a discard pile,
+    so the result depends on ownership rather than on who the minion happened
+    to engage. The encounter-owned case is reachable when encounter cards have
+    been shuffled into a player deck, as Mysterio's set does.
+    """
+
+    def setUp(self):
+        self.world = NewWorld(("spider_man", "captain_marvel"))
+        self.players = self.world.const_seat_order_players
+        self.puzzle = RunPuzzle(self.world)
+        self.puzzle.PutIntoPlay(ULTRON_DRONES)
+
+    def MakePlayerOwnedDrone(self, player, card_id=AUNT_MAY):
+        card = CardFactory.GenerateCard(card_id, player.player_deck, self.world)
+        Enemies.PutYouDeckTopCardAsFacedownMinion(
+            player, "Drone Minion", self.puzzle.debug_rule)
+        self.assertEqual(card.face.paper.card_id, DRONE)
+        return card
+
+    def Defeat(self, card):
+        card.face.TakeDamage(card.face, 1, self.puzzle.debug_rule)
+
+    def test_a_second_players_drone_returns_to_that_players_discard_pile(self):
+        owner = self.players[1]
+        card = self.MakePlayerOwnedDrone(owner)
+
+        self.Defeat(card)
+
+        self.assertIs(card.area, owner.discard_pile)
+        self.assertEqual(card.face.paper.card_id, AUNT_MAY)
+
+    def test_a_transferred_drone_returns_to_its_owner_not_the_engaged_player(self):
+        owner, engaged_player = self.players
+        card = self.MakePlayerOwnedDrone(owner)
+        self.assertTrue(card.face.EngagePlayer(engaged_player,
+                                               self.puzzle.debug_rule))
+        self.assertIs(card.face.GetEngagedPlayer(), engaged_player)
+
+        self.Defeat(card)
+
+        self.assertIs(card.area, owner.discard_pile)
+        self.assertNotIn(card, engaged_player.discard_pile.cards)
+
+    def test_an_encounter_owned_drone_returns_to_the_encounter_discard_pile(self):
+        player = self.players[0]
+        self.puzzle.CreateEncounterDeck("27092")  # Mysterio encounter card
+        face = self.puzzle.FindOrCreateFace("27092")
+        card = face.card
+        Faces.MoveAllTo([face], player.player_deck, self.puzzle.debug_rule)
+        Enemies.PutYouDeckTopCardAsFacedownMinion(
+            player, "Drone Minion", self.puzzle.debug_rule)
+        self.assertEqual(card.face.paper.card_id, DRONE)
+
+        self.Defeat(card)
+
+        self.assertIs(card.area, self.world.scenario.encounter_discard_pile)
+        self.assertEqual(card.face.paper.card_id, "27092")
 
 
 class TestAFullHealthDroneIsNotAHealingTarget(DroneTestCase):
