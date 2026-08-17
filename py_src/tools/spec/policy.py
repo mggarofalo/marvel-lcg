@@ -550,7 +550,7 @@ class TranscriptPolicy(BotPolicy):
             elif isinstance(beat, PromptStep):
                 self.Record(beat, False,
                             "the game ended before the engine asked this")
-            elif isinstance(beat, (CannotStep, LimitStep)):
+            elif isinstance(beat, (NotOfferedStep, CannotStep, LimitStep)):
                 # A restriction is a claim about a decision, so with no decision
                 # left there is nothing to check. It does not pass by default:
                 # "the engine never offered the chance" and "the engine offered

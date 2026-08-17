@@ -378,7 +378,7 @@ class EffectChecker:
             # exception: reduce its demand before applying the shared check.
             requires_affordability = (
                 self.ability.flags.is_choose_ability or
-                self.ability.flags.is_action
+                (self.ability.flags.is_action and not self.ability.is_play)
             )
             if self.effect.context.pay_as_much_as_possible:
                 assert self.ability.flags.is_choose_ability

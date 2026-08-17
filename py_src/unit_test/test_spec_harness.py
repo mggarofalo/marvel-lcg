@@ -470,6 +470,18 @@ class TestDecisionBudget(unittest.TestCase):
         # The failure is recorded once, not re-reported per unwinding decision.
         self.assertEqual(policy.failure.count("gave up"), 1)
 
+    def test_not_offered_needs_a_decision_to_observe(self):
+        """A game ending first cannot prove that an option was absent."""
+        from tools.spec.policy import TranscriptPolicy
+        policy = TranscriptPolicy(
+            beats=(NotOfferedStep(option="Action", card="Vision"),))
+
+        policy.Finish(None)
+
+        self.assertEqual(len(policy.results), 1)
+        self.assertFalse(policy.results[0].passed)
+        self.assertTrue(policy.results[0].unresolvable)
+
 
 ################################################################################
 # End to end -- these boot the engine.
@@ -621,6 +633,20 @@ class TestAgainstTheEngine(unittest.TestCase):
                 GivenStep("hand", ("Energy",)),
             ),
             beats=(NotOfferedStep(option="Action", card="Vision"),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
+        self.assertIn("offered", result.Failures()[0].message)
+
+    def test_unaffordable_event_play_remains_offered(self):
+        """Event Play entries keep the established visible-menu contract."""
+        case = MakeCase(
+            name="unaffordable event remains visible",
+            given=(
+                HERO_FORM,
+                GivenStep("hand", ("Swinging Web Kick",)),
+            ),
+            beats=(NotOfferedStep(option="Play", card="Swinging Web Kick"),),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
