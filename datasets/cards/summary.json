@@ -27,8 +27,8 @@
   "stratification": {
     "no_imperative_handler": {
       "rule": "Card scripts whose syntax tree contains no function defined inside another -- purely declarative AbilityFactory calls, so the least spec attention is needed.",
-      "scripts": 531,
-      "cards": 602
+      "scripts": 532,
+      "cards": 604
     },
     "suspends_for_player_choice": {
       "rule": "Card scripts calling a method of PlayerAsk (game/player/model/player_ask.py) or one of ChooseAbilities / MayChooseOneAbility / AskSpendResources (game/player/action/player_action.py). These suspend mid-resolution for a player answer and deserve the most spec attention. Random-choice helpers are excluded -- they suspend nothing.",
@@ -76,7 +76,7 @@
     "files": 3457,
     "claimed_by_a_card": 3453,
     "unclaimed": 4,
-    "total_lines": 98084,
+    "total_lines": 98081,
     "distinct_ability_factories": 304,
     "ability_factories": {
       "WhenThisRevealed": 683,
@@ -129,11 +129,11 @@
       "AfterMinionEngagePlayer": 17,
       "ThisEnterPlayWithCounters": 17,
       "WhenUnitDefendAgainstAttack": 17,
-      "AfterUnitBeDefeated": 16,
       "Otherwise": 16,
       "ReduceCostToPlayThis": 16,
       "WhenUnitUseBasicPower": 16,
       "AfterEnemyActivationEnd": 15,
+      "AfterUnitBeDefeated": 15,
       "AfterResolveVillainPhaseStep": 14,
       "UnitCannotAttackTarget": 13,
       "WhenEnemyActivateAgainstYou": 12,
