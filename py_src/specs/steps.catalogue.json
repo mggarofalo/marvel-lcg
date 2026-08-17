@@ -71,7 +71,8 @@
       "it is the \"<phase>\" phase",
       "I cannot choose \"<option>\" targeting \"<card>\"",
       "the legal targets for \"<option>\" are",
-      "the target maximum for \"<option>\" is <n>"
+      "the target maximum for \"<option>\" is <n>",
+      "the target minimum for \"<option>\" is <n>"
     ],
     "when": [
       "I play \"<card>\"",

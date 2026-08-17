@@ -379,9 +379,11 @@ Prefer both to the older workaround of building a board where the illegal
 candidate is the only one and asserting it survived. That reads like full
 coverage and is not.
 
-A third step says **how many** of those targets may be taken (MARVEL-120):
+A third pair says **how many** of those targets must and may be taken
+(MARVEL-120 / MARVEL-134):
 
 ```gherkin
+    Then the target minimum for "Play" is 1
     Then the target maximum for "Play" is 3
 ```
 
@@ -406,6 +408,16 @@ candidate count. And for a selector with no printed maximum (`range=(1, "All")`,
 which is what "each X you control" compiles to) the number is the board's rather
 than the card's, which is a claim worth making in its own right:
 `specs/rules/target-counts.feature` states both shapes side by side.
+
+The minimum form is the exact counterpart and reads `target_num_range[0]` from
+the same live option. It is also equality: "at least 1" would accept an engine
+that accidentally required 2. The value is the **effective** floor, not the raw
+card-script range. `range="All"` therefore produces 2 on a board with two legal
+targets and 3 on a board with three; if a dynamic floor crosses a clamped
+ceiling, `Selector.GetTargetRange` lowers it to that ceiling. If the board cannot
+satisfy a raw floor at all, the option is filtered out and the assertion is
+unresolvable. These are client-visible semantics, which is why the C# Reqnroll
+binding must inspect its offered option rather than card-definition metadata.
 
 One more decision assertion says a card-bound option is absent (MARVEL-130):
 
@@ -477,7 +489,8 @@ Read the catalogue for the current list. The shape:
   `I pass`, each optionally `targeting "<card>"`; `I choose` also has exact
   `paying <n> resources` forms with and without targets
 - **Then** — `I am prompted to choose one` + table, `I am not prompted again`,
-  `I cannot attack "<card>"`, `the target maximum for "<option>" is <n>`, card state
+  `I cannot attack "<card>"`, `the target minimum for "<option>" is <n>`,
+  `the target maximum for "<option>" is <n>`, card state
   (`has <n> damage`, `has <n> "<icon>" resource icons`,
   `is in the "<zone>"`, `is [not] stunned`), my state
   (`I have <n> cards in hand`), another player's state

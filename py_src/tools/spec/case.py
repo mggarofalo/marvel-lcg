@@ -16,7 +16,7 @@ the *number of prompts* implicitly. A scenario written that way passes against
 an engine that asks a different set of questions and lands on the same final
 state, which is exactly the failure the format exists to prevent (MARVEL-22).
 
-Eight kinds of beat:
+Nine kinds of beat:
 
 - `WhenStep`      answer the decision the engine is currently asking
 - `PromptStep`    assert what the engine is asking, and with which options
@@ -24,7 +24,8 @@ Eight kinds of beat:
 - `NotOfferedStep` assert an option bound to a card is absent
 - `CannotStep`    assert an action will not take a card as its target
 - `TargetsStep`   assert which cards an offered option will take
-- `LimitStep`     assert how many of them it will take
+- `MinimumStep`   assert the fewest of them it will take
+- `LimitStep`     assert the most of them it will take
 - `ThenStep`      assert one thing about readable state
 
 `GivenStep` stays a block ahead of the transcript: it builds the board before
@@ -328,6 +329,45 @@ class LimitStep:
 
 
 @dataclass(frozen=True)
+class MinimumStep:
+    """Assert the fewest targets an offered option will take.
+
+    This is the floor counterpart to `LimitStep`. It reads
+    `target_num_range[0]` from the live option, so it records the selector's
+    *effective* floor rather than trying to recover its raw card-script range.
+    For `range="All"`, that floor is the number of legal candidates currently
+    on the board. A raw floor the board cannot satisfy produces no offered
+    option at all, and is therefore unresolvable rather than a different
+    minimum.
+
+    The sentence says "is N" because this is equality. "At least N" would let
+    a runner accept a floor that is too high and would give the future C#
+    binding a looser contract than the Python implementation.
+    """
+
+    option: str
+    minimum: int
+
+    kind = "minimum"
+
+    def __post_init__(self) -> None:
+        if not self.option:
+            raise SpecCaseError("a target-minimum assertion needs an option")
+        if self.minimum < 1:
+            raise SpecCaseError(
+                f"the target minimum for {self.option!r} is {self.minimum}; a "
+                f"minimum below 1 is an optional/no-target selector rather "
+                f"than a printed target requirement")
+
+    def Describe(self) -> str:
+        return f"the target minimum for {self.option!r} is {self.minimum}"
+
+    def ToDict(self) -> Dict[str, Any]:
+        return {"kind": "minimum", "option": self.option,
+                "minimum": self.minimum}
+
+
+@dataclass(frozen=True)
 class PromptStep:
     """Assert the engine is asking, and with exactly these options.
 
@@ -495,10 +535,10 @@ class ThenStep:
 
 
 Beat = Union[WhenStep, PromptStep, NoPromptStep, NotOfferedStep, CannotStep,
-             TargetsStep, LimitStep, ThenStep]
+             TargetsStep, MinimumStep, LimitStep, ThenStep]
 
 ASSERTION_KINDS = ("prompt", "no_prompt", "not_offered", "cannot", "targets",
-                   "limit", "then")
+                   "minimum", "limit", "then")
 
 
 def IsAction(beat: Beat) -> bool:
@@ -661,6 +701,9 @@ def BeatFromDict(item: Dict[str, Any]) -> Beat:
     if kind == "limit":
         return LimitStep(option=str(item.get("option", "")),
                          maximum=int(item.get("maximum", 0)))
+    if kind == "minimum":
+        return MinimumStep(option=str(item.get("option", "")),
+                           minimum=int(item.get("minimum", 0)))
     if kind == "then":
         return ThenStep(
             subject=str(item["subject"]),

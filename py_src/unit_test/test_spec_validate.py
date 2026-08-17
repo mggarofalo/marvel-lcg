@@ -629,6 +629,26 @@ class TestGherkinParsing(unittest.TestCase):
 """))
         self.assertIn("I cannot choose", str(caught.exception))
 
+    def test_the_target_floor_compiles_to_a_minimum_beat(self):
+        """MARVEL-134. The direct spelling of a required target count."""
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then the target minimum for "Play" is 2
+"""))[0]
+        beat = case.beats[0]
+        self.assertEqual((beat.kind, beat.option, beat.minimum),
+                         ("minimum", "Play", 2))
+        self.assertEqual(len(case.Assertions()), 1)
+
+    def test_a_floor_below_one_is_a_parse_error(self):
+        """Optional/no-target selectors are not printed target requirements."""
+        with self.assertRaises(GherkinError) as caught:
+            ParseFeature(Feature("""
+  Scenario: one
+    Then the target minimum for "Play" is 0
+"""))
+        self.assertIn("optional/no-target", str(caught.exception))
+
     def test_resource_icons_compile_to_a_property_read(self):
         """MARVEL-120. `RES` was the one printed attribute with no step.
 

@@ -58,8 +58,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
 
 from tools.spec.case import (
-    CannotStep, GivenStep, LimitStep, NoPromptStep, NotOfferedStep, PromptStep,
-    SourceDigest, SpecCase, TargetsStep,
+    CannotStep, GivenStep, LimitStep, MinimumStep, NoPromptStep, NotOfferedStep,
+    PromptStep, SourceDigest, SpecCase, TargetsStep,
     SpecCaseError, ThenStep, WhenStep)
 from tools.spec.resolve import SplitRefs
 from tools.spec.state import PHASE_NAMES
@@ -317,6 +317,13 @@ THEN_TABLE: Table = [
      Rx(r'the target maximum for ' + Q + r' is ' + N),
      lambda option, value: ("then", LimitStep(option=option,
                                               maximum=int(value)))),
+    # The floor counterpart. It reads the live effective range, not the raw
+    # selector spelling: see `MinimumStep` for the clamp and `range="All"`
+    # semantics that the C# binding must reproduce.
+    ('the target minimum for "<option>" is <n>',
+     Rx(r'the target minimum for ' + Q + r' is ' + N),
+     lambda option, value: ("then", MinimumStep(option=option,
+                                                minimum=int(value)))),
 
     # -- card state --------------------------------------------------------
     ('"<card>" has <n> health',

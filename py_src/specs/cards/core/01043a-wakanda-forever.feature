@@ -111,24 +111,12 @@ Feature: Wakanda Forever!
     And "Tactical Genius" is in play
     And the main scheme has 5 threat
 
+    Then the target minimum for "Play" is 2
+
     When I play "01043a"
     Then "Rhino" has 2 damage
     And the main scheme has 3 threat
     And I am not prompted again
-
-  # The claim this file cannot make: that naming *one* of the two upgrades is
-  # refused. The scenario above shows the engine resolving both when told
-  # nothing, which is the behaviour that matters, but the direct form -- submit
-  # a target list shorter than the minimum and require a refusal -- has no
-  # spelling. `I cannot choose "<option>" targeting "<card>"` is about a card
-  # not being a legal target, and Panther Claws is one; it just cannot be the
-  # only one. `the target maximum for "<option>" is <n>` (MARVEL-120) reads
-  # `target_num_range[1]` and has no counterpart reading `[0]`.
-  #
-  # So the floor is pinned by consequence and not by assertion. Filed as its
-  # own issue rather than papered over -- a step added to the closed vocabulary
-  # is a step the C# runner must bind too, and that is not a decision to make
-  # inside a card fix.
 
   @card:01043a
   Scenario: with no Black Panther upgrade in play the event is not offered
