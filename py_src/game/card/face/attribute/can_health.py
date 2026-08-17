@@ -561,11 +561,18 @@ class CanHealth(HasHealth):
     #
     @final
     def UpdateMaxHealth(self, value: int, by_effect: 'Effect'):
-        # The same in-play guard `UpdateHealth` applies, and for the same reason:
-        # `components.health` belongs to the *card*, not to this face, and a card
-        # that leaves play may have had it zeroed -- `Card.Reset` runs
-        # `Health.OnParentReset`, and a facedown Ultron drone reverting to the
-        # player card it was made from does exactly that.
+        # The same in-play guard `UpdateHealth` applies, but it must require this
+        # exact face. `components.health` belongs to the *card*, not to the face,
+        # and `CardFace.IsInPlay()` deliberately treats another face with the
+        # same name as equivalent. Villain stages share both a name and a card:
+        # removing The "Immortal" Klaw can defeat stage I, advance to stage II,
+        # and reveal the side scheme again between the health and max-health
+        # halves of this one mutation. The retired stage-I face must not then
+        # subtract from stage II's freshly reset maximum. See MARVEL-123.
+        #
+        # A card that leaves play may also have had the component zeroed --
+        # `Card.Reset` runs `Health.OnParentReset`, and a facedown Ultron drone
+        # reverting to the player card it was made from does exactly that.
         #
         # Without this, the two halves of `GainHealthAndMaxHealth` can disagree
         # about which object they are editing. Removing a +1 HP grant from a
@@ -573,7 +580,7 @@ class CanHealth(HasHealth):
         # to 0, kills it, and reverts the card to its printed face with the
         # component reset to 0; `GainOnlyMaxHealth(-1)` then subtracts from the
         # *fresh* component and leaves `max_health = -1`. See MARVEL-77.
-        if not self.IsInPlay():
+        if not self.IsInPlay(is_same_face=True):
             return
         self.components.health.AddMaxHealth(value)
 
@@ -643,4 +650,3 @@ class CanHealth(HasHealth):
             self.Defeated(None, by_effect)
         message = Message.AfterUnitHitPointSet(self.CastTo(Unit2), by_effect)
         message.Send()
-

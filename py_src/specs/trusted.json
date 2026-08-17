@@ -42,15 +42,15 @@
       "source": "specs/cards/core/01155-affairs-of-state.feature"
     },
     "Ancestral Knowledge :: \"up to\" allows fewer than three": {
-      "sha256": "20c0d32d6bd378b3d35b25b2ac765841e845be34b77087042e91135ad6cfe369",
+      "sha256": "ee70a04f34280759ada13ef4a306622d42ec335869927e2b79de42e85e0e3973",
       "source": "specs/cards/core/01042-ancestral-knowledge.feature"
     },
     "Ancestral Knowledge :: a hero is not offered the action at all": {
-      "sha256": "20c0d32d6bd378b3d35b25b2ac765841e845be34b77087042e91135ad6cfe369",
+      "sha256": "ee70a04f34280759ada13ef4a306622d42ec335869927e2b79de42e85e0e3973",
       "source": "specs/cards/core/01042-ancestral-knowledge.feature"
     },
     "Ancestral Knowledge :: three chosen cards leave the discard pile and the fourth stays": {
-      "sha256": "20c0d32d6bd378b3d35b25b2ac765841e845be34b77087042e91135ad6cfe369",
+      "sha256": "ee70a04f34280759ada13ef4a306622d42ec335869927e2b79de42e85e0e3973",
       "source": "specs/cards/core/01042-ancestral-knowledge.feature"
     },
     "Android Efficiency :: a [mental] cost this player cannot pay is not offered on the [mental] face": {
