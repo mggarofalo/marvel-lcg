@@ -278,6 +278,11 @@ class TestCommandBuilding(unittest.TestCase):
         self.assertEqual(BotCommand.BuildPayment(options[0], [], amount=0), [])
         self.assertEqual(BotCommand.BuildPayment(options[0], []), [51, 52])
 
+    def test_an_explicit_zero_is_valid_when_an_option_has_no_payment(self):
+        option = ParseOptions(MakeOptionJson())[0]
+        self.assertEqual(BotCommand.BuildPayment(option, [], amount=0), [])
+        self.assertIsNone(BotCommand.BuildPayment(option, [], amount=1))
+
     def test_an_unavailable_explicit_amount_is_refused(self):
         options = ParseOptions(MakeOptionJson(
             target_payment={'0': {'cost': '0', 'rule': ['Variable'], 'payment': [

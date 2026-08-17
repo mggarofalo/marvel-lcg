@@ -108,7 +108,7 @@ class BotCommand:
         """
         target_cost = option.GetTargetCost(targets)
         if target_cost is None:
-            return [] if amount is None else None
+            return [] if amount in (None, 0) else None
         if target_cost.cost in NO_COST_TEXTS and not target_cost.payment:
             if amount is None:
                 return []
