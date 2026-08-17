@@ -179,6 +179,24 @@ class SelectorRule:
                         effect.failures.Set(player, EffectFailure.EngagedDifferentPlayer)
                         return False
 
+            # Unlike an ordinary "All" range, SamePlayer chooses one player's
+            # group from a pool containing every player's minions. The client
+            # therefore checks the unchosen legal targets explicitly. Mirror
+            # that here: once the player is known, every minion engaged with
+            # that player must be present. WithYou already has a player before
+            # this check; SamePlayer deliberately refuses villain-only if any
+            # minion remains in the pool, matching the client's `player_id ==
+            # -1` case (MARVEL-128).
+            legal_minions = [face for face in effect.context.all_legal_targets
+                             if Minion.IsType(face)]
+            if player is None and legal_minions:
+                effect.failures.Set(None, EffectFailure.TargetNum)
+                return False
+            for face in legal_minions:
+                if face.GetEngagedPlayer() == player and face not in targets:
+                    effect.failures.Set(player, EffectFailure.TargetNum)
+                    return False
+
         # "Choose up to 3 *different* cards". Two copies of one title are one
         # card for the purpose of card abilities, so the second copy is not an
         # available second choice. This is the engine-side counterpart of

@@ -319,7 +319,7 @@ REVIEWED_SELECT_RULES = {
         "`SelectorRule.Process` drops a pool that cannot reach the minimum and "
         "`AfterSelectTargets` bounds the chosen set both ways, on "
         "`FacesCounter.GetPrintedCost`. This remains a distinct descriptor "
-        "name because shipped card scripts and saved inputs use it"),
+        "name because shipped card scripts emit it and clients consume it"),
     "CombinedPrintedCost": (ENFORCED, frozenset({FEASIBILITY, SELECTION}),
         "same two sites and the same `GetPrintedCost` call. MARVEL-128 kept "
         "both names as compatibility aliases: both have shipped callers, are "
@@ -334,9 +334,9 @@ REVIEWED_SELECT_RULES = {
     # RULE_FOR_UI
     "VillainAndMinionsEngagedSamePlayer": (ENFORCED, frozenset({SELECTION}),
         "`AfterSelectTargets` takes this branch through "
-        "`startswith('VillainAndMinions')` and rejects a selection whose "
-        "minions are not all engaged with one player. Selection only, and "
-        "correctly so: there is no pool that makes this infeasible in advance"),
+        "`startswith('VillainAndMinions')`, requires exactly one villain, and "
+        "requires every minion engaged with the selected player. Selection "
+        "only, and correctly so: the player group is chosen from the pool"),
     "VillainAndMinionsEngagedWithYou": (ENFORCED, frozenset({SELECTION}),
         "the same `startswith` branch. Since MARVEL-128 it matches the browser "
         "and the four printed cards: exactly one Villain (including a Leader) "
@@ -872,7 +872,7 @@ class TestCombinedValueRules(unittest.TestCase):
 
     Resource-icon selection used the lower bound twice, turning every range
     into an exact value. The two printed-cost spellings really are aliases, but
-    both are shipped descriptor names, so their compatibility and equal
+    both are shipped client-facing descriptor names, so their compatibility and equal
     behaviour are pinned rather than one name being silently removed.
     """
 
@@ -923,8 +923,14 @@ class TestVillainAndMinionRules(unittest.TestCase):
         def GetEngagedPlayer(self):
             return self.engaged_player
 
-    def Check(self, rule_name, targets, you=None):
+    class FakeContext:
+        def __init__(self, legal_targets):
+            self.all_legal_targets = legal_targets
+
+    def Check(self, rule_name, targets, you=None, legal_targets=None):
         effect = TestDifferentCardsIsEnforced().Effect()
+        effect.context = self.FakeContext(
+            targets if legal_targets is None else legal_targets)
         rule = SelectorRule(select_rule=rule_name)
         with patch.object(Villain, "IsType",
                           side_effect=lambda face: face.kind in {"villain", "leader"}), \
@@ -970,6 +976,19 @@ class TestVillainAndMinionRules(unittest.TestCase):
 
         self.assertTrue(accepted)
 
+    def test_with_you_requires_every_minion_engaged_with_you(self):
+        you = object()
+        villain = self.FakeFace("villain")
+        first = self.FakeFace("minion", you)
+        second = self.FakeFace("minion", you)
+
+        accepted, _ = self.Check(
+            "VillainAndMinionsEngagedWithYou", [villain, first], you,
+            legal_targets=[villain, first, second],
+        )
+
+        self.assertFalse(accepted)
+
     def test_a_leader_counts_as_the_one_villain(self):
         you = object()
         targets = [self.FakeFace("leader"), self.FakeFace("minion", you)]
@@ -986,6 +1005,43 @@ class TestVillainAndMinionRules(unittest.TestCase):
 
         accepted, _ = self.Check(
             "VillainAndMinionsEngagedSamePlayer", targets)
+
+        self.assertTrue(accepted)
+
+    def test_same_player_rule_requires_that_players_whole_group(self):
+        player = object()
+        villain = self.FakeFace("villain")
+        first = self.FakeFace("minion", player)
+        second = self.FakeFace("minion", player)
+
+        accepted, _ = self.Check(
+            "VillainAndMinionsEngagedSamePlayer", [villain, first],
+            legal_targets=[villain, first, second],
+        )
+
+        self.assertFalse(accepted)
+
+    def test_same_player_rule_does_not_require_another_players_group(self):
+        chosen_player = object()
+        other_player = object()
+        villain = self.FakeFace("villain")
+        chosen = self.FakeFace("minion", chosen_player)
+        other = self.FakeFace("minion", other_player)
+
+        accepted, _ = self.Check(
+            "VillainAndMinionsEngagedSamePlayer", [villain, chosen],
+            legal_targets=[villain, chosen, other],
+        )
+
+        self.assertTrue(accepted)
+
+    def test_same_player_rule_allows_villain_alone_when_no_minion_exists(self):
+        villain = self.FakeFace("villain")
+
+        accepted, _ = self.Check(
+            "VillainAndMinionsEngagedSamePlayer", [villain],
+            legal_targets=[villain],
+        )
 
         self.assertTrue(accepted)
 
