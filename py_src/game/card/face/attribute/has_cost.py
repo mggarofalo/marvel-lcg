@@ -2,6 +2,31 @@ from . import *
 
 class HasCost(HasAttribute):
 
+    @staticmethod
+    def IsVariableText(value: str) -> bool:
+        """Does this printed cost spell X?
+
+        `data/cards.json` has two spellings for the same thing -- "X" on Speed
+        Cyclone (14006) and Lethal Intent (22010), "-1" on Everywhere All at
+        Once (58018), which is how marvelsdb writes an X cost and is what
+        `datasets/cards/cards.json` carries as `stats.cost`. `ResRBYGA.FromText`
+        reads both as zero, because neither is a digit string. So an X cost has
+        always arrived here as
+        `Cost("0")`: indistinguishable from a card that is genuinely free, on
+        the wire as well as in the engine.
+
+        That is what made MARVEL-135 possible. The bot's planner pays the
+        least it legally can, zero satisfies a zero cost, and "Stun X enemies"
+        stunned nothing -- with no signal anywhere for a planner to notice
+        that this particular zero is a choice rather than a price.
+
+        Only the rule flag is set. The value stays 0, because it *is* 0 until
+        the player decides otherwise: `Effect.GetCostX` measures X after the
+        fact, as paid minus owed.
+        """
+        value = value.strip()
+        return value.upper() == "X" or (value.startswith("-") and value[1:].isdigit())
+
     @override
     def __init__(self, paper: 'Paper') -> None:
         self.printed_cost = Cost("0")
@@ -16,7 +41,7 @@ class HasCost(HasAttribute):
             if "*" in value:
                 self.printed_cost = Cost.FromText(str(self.FormatPlayerNumValue(value)))
             else:
-                self.printed_cost = Cost.FromText(value)
+                self.printed_cost = Cost.FromText(value, variable=HasCost.IsVariableText(value))
         self.RegisterAttribute("Cost", parse)
 
         def parse2(value: str):

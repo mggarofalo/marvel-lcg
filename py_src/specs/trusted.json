@@ -525,6 +525,22 @@
       "sha256": "5626592d10a56c11030c272e85500ac194147eaeeca14580b42906c765bdd079",
       "source": "specs/cards/reprints/17030-42015-ever-vigilant.feature"
     },
+    "Everywhere All at Once :: X schemes chosen for X paid removes 2 threat from each": {
+      "sha256": "8a33a0a049fec69908301057c81018bdda73327346275d591a5b98e58de4a389",
+      "source": "specs/cards/wonder_man/58018-everywhere-all-at-once.feature"
+    },
+    "Everywhere All at Once :: paying more than the schemes chosen removes 3 instead": {
+      "sha256": "8a33a0a049fec69908301057c81018bdda73327346275d591a5b98e58de4a389",
+      "source": "specs/cards/wonder_man/58018-everywhere-all-at-once.feature"
+    },
+    "Everywhere All at Once :: two resources of one type are still two resources": {
+      "sha256": "8a33a0a049fec69908301057c81018bdda73327346275d591a5b98e58de4a389",
+      "source": "specs/cards/wonder_man/58018-everywhere-all-at-once.feature"
+    },
+    "Everywhere All at Once :: with nothing to spend no scheme is chosen and no threat moves": {
+      "sha256": "8a33a0a049fec69908301057c81018bdda73327346275d591a5b98e58de4a389",
+      "source": "specs/cards/wonder_man/58018-everywhere-all-at-once.feature"
+    },
     "Eviction Notice :: declining the flip leaves only the random discard, and it resolves unasked": {
       "sha256": "b87be55b3f64521a4252fef83ce7e56a8ca2c963351c9f64dc6e9a2eb98c5795",
       "source": "specs/cards/core/01165-eviction-notice.feature"
@@ -793,6 +809,22 @@
       "sha256": "0b1b6dfc3a6fd4f78b6539e439cc4e93a6788196d3cdabed2feb17e533581529",
       "source": "specs/cards/core/01160-legal-work.feature"
     },
+    "Lethal Intent :: one resource spent resolves only the first upgrade named": {
+      "sha256": "6dcb0f0eb773418acc53af32768b061af362b1b64ae766a1a2aa6df9d1d20774",
+      "source": "specs/cards/nebu/22010-lethal-intent.feature"
+    },
+    "Lethal Intent :: the same one resource resolves whichever upgrade is named first": {
+      "sha256": "6dcb0f0eb773418acc53af32768b061af362b1b64ae766a1a2aa6df9d1d20774",
+      "source": "specs/cards/nebu/22010-lethal-intent.feature"
+    },
+    "Lethal Intent :: two resources spent resolves both chosen upgrades": {
+      "sha256": "6dcb0f0eb773418acc53af32768b061af362b1b64ae766a1a2aa6df9d1d20774",
+      "source": "specs/cards/nebu/22010-lethal-intent.feature"
+    },
+    "Lethal Intent :: with nothing left to spend the card resolves no Special at all": {
+      "sha256": "6dcb0f0eb773418acc53af32768b061af362b1b64ae766a1a2aa6df9d1d20774",
+      "source": "specs/cards/nebu/22010-lethal-intent.feature"
+    },
     "Lock and Load :: nobody is asked when there is no weapon upgrade to find": {
       "sha256": "ccde4e10e9502b0fd030dd21293f9ac4f377c9f45a0a2df70fef9c7b9f91882e",
       "source": "specs/cards/search/40019-lock-and-load.feature"
@@ -808,6 +840,22 @@
     "Lock and Load :: the search puts the weapon upgrade into play": {
       "sha256": "ccde4e10e9502b0fd030dd21293f9ac4f377c9f45a0a2df70fef9c7b9f91882e",
       "source": "specs/cards/search/40019-lock-and-load.feature"
+    },
+    "Machine Man :: a resource that does not fit under the ceiling is skipped, not final": {
+      "sha256": "d466e54d58936f10c18570d9b6d34c3563deb9898ccefeae68e5c1b3d31c998f",
+      "source": "specs/cards/vision/26022-machine-man.feature"
+    },
+    "Machine Man :: the printed 3 is a ceiling, not a demand": {
+      "sha256": "d466e54d58936f10c18570d9b6d34c3563deb9898ccefeae68e5c1b3d31c998f",
+      "source": "specs/cards/vision/26022-machine-man.feature"
+    },
+    "Machine Man :: three resources spent is three more attack": {
+      "sha256": "d466e54d58936f10c18570d9b6d34c3563deb9898ccefeae68e5c1b3d31c998f",
+      "source": "specs/cards/vision/26022-machine-man.feature"
+    },
+    "Machine Man :: with nothing to spend the ally attacks for its printed 1": {
+      "sha256": "d466e54d58936f10c18570d9b6d34c3563deb9898ccefeae68e5c1b3d31c998f",
+      "source": "specs/cards/vision/26022-machine-man.feature"
     },
     "Nick Fury :: damage is dealt to the chosen enemy, not the first one": {
       "sha256": "585ed44c484cf9b167cfd8648423f3ef4773992fab21db7c103e6158357764e8",
@@ -1144,6 +1192,22 @@
     "Sound Manipulation :: revealed to an alter-ego it heals Klaw 4 and does not surge": {
       "sha256": "6e78c8f1607a9b2e3f8447c5ae75a465b362fd9f589c015e35e330744a581ef1",
       "source": "specs/cards/core/01124-sound-manipulation.feature"
+    },
+    "Speed Cyclone :: one resource spent stuns only the first enemy named": {
+      "sha256": "4aeb6cc719ecf9bb04b72ec5e223604b2e13e568bf142a40044cb7e932cfc335",
+      "source": "specs/cards/qsv/14006-speed-cyclone.feature"
+    },
+    "Speed Cyclone :: one resource spent stuns whichever enemy is named first": {
+      "sha256": "4aeb6cc719ecf9bb04b72ec5e223604b2e13e568bf142a40044cb7e932cfc335",
+      "source": "specs/cards/qsv/14006-speed-cyclone.feature"
+    },
+    "Speed Cyclone :: two resources spent stuns two enemies": {
+      "sha256": "4aeb6cc719ecf9bb04b72ec5e223604b2e13e568bf142a40044cb7e932cfc335",
+      "source": "specs/cards/qsv/14006-speed-cyclone.feature"
+    },
+    "Speed Cyclone :: with nothing to spend X is zero and the card stuns nothing": {
+      "sha256": "4aeb6cc719ecf9bb04b72ec5e223604b2e13e568bf142a40044cb7e932cfc335",
+      "source": "specs/cards/qsv/14006-speed-cyclone.feature"
     },
     "Stampede :: a character the attack does not damage is not stunned": {
       "sha256": "8244019ecf9455298c101ce3f8345cbdfac0248f5623c6f88b640cf68b126a1a",

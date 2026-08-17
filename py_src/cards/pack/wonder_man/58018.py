@@ -8,7 +8,13 @@ def GetAbilities() -> Sequence['Ability']:
         this = effect.this.CastTo(Event)
         Unused(this)
 
-        paid = effect.GetPaidResources().GetResourceIconTypes()
+        # `.val`, not `GetResourceIconTypes()`. X on this card is the cost that
+        # was paid; the helper counts how many *kinds* of resource were spent,
+        # which is Jubilee's mechanic and not this one. Under it, two [[mental]]
+        # resources bought one scheme and paying five of a colour still bought
+        # one -- and "overpaid" meant "spent two colours". MARVEL-137, only
+        # observable once MARVEL-135 let this card be paid for at all.
+        paid = effect.GetPaidResources().val
         if paid > len(effect.targets):
             value = 3
         else:

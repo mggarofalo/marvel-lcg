@@ -11,6 +11,7 @@ what is affordable.
 """
 
 from core import *
+from engine.config import ConfigVariables
 from engine.log import Log
 from engine.device.manager.bot.policy import BotOption, BotTargetCost
 from game.scene.replay.operation import CommandDescriptor
@@ -19,6 +20,12 @@ CATEGORY_NAME = "BOT"
 
 # `Cost.text_legacy` values that mean "nothing to pay".
 NO_COST_TEXTS = ("", "0", "*")
+
+# Off restores the pre-MARVEL-135 planner exactly: every variable cost paid
+# with nothing. Kept because it is the behaviour any replay recorded before
+# this change was generated under, and because "how much" is a strategy
+# question this planner is not the right place to answer well.
+PAY_VARIABLE_COST = ConfigVariables.Bool('bot_pay_variable_cost', True)
 
 class BotCommand:
 
@@ -101,11 +108,31 @@ class BotCommand:
             return None
 
     @staticmethod
+    def IsSpendItsOwnEffect(target_cost: 'BotTargetCost') -> bool:
+        """Is the *size* of this payment the thing the card does?
+
+        Two rules say so, and they are not the same shape:
+
+          * `Variable` -- a printed X. The engine renders the cost as "0"
+            because X is 0 until it is chosen, so without this flag the
+            planner cannot tell Speed Cyclone from a free card at all.
+          * `UpTo` -- "spend up to 3", where the printed number is a ceiling
+            rather than a price. This one the planner could always see; it
+            just had no reason to look, because zero matches.
+
+        For both, the least legal answer is not a cheap answer -- it is the
+        card doing nothing. See MARVEL-135.
+        """
+        return "Variable" in target_cost.rule or "UpTo" in target_cost.rule
+
+    @staticmethod
     def BuildPaymentInternal(target_cost: 'BotTargetCost') -> 'List[int]|None':
         from game.element.cost import Cost
         from game.element.resources import Resources
 
-        if target_cost.cost in NO_COST_TEXTS:
+        maximal = BotCommand.IsSpendItsOwnEffect(target_cost) and PAY_VARIABLE_COST.value
+
+        if target_cost.cost in NO_COST_TEXTS and not maximal:
             return []
 
         cost = Cost(
@@ -114,7 +141,11 @@ class BotCommand:
             same_type       = ("SameType" in target_cost.rule) or None,
             different_type  = ("DifferentType" in target_cost.rule) or None,
             from_hand       = ("FromHand" in target_cost.rule) or None,
+            variable        = ("Variable" in target_cost.rule) or None,
         )
+
+        if maximal:
+            return BotCommand.BuildMaximalPayment(target_cost, cost)
 
         paid = Resources.FromText("0")
         chosen: List[int] = []
@@ -128,6 +159,39 @@ class BotCommand:
                 return chosen
 
         return None
+
+    @staticmethod
+    def BuildMaximalPayment(target_cost: 'BotTargetCost', cost: 'Cost') -> List[int]:
+        """Spend as much as this cost will take, in the order it was offered.
+
+        Deliberately the *whole* offer for a `Variable` cost rather than a
+        number picked to match the targets already chosen. Targets are settled
+        before payment (MARVEL-133), so bounding the spend by them would make
+        it impossible to overpay -- and Everywhere All at Once (58018) prints
+        a different effect for overpaying, which nothing could then reach.
+
+        Skips rather than stops on a resource that would break the match: an
+        `UpTo` ceiling of 3 with a 2 and a 4 on offer takes the 2, and a
+        greedy walk that returned at the first refusal would take neither.
+        Engine order throughout, so the plan is deterministic
+        (docs/rng-contract.md).
+
+        How much a bot *should* spend is strategy, and a maximum is only the
+        least bad answer that is not zero -- `BotCommand` is the shared
+        plumbing every policy inherits, so the knob is here and a policy that
+        wants to think about it should override rather than tune it.
+        """
+        from game.element.resources import Resources
+
+        paid = Resources.FromText("0")
+        chosen: List[int] = []
+        for payment in target_cost.payment:
+            more = paid + Resources.FromText(payment.res_text or "0")
+            if not more.IsMatchCost(cost):
+                continue
+            paid = more
+            chosen.append(payment.effect_id)
+        return chosen
 
     ################################################################################
     #

@@ -617,6 +617,37 @@ targets can be raised *after* the cost is known and the count becomes an
 ordinary bound. Settle it there deliberately rather than reproducing the
 workaround. See MARVEL-133.
 
+#### A cost of X is a cost of 0 wearing a rule flag
+
+The engine holds no number for X. `data/cards.json` spells it `"X"` (14006,
+22010) or `"-1"` (58018, which is how marvelsdb writes it), and
+`ResRBYGA.FromText` reads both as zero — neither is a digit string. So the
+printed cost of Speed Cyclone *is* `Cost("0")`, and the card is played for
+nothing. What X means is measured afterwards, by `Effect.GetCostX()`: resources
+paid minus cost owed. Overpaying a zero cost is how X gets a value at all.
+
+That is defensible — X really is zero until someone chooses otherwise — but it
+left the choice invisible. The option descriptor sent `cost: "0"` and an empty
+rule list: byte-identical to a genuinely free card, on the wire as well as in
+the engine. **`CostRule.variable` and the `"Variable"` rule text exist to make
+the difference sayable** (MARVEL-135). Nothing about the value changed; the flag
+rides `EffectDescriptor.Payment.rule` beside `UpTo`/`FromHand`/`SameType`/
+`DifferentType`, which both the web client and `BotCommand` read by membership.
+
+**Two rules now mean "the size of this payment is the effect":** `Variable`, and
+`UpTo` — "spend up to 3 resources" (26022, 47012, 21116 and three more), where
+the printed number is a ceiling rather than a price. For both, the *least legal*
+answer is not a cheap answer, it is the card doing nothing, and a planner that
+minimises produces it every time. `BotCommand.IsSpendItsOwnEffect` is where that
+distinction lives. A cost with neither flag is unchanged: paid exactly, or the
+option is unaffordable.
+
+The same shape reaches costs that are not resources at all — `CostFunc.Discard`,
+`CostFunc.Counter` and `CostFunc.Exhaust` all take ranges, and a range with a
+floor of 0 is answered by the bot's minimum-target rule rather than by any of
+this. Shield Toss (`03006`) pays `CostFunc.Discard(range=(0, "All"))` and is
+still discarding nothing. See MARVEL-138.
+
 ### Effect System
 
 An `Effect` represents a single resolution of an ability:

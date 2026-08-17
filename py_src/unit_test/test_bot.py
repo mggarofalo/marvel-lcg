@@ -12,6 +12,7 @@ equality — comes from `python main.py -device bot -bot_verify`.
 import json
 import unittest
 
+from engine.config import ConfigVariables
 from engine.device.manager.bot.command import BotCommand
 from engine.device.manager.bot.policies import FirstLegalPolicy, RepeatGuard, SeededRandomPolicy
 from engine.device.manager.bot.policy import BotDecision, BotOptionParser, BotStuck
@@ -129,13 +130,91 @@ class TestCommandBuilding(unittest.TestCase):
         self.assertIsNotNone(command)
         self.assertEqual(command.resources, ['51', '52'])
 
-    def test_pays_nothing_for_an_up_to_cost(self):
+    def test_spends_up_to_the_ceiling_of_an_up_to_cost(self):
+        # This used to assert `[]`, and `[]` is legal -- an `UpTo` cost is met
+        # by spending nothing. It is also the card doing nothing: "spend up to
+        # 3" is a ceiling on an effect, not a price, so the minimum answer is
+        # the one answer that wastes the option. MARVEL-135.
         options = ParseOptions(MakeOptionJson(
-            target_payment={'0': {'cost': '3', 'rule': ['UpTo'], 'payment': [{'51': 'R'}]}},
+            target_payment={'0': {'cost': '3', 'rule': ['UpTo'], 'payment': [
+                {'51': 'R'}, {'52': 'B'},
+            ]}},
+        ))
+        command = BotCommand.Build(options[0])
+        self.assertIsNotNone(command)
+        self.assertEqual(command.resources, ['51', '52'])
+
+    def test_an_up_to_ceiling_is_still_a_ceiling(self):
+        # Stops at 3 of the 4 on offer. Without this the "maximal" reading
+        # would be "everything", and an `UpTo` cost would be overpaid -- which
+        # `IsMatchCost` rejects, so the option would come back unaffordable.
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '3', 'rule': ['UpTo'], 'payment': [
+                {'51': 'R'}, {'52': 'B'}, {'53': 'Y'}, {'54': 'R'},
+            ]}},
+        ))
+        command = BotCommand.Build(options[0])
+        self.assertIsNotNone(command)
+        self.assertEqual(command.resources, ['51', '52', '53'])
+
+    def test_a_resource_that_would_break_the_ceiling_is_skipped_not_final(self):
+        # A greedy walk that returned at the first refusal would take nothing
+        # here: the four-resource generator is offered first and does not fit
+        # under a ceiling of 3.
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '3', 'rule': ['UpTo'], 'payment': [
+                {'51': 'RRRR'}, {'52': 'B'},
+            ]}},
+        ))
+        command = BotCommand.Build(options[0])
+        self.assertIsNotNone(command)
+        self.assertEqual(command.resources, ['52'])
+
+    def test_a_variable_cost_spends_the_whole_offer(self):
+        # A printed X. The cost text is "0" -- `ResRBYGA.FromText` reads "X" as
+        # zero and always has -- so `Variable` in the rule list is the only
+        # thing separating this from a card that is genuinely free, and the
+        # next test is the free card.
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '0', 'rule': ['Variable'], 'payment': [
+                {'51': 'R'}, {'52': 'B'}, {'53': 'Y'},
+            ]}},
+        ))
+        command = BotCommand.Build(options[0])
+        self.assertIsNotNone(command)
+        self.assertEqual(command.resources, ['51', '52', '53'])
+
+    def test_a_free_card_still_pays_nothing_for_it(self):
+        # Same cost text, no rule. Nothing about "0" changed.
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '0', 'rule': [], 'payment': [
+                {'51': 'R'}, {'52': 'B'},
+            ]}},
         ))
         command = BotCommand.Build(options[0])
         self.assertIsNotNone(command)
         self.assertEqual(command.resources, [])
+
+    def test_the_planner_can_be_put_back_the_way_it_was(self):
+        # `-bot_pay_variable_cost false` is what a replay recorded before
+        # MARVEL-135 was generated under, so it has to still be reachable.
+        from engine.device.manager.bot.command import PAY_VARIABLE_COST
+
+        options = ParseOptions(MakeOptionJson(
+            target_payment={'0': {'cost': '0', 'rule': ['Variable'], 'payment': [
+                {'51': 'R'},
+            ]}},
+        ))
+        # `-no_<flag>` is how a `Bool` is turned off -- a bare flag name is
+        # presence, so `-bot_pay_variable_cost false` would read as True with
+        # a stray value. See `ConfigVariables.ParseArguments`.
+        ConfigVariables.ParseString("-no_bot_pay_variable_cost")
+        try:
+            self.assertFalse(PAY_VARIABLE_COST.value)
+            self.assertEqual(BotCommand.Build(options[0]).resources, [])
+        finally:
+            ConfigVariables.ParseString("-bot_pay_variable_cost")
+        self.assertEqual(BotCommand.Build(options[0]).resources, ['51'])
 
     def test_ignored_cost_needs_no_resources(self):
         options = ParseOptions(MakeOptionJson(
