@@ -89,6 +89,7 @@ class TranscriptPolicy(BotPolicy):
     index: int = 0
     records: List[DecisionRecord] = field(default_factory=list)
     results: List[AssertionResult] = field(default_factory=list)
+    exact_payments: List[Tuple[Any, int, str]] = field(default_factory=list)
     state: Optional[StateView] = None
     halted: bool = False
     failure: str = ""
@@ -107,6 +108,7 @@ class TranscriptPolicy(BotPolicy):
         self.index = 0
         self.records = []
         self.results = []
+        self.exact_payments = []
         self.state = None
         self.halted = False
         self.failure = ""
@@ -405,6 +407,15 @@ class TranscriptPolicy(BotPolicy):
             self.Fail(f"{beat.Describe()} could not be played: {why}", decision)
             return self.Halt(decision)
 
+        if beat.payment is not None and decision.world is not None:
+            effect = decision.world.object_manager.effect_dict.get(int(command.id))
+            if effect is None:
+                self.Fail(
+                    f"cannot verify the realized payment for {beat.Describe()}: "
+                    f"effect {command.id} is not in the world", decision)
+                return self.Halt(decision)
+            self.exact_payments.append((effect, beat.payment, beat.Describe()))
+
         self.index += 1
         return self.Answer(decision, command, beat.Describe())
 
@@ -541,6 +552,25 @@ class TranscriptPolicy(BotPolicy):
     #
     def Finish(self, world: Any) -> None:
         """Judge whatever is still queued once the engine has stopped asking."""
+        # The payment descriptor states what each generator *can* produce.
+        # Some resource abilities ask a nested question and produce less than
+        # they advertised (SP//dr Suit is the shipped example). The command can
+        # only name generator ids, so exactness has to be checked against the
+        # selected effect after `SpendResource` records what was really made.
+        # `paid_this_res_effects` is cleared when the outer effect finishes; if
+        # it is still populated, another transcript failure halted resolution
+        # early and that earlier failure remains the useful diagnosis.
+        if not self.failure:
+            for effect, expected, description in self.exact_payments:
+                if effect.context.paid_this_res_effects:
+                    continue
+                actual = effect.context.paid_this_resources.val
+                if actual != expected:
+                    self.failure = (
+                        f"{description} required exactly {expected} resources, "
+                        f"but the selected payment effects generated {actual}")
+                    break
+
         if self.state is None and world is not None:
             self.state = Capture(world)
 

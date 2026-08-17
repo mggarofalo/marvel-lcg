@@ -157,11 +157,14 @@ payment for X and “spend up to N” costs.
 The stated amount is a requirement, not a hint. If no legal combination totals
 that amount, or if that amount does not meet the printed cost and payment
 rules, the action is unplayable. The runner does not fall back to another
-amount; validation classifies the scenario as `FAIL-spec-wrong`. This exact
-spelling and behavior are the C# Reqnroll binding contract. Card and counter
-costs remain separate engine decisions whose concrete targets are named by
-their own transcript beats; this amount only controls the option's attached
-resource payment.
+amount. A resource ability can make a nested choice and generate less than its
+affordability descriptor advertised, so the runner also checks the resources
+actually generated after resolution. Either mismatch is unplayable, and
+validation classifies the scenario as `FAIL-spec-wrong`. This exact spelling
+and behavior are the C# Reqnroll binding contract. Card and counter costs remain
+separate engine decisions whose concrete targets are named by their own
+transcript beats; this amount only controls the option's attached resource
+payment.
 
 ## Naming cards
 

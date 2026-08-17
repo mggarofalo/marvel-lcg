@@ -549,6 +549,34 @@ class TestAgainstTheEngine(unittest.TestCase):
         self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
         self.assertIn("cannot be paid with exactly 3 resources", result.Describe())
 
+    def test_a_dynamic_resource_ability_must_generate_the_exact_amount(self):
+        """SP//dr Suit advertises every Interface, then exhausts only those chosen."""
+        case = MakeCase(
+            name="dynamic exact payment",
+            heroes=("sp_dr",),
+            given=(
+                HERO_FORM,
+                GivenStep("in_play", ("Host Spider",)),
+                GivenStep("in_play", ("Hydra Mercenary",)),
+                GivenStep("hand", ("Speed Cyclone",)),
+            ),
+            beats=(
+                WhenStep(
+                    option="Play", card="Speed Cyclone", payment=2,
+                    targets=("Rhino", "Hydra Mercenary")),
+                WhenStep(
+                    option="Pay cost Exhaust", card="SP//dr Suit",
+                    targets=("Host Spider",)),
+                ThenStep("Rhino", "stunned", True),
+                ThenStep("Hydra Mercenary", "stunned", False),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn(
+            "required exactly 2 resources, but the selected payment effects "
+            "generated 1", result.Describe())
+
     def test_given_steps_put_cards_where_the_scenario_says(self):
         case = MakeCase(
             name="given builds the board",
