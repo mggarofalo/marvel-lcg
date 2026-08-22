@@ -26,8 +26,10 @@ Two things it deliberately does not do:
 
 What survives redaction is everything a player can see across the table without
 reading the card: where it sits, whether it is exhausted, what it is bound to,
-which cards point at it, and the back that is facing up. What goes is everything
-printed on the hidden face.
+and the back that is facing up. What goes is everything printed on the hidden
+face, and everything derived from it -- including the links to the abilities the
+card carries and to the cards it is affecting, because a card you cannot see
+must not answer questions about itself.
 
 `revision` goes too. It is a hash over the card's render info -- deliberately
 computed from face-up-guarded state for the digest's sake, but still a value
@@ -37,8 +39,16 @@ received (`Lib.object.hashObjectFast`), so it keeps working on the redacted one.
 
 The walk is driven by the shape of the data rather than a list of zone names, so
 a zone added to `WorldDescriptor` later is filtered the day it is added instead
-of leaking until somebody remembers this file. `unit_test/test_world_visibility.py`
-pins that.
+of leaking until somebody remembers this file. Every container a card could be
+declared in is walked -- list, tuple, dict -- not only the `List` the descriptor
+happens to use today. `unit_test/test_world_visibility.py` pins both.
+
+**What this does not cover: the descriptor's free text.** `prompt`,
+`prompt_last_text` and `event_name` are strings composed by the engine's message
+senders, and some of them name cards -- `AfterPlayerGainCards_Text` formats
+"{player} gains {faces}" for cards that go into a hand. Those go to every viewer
+unfiltered. It is a different channel with a different fix (report counts, the
+way the draw message already does), and it is MARVEL-152.
 """
 
 from core import *
@@ -65,6 +75,12 @@ def BlankFace() -> Dict[str, Any]:
         # no abilities, and the count of them is itself a hint at its identity.
         'effects'               : [],
         'resources'             : [],
+        # What this card is affecting, and what is affecting it. Same reasoning:
+        # hovering a face-down card must not light up what it points at. The
+        # cards on the other end keep their own lists, so an arrow between a
+        # hidden card and a visible one still draws from the visible side.
+        'effect_by_cards'       : [],
+        'effect_to_cards'       : [],
         # The enforcement signal. Emptied so the browser draws the back, and so
         # that "player 2 peeked at this" is not readable off the wire either.
         'visible_for_players'   : [],
@@ -143,20 +159,38 @@ def RedactCardList(cards: 'Sequence[Any]', viewers: Set[int]) -> 'Sequence[Any]'
 
 def RedactValue(value: Any, viewers: Set[int]) -> Any:
     """Returns `value` itself when nothing under it changed, so callers can
-    tell an untouched branch by identity and leave it alone."""
+    tell an untouched branch by identity and leave it alone.
+
+    Every container the descriptor could hold a card in is handled, not just
+    the `List` it happens to use today: a zone declared as a tuple, a set or a
+    dict would otherwise fall through to the last line and go out intact, and
+    the whole point of walking the shape is that a new zone is covered before
+    anyone notices it exists.
+    """
     if IsCardDescriptor(value):
         return value if IsVisibleTo(value, viewers) else RedactCard(value)
 
     if is_dataclass(value) and not isinstance(value, type):
         return RedactDataclass(value, viewers)
 
-    if isinstance(value, list):
-        items: List[Any] = value
-        if items and IsCardDescriptor(items[0]):
-            return RedactCardList(items, viewers)
-        rebuilt = [RedactValue(item, viewers) for item in items]
-        changed = any(new is not old for new, old in zip(rebuilt, items))
-        return rebuilt if changed else value
+    if isinstance(value, (list, tuple)):
+        # Order only means something in a sequence, so this is the one place
+        # the hidden entries get sorted.
+        if value and IsCardDescriptor(value[0]):
+            redacted: Any = RedactCardList(value, viewers)
+        else:
+            redacted = [RedactValue(item, viewers) for item in value]
+            if all(new is old for new, old in zip(redacted, value)):
+                redacted = value
+        if redacted is value:
+            return value
+        return tuple(redacted) if isinstance(value, tuple) else list(redacted)
+
+    if isinstance(value, dict):
+        by_key = {key: RedactValue(item, viewers) for key, item in value.items()}
+        if all(new is value[key] for key, new in by_key.items()):
+            return value
+        return by_key
 
     return value
 

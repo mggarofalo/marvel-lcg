@@ -30,7 +30,9 @@ because the point of the structural tests is to notice when those change.
 """
 
 import unittest
-from dataclasses import fields
+from collections import abc
+from dataclasses import dataclass, field, fields
+from typing import Dict, List, Tuple, get_args, get_origin
 from unittest import mock
 
 # The `game.*` packages import each other circularly and only resolve once the
@@ -124,6 +126,21 @@ class TestOneCard(unittest.TestCase):
         world = WorldDescriptor(encounter_deck=[NewCard(1, visible_for=[1])])
 
         self.assertEqual(RedactForViewers(world, [0]).encounter_deck[0].revision, 0)
+
+    def test_it_stops_pointing_at_the_cards_it_affects(self):
+        # Hovering a face-down card lights up what it points at
+        # (`hover.ts`, `updateHoverEffects`). Same reasoning as `effects`:
+        # a card you cannot see must not answer questions about itself. The
+        # cards on the other end keep their own lists, so an arrow between a
+        # hidden card and a visible one still draws from the visible side.
+        world = WorldDescriptor(encounter_deck=[NewCard(1, visible_for=[1])])
+
+        seen = RedactForViewers(world, [0]).encounter_deck[0]
+
+        self.assertEqual(seen.effects, [])
+        self.assertEqual(seen.resources, [])
+        self.assertEqual(seen.effect_by_cards, [])
+        self.assertEqual(seen.effect_to_cards, [])
 
     def test_the_card_still_has_a_back_to_draw(self):
         # A redacted card is still rendered -- as the back it is physically
@@ -270,20 +287,39 @@ class TestEveryZoneIsFiltered(unittest.TestCase):
     """
 
     @staticmethod
+    def Build(annotation, counter):
+        """A hidden value of this declared type, or None if it holds no cards.
+
+        Resolves the annotation properly rather than matching substrings: a
+        `Dict[str, CardDescriptor]` zone has to be *built as a dict*, or this
+        test would fill it with a bare card, redact that happily, and stay
+        green while the real dict-shaped zone went out intact.
+        """
+        if annotation is CardDescriptor:
+            counter.append(1)
+            return NewCard(len(counter), visible_for=[3])
+        if annotation is WorldDescriptor.PlayerDescriptor:
+            return TestEveryZoneIsFiltered.FillWithHiddenCards(
+                WorldDescriptor.PlayerDescriptor, counter)
+
+        origin, args = get_origin(annotation), get_args(annotation)
+        if origin in (list, tuple, set, abc.Sequence, abc.Set):
+            inner = TestEveryZoneIsFiltered.Build(args[0], counter)
+            if inner is None:
+                return None
+            return [inner] if origin in (list, abc.Sequence) else origin([inner])
+        if origin in (dict, abc.Mapping):
+            inner = TestEveryZoneIsFiltered.Build(args[1], counter)
+            return None if inner is None else {'a': inner}
+        return None
+
+    @staticmethod
     def FillWithHiddenCards(cls, counter):
         values = {}
         for descriptor_field in fields(cls):
-            annotation = str(descriptor_field.type)
-            if 'PlayerDescriptor' in annotation:
-                values[descriptor_field.name] = [
-                    TestEveryZoneIsFiltered.FillWithHiddenCards(
-                        WorldDescriptor.PlayerDescriptor, counter)]
-            elif 'Sequence[' in annotation and 'CardDescriptor' in annotation:
-                counter.append(1)
-                values[descriptor_field.name] = [[NewCard(len(counter), visible_for=[3])]]
-            elif 'CardDescriptor' in annotation:
-                counter.append(1)
-                values[descriptor_field.name] = [NewCard(len(counter), visible_for=[3])]
+            built = TestEveryZoneIsFiltered.Build(descriptor_field.type, counter)
+            if built is not None:
+                values[descriptor_field.name] = built
         return cls(**values)
 
     def test_the_walk_reaches_every_card_carrying_field(self):
@@ -309,16 +345,74 @@ class TestEveryZoneIsFiltered(unittest.TestCase):
             self.assertFalse(IsRedacted(card), f"card {card.id} was redacted for a viewer who may see it")
 
 
+@dataclass
+class ShapedZones:
+    """A descriptor holding cards in every container that could be declared.
+
+    `WorldDescriptor` uses only `List` today. The walk claims to be driven by
+    the shape of the data rather than a list of zone names, and that claim is
+    worth nothing if the first zone declared as a tuple or a dict falls
+    straight through to the wire.
+    """
+    in_a_list       : List[CardDescriptor] = field(default_factory=lambda: [])
+    in_a_tuple      : Tuple[CardDescriptor, ...] = field(default_factory=lambda: ())
+    in_a_dict       : Dict[str, CardDescriptor] = field(default_factory=lambda: {})
+    nested          : List[List[CardDescriptor]] = field(default_factory=lambda: [])
+    on_its_own      : object = None
+
+
+class TestContainersTheWalkMustUnderstand(unittest.TestCase):
+
+    def Redact(self):
+        hidden = lambda object_id: NewCard(object_id, visible_for=[1])
+        zones = ShapedZones(
+            in_a_list   = [hidden(1)],
+            in_a_tuple  = (hidden(2),),
+            in_a_dict   = {'top': hidden(3)},
+            nested      = [[hidden(4)]],
+            on_its_own  = hidden(5),
+        )
+        return zones, RedactForViewers(zones, [0])
+
+    def test_a_list(self):
+        _, seen = self.Redact()
+        self.assertTrue(IsRedacted(seen.in_a_list[0]))
+
+    def test_a_tuple_stays_a_tuple(self):
+        _, seen = self.Redact()
+        self.assertIsInstance(seen.in_a_tuple, tuple)
+        self.assertTrue(IsRedacted(seen.in_a_tuple[0]))
+
+    def test_a_dict_keeps_its_keys(self):
+        _, seen = self.Redact()
+        self.assertEqual(list(seen.in_a_dict), ['top'])
+        self.assertTrue(IsRedacted(seen.in_a_dict['top']))
+
+    def test_a_list_of_lists(self):
+        _, seen = self.Redact()
+        self.assertTrue(IsRedacted(seen.nested[0][0]))
+
+    def test_a_card_held_directly(self):
+        _, seen = self.Redact()
+        self.assertTrue(IsRedacted(seen.on_its_own))
+
+    def test_and_none_of_it_touched_the_original(self):
+        zones, _ = self.Redact()
+        self.assertNotEqual(zones.in_a_list[0].card_id, "")
+        self.assertNotEqual(zones.in_a_tuple[0].card_id, "")
+        self.assertNotEqual(zones.in_a_dict['top'].card_id, "")
+
+
 class TestEveryCardFieldIsAccountedFor(unittest.TestCase):
     """Every field of `CardDescriptor` is either blanked or deliberately let
     through. A field added later is in neither list, and this fails."""
 
     # What a player can see across the table without reading the card: where it
-    # sits, whether it is exhausted, what it is attached to, which cards point
-    # at it, and the back that is facing up.
+    # sits, whether it is exhausted, what it is attached to, and the back that
+    # is facing up.
     ALLOWED_THROUGH = {
         'id', 'is_ready', 'is_face_up', 'bind_object_id', 'game_area',
-        'down_card_ids', 'effect_by_cards', 'effect_to_cards',
+        'down_card_ids',
     }
 
     def test_no_field_is_unclassified(self):
