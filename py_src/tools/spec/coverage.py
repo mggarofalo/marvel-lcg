@@ -3,6 +3,7 @@
     python -m tools.spec.coverage                    # the summary
     python -m tools.spec.coverage --tier interactive # what to author next
     python -m tools.spec.coverage --pack core
+    python -m tools.spec.coverage --rulings          # printed text is not the last word
     python -m tools.spec.coverage --out coverage.json
 
 MARVEL-68's fourth acceptance item. `tools/coverage/report.py` answers "which
@@ -52,6 +53,20 @@ in the printed dataset that the engine does not implement at all.
 That distinction moves the denominator from 3781 to 3996, and getting it wrong
 in the other direction is the MARVEL-16 failure repeated -- a missed population
 does not look like a bug, it looks like a smaller universe.
+
+## `RULING` marks a card the printed words do not settle
+
+A card carrying an official MarvelCDB ruling is flagged `RULING` in the work
+lists, and `--rulings` narrows to those cards (MARVEL-143). This is not coverage
+and never counts as any: it is a warning about the *input*.
+
+An author reading only printed text on such a card writes their reading, has it
+validated against the Python engine -- which implements the same reading -- and
+the scenario passes into `trusted.json` having confirmed nothing. Read
+`python -m tools.cards.rulings <card_id>` first.
+
+The flag is absent, harmlessly, on a clone that has not harvested
+`datasets/marvelcdb-faq/`. See that dataset's UPSTREAM.md.
 """
 
 from __future__ import annotations
@@ -62,6 +77,8 @@ import json
 import os
 import sys
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+
+from tools.cards import rulings as rulings_module
 
 CARD_DATASET = "../datasets/cards/cards.json"
 SPEC_ROOT = "specs"
@@ -187,9 +204,16 @@ class Coverage:
     def __init__(self, cards: Sequence[Dict[str, Any]],
                  tagged: Dict[str, List[str]],
                  trusted: Iterable[str], quarantined: Iterable[str],
-                 unreachable: Sequence[Dict[str, Any]] = ()) -> None:
+                 unreachable: Sequence[Dict[str, Any]] = (),
+                 rulings: Optional[Dict[str, List[Any]]] = None) -> None:
         self.cards = {card["card_id"]: card for card in cards}
         self.tier = {card_id: Tier(card) for card_id, card in self.cards.items()}
+
+        # card_id -> the official rulings MarvelCDB records against it
+        # (MARVEL-143). Empty when nobody has harvested the snapshot, which is
+        # a normal state for a fresh clone and never an error: a ruling is an
+        # input to authoring, not something coverage is measured against.
+        self.rulings: Dict[str, List[Any]] = dict(rulings or {})
 
         # card_id -> the recorded dispositions against it. A card can have more
         # than one unreachable path, and each is its own debt.
@@ -363,13 +387,19 @@ class Coverage:
                 rows[pack]["covered"] += 1
         return dict(rows)
 
-    def Uncovered(self, tier: str = "", pack: str = "") -> List[Dict[str, Any]]:
+    def Uncovered(self, tier: str = "", pack: str = "",
+                  rulings: bool = False) -> List[Dict[str, Any]]:
         """Specifiable cards with no trusted scenario, worst tier first.
 
         Ordered by tier and then by script size, so the head of the list is
         where a scenario buys the most. Not by card id -- that would walk the
         core set to exhaustion before touching anything else, and the tail is
         where port bugs hide.
+
+        `rulings=True` narrows to cards an official ruling exists for. Those are
+        the cards where authoring from the printed words alone is most likely to
+        be confidently wrong, so they are worth writing while the ruling is in
+        front of you rather than in card-id order (MARVEL-143).
         """
         rows: List[Dict[str, Any]] = []
         for card_id in self.Specifiable():
@@ -380,6 +410,8 @@ class Coverage:
             if tier and card_tier != tier:
                 continue
             if pack and str(card.get("pack") or "") != pack:
+                continue
+            if rulings and not self.rulings.get(card_id):
                 continue
             script = (card.get("engine") or {}).get("script") or {}
             rows.append({
@@ -392,12 +424,14 @@ class Coverage:
                 "asks": list(script.get("player_choice_calls") or ()),
                 "via": list(script.get("player_choice_helpers") or ()),
                 "quarantined": len(self.quarantined.get(card_id, ())),
+                "rulings": len(self.rulings.get(card_id, ())),
             })
         rows.sort(key=lambda r: (TIER_ORDER.index(r["tier"]), -r["lines"],
                                  r["card_id"]))
         return rows
 
-    def Shallow(self, tier: str = "", pack: str = "") -> List[Dict[str, Any]]:
+    def Shallow(self, tier: str = "", pack: str = "",
+                rulings: bool = False) -> List[Dict[str, Any]]:
         """Covered cards short of their tier's plan, biggest shortfall first.
 
         `Uncovered` answers "what has nobody looked at". This answers the other
@@ -421,6 +455,8 @@ class Coverage:
                 continue
             if pack and str(card.get("pack") or "") != pack:
                 continue
+            if rulings and not self.rulings.get(card_id):
+                continue
             script = (card.get("engine") or {}).get("script") or {}
             have = len(self.Scenarios(card_id))
             planned = TIERS[card_tier][0]
@@ -437,6 +473,7 @@ class Coverage:
                 "planned": planned,
                 "short": planned - have,
                 "quarantined": len(self.quarantined.get(card_id, ())),
+                "rulings": len(self.rulings.get(card_id, ())),
             })
         rows.sort(key=lambda r: (TIER_ORDER.index(r["tier"]), -r["short"],
                                  r["card_id"]))
@@ -529,6 +566,12 @@ class Coverage:
                 "at_depth": len(at_depth),
                 "scenarios": sum(len(v) for v in self.trusted.values()),
                 "quarantined": sum(len(v) for v in self.quarantined.values()),
+                # Cards, not rulings: one card can carry several Q&As in a
+                # single FAQ entry, and what an author picks from is the card.
+                "with_ruling": sum(1 for c in specifiable if self.rulings.get(c)),
+                "uncovered_with_ruling": sum(
+                    1 for c in specifiable
+                    if self.rulings.get(c) and not self.Covered(c)),
                 # Paths, not cards: one card can hold more than one.
                 "unreachable": sum(len(v) for v in self.unreachable.values()),
             },
@@ -544,13 +587,34 @@ class Coverage:
 #
 
 
+def Rulings(cards: Sequence[Dict[str, Any]]) -> Dict[str, List[Any]]:
+    """Official rulings by card id, or nothing when none have been harvested.
+
+    `datasets/marvelcdb-faq/` is vendored by a manual harvest, so a clone that
+    has not run one does not have it. That is not an error and must not stop
+    this tool: coverage is measured against scenarios, and a ruling only changes
+    what an author reads before writing one.
+
+    A snapshot that is present but malformed *does* raise, from
+    `tools.cards.rulings.Load`. A corrupted checked-in dataset silently reporting
+    "no rulings" is the failure worth being loud about, because it looks exactly
+    like the normal empty state.
+    """
+    data = rulings_module.Load()
+    if not data.Loaded():
+        return {}
+    return rulings_module.ByCard(data, {card["card_id"] for card in cards})
+
+
 def Build() -> Coverage:
+    cards = Cards()
     return Coverage(
-        cards=Cards(),
+        cards=cards,
         tagged=TaggedCards(),
         trusted=Manifest(TRUSTED),
         quarantined=Manifest(QUARANTINE),
         unreachable=Unreachable(),
+        rulings=Rulings(cards),
     )
 
 
@@ -570,8 +634,19 @@ def Percent(part: int, whole: int) -> str:
     return f"{100.0 * part / whole:.1f}%" if whole else "n/a"
 
 
+def _Flags(row: Dict[str, Any]) -> str:
+    """The markers that hang off the end of a work-list row.
+
+    `RULING` is not decoration. It says an official ruling exists for this card,
+    so the printed words are not the last word on it -- read
+    `python -m tools.cards.rulings <id>` before asserting anything about timing.
+    """
+    flags = "  QUARANTINED" if row.get("quarantined") else ""
+    return flags + ("  RULING" if row.get("rulings") else "")
+
+
 def Report(coverage: Coverage, tier: str, pack: str, top: int,
-           shallow: bool = False) -> None:
+           shallow: bool = False, rulings: bool = False) -> None:
     data = coverage.ToDict()
     totals = data["totals"]
 
@@ -593,6 +668,11 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int,
     if totals["quarantined"]:
         print(f"quarantined       {totals['quarantined']} "
               f"(claims that failed -- not coverage)")
+    if totals["with_ruling"]:
+        print(f"with a ruling     {totals['with_ruling']} card(s), of which "
+              f"{totals['uncovered_with_ruling']} uncovered -- printed text is "
+              f"\n                  not the last word on these "
+              f"(`--rulings` lists them)")
     if totals["unreachable"]:
         print(f"unreachable       {totals['unreachable']} decision path(s) "
               f"recorded in {UNREACHABLE}")
@@ -642,24 +722,26 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int,
                       + (f"  ({row['issue']})" if row["issue"] else ""))
         print()
 
+    if rulings:
+        label += " with a ruling"
+
     if shallow:
-        rows = coverage.Shallow(tier=tier, pack=pack)
+        rows = coverage.Shallow(tier=tier, pack=pack, rulings=rulings)
         if not rows:
             print("nothing covered matches that filter is short of its plan")
             return
         print(f"short of plan ({label}) -- {len(rows)} covered but not at depth,"
               f"\nbiggest shortfall first:")
         for row in rows[:top]:
-            asks = _Asks(row)
-            flag = "  QUARANTINED" if row["quarantined"] else ""
             print(f"  {row['card_id']:<8} {row['tier']:<12} "
                   f"{row['scenarios']}/{row['planned']:<6} "
-                  f"{row['pack']:<10} {row['name'][:34]:<34}{asks}{flag}")
+                  f"{row['pack']:<10} {row['name'][:34]:<34}"
+                  f"{_Asks(row)}{_Flags(row)}")
         if len(rows) > top:
             print(f"  ... {len(rows) - top} more")
         return
 
-    rows = coverage.Uncovered(tier=tier, pack=pack)
+    rows = coverage.Uncovered(tier=tier, pack=pack, rulings=rulings)
     if not rows:
         print("nothing uncovered matches that filter")
         return
@@ -667,10 +749,9 @@ def Report(coverage: Coverage, tier: str, pack: str, top: int,
     print(f"next up ({label}) -- {len(rows)} uncovered, "
           f"largest script first:")
     for row in rows[:top]:
-        asks = _Asks(row)
-        flag = "  QUARANTINED" if row["quarantined"] else ""
         print(f"  {row['card_id']:<8} {row['tier']:<12} {row['lines']:>4}L "
-              f"{row['pack']:<10} {row['name'][:34]:<34}{asks}{flag}")
+              f"{row['pack']:<10} {row['name'][:34]:<34}"
+              f"{_Asks(row)}{_Flags(row)}")
     if len(rows) > top:
         print(f"  ... {len(rows) - top} more")
 
@@ -687,6 +768,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--shallow", action="store_true",
                         help="list covered cards short of their tier's plan "
                              "instead of uncovered ones")
+    parser.add_argument("--rulings", action="store_true",
+                        help="only list cards an official MarvelCDB ruling "
+                             "exists for -- where authoring from the printed "
+                             "words alone is most likely to be wrong")
     parser.add_argument("--out", default="", help="write the full report as JSON")
     parser.add_argument("--done", default="", metavar="PACK",
                         help="verdict on whether a shard is finished; exits "
@@ -712,7 +797,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 1
 
     Report(coverage, tier=args.tier, pack=args.pack, top=args.top,
-           shallow=args.shallow)
+           shallow=args.shallow, rulings=args.rulings)
 
     if args.out:
         payload = coverage.ToDict()

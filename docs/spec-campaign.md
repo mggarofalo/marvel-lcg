@@ -186,6 +186,14 @@ either direction. Mutation does.
 - **`declarative` is not the easy tier.** It is read from script shape, not
   behaviour: a sample of 25 includes Thanos, Baron Zemo, and a card whose text
   begins "Create your own game area".
+- **A `RULING` flag means the printed words are not the last word.** Read
+  `python -m tools.cards.rulings <card_id>` before asserting timing on that
+  card, and `--rulings` lists them. This is the one place the validation gate
+  cannot help: a scenario written from an ambiguous card is checked against the
+  Python engine, which implements the same reading of the same ambiguity, so it
+  passes into `trusted.json` having confirmed only that the engine agrees with
+  itself. An official ruling is the only independent check available, and it is
+  worth more on a delegated shard than on one you author yourself (MARVEL-143).
 - **Watch `at depth`, not `covered`.** `python -m tools.spec.coverage` reports
   both. `covered` credits a card for one trusted scenario whatever its tier
   plans; the gap between the two columns is how much of the covered set is one
