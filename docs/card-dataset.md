@@ -38,6 +38,13 @@ having gone and looked, once, so nobody authors 314 specs on a bad premise.
 MarvelSDB's `code` is the same identifier the engine calls `card_id`, so the two
 join directly — 3,953 of 4,344 cards are in both.
 
+`datasets/marvelcdb-faq/` sits alongside these rather than in them. It carries
+official **rulings**, not printed text, and nothing in `cards.json` is built from
+it — a ruling is an input an author reads, not a field the dataset derives. It is
+read through `tools/cards/rulings.py` and surfaced by
+`python -m tools.spec.coverage --rulings`. See
+[its UPSTREAM.md](../datasets/marvelcdb-faq/UPSTREAM.md) (MARVEL-143).
+
 ## Generating
 
 Everything runs from `py_src/`, and the tool is stdlib-only: no engine

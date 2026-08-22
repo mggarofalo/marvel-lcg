@@ -86,6 +86,10 @@ The engine has been audited against all four — see [docs/determinism-audit.md]
 
 **Do not author specs from `data/cards.json`.** The engine's card text has 36 cards corrupted by an encoding round-trip and 197 that differ materially from the printed card — `03025` is missing an entire rules line. Printed text lives in `datasets/cards/`, built from a vendored MarvelSDB snapshot. See [docs/card-dataset.md](docs/card-dataset.md).
 
+**Nothing under `datasets/` may require the network to regenerate.** Every dataset is either *generated* — rebuildable offline and byte-identically, guarded by a `--check` gate in CI — or *vendored*, copied in once from a pinned upstream and read as-is. There is no third kind, and a fetch at read time is not one.
+
+That makes [`marvelcdb`](https://github.com/mggarofalo/marvelcdb-cli) an **acquisition and research tool, not a dependency of this software**. It runs at harvest time and never at build time. `py_src/tools/cards/harvest_faq.py` is the only module in the repository that invokes it, nothing imports that module, and `tools/cards/rulings.py` reads the result offline. Sanctioned interactive uses: searching for a card while authoring a spec, and pulling a card image to adjudicate a text divergence (MARVEL-52). Do not wire it into a build, a test, or an engine path.
+
 **The corpus is immutable once frozen.** Changing engine behavior after generation invalidates it. That is a decision to raise, not to make silently. It is also why the RNG replacement must land *before* corpus generation.
 
 ## Security
@@ -381,6 +385,10 @@ python -m tools.spec.validate --triage triage.json      # records for adjudicati
 **Two things about puzzle scenes bite every author once.** A scene starts with no player deck and no encounter deck, so a scenario that ends a turn without stocking both does not walk the phases — it decks the hero out in round 1, or halts the villain phase with an empty encounter deck. And **decks are written top-first**: `the encounter deck is "A", "B", "C"` puts A on top, so during a villain activation the first card written is the boost card and the second is the one revealed. `#N` still counts written order, and order does not survive an in-game shuffle. Both are written up in [docs/spec-harness.md](docs/spec-harness.md).
 
 **Coverage and the campaign.** `python -m tools.spec.coverage` reports which cards have a trusted scenario, at what depth, and what is left; the sharding plan and the depth rule per tier are in [docs/spec-campaign.md](docs/spec-campaign.md) (MARVEL-68). The denominator is **3,996**, not the 3,781 cards with a script — 215 more are implemented by `game/card/face/attribute/` rather than per card, and Hydra Mercenary's Guard is already specced without one. Only the 348 cards the engine does not have are out of scope.
+
+**Check for a ruling before asserting timing.** Printed card text is not always the last word. `python -m tools.spec.coverage --rulings` lists cards an official MarvelCDB ruling exists for, the work lists flag them `RULING`, and `python -m tools.cards.rulings <card_id>` prints the ruling itself. Read it before writing the scenario.
+
+This matters because of a blind spot the validation gate cannot see: author a spec from ambiguous printed words, and it is checked against the Python engine — which implements the same reading of the same words — so it passes into `trusted.json` having confirmed only that the engine agrees with itself. Spider-Man's Interrupt and Ultron's Forced Interrupt read as two different moments and are ruled to be one (MARVEL-143). The snapshot lives in [`datasets/marvelcdb-faq/`](datasets/marvelcdb-faq/UPSTREAM.md) and is absent-tolerant: a clone that has not harvested one loses the flag, not the tool.
 
 This only works while the Python engine still runs and is still the reference. Read [docs/spec-harness.md](docs/spec-harness.md) before authoring.
 
