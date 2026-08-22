@@ -24,6 +24,18 @@ class TargetCost:
     def IsEmpty(self) -> bool:
         return self.target_cost == {}
 
+    def IsPerTarget(self) -> bool:
+        """Was a separate cost calculated for each legal target?
+
+        False is the ordinary answer: one calculation, keyed on `None`, and
+        `GetCost` hands it back whatever target it is asked about. True only
+        when a legal target declared `Ability.SetCostDependsOnTarget`, and it
+        is the precondition for comparing targets on affordability at all --
+        without it every target has the same cost and the comparison is
+        vacuous (MARVEL-140).
+        """
+        return not self.only_none_target and not self.IsEmpty()
+
     def HasTarget(self, face: 'CardFace|None') -> bool:
         return face in self.target_cost
 

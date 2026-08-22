@@ -168,13 +168,82 @@ class EffectChecker:
                     self.cost_for_different_target.AddPayment(target, cost_effect, res, check_effect)
                 pass
 
-            if "09039" in [x.paper.card_id for x in effect.context.all_legal_targets]:
+            # One cost stands for the whole option unless a legal target says
+            # it cannot. A card that changes what an effect costs according to
+            # which target that effect has declares so with
+            # `Ability.SetCostDependsOnTarget`, and only then is every target
+            # priced separately.
+            #
+            # This used to read `if "09039" in [...card_id...]`, which is the
+            # same test for exactly one printed card. Pricing every target
+            # unconditionally would be more general still and was measured as
+            # free -- 36 headless games, every per-step digest byte-identical
+            # -- but it raises the `message` object counter by up to 17%, and
+            # that counter is inside the determinism contract. See MARVEL-140.
+            if any(EffectChecker.CostDependsOnTarget(x)
+                   for x in effect.context.all_legal_targets):
                 for target in effect.context.all_legal_targets:
                     process_target(target)
             else:
                 self.cost_for_different_target.SetNoneTargetOnly()
                 process_target(None)
 
+        return True
+
+    @staticmethod
+    def CostDependsOnTarget(face: 'CardFace') -> bool:
+        """Does being the target of an effect change what that effect costs?
+
+        Asked of a legal target, not of the effect: the card that moves the
+        cost is the one being targeted. Over-answering is harmless -- it only
+        costs a second calculation -- so this does not ask whether the ability
+        is currently able to fire.
+        """
+        return any(ability.cost_depends_on_target
+                   for ability in face.ability.abilities)
+
+    def DropUnpayableTargets(self) -> bool:
+        """Remove the legal targets this player could not pay for (MARVEL-140).
+
+        Only reachable when the costs were calculated per target, which is the
+        only way two targets of one option can differ in what they cost. When
+        they do, a target nobody can pay for is not a choice: picking it
+        reaches `CheckBeforeActive`, fails `check_pay`, and refuses an option
+        the player was invited to take.
+
+        **Never empties the list.** If no target is payable there is nothing to
+        prefer, and the surfaces that withhold a whole unaffordable option
+        already do so through `CanPayAnyTarget` -- while the card-play menu
+        deliberately does not (MARVEL-130). Emptying it here would quietly
+        redefine that boundary from inside the target selector.
+
+        `target_range` is re-derived rather than kept, because it was computed
+        from the unfiltered list -- `Selector.GetTargetRange` clamps the
+        maximum to how many targets there are, and `EventManager` asserts on
+        the two agreeing.
+        """
+        costs = self.cost_for_different_target
+        if not costs.IsPerTarget():
+            return False
+
+        targets = self.effect.context.all_legal_targets
+        payable = [x for x in targets if costs.CanPay(x)]
+        if len(payable) == len(targets) or not payable:
+            return False
+
+        selector = self.ability.selectors[0] if self.ability.selectors else None
+        if not selector:
+            return False
+
+        target_range = selector.GetTargetRange(self.effect, payable)
+        if target_range == None:
+            # The payable targets cannot satisfy the selector -- "choose two
+            # allies" with one payable ally is not a smaller choice, it is a
+            # different one. Leave the option as it was.
+            return False
+
+        self.effect.context.all_legal_targets = payable
+        self.effect.context.target_range = target_range
         return True
 
     ################################################################################
@@ -385,10 +454,17 @@ class EffectChecker:
                 self.cost_for_different_target.ReduceToMaxPayable()
                 self.effect.display_name_override = \
                     f"Spend {self.cost_for_different_target.GetCost(None).GetSpendText()}"
-            elif (requires_affordability and
-                  not self.cost_for_different_target.CanPayAnyTarget()):
-                self.failures.Set(asked_player, EffectFailure.CannotPay)
-                return False
+            else:
+                # Same rule one level down. `CanPayAnyTarget` keeps an option
+                # alive when *some* target is payable and says nothing about
+                # the rest, so a player could still pick a target whose cost
+                # cannot be paid and be refused after choosing (MARVEL-140).
+                self.DropUnpayableTargets()
+
+                if (requires_affordability and
+                        not self.cost_for_different_target.CanPayAnyTarget()):
+                    self.failures.Set(asked_player, EffectFailure.CannotPay)
+                    return False
 
         if self.ability.is_label_defense:
             # from game.message.message_type import AttackerMessageInternal

@@ -578,8 +578,19 @@ class AbilityFactoryResources:
                                 which_player: 'Player|Literal["Attached", "You", "EachPlayer", "AnyPlayer"]',
                                 *,
                                 which_effect: 'Effect|None'=None,
+                                when_this_is_the_target: bool=False,
                                 conditions: ConditionsType[Message.WhenCalculateEffectCost]=[],
                                 ) -> 'Ability':
+        """`when_this_is_the_target` -- "...on Iron Man", not "...anywhere".
+
+        The reduction applies only while the card being played is targeting
+        this one, which makes the option cost different amounts depending on
+        where the player puts it. Spelling that as a hand-written condition
+        was not enough: `EffectChecker` has to know to price each target
+        separately, and it used to know by card id. Asking for the condition
+        here also marks the ability, so the two cannot drift apart and the
+        checker needs no list of cards (MARVEL-140).
+        """
 
         def update_cost(effect: 'Effect') -> int:
             base_val = 1
@@ -590,7 +601,13 @@ class AbilityFactoryResources:
                 value = base_val * update_cost_fn(effect)
             return value * -1
 
-        return AbilityFactoryResources.UpdateCostOfCardInternal(
+        def check_this_is_the_target(effect: 'Effect', message: 'Message.WhenCalculateEffectCost') -> bool:
+            return [effect.this] == message.for_targets
+
+        if when_this_is_the_target:
+            conditions = [check_this_is_the_target, *conditions]
+
+        ability = AbilityFactoryResources.UpdateCostOfCardInternal(
             which_card,
             update_cost,
             which_player,
@@ -598,6 +615,9 @@ class AbilityFactoryResources:
             is_play=True,
             conditions=conditions,
         )
+        if when_this_is_the_target:
+            ability.SetCostDependsOnTarget()
+        return ability
 
     @staticmethod
     def IncreaseResourceCostToPlay(which_card: CardType,
