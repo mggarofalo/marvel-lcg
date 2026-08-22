@@ -435,8 +435,13 @@ class TranscriptPolicy(BotPolicy):
             return None, (f"the engine is not offering {subject}; it offers "
                           f"{self.Offered(decision)}")
         if len(options) > 1:
+            # A bound assertion can still be ambiguous -- one card offering the
+            # same label twice -- and telling its author to bind it is advice
+            # they have already taken.
+            remedy = ("that card offers it more than once" if beat.card
+                      else "bind the assertion to a card")
             return None, (f"{subject} matches {len(options)} offered options; "
-                          f"bind the assertion to a card")
+                          f"{remedy}")
         return options[0], ""
 
     def CheckPrompt(self, beat: PromptStep, decision: Any) -> None:

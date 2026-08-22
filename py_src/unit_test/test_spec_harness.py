@@ -456,12 +456,12 @@ class TestDecisionBudget(unittest.TestCase):
     the failure is visible.
     """
 
-    def Decide(self, *, can_cancel=True, event="WhenPlayerInTurn"):
+    def Decide(self, *, can_cancel=True, event="WhenPlayerInTurn", options=None):
         from engine.device.manager.bot.policy import BotDecision
         return BotDecision(
             player_id=0, step_id=7, attempt=0, event_name=event,
             ability_type="Normal", prompt_text="", can_cancel=can_cancel,
-            options=[], replay_input="{}", world=None,
+            options=list(options or []), replay_input="{}", world=None,
         )
 
     def test_the_budget_trips_cleanly_after_the_transcript_has_finished(self):
@@ -509,15 +509,23 @@ class TestDecisionBudget(unittest.TestCase):
 
     def test_an_option_assertion_needs_a_board_to_read(self):
         """Every option assertion reads the world, so a decision without one
-        resolves nothing -- not even the label match it could have made."""
+        resolves nothing -- not even the label match it could have made.
+
+        The decision offers a matching `Play` on purpose: without one the check
+        would be satisfied by there being nothing to match, which says nothing
+        about the order the two conditions are tested in.
+        """
         from tools.spec.policy import TranscriptPolicy
+        offered = [SimpleNamespace(name="Play", bind_id=1, is_selectable=True,
+                                   target_num_range=(1, 1),
+                                   all_legal_targets=[])]
         for beat in (TargetsStep(option="Play", targets=("Rhino",)),
                      MinimumStep(option="Play", minimum=1),
                      LimitStep(option="Play", maximum=1)):
             with self.subTest(beat=beat.kind):
                 policy = TranscriptPolicy(beats=(beat,))
 
-                policy.Choose(self.Decide())
+                policy.Choose(self.Decide(options=offered))
 
                 self.assertEqual(len(policy.results), 1)
                 self.assertFalse(policy.results[0].passed)

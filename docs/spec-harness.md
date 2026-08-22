@@ -443,11 +443,21 @@ wrong card.
 
 The bound form is matched on the option's `bind_id`, the object id of the card
 the engine attached the option to. The shorter form is still accepted for labels
-that are unique at that decision, and an ambiguous short form is *unresolvable*
-rather than resolved by enumeration order.
-`specs/rules/option-binding.feature` states both controls: the same two claims
-over a hand written in both orders, and a board where one of the two `Play`
-options is gone and the other is not.
+that are unique at that decision, and a label matching more than one offered
+option is *unresolvable* rather than resolved by enumeration order — including a
+bound one, if a single card offers the same label twice. All three are also
+unresolvable at a decision carrying no board, since all three read the world
+either to resolve the named card or to name the option's targets. **These are
+behavior, not syntax**, and a second runner has to reimplement them: a C#
+binding that took the first match would pass the same scenarios and mean
+something else.
+
+`specs/rules/option-binding.feature` carries the ordering control — the same two
+claims over a hand written in both orders, which no first-match resolver passes.
+The absence hazard has no passing spelling, because a bound assertion whose card
+has left the menu is *unresolvable* and a scenario cannot assert its own
+failure; that direction is controlled in `unit_test/test_spec_harness.py`
+instead.
 
 One more decision assertion says a card-bound option is absent (MARVEL-130):
 
