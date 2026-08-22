@@ -82,6 +82,26 @@ export class Setting {
         }
         return player_ids
     }
+
+    // The query `get_world` is asked with. It used to be a hardcoded `p=0`,
+    // because the descriptor it answered with was the whole table and the
+    // browser decided what to draw. The server filters it now (MARVEL-62), so
+    // this has to say who is asking, and say when one browser is standing in
+    // for the whole table -- `hot_seat` and `watch` both do.
+    //
+    // The flags are sent as well as the ids because `Game.total_players` is 0
+    // until the first frame arrives, so `getPlayerIds()` cannot yet enumerate
+    // the table on the very first `get_world`.
+    static getWorldQuery() {
+        let query = `p=${Setting.getPlayerIds()}`
+        if( Setting.is_hot_seat ) {
+            query += `&hot_seat`
+        }
+        if( Setting.is_watch ) {
+            query += `&watch`
+        }
+        return query
+    }
 }
 
 export class ButtonSetting {

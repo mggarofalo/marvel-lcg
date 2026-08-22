@@ -101,6 +101,13 @@ Card scripts are **executed as Python**. `py_src/cards/database.py` calls `exec(
 
 What replaces it is designed in [docs/card-dsl.md](docs/card-dsl.md) — cards as a tree of typed nodes, with the trust boundary at provenance rather than expressiveness. `python -m tools.dsl.blockers` measures how much of the corpus that reaches and what is left over; read it before arguing that some card needs an escape hatch.
 
+**Hidden information is filtered on the server, not in the browser.** `ToDescriptor.World` builds one `WorldDescriptor` per render for the whole table — a `CardDescriptor` for every card in the game, each carrying `card_id`, `name` and `info` next to a `visible_for_players` list. Until MARVEL-62 all of it went to whichever client asked and `visible_for_players` was an instruction the browser was trusted to follow, so a `curl` with a valid `app_version` cookie read the encounter deck in order, every other player's hand, and the identity of every face-down card in play. `engine/device/web/server/world_visibility.py` now strips the face off every card the requesting players may not see, before `handle_get_world` puts it on the wire.
+
+- **The walk is driven by the shape of the descriptor, not a list of zone names.** A zone added to `WorldDescriptor` is filtered the day it is added, and `unit_test/test_world_visibility.py` fails if a field is added to `CardDescriptor` without a decision about whether it may leave the server.
+- **Redaction, not deletion.** A client still draws a face-down deck of the right height, so a hidden card keeps its object id, its zone, its exhausted state and its printed back. Hidden cards within a zone come back sorted by object id, because object ids are stable for a whole game and the real order would otherwise say which card is on top. That the ids are real at all is the residual — MARVEL-146.
+- **It is filtering, not authentication.** `p`, `hot_seat` and `watch` are asserted by the requesting client and nothing checks them — as they always were. What changed is that enforcement now lives in one server-side place. See MARVEL-145.
+- A consequence: the browser's `?show_all_cards` and the debug console's `cheat_show_all_cards` can no longer reveal what the server did not send. The scene rule `show_all_cards` (`game/world/world_rule.py`) still does, for player 0, which is the path puzzles and tests use.
+
 ## Headless bot
 
 Plays games with no client attached — no websocket, no HTTP server, no keyboard. Lives in `py_src/engine/device/manager/bot/`. Run from `py_src/`:
@@ -238,7 +245,8 @@ python -m unittest unit_test.test_bot unit_test.test_teamup_order \
                    unit_test.test_decks unit_test.test_deck_build \
                    unit_test.test_dsl_blockers unit_test.test_select_rules \
                    unit_test.test_may_choose_one \
-                   unit_test.test_target_before_payment
+                   unit_test.test_target_before_payment \
+                   unit_test.test_world_visibility
 # spec harness, puzzle commands and card coverage: boot the engine and play,
 # still under two seconds
 python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \

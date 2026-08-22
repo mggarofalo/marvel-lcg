@@ -6,6 +6,7 @@ from engine.device.web import *
 
 from aiohttp import web
 from engine.device.web.server.server_base import GameServerBase
+from engine.device.web.server.world_visibility import RedactForViewers
 
 CATEGORY_NAME = "WEB"
 
@@ -13,6 +14,20 @@ class GameServerSync(GameServerBase):
 
     def get_render_id(self, request: web.Request) -> int:
         return int(request.rel_url.query.get('r', 0))
+
+    def get_view_player_ids(self, request: web.Request) -> List[int]:
+        """Whose view of the board this request is answered with.
+
+        `hot_seat` and `watch` are shared-screen modes -- one browser standing
+        in for the whole table -- so they get the union of every player's view.
+        Deliberately not folded into `get_player_ids`: that one also decides who
+        a `/client_updated` acknowledges for and who a `/post` speaks for, and a
+        spectator must not be able to answer on a player's behalf.
+        """
+        query = request.rel_url.query
+        if 'hot_seat' in query or 'watch' in query:
+            return list(range(self.controller_manager.total_players))
+        return self.get_player_ids(request)
 
     def get_game_id(self, request: web.Request) -> int:
         return int(request.rel_url.query.get('g', 0))
@@ -73,14 +88,24 @@ class GameServerSync(GameServerBase):
         return web.Response(body=compressed_data, content_type='application/json', headers={'Content-Encoding': 'gzip'})
 
     async def handle_get_world(self, request: web.Request) -> web.Response:
-        player_ids = self.get_player_ids(request)
-        controller = self.get_first_controller(request)
+        player_ids = self.get_view_player_ids(request)
+        # Controller 0 rather than the requesting player's: every controller
+        # shares one world (`Controller.world` is `manager.game.world`), and `p`
+        # now names who is *looking*, so a client naming a player this process
+        # holds no controller for must still get a board back.
+        controller = self.device_manager.controllers[0]
         if controller.world:
             data = controller.world.render.descriptor
         else:
             # Bug here, if we return {}, ts code will read null and crash
             from game.render.descriptor.world import WorldDescriptor
             data = WorldDescriptor()
+
+        # The descriptor is built once per render for the whole table. Strip the
+        # face off every card these players may not see before it goes on the
+        # wire -- until MARVEL-62 the whole board went to whoever asked and the
+        # browser decided what to draw. See `world_visibility.py`.
+        data = RedactForViewers(data, player_ids)
 
         compressed_data = Json.DumpGZip(data)
 

@@ -330,7 +330,7 @@ export class Client {
         Effect.select_effect_obj.clear()
         UI.selectCountClear()
 
-        const response = await fetch(`get_world?p=0`);
+        const response = await fetch(`get_world?${Setting.getWorldQuery()}`);
         if (!response.ok) {
             throw new Error('Network response was not ok: ' + response.statusText);
         }
