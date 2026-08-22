@@ -103,7 +103,8 @@ jobs:
             unit_test.test_spec_coverage unit_test.test_decks unit_test.test_deck_build \
             unit_test.test_dsl_blockers unit_test.test_select_rules \
             unit_test.test_may_choose_one \
-            unit_test.test_target_before_payment
+            unit_test.test_target_before_payment \
+            unit_test.test_world_visibility
 
       - name: Unit suite — engine-booting tier
         run: |
