@@ -684,6 +684,29 @@ affordability: an option with no payable target is withheld rather than offered
 and rejected after selection. Card-play, interrupt and response menus retain
 their existing presentation rules; MARVEL-130 did not redefine those surfaces.
 
+The same question is asked one level down, of the targets. Costs are normally
+calculated **once** per option and shared by every target, so all targets are
+equally payable and there is nothing to compare. A card whose text keys the
+cost off which target the effect has breaks that — "reduce the cost to play
+each upgrade **on Iron Man** by 1" — and declares it with
+`Ability.SetCostDependsOnTarget`, which is what makes
+`EffectChecker.UpdatePayResources` price each legal target separately. Only
+then does `DropUnpayableTargets` remove the targets this player cannot pay for,
+so a selection cannot be offered and then refused in `check_pay`. It never
+empties the list: with no payable target there is nothing to prefer, and
+withholding the whole option is the affordability rule above, on the surfaces
+that have opted into it. MARVEL-140.
+
+Pricing every legal target unconditionally would drop the declaration
+entirely. It was measured on 36 headless games (3 scenarios × 3 party sizes ×
+4 seeds): every per-step digest and every recorded event byte-identical, `card`
+and `effect` id counters unchanged, no measurable wall-clock cost. What it does
+move is the `message` object counter, by up to 17%, and that counter is inside
+`PERSISTED_ID_CATEGORIES` — so it is a determinism-contract change rather than
+a free generalisation, and it also changes which payers `CheckPlayerCanPayCost`
+finds (`check_is_not_the_target` sees a real target instead of `None`). Both
+belong to their own change.
+
 ### Message System
 
 Messages broadcast game events to all cards in play:

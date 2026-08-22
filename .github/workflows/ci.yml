@@ -114,7 +114,8 @@ jobs:
             unit_test.test_card_coverage_play unit_test.test_card_removal \
             unit_test.test_cannot_defend unit_test.test_probe_temp0_order \
             unit_test.test_base_health_grant unit_test.test_base_stat_grant \
-            unit_test.test_choice_cost unit_test.test_main_scheme_completion
+            unit_test.test_choice_cost unit_test.test_main_scheme_completion \
+            unit_test.test_target_affordability
 
       # MARVEL-55: the suite used to bump the version and leave a commit on
       # whatever branch was checked out. unit_test/test_package_tools.py guards

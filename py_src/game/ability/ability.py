@@ -73,6 +73,14 @@ class Ability:
         # effect of the payment rather than ordinary effect targeting.
         self.pay_size_is_effect = False
 
+        # This card changes what *another* effect costs according to which
+        # target that effect has, so one cost cannot stand for the whole
+        # option. `EffectChecker.UpdatePayResources` prices every legal target
+        # separately when one of them declares this. Set by
+        # `AbilityFactory.ReduceCostToPlayFaceWhen(when_this_is_the_target=...)`
+        # -- see `Ability.SetCostDependsOnTarget` (MARVEL-140).
+        self.cost_depends_on_target = False
+
         self.default_choose = False
 
         self.selectors: List['Selector|None'] = [] # Only use the first one, the others are used to check if it has the legal target, remove "Zero" in range
@@ -346,6 +354,24 @@ class Ability:
     def SetPaySizeIsTheEffect(self, value: bool=True) -> 'Ability':
         assert self.flags.is_choose_ability, f"{self.flags=}"
         self.pay_size_is_effect = value
+        return self
+
+    def SetCostDependsOnTarget(self) -> 'Ability':
+        """Declare that what this card does to a cost depends on the target.
+
+        `EffectChecker.UpdatePayResources` calculates **one** cost for an
+        option and lets it stand for every target, which is right for the
+        overwhelming majority of cards and wrong for the few whose text keys
+        off which target the effect has -- "reduce the cost to play each
+        upgrade on Iron Man by 1" is not the cost of playing that upgrade
+        anywhere else.
+
+        The checker used to recognise that case by card id. This is the
+        general form: a card says so, the checker asks the legal targets, and
+        a second card needs no engine change. See MARVEL-140.
+        """
+        assert self.when == Message.WhenCalculateEffectCost, f"{self=}"
+        self.cost_depends_on_target = True
         return self
 
     def SetPlayCost(self, cost: 'Cost') -> 'Ability':
