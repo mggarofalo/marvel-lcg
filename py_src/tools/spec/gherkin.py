@@ -77,7 +77,8 @@ class GherkinError(SpecCaseError):
 #   ("setting", key, value)   scenario-level configuration
 #   ("given", GivenStep)
 #   ("when", WhenStep)
-#   ("then", ThenStep | PromptStep | NoPromptStep | "prompt" | ("targets", option))
+#   ("then", ThenStep | PromptStep | NoPromptStep | "prompt"
+#            | ("targets", option, card))
 #
 # Quotes are required around card and option names so a card called
 # "Hard to Keep Down" is unambiguous.
@@ -306,7 +307,14 @@ THEN_TABLE: Table = [
     # ...and the positive form, for "look at the top 3 cards of your deck".
     ('the legal targets for "<option>" are',
      Rx(r'the legal targets for ' + Q + r' are'),
-     lambda option: ("then", ("targets", option))),
+     lambda option: ("then", ("targets", option, ""))),
+    # Bound to the card that offers the option, for a shared label such as
+    # `Play`. MARVEL-141, and the same reasoning as the two range steps below:
+    # the label is not an identity, so an unbound assertion over one of several
+    # `Play` options reads whichever the engine enumerated first.
+    ('the legal targets for "<option>" on "<card>" are',
+     Rx(r'the legal targets for ' + Q + r' on ' + Q + r' are'),
+     lambda option, card: ("then", ("targets", option, card))),
     # How many of them may be taken, which is the other half of "up to N" and
     # the half nothing could say. Naming a fourth target for Ancestral
     # Knowledge's "up to 3" is refused with `Play takes 1..3 target(s)` -- the
@@ -754,12 +762,15 @@ def Build(draft: Draft, feature: str, path: str, digest: str, where: str) -> Spe
                             f"a table of the options the engine should offer")
                     payload = PromptStep(options=tuple(rows))
                 elif isinstance(payload, tuple) and payload and payload[0] == "targets":
+                    _kind, option, card = payload
+                    bound = f" on {card!r}" if card else ""
                     if not rows:
                         raise GherkinError(
                             f"{where}:{number}: 'the legal targets for "
-                            f"{payload[1]!r} are' needs a table of the cards the "
-                            f"engine should accept")
-                    payload = TargetsStep(option=payload[1], targets=tuple(rows))
+                            f"{option!r}{bound} are' needs a table of the cards "
+                            f"the engine should accept")
+                    payload = TargetsStep(option=option, targets=tuple(rows),
+                                          card=card)
                 beats.append(payload)
         except GherkinError:
             raise

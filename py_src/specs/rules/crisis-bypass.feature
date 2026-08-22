@@ -75,7 +75,7 @@ Feature: The crisis-icon bypass
     # removes a target -- it removes the threat removal -- which is the
     # distinction damage-and-threat.feature draws between crisis and patrol, and
     # it holds for the card that ignores it too.
-    Then the legal targets for "Play" are
+    Then the legal targets for "Play" on "Cable Arrow" are
       | The Break-In! |
       | Under Attack  |
 

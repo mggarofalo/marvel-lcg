@@ -63,7 +63,7 @@ Feature: Target counts
     And my hand is "01042", "Vibranium"
     And my discard pile is "Panther Claws", "Tactical Genius", "Energy Daggers", "Vibranium Suit"
 
-    Then the legal targets for "Play" are
+    Then the legal targets for "Play" on "01042" are
       | Panther Claws  |
       | Tactical Genius |
       | Energy Daggers |

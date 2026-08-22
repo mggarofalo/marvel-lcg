@@ -582,6 +582,27 @@ class TestGherkinParsing(unittest.TestCase):
         self.assertEqual(beat.option, "Futurist")
         self.assertEqual(beat.targets, ("Repulsor Blast", "Mark V Armor"))
 
+    def test_legal_targets_can_bind_the_option_to_its_card(self):
+        """MARVEL-141. `Play` is offered once per playable card in hand."""
+        case = ParseFeature(Feature("""
+  Scenario: one
+    Then the legal targets for "Play" on "Wakanda Forever!" are
+      | Panther Claws |
+"""))[0]
+        beat = case.beats[0]
+        self.assertEqual((beat.kind, beat.option, beat.card),
+                         ("targets", "Play", "Wakanda Forever!"))
+        self.assertEqual(beat.targets, ("Panther Claws",))
+
+    def test_a_bound_legal_targets_without_a_table_is_a_parse_error(self):
+        with self.assertRaises(GherkinError) as caught:
+            ParseFeature(Feature("""
+  Scenario: one
+    Then the legal targets for "Play" on "Wakanda Forever!" are
+"""))
+        self.assertIn("needs a table", str(caught.exception))
+        self.assertIn("on 'Wakanda Forever!'", str(caught.exception))
+
     def test_legal_targets_without_a_table_is_a_parse_error(self):
         """An empty target list would read as "this option accepts nothing".
 

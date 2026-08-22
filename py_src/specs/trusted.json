@@ -877,6 +877,18 @@
       "sha256": "585ed44c484cf9b167cfd8648423f3ef4773992fab21db7c103e6158357764e8",
       "source": "specs/cards/core/01084-nick-fury.feature"
     },
+    "Option binding :: a filtered-out Play leaves the other card's Play untouched": {
+      "sha256": "670796bd14569cc2d54412ba8bc1560298e3630070f1b4d92c50150879e0340d",
+      "source": "specs/rules/option-binding.feature"
+    },
+    "Option binding :: two cards offering Play answer for their own targets": {
+      "sha256": "670796bd14569cc2d54412ba8bc1560298e3630070f1b4d92c50150879e0340d",
+      "source": "specs/rules/option-binding.feature"
+    },
+    "Option binding :: writing the hand the other way round moves neither answer": {
+      "sha256": "670796bd14569cc2d54412ba8bc1560298e3630070f1b4d92c50150879e0340d",
+      "source": "specs/rules/option-binding.feature"
+    },
     "Panther Claws :: as a step that is not the final one it deals 2": {
       "sha256": "d5e947b778e9729f8a15759051c8eed7802de7b63df27830e6cd3cd0f99232f5",
       "source": "specs/cards/core/01047-panther-claws.feature"
@@ -1330,19 +1342,19 @@
       "source": "specs/cards/core/01048-tactical-genius.feature"
     },
     "Target counts :: a fifth card in the pile does not raise the ceiling": {
-      "sha256": "42ec1bb44ca07890fc1ee7ade23ab8a6d3a11976bbc04d14f1a1b98e4334043e",
+      "sha256": "824a73634ce042a6944631502aefef987bacb8feb87019ca6792f4ed13011c2b",
       "source": "specs/rules/target-counts.feature"
     },
     "Target counts :: a third upgrade raises that ceiling to three": {
-      "sha256": "42ec1bb44ca07890fc1ee7ade23ab8a6d3a11976bbc04d14f1a1b98e4334043e",
+      "sha256": "824a73634ce042a6944631502aefef987bacb8feb87019ca6792f4ed13011c2b",
       "source": "specs/rules/target-counts.feature"
     },
     "Target counts :: an each-you-control effect takes as many targets as the board offers": {
-      "sha256": "42ec1bb44ca07890fc1ee7ade23ab8a6d3a11976bbc04d14f1a1b98e4334043e",
+      "sha256": "824a73634ce042a6944631502aefef987bacb8feb87019ca6792f4ed13011c2b",
       "source": "specs/rules/target-counts.feature"
     },
     "Target counts :: up to 3 is a ceiling of 3 even with four cards to choose from": {
-      "sha256": "42ec1bb44ca07890fc1ee7ade23ab8a6d3a11976bbc04d14f1a1b98e4334043e",
+      "sha256": "824a73634ce042a6944631502aefef987bacb8feb87019ca6792f4ed13011c2b",
       "source": "specs/rules/target-counts.feature"
     },
     "Taunt :: 42016 makes the villain attack, only the hero may defend, and draws 3": {
@@ -1434,51 +1446,51 @@
       "source": "specs/cards/core/01045-the-golden-city.feature"
     },
     "The crisis-icon bypass :: an ally ignoring the icon is not you ignoring it": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: an ally that ignores the icon thwarts the main scheme through it": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: an ally whose basic THW ignores the icon removes threat through it": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: an effect that ignores the icon and counts it does both": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: an effect that ignores the icon removes threat the icon would have blocked": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: ignoring the icon fires a response the board can see": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: no crisis icon in play is no response, not a silent one": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: the ally's bypass does not extend to the hero thwarting beside it": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: the same ally removes the same 2 with no crisis in play": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: the same ally removes the same 3 with no crisis in play": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: the same effect removes the same 3 with no crisis in play": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: the same effect removes the same 6 with an acceleration icon instead": {
-      "sha256": "e5c71ba287bb38a2d7f82da50c3755ad68ba88f657690cc8235deeadf765b1dc",
+      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "Timing priority :: a constant alone prevents the damage": {
@@ -1718,35 +1730,35 @@
       "source": "specs/cards/core/01068-vision.feature"
     },
     "Wakanda Forever! :: a lone upgrade is the final step of the sequence": {
-      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
+      "sha256": "2cd9a909b0be8638991c9a69885cdcd4cddbaf053bcd6c53e3591acb979153bd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: each means each -- naming no order resolves every upgrade": {
-      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
+      "sha256": "2cd9a909b0be8638991c9a69885cdcd4cddbaf053bcd6c53e3591acb979153bd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: the mental printing resolves the same ability": {
-      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
+      "sha256": "2cd9a909b0be8638991c9a69885cdcd4cddbaf053bcd6c53e3591acb979153bd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: the order named decides which upgrade gets the final step": {
-      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
+      "sha256": "2cd9a909b0be8638991c9a69885cdcd4cddbaf053bcd6c53e3591acb979153bd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: the physical printing resolves the same ability": {
-      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
+      "sha256": "2cd9a909b0be8638991c9a69885cdcd4cddbaf053bcd6c53e3591acb979153bd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: the same two upgrades in the other order swap both numbers": {
-      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
+      "sha256": "2cd9a909b0be8638991c9a69885cdcd4cddbaf053bcd6c53e3591acb979153bd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: the wild printing resolves the same ability": {
-      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
+      "sha256": "2cd9a909b0be8638991c9a69885cdcd4cddbaf053bcd6c53e3591acb979153bd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "Wakanda Forever! :: with no Black Panther upgrade in play the event is not offered": {
-      "sha256": "0619412118748886a72d2149b7c6d5c4d742468046b7d903e5f79853a2fa40cd",
+      "sha256": "2cd9a909b0be8638991c9a69885cdcd4cddbaf053bcd6c53e3591acb979153bd",
       "source": "specs/cards/core/01043a-wakanda-forever.feature"
     },
     "War Machine :: a minion in play is damaged too, without being named": {
