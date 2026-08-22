@@ -375,6 +375,14 @@ scheme" needs. `the legal targets for "<option>" are` is the positive form, and
 naming an option the engine is not offering fails as *unresolvable* rather than
 passing vacuously.
 
+It takes the same `on "<card>"` binding as the two range steps below
+(MARVEL-141), and for a shared label like `Play` it needs one:
+
+```gherkin
+    Then the legal targets for "Play" on "Wakanda Forever!" are
+      | Panther Claws |
+```
+
 Prefer both to the older workaround of building a board where the illegal
 candidate is the only one and asserting it survived. That reads like full
 coverage and is not.
@@ -419,12 +427,27 @@ satisfy a raw floor at all, the option is filtered out and the assertion is
 unresolvable. These are client-visible semantics, which is why the C# Reqnroll
 binding must inspect its offered option rather than card-definition metadata.
 
-Use the `on "<card>"` form for generic labels such as `Play`. Several cards can
-offer `Play` in the same decision, and one may be filtered out while another
-remains; matching only the label would make the assertion depend on option
-enumeration. The shorter form is accepted for labels that are unique at that
-decision, and an ambiguous short form is unresolvable rather than choosing the
-first match.
+Use the `on "<card>"` form for generic labels such as `Play`. It applies to all
+three option assertions — the two ranges (MARVEL-134) and the legal-target list
+(MARVEL-141) — because all three have to answer "which option?" before they can
+answer anything else, and a label is not an answer: `Play` is the label of every
+playable card in hand.
+
+Two ways matching on the label alone goes wrong, and only one of them is loud.
+With two `Play` options the answer depended on which the engine enumerated
+first, so the same claim about the same board passed or failed on the order the
+hand happened to be written in. And with the intended card's `Play` **filtered
+out** — which is how the engine says "you cannot do this" — an unrelated `Play`
+was still there to answer in its place, which resolves silently against the
+wrong card.
+
+The bound form is matched on the option's `bind_id`, the object id of the card
+the engine attached the option to. The shorter form is still accepted for labels
+that are unique at that decision, and an ambiguous short form is *unresolvable*
+rather than resolved by enumeration order.
+`specs/rules/option-binding.feature` states both controls: the same two claims
+over a hand written in both orders, and a board where one of the two `Play`
+options is gone and the other is not.
 
 One more decision assertion says a card-bound option is absent (MARVEL-130):
 
@@ -496,9 +519,9 @@ Read the catalogue for the current list. The shape:
   `I pass`, each optionally `targeting "<card>"`; `I choose` also has exact
   `paying <n> resources` forms with and without targets
 - **Then** — `I am prompted to choose one` + table, `I am not prompted again`,
-  `I cannot attack "<card>"`, `the target minimum for "<option>" is <n>`,
-  the card-bound `... on "<card>" is <n>` variant, target maximum in both
-  forms, card state
+  `I cannot attack "<card>"`, `the legal targets for "<option>" are` + table,
+  `the target minimum for "<option>" is <n>`, target maximum likewise, and the
+  card-bound `... on "<card>"` variant of all three, card state
   (`has <n> damage`, `has <n> "<icon>" resource icons`,
   `is in the "<zone>"`, `is [not] stunned`), my state
   (`I have <n> cards in hand`), another player's state

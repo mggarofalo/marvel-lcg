@@ -19,9 +19,9 @@ from types import SimpleNamespace
 
 from tools.spec.assertions import Evaluate, ResolveSubject
 from tools.spec.case import (
-    CannotStep, GivenStep, LoadJsonCases, MinimumStep, NoPromptStep,
-    NotOfferedStep, PromptStep, SourceDigest, SpecCase, SpecCaseError, ThenStep,
-    WhenStep)
+    CannotStep, GivenStep, LimitStep, LoadJsonCases, MinimumStep, NoPromptStep,
+    NotOfferedStep, PromptStep, SourceDigest, SpecCase, SpecCaseError,
+    TargetsStep, ThenStep, WhenStep)
 from tools.spec.harness import (
     OUTCOME_ASSERTION, OUTCOME_PASS, OUTCOME_UNPLAYABLE, RunCase)
 from tools.spec.resolve import CardRef, CardRefError, NormaliseLabel
@@ -147,6 +147,25 @@ class TestCaseFormat(unittest.TestCase):
         self.assertEqual([beat.kind for beat in again.beats],
                          ["when", "prompt", "when", "minimum", "then",
                           "no_prompt"])
+
+    def test_a_legal_targets_beat_round_trips_with_its_card_binding(self):
+        # The `targets` kind was write-only until MARVEL-94's follow-up; the
+        # card binding it gained in MARVEL-141 has to survive the same trip.
+        case = MakeCase(beats=(TargetsStep(option="Play", card="01043a",
+                                           targets=("Panther Claws",)),))
+        again = SpecCase.FromJson(case.ToJson())
+        self.assertEqual(again.ToDict(), case.ToDict())
+        beat = again.beats[0]
+        self.assertEqual((beat.option, beat.card, beat.targets),
+                         ("Play", "01043a", ("Panther Claws",)))
+
+    def test_an_unbound_legal_targets_beat_omits_the_card_from_json(self):
+        # An optional field written as "" would churn every stored case that
+        # predates the binding.
+        beat = TargetsStep(option="Futurist", targets=("Repulsor Blast",))
+        self.assertNotIn("card", beat.ToDict())
+        self.assertEqual(beat.Describe(),
+                         "the legal targets for 'Futurist' are 'Repulsor Blast'")
 
     def test_load_json_stamps_provenance_on_every_case(self):
         text = ('[{"name": "one", "scenario": "rhino", "heroes": ["spider_man"], '
@@ -488,6 +507,23 @@ class TestDecisionBudget(unittest.TestCase):
         self.assertFalse(policy.results[0].passed)
         self.assertTrue(policy.results[0].unresolvable)
 
+    def test_an_option_assertion_needs_a_board_to_read(self):
+        """Every option assertion reads the world, so a decision without one
+        resolves nothing -- not even the label match it could have made."""
+        from tools.spec.policy import TranscriptPolicy
+        for beat in (TargetsStep(option="Play", targets=("Rhino",)),
+                     MinimumStep(option="Play", minimum=1),
+                     LimitStep(option="Play", maximum=1)):
+            with self.subTest(beat=beat.kind):
+                policy = TranscriptPolicy(beats=(beat,))
+
+                policy.Choose(self.Decide())
+
+                self.assertEqual(len(policy.results), 1)
+                self.assertFalse(policy.results[0].passed)
+                self.assertTrue(policy.results[0].unresolvable)
+                self.assertIn("no board", policy.results[0].message)
+
 
 ################################################################################
 # End to end -- these boot the engine.
@@ -591,6 +627,85 @@ class TestAgainstTheEngine(unittest.TestCase):
                 GivenStep("in_play", ("Tactical Genius",)),
             ),
             beats=(MinimumStep(option="Play", minimum=2),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("matches 2 offered options", result.Describe())
+
+    ############################################################################
+    # MARVEL-141. The same four claims for `the legal targets for`, which had
+    # the defect MARVEL-134 fixed for the two range steps. Haymaker and Wakanda
+    # Forever! both offer `Play` and share no legal target, so a mis-bound
+    # assertion cannot pass by coincidence.
+    #
+    def test_a_card_bound_target_list_reads_the_card_it_names(self):
+        """Haymaker is listed first and answers for enemies, not upgrades."""
+        case = MakeCase(
+            name="bound legal targets",
+            heroes=("black_panther",),
+            given=(
+                HERO_FORM,
+                GivenStep("hand", (
+                    "Haymaker", "01043a", "Vibranium", "Vibranium")),
+                GivenStep("in_play", ("Panther Claws",)),
+            ),
+            beats=(
+                TargetsStep(option="Play", card="01043a",
+                            targets=("Panther Claws",)),
+                TargetsStep(option="Play", card="Haymaker",
+                            targets=("Rhino",)),
+            ),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_PASS, result.Describe())
+
+    def test_a_wrong_card_bound_target_list_fails_the_assertion(self):
+        """Mutation control: the binding must not pass unconditionally."""
+        case = MakeCase(
+            name="wrong bound legal targets",
+            heroes=("black_panther",),
+            given=(
+                HERO_FORM,
+                GivenStep("hand", (
+                    "Haymaker", "01043a", "Vibranium", "Vibranium")),
+                GivenStep("in_play", ("Panther Claws",)),
+            ),
+            beats=(TargetsStep(option="Play", card="Haymaker",
+                               targets=("Panther Claws",)),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_ASSERTION, result.Describe())
+        self.assertIn("missing 'panther claws'", result.Failures()[0].message)
+
+    def test_a_card_bound_target_list_does_not_inspect_another_play_option(self):
+        """Wakanda is filtered out; Haymaker must not answer in its place."""
+        case = MakeCase(
+            name="filtered legal targets",
+            heroes=("black_panther",),
+            given=(
+                HERO_FORM,
+                GivenStep("hand", (
+                    "01043a", "Haymaker", "Vibranium", "Vibranium")),
+            ),
+            beats=(TargetsStep(option="Play", card="01043a",
+                               targets=("Panther Claws",)),),
+        )
+        result = RunCase(case)
+        self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())
+        self.assertIn("not offering 'Play' on '01043a'", result.Describe())
+
+    def test_an_unbound_target_list_with_two_matching_options_is_unresolvable(self):
+        """Enumeration order cannot decide which card an assertion reads."""
+        case = MakeCase(
+            name="ambiguous legal targets",
+            heroes=("black_panther",),
+            given=(
+                HERO_FORM,
+                GivenStep("hand", (
+                    "Haymaker", "01043a", "Vibranium", "Vibranium")),
+                GivenStep("in_play", ("Panther Claws",)),
+            ),
+            beats=(TargetsStep(option="Play", targets=("Panther Claws",)),),
         )
         result = RunCase(case)
         self.assertEqual(result.outcome, OUTCOME_UNPLAYABLE, result.Describe())

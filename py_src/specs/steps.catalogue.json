@@ -71,6 +71,7 @@
       "it is the \"<phase>\" phase",
       "I cannot choose \"<option>\" targeting \"<card>\"",
       "the legal targets for \"<option>\" are",
+      "the legal targets for \"<option>\" on \"<card>\" are",
       "the target maximum for \"<option>\" is <n>",
       "the target maximum for \"<option>\" on \"<card>\" is <n>",
       "the target minimum for \"<option>\" is <n>",

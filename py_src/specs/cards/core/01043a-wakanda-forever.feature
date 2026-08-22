@@ -53,7 +53,7 @@ Feature: Wakanda Forever!
     And "Panther Claws" is in play
     And "Combat Training" is in play
 
-    Then the legal targets for "Play" are
+    Then the legal targets for "Play" on "01043a" are
       | Panther Claws |
     And I cannot choose "Play" targeting "Combat Training"
 

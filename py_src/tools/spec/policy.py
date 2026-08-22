@@ -303,36 +303,37 @@ class TranscriptPolicy(BotPolicy):
         vacuously: "the legal targets for an option that was never offered" has
         no truth value worth recording, and passing it would be the
         silent-wrong-pass this harness exists to refuse.
+
+        MARVEL-141. Which option is read is decided by `OfferedOption`, not by
+        enumeration order: `Play` is a shared label, and a board that filters the
+        intended card's `Play` out still offers another card's, which would then
+        answer this assertion in its place.
         """
-        world = decision.world
-        wanted = NormaliseLabel(beat.option)
-        for option in decision.selectable_options:
-            if NormaliseLabel(option.name) != wanted:
-                continue
-            # Compared on the card's *name*, the way an author writes it. The
-            # descriptive form -- "Repulsor Blast (01031) in PlayerDeck" -- is
-            # what the failure message prints, because a target list that
-            # disagrees is much easier to read with the zone attached.
-            actual = sorted(NormaliseLabel(name)
-                            for name in self.TargetNames(world, option))
-            expected = sorted(NormaliseLabel(card) for card in beat.targets)
-            if actual == expected:
-                self.Record(beat, True)
-                return
-            missing = [t for t in expected if t not in actual]
-            extra = [t for t in actual if t not in expected]
-            parts: List[str] = []
-            if missing:
-                parts.append(f"missing {', '.join(repr(t) for t in missing)}")
-            if extra:
-                parts.append(f"unexpected {', '.join(repr(t) for t in extra)}")
-            listing = ", ".join(self.LabelTargets(world, option)) or "nothing"
-            self.Record(beat, False,
-                        f"{option.name} accepts {listing} ({'; '.join(parts)})")
+        option, error = self.OfferedOption(beat, decision)
+        if error:
+            self.Record(beat, False, error, unresolvable=True)
             return
+        world = decision.world
+        # Compared on the card's *name*, the way an author writes it. The
+        # descriptive form -- "Repulsor Blast (01031) in PlayerDeck" -- is
+        # what the failure message prints, because a target list that
+        # disagrees is much easier to read with the zone attached.
+        actual = sorted(NormaliseLabel(name)
+                        for name in self.TargetNames(world, option))
+        expected = sorted(NormaliseLabel(card) for card in beat.targets)
+        if actual == expected:
+            self.Record(beat, True)
+            return
+        missing = [t for t in expected if t not in actual]
+        extra = [t for t in actual if t not in expected]
+        parts: List[str] = []
+        if missing:
+            parts.append(f"missing {', '.join(repr(t) for t in missing)}")
+        if extra:
+            parts.append(f"unexpected {', '.join(repr(t) for t in extra)}")
+        listing = ", ".join(self.LabelTargets(world, option)) or "nothing"
         self.Record(beat, False,
-                    f"the engine is not offering {beat.option!r}; it offers "
-                    f"{self.Offered(decision)}", unresolvable=True)
+                    f"{option.name} accepts {listing} ({'; '.join(parts)})")
 
     def CheckLimit(self, beat: LimitStep, decision: Any) -> None:
         """Check the most targets an offered option will take.
@@ -350,11 +351,10 @@ class TranscriptPolicy(BotPolicy):
         says when the ceiling it found is the candidate count -- a scenario that
         hits it has not built a board that can see the printed number.
         """
-        options, error = self.TargetCountOptions(beat, decision)
+        option, error = self.OfferedOption(beat, decision)
         if error:
             self.Record(beat, False, error, unresolvable=True)
             return
-        option = options[0]
         low = int(option.target_num_range[0])
         high = int(option.target_num_range[1])
         if high == beat.maximum:
@@ -378,11 +378,10 @@ class TranscriptPolicy(BotPolicy):
         Reading the live tuple is therefore the only contract the browser and
         future C# runner can share without reaching into Python card scripts.
         """
-        options, error = self.TargetCountOptions(beat, decision)
+        option, error = self.OfferedOption(beat, decision)
         if error:
             self.Record(beat, False, error, unresolvable=True)
             return
-        option = options[0]
         low = int(option.target_num_range[0])
         high = int(option.target_num_range[1])
         if low == beat.minimum:
@@ -393,31 +392,52 @@ class TranscriptPolicy(BotPolicy):
             beat, False,
             f"{option.name} takes {low}..{high} target(s) from {listing}")
 
-    def TargetCountOptions(self, beat: Any, decision: Any) -> Tuple[List[Any], str]:
-        """Resolve one option for a range assertion without trusting ordering."""
+    def OfferedOption(self, beat: Any, decision: Any) -> Tuple[Any, str]:
+        """Resolve the one offered option an assertion is about.
+
+        Shared by every assertion that inspects a single option: the two range
+        steps (MARVEL-134) and `the legal targets for` (MARVEL-141). All three
+        used to take the first option whose label matched, and a label is not an
+        identity -- `Play` is offered once per playable card in hand. Two ways
+        that went wrong, and the second is the one that passes silently: with two
+        `Play` options the answer depended on which the engine enumerated first,
+        and with the intended card's `Play` filtered out an unrelated one was
+        still there to be read in its place.
+
+        So an unbound label that matches more than one option is unresolvable
+        rather than resolved by ordering, and a bound one is matched on
+        `bind_id` -- the object id of the card the engine attached the option to.
+        Returns `(option, "")` or `(None, reason)`.
+
+        A decision with no board is unresolvable for all three. Every caller
+        reads the world -- to resolve the named card, or to name the option's
+        targets in the failure message -- so there is nothing to say about the
+        option even when the label alone would have matched.
+        """
+        if decision.world is None:
+            return None, "there is no board to resolve the option against"
+
         wanted = NormaliseLabel(beat.option)
         options = [option for option in decision.selectable_options
                    if NormaliseLabel(option.name) == wanted]
 
         if beat.card:
-            if decision.world is None:
-                return [], f"there is no board to resolve {beat.card!r} against"
             try:
                 card = ResolveCard(decision.world, beat.card)
             except CardRefError as exc:
-                return [], str(exc)
+                return None, str(exc)
             options = [option for option in options
                        if int(option.bind_id) == int(card.object_id)]
 
         subject = (f"{beat.option!r} on {beat.card!r}" if beat.card
                    else repr(beat.option))
         if not options:
-            return [], (f"the engine is not offering {subject}; it offers "
-                        f"{self.Offered(decision)}")
+            return None, (f"the engine is not offering {subject}; it offers "
+                          f"{self.Offered(decision)}")
         if len(options) > 1:
-            return [], (f"{subject} matches {len(options)} offered options; "
-                        f"bind the assertion to a card")
-        return options, ""
+            return None, (f"{subject} matches {len(options)} offered options; "
+                          f"bind the assertion to a card")
+        return options[0], ""
 
     def CheckPrompt(self, beat: PromptStep, decision: Any) -> None:
         expected = sorted(NormaliseLabel(option) for option in beat.options)

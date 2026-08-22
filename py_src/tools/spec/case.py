@@ -255,10 +255,20 @@ class TargetsStep:
 
     Compared as a set, like `PromptStep`, and for the same reason: a missing or
     extra legal target is behavior, the order the engine built them in is not.
+
+    `card` binds the assertion to the card that offers the option, the way
+    `LimitStep` and `MinimumStep` do since MARVEL-134. The label alone is not an
+    identity: several cards in one hand offer `Play` at the same decision, so an
+    unbound assertion would be answered by whichever the engine enumerated first
+    -- and a board that filters the intended card out leaves an unrelated `Play`
+    behind to satisfy or fail the claim in its place (MARVEL-141). Unbound is
+    still accepted for a label that is unique at that decision, and an ambiguous
+    one is unresolvable rather than resolved by enumeration order.
     """
 
     option: str
     targets: Tuple[str, ...] = ()
+    card: str = ""
 
     kind = "targets"
 
@@ -272,12 +282,16 @@ class TargetsStep:
                 f"target, name the card with 'I cannot choose'")
 
     def Describe(self) -> str:
-        return (f"the legal targets for {self.option!r} are "
+        bound = f" on {self.card!r}" if self.card else ""
+        return (f"the legal targets for {self.option!r}{bound} are "
                 f"{', '.join(repr(t) for t in self.targets)}")
 
     def ToDict(self) -> Dict[str, Any]:
-        return {"kind": "targets", "option": self.option,
-                "targets": list(self.targets)}
+        result: Dict[str, Any] = {"kind": "targets", "option": self.option,
+                                  "targets": list(self.targets)}
+        if self.card:
+            result["card"] = self.card
+        return result
 
 
 @dataclass(frozen=True)
@@ -707,7 +721,8 @@ def BeatFromDict(item: Dict[str, Any]) -> Beat:
     # `limit` beside it.
     if kind == "targets":
         return TargetsStep(option=str(item.get("option", "")),
-                           targets=tuple(str(t) for t in item.get("targets", ())))
+                           targets=tuple(str(t) for t in item.get("targets", ())),
+                           card=str(item.get("card", "")))
     if kind == "cannot":
         return CannotStep(option=str(item.get("option", "")),
                           card=str(item.get("card", "")))
