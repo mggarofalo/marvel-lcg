@@ -1,0 +1,45 @@
+# Paths that produce collateral merge damage when parallel agents touch them.
+#
+# Read this before dispatching concurrent work-issue agents. Two pending issues
+# whose predicted scopes both intersect a line here are serialized, not
+# parallelized. See ~/.claude/skills/work-issue/SKILL.md, "Pre-flight checks".
+#
+# The cost of getting this wrong is not a merge conflict -- a conflict is loud
+# and cheap. It is a plausible-looking resolution that silently breaks an
+# invariant nobody re-checks, in a file whose whole job is to be the invariant.
+
+# The closed step vocabulary, and the Python<->C# contract built on it.
+# A test asserts the parser implements exactly this file, so a merge that keeps
+# "both sides" of a concurrent edit produces a catalogue that still parses,
+# still passes locally, and no longer describes what the C# runner binds.
+# MARVEL-139 and MARVEL-141 both land here.
+py_src/specs/steps.catalogue.json
+
+# Generated ledgers, written only by the validation runner, never by hand.
+# Two spec-authoring agents regenerate these from different partial worlds and
+# each one's output looks authoritative. Run one spec author at a time.
+py_src/specs/trusted.json
+py_src/specs/quarantine.json
+
+# One function, several open issues about different ends of the same ordering
+# problem: targets are chosen before payment exists. MARVEL-133 and MARVEL-140
+# both land here and will disagree about what the fix is.
+py_src/game/effect/effect_checker.py
+py_src/game/effect/effect_target_cost.py
+
+# Generated card data. Regenerating it moves counts that prose all over the repo
+# restates, so an agent that refreshes it invalidates the measurements another
+# agent is mid-way through correcting. MARVEL-142 and MARVEL-144 are exactly
+# this pair.
+datasets/cards/**
+datasets/marvelsdb/**
+
+# Carries its own checksum, verified by Json.LoadInternal. Any edit has to
+# regenerate it, and two independent regenerations do not merge.
+py_src/data/cards.json
+
+# Coverage prose and the tool that produces the numbers it quotes. Anything
+# refreshing counts touches both, and so does anything changing what is counted.
+py_src/tools/spec/coverage.py
+py_src/tools/coverage/reach.py
+docs/spec-campaign.md
