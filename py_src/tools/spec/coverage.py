@@ -800,9 +800,17 @@ def main(argv: Optional[List[str]] = None) -> int:
            shallow=args.shallow, rulings=args.rulings)
 
     if args.out:
+        # Every filter the printed report applied applies here too. A JSON file
+        # that quietly disagrees with the report printed beside it is worse than
+        # one that is missing: whoever automates against it has no reason to
+        # look twice.
         payload = coverage.ToDict()
-        payload["uncovered"] = coverage.Uncovered(tier=args.tier, pack=args.pack)
-        payload["shallow"] = coverage.Shallow(tier=args.tier, pack=args.pack)
+        payload["uncovered"] = coverage.Uncovered(
+            tier=args.tier, pack=args.pack, rulings=args.rulings)
+        payload["shallow"] = coverage.Shallow(
+            tier=args.tier, pack=args.pack, rulings=args.rulings)
+        payload["filters"] = {"tier": args.tier, "pack": args.pack,
+                              "rulings": args.rulings}
         with open(args.out, "w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2, sort_keys=True)
             handle.write("\n")

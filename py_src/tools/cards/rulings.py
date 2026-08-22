@@ -163,12 +163,21 @@ def Load(snapshot: Path = SNAPSHOT_DIR) -> RulingsData:
             updated=entry.get("updated"),
         )
     # An entry nobody asked about cannot have come from this harvest.
+    #
+    # Unconditional on purpose. Guarding this with `if data.queried` would make
+    # the check evaporate in exactly the case it exists for: a snapshot with
+    # rulings and an empty or missing `queried` is the most provenance-free
+    # file this loader can be handed, and it would have been the one shape that
+    # sailed through. An empty snapshot -- no entries, no queried -- still
+    # passes, because there is nothing there to be unaccounted for.
     unasked = sorted(set(data.rulings) - data.queried)
-    if data.queried and unasked:
+    if unasked:
         raise ValueError(
             f"{path} holds {len(unasked)} ruling(s) for code(s) absent from "
             f"`queried`, so the file was not written by one harvest: "
-            f"{', '.join(unasked[:5])}")
+            f"{', '.join(unasked[:5])}. `queried` records what the harvest "
+            f"asked about; without it a ruling has no provenance. Re-harvest "
+            f"with `python -m tools.cards.harvest_faq`.")
     return data
 
 

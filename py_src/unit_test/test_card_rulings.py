@@ -123,6 +123,34 @@ class TestLoad(unittest.TestCase):
             with self.assertRaises(ValueError):
                 rulings.Load(root)
 
+    def test_rulings_with_no_queried_at_all_are_rejected(self):
+        """The most provenance-free shape there is must not be the one that passes.
+
+        Guarding the check on a non-empty `queried` would have let this through:
+        rulings present, nothing recording that anybody asked for them.
+        """
+        for empty in ([], None):
+            with self.subTest(queried=empty):
+                with tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    WriteSnapshot(root, [Entry("01001a")], queried=[])
+                    if empty is None:
+                        path = root / rulings.FAQ_FILE
+                        payload = json.loads(path.read_text(encoding="utf-8"))
+                        del payload["queried"]
+                        path.write_text(json.dumps(payload), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        rulings.Load(root)
+
+    def test_an_entirely_empty_snapshot_is_still_valid(self):
+        """Nothing asked, nothing found -- there is nothing unaccounted for."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            WriteSnapshot(root, [], queried=[])
+            data = rulings.Load(root)
+        self.assertTrue(data.Loaded())
+        self.assertEqual(data.rulings, {})
+
 
 class TestFaces(unittest.TestCase):
     """Mapping a MarvelCDB code onto the card ids this repository uses."""
@@ -395,6 +423,23 @@ class TestCoverageIntegration(unittest.TestCase):
             self.assertGreater(len(by_card), 25)
         else:
             self.assertEqual(by_card, {})
+
+    def test_the_written_json_applies_the_same_filters_as_the_report(self):
+        """`--rulings --out` must not print one list and write another.
+
+        The filters go into the payload too, so a consumer can tell a narrowed
+        report from a whole one rather than inferring it from the row count.
+        """
+        from tools.spec import coverage
+        cards = [
+            {"card_id": "A", "engine": {"script": {"lines": 1}}},
+            {"card_id": "B", "engine": {"script": {"lines": 1}}},
+        ]
+        cov = coverage.Coverage(cards=cards, tagged={}, trusted=(),
+                                quarantined=(), rulings={"A": [object()]})
+        self.assertEqual([r["card_id"] for r in cov.Uncovered(rulings=True)], ["A"])
+        self.assertEqual(
+            sorted(r["card_id"] for r in cov.Uncovered()), ["A", "B"])
 
     def test_a_card_with_a_ruling_is_flagged_in_a_work_list_row(self):
         from tools.spec import coverage
