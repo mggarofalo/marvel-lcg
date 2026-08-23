@@ -29,9 +29,24 @@ sources. Each is vendored as a snapshot, each is diffable, and each can move.
 |---|---|---|---|
 | **Rules Reference** (FFG/Asmodee) | `datasets/rules-reference/` | rule entry | a new RR version is published |
 | **Printed card text** (MarvelSDB) | `datasets/marvelsdb/` → `datasets/cards/` | card code | a new pack ships |
-| **Official rulings** (MarvelCDB FAQ) | `datasets/marvelcdb-faq/` | ruling per card | rulings are added or revised |
+| **Card rulings** (MarvelCDB FAQ) | `datasets/marvelcdb-faq/` | ruling per card | rulings are added or revised |
+| **Rules rulings** (Hall of Heroes) | `datasets/rulings/` | ruling per question | rulings are added or revised |
 
-Two of the three already exist. The Rules Reference is the missing one.
+Two of the four already exist. The Rules Reference and the rules rulings are the
+missing ones, and they are missing together for the same reason: **there was no
+authority for rules, only for cards.**
+
+The two ruling sources are complementary rather than redundant. MarvelCDB FAQ is
+keyed per card code and structurally cannot express a ruling that names no card.
+[Hall of Heroes](https://hallofheroeslcg.com/official-ffg-rulings/) is keyed per
+question, and a large share of its ~974 attributed rulings cite no card at all —
+"How are minion attacks ordered?" is a ruling about the Rules Reference, not
+about a card.
+
+Its rulings are also **scoped by the RRG version they were made against** — the
+site is organised into pre-1.5, post-1.5, post-1.6 and post-1.7&1.8 pages. That
+is the supersession problem stated by the source itself, and it is why the
+modifications layer below is not optional.
 
 All three obey the existing rule: **nothing under `datasets/` may require the
 network to regenerate.** Each is *vendored* — harvested once, pinned, read
@@ -85,6 +100,7 @@ Extend the pin to **every authority the scenario derives from**:
 | `@card:01001a` | the printed-text hash of `01001a` in `datasets/cards/` |
 | `@rr:damage.3` | the entry hash of `damage.3` in the RR index |
 | `@ruling:01001a` | the hash of that card's rulings |
+| `@ruling:<sha>` | the hash of that Hall of Heroes ruling |
 
 A trusted scenario is trusted **against a stated set of inputs**. When any of
 them moves, the scenario leaves `trusted.json` automatically and returns to
