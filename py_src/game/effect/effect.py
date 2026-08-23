@@ -521,22 +521,32 @@ class Effect(Object):
     #
     def Render(self, by_effect: 'Effect|None', bind_player_id: int) -> 'EffectDescriptor':
         def get_pay_info(effect: 'Effect') -> Dict[int, 'EffectDescriptor.Payment']:
-            def get_cost_str_rule(effect: 'Effect', target: 'CardFace|None') -> Tuple[str, List[str]]:
+            def get_cost_str_rule(effect: 'Effect', target: 'CardFace|None'
+                                  ) -> Tuple[str, List[str], str, List[str]]:
                 if effect.failures.GetText(bind_player_id):
                     # this should not happen
-                    return ("0", [])
+                    return ("0", [], "", [])
                 if effect.context.ignore_resource_cost:
-                    return ("*", [])
+                    return ("*", [], "", [])
                 if effect.checker.cost_for_different_target.HasTarget(target):
                     cost = effect.checker.cost_for_different_target.GetCost(target)
                     if cost.rule.or_res != None:
-                        return ("1", [])
+                        # This used to flatten to a bare "1" with no rules, which
+                        # is readable for a human and unusable for anything
+                        # planning a payment: the bot paid one resource of the
+                        # wrong type, the engine checked the real cost, and the
+                        # ability failed mid-resolution -- corrupting the corpus
+                        # it was being generated into (MARVEL-158). Send both
+                        # readings and let the reader satisfy either.
+                        return (cost.text_legacy, cost.GetRuleText(),
+                                cost.rule.or_res.text_legacy,
+                                cost.rule.or_res.GetRuleText())
                     else:
-                        return (cost.text_legacy, cost.GetRuleText())
+                        return (cost.text_legacy, cost.GetRuleText(), "", [])
                 # if target in effect.for_select_target_dict:
                 #     # return effect.this_effect_cost.text_legacy
                 #     return effect.for_select_target_dict[target].cost.text_legacy
-                return ("", [])
+                return ("", [], "", [])
 
             payinfo_dict: Dict[int, EffectDescriptor.Payment] = {}
             for target in effect.checker.cost_for_different_target.target_cost:
@@ -545,11 +555,13 @@ class Effect(Object):
                 else:
                     target_id = target.card.object_id
 
-                cost_text, cost_rule = get_cost_str_rule(effect, target)
+                cost_text, cost_rule, or_text, or_rule = get_cost_str_rule(effect, target)
                 payinfo_dict[target_id] = EffectDescriptor.Payment(
                     cost=cost_text,
                     payment=[],
-                    rule=cost_rule
+                    rule=cost_rule,
+                    or_cost=or_text,
+                    or_rule=or_rule
                 )
                 if effect.context.ignore_resource_cost:
                     continue

@@ -1,4 +1,5 @@
 from core import *
+from dataclasses import field
 
 # data.ts
 @dataclass
@@ -9,6 +10,12 @@ class EffectDescriptor:
         cost: str
         payment: List[Dict[int, str]] # `effect_id` `res_text`
         rule: List[str]
+        # An alternative cost ("spend a [mental] resource *or* 2 of any type").
+        # Additive fields: `cost`/`rule` keep describing the primary reading, so
+        # a reader that does not know about these is unaffected. A reader that
+        # plans a payment needs them -- see `BotCommand.BuildPaymentInternal`.
+        or_cost: str = ""
+        or_rule: List[str] = field(default_factory=list)
 
     id: int                         # game object id
     name: str

@@ -417,7 +417,15 @@ class PlayerAction:
 
             if effect != fallthrough_effect:
                 if type(message) == Message.WhenPlayerInTurn:
-                    game.controller_manager.replay.Pop()
+                    # The step stays in the recording. Popping it assumes a
+                    # refused answer changed nothing, and that is not true: the
+                    # attempt has already moved the card to the processing area
+                    # and paid the ability's cost, and neither is undoable --
+                    # there is no transaction around "attempt an ability". A
+                    # dropped step leaves the scene with state changes no input
+                    # explains, which is precisely what a replay cannot
+                    # reproduce (MARVEL-158). Keeping it means the replay makes
+                    # the same failed attempt and lands in the same state.
                     if not Build.release:
                         game.controller_manager.skip.Clean()
                     message.world.render.PresentForceNoWait(is_update=False)

@@ -19,6 +19,7 @@ Determinism contract for every implementation of `BotPolicy`:
 """
 
 from core import *
+import dataclasses
 from game.scene.replay.operation import CommandDescriptor
 
 ################################################################################
@@ -44,6 +45,11 @@ class BotTargetCost:
     rule: List[str]         # subset of "UpTo" "FromHand" "SameType"
                             #           "DifferentType" "Variable"
     payment: List[BotPayment]
+    # The other way this cost may be paid, empty when there is only one way.
+    # Satisfying either is legal, so a planner has to see both -- the engine
+    # checks `Resources.IsMatchCost`, which tries `or_res` first.
+    or_cost: str = ""
+    or_rule: List[str] = dataclasses.field(default_factory=list)
 
 @dataclass(frozen=True)
 class BotOption:
@@ -116,6 +122,8 @@ class BotOptionParser:
                 cost    = str(value.get('cost', "")),
                 rule    = [str(x) for x in (value.get('rule') or [])],
                 payment = pays,
+                or_cost = str(value.get('or_cost', "") or ""),
+                or_rule = [str(x) for x in (value.get('or_rule') or [])],
             )
 
         return BotOption(
