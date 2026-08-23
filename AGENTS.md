@@ -1,449 +1,256 @@
 # AGENTS.md
 
-Guidance for AI agents working in this repository.
+Guidance for AI agents working in this repository. **This file is a router.** It
+holds the rules you can break without noticing; everything else is a pointer.
 
 ## What this repo is
 
-A digital implementation of the Marvel Champions LCG, mid-migration from Python to C#. Work is tracked in the Plane project `MARVEL` — see [docs/plane.md](docs/plane.md).
+A digital implementation of the Marvel Champions LCG, mid-migration from Python
+to C#. Work is tracked in the Plane project `MARVEL` — see [docs/plane.md](docs/plane.md).
 
 ```
-py_src/     Python reference engine (the game as it exists today) + preparation tooling
+py_src/     Python reference engine (the game as it exists today) + tooling
 src/        C# engine (empty until the Engine Core phase)
 datasets/   generated and vendored data both engines consume
 docs/       project documentation, decisions, and audits
 ```
 
-`py_src/` began as a fork of [irefrixs/marvel-lcg](https://github.com/irefrixs/marvel-lcg). **We no longer track upstream**, so there is no fork hygiene to preserve — refactor it freely where a Plane issue justifies it.
+`py_src/` began as a fork of [irefrixs/marvel-lcg](https://github.com/irefrixs/marvel-lcg).
+**We no longer track upstream**, so there is no fork hygiene to preserve.
 
-Its job now is to be the **behavioral source of truth**: the definition of how the game currently behaves, and the thing the C# engine is validated against. Read [docs/migration.md](docs/migration.md) for why the migration is happening and what has been decided.
+Its job now is to be the **behavioral oracle**: the definition of how the game
+currently behaves, and the thing the C# engine is validated against. It is not
+the product. See [docs/migration.md](docs/migration.md).
+
+**`py_src/` is frozen except where it blocks the oracle.** A defect there earns
+work only if it changes behavior the C# engine must reproduce, corrupts a
+corpus, or blocks a spec from being authored. Everything else is noise — see
+[Scope discipline](#scope-discipline).
+
+**`py_src` is never served.** It is a development tool and an oracle, never
+deployed, never bound beyond localhost. **Its network surface is not a work
+item** — do not file issues against the Python web server's exposure. The C# MVP
+is single-player and local; `src/Marvel.Server` is a later phase and is not being
+architected now. What carries forward is one note for whoever designs the C# wire
+format — *the server decides what each seat sees, rather than trusting the
+client's assertion* — recorded in
+[migration.md](docs/migration.md#deployment-py_src-is-never-served). This is a
+cooperative game: a permissive policy is fine, but it has to be chosen.
 
 ## Run everything from `py_src/`
 
-**This is the single easiest thing to get wrong.** All Python paths are relative to the working directory — `launch.json` points at `./data/`, `./replays/`, `./assets/`, and `engine/config.py` resolves config files the same way. Run from the repo root and the engine will not find its data.
+**This is the single easiest thing to get wrong.** All Python paths are relative
+to the working directory — `launch.json` points at `./data/`, `./replays/`,
+`./assets/`, and `engine/config.py` resolves config files the same way. Run from
+the repo root and the engine will not find its data.
 
 ```bash
 cd py_src
 uv venv --python 3.13
-uv pip install -r requirements.lock     # pinned resolution
+uv pip install -r requirements.lock     # pinned resolution; python 3.13, see .python-version
 .venv/Scripts/python.exe main.py        # serves the web client on 127.0.0.1:2345
-```
-
-Verify it came up:
-
-```bash
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:2345/main   # expect 200
 ```
 
-Tooling under `py_src/tools/` must be invoked as a module so the package resolves:
+Tooling under `py_src/tools/` must be invoked as a module:
+`python -m tools.determinism.check_runs --runs 6`.
 
-```bash
-.venv/Scripts/python.exe -m tools.determinism.check_runs --runs 6
-```
+Surprises that are not bugs — the `app_version` cookie, the missing `assets/`,
+the gitignored compiled client — are in
+[docs/engine-conventions.md](docs/engine-conventions.md#things-that-look-broken-but-arent).
 
-### Things that look broken but aren't
+## Non-negotiables
 
-- Most API routes require an `app_version` cookie matching `Ver.ui_version_str` (`<version>r` release, `<version>d` debug). A **cookieless request always fails the version check** and is served `public/clean_cache.html` — see `IsVersionMatch` in `py_src/engine/network/web_server.py:88`. To call the API directly: `curl -s --cookie "app_version=0.5.9.201r" http://127.0.0.1:2345/list_scenarios`
-- `assets/` and `replays/` are absent from a clean clone and the engine runs anyway — card images come from the `image_servers` in `launch.json`, and missing ones are generated as placeholders by `engine/lib/image_creator.py`.
-- The web client's TypeScript compiles to **gitignored** JavaScript, so a clean clone has no compiled client. See `py_src/public/js/tsconfig.json`. The API works without it; the browser UI does not.
+These are the rules that cost a day when broken. Nothing else in this file is
+as important.
 
-### Dependencies
+1. **Determinism is load-bearing.** The replay corpus is only an oracle if the
+   engine is deterministic. Never introduce into a gameplay path: wall-clock
+   time or dates; unseeded randomness or any RNG other than the seeded `Random`;
+   iteration over unordered `set`/`dict` where order can affect game state;
+   threading or async that touches game state. Run
+   `python -m tools.determinism.check_runs` after any gameplay change.
 
-Python is pinned to 3.13 (`py_src/.python-version`), managed with [uv](https://docs.astral.sh/uv/). `requirements.txt` is the direct list; `requirements.lock` is the pinned resolution (`uv pip compile requirements.txt -o requirements.lock`). Install from the lock.
+2. **The RNG and the state digest are wire formats.** One MT19937 stream, seeded
+   once per game, no floating point. `World.CalculateDigest()` serialises every
+   card and is compared on every replayed step. `datasets/rng/vectors.json` and
+   `datasets/digest/vectors.json` are the cross-language fixtures the C# port is
+   accepted against. Changing either changes every game outcome.
 
-`numpy` is **gone** as of MARVEL-38 — it was only ever there as the default RNG backend. Nothing imports it. Do not add it back without a reason that survives [docs/rng-contract.md](docs/rng-contract.md).
+3. **Card scripts are executed as Python.** `py_src/cards/database.py` calls
+   `exec()` with no sandboxing; the AST denylist in
+   `engine/security/command_validation.py` guards only the cheat console. Never
+   load a card script from an untrusted source, including in tests. Do not
+   extend the `exec`-based path — removing it is the point of the migration.
 
-## Architecture
+4. **Do not author specs from `data/cards.json`.** 36 cards are corrupted by an
+   encoding round-trip and 197 differ materially from the printed card (`03025`
+   is missing an entire rules line). Printed text lives in `datasets/cards/`.
 
-Three layers inside `py_src/`: `core/` (utilities) → `engine/` (devices, controllers, web server, config) → `game/` (rules, cards, abilities). Card definitions in `cards/pack/`, data in `data/`, web client in `public/`.
+5. **Nothing under `datasets/` may require the network to regenerate.** Every
+   dataset is either *generated* (rebuildable offline and byte-identically,
+   guarded by a `--check` gate in CI) or *vendored* (copied once from a pinned
+   upstream, read as-is). There is no third kind. This makes
+   [`marvelcdb`](https://github.com/mggarofalo/marvelcdb-cli) an **acquisition
+   and research tool, never a build or engine dependency** —
+   `py_src/tools/cards/harvest_faq.py` is the only module that invokes it and
+   nothing imports it.
 
-Read [docs/engine_architecture.md](docs/engine_architecture.md) before structural changes.
+6. **The corpus is immutable once frozen.** Changing engine behavior after
+   generation invalidates it. That is a decision to raise, not to make silently.
 
-Four facts that matter more than the rest:
+7. **An integrity error must not be swallowed.** If continuing would produce a
+   *wrong artefact* rather than a wrong frame, derive from
+   `core.errors.EngineIntegrityError` — `Log.OnCrash` re-raises that class
+   regardless of the build.
+   [Full rule and the thread case.](docs/engine-conventions.md#integrity-errors-must-not-be-swallowed)
 
-- **Input blocks.** `Controller.ChoiceOne` (`py_src/engine/controller/controller.py`) blocks a thread inside `self.input.GetInput(...)` waiting for a websocket or keypress. This is why the threading, task, and job machinery exists. Removing it is a goal of the C# design.
-- **Replays are seed + input list.** A saved scene records the RNG seed and every player input; replaying re-executes them. This is what makes undo, skip, and deterministic replay work.
-- **Every replay step carries a state digest.** `World.CalculateDigest()` (`py_src/game/world/world_render.py`) serialises every card — identity, zone, index, owner, host, face-up, and a dictionary of named state fields — and `engine/controller/module/replay.py` compares it on every replayed step, printing a card-by-card, field-by-field diff on mismatch. **This is the project's oracle — treat it as a wire format.** It is built by `py_src/game/world/digest.py` and specified in [docs/state-digest-v2.md](docs/state-digest-v2.md); read that before changing anything it touches. `datasets/digest/vectors.json` is the cross-language fixture the C# port is accepted against, regenerated by `python -m tools.digest.emit_vectors`. The v1 format it replaced is [docs/state-digest-contract.md](docs/state-digest-contract.md), kept because it is the only thing that reads a scene saved before `0.5.9.205`.
-- **The RNG is a specified contract.** One MT19937 stream, seeded once per game, written down in [docs/rng-contract.md](docs/rng-contract.md) and implemented by `engine/lib/mt19937.py`. There is no backend flag any more, and no floating point anywhere in it — bounded integers come off the raw 32-bit stream by masked rejection. **Changing any of it changes every game outcome**, so treat it as a wire format: `datasets/rng/vectors.json` is the cross-language fixture the C# port is accepted against, and `unit_test/test_rng.py` fails if you move the stream without regenerating it.
+8. **The test suite never touches the repository.** Running it leaves
+   `git status` clean and creates no commits. Packaging (`tools.package.bump`,
+   `tools.package.zip_cards`) mutates the tree and must never be wired into a
+   test, a hook, or CI.
 
-### Configuration
+9. **Never close or merge a pull request you did not open in this session.** If
+   a PR looks like a blocker, report it and stop.
 
-`engine/config.py` resolves every flag from four sources, strongest first: **the command line**, then **an arg group it expanded** (`-bot`, `-test`), then **launch.json**, then the declared default. Precedence, not arrival order — `-bot -no_check_invariants` and `-no_check_invariants -bot` mean the same thing, and `ConfigVariables.InitVariable` re-derives the winner every time it runs rather than remembering who wrote first.
+## Before you touch X, read Y
 
-It did not always. A group expansion wrote straight into `instance_command` and stamped `set_from = "CommandLine"` before the real command line was read, and `SetValue` returned early when the source matched — so **a flag inside a group could not be overridden at all**, of any type. That was MARVEL-64. `unit_test/test_config.py` pins the rule, including that `-bot` and `-test` still expand to exactly what they used to.
-
-Two things about groups are still worth knowing. A group takes no arguments — a value written after one is ignored, because there is nothing to attach it to. And **a group must never name a valued variable with no value**: `ConfigVariables` reads a valueless flag as a bool, so a bare `-device` inside a group set the device *name* to the string `"True"` (MARVEL-28). `unit_test/test_verify_replays.py` fails if any group does that again.
-
-## Critical constraints
-
-**Determinism is load-bearing.** The replay corpus is only an oracle if the engine is deterministic. Do not introduce into any gameplay path:
-
-- wall-clock time or dates
-- unseeded randomness, or any RNG other than the seeded `Random` instance
-- iteration over unordered `set`/`dict` where the order can affect game state
-- threading or async that touches game state
-
-The engine has been audited against all four — see [docs/determinism-audit.md](docs/determinism-audit.md) for what was found, what the harness must pin, and which sets are already known harmless. **Check there before re-deriving anything.** Run `python -m tools.determinism.check_runs` after any change to a gameplay path.
-
-**Do not author specs from `data/cards.json`.** The engine's card text has 36 cards corrupted by an encoding round-trip and 197 that differ materially from the printed card — `03025` is missing an entire rules line. Printed text lives in `datasets/cards/`, built from a vendored MarvelSDB snapshot. See [docs/card-dataset.md](docs/card-dataset.md).
-
-**Nothing under `datasets/` may require the network to regenerate.** Every dataset is either *generated* — rebuildable offline and byte-identically, guarded by a `--check` gate in CI — or *vendored*, copied in once from a pinned upstream and read as-is. There is no third kind, and a fetch at read time is not one.
-
-That makes [`marvelcdb`](https://github.com/mggarofalo/marvelcdb-cli) an **acquisition and research tool, not a dependency of this software**. It runs at harvest time and never at build time. `py_src/tools/cards/harvest_faq.py` is the only module in the repository that invokes it, nothing imports that module, and `tools/cards/rulings.py` reads the result offline. Sanctioned interactive uses: searching for a card while authoring a spec, and pulling a card image to adjudicate a text divergence (MARVEL-52). Do not wire it into a build, a test, or an engine path.
-
-**The corpus is immutable once frozen.** Changing engine behavior after generation invalidates it. That is a decision to raise, not to make silently. It is also why the RNG replacement must land *before* corpus generation.
-
-## Security
-
-Card scripts are **executed as Python**. `py_src/cards/database.py` calls `exec()` on custom card modules with no sandboxing. The AST denylist in `engine/security/command_validation.py` is wired only into the cheat console, not into card loading — and a denylist over import names would not be sufficient anyway.
-
-- Never load or execute a card script from an untrusted source, including in tests.
-- Do not extend the `exec`-based loading path. Removing it is a goal of the migration, not something to build on.
-
-What replaces it is designed in [docs/card-dsl.md](docs/card-dsl.md) — cards as a tree of typed nodes, with the trust boundary at provenance rather than expressiveness. `python -m tools.dsl.blockers` measures how much of the corpus that reaches and what is left over; read it before arguing that some card needs an escape hatch.
-
-**Hidden information is filtered on the server, not in the browser.** `ToDescriptor.World` builds one `WorldDescriptor` per render for the whole table — a `CardDescriptor` for every card in the game, each carrying `card_id`, `name` and `info` next to a `visible_for_players` list. Until MARVEL-62 all of it went to whichever client asked and `visible_for_players` was an instruction the browser was trusted to follow, so a `curl` with a valid `app_version` cookie read the encounter deck in order, every other player's hand, and the identity of every face-down card in play. `engine/device/web/server/world_visibility.py` now strips the face off every card the requesting players may not see, before `handle_get_world` puts it on the wire.
-
-- **The walk is driven by the shape of the descriptor, not a list of zone names.** A zone added to `WorldDescriptor` is filtered the day it is added, and `unit_test/test_world_visibility.py` fails if a field is added to `CardDescriptor` without a decision about whether it may leave the server.
-- **Redaction, not deletion.** A client still draws a face-down deck of the right height, so a hidden card keeps its object id, its zone, its exhausted state and its printed back. Hidden cards within a zone come back sorted by object id, because object ids are stable for a whole game and the real order would otherwise say which card is on top. That the ids are real at all is the residual — MARVEL-146.
-- **It is filtering, not authentication, and it covers the cards only.** `p`, `hot_seat` and `watch` are asserted by the requesting client and nothing checks them — as they always were (MARVEL-145). The descriptor's free text — `prompt`, `prompt_last_text`, `event_name` — is composed by the message senders and goes out unfiltered, and some of those strings name cards moving into a hand (MARVEL-152). And `/read_file` plus the `/debug` console still reach a saved scene, seed and all (MARVEL-153). What changed is that enforcement of the card descriptors now lives in one server-side place.
-- A consequence: the browser's `?show_all_cards` and the debug console's `cheat_show_all_cards` can no longer reveal what the server did not send. The scene rule `show_all_cards` (`game/world/world_rule.py`) still does, for player 0, which is the path puzzles and tests use.
-
-## Headless bot
-
-Plays games with no client attached — no websocket, no HTTP server, no keyboard. Lives in `py_src/engine/device/manager/bot/`. Run from `py_src/`:
-
-```bash
-python main.py -device bot                              # one game, seed 1, saved to replays/
-python main.py -bot -bot_games 50 -bot_seed 1000        # 50 games, seeds 1000..1049
-python main.py -bot -bot_verify                         # replay each saved scene, check the digest
-python main.py -bot -bot_scenario klaw -bot_heroes she_hulk captain_marvel
-```
-
-`-bot` is shorthand for `-device bot` plus quieter logging. Exit code 0 when every game finished and saved, 1 otherwise.
-
-**A headless run builds no `WorldDescriptor`.** `WorldRender.PresentInternal` serialises the whole board on every present, and one thing reads it — the browser sync in `GameServerSync.handle_post`. `DeviceManager.IsRenderNeeded()` answers whether anything will; `BotDeviceManager` and the determinism harness's `NullDeviceManager` say no, everything else inherits `True`. Measured at 2.6x end-to-end on twelve games (7.41s → 2.87s), and 61% of profiled runtime, because a present happens on *every message* rather than only at a decision — 2317 presents against 192 digests in one six-game run.
-
-Only the descriptor is conditional. The prompt, round id, render id, game log and `WaitSync` all still happen, because the rest of the engine reads them and a headless run's recorded steps have to be identical to a rendered one's rather than merely similar. `unit_test/test_render_skip.py` pins that split. Verified end to end by generating the same twelve seeds both ways: every saved scene byte-identical, every per-step digest byte-identical. See MARVEL-29.
-
-One thing that is *not* identical: `object_manager.index_dict["check_message"]`. Building a descriptor asks the game questions, and those allocate `check_message` objects, so a rendered run ends with a higher count than a headless one on the same seed and inputs. Nothing persists it — saves and per-step digests are unaffected — but `tools/determinism/headless.py` folds the whole index into its aggregate run digest, so harness run digests changed once when this landed. See MARVEL-75.
-
-Bot saves are **deterministic saves**: `sign`, `time`, and `playtime` are omitted, so the same seed writes a byte-identical file on any machine and no host fingerprint reaches the repo. `-no_bot_deterministic_save` restores the human save format. Human-facing saves are unaffected either way — see MARVEL-27.
-
-Each run also writes `bot-manifest-<scenario>-<heroes>-<seed>-<games>.json` beside its scenes, recording the resolved input timeout, the policy, the fabricated-input count, how much went wrong (`crashes`), and one entry per game. **The input timeout must be 0**: a non-zero one lets `DoGetInput` return an untouched `"{}"` that the replay records as a decline nobody made. Generation refuses to start or save if it is not, and the bot device raises `FabricatedInputError` rather than let one through — see MARVEL-32.
-
-**The manifest also carries the fully resolved config and the commit that produced it**, because the engine is deterministic *for a given configuration* and not across configurations — the audit measured 158 against 183 forced effects under different flags, with per-card digests unchanged. `engine/config_record.py` snapshots every registered `ConfigVariables` entry with the source that decided it, and `-verify_replays` compares each manifest it finds against the running process and **fails the run on drift** (`-verify_allow_config_drift` waives it). Read that module's docstring before touching the comparison: what is compared is a denylist, so a new gameplay flag is compared by default, and the exclusions each stand for a reason. Two of them were calibration results rather than guesses — `check_invariants` is forced on by the resolved device and so can never agree between a generator and a verifier, and a variable only one side *registered* is not drift at all, because a config variable exists only once the module declaring it has been imported. `tools/replay/probe_verify.py` pins that the gate rejects real drift and accepts the honest path. See MARVEL-34.
-
-### Turning that into a corpus
-
-`python -m tools.corpus.generate --games 200 --out ./corpus/` plans a stratified sample, plays it across processes, and resumes if it dies. **The sampling strategy is the deliverable** — 108 scenarios against 63 heroes against four player counts cannot be enumerated — and it lives in `tools/corpus/plan.py`, which is a pure function of `(seed, sizes, inventory)`: `--dry-run` prints the plan and its digest without playing anything, and two runs of one plan produce byte-identical scenes.
-
-The floor is a **guarantee, not a target**: every scenario and hero appears at least `--floor` times even when that costs more games than `--games` asked for, and the plan says so rather than quietly dropping coverage. Heroes are drawn least-used-first because a uniform draw over 63 of them leaves the tail — where port bugs hide — badly under-sampled. Read [docs/corpus.md](docs/corpus.md) before changing any of it, particularly the phase split: the coverage phases play one game per case on purpose, and batching them would multiply the floor by the batch size.
-
-A corpus is a **tree**, one folder per case, because the engine is not thread-safe and every case is its own process. `-verify_replays` walks it (`ReplayVerifier.ExpandTree`) and so does `tools.coverage.report`, so one command verifies or measures a whole corpus and a flat folder still expands to itself.
-
-**A scene that does not reproduce must leave an artefact.** `-verify_quarantine_folder` sets aside every failed or truncated scene with its reason, the step it diverged at, and a copy — *copied*, not moved, because a verifier that edits its input cannot be re-run against the same folder to see whether the failure repeats. Quarantining does not forgive: the run still exits non-zero. `quarantine.json` is written even when empty, because "nothing was quarantined" and "quarantining never ran" must not look alike to whoever freezes the corpus. Generating and verifying in one process proves almost nothing, so `determinism.yml` generates on Linux and verifies on Windows. See MARVEL-17.
-
-**Freezing content-addresses the scenes and nothing else.** `python -m tools.corpus.freeze` hashes each scene and a root hash over the set, excluding quarantined ones by name. Run manifests and the coverage report are recorded with their own hashes under `artefacts` but are **not** part of the identity — since MARVEL-34 a run manifest embeds `bot_save_folder`, so hashing it would make a corpus's identity depend on which directory generated it. Python version, platform and freeze date sit in `provenance`, outside the hash, because a manifest that changed when rebuilt elsewhere is useless as an integrity check. Shards are gzipped per scenario with `mtime=0` and rebuild byte-identically (MARVEL-4). There is no frozen corpus yet — CI keeps the *mechanism* true, including a negative control that tampers with a scene and requires rejection. See MARVEL-18.
-
-`--rounds N` makes generation a loop: play, merge coverage, aim the next round at cards that have still never resolved an ability, stop when a round adds fewer than `--plateau` of them. Aiming is greedy set cover over `tools/coverage/reach.py`, a pure data join answering *which setups contain this card*. **Covering a card is not playing it** — a scenario that contains one still has to draw it — so the plan only steers and the next round's measurement is what says whether it worked.
-
-**Self-play coverage is bounded at 96.8%.** `python -m tools.coverage.reach` measures it: of 3781 scripted cards, **122 are named by no starter deck, encounter set, scenario or card script**, so no corpus of any size reaches them — they are input to hand-authored puzzle tests. A measured 321-case run reached 3116 (85.1% of what is reachable). It was 91.2%/334 before MARVEL-80 generated decks for cards no shipped deck names, and 95.7%/164 before MARVEL-98 read the ids card scripts hold as literals. **The map is a lower bound and has been badly wrong twice** — it omitted `player_deck` and reported a confident 71%, then missed the Wrecking Crew's whole encounter deck, which is a Python list in a card script rather than anything in `data/`. Both times what caught it was a corpus resolving cards the map called unreachable, and the second time that check took weeks to act on because it only *printed*. **`--corpus` is a gate now**: it exits 1 on any played card that is not in the stated allowlist. See [docs/corpus.md](docs/corpus.md).
-
-Beside that goes `bot-coverage-<scenario>-<heroes>-<seed>-<games>.json`: **what the run actually exercised**, which is the number that says whether the corpus is worth generating more of. It separates *present* from *entered play* from *ability resolved*, and its primary measure is which of the 303 `AbilityFactory` methods a card script names actually fired — the tail is where port bugs will hide. Two ranked lists come out, of never-fired triggers and never-exercised cards, and they are the input to coverage-directed generation. On by default (`-no_bot_coverage` to disable), merged across runs by `python -m tools.coverage.report replays/`. Read [docs/card-coverage.md](docs/card-coverage.md) before changing anything it touches — particularly before renaming an `AbilityFactory` method, which moves the denominator.
-
-### No-op decisions and the progress guard
-
-Some abilities are offered, recorded as a replay step, and legally resolve to **nothing**. The alter-ego `Ask` action — offer a teammate a chance to act, do nothing if they decline — is 621 of the 711 measured cases. A policy that always answers the same way rides one forever while the step counter climbs.
-
-Two guards, working on different things:
-
-- `RepeatGuard` (`bot/policies.py`) works on **the question**. When a decision signature recurs inside a sliding window, `FirstLegalPolicy` moves further down the option list. A window rather than "same as last time" because the loops are two-player *cycles*. Exempt when the decision has **one legal answer**, because "End Turn" legitimately recurs every turn. That exemption used to be keyed on `can_cancel` instead, which is not the same thing and was MARVEL-99: `PlayerAction.MayChooseOneAbility` appends an explicit `Cancel` *ability* and then asks forced, so the bot saw "no cancel" alongside two legal answers, one of which was the way out. See `RepeatOffset`.
-- `NoProgressGuard` (`bot/progress.py`) works on **the answer**, with two counters. Consecutive decisions leaving the digest **identical** (`bot_no_progress_limit`, 32) catch a policy standing still; decisions since the last **novel** digest (`bot_stall_limit`, 256) catch a cycle of longer period, where every step changes the digest and the first counter resets every time. Both raise `NoProgressError`, an `EngineIntegrityError`.
-
-The structural check is the backstop because **the enumeration cannot be completed**: the corpus behind the inventory fired 98 of 303 `AbilityFactory` methods, so any ability list drawn from it is a lower bound. `bot_no_progress_limit` defaults to 32 against a measured maximum legitimate run of **4** over 4759 decisions; `bot_stall_limit` defaults to 256 against a measured maximum of **10** over 105,633 decisions in 902 completed scenes. On the naive policy (`-bot_repeat_window 0`) the first stops the run at step 37 instead of the 3000-step cap; on the MARVEL-99 swap loop the second stops it at step 301 instead of 20,000.
-
-Regenerate the inventory against any corpus with `python -m tools.noop.scan replays/`. Read [docs/no-op-decisions.md](docs/no-op-decisions.md) before changing either guard — including why the web client's `AutoActivate.isHasAutoActivate` exclusion list is **not** the same set and should not be used to seed this one.
-
-**Do not let an exception you raise for integrity get swallowed.** `EffectInvoker`, `Message2.Send`, the cost and target checkers, and `Engine.EngineRun` all catch broadly so one bad card cannot end the game, and all report through `Log.OnCrash` — which re-raises only when `Build.release` is false, and `build.py` hardcodes it true. If continuing would produce a *wrong artefact* rather than a wrong frame, derive from `core.errors.EngineIntegrityError`: `Log.OnCrash` re-raises that class regardless of the build.
-
-`unit_test/test_integrity_errors.py` enforces that rule rather than restating it. It walks `engine/` and `game/` and fails on any `except` an integrity error could stop at: a broad clause that swallows, or an `except EngineIntegrityError` that never re-raises. Clause **order** counts — `except Exception` written above `except EngineIntegrityError` catches it first and makes the guard dead code, so the broad clause is still reported. Everything that legitimately absorbs is listed in `REVIEWED_ABSORBERS` with the reason. **Adding an entry is a decision:** if an integrity error can reach the `try`, put `except EngineIntegrityError: raise` ahead of the broad clause instead — the scan goes quiet either way and only one of the two is correct.
-
-Threads are the case the convention alone missed. `Job.run_job` and `Task.run` wrap their work in `except Exception`, and a worker thread cannot raise at its caller, so an integrity error there was logged and dropped (MARVEL-54). Both now hold it and re-raise on whoever waits — `JobManager.WaitForAllJobsToComplete` / `WaitForAnyJobToComplete` / `Job.WaitFinished`, and `TaskManager.WaitTasksFinished` / `Task.WaitFinished`. It is deliberately not cleared once raised: every waiter gets it. Ordinary exceptions stay absorbed, which `python -m tools.determinism.probe_threaded_integrity` checks in the same run as the integrity case — it injects both on the real `WaitConnect` job path in a real game.
-
-**`Log.HasError` is a correctness signal, not a debug convenience.** It is how `-bot_verify` decides a replay diverged (`TestRun.Run` returns True unconditionally and reports a failed case by *logging* it) and how the spec harness catches a case that passed over a swallowed exception. It reads the counts `LogHelper.StatLog` writes, so anything that stops those being written silently turns both gates into always-pass — which is exactly what MARVEL-65 was, in two places at once: `StatLog` skipped recording on a release build, and `PrintLog` skipped it for a hidden category. Recording now happens before every display filter. **Never gate it on a presentation concern** — whether a line is printed and whether an error is detectable are different questions.
-
-### Crash capture
-
-Because those handlers swallow, most of what self-play trips would otherwise be a traceback on stdout and nothing else. `engine/device/manager/bot/crash.py` turns each one into an artefact instead, written to `crashes/` (gitignored, `-bot_crash_folder`) — the run installs `Log.crash_observer` for the duration and takes it back down afterwards. See MARVEL-12.
-
-| File | What it is |
+| Touching | Read first |
 |---|---|
-| `bot-crash-<class>-<signature>.json` | the scene: seed plus every input up to the failure, an ordinary replay |
-| `bot-crash-<class>-<signature>.crash.json` | the sidecar: class, traceback, step, state digest, seed, and the exact command that regenerates the game |
-| `bot-crashes-<scenario>-<heroes>-<seed>-<games>.json` | the run report: distinct signatures with occurrence counts and a minimal repro for each |
+| anything in a gameplay path | [determinism-audit.md](docs/determinism-audit.md) |
+| `engine/lib/mt19937.py`, the `Random` facade | [rng-contract.md](docs/rng-contract.md) |
+| `game/world/digest.py`, `CardFace.GetStateFields`, zone flags, card id allocation | [state-digest-v2.md](docs/state-digest-v2.md) |
+| structural changes to `core/` → `engine/` → `game/` | [engine_architecture.md](docs/engine_architecture.md) |
+| `game/world/invariants.py`, or adding an invariant rule | [invariants.md](docs/invariants.md) |
+| corpus generation, sampling, freezing | [corpus.md](docs/corpus.md) |
+| `tools/coverage/`, renaming an `AbilityFactory` method | [card-coverage.md](docs/card-coverage.md) |
+| `bot/policies.py`, `bot/progress.py`, the stall guards | [no-op-decisions.md](docs/no-op-decisions.md) |
+| authoring or running behavioral specs | [spec-harness.md](docs/spec-harness.md) |
+| the spec campaign, sharding, depth tiers | [spec-campaign.md](docs/spec-campaign.md) |
+| refreshing a vendored snapshot, a new RR version, a new pack | [rules-provenance.md](docs/rules-provenance.md) |
+| `datasets/cards/`, `tools/cards/extract` | [card-dataset.md](docs/card-dataset.md) |
+| the card ability DSL | [card-dsl.md](docs/card-dsl.md) |
+| `engine/config.py`, arg groups, crash capture, packaging, visibility filtering, `Build.release` | [engine-conventions.md](docs/engine-conventions.md) |
+| a scene saved before `0.5.9.205` | [state-digest-contract.md](docs/state-digest-contract.md) |
+| Plane issues, modules, labels, priority | [plane.md](docs/plane.md) |
+| why any of this is happening | [migration.md](docs/migration.md) |
 
-- **One bug is one file.** Failures group by a signature over the exception type and the frames it travelled through, so ten thousand recurrences produce one scene, not ten thousand. The exception *message* is deliberately not part of it — it carries card names and would split one bug per game.
-- **The minimal repro is the shortest one.** Whichever occurrence reached the failure in the fewest steps replaces the stored scene, so the artefact you get is the cheapest way back to the bug.
-- **Five classes**, in resolution order: `fabricated-input` (`FabricatedInputError`, plus the runner's refusals for a non-zero resolved timeout or a counted fabricated input), `invariant-violation` (the MARVEL-11 checker, replay verification disagreeing, a scene that would not save), `engine-assert`, `timeout-stall` (`BotStuck`, `NoProgressError`, `bot_max_steps`, restart exhaustion), `unhandled-exception`.
-- **Only `fabricated-input` gets no scene.** There a decision in the recorded list was returned by a timed-out wait rather than made by the policy, so writing it would put a replay of a decision nobody made on disk; the seed reproduces it instead (MARVEL-32). **Every other class keeps its scene**, including a checker violation — its inputs were all genuinely made by the policy and only the state computed from them is wrong, so they replay faithfully. `SCENE_WITHHELD_CLASSES` covered every `EngineIntegrityError` until MARVEL-66, which produced two artefacts that disagreed about whether a repro existed. The three `EngineIntegrityError` subclasses now land in three different classes, because that base class is about surviving the broad handlers and says nothing about whether the inputs can be trusted.
-- Artefacts read no clock and no host: traceback paths are relative, like the scenes they sit beside.
-- **A captured crash does not fail the run.** Most of what self-play finds is a pre-existing bug in this engine, and those are to be logged, not to block corpus generation. `-bot_fail_on_crash` gates on them when you want that; `-no_bot_capture_crashes` turns collection off.
-
-Decisions come from a **policy** (`BotPolicy.Choose(decision) -> CommandDescriptor`) injected into `BotDeviceManager`. The two shipped policies are deliberately trivial — they prove the device works, they do not play well. A real policy subclasses `BotPolicy` and registers in `BotPolicyFactory`.
-
-`BotCommand` is the shared plumbing under every policy, and it answers with the **minimum legal** command: the fewest targets, the cheapest payment. That is neutral except where the size of the payment *is* the effect. For resources, a printed X (`Variable`) or "spend up to N" (`UpTo`) is paid maximally, up to the ceiling, in engine order; `-no_bot_pay_variable_cost` restores the old planner (MARVEL-135). Card and counter costs carry the equivalent `pay_size_is_effect` option marker and are also maximised; `-no_bot_pay_variable_card_cost` restores their old minimum (MARVEL-138). Ordinary effect targets are still minimum-selected. **An unmoved digest does not clear a change like this**: the wide matrix may never reach the affected cost, so bound it with constructed cases.
-
-The device answers through `DeviceManager.WhenInput`, the same entry point the web server uses for a browser POST, so `Controller.ChoiceOne` runs its normal validation, CRC and `replay.Push` path. **Do not add a shortcut around `ChoiceOne`** — bot replays must be structurally indistinguishable from human ones or the corpus is worthless.
-
-### Runtime invariants
-
-Self-play only finds bugs if something is watching, so the bot device runs with the invariant checker on. It asserts a set of rules about the world at every decision — a card is in one zone, counters and threat are not negative, nothing out of play is exhausted, the step counter and the replay history agree — and on a violation it **aborts the game**: it dumps a loadable repro to `py_src/invariants/`, logs the step and the rule, and raises `InvariantViolation`. The run exits non-zero and nothing is saved.
-
-```bash
-python main.py -bot                        # on
-python main.py -bot -no_check_invariants   # off, for corpus generation
-python main.py -check_invariants           # on for a web session, for debugging
-```
-
-It costs about **0.8ms per decision** — 1.86× the wall time of a 20000-decision game, and invisible on a short one because engine startup dominates. That is the number to weigh before turning it off for a corpus run.
-
-The flag is forced from the resolved device in `Engine.Initialize` rather than added to the `bot` arg group. That started as a workaround for MARVEL-64 — a flag inside a group could not be turned off again — and survives it for a different reason: `-device bot` is a documented way to run the bot and expands no group, so a group entry would leave that spelling unwatched.
-
-The rules and — more importantly — the states that *look* like violations and are not live in [docs/invariants.md](docs/invariants.md). **Read it before adding a rule.** Three of them were tried and removed because they fire on ordinary play: there is no lower bound on health anywhere, no upper bound on threat, and no upper bound on hand size. A rule that cries wolf aborts a game that was fine and teaches everyone to switch the checker off.
-
-The hand-size removal (MARVEL-76) is the one worth reading before adding a rule, because it failed in a way that looked safe. It only checked during `Phase.State.PlaceThreat`, reasoning that the villain phase begins right after the end-phase discard step — but that state is a *span*, not an instant, and every effect an encounter card triggers resolves under it. Underneath that, **any card that draws outside the end phase legitimately breaks the bound**: Thor's printed "Have at thee!" takes a legal hand of 4 to 6 and it stays there until the next end phase. The property was real but it is a post-condition of `PlayerPhase.MayDiscardHandCardsAndDrawUpToMax`, which is where it is asserted now. **If the natural accessor for a rule is not a plain read** — the hand-size rule had to approximate `GetCountHandSizeFaces` by reading ability trigger classes — that is evidence the property belongs to an operation rather than to the world.
-
-Every rule is read-only. Nothing in `game/world/invariants.py` may send a `Message`, allocate an `Effect`, or touch the RNG — a checker that perturbs the game breaks the determinism the corpus rests on.
-
-`InvariantViolation` derives from `EngineIntegrityError`, so **crash capture also sees it** and files it under `invariant-violation`. Two artefacts therefore describe one event, and both are replayable: the checker's repro in `invariants/` and crash capture's scene in `crashes/`, which holds every input up to the failing step and fires the same rule when replayed. Until MARVEL-66 the second was withheld on the grounds that its inputs could not be trusted — reasoning borrowed from the fabricated-input refusal it shared a class with, and wrong here, because a checker violation's inputs are all genuine.
-
-## Testing
-
-From `py_src/`:
+## Commands
 
 ```bash
-# fast tests: pure logic, no engine bootstrap beyond `import engine`
-python -m unittest unit_test.test_bot unit_test.test_teamup_order \
-                   unit_test.test_local_effect_order unit_test.test_scene_hash \
-                   unit_test.test_bot_timeout unit_test.test_bot_crash \
-                   unit_test.test_card_dataset unit_test.test_rng \
-                   unit_test.test_package_tools unit_test.test_digest \
-                   unit_test.test_log_errors unit_test.test_card_coverage \
-                   unit_test.test_invariants unit_test.test_verify_replays \
-                   unit_test.test_integrity_errors unit_test.test_config \
-                   unit_test.test_file_paths unit_test.test_cross_os \
-                   unit_test.test_console_encoding \
-                   unit_test.test_fixture_staleness \
-                   unit_test.test_render_skip unit_test.test_no_progress \
-                   unit_test.test_hand_size unit_test.test_policy_driver \
-                   unit_test.test_run_digest unit_test.test_heuristic_policy \
-                   unit_test.test_max_health_guard unit_test.test_config_record \
-                   unit_test.test_base_thwart_unreachable \
-                   unit_test.test_corpus_plan unit_test.test_coverage_reach \
-                   unit_test.test_coverage_literals \
-                   unit_test.test_corpus_freeze unit_test.test_spec_coverage \
-                   unit_test.test_decks unit_test.test_deck_build \
-                   unit_test.test_dsl_blockers unit_test.test_select_rules \
-                   unit_test.test_may_choose_one \
-                   unit_test.test_target_before_payment \
-                   unit_test.test_world_visibility
-# spec harness, puzzle commands and card coverage: boot the engine and play,
-# still under two seconds
-python -m unittest unit_test.test_spec_harness unit_test.test_spec_validate \
-                   unit_test.test_puzzle unit_test.test_worlds_encounter \
-                   unit_test.test_card_coverage_play unit_test.test_card_removal \
-                   unit_test.test_cannot_defend unit_test.test_probe_temp0_order \
-                   unit_test.test_base_health_grant \
-                   unit_test.test_base_stat_grant \
-                   unit_test.test_choice_cost
-python -m tools.determinism.check_runs --runs 6  # digest reproduction across processes
-python -m tools.determinism.check_runs --runs 4 --matrix wide --policy first  # ...on games that play cards
-python -m tools.determinism.probe_forced_selection  # self-play still reaches the forced-ability tie-break
-python -m tools.determinism.probe_temp0_order        # no board reaches a Temp0-only forced-order prompt
-python -m tools.determinism.cross_os emit --out trace.json --label $(uname -s)  # this platform's trace
-python -m tools.determinism.cross_os compare a.json b.json  # do two platforms agree?
-python -m tools.determinism.check_scene_repro    # same seed -> same saved file
-python -m tools.spec.validate --trusted-only     # every trusted behavioral spec
-python -m tools.digest.emit_vectors --check      # digest fixture not stale
-python -m tools.invariants.probe_repro           # an injected violation aborts and its repro reproduces
-python -m tools.determinism.probe_threaded_integrity  # an integrity error on a job thread still stops the run
-python -m tools.replay.probe_verify              # the verification gate accepts and rejects the right corpora
-python main.py -bot -bot_verify                  # generate a game and replay-verify it
+# --- self-play -------------------------------------------------------------
+python main.py -device bot                       # one game, seed 1, saved to replays/
+python main.py -bot -bot_games 50 -bot_seed 1000 # 50 games
+python main.py -bot -bot_verify                  # replay each saved scene, check the digest
+python main.py -bot -no_check_invariants         # invariants off (corpus generation)
+
+# --- corpus ----------------------------------------------------------------
+python -m tools.corpus.generate --games 200 --out ./corpus/
+python -m tools.corpus.generate --dry-run        # print the plan and its digest
+python -m tools.corpus.freeze                    # content-address the scenes
+python -m tools.coverage.report replays/         # what the run actually exercised
+python -m tools.coverage.reach --corpus ./corpus/ # gate: a played card must be in the allowlist
+
+# --- replay verification ---------------------------------------------------
+python main.py -verify_replays                            # every folder in replay_folders
+python main.py -verify_replays -verify_folders ./corpus/
+python -m tools.determinism.check_corpus --runs 100
+
+# --- specs -----------------------------------------------------------------
+python -m tools.spec.run_case specs/             # run scenarios, see what happened
+python -m tools.spec.validate                    # assign verdicts, update the manifests
+python -m tools.spec.validate --trusted-only     # the gate
+python -m tools.spec.coverage --rulings          # cards with an official ruling
+python -m tools.cards.rulings <card_id>          # print the ruling
+
+# --- fixtures (regenerate-or-fail; --check is what CI runs) ----------------
+python -m tools.rng.emit_vectors                 # after touching the RNG
+python -m tools.digest.emit_vectors              # after touching anything the digest reads
+python -m tools.cards.extract                    # after touching data/cards.json or datasets/marvelsdb/
+
+# --- determinism probes ----------------------------------------------------
+python -m tools.determinism.check_runs --runs 6
+python -m tools.determinism.check_runs --runs 4 --matrix wide --policy first
+python -m tools.determinism.cross_os emit --out trace.json --label $(uname -s)
+python -m tools.determinism.cross_os compare a.json b.json
 ```
 
-CI runs these, split across two workflows by cost — see [CI](#ci) for which gate
-runs where, and why four of them are Windows-only.
+**The unit test tiers live in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+— that file is the source of truth, not this one.** Copy the two `python -m
+unittest` invocations from it. Do not use `unittest discover`: it picks up
+`unit_test/test_all.py`, an old harness that mutates `Build.release`, appends to
+`sys.argv` and writes result files into the working directory.
 
-Name the modules explicitly. `unittest discover` picks up `unit_test/test_all.py`,
-which is an old harness around the replay suite — it mutates `Build.release`,
-appends to `sys.argv` and writes result files into the working directory. Use
-`-verify_replays` (below) instead.
+New tooling needs its own tests: test behavior not implementation, no
+assertion-free tests, coverage is an observed outcome and never a target.
 
-**The suite does not touch the repository.** Running it leaves `git status` clean
-and creates no commits. Packaging is a separate, deliberate step:
+## Behavioral specs, in one paragraph
 
-```bash
-python -m tools.package.bump              # bump BUILD in build.py and commit it
-python -m tools.package.bump --no-commit  # bump only
-python -m tools.package.zip_cards         # write cards-<version>.zip (gitignored)
-```
+The replay corpus answers "did this game reproduce". It cannot answer "does
+Swinging Web Kick deal 8 damage". Specs do, and they are what the C# engine is
+held to. **A scenario is a transcript** — one `When` per engine decision, `Then`s
+interleaved, Gherkin under `py_src/specs/`. The harness **never answers a
+decision the transcript omits**; an unanswered mid-resolution choice is
+`FAIL-spec-wrong`, not a silent pick. **A scenario is not trusted until it
+passes**: `specs/trusted.json` is written only by the validation runner, only
+from `PASS`, each entry pinned to the hash of its source. There is no way to add
+one by hand. `specs/self-test/quarantine.feature` is wrong on purpose and must
+stay that way.
 
-Both of these mutate the working tree, and `bump` commits — never wire them into
-a test, a hook, or CI. They used to be `test_IncreaseVersion` and `test_zip_cards`
-in `unit_test/test_task.py`, so every run of the suite bumped the version and
-left a commit on whatever branch was checked out; with agents in parallel
-worktrees, two suites editing the same `BUILD` line collide at merge. That is
-MARVEL-55, and `unit_test/test_package_tools.py` guards against it coming back.
-The card zip covers every folder under `cards/pack/` holding a card script — derived
-by walking the tree, not from a list (MARVEL-56) — and is byte-reproducible across
-checkouts (MARVEL-57). Arcnames are flat, so `ZipCards` refuses a duplicate basename
-rather than silently overwriting.
+**Check for a ruling before asserting timing.** A spec authored from ambiguous
+printed words is checked against a Python engine implementing the same reading of
+the same words, so it enters `trusted.json` having confirmed only that the engine
+agrees with itself. `--rulings` flags the cards where an official MarvelCDB
+ruling exists. Details in [spec-harness.md](docs/spec-harness.md).
 
-Regenerate the RNG vectors after touching anything in `engine/lib/mt19937.py` or the `Random` facade — `unit_test.test_rng` fails until you do:
+The general form of that problem — and the patch loop for when a rulebook, a
+ruling or a pack changes — is [rules-provenance.md](docs/rules-provenance.md).
+A trusted scenario is trusted *against a stated set of inputs*; when one moves,
+it drops out and returns to triage.
 
-```bash
-python -m tools.rng.emit_vectors         # write datasets/rng/vectors.json
-python -m tools.rng.emit_vectors --check  # non-zero if stale
-```
+## Scope discipline
 
-Regenerate the state-digest vectors after touching anything the digest reads — `game/world/digest.py`, `CardFace.GetStateFields`, the zone flags, or card id allocation. It boots the engine and plays, so it is not in the fast tier:
+This project has a documented tendency to generate tangential work: an
+adversarial review of every PR against a 59k-LOC legacy engine always finds
+something real, and every finding used to become an issue. Before filing:
 
-```bash
-python -m tools.digest.emit_vectors         # write datasets/digest/vectors.json
-python -m tools.digest.emit_vectors --check  # non-zero if stale
-```
+- **Does this change behavior the C# engine must reproduce?** If no, it is not
+  worth an issue. A crash in a path no scenario reaches is not oracle behavior.
+- **Is `py_src` the right place to fix it?** If the C# engine will not inherit
+  the defect, record it and move on.
+- **Is this the third generation of the same thread?** Fixing the tooling that
+  tests the fixes to the engine is a signal to stop and re-anchor on
+  `docs/migration.md`.
 
-Regenerate the card dataset after touching `data/cards.json`, the card scripts, or `datasets/marvelsdb/`:
-
-```bash
-python -m tools.cards.extract           # write datasets/cards/
-python -m tools.cards.extract --check    # exit 1 if the checked-in copy is stale
-```
-
-**All three `--check` gates mean the same thing by "stale", and it is written down once**, in `py_src/tools/fixtures.py`: the checked-in file must be **byte for byte** what the generator would write. Not the same parsed JSON — key order, the one-card-per-line layout, number formatting and Unicode escaping are all part of what a C# implementer reads, so they are all part of the comparison. Read that module before changing any of the three; `unit_test/test_fixture_staleness.py` mutation-tests the comparison and asserts the three gates still share it.
-
-That makes **line endings part of the comparison**, so `.gitattributes` pinning `eol=lf` is load-bearing rather than tidy — git's `core.autocrlf` defaults to true on Windows and a clone made before MARVEL-67 has a working tree full of CRLF. A CRLF checkout fails all three gates, deliberately, with a message that says so instead of saying "stale": the repair is to re-normalise the checkout, not to regenerate anything.
-
-The three used to disagree, and nobody could say how. All three read the file in text mode, so Python's universal-newline translation quietly hid CRLF from every one of them; what actually failed on Windows was `tools.cards.extract`, and for a reason that had nothing to do with the comparison. Its output header carries a SHA-256 of each engine file it was built from, `tools/cards/engine.py:Sha256` hashed raw bytes, and on a CRLF checkout those bytes differ — so the regenerated header disagreed with the committed one over two hex strings with nothing semantic changed. **That hash is newline-normalised now** (MARVEL-73): it names the file's content, not the checkout, and it is no longer the value `sha256sum` prints on a CRLF tree.
-
-**`replays/` is empty and untracked**, so there is no regression suite yet. Building it is the entire point of the `Corpus and Oracle` phase — weigh changes accordingly.
-
-New tooling needs its own tests: test behavior not implementation, no assertion-free tests, coverage is an observed outcome and never a target.
-
-## Replay verification
-
-The replay suite (`game/test/test.py` → `TestRun`) re-executes a scene's inputs and asserts per-step digest equality. `-verify_replays` is how a process runs it (MARVEL-28); `-bot_verify` and the web client's `/T` command drive the same `TestRun` for the scenes a bot run just generated and for one scene interactively.
-
-```bash
-python main.py -verify_replays                              # every folder in replay_folders
-python main.py -verify_replays -verify_folders ./corpus/    # point it somewhere
-python main.py -verify_replays -verify_report_file r.json   # machine-readable, for CI
-python main.py -verify_replays -verify_allow_incomplete     # accept truncated recordings
-python -m tools.determinism.check_corpus --runs 100         # the same, N fresh processes
-```
-
-Exit code 0 when every scene reproduced, 1 otherwise. Three outcomes, in `game/test/verify.py`:
-
-- **pass** — every recorded step reproduced its digest.
-- **fail** — a step diverged, or the replay raised.
-- **incomplete** — the recording ran out while the game was still going. Every step it held reproduced, but the file describes less than a game, so it fails the run unless `-verify_allow_incomplete`.
-
-Three things about it are load-bearing:
-
-- **A corpus folder is not all scenes.** `bot-manifest-*.json` and `bot-coverage-*.json` sit beside the scenes they describe, and every field of `Scene` has a default — so loading a manifest as a scene *succeeds* and yields an empty game rather than an error. `ReplayVerifier.IsSceneDocument` filters before the load, not through it.
-- **The device must never block.** `-verify_replays` forces `-device verify`, whose only job is to end the game when the recording runs out instead of waiting for a decision. This is what `-test` got wrong: it expanded to a bare `-device`, which set the device *name* to the string `"True"`, fell through to the interactive keyboard device, and blocked in `WaitUntilGameStart()` forever. Any arg group that names a valued variable with no value repeats that; `unit_test/test_verify_replays.py` fails if one does.
-- **Verifying nothing is a failure.** An empty folder exits non-zero, because "the gate found no divergence" and "the gate never ran" must not look the same to CI.
-
-`python -m tools.replay.probe_verify` is the end-to-end proof: it generates a game, verifies it, corrupts one recorded digest, truncates another copy, and checks the gate accepts and rejects the right ones.
-
-**`Build.release` is hardcoded true and stays that way.** It is read at around sixty sites and decides far more than log formatting: `Log.OnCrash` re-raises only when it is false, the editor only initialises when it is false, and `Ver.ui_version_str` gains the `r`/`d` suffix every API route's `app_version` cookie is checked against. The headless bot's crash capture exists *because* a release build absorbs — flipping the flag would turn every absorbed card bug into a run-ending exception and change what a corpus run means. What MARVEL-28 removed was the line above it, `release = "RELEASE" in os.environ`, which read as an override and was dead: the hardcode overwrote it unconditionally. Nothing in the verification path reads the flag either way.
-
-## Behavioral specs
-
-The replay corpus answers "did this game reproduce". It cannot answer "does Swinging Web Kick deal 8 damage". Behavioral specs do, and they are what the C# engine will be held to. The format is decided in MARVEL-22 — read it before changing `tools/spec/`.
-
-**A scenario is a transcript**: one `When` per engine decision, with `Then`s interleaved, in Gherkin `.feature` files under `py_src/specs/`. The engine is a fold `(state, input) -> (state, prompt)` and a scenario is a literal trace of it.
-
-```gherkin
-When I play "Nick Fury"
-Then I am prompted to choose one
-  | Draw 3 cards              |
-  | Deal 4 damage to an enemy |
-
-When I choose "Deal 4 damage to an enemy" targeting "Shocker"
-Then "Shocker" has 4 damage
-And I am not prompted again
-```
-
-The verbosity buys the two assertions a batched format cannot make: **which options the engine offered** (state-dependent behavior — Nick Fury is printed as a three-way choice but offers two when no scheme has threat) and **that the resolution ended**. And the harness **never answers a decision the transcript omits** — an unanswered mid-resolution choice is `FAIL-spec-wrong`, not a silent pick. Without that rule the other two are decoration.
-
-```bash
-python -m tools.spec.run_case specs/                    # run scenarios, see what happened
-python -m tools.spec.validate                           # assign verdicts, update the manifests
-python -m tools.spec.validate --trusted-only            # the gate: every trusted spec must pass
-python -m tools.spec.validate --triage triage.json      # records for adjudicating disagreements
-```
-
-**A scenario is not trusted until it passes.** `specs/trusted.json` is written only by the validation runner, only from `PASS`, and each entry is pinned to the hash of its scenario source — edit a scenario and it drops out on the next run. There is no way to add one by hand. Everything else is quarantined with a verdict: `FAIL-spec-wrong` (the engine never offered what the scenario describes — probably a misread card), `FAIL-engine-suspected` (it ran cleanly and disagreed anyway), or `ERROR`. A disagreement is triaged, never dismissed; both kinds are worth finding.
-
-`specs/steps.catalogue.json` is the closed step vocabulary; a test asserts the parser implements exactly it, so drift between the Python and C# runners fails a build. Scenarios name cards by printed name and are tagged `@card:<id>`; object ids never appear in a spec.
-
-`specs/self-test/quarantine.feature` is wrong on purpose and must stay that way — it is the proof the gate works.
-
-**Two things about puzzle scenes bite every author once.** A scene starts with no player deck and no encounter deck, so a scenario that ends a turn without stocking both does not walk the phases — it decks the hero out in round 1, or halts the villain phase with an empty encounter deck. And **decks are written top-first**: `the encounter deck is "A", "B", "C"` puts A on top, so during a villain activation the first card written is the boost card and the second is the one revealed. `#N` still counts written order, and order does not survive an in-game shuffle. Both are written up in [docs/spec-harness.md](docs/spec-harness.md).
-
-**Coverage and the campaign.** `python -m tools.spec.coverage` reports which cards have a trusted scenario, at what depth, and what is left; the sharding plan and the depth rule per tier are in [docs/spec-campaign.md](docs/spec-campaign.md) (MARVEL-68). The denominator is **3,996**, not the 3,781 cards with a script — 215 more are implemented by `game/card/face/attribute/` rather than per card, and Hydra Mercenary's Guard is already specced without one. Only the 348 cards the engine does not have are out of scope.
-
-**Check for a ruling before asserting timing.** Printed card text is not always the last word. `python -m tools.spec.coverage --rulings` lists cards an official MarvelCDB ruling exists for, the work lists flag them `RULING`, and `python -m tools.cards.rulings <card_id>` prints the ruling itself. Read it before writing the scenario.
-
-This matters because of a blind spot the validation gate cannot see: author a spec from ambiguous printed words, and it is checked against the Python engine — which implements the same reading of the same words — so it passes into `trusted.json` having confirmed only that the engine agrees with itself. Spider-Man's Interrupt and Ultron's Forced Interrupt read as two different moments and are ruled to be one (MARVEL-143). The snapshot lives in [`datasets/marvelcdb-faq/`](datasets/marvelcdb-faq/UPSTREAM.md) and is absent-tolerant: a clone that has not harvested one loses the flag, not the tool.
-
-This only works while the Python engine still runs and is still the reference. Read [docs/spec-harness.md](docs/spec-harness.md) before authoring.
+Two numbers say whether the project is moving: **cards with a trusted spec**
+(`python -m tools.spec.coverage`) and **C# lines in `src/`**. Issue throughput
+says nothing.
 
 ## Workflow
 
-### Plane
-
-All work is tracked in Plane, project `MARVEL`. Every issue belongs to a module (phase). See [docs/plane.md](docs/plane.md).
-
-### Branching
-
-`master` is the long-lived branch. Cut a short-lived `<type>/marvel-<id>-<slug>` branch off `master`, open a PR, and squash-merge.
-
-**Never close or merge a pull request you did not open in the current session.** If a PR looks like a blocker, report it and stop.
-
-### Commits
-
-Conventional Commits: `<type>(<scope>): <description>`. Use `py` scope for `py_src/` changes and `engine` for `src/`.
+- **Plane** — all work is tracked in project `MARVEL`; every issue belongs to a
+  module (phase). See [docs/plane.md](docs/plane.md).
+- **Branching** — `master` is long-lived. Cut `<type>/marvel-<id>-<slug>` off
+  `master`, open a PR, squash-merge.
+- **Commits** — Conventional Commits. Scope `py` for `py_src/`, `engine` for `src/`.
+- **Parallel agents** — read [`.parallel-sensitive`](.parallel-sensitive) before
+  dispatching concurrent work. Two issues whose scopes both touch a path listed
+  there are serialized, not parallelized.
 
 ### CI
 
-Two workflows, split by cost. Both pin Python from `py_src/.python-version`, install from `requirements.lock`, and set `PYTHONIOENCODING=utf-8` (MARVEL-36).
-
 | Workflow | Runs | What |
 |---|---|---|
-| `.github/workflows/ci.yml` | every push to `master`, every PR | both unit tiers, the three fixture staleness checks, the trusted specs, one generated-and-verified game |
-| `.github/workflows/determinism.yml` | nightly 06:00 UTC, or manually | `check_runs` across fresh processes, the cross-OS digest comparison, and the replay and invariant probes |
+| [`ci.yml`](.github/workflows/ci.yml) | every push to `master`, every PR | both unit tiers, three fixture staleness checks, trusted specs, one generated-and-verified game, `git status` clean |
+| [`determinism.yml`](.github/workflows/determinism.yml) | nightly 06:00 UTC, or manually | `check_runs` across fresh processes, cross-OS digest comparison, replay and invariant probes |
 
-`ci.yml` also asserts `git status` is clean after the suite. That is MARVEL-55 at the run level — the suite used to bump the version and leave a commit on whatever branch was checked out.
+Both pin Python from `py_src/.python-version`, install from `requirements.lock`,
+and set `PYTHONIOENCODING=utf-8`.
 
-**Everything in `ci.yml` is verified green on Windows and Linux.** Keep it that way: a gate that has never passed on one OS belongs in `determinism.yml` behind an explicit `runs-on`, not in the push path. A red `master` must mean something broke.
+**Everything in `ci.yml` is verified green on Windows and Linux.** Keep it that
+way: a gate that has never passed on one OS belongs in `determinism.yml` behind
+an explicit `runs-on`. A red `master` must mean something broke.
 
-**Every job in `determinism.yml` now runs on both operating systems** (MARVEL-35). The `probes` job was `windows-latest` only because its four gates failed on Linux for two reasons, both fixed by MARVEL-72: absolute POSIX paths were parsed as flags (`engine/config.py`), and `FileManager.FormatPath` treated only a Windows drive letter as absolute, so `/tmp/x` came back anchored as `./tmp/x`.
-
-### Cross-OS digest agreement
-
-`check_runs` proves each platform reproduces *itself* across fresh processes. That is a weaker claim than it looks: an ordering hazard can resolve one way in every process on one machine and the other way on the other machine, and no single process ever sees both. `tools/determinism/cross_os.py` closes that gap in two halves, because CI cannot do it in one — each leg of the `cross-os` matrix runs `emit` and uploads its trace, then `cross-os-compare` downloads both and diffs them per step.
-
-What is compared is pinned in `COMPARED_FIELDS` and guarded by `unit_test/test_cross_os.py`: the run digest, the step count, `persisted_index`, `game_over`, and `error`. The platform block — OS, release, machine, Python version — is recorded for the report and deliberately never compared, since it is *expected* to differ. Narrowing that set is the one edit that would make this gate pass on a real divergence, so the test pins the set itself.
-
-**`persisted_index`, not the whole `object_index`** (MARVEL-75). `ObjectManager.index_dict` counts every allocated object; only three of those counters — `card`, `effect`, `message` — have ids that reach something anyone keeps. That is measured, not chosen: `m`, `e` and `c` are the only id prefixes anywhere in a saved scene, and `card` is the only one on the v2 digest wire (`owner` there is a seat index, not the `player` counter). Folding the rest in made the harness assert that the engine allocated the same number of *internal query objects*, which moves whenever anything asks the engine a question — twice in one day, both benign, an investigation each time. `headless.PERSISTED_ID_CATEGORIES` is the set and `unit_test/test_run_digest.py` pins both directions: a query-path change must not move the digest, and a card allocated a different id still must.
-
-A divergence here means **the corpus is only valid on the platform that produced it**, which constrains the whole C# validation strategy. File it and stop; do not work around it. The audit names the identity-hash orderings (team-up units, forced-effect resolution) as the likeliest to differ under another allocator, and the driver walks both.
-
-The harness can drive the engine two ways. `decline_everything` answers every prompt with the empty command; `PolicyDriver` answers from a real `BotPolicy`, so the game plays cards, runs roughly twice as long, and opens response windows a decline-only run never reaches — `check_runs --policy first|random`, and the default for `probe_forced_selection`. Both reproduce byte-identically across fresh processes. `--policy` defaults to `decline` on `check_runs` so the nightly gate and the cross-OS baselines are unchanged. Which driver a measurement used is load-bearing: a decline-only run reaches no forced-ability tie-break at all, so digest evidence from one says nothing about MARVEL-39 or MARVEL-40 (MARVEL-69).
-
-Where the remaining corpus-phase jobs attach:
-
-- **MARVEL-18** (manifest hash) — a new job in `determinism.yml`. It needs the corpus to exist (MARVEL-15), so it is named in a comment rather than stubbed; an empty job that always passes is worse than no job.
-- **MARVEL-17** (corpus self-consistency) — wire `tools/determinism/check_corpus.py` into `cross-os` once a corpus exists. Its cross-OS requirement is what the comparison above was built for.
+`replays/` is empty and untracked, so **there is no regression suite yet**.
+Building it is the entire point of the `Corpus and Oracle` phase — weigh changes
+accordingly.
