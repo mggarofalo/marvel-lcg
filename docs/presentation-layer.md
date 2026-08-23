@@ -3,14 +3,24 @@
 MARVEL-159. A proposal, not yet a decision. The decision is made when that issue
 closes, and this document is rewritten to record what was decided.
 
-Two questions are open and are called out under [Costs and open questions](#costs-and-open-questions):
-whether Godot's .NET export still cannot target the web, and whether card art is
-shipped as scans or drawn procedurally.
+One question is open and is called out under [Costs and open questions](#costs-and-open-questions):
+whether card art is shipped as scans or drawn procedurally.
+
+Release targets are settled: macOS and Windows clients, with the server also
+runnable as a Linux container. Web is explicitly not wanted, which removes the
+only material risk the Godot decision carried.
+
+The export-target question is answered. MARVEL-166 confirmed against Godot
+4.7.2-stable that C# cannot be exported to the web, and will not be soon. What
+that costs is smaller than this document first assumed — see
+[Export targets](#export-targets).
 
 ## What this proposes
 
-Build the C# client in Godot, and drop `Marvel.Server` and the TypeScript web
-client from the MVP.
+Build the C# client in Godot for macOS and Windows, and drop the TypeScript web
+client. Keep `Marvel.Server`, but not in the shape `migration.md` assumed: it is
+the engine host, bundled inside the client for local play and separately runnable
+as a Linux container.
 
 Three things follow from that, and each one costs almost nothing now and a great
 deal later:
@@ -158,7 +168,7 @@ src/
   Marvel.View          engine-agnostic view model: affordances, event-to-beat mapping
   ------------------------------ the wall ------------------------------
   Marvel.Godot         Godot project. Scenes, tweens, audio, input. Thin.
-  Marvel.Server        deferred. Only if multiplayer ever happens.
+  Marvel.Server        engine host. Embedded in the client, or a Linux container.
 tests/
   Marvel.Vectors.Tests RNG and digest fixtures. The first C# code written.
   Marvel.Rules.Tests   xUnit
@@ -241,13 +251,98 @@ Libraries worth naming:
 Do not use an entity component system. A few hundred entities with very rich
 per-entity rules is the case it handles worst.
 
-## Costs and open questions
+## Export targets
 
-Web export for C# in Godot. Godot's .NET web export has historically been
-unsupported, and was still experimental in the Godot 4.3 era. I have not
-confirmed its current state, and that check should happen before any commitment.
-This is the one decision that could permanently foreclose a browser build, and
-the project has a working browser client today.
+Answered by MARVEL-166, researched on 23 August 2026 against Godot 4.7.2-stable,
+released 18 August 2026.
+
+| Target | C# support |
+|---|---|
+| Windows, Linux, macOS | Fully supported |
+| Android | Supported since 4.2, experimental |
+| iOS | Supported since 4.2, experimental. Simulator templates are x64 only, and export needs a macOS host. |
+| Web | Not supported |
+
+The Godot 4.7 documentation is unambiguous: "Projects written in C# using Godot 4
+currently cannot be exported to the web." The 4.8 development docs say the same.
+
+Web is also not close, which matters because the May 2025 prototype demo makes it
+look imminent. The enabling pull request is open, still marked draft, and carries
+the milestone `4.x`, which means unscheduled. Its only commit is dated April 2025.
+The tracking issue has been open since January 2023. Demand is not the constraint:
+the pull request has 443 reactions. Plan as though C# web export does not exist.
+
+### Losing web costs the client, not the engine
+
+This document originally called web export the one decision that could
+permanently foreclose a browser build. That was too strong, and the reason is the
+wall.
+
+`Marvel.Core`, `Marvel.Rules`, `Marvel.Cards.*` and `Marvel.View` are plain .NET
+class libraries that never reference `GodotSharp`. Godot's limitation applies to
+the Godot export pipeline, not to those assemblies. A browser client can be a
+Blazor WebAssembly application over the same engine, which is a supported
+Microsoft path.
+
+So the browser option survives as a different client over one engine, rather than
+being lost. That raises the build gate from hygiene to a load-bearing part of the
+argument, and it is why MARVEL-162 should land early rather than late.
+
+### One engine-level consequence
+
+iOS forbids just-in-time compilation, so iOS builds compile ahead of time. Blazor
+WebAssembly trimming wants the same discipline. Two different future targets, one
+requirement: source-generated `System.Text.Json` contexts, and no runtime
+reflection in the engine. Honour it from the first line of `Marvel.Core` rather
+than retrofitting it.
+
+## Server topology
+
+Decided 23 August 2026. `migration.md` treats `Marvel.Server` as a later phase for
+multiplayer, deferred and deliberately not architected. That is not the shape it
+takes.
+
+The server is the engine host, and it runs in two places from the same assembly:
+
+- Bundled inside the Godot client, in-process, for local single-player.
+- Standalone in a Linux container, for hosted play.
+
+Two consequences, and the first is the one that decides whether this works.
+
+### The client speaks one interface, whatever the transport
+
+If the client calls the engine directly when bundled and over a wire when hosted,
+those are two code paths and they will diverge. The bugs will only appear in the
+hosted case, which is the case that is harder to debug.
+
+So the client always speaks the same interface. Only the transport changes:
+in-process for the bundled case, a socket for the container. The fold makes this
+straightforward, because `(state, input) -> (state, affordances, events)` says
+nothing about where the function runs.
+
+### Affordances and events have to be wire types
+
+This is a new constraint on MARVEL-160 and MARVEL-161, and it is cheap now and
+expensive later. Both the affordance list and the event stream cross a network in
+the hosted case, so both need stable, versioned, serialisable representations.
+They cannot hold object references into engine state.
+
+The digest is the counter-example that proves the rule: it records hidden state
+truthfully and must never reach a client. With a real server that stops being a
+convention and becomes something the wire format enforces.
+
+### Visibility becomes a real requirement again
+
+`migration.md` records the forward-looking rule in prose: the server decides what
+each seat sees, and the client's assertion is an input to that decision rather
+than the decision itself. That was filed away as untracked because nothing was
+being served.
+
+Something is being served now. The rule needs an owner on the C# side. This is a
+cooperative game, so a permissive policy is legitimate — it still has to be
+chosen rather than arrived at by nobody checking.
+
+## Costs and open questions
 
 Card art changes category. A localhost development tool that uses card scans is
 one thing. A distributable game is another. There is a real mitigation available:
@@ -283,7 +378,7 @@ rather than disrupting a planned one.
 
 | Issue | State | What changes |
 |---|---|---|
-| MARVEL-145 — The server does not decide what each seat sees | Backlog | If `Marvel.Server` leaves the MVP, this has no target for the foreseeable future. `migration.md` already records the forward-looking requirement in prose. Close it as recorded-not-tracked, or move it to `Probably Won't Do`. |
+| MARVEL-145 — The server does not decide what each seat sees | Backlog | The Python half is genuinely dead: `py_src` is never served. But the requirement is live again, because `Marvel.Server` runs as a container. Close this Python issue, and re-file the requirement against the C# server. |
 | MARVEL-153 — The web server serves arbitrary files and a cheat console | Backlog | Same. `migration.md` already states the carry-forward constraint: do not port `/read_file` or the cheat console onto a served surface. Close as recorded. |
 | MARVEL-146, MARVEL-152 | Cancelled | Already cancelled. No action. |
 
