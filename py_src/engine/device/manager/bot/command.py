@@ -79,11 +79,18 @@ class BotCommand:
         if not option.is_selectable:
             return None
 
-        if option.target_groups:
+        if option.select_rule.startswith("VillainAndMinions"):
             # A grouping rule: the pool holds every player's minions but only
             # one villain plus one player's whole group is a legal selection,
             # so `target_num_range` is not a count to slice by. First group, in
             # engine order, to keep the choice deterministic.
+            if not option.target_groups:
+                # No group at all means no selection can satisfy the rule -- the
+                # pool has no villain in it, and the rule wants exactly one. The
+                # engine offers the option anyway; taking it up would fail while
+                # resolving, which is the thing a recorded game cannot afford
+                # (MARVEL-158). Treat it as unaffordable and move on.
+                return None
             targets = option.target_groups[0]
         else:
             target_count = option.target_num_range[0]

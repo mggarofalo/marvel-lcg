@@ -426,9 +426,17 @@ class PlayerAction:
                     # explains, which is precisely what a replay cannot
                     # reproduce (MARVEL-158). Keeping it means the replay makes
                     # the same failed attempt and lands in the same state.
-                    if not Build.release:
-                        game.controller_manager.skip.Clean()
-                    message.world.render.PresentForceNoWait(is_update=False)
+                    if not game.controller_manager.skip.is_skipping:
+                        # Surfacing a refused action is for whoever is watching.
+                        # Nobody is while the controller is fast-forwarding -- a
+                        # replay, or the bot -- and `PresentForceNoWait` asserts
+                        # exactly that the fast-forward is off, so calling it
+                        # here brought the replay down. Keeping the failed step
+                        # (above) is what makes a replay reach this branch at
+                        # all, so the guard belongs here.
+                        if not Build.release:
+                            game.controller_manager.skip.Clean()
+                        message.world.render.PresentForceNoWait(is_update=False)
                     Log.Assert(CATEGORY_NAME, f"{effect} failed")
                     # engine.DebugBreak()
                     break

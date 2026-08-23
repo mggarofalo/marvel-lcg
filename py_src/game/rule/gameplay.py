@@ -12,11 +12,22 @@ ALLOW_CUSTOM_SCRIPT = ConfigVariables.Bool('allow_custom_script', False)
 def GetGamePlayRules() -> List['Ability']:
 
     def try_shuffle_deck(effect: 'Effect', deck: 'Deck'):
-        if effect.world.is_game_started:
-            if deck.bind_discard_pile != None and deck.bind_discard_pile.GetSize() > 0:
-                if not deck.flags.is_player_deck or not deck.GetOwnerPlayer().is_eliminated:
-                    deck.ShuffleWithDiscardPile(True, effect)
-            pass
+        # A depleted deck is reformed from its discard pile. This is a continuing
+        # effect, so it holds during setup too -- it used to be gated on
+        # `is_game_started`, and a "when revealed" that empties the encounter
+        # deck fires while the scenario is still being set up. Ebony Maw
+        # discards the encounter deck looking for a Spell and reaches the end of
+        # it; the deck then stayed empty and `CardFace.do_discard` asserted
+        # (MARVEL-158).
+        #
+        # Nothing needs the gate: an empty discard pile is the state a deck is
+        # in while it is still being built, and the check below already declines
+        # then. `process_after_shuffle` is likewise safe before the board exists
+        # -- the encounter deck's places an acceleration token *if* there is a
+        # main scheme to place it on.
+        if deck.bind_discard_pile != None and deck.bind_discard_pile.GetSize() > 0:
+            if not deck.flags.is_player_deck or not deck.GetOwnerPlayer().is_eliminated:
+                deck.ShuffleWithDiscardPile(True, effect)
             # # assert world.GetEncounterDeck().GetSize() != 0
             # # if world.GetEncounterDeck().GetSize() == 0:
             # for villain in World().GetScenario().area_villain.Get():
