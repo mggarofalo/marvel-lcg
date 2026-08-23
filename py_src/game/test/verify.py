@@ -456,12 +456,26 @@ class ReplayVerifier:
                 # quote, and "fail" with an empty reason is not a reason --
                 # MARVEL-17 wants a quarantined scene to say why it is there.
                 # Say what is known: where it stopped, and where the detail is.
-                detail = (
-                    f"Diverged after {replayed} of {recorded} recorded step(s). "
-                    "The recomputed state digest did not match the one saved "
-                    "with the step; the card-by-card diff is in the run log "
-                    "(engine/controller/module/replay.py)."
-                )
+                mismatches = ReplayVerifier.GetDigestMismatches(game)
+                if mismatches:
+                    detail = (
+                        f"Diverged after {replayed} of {recorded} recorded step(s). "
+                        "The recomputed state digest did not match the one saved "
+                        "with the step; the card-by-card diff is in the run log "
+                        "(engine/controller/module/replay.py)."
+                    )
+                else:
+                    # Every digest compared equal, so the scene reproduced. The
+                    # verdict came from `Log.HasError`, which an engine error
+                    # trips -- an ability that was offered and then would not
+                    # resolve is the usual one, and it stops the replay where it
+                    # happened rather than diverging from it.
+                    detail = (
+                        f"Reproduced {replayed} of {recorded} recorded step(s) with "
+                        "every digest matching, then the engine logged an error and "
+                        "the replay stopped. This is not a divergence; the error is "
+                        "in the run log."
+                    )
 
         record: Dict[str, Any] = {
             "file": FileManager.GetBaseName(path),
@@ -487,6 +501,11 @@ class ReplayVerifier:
         scene = game.session.scene if hasattr(game.session, "scene") else None
         recorded = len(scene.inputs) if scene else 0
         return recorded, game.controller_manager.replay.current_step_id
+
+    @staticmethod
+    def GetDigestMismatches(game: 'Game') -> int:
+        """How many steps compared unequal. Zero means the scene reproduced."""
+        return getattr(game.controller_manager.replay, "digest_mismatches", 0)
 
     ################################################################################
     #

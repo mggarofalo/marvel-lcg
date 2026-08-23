@@ -153,10 +153,18 @@ class ResRBYGA:
     @staticmethod
     def FromText(rbyga: str) -> 'ResRBYGA':
         rbyga = rbyga.lower()
-        rbyga = rbyga.lstrip("RBY")
+        # Strip the colours to leave the generic part. This used to strip
+        # "RBY" *after* lowering, so it matched nothing and every mixed cost
+        # lost its generic component: "R1" -- one physical and one of any type,
+        # which is what a printed cost with a Requirement renders as -- parsed
+        # as a bare "R" worth 1 instead of 2. The engine builds such costs by
+        # arithmetic and was unaffected; anything re-deriving one from its text
+        # was not, and the bot planned single-resource payments for two-resource
+        # costs, so the ability failed as it resolved (MARVEL-158).
+        generic = rbyga.lstrip("rby")
 
-        if rbyga.isdigit():
-            a = int(rbyga)
+        if generic.isdigit():
+            a = int(generic)
         else:
             a = 0
         return ResRBYGA(a, ResRBYG.FromText(rbyga))
