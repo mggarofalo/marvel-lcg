@@ -66,6 +66,9 @@ class BotOption:
     failure_reason: str
     is_search: bool
     pay_size_is_effect: bool = False
+    # Complete legal selections, when the select rule groups its candidates
+    # rather than taking them all. Empty for every ordinary rule.
+    target_groups: List[List[int]] = dataclasses.field(default_factory=list)
 
     @property
     def is_selectable(self) -> bool:
@@ -135,6 +138,8 @@ class BotOptionParser:
             target_num_range            = (int(target_range[0]), int(target_range[1])),
             target_payment              = payments,
             select_rule                 = str(item.get('select_rule', "") or ""),
+            target_groups               = [[int(t) for t in group]
+                                           for group in (item.get('target_groups') or [])],
             target_must_include_traits  = [str(x) for x in (item.get('target_must_include_traits') or [])],
             failure_reason              = str(item.get('failure_reason', "") or ""),
             is_search                   = bool(item.get('is_search', False)),

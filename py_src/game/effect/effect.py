@@ -519,6 +519,45 @@ class Effect(Object):
 
     ################################################################################
     #
+
+    def GetTargetGroups(self, select_rule: str) -> List[List[int]]:
+        """Every complete selection a grouping select rule would accept.
+
+        `SelectorRule.AfterSelectTargets` wants exactly one villain, all minion
+        targets engaged with a single player, and *every* legal minion of that
+        player present. A flat candidate list cannot say that, so anything
+        choosing targets from the wire alone -- the bot -- picked the whole pool
+        and had the ability rejected while it resolved (MARVEL-158). The client
+        does not need this because it reads the board directly.
+        """
+        from game.card.face.base import Villain
+        from game.card.face.card_type import Minion
+
+        if not select_rule.startswith("VillainAndMinions"):
+            return []
+
+        legal = list(self.context.all_legal_targets)
+        villains = [face for face in legal if Villain.IsType(face)]
+        minions = [face for face in legal if Minion.IsType(face)]
+
+        by_player: Dict[int, List['CardFace']] = {}
+        for face in minions:
+            player = face.GetEngagedPlayer()
+            if player is None:
+                continue
+            by_player.setdefault(player.player_id, []).append(face)
+
+        groups: List[List[int]] = []
+        for villain in villains:
+            # Sorted so the enumeration does not depend on dict insertion order
+            # reaching a recorded replay (AGENTS.md, determinism).
+            for player_id in sorted(by_player):
+                groups.append([villain.card.object_id]
+                              + [face.card.object_id for face in by_player[player_id]])
+            if not by_player:
+                groups.append([villain.card.object_id])
+        return groups
+
     def Render(self, by_effect: 'Effect|None', bind_player_id: int) -> 'EffectDescriptor':
         def get_pay_info(effect: 'Effect') -> Dict[int, 'EffectDescriptor.Payment']:
             def get_cost_str_rule(effect: 'Effect', target: 'CardFace|None'
@@ -606,6 +645,7 @@ class Effect(Object):
             bind_id=bind_id,
             bind_player_id=bind_player_id,
             all_legal_targets=[face.card.object_id for face in self.context.all_legal_targets],
+            target_groups=self.GetTargetGroups(select_rule),
             target_num_range=list(self.context.target_range),
             target_payment=get_pay_info(self),
             select_rule=select_rule,

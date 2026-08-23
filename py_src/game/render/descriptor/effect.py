@@ -27,6 +27,13 @@ class EffectDescriptor:
 
     select_rule: str
     select_rule_param: Tuple[int, int]
+    # Complete legal selections, when the select rule groups its candidates
+    # instead of taking them all. `VillainAndMinionsEngagedSamePlayer` pools
+    # every player's minions but accepts exactly one villain plus one player's
+    # whole group, so the flat `all_legal_targets` cannot express a legal
+    # choice and `target_num_range` is not a count anyone can act on. Empty
+    # for every ordinary rule. See `SelectorRule.AfterSelectTargets`.
+    target_groups: List[List[int]]
     target_must_include_traits: List[str] # For "26035"
 
     failure_reason: str             # not null if fail

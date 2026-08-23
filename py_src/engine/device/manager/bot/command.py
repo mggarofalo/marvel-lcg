@@ -79,12 +79,19 @@ class BotCommand:
         if not option.is_selectable:
             return None
 
-        target_count = option.target_num_range[0]
-        if option.pay_size_is_effect and PAY_VARIABLE_CARD_COST.value:
-            target_count = option.target_num_range[1]
-        if len(option.all_legal_targets) < target_count:
-            return None
-        targets = option.all_legal_targets[:target_count]
+        if option.target_groups:
+            # A grouping rule: the pool holds every player's minions but only
+            # one villain plus one player's whole group is a legal selection,
+            # so `target_num_range` is not a count to slice by. First group, in
+            # engine order, to keep the choice deterministic.
+            targets = option.target_groups[0]
+        else:
+            target_count = option.target_num_range[0]
+            if option.pay_size_is_effect and PAY_VARIABLE_CARD_COST.value:
+                target_count = option.target_num_range[1]
+            if len(option.all_legal_targets) < target_count:
+                return None
+            targets = option.all_legal_targets[:target_count]
 
         resources = BotCommand.BuildPayment(option, targets)
         if resources is None:
