@@ -184,6 +184,24 @@ src/tests/Marvel.Specs           Reqnroll
 
 The web client currently lives at `py_src/public/` because the Python server serves it over relative paths. Whether it moves to a shared top-level location is deferred to the Client and Integration phase.
 
+### Deployment: `py_src` is never served
+
+**Decided.** Settles MARVEL-145, -146, -152 and -153. The Python engine is a development tool and a behavioral oracle. It is never deployed, and its HTTP server is never bound beyond localhost. **Its network surface is therefore not a work item.**
+
+If multiplayer is ever exposed, it is a separate C# server project — `src/Marvel.Server`, containerized, behind Nginx. TLS, authentication and rate limiting terminate at the reverse proxy; the engine server never faces the network directly.
+
+**The C# MVP is single-player and local.** No server, no multiplayer, no network surface. `src/Marvel.Server` is a later phase and is deliberately not being architected now.
+
+That settles the four filed issues, but **not** along a confidentiality line — this is a cooperative game. Hidden information is routinely shared at a real table, and with one scenario excepted there is no opponent among the players to keep secrets from. "One client must not read another seat's cards" is the wrong requirement, and designing toward it would be designing toward the wrong game.
+
+**MARVEL-153 — not a defect.** `/read_file` and the `/debug` console reach a saved scene, seed and all. That is a local development affordance on a process nobody else can reach. The forward-looking constraint is one line, recorded here rather than tracked as work: **do not port `/read_file` or the cheat console onto a served surface in `Marvel.Server`.** A fresh implementation does not inherit it unless someone adds it.
+
+**MARVEL-145, -146, -152 — one requirement, and it is about authority, not secrecy.** Today `p`, `hot_seat` and `watch` are asserted by the requesting client and nothing checks them; object ids and the descriptor's free text leak around the filter that does exist. The defect is not that a client can see too much. It is that **there is no policy** — visibility is whatever the client claims it should be.
+
+The requirement `Marvel.Server` inherits is therefore: **the server decides what each seat sees, and the client's assertion is an input to that decision rather than the decision itself.** A cooperative policy may legitimately be permissive — show everything to everyone is a defensible answer for most scenarios, and probably the right default. It is still a policy, made server-side, and a permissive one has to be chosen rather than arrived at by nobody checking. The one non-cooperative scenario is where a restrictive policy actually has to work, and it is the case that proves the mechanism exists.
+
+MARVEL-62 established the shape that mechanism takes: the walk is driven by the shape of the descriptor rather than a list of zone names, so a zone is filtered the day it is added. That property carries forward. The three residuals — ids, free text, and the seat assertion itself — are the places the Python implementation does not reach, and they are notes for whoever designs the C# wire format, not work items now.
+
 ## Testing strategy
 
 Three oracles, used for different things.
