@@ -3,9 +3,13 @@
 MARVEL-159. A proposal, not yet a decision. The decision is made when that issue
 closes, and this document is rewritten to record what was decided.
 
-Two questions are open and are called out under [Costs and open questions](#costs-and-open-questions):
-whether Godot's .NET export still cannot target the web, and whether card art is
-shipped as scans or drawn procedurally.
+One question is open and is called out under [Costs and open questions](#costs-and-open-questions):
+whether card art is shipped as scans or drawn procedurally.
+
+The export-target question is answered. MARVEL-166 confirmed against Godot
+4.7.2-stable that C# cannot be exported to the web, and will not be soon. What
+that costs is smaller than this document first assumed — see
+[Export targets](#export-targets).
 
 ## What this proposes
 
@@ -241,13 +245,52 @@ Libraries worth naming:
 Do not use an entity component system. A few hundred entities with very rich
 per-entity rules is the case it handles worst.
 
-## Costs and open questions
+## Export targets
 
-Web export for C# in Godot. Godot's .NET web export has historically been
-unsupported, and was still experimental in the Godot 4.3 era. I have not
-confirmed its current state, and that check should happen before any commitment.
-This is the one decision that could permanently foreclose a browser build, and
-the project has a working browser client today.
+Answered by MARVEL-166, researched on 23 August 2026 against Godot 4.7.2-stable,
+released 18 August 2026.
+
+| Target | C# support |
+|---|---|
+| Windows, Linux, macOS | Fully supported |
+| Android | Supported since 4.2, experimental |
+| iOS | Supported since 4.2, experimental. Simulator templates are x64 only, and export needs a macOS host. |
+| Web | Not supported |
+
+The Godot 4.7 documentation is unambiguous: "Projects written in C# using Godot 4
+currently cannot be exported to the web." The 4.8 development docs say the same.
+
+Web is also not close, which matters because the May 2025 prototype demo makes it
+look imminent. The enabling pull request is open, still marked draft, and carries
+the milestone `4.x`, which means unscheduled. Its only commit is dated April 2025.
+The tracking issue has been open since January 2023. Demand is not the constraint:
+the pull request has 443 reactions. Plan as though C# web export does not exist.
+
+### Losing web costs the client, not the engine
+
+This document originally called web export the one decision that could
+permanently foreclose a browser build. That was too strong, and the reason is the
+wall.
+
+`Marvel.Core`, `Marvel.Rules`, `Marvel.Cards.*` and `Marvel.View` are plain .NET
+class libraries that never reference `GodotSharp`. Godot's limitation applies to
+the Godot export pipeline, not to those assemblies. A browser client can be a
+Blazor WebAssembly application over the same engine, which is a supported
+Microsoft path.
+
+So the browser option survives as a different client over one engine, rather than
+being lost. That raises the build gate from hygiene to a load-bearing part of the
+argument, and it is why MARVEL-162 should land early rather than late.
+
+### One engine-level consequence
+
+iOS forbids just-in-time compilation, so iOS builds compile ahead of time. Blazor
+WebAssembly trimming wants the same discipline. Two different future targets, one
+requirement: source-generated `System.Text.Json` contexts, and no runtime
+reflection in the engine. Honour it from the first line of `Marvel.Core` rather
+than retrofitting it.
+
+## Costs and open questions
 
 Card art changes category. A localhost development tool that uses card scans is
 one thing. A distributable game is another. There is a real mitigation available:
