@@ -6,6 +6,10 @@ closes, and this document is rewritten to record what was decided.
 One question is open and is called out under [Costs and open questions](#costs-and-open-questions):
 whether card art is shipped as scans or drawn procedurally.
 
+Release targets are settled: macOS and Windows clients, with the server also
+runnable as a Linux container. Web is explicitly not wanted, which removes the
+only material risk the Godot decision carried.
+
 The export-target question is answered. MARVEL-166 confirmed against Godot
 4.7.2-stable that C# cannot be exported to the web, and will not be soon. What
 that costs is smaller than this document first assumed — see
@@ -13,8 +17,10 @@ that costs is smaller than this document first assumed — see
 
 ## What this proposes
 
-Build the C# client in Godot, and drop `Marvel.Server` and the TypeScript web
-client from the MVP.
+Build the C# client in Godot for macOS and Windows, and drop the TypeScript web
+client. Keep `Marvel.Server`, but not in the shape `migration.md` assumed: it is
+the engine host, bundled inside the client for local play and separately runnable
+as a Linux container.
 
 Three things follow from that, and each one costs almost nothing now and a great
 deal later:
@@ -162,7 +168,7 @@ src/
   Marvel.View          engine-agnostic view model: affordances, event-to-beat mapping
   ------------------------------ the wall ------------------------------
   Marvel.Godot         Godot project. Scenes, tweens, audio, input. Thin.
-  Marvel.Server        deferred. Only if multiplayer ever happens.
+  Marvel.Server        engine host. Embedded in the client, or a Linux container.
 tests/
   Marvel.Vectors.Tests RNG and digest fixtures. The first C# code written.
   Marvel.Rules.Tests   xUnit
@@ -290,6 +296,52 @@ requirement: source-generated `System.Text.Json` contexts, and no runtime
 reflection in the engine. Honour it from the first line of `Marvel.Core` rather
 than retrofitting it.
 
+## Server topology
+
+Decided 23 August 2026. `migration.md` treats `Marvel.Server` as a later phase for
+multiplayer, deferred and deliberately not architected. That is not the shape it
+takes.
+
+The server is the engine host, and it runs in two places from the same assembly:
+
+- Bundled inside the Godot client, in-process, for local single-player.
+- Standalone in a Linux container, for hosted play.
+
+Two consequences, and the first is the one that decides whether this works.
+
+### The client speaks one interface, whatever the transport
+
+If the client calls the engine directly when bundled and over a wire when hosted,
+those are two code paths and they will diverge. The bugs will only appear in the
+hosted case, which is the case that is harder to debug.
+
+So the client always speaks the same interface. Only the transport changes:
+in-process for the bundled case, a socket for the container. The fold makes this
+straightforward, because `(state, input) -> (state, affordances, events)` says
+nothing about where the function runs.
+
+### Affordances and events have to be wire types
+
+This is a new constraint on MARVEL-160 and MARVEL-161, and it is cheap now and
+expensive later. Both the affordance list and the event stream cross a network in
+the hosted case, so both need stable, versioned, serialisable representations.
+They cannot hold object references into engine state.
+
+The digest is the counter-example that proves the rule: it records hidden state
+truthfully and must never reach a client. With a real server that stops being a
+convention and becomes something the wire format enforces.
+
+### Visibility becomes a real requirement again
+
+`migration.md` records the forward-looking rule in prose: the server decides what
+each seat sees, and the client's assertion is an input to that decision rather
+than the decision itself. That was filed away as untracked because nothing was
+being served.
+
+Something is being served now. The rule needs an owner on the C# side. This is a
+cooperative game, so a permissive policy is legitimate — it still has to be
+chosen rather than arrived at by nobody checking.
+
 ## Costs and open questions
 
 Card art changes category. A localhost development tool that uses card scans is
@@ -326,7 +378,7 @@ rather than disrupting a planned one.
 
 | Issue | State | What changes |
 |---|---|---|
-| MARVEL-145 — The server does not decide what each seat sees | Backlog | If `Marvel.Server` leaves the MVP, this has no target for the foreseeable future. `migration.md` already records the forward-looking requirement in prose. Close it as recorded-not-tracked, or move it to `Probably Won't Do`. |
+| MARVEL-145 — The server does not decide what each seat sees | Backlog | The Python half is genuinely dead: `py_src` is never served. But the requirement is live again, because `Marvel.Server` runs as a container. Close this Python issue, and re-file the requirement against the C# server. |
 | MARVEL-153 — The web server serves arbitrary files and a cheat console | Backlog | Same. `migration.md` already states the carry-forward constraint: do not port `/read_file` or the cheat console onto a served surface. Close as recorded. |
 | MARVEL-146, MARVEL-152 | Cancelled | Already cancelled. No action. |
 
