@@ -85,6 +85,12 @@ class Form:
         rest_upgrades = [x for x in all_upgrades if x not in upgrades]
 
         if not rest_upgrades:
+            if not upgrades:
+                # No form upgrade in play at all, so there is no form to change
+                # into and nothing to flip. `upgrades[0]` raised IndexError --
+                # Vision's Density Manipulation reaches this once his mass form
+                # upgrade has left play (MARVEL-158).
+                return False
             upgrade = upgrades[0]
         elif name == None:
             upgrade = self.player.AskChooseFace(rest_upgrades, by_effect)
