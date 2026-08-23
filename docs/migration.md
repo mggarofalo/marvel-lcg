@@ -41,6 +41,13 @@ Chosen over TypeScript and Rust. Determinism control is better than TypeScript's
 
 The existing TS/HTML/CSS client is kept and served from ASP.NET Core.
 
+**This line is under review — see [presentation-layer.md](presentation-layer.md) (MARVEL-159).**
+The proposal there is to build the client in Godot and drop `Marvel.Server` and
+the TypeScript client from the MVP, which would change the fold's return
+signature to carry a semantic event stream and anchored affordances. Nothing else
+in this document is affected. Do not build against either answer until MARVEL-159
+closes.
+
 ### Architecture: the engine is a fold
 
 ```
@@ -182,7 +189,7 @@ src/tests/Marvel.Engine.Tests    xUnit
 src/tests/Marvel.Specs           Reqnroll
 ```
 
-The web client currently lives at `py_src/public/` because the Python server serves it over relative paths. Whether it moves to a shared top-level location is deferred to the Client and Integration phase.
+The web client currently lives at `py_src/public/` because the Python server serves it over relative paths. Whether it moves to a shared top-level location is deferred to the Client and Integration phase — and MARVEL-159 may retire the question entirely, along with `Marvel.Server`. MARVEL-3 deferred the same question and is superseded on this point.
 
 ### Deployment: `py_src` is never served
 

@@ -130,6 +130,7 @@ as important.
 | refreshing a vendored snapshot, a new RR version, a new pack | [rules-provenance.md](docs/rules-provenance.md) |
 | `datasets/cards/`, `tools/cards/extract` | [card-dataset.md](docs/card-dataset.md) |
 | the card ability DSL | [card-dsl.md](docs/card-dsl.md) |
+| the client, the fold's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
 | `engine/config.py`, arg groups, crash capture, packaging, visibility filtering, `Build.release` | [engine-conventions.md](docs/engine-conventions.md) |
 | a scene saved before `0.5.9.205` | [state-digest-contract.md](docs/state-digest-contract.md) |
 | Plane issues, modules, labels, priority | [plane.md](docs/plane.md) |

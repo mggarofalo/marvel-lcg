@@ -16,4 +16,10 @@ tests/Marvel.Engine.Tests    xUnit
 tests/Marvel.Specs           Reqnroll behavioral specs
 ```
 
+**The layout above is under review.** [presentation-layer.md](../docs/presentation-layer.md)
+(MARVEL-159) proposes replacing `Marvel.Server` and the TypeScript client with a
+Godot client, splitting `Marvel.Engine` into `Marvel.Core` / `Marvel.Rules` /
+`Marvel.Cards.*`, and adding an engine-agnostic `Marvel.View` above a build-enforced
+wall. Read that before creating any project here.
+
 The Python reference engine lives in [`../py_src/`](../py_src/) and is the behavioral source of truth this code is validated against.
