@@ -521,7 +521,7 @@ class Effect(Object):
     #
 
     def GetTargetGroups(self, select_rule: str) -> List[List[int]]:
-        """Every complete selection a grouping select rule would accept.
+        """Complete selections a select rule would accept, when a flat list cannot say.
 
         `SelectorRule.AfterSelectTargets` wants exactly one villain, all minion
         targets engaged with a single player, and *every* legal minion of that
@@ -532,6 +532,29 @@ class Effect(Object):
         """
         from game.card.face.base import Villain
         from game.card.face.card_type import Minion
+
+        if select_rule in ("DifferentType", "DifferentCards"):
+            # "Choose two cards of different types" / "of different titles".
+            # `AfterSelectTargets` checks the *selection*, and the flat
+            # candidate list cannot express the constraint, so a reader picking
+            # the first n legal targets picks an illegal set whenever the pool
+            # opens with two of a kind. Engine order, first legal set.
+            need = self.context.target_range[0]
+            if need <= 0:
+                return []
+            picked: List[Any] = []
+            seen: set[Any] = set()
+            for face in self.context.all_legal_targets:
+                key = type(face) if select_rule == "DifferentType" else face.name
+                if key in seen:
+                    continue
+                seen.add(key)
+                picked.append(face)
+                if len(picked) == need:
+                    break
+            if len(picked) < need:
+                return []
+            return [[face.card.object_id for face in picked]]
 
         if not select_rule.startswith("VillainAndMinions"):
             return []

@@ -79,7 +79,7 @@ class BotCommand:
         if not option.is_selectable:
             return None
 
-        if option.select_rule.startswith("VillainAndMinions"):
+        if BotCommand.IsConstrainedSelectRule(option.select_rule):
             # A grouping rule: the pool holds every player's minions but only
             # one villain plus one player's whole group is a legal selection,
             # so `target_num_range` is not a count to slice by. First group, in
@@ -109,6 +109,19 @@ class BotCommand:
             [str(x) for x in targets],
             [str(x) for x in resources],
         )
+
+
+    @staticmethod
+    def IsConstrainedSelectRule(select_rule: str) -> bool:
+        """Does this rule constrain the *combination* rather than each target?
+
+        For these the engine sends complete legal selections in
+        `target_groups`, because a flat candidate list plus a count cannot say
+        which combinations are legal and `AfterSelectTargets` checks the
+        combination.
+        """
+        return (select_rule.startswith("VillainAndMinions")
+                or select_rule in ("DifferentType", "DifferentCards"))
 
     @staticmethod
     def BuildPayment(option: 'BotOption', targets: List[int],
