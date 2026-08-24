@@ -113,8 +113,37 @@ One known blind spot, recorded here because it is invisible by construction and
 a reader will otherwise assume the digest is total.
 
 **Which play area a card is in.** The digest's `owner` is the card's
-*controller*, not the place it sits, and every zone name maps to one shared
-ordered list. Two examples, both published:
+*controller*, and every zone name maps to one shared ordered list.
+
+The controller is **almost** the play area, and that is the dangerous part.
+Rules Reference `ownership-and-control` §5 says a character that changes control
+"is moved to its new controller's play area", so for characters the play area
+follows control. Measured over 163,696 card records from twelve corpus scenes,
+the two agree **98.1%** of the time.
+
+They are not the same thing in either direction, and every exception is a named
+rule:
+
+| | rule | measured |
+|---|---|---|
+| engaged minions — in your play area, scenario-controlled | `rr:player-s-play-area` §3 | 1,412 records |
+| encounter cards dealt to you — likewise | `rr:play-area` §1 | 264 records |
+| player side schemes — yours, "placed next to the main scheme in the villain's play area" | `rr:player-side-scheme` §1 | `SideSchemesArea` holds controllers `-1`, `0` and `2` at once |
+| upgrades on a card in the villain's play area — yours, not in your play area | `rr:player-s-play-area` §2 | 285 records |
+| set-aside and removed cards — a controller, no play area at all | `rr:in-play-and-out-of-play` | 663 + 321 records |
+
+**A 98%-accurate proxy is a worse failure mode than an obviously wrong one.** A
+port that read `owner` as the play area would pass nearly everything and fail on
+engaged minions, player side schemes and villain attachments — which are exactly
+the cards where "whose is it" drives rules, and exactly the failures that surface
+after the card ports rather than before.
+
+For the scenarios below it carries no information at all. Every main scheme in
+the corpus is scenario-controlled — `MainSchemesArea` is `{-1: 941}` — and
+nobody controls a main scheme, so two main schemes in two different play areas
+both record `owner: -1`.
+
+Two examples, both published:
 
 - **Protection Racket** (Fear No Evil): *"Each main scheme is in the play area
   of the player who chose it."* Two main schemes, two play areas, one
