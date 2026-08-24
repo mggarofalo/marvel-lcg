@@ -1,0 +1,192 @@
+# Affordances
+
+MARVEL-161. The prompt stops being a list of option strings and becomes a list of
+things the player can do, each anchored to the board object they click.
+
+Designed alongside [event-stream.md](event-stream.md) on purpose. The two halves
+of the fold's return value share a `Trigger`, and inventing that twice is how
+they would come to disagree.
+
+## Why strings were enough and are not any more
+
+A web client repaints a document, so an option can be a label and an index. A
+game has to know that "Play Enhanced Spider-Sense" belongs to *that card, there*
+— to highlight it, to animate from it, to grey it out.
+
+MARVEL-41 already requires the prompt to carry the option set and "enough context
+to tell a mid-resolution prompt from a turn-level one". This is the shape that
+satisfies it.
+
+## The proposal was a third of the answer
+
+[presentation-layer.md](presentation-layer.md) sketched five fields:
+
+```
+Affordance { Id, Kind, AnchorId, Label, Legality }
+```
+
+That sketch was written without looking at what the engine already renders. It
+renders fourteen fields per option, and the corpus cannot settle which of them
+matter because it records the input that was *chosen* and never the set it was
+chosen from. So `py_src/tools/affordances/census.py` plays games instead, through
+the same headless harness the determinism probes use, and counts.
+
+**30 games. 1,997 prompts. 6,351 options.**
+
+| field | informative on | in the sketch? |
+|---|---|---|
+| `id` | 100% | yes |
+| `name` — the verb | 100% | yes, as `Kind` |
+| `bind_id` — the anchor | 100% | yes |
+| `bind_player_id` | 100% | no |
+| `all_legal_targets` | **86.5%** | **no** |
+| `target_num_range` | **86.4%** | **no** |
+| `target_payment` | **53.5%** | **no** |
+| `is_search` | 2.8% | no |
+| `pay_size_is_effect` | 0.6% | no |
+| `select_rule` | 0.3% | no |
+| `target_groups` | 0.3% | no |
+| `failure_reason` | 0% observed | yes, as `Legality` |
+| `target_must_include_traits` | 0% observed | no |
+
+The two the sketch dropped are the two a player is mostly deciding about. An
+affordance without targets and costs can be clicked; it cannot be *chosen*.
+
+## What each measurement decided
+
+### The anchor is never absent
+
+`bind_id` is informative on every one of 6,351 options, which is the whole
+justification for the type. There is no fallback case to design for.
+
+### Targeting is usually trivial and sometimes not
+
+A target request is present on 86.5% of options. Two thirds of those offer
+exactly **one** legal target — so the common case is a choice with one answer, and
+a client can resolve it silently. But 20% offer two or more, so the list has to
+travel rather than being collapsed by the engine.
+
+`target_groups` appears on only 0.3%, and it is not optional for correctness.
+`VillainAndMinionsEngagedWithYou` pools every player's minions but accepts
+exactly one villain plus one player's whole group. The flat candidate list and a
+min/max cannot express that, so a client obeying them would build an illegal
+selection. When groups are present they are authoritative.
+
+### Payment is plural, and it is not the cost
+
+This is the measurement that most changes the design.
+
+| ways to pay | share of priced affordances |
+|---|---|
+| 5 | 22.1% |
+| 6 | 21.6% |
+| 4 | 17.2% |
+| 3 | 13.3% |
+| 2 | 10.5% |
+| 1 | 7.3% |
+
+Only 7.3% of priced affordances have a single way to pay. **An interface that
+picked for the player would be wrong more than nine times out of ten.**
+
+That is the generation-and-payment distinction from MARVEL-169 made concrete.
+Resources are generated incrementally — by discarding cards, by using abilities —
+and then consumed once to pay. `CostOption.Sources` is the menu of generators;
+which subset gets used is the player's decision, and the engine cannot collapse
+it in advance.
+
+`OrCost` is additive rather than a replacement, and that is load-bearing:
+flattening "a mental resource *or* two of any type" to a bare `2` is what
+corrupted a corpus during MARVEL-158, because the payer met the number with
+resources of the wrong type and the ability failed mid-resolution.
+
+### Prompt kind is an enum the engine already has
+
+MARVEL-41 asks for enough context to tell a mid-resolution prompt from a
+turn-level one. `ability_type` already is that, and it does not have to be
+inferred from a trigger name:
+
+| kind | share |
+|---|---|
+| `Normal` | 90.4% |
+| `Response` | 6.4% |
+| `Interrupt` | 3.2% |
+| `ForcedInterrupt` | 0.1% |
+
+All four were observed. None is speculative.
+
+### Cancellable matters more than it looks
+
+**34.8% of prompts offer exactly one affordance**, and **81% are cancellable**.
+Without a cancellable flag a client cannot tell "your only move" from "your only
+move, or pass" — and those are different screens.
+
+### `Legality` survives, with a caveat about the evidence
+
+`failure_reason` was **not observed once** in 6,351 options, which looks like
+grounds for dropping it. It is not.
+
+The mechanism is real and predates this work: `Effect.failures` is set for
+"pay cost, need 3, but only have 2", failed target checks, out-of-play sources
+and more, and the Python client already greys options out on exactly this —
+`BotOption.is_selectable` is defined as `failure_reason == ""`. What the census
+shows is that a bot which plays what it can afford does not surface many. **Treat
+the zero as a gap in the sample, not in the engine.**
+
+`target_must_include_traits` is in the same position: rare by construction — the
+engine comment names one card — and absent from a 30-game sample rather than
+absent from the game.
+
+## The shape
+
+`src/Marvel.Rules/Prompts/`.
+
+```
+Prompt        Player, Kind, Trigger, Label, Cancellable, Affordance[]
+Affordance    Id, Verb, AnchorId, AnchorPlayer, Label,
+              TargetRequest?, CostOption[], Illegal?
+TargetRequest Legal[], Min, Max, Groups[][], MustIncludeTraits[], Rule, IsSearch
+CostOption    Target, Cost, Rule[], OrCost, OrRule[], ResourceSource[]
+ResourceSource Effect, Generates
+```
+
+Two constraints carried over from the event stream, for the same reasons:
+
+**Wire types.** Integers, strings and lists of them. A prompt crosses a socket
+when the server is hosted, and a live card reference would let the view layer
+read hidden state through a field that was only meant to say what is clickable.
+
+**The label is unchanged.** MARVEL-41 pins the domain-level label, and the spec
+suite depends on it. `AnchorId`, `Targets` and `Costs` are additions beside it,
+never a replacement for it.
+
+## The fold
+
+```
+(state, input) -> (state, Prompt?, GameEvent[])
+```
+
+The two sides are deliberately asymmetric. A prompt is **absent** when the game
+is over, and never empty — a decision with no options is not put to a player. The
+event list is very often empty: 35.3% of recorded steps change no state at all.
+
+## Reproducing the numbers
+
+```bash
+cd py_src
+python -m tools.affordances.census --games 30 --max-steps 700 --json census.json
+```
+
+Each game boots the engine, so this takes seconds per game. It is a tool, not a
+unit test — `tests/Marvel.Rules.Tests/Prompts/` states the shape rules that
+follow from it, on data small enough to read.
+
+## What is not settled here
+
+- **MARVEL-164**, affordance completeness against the corpus: every input the
+  corpus recorded at a step must appear in the affordance list offered at that
+  step. Cheap, high value, and it needs the engine.
+- **Ordering.** The census does not check whether affordance order is stable or
+  meaningful. It has to be stable for replay; whether it is meaningful for
+  display is a view question.
+- **Grouping for display.** Which affordances belong to the same card, and how a
+  client stacks them, belongs to `Marvel.View`.

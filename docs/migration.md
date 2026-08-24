@@ -51,8 +51,14 @@ anchored affordances. Nothing else in this document is affected.
 ### Architecture: the engine is a fold
 
 ```
-(state, input) -> (state, prompt | gameOver)
+(state, input) -> (state, Prompt?, GameEvent[])
 ```
+
+~~`(state, input) -> (state, prompt | gameOver)`~~ — **extended by MARVEL-160 and
+MARVEL-161.** The prompt is now a list of affordances anchored to board objects
+([affordances.md](affordances.md)), and the fold also returns a semantic event
+stream describing what happened ([event-stream.md](event-stream.md)). A prompt is
+absent when the game is over, which is what the old `| gameOver` said.
 
 No blocking, no threads in gameplay paths. "Ask the player" is a `yield`, not an I/O wait.
 

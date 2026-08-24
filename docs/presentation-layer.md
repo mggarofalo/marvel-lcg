@@ -139,6 +139,12 @@ class of animation bug into a CI failure, using a corpus that already exists.
 
 ### Affordances instead of option strings
 
+**Settled by MARVEL-161 — see [affordances.md](affordances.md).** The five-field
+sketch below turned out to be a third of the answer: measured over 1,997 prompts
+and 6,351 options, legal targets are informative on 86.5% and cost on 53.5%, and
+neither is in the sketch. What follows is the reasoning that led there.
+
+
 The prompt today is a list of labels. `MARVEL-41` already says the C# prompt
 "must carry the option set and enough context to tell a mid-resolution prompt
 from a turn-level one". A game needs more than that: each option has to name the
