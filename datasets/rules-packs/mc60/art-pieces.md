@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 17
 hash: "sha256:ad9116e4dd2e7ae19d9fe73cec4953e337cfb01589501aab2da4a27df7bd16b3"
 rules: []
-references: []
 ---
 
 # ART PIECES

@@ -7,7 +7,6 @@ source: "mc19_drax_rulesheet.pdf"
 page: 1
 hash: "sha256:8c1c8c5f84dcd8066c3285280b2bc65701b6c6515bc468803ccf090a934d9db4"
 rules: []
-references: []
 ---
 
 # DRAX // PROTECTION

@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 13
 hash: "sha256:25ef27ff1790caed8684daebe5a2a3d3355ce3e31e933bb3a0ec78cb6ded257b"
 rules: []
-references: []
 ---
 
 # GROUP PODS

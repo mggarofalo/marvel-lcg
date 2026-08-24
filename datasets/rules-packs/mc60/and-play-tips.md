@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 5
 hash: "sha256:bb3a4cdfc0d5270575af665b4c23d75228582a8067d82645cd88a9a0553e14b7"
 rules: []
-references: []
 ---
 
 # AND PLAY TIPS

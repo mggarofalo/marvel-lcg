@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 13
 hash: "sha256:cede99bfde94ad20e63e452409fdfc013a00d6ca92fb4a6209626d218b2ef34c"
 rules: ["hinder-x", "incite-x", "permanent", "piercing", "ranged", "setup", "stalwart", "villainous", "victory-x"]
-references: []
 ---
 
 # IMPORTANT KEYWORDS

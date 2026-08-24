@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 9
 hash: "sha256:56d6bd3abe3fb827e44ad2ec5c20690db87764aa80d10b64f54510a71b30f302"
 rules: []
-references: []
 ---
 
 # AMPLIFY ICON ()

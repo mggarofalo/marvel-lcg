@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 22
 hash: "sha256:52b045a53a3dcd6a9e35c313154cc7704883d0b018ef2750bf19ccbe0157631e"
 rules: []
-references: []
 ---
 
 # MAGIK // AGGRESSION

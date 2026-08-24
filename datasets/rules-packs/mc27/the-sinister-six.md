@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 15
 hash: "sha256:5747b726bc334e9cdddfaf94e7587ad9c435ba15204c7bd62abeb2a3723e39c2"
 rules: []
-references: []
 ---
 
 # THE SINISTER SIX

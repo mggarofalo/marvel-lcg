@@ -7,7 +7,6 @@ source: "mc22_nebula_rulesheet.pdf"
 page: 1
 hash: "sha256:0233b64a1c16e8820a1c77e67b5ae93417e714a9ab70ac2eeb5deeb3c3edf814"
 rules: []
-references: []
 ---
 
 # NEBULA // JUSTICE

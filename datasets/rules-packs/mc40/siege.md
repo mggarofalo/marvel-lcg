@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 9
 hash: "sha256:2eeb2da54f84676c9a83232f322d9cd88d68eb2776569b2070f2d8589f24eec4"
 rules: []
-references: []
 ---
 
 # SIEGE

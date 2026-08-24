@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 3
 hash: "sha256:8a5c9521034d5dfa153f8ef6ea0abb60afac1c93f6a713b2d8c33b8bc85cdfa3"
 rules: ["2-leaders", "8-main-schemes", "8-modular-encounter-sets", "1-standard-pvp-encounter-set"]
-references: []
 ---
 
 # CONTENT OVERVIEW

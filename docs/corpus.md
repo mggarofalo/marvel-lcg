@@ -241,7 +241,21 @@ python -m tools.corpus.freeze ./corpus/ --check ../datasets/corpus/manifest.json
 ```
 
 From the freeze onward the corpus is immutable and every later phase validates against it. A
-corpus that can drift is not an oracle. MARVEL-4 decided the storage: **gzipped, in a separate
+corpus that can drift is not an oracle.
+
+**"Immutable" describes the artefact, not the project.** A frozen corpus is content-addressed
+and pinned by SHA, so *that* corpus can never change underneath a validation run — which is the
+whole point, and it is why a rebuilt shard has to be byte-identical. It does not mean the corpus
+is the last one that will ever be cut.
+
+Freezing is a **phase boundary**: work stops on `py_src` and starts on the C# engine. If a rules
+error surfaces later — MARVEL-170 is the worked example, five rule flags shipped off while the
+authority was two revisions ahead — `py_src` gets fixed and a new corpus is generated and pinned
+at a new SHA. The cost of that is C# rework proportional to how much has already been validated,
+which is a reason to freeze *carefully*, not a reason to treat it as a one-way door.
+
+The engine's own realistic expectation is that the full set of correct rules will not be known
+until the second engine exists and disagrees with the first about something. MARVEL-4 decided the storage: **gzipped, in a separate
 repo pinned by commit SHA, with the hash manifest checked into *this* repo** so integrity is
 verifiable without fetching the corpus, sharded by scenario so CI can fetch a subset.
 

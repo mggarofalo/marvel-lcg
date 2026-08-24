@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 17
 hash: "sha256:bd4936118b8066637f18429be5423052099b9277366b51a776e44de06ce42bd5"
 rules: []
-references: []
 ---
 
 # AND END THE ROUND

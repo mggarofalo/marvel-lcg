@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 25
 hash: "sha256:a6714d47f8815245398e600c41430a16fbe22e8a44de647a470ae9b4364d34bd"
 rules: []
-references: []
 ---
 
 # DAREDEVIL // JUSTICE

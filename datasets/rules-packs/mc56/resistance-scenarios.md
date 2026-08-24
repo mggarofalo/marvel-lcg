@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 8
 hash: "sha256:834dcfe65c4d4897f2a9f8531f8fe2c9532781dcbe63bed69fbea97ed69461d8"
 rules: []
-references: []
 ---
 
 # RESISTANCE SCENARIOS

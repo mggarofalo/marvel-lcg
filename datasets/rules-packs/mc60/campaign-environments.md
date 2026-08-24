@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 8
 hash: "sha256:0a07ac70cb53cd15333cdf06cc3eefa3d4d36becb824b83e01a90734d65ca9a7"
 rules: []
-references: []
 ---
 
 # CAMPAIGN ENVIRONMENTS

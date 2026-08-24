@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 17
 hash: "sha256:314d8dbd736d4fb101ad96473b054314cf553a081348f7bdb27d94e3c9c0070f"
 rules: []
-references: []
 ---
 
 # WHAT’S NEXT?

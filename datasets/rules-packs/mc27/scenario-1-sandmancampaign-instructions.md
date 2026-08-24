@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 9
 hash: "sha256:b4fdcbae689389c6322930fd170c65a15935beeb87db879da886a6ec24eebc1e"
 rules: []
-references: []
 ---
 
 # SCENARIO #1 - SANDMANCAMPAIGN INSTRUCTIONS

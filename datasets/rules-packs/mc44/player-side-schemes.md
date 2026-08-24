@@ -7,7 +7,6 @@ source: "mc44_deadpool_rules_insert-web.pdf"
 page: 2
 hash: "sha256:b8d0798a697388f913ee6bf76a4557e0df6ba8b6cc7ee5c8951584e00b57722b"
 rules: []
-references: []
 ---
 
 # PLAYER SIDE SCHEMES

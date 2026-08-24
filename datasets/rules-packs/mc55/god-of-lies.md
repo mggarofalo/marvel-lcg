@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 20
 hash: "sha256:d51d2e06cd74eaf8caa77cdee356ca50e1c33618babc18c72058ec9ec1b87241"
 rules: []
-references: []
 ---
 
 # GOD OF LIES

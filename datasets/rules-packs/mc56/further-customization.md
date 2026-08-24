@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 5
 hash: "sha256:d6cee2dfbb3bea0ad1fdd5dc75645a09ac8e463eb93b24947e9b9e7685b6228f"
 rules: []
-references: []
 ---
 
 # FURTHER CUSTOMIZATION

@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 11
 hash: "sha256:82cbf884f8fd69d9662133ae92f7cf0489df2c5e19472a5263f9b2392f80c6a7"
 rules: []
-references: []
 ---
 
 # HORSEMEN

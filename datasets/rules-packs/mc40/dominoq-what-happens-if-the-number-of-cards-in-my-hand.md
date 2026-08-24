@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 21
 hash: "sha256:703a36a46e6b3f3f9bd84dc1318fbf7e36e5f387f78c31db8ad597798b9cd569"
 rules: ["changes-while-stryfe-163-165-is-attacking-me", "from-the-top-of-domino-s-deck-if-it-was-the-last-card-in-her-deck"]
-references: []
 ---
 
 # DOMINOQ. What happens if the number of cards in my hand

@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 6
 hash: "sha256:cb70a54f01b5170ae5b5710d50299ec16a908228458469d017f3d7db4f506fa8"
 rules: []
-references: []
 ---
 
 # SCENARIO

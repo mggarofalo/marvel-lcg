@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 13
 hash: "sha256:152afd6133eafc0824aed248dfd5dff02c0650a748ac6062dd5ffa6ea37fbe38"
 rules: []
-references: []
 ---
 
 # PROTECTION RACKET

@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 20
 hash: "sha256:be9d3af8466a2ea277d7eca2e1b721452e3b83e7ac6a35517b2affffa3f42d38"
 rules: ["q-collector-s-ability-for-scenario-2-infiltrate-the-museum-says-when-a-card-would-be-placed-into-a-discard-pile-from-play-which-card-types-does-this-apply-to", "hero-already-in-play-such-as-playing-the-groot-ally", "while-my-friend-is-playing-the-groot-hero", "q-in-scenario-2-infiltrate-the-museum-if-a-card-q-how-does-groot-s-flora-colossus-ability-work-if-he-would-be-set-aside-removed-from-the-game-shuffled-takes-more-damage-than-he-has-growth-counters-into-a-deck-from-play-or-added-to-a-player-s-hand", "from-play-will-collector-s-forced-interrupt-ability", "trigger", "q-if-groot-has-a-tough-status-card-and-takes", "damage-will-growth-counters-be-removed-from-him", "q-in-the-ship-command-modular-set-the-treachery-cards-blind-side-145-hull-breach-146-and-power-q-if-the-last-charge-counter-is-removed-from-one-drain-147-give-the-player-the-option-to-exhaust-the-of-rocket-raccoon-s-upgrades-is-that-upgrade-milano-can-the-player-choose-this-option-if-they-do-discarded-not-control-the-milano", "q-what-happens-when-a-stunned-or-confused-character-gains-the-stalwart-keyword-q-if-rocket-raccoon-reveals-shadow-of-the-past-will", "the-amplify-icon-from-the-vendetta-side-scheme-apply", "to-blackjack-o-hare-s-quickstrike-attack"]
-references: []
 ---
 
 # AGGRESSION

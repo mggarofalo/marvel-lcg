@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 7
 hash: "sha256:142f21bcfe75f67d1c6f0491b1660c3cc12c9f4d6610e6eb748d8ecafba81ff2"
 rules: ["at-the-trance-side-of-any-attachment-until-it-flips-through-hypnotic-gaze-s-ability"]
-references: []
 ---
 
 # ENCHANTMENT ATTACHMENTS

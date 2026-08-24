@@ -7,7 +7,6 @@ source: "mc52_rulesheet-web.pdf"
 page: 1
 hash: "sha256:f9081710d5dc1480e09ddf22cc0636628887d6550b8531fd1b5be6435864e2e4"
 rules: []
-references: []
 ---
 
 # SILK // PROTECTION

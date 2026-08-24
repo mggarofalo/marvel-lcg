@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 10
 hash: "sha256:c3d4e97dce593042de429a51828fad4163156a95bdcd8f9ab6c0c4dfb3ad69e6"
 rules: []
-references: []
 ---
 
 # ROUND SEQUENCE

@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 12
 hash: "sha256:b6b89daebb3d024ba8e41779df4a7e9e0dce8106a83ebde256aa91251cd2d009"
 rules: []
-references: []
 ---
 
 # USING AN ALLY

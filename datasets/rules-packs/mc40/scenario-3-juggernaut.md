@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 14
 hash: "sha256:796bceb2ad5e818e5c4eedec91e146d7b6e7003a6a0e4ac2a8b6c847e5c796f3"
 rules: []
-references: []
 ---
 
 # SCENARIO #3 - JUGGERNAUT

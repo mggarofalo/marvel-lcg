@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 26
 hash: "sha256:8b32451f3d9a8c1fc58f1669a8fbcc92ad69c85b93d573e4b8ee7bb7d92a249b"
 rules: ["q-when-can-i-use-the-ability-on-photographic-reflexes-40-to-play-an-event-tucked-under-echo", "q-what-happens-to-the-tucked-event-after-i-use-photographic-reflexes-40-to-play-it"]
-references: []
 ---
 
 # ECHO

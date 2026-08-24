@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 8
 hash: "sha256:38db18e723d9c3cb6424f2b0def1a397edd20b2fa00a132b599dec1a8231a6b5"
 rules: []
-references: []
 ---
 
 # BROTHERHOOD OF BADOON

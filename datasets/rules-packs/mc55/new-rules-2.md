@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 9
 hash: "sha256:e75d328b6d6ed449067f7fc845534e5e38bd8c79218d55563c7b48f2a28226fa"
 rules: []
-references: []
 ---
 
 # NEW RULES

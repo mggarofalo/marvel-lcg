@@ -7,7 +7,6 @@ source: "mc57_rulebook-web.pdf"
 page: 18
 hash: "sha256:137afdef3ecc35e2f7e6ea5a91cfb0782df9df1593f7e0d02a713ac36f66946c"
 rules: ["q-what-happens-in-competitive-mode-if-the-enemy-leader-has-the-same-card-title-as-my-identity-or-ally", "q-what-happens-if-i-reveal-stage-ii-of-the-enemy-leader-during-the-villain-phase", "q-do-i-shuffle-my-identity-s-obligation-into-the-encounter-deck-during-competitive-play"]
-references: []
 ---
 
 # UESTIONS

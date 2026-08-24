@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 8
 hash: "sha256:8c5cc47a76de16cf143d17e23ad7b69928bcd04db4a5badcb82ff50288fcefce"
 rules: []
-references: []
 ---
 
 # MODULAR DIFFICULTY

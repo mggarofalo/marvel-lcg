@@ -316,9 +316,6 @@ def build(documents: Sequence[Document]) -> Dict[str, str]:
                     else section.rules[0].heading),
                 "hash": _hash(section.text),
                 "rules": len(section.rules),
-                # One-way, and authored rather than parsed. See the module
-                # docstring and docs/rules-provenance.md.
-                "references": [],
             })
 
             for rule in section.rules:
@@ -331,7 +328,6 @@ def build(documents: Sequence[Document]) -> Dict[str, str]:
                     "page": section.page,
                     "fragment": _sentence(rule.text),
                     "hash": _hash(rule.text),
-                    "references": [],
                 })
 
             fields = {
@@ -343,7 +339,6 @@ def build(documents: Sequence[Document]) -> Dict[str, str]:
                 "page": section.page,
                 "hash": _hash(section.text),
                 "rules": [slug(r.heading) for r in section.rules],
-                "references": [],
             }
             body = [_front_matter(fields), "", f"# {section.heading}", ""]
             body += [paragraph + "\n" for paragraph in section.paragraphs]

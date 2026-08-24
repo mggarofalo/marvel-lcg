@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 20
 hash: "sha256:e7261349d61ef4e5301a091aff12ada7034d11ef5ec29c63790fb5f5bcbb92ef"
 rules: []
-references: []
 ---
 
 # STARTER DECKS

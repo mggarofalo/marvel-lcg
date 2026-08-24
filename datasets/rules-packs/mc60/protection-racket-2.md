@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 26
 hash: "sha256:caf079d90249bfa50bb91ce7be666e7b6d6158e7d836dcc108afe7b5f6f003aa"
 rules: ["q-when-change-of-venue-141-swaps-a-main-scheme-for-a-new-one-what-happens-to-cards-attached-to-the-previous-main-scheme"]
-references: []
 ---
 
 # PROTECTION RACKET

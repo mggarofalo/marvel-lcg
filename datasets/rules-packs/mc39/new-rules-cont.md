@@ -7,7 +7,6 @@ source: "mc39_mojomania_rules_insert-compressed.pdf"
 page: 8
 hash: "sha256:acdd674e18926d8727d54bb0b5b03740834437d59c42e674dd5c952e51f601bf"
 rules: ["double-sided-villain"]
-references: []
 ---
 
 # NEW RULES (CONT.)

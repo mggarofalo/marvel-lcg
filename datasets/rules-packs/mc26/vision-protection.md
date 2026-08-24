@@ -7,7 +7,6 @@ source: "mc26_vision_rulesheet.pdf"
 page: 1
 hash: "sha256:3d98b2111e7e16ea149fc73c3bf60302895d150e41682a1dd2ac010fb62d4581"
 rules: []
-references: []
 ---
 
 # VISION // PROTECTION

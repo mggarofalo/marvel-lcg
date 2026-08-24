@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 9
 hash: "sha256:803d3302e6925aa8cc2a84307135bb13562fae1ded0da1ee8f84a5548a2efaaa"
 rules: ["if-there-are-x-facedown-cards-under-this-scheme-the-players-lose-the-game-x-is-3-more-than-the-number"]
-references: []
 ---
 
 # TOLERANCE

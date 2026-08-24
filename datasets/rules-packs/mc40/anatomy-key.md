@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 3
 hash: "sha256:5773b8cb88ecccdc887c83f3e4e1cad9363cb51d6e5faa5fa21c6262f336b1df"
 rules: []
-references: []
 ---
 
 # ANATOMY KEY

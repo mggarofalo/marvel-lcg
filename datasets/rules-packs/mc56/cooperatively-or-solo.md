@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 6
 hash: "sha256:87aac11511787b97bd11a0a6901c69382cf6e9d103d25d3dfe58b5a25ff879c0"
 rules: []
-references: []
 ---
 
 # COOPERATIVELY (OR SOLO)

@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 5
 hash: "sha256:e74baec6c554c14d94dd0d6f8910d27f3e11b4f75009139f121136c385445b7c"
 rules: []
-references: []
 ---
 
 # PERSISTENT DAMAGE

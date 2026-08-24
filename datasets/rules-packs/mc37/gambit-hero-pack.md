@@ -7,7 +7,6 @@ source: "mc37_gambit_rules_insert.pdf"
 page: 1
 hash: "sha256:723af223c579dd5ec3c9c3e5e3f85b747eeb1a504ec1cb36b9c64d6920fae173"
 rules: ["new-keyword-piercing", "new-keyword-ranged", "new-keyword-team-up", "new-keyword-villainous"]
-references: []
 ---
 
 # GAMBIT HERO PACK

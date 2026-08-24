@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 5
 hash: "sha256:f165b24acbbdef6d35c4c7db756aaeb3aac2043a1644504a07d7378ab32bc9ce"
 rules: []
-references: []
 ---
 
 # REPUTATION TRACKCAMPAIGN LOG

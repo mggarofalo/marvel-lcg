@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 11
 hash: "sha256:bcd0955e5e58d3ba3dd0a3a32d605fda3c45815a453bffcd47f751adbdd0f1e3"
 rules: []
-references: []
 ---
 
 # INFILTRATING THE EMBASSY

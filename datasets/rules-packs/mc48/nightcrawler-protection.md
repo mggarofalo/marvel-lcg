@@ -7,7 +7,6 @@ source: "mc48_nightcrawler_rules_insert.pdf"
 page: 1
 hash: "sha256:e35d673e7fb5dd29ab45eab999ef15c5129ffcfc8334f5ff4096343791f10ec4"
 rules: []
-references: []
 ---
 
 # NIGHTCRAWLER // PROTECTION

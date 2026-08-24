@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 10
 hash: "sha256:0853e37a2294f18ef6b97b1d1fd059bee253a8dcb8e1288f60ff571732683941"
 rules: ["once-each-turn"]
-references: []
 ---
 
 # PLAYER TURN

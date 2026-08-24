@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 20
 hash: "sha256:cdc579ff1e1117e5902c2248ebe9828b01defd2732abcf01091a7935503aa0b7"
 rules: []
-references: []
 ---
 
 # PERSISTENT DAMAGE

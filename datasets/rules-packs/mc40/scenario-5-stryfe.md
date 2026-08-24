@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 18
 hash: "sha256:92662728b4e767e3735e184654e95dd2e4c19ba42abde39a53ad51971af7fc0f"
 rules: []
-references: []
 ---
 
 # SCENARIO #5 - STRYFE

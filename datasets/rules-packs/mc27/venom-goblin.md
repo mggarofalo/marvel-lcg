@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 17
 hash: "sha256:d8beeee07b818f8e00317a96b9860aae321382565b0ced32f529539bc86dc46d"
 rules: []
-references: []
 ---
 
 # VENOM GOBLIN

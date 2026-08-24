@@ -7,7 +7,6 @@ source: "mc12_ant-man_rulesheet.pdf"
 page: 1
 hash: "sha256:50f8a62f35712686bfe879925365ab61a3fd9b74dca14e93b2bbbd41c2cf9491"
 rules: []
-references: []
 ---
 
 # ANT-MAN // LEADERSHIP

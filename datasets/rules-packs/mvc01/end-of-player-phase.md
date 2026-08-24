@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 14
 hash: "sha256:fe22404ce4ab2ecc437a7308d427370be61dc1395e47b8b1c582b6fc11f4eb08"
 rules: []
-references: []
 ---
 
 # END OF PLAYER PHASE

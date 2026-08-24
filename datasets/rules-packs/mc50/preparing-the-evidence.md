@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 5
 hash: "sha256:d22f78316a588425d84a1cb18f11cd86567777aaf0a0c091495c2c3eae658212"
 rules: []
-references: []
 ---
 
 # PREPARING THE EVIDENCE

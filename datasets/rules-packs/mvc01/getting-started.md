@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 22
 hash: "sha256:340f0a472f354e94ebde81b11c7635902035a5529e34613c483a9d2643ac52e2"
 rules: []
-references: []
 ---
 
 # GETTING STARTED

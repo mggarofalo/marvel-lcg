@@ -7,7 +7,6 @@ source: "mc15_scarlet_witch_rulesheet.pdf"
 page: 1
 hash: "sha256:89d1f3369a9968401ced296bbca2def0d95809816f3aba33bad60c6c905f323d"
 rules: []
-references: []
 ---
 
 # SCARLET WITCH // JUSTICE

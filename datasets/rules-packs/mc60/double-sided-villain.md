@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 23
 hash: "sha256:a6d179f1f41b218dc60e6d07880a0eaeb3db904f344613fafc30ac2fb1b46f03"
 rules: []
-references: []
 ---
 
 # DOUBLE-SIDED VILLAIN

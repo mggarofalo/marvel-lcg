@@ -7,7 +7,6 @@ source: "mc39_mojomania_rules_insert-compressed.pdf"
 page: 17
 hash: "sha256:8e907ac578fe1087a4b03a7332cffada2d4224f99528aac2dea6ab75b7b50b7c"
 rules: []
-references: []
 ---
 
 # SETUP:

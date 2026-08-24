@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 7
 hash: "sha256:d0ba9e55d8443e39a3bcbc08e7df969d48d3f132a0f9ad801cf2008f20938864"
 rules: ["leader-deck"]
-references: []
 ---
 
 # IRON MAN

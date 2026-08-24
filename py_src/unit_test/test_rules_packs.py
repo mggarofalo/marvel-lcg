@@ -121,6 +121,40 @@ class TestReferenceGraph(unittest.TestCase):
         from tools.rules.refs import cycles
         self.assertEqual(cycles(self.rules), [])
 
+    def test_edges_live_only_in_the_authored_graph(self):
+        """Generated indexes carry no reference field at all.
+
+        The indexes are destroyed and rebuilt from the PDFs on every harvest.
+        An authored edge stored inside one would be lost on the next refresh,
+        silently and completely — so generated and authored data do not share a
+        file, and this is the assertion that keeps them apart.
+        """
+        for path in (INDEX, RR_INDEX):
+            with open(path, encoding="utf-8") as handle:
+                for record in json.load(handle)["entries"]:
+                    with self.subTest(path=path, rule=record["id"]):
+                        self.assertNotIn("references", record)
+
+    def test_authored_edges_resolve(self):
+        graph = os.path.join("..", "datasets", "rules-graph.json")
+        if not os.path.exists(graph):
+            self.skipTest("no rules graph present")
+        with open(graph, encoding="utf-8") as handle:
+            edges = json.load(handle)["edges"]
+        self.assertTrue(edges)
+        for rule_id, edge in edges.items():
+            with self.subTest(rule_id):
+                self.assertIn(rule_id, self.rules)
+                self.assertTrue(edge.get("why"),
+                                "an edge without a reason cannot be reviewed")
+                for target in edge["references"]:
+                    self.assertIn(target, self.rules)
+
+    def test_no_rule_references_itself(self):
+        for rule_id, record in self.rules.items():
+            with self.subTest(rule_id):
+                self.assertNotIn(rule_id, record.get("references") or [])
+
     def test_the_reverse_index_is_not_stored(self):
         """Only `references` is authored; back-references are computed.
 

@@ -7,7 +7,6 @@ source: "mc38_rogue_rules_insert.pdf"
 page: 1
 hash: "sha256:0a256f50865af3c17bc829589425732e157965f774cf76d56a20e211dbbc8506"
 rules: []
-references: []
 ---
 
 # ROGUE // PROTECTION

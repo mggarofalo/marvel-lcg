@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 13
 hash: "sha256:88f38d10e80490f6db1479a4ac4e168a588c943130e1ff417951dfd1f3142f91"
 rules: []
-references: []
 ---
 
 # SCENARIO #3 - M.O.D.O.K.

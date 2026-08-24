@@ -7,7 +7,6 @@ source: "mc13_wasp_rulesheet.pdf"
 page: 1
 hash: "sha256:2c3ebf9f29715ab00ac19e1e3e7f43f2a28365ef8bd13a882ad23e0b5229945e"
 rules: ["foldable-cards", "new-keyword-team-up", "new-keyword-piercing", "rules-clarifications"]
-references: []
 ---
 
 # WASP HERO PACK

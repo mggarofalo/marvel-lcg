@@ -42,17 +42,32 @@ from typing import Dict, Iterable, List, Sequence, Set
 
 RR_INDEX = os.path.join("..", "datasets", "rules-reference", "index.json")
 PACK_INDEX = os.path.join("..", "datasets", "rules-packs", "index.json")
+GRAPH = os.path.join("..", "datasets", "rules-graph.json")
 
 
-def load(*paths: str) -> Dict[str, Dict]:
-    """Every rule in the corpus, both tiers, keyed by id."""
+def load(*paths: str, graph: str = GRAPH) -> Dict[str, Dict]:
+    """Every rule in the corpus, both tiers, keyed by id, with its edges.
+
+    The indexes are *generated* -- rebuilt from the PDFs on every harvest and
+    carrying no reference field at all. The edges are *authored*, and live in
+    one file of their own. Keeping them apart is what makes the authoring
+    survive a re-harvest; storing an authored edge inside a file that gets
+    destroyed and rewritten would lose it on the next refresh, silently.
+    """
     rules: Dict[str, Dict] = {}
     for path in paths:
         if not os.path.exists(path):
             continue
         with open(path, encoding="utf-8") as handle:
             for record in json.load(handle).get("entries", []):
-                rules[record["id"]] = record
+                rules[record["id"]] = dict(record, references=[])
+
+    if os.path.exists(graph):
+        with open(graph, encoding="utf-8") as handle:
+            for rule_id, edge in json.load(handle).get("edges", {}).items():
+                if rule_id in rules:
+                    rules[rule_id]["references"] = list(edge.get("references") or [])
+                    rules[rule_id]["why"] = edge.get("why", "")
     return rules
 
 
@@ -166,6 +181,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"\nreferences ({len(out)}) — authored, one-way:")
     for other in out:
         print(f"  → {_describe(rules, other)}")
+    if record.get("why"):
+        print(f"      because: {record['why']}")
 
     back = incoming(rules, args.rule_id)
     print(f"\nreferenced by ({len(back)}) — computed, never stored:")

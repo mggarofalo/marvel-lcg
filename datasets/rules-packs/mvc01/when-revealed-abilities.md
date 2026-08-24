@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 17
 hash: "sha256:752cf6c905898811bdd3b97688e3ba1639fd3884ecbc040ed59c0761eea62e6b"
 rules: []
-references: []
 ---
 
 # WHEN REVEALED ABILITIES

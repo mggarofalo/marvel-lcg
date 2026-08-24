@@ -7,7 +7,6 @@ source: "mc23_war_machine_rulesheet.pdf"
 page: 1
 hash: "sha256:dfc7a9194dd5f2f34ce5cefb39a0cf14c0618982a4bb7fe8179c244c95026718"
 rules: []
-references: []
 ---
 
 # WAR MACHINE // LEADERSHIP

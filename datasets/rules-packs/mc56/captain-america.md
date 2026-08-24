@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 8
 hash: "sha256:af312c64372522aab9ed2ec89c97d79c809c22d0ed849714d8d991a6383829b9"
 rules: []
-references: []
 ---
 
 # CAPTAIN AMERICA

@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 17
 hash: "sha256:3cb859dfabd39eb8415251b0b73d3528faec45222ca62990c604c60ad48c7cf2"
 rules: []
-references: []
 ---
 
 # TIE-BREAK CONDITIONS

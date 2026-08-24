@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 7
 hash: "sha256:ed1651e2a6f28fd8d24a13f573ca2cbacec9382b127cb1aa56240905fbdd6e45"
 rules: []
-references: []
 ---
 
 # PERSISTENT DAMAGE

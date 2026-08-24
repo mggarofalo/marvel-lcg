@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 15
 hash: "sha256:d81788096d914eb6a33dbe044921c3e379321cb936f41bdad361f57e22d68093"
 rules: []
-references: []
 ---
 
 # MASTER KEY

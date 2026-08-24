@@ -7,7 +7,6 @@ source: "mc02_green_goblin_rules_insert.pdf"
 page: 2
 hash: "sha256:75abb4f65853b6bf93fc4bfcf1b8c17ca70305b733501ed33dd76e7af0d1d21f"
 rules: ["modular-encounter-sets", "this-document"]
-references: []
 ---
 
 # HOW TO USE THIS PACK

@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 24
 hash: "sha256:0c44279b015c2d0332b967a6f6578067136ab099e72056f1052cc6ae6a5c2d84"
 rules: []
-references: []
 ---
 
 # SCENARIO #5 - LOKI

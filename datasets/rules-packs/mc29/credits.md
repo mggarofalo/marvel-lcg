@@ -7,7 +7,6 @@ source: "mc29_ironheart_rulesheet.pdf"
 page: 1
 hash: "sha256:95f6c338f64518ef5a7a620cb438e16a0da091c1a438d954c5ead8ef6e0664b9"
 rules: []
-references: []
 ---
 
 # CCRREEDDIITTSS

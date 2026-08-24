@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 25
 hash: "sha256:4d9b3222844bf0e36c0f1687b5583330f7f5ca5e5f8061d8f2ed75e23df5273b"
 rules: []
-references: []
 ---
 
 # PERSISTENT DAMAGE

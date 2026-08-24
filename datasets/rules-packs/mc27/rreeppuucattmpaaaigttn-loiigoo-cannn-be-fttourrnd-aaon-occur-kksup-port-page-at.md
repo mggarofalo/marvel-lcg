@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 5
 hash: "sha256:bc9e93cc2b6f6c90168b61726d311d8f681b965794b00559027627278f5f5c3b"
 rules: []
-references: []
 ---
 
 # RREEPPUUcaTTmpAAaigTTn loIIgOO caNNn be fTTouRRnd AAon oCCur KKsup port page at:

@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 16
 hash: "sha256:2bf000b291b69cd0e5dbb4730edd60cf95c863447bd30c1177d24109f577bd91"
 rules: []
-references: []
 ---
 
 # SINISTER

@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 9
 hash: "sha256:d37b64231dc62ade701db8b7caff3331d93993ac408fd5e1054724844fcf99e7"
 rules: ["hinder-x", "patrol", "permanent", "piercing", "ranged", "setup", "stalwart", "steady", "teamwork", "victory-x", "villainous"]
-references: []
 ---
 
 # FEATURED KEYWORDS

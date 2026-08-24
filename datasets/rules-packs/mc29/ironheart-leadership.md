@@ -7,7 +7,6 @@ source: "mc29_ironheart_rulesheet.pdf"
 page: 1
 hash: "sha256:9411c2cb921ce7f699c5db98fc8e242c92a967382637ae77770049c60a823557"
 rules: []
-references: []
 ---
 
 # IRONHEART // LEADERSHIP

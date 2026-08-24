@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 14
 hash: "sha256:14d20df0280b1fd6e1a7656cc355292c63da106cc4d41385bb5ae92a9915fef2"
 rules: []
-references: []
 ---
 
 # SCENARIO #3 – APOCALYPSE

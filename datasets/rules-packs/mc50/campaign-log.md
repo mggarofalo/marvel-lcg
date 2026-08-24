@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 4
 hash: "sha256:8dd1eb95f531549f62a21a32e9295bd53415518a732eb5ed5cf03765e2cb6c5a"
 rules: []
-references: []
 ---
 
 # CAMPAIGN LOG

@@ -7,7 +7,6 @@ source: "mc09_hulk_rulesheet.pdf"
 page: 1
 hash: "sha256:8dd4c87c41238e1cbb4ce36a3fd8745b7afb3c471449ee11641d9c897a1547b7"
 rules: []
-references: []
 ---
 
 # HULK HERO PACK

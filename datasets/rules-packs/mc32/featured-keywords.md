@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 3
 hash: "sha256:a39621b916b32bf8e57ccdd54d30129d8b661ff2be62057a90e837a7854578e5"
 rules: ["hinder-x", "patrol", "permanent", "piercing", "ranged", "setup", "stalwart", "steady", "teamwork", "team-up", "villainous", "victory-x"]
-references: []
 ---
 
 # FEATURED KEYWORDS

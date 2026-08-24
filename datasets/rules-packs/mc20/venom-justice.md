@@ -7,7 +7,6 @@ source: "mc20_venom_rulesheet.pdf"
 page: 1
 hash: "sha256:7ead702265b0e371be519f93c6412d39c1feb3f7601b128737adc2466530cca6"
 rules: []
-references: []
 ---
 
 # VENOM // JUSTICE

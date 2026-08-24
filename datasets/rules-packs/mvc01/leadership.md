@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 21
 hash: "sha256:843f6e47a693967082e95b7b92776598fa7965df2d24f74ca8ada31fbf0b4ace"
 rules: []
-references: []
 ---
 
 # LEADERSHIP

@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 17
 hash: "sha256:620ce219288313a6e67b7cffa579b417084e5dddd3254ac9439645e69dca70b2"
 rules: []
-references: []
 ---
 
 # ALTER-EGO FORM AND HERO FORM

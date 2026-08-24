@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 22
 hash: "sha256:b3b541a29e10b26cad7ac6a15361b8ca44bbf94d13e70638ef20f7df58a8598a"
 rules: ["q-when-resolving-the-ability-on-thunderbolt-backup-131b-what-happens-if-there-is-a-tie-for-minion-with-the-most-damage"]
-references: []
 ---
 
 # THUNDERBOLTS

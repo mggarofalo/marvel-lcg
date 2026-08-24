@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 12
 hash: "sha256:7b3294ac2f86b98e0374f8f9dea71b3d275186ef19ea608cc78fb4189cd6313f"
 rules: []
-references: []
 ---
 
 # INFINITE HIT POINTS (NEW)

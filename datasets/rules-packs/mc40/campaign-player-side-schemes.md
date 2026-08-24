@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 7
 hash: "sha256:4c4b63e6db82ae5db16e097a2102750f50111e6f5a0ef7a38c3f617c6b4ead8e"
 rules: []
-references: []
 ---
 
 # CAMPAIGN PLAYER SIDE SCHEMES

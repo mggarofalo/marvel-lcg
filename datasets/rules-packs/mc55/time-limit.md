@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 16
 hash: "sha256:3b7cb327a2728957e5b53358eba70633200e3ca6c44c01082211f7dfbdb59a14"
 rules: []
-references: []
 ---
 
 # TIME LIMIT

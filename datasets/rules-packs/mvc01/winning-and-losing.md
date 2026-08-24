@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 9
 hash: "sha256:a314e0052d81624989903b8c2c3a551fc858b4ef2ba0287f6b99a722d106216b"
 rules: []
-references: []
 ---
 
 # WINNING AND LOSING

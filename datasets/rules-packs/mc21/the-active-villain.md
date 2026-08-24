@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 11
 hash: "sha256:f946a8c8a2100eaffc6a83cf067760e7f627536caee02f0ec3d8eb0814e27604"
 rules: []
-references: []
 ---
 
 # THE ACTIVE VILLAIN

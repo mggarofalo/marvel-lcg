@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 4
 hash: "sha256:c4592ad868fcbe6f59d3a07a3b391eb7b182a02ac1776ae6f37f38ce02559d7b"
 rules: []
-references: []
 ---
 
 # CAMPAIGN MODE RULES

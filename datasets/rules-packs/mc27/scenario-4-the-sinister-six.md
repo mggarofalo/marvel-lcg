@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 21
 hash: "sha256:25c435850b63aa0005d67f1e9a849e2c9f110b5f360b35ca4375b1773e49deb9"
 rules: ["q-if-the-villain-with-the-active-counter-is-prevented-from-activating-such-as-through-a-stun-or-confuse-status-card-does-the-active-counter-move", "q-if-there-is-only-one-villain-in-play-does-the-active-counter-move", "q-are-there-any-suggestions-for-the-easiest-method-to-keep-track-of-each-villain-s-remaining-hit-points"]
-references: []
 ---
 
 # SCENARIO #4 — THE SINISTER SIX

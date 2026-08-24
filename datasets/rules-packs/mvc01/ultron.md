@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 23
 hash: "sha256:5d22bd27a3e47d50288cadf941d10ef04cd3420777ddde9c94276cd1db06c732"
 rules: []
-references: []
 ---
 
 # ULTRON

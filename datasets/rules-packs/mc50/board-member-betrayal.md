@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 6
 hash: "sha256:46dcb8b3df3aa8a54e05da95a60f268f40b5df0ba66cb1f0d09e84d1efef09a1"
 rules: []
-references: []
 ---
 
 # BOARD MEMBER BETRAYAL

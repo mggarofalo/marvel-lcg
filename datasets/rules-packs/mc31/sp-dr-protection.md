@@ -7,7 +7,6 @@ source: "mc31_spdr_rulesheet.pdf"
 page: 1
 hash: "sha256:b381dbc69cb80d45ad691099cf90de4d24c5667e99627a9f28ae476a185cf5c9"
 rules: []
-references: []
 ---
 
 # SP//DR // PROTECTION

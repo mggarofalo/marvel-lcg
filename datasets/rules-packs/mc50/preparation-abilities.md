@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 9
 hash: "sha256:ec0d787c8635c85e70b90eea86617a90c746c5e6aa8ee69bf51a759d6bc06868"
 rules: []
-references: []
 ---
 
 # PREPARATION ABILITIES

@@ -7,7 +7,6 @@ source: "mc57_rulebook-web.pdf"
 page: 8
 hash: "sha256:8efd623bbac1b526e232d33399dce89a471fe22aa236ec2885cfdb35dcb5a0c3"
 rules: []
-references: []
 ---
 
 # FEATURED KEYWORDS

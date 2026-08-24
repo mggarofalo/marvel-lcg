@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 12
 hash: "sha256:bcb9c8cc6f007110e72f069e127d3e06ff1a4737e20b2b481b27e80e96204d76"
 rules: []
-references: []
 ---
 
 # SCENARIO #3 - MASTER MOLD

@@ -7,7 +7,6 @@ source: "mc03_wrecking_crew_rules_insert-compressed.pdf"
 page: 6
 hash: "sha256:c7fc2e0229d0c23eb8a13df86131cc0e5252ea6905cdec6a888ae34458727fdd"
 rules: ["the-active-villain", "multiple-villains-and-encounter-decks"]
-references: []
 ---
 
 # NEW RULES

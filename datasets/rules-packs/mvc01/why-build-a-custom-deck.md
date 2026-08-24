@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 22
 hash: "sha256:e6da9b485385ea3d3008e4cc8b105c6cae798697b6730044a3f26f6cda15d8ef"
 rules: []
-references: []
 ---
 
 # WHY BUILD A CUSTOM DECK?

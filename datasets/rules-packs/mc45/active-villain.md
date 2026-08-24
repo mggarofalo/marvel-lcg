@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 11
 hash: "sha256:815c6e52c612b7487dcb3c265f634e4090441b9677d795c95fb9130a6c3c0f10"
 rules: []
-references: []
 ---
 
 # ACTIVE VILLAIN

@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 18
 hash: "sha256:8762e64b93d51cb2424a9ac4511893c552644fbcab05a374e5faeefb394a2f3f"
 rules: []
-references: []
 ---
 
 # SHATTER COUNTERS

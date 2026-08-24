@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 21
 hash: "sha256:3341293ac437605040b69d0f00a0d445be311992bf9e169e31ac1d28a0ce3a85"
 rules: []
-references: []
 ---
 
 # CAMPAIGN INSTRUCTIONS

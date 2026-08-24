@@ -7,7 +7,6 @@ source: "mc54_rulesheet-web.pdf"
 page: 1
 hash: "sha256:f5b1409c502c4f95d501aba70ef70d938ef7cca0d1ba5d683d6fe09dcbf047a0"
 rules: []
-references: []
 ---
 
 # WINTER SOLDIER // AGGRESSION

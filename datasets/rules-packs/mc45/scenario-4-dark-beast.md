@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 16
 hash: "sha256:291fca87c709f3e628ab8a6585d7673646c88924658c4f4cd0dc3f323a1204d2"
 rules: []
-references: []
 ---
 
 # SCENARIO #4 – DARK BEAST

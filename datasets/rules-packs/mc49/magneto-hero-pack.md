@@ -7,7 +7,6 @@ source: "mc49_magneto_rules_insert.pdf"
 page: 1
 hash: "sha256:36c54b4cf53c87b8dddb58244731c91046897eef86bf6ba53c8a2a3c65d2d131"
 rules: ["new-card-type-player-side-scheme", "featured-keyword-linked-card-title", "featured-keyword-steady", "featured-keyword-villainous", "featured-keyword-victory-x"]
-references: []
 ---
 
 # MAGNETO HERO PACK

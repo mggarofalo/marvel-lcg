@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 8
 hash: "sha256:becb236a5e95c7726c184a52e756c8494fa5ce0031887f627bc7085c5feffa8f"
 rules: []
-references: []
 ---
 
 # UNDERLING VILLAIN PLAY ORDER

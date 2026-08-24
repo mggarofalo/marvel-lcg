@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 7
 hash: "sha256:6155c3dde3cefcadcb48923cada2ff95ac98d0080683b84e99f7d197335ca853"
 rules: []
-references: []
 ---
 
 # EXPERT CAMPAIGN

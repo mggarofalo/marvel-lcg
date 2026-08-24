@@ -7,7 +7,6 @@ source: "mc09_hulk_rulesheet.pdf"
 page: 1
 hash: "sha256:81406bcd11396c04b410609d57ecab92002a808067a2c964206ea8e880da0eb4"
 rules: []
-references: []
 ---
 
 # HULK // AGGRESSION

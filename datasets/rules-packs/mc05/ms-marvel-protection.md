@@ -7,7 +7,6 @@ source: "mc05_ms_marvel_rulesheet.pdf"
 page: 1
 hash: "sha256:12d97684387c48139838b1df8559f4330853ae0a7e5539cb3ad2d0c14091eb90"
 rules: []
-references: []
 ---
 
 # MS. MARVEL // PROTECTION

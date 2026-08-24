@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 11
 hash: "sha256:2d6e2cf11bf9d0e5794e8217c11916a43425586667f108b4f8cbab260b8b9cb2"
 rules: []
-references: []
 ---
 
 # USING A BASIC POWER

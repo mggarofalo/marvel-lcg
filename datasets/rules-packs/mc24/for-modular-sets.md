@@ -7,7 +7,6 @@ source: "mc24_the_hood_rules_insert.pdf"
 page: 6
 hash: "sha256:d6fac117fd499353fc8c044552aa0f18bb0a2420108b354fb1300befccee6f86"
 rules: ["beasty-boys", "brothers-grimm", "crossfire-s-crew", "mister-hyde", "ransacked-armory", "sinister-syndicate", "state-of-emergency", "streets-of-mayhem", "wrecking-crew"]
-references: []
 ---
 
 # FOR MODULAR SETS

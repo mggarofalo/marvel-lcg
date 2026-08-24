@@ -7,7 +7,6 @@ source: "mc03_wrecking_crew_rules_insert-compressed.pdf"
 page: 7
 hash: "sha256:3349462c40b6cf74bc7cc4dc3e8625766fcac905224fa6941226138b4a622087"
 rules: []
-references: []
 ---
 
 # ADJUSTABLE DIFFICULTY

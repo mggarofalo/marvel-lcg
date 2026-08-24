@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 4
 hash: "sha256:78838d0180c4e1d0becb8383081bac8832011a8b8a84a0b92684fca1aa133f97"
 rules: []
-references: []
 ---
 
 # CAMPAIGN-SPECIFIC CARDS

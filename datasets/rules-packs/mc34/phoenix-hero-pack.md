@@ -7,7 +7,6 @@ source: "mc34_phoenix_rules_insert.pdf"
 page: 1
 hash: "sha256:263b3f376fda18a98d14758662e3f0eefddc8ce206ed4120a564b438f5c0bd9d"
 rules: ["new-keyword-permanent", "new-keyword-steady", "new-keyword-team-up", "new-keyword-villainous", "frequently-asked-questions"]
-references: []
 ---
 
 # PHOENIX HERO PACK

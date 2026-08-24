@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 19
 hash: "sha256:284194244cd4cbbcd8c5d331070580b9700aae0f754605b9304334c775b466ac"
 rules: []
-references: []
 ---
 
 # OUT FRONT/ALONGSIDE

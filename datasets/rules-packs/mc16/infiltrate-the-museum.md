@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 10
 hash: "sha256:120f99c8c9e9b6da34f19f49877217a1a4c80fe48363dfd4a84f37da981ce237"
 rules: []
-references: []
 ---
 
 # INFILTRATE THE MUSEUM

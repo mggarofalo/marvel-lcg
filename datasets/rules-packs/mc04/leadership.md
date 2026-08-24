@@ -7,7 +7,6 @@ source: "mc04_captain_america_rulesheet.pdf"
 page: 1
 hash: "sha256:b8b289530a344cc0738fb36b78339f6a48b1e6333b1174949ba9d99f06a30374"
 rules: []
-references: []
 ---
 
 # LEADERSHIP

@@ -7,7 +7,6 @@ source: "mc39_mojomania_rules_insert-compressed.pdf"
 page: 11
 hash: "sha256:730a23576c4537108c8584fde86883cff1cfa0d309d2031b97fa7c7f28202b3e"
 rules: ["the-show-deck", "double-sided-villain"]
-references: []
 ---
 
 # NEW RULES

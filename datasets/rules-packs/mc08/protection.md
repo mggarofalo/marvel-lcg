@@ -7,7 +7,6 @@ source: "mc08_doctor_strange_rulesheet.pdf"
 page: 1
 hash: "sha256:0c7922470ad5351face24e7a3f101841cf2c78e0b867df9af35876f6a6ea141f"
 rules: []
-references: []
 ---
 
 # PROTECTION

@@ -7,7 +7,6 @@ source: "mc06_thor_rulesheet.pdf"
 page: 1
 hash: "sha256:ee23839608968e682baa3a5259e542241c56885c0fe4f0e1ed80aa683b9a6ff2"
 rules: []
-references: []
 ---
 
 # THOR // AGGRESSION

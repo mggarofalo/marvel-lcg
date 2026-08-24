@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 14
 hash: "sha256:3e2f7d45977539ba66650aee6ec0f8ff2ba527459c60bf9febcfb5865107ef30"
 rules: []
-references: []
 ---
 
 # EVENT ORGANIZER

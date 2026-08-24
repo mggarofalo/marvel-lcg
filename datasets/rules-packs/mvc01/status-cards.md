@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 24
 hash: "sha256:c36af50b8eb9d5eb4fe2b046dfcfd3b038c2362a9f9c4c55486e39d5ad049322"
 rules: []
-references: []
 ---
 
 # STATUS CARDS

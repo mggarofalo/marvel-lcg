@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 9
 hash: "sha256:1bed01d8472b7bf0fd845af998f3adfd49888cacd13e179dde3a75c2670195c3"
 rules: []
-references: []
 ---
 
 # THE GOLDEN RULE

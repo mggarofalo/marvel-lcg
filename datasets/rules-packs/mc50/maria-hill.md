@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 22
 hash: "sha256:2916a1e69903d6503ae3eb76aef8c75b4e93ad6387083c78105c80813b64717c"
 rules: ["q-how-many-schemes-or-enemies-can-be-chosen-as-targets-for-all-points-bulletin-3"]
-references: []
 ---
 
 # MARIA HILL

@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 21
 hash: "sha256:416476cb86227852e14ae6124dff2c454e67db51e6ded9e3356836568375d62c"
 rules: []
-references: []
 ---
 
 # STOP THE PRESSES!

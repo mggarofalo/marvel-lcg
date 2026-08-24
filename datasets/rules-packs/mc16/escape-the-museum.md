@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 12
 hash: "sha256:caf1868247b47a324a793725fe4d1fc6313773972032d1da031d75647da17b27"
 rules: []
-references: []
 ---
 
 # ESCAPE THE MUSEUM

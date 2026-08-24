@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 11
 hash: "sha256:7a6946e1f84b7c520b4854cd2d391b9727099512f5a82c1a01d270b8f23ee4b2"
 rules: []
-references: []
 ---
 
 # MODULAR DIFFICULTY

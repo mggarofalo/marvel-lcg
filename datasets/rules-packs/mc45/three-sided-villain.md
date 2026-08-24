@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 19
 hash: "sha256:c883e2caed7fdfca516d1f3e1f41e82132fb2f692376097fa51b65d028bf033c"
 rules: []
-references: []
 ---
 
 # THREE-SIDED VILLAIN

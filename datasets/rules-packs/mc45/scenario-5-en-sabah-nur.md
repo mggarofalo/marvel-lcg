@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 19
 hash: "sha256:259b29206fe4281f793f3734275ce90887842c99b51a541b4a34bfac6d5ca2c2"
 rules: []
-references: []
 ---
 
 # SCENARIO #5 – EN SABAH NUR

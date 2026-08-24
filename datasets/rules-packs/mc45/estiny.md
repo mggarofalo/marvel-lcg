@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 4
 hash: "sha256:37a6701e554855ba5b973716842091246f8776005f7c136d00ce7b2eba16b5dc"
 rules: []
-references: []
 ---
 
 # estiny

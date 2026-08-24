@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 6
 hash: "sha256:ac2ebbef744b4b69f35ef7e96fa1b843dde4577d7d0797f8043a23f4e389cb60"
 rules: []
-references: []
 ---
 
 # EXPERT CAMPAIGN

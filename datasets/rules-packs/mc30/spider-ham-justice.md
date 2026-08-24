@@ -7,7 +7,6 @@ source: "mc30_spider-ham_rulesheet.pdf"
 page: 1
 hash: "sha256:5195584a1bac7702ba2e6598b1af579c79b5060a19471b720975799912531c60"
 rules: []
-references: []
 ---
 
 # SPIDER-HAM // JUSTICE

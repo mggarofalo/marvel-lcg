@@ -7,7 +7,6 @@ source: "mc11_once_and_future_kang_rules_insert-compressed.pdf"
 page: 3
 hash: "sha256:5b250e74b1c599d53629ea45d2534d6c024ab6992fd29cea1e37c658a31712ee"
 rules: []
-references: []
 ---
 
 # AREAS

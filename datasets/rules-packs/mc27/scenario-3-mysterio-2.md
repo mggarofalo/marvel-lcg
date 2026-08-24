@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 21
 hash: "sha256:40dcb5d9e2c1979b2bf6bd3aef6ad4822ff10b584e629187a72bfa5ca46006c3"
 rules: ["q-when-an-encounter-card-is-added-to-my-deck-do-i-have-to-re-sleeve-that-card-to-match-my-player-cards", "q-if-i-draw-multiple-cards-when-are-the-encounter-cards-that-i-draw-dealt-to-me"]
-references: []
 ---
 
 # SCENARIO #3 — MYSTERIO

@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 11
 hash: "sha256:b8d4718bc953c1a7bea2f9f44d8816db7ce8c08a7860e87474cf5a9279de39df"
 rules: []
-references: []
 ---
 
 # ADJUSTABLE DIFFICULTY

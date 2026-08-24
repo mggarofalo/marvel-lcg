@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 20
 hash: "sha256:35e13cfe92e9a06cc1b7c4d5efc3acae1f2343f0ba76eb3b24ec8d1034464d3a"
 rules: []
-references: []
 ---
 
 # STARTER DECKS

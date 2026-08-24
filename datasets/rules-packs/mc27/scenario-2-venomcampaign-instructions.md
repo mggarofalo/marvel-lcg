@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 11
 hash: "sha256:05f8f9f183aa292f3f4b90fb558dd1670c48f0f1afe8c5a834a063daebe1f80a"
 rules: ["expert-campaign-only", "encounter-deck"]
-references: []
 ---
 
 # SCENARIO #2 - VENOMCAMPAIGN INSTRUCTIONS

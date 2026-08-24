@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 6
 hash: "sha256:353137f9bac3b9477552af8aa69de38f00f32a09bf0d18fa141ac802b09ed686"
 rules: []
-references: []
 ---
 
 # COMPETITIVELY

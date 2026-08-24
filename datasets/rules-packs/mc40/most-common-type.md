@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 18
 hash: "sha256:930ed06f69a8263b81bbd7a49cf6a3bd203f8a907509b415251112ae774c0cbd"
 rules: []
-references: []
 ---
 
 # MOST COMMON TYPE

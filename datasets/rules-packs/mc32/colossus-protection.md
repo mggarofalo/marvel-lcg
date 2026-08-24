@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 22
 hash: "sha256:3303139f4fae7022105f34981c161cfa7832c1fce3f27845756f406be5c22adf"
 rules: []
-references: []
 ---
 
 # COLOSSUS // PROTECTION

@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 19
 hash: "sha256:0ea09a94b5308b80b3168cd03e3dd3ba2a6f193a78535092ab6b17d746802e72"
 rules: []
-references: []
 ---
 
 # SPEED COUNTERS

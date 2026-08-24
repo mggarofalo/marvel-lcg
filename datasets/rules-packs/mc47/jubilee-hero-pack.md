@@ -7,7 +7,6 @@ source: "mc47_jubilee_rules_insert-web.pdf"
 page: 1
 hash: "sha256:fa4e474abd1b0d67f911dd39dcbabbc9226e35a7021ab75678e7095ac95c264a"
 rules: ["new-card-type-player-side-scheme", "featured-keyword-alliance", "featured-keyword-piercing", "featured-keyword-team-up", "featured-keyword-victory-x"]
-references: []
 ---
 
 # JUBILEE HERO PACK

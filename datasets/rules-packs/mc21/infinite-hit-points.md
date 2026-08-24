@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 20
 hash: "sha256:7b818418296de54f2247d5ee4ef5169ef20373682ae07988ec10145ae99d339c"
 rules: []
-references: []
 ---
 
 # INFINITE HIT POINTS

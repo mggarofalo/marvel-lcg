@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 15
 hash: "sha256:d485acd626cf2d86920b7ac22b0a9eb4c7fd6faf74e133dc3598da56a6f78a81"
 rules: []
-references: []
 ---
 
 # THE ACTIVE COUNTER

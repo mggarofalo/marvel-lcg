@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 5
 hash: "sha256:88aca6b7c3e7bb1ba3d1c96d401bbb28317cdc7161788666cefa46a673e70e08"
 rules: ["role-building"]
-references: []
 ---
 
 # CAMPAIGN ROLES

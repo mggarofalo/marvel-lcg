@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 17
 hash: "sha256:9e207aac4fdfc9a6ce4399c95b268634f208b371571a26632ca1df449c0f685a"
 rules: []
-references: []
 ---
 
 # CROSS-GROUP COMMUNICATION

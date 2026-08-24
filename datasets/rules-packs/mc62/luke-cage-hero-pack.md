@@ -7,7 +7,6 @@ source: "mc62_rulesheet-web.pdf"
 page: 1
 hash: "sha256:833d3b536f13f0264b75fcb468f414ff1feb34bdc29c16b7906fe7eb486f9333"
 rules: ["featured-keyword-piercing", "featured-keyword-team-up", "new-keyword-prerequisite-form-or", "new-term-unpreventable-damage", "questions"]
-references: []
 ---
 
 # LUKE CAGE HERO PACK

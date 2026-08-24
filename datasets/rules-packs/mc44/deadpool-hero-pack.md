@@ -7,7 +7,6 @@ source: "mc44_deadpool_rules_insert-web.pdf"
 page: 1
 hash: "sha256:619d87da383324a7fe8073274d60235cb145eac041814c1f034d59fc381fc44c"
 rules: ["featured-keyword-piercing", "featured-keyword-team-up", "frequently-asked-questions"]
-references: []
 ---
 
 # DEADPOOL HERO PACK

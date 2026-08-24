@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 14
 hash: "sha256:66733da34801986005639e50fa2247e7ae422357c9062d52c25ac57b2dd501db"
 rules: []
-references: []
 ---
 
 # END OF A PLAYER’S TURN

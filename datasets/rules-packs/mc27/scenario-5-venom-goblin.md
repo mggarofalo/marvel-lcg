@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 21
 hash: "sha256:85969eb14099cb1339974b8dadaf70c5a7a1b22a6391b6b2167684e819a9076e"
 rules: ["q-are-players-restricted-to-only-removing-threat-from-the-scheme-with-the-glider-counter", "q-multiple-main-schemes-have-the-same-amount-of-threat-which-scheme-is-considered-to-have-the-least-or-most-threat-on-it", "q-how-do-the-patrol-keyword-and-the-crisis-icon-interact-with-three-main-schemes"]
-references: []
 ---
 
 # SCENARIO #5 — VENOM GOBLIN

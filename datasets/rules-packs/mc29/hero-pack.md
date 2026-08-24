@@ -7,7 +7,6 @@ source: "mc29_ironheart_rulesheet.pdf"
 page: 1
 hash: "sha256:ae79c04c69b0425535369d788a29121d39463f04c88f63f855bf4c52bd15c848"
 rules: ["new-rules-progressing-identity-cards", "new-keyword-requirement-resources"]
-references: []
 ---
 
 # HHEERROO PPAACCKK

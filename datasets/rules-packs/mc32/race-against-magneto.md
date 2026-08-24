@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 18
 hash: "sha256:9c2fd8d0b72da74c8732ddde2a40720eea3467bfbb6f42afa1edf53631e0c1b4"
 rules: []
-references: []
 ---
 
 # RACE AGAINST MAGNETO

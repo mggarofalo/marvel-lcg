@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 14
 hash: "sha256:376d86664d13234a0df55b1d852be74dabd8a22921e89f1f05adbec033dbfdc1"
 rules: []
-references: []
 ---
 
 # VILLAIN PHASE

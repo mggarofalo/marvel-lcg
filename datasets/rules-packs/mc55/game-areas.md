@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 12
 hash: "sha256:a7740bf43751844ad50145447dfaf6159ccfe9792f3fb1f7bc4a598a665f6d5b"
 rules: []
-references: []
 ---
 
 # GAME AREAS

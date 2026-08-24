@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 18
 hash: "sha256:1b26ec72f7241af972621354aa26864a4145ef5b28b5ee32298f2d4cbd533d81"
 rules: []
-references: []
 ---
 
 # CAMPAIGN INSTRUCTIONS

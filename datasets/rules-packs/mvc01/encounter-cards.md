@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 13
 hash: "sha256:34192d68b95ac700602b0be112343f5db9fcc580d527ab4669ec434148dc950a"
 rules: []
-references: []
 ---
 
 # ENCOUNTER CARDS

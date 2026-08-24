@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 5
 hash: "sha256:07913044eb92c275499e8c99d5ac6432b6ceb7ea68f105aab6be85e7647b4a83"
 rules: []
-references: []
 ---
 
 # DECK CUSTOMIZATION RESTRICTIONS

@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 16
 hash: "sha256:8aaa83a42568052e375217872bd27e1b5e4af41eb715ccc9709f4ef3ad607496"
 rules: []
-references: []
 ---
 
 # BETWEEN WORLDS

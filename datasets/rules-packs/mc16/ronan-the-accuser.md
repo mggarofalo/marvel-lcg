@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 18
 hash: "sha256:6880f299c4cea7453c19241a962af0f0399630af5391e04516407de1142f2482"
 rules: []
-references: []
 ---
 
 # RONAN THE ACCUSER

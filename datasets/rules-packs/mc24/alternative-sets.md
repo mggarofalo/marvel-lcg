@@ -7,7 +7,6 @@ source: "mc24_the_hood_rules_insert.pdf"
 page: 2
 hash: "sha256:86012755dc9babff88bc099d4268ca78ce8bc2d4762b80fb0d997bb226c3f4fe"
 rules: []
-references: []
 ---
 
 # ALTERNATIVE SETS

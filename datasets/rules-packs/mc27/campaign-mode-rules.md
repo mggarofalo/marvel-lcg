@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 4
 hash: "sha256:803ecf807defcce1f7fdb8e3bf5824b4f52d95cbd568b87c6c163b26776cf05d"
 rules: []
-references: []
 ---
 
 # CAMPAIGN MODE RULES

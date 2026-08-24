@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 25
 hash: "sha256:4e1646739537cc17439a9501a59293876a31da5c1dcd6ef57053bb51c207be7a"
 rules: []
-references: []
 ---
 
 # ECHO // PROTECTION

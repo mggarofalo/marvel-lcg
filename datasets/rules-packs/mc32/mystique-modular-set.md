@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 7
 hash: "sha256:c170f74f4be088cc39715c066b28ed0e9f19e36cfd3e0905fa61d927891adb67"
 rules: []
-references: []
 ---
 
 # MYSTIQUE MODULAR SET

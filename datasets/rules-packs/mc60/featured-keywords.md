@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 3
 hash: "sha256:e812b37631c2e07c8227a87577090a53e3b75e9cbee7fdba4eb35c567033f189"
 rules: ["hinder-x", "patrol", "permanent", "piercing", "prerequisite-form-or", "ranged", "setup", "stalwart", "steady", "team-up", "teamwork", "temporary", "victory-x"]
-references: []
 ---
 
 # FEATURED KEYWORDS

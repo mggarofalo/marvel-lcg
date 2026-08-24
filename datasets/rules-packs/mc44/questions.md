@@ -7,7 +7,6 @@ source: "mc44_deadpool_rules_insert-web.pdf"
 page: 2
 hash: "sha256:f671a0469a9d68c314bb9e810c7f5000aa7db18e5d097dbcf042841a559686f0"
 rules: []
-references: []
 ---
 
 # QUESTIONS

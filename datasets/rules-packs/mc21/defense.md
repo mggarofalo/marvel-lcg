@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 10
 hash: "sha256:eaf3f71d5d2ad41f5af86e4a99184c1fa3b3acda51a452d138cfdc192bd22b38"
 rules: ["encounter-deck"]
-references: []
 ---
 
 # DEFENSE

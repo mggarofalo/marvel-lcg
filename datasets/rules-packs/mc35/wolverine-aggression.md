@@ -7,7 +7,6 @@ source: "mc35_wolverine_rules_insert.pdf"
 page: 1
 hash: "sha256:bfca14ad8746f913cd5badb9b26b8448ba9243b3b98c4c567b217edcaac4073b"
 rules: []
-references: []
 ---
 
 # WOLVERINE // AGGRESSION

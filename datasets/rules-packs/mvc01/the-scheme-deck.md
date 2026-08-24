@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 14
 hash: "sha256:b8ce2b48a26050a8ab089368d795586c8f45eaec81013c565a16357763cc5a5b"
 rules: []
-references: []
 ---
 
 # THE SCHEME DECK

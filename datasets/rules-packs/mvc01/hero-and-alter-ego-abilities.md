@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 13
 hash: "sha256:04d9fed7848dfdb1d399acdbc58ba4aaca7330d1c898503c3d4b67f786ae3bf9"
 rules: []
-references: []
 ---
 
 # HERO AND ALTER-EGO ABILITIES

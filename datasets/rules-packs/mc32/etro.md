@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 4
 hash: "sha256:717a3f811339a39e6b264af682f65f67467bfa3d246b52428c1932efb939b55a"
 rules: []
-references: []
 ---
 
 # etro

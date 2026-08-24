@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 3
 hash: "sha256:077f81316607d14535decca0552e22b1ed108d9596e73f12b535c2c14d5601f1"
 rules: []
-references: []
 ---
 
 # EXPANSION

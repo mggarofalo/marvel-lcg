@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 21
 hash: "sha256:1e33d00472425e9cc9d2f9cfc19e521e7106541e94e7388d659af734d321f578"
 rules: ["the-when-revealed-effects-on-sinister-intent-q-what-happens-if-technovirus-resurgence-31-139b-and-mister-sinister-ii-137-resolved-causes-technovirus-purge-6-to-enter-play-when-the"]
-references: []
 ---
 
 # SCENARIO #4 — MISTER SINISTER

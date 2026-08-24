@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 26
 hash: "sha256:4c5fb4d97055d4af5eee639362b410b4741c6322cc41fef43c71a4bb94935fb3"
 rules: ["q-when-baron-zemo-145-leaves-play-what-happens-to-allies-with-threat-on-them"]
-references: []
 ---
 
 # THE RAFT BREAKOUT

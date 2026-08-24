@@ -7,7 +7,6 @@ source: "mc18_gamora_rulesheet.pdf"
 page: 1
 hash: "sha256:723c4c1e3cd092576ff67b98b8e0c237f933a7fc7428ec688e89a7072bfbd6c4"
 rules: []
-references: []
 ---
 
 # GAMORA // AGGRESSION+

@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 4
 hash: "sha256:70c55062b650933759256aae400b07fb3d7f0892cd5964d6c15c00179536e953"
 rules: ["alliance", "assault", "hinder-x", "incite-x", "patrol", "permanent", "piercing", "ranged", "requirement-resources", "setup", "stalwart", "steady", "team-up", "teamwork", "victory-x", "villainous"]
-references: []
 ---
 
 # FEATURED KEYWORDS

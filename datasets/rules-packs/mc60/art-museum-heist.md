@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 17
 hash: "sha256:d870686dc15a7efc454dd1dec0cf9f97b952710ed47f481761806d59e1f2a760"
 rules: []
-references: []
 ---
 
 # ART MUSEUM HEIST

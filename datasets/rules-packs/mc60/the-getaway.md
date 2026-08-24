@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 19
 hash: "sha256:c96af6cc9c0a3b9d89f8245cd6963202e1e406a5b148a1b72afbca745436ef1a"
 rules: []
-references: []
 ---
 
 # THE GETAWAY

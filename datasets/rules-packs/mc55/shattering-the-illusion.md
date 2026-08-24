@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 19
 hash: "sha256:61406a886d4831a842b8d9d0ca2cdc2f6068eff136bfdd71c0214556ae906710"
 rules: []
-references: []
 ---
 
 # SHATTERING THE ILLUSION

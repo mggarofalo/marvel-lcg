@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 5
 hash: "sha256:2e136d9d0549601692d55a78ec9f09a7c730305d4685ccb21a1baf84101f80f0"
 rules: []
-references: []
 ---
 
 # ELECTRO

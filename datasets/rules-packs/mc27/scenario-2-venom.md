@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 21
 hash: "sha256:5156f36a5ecb0398b76f8d26c1ffbfa27d7053563fdcfbbf88b0646d001eef5e"
 rules: ["tower-by-an-attack-is-that-attack-considered-to-have-dealt-excess-damage"]
-references: []
 ---
 
 # SCENARIO #2 — VENOM

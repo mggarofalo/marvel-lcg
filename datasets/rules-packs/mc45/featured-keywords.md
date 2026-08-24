@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 3
 hash: "sha256:8bcacebb1bd5c1236942fd503e2e30808d74a5b26d005d76aa17ecbf1bb43fb6"
 rules: ["hinder-x", "patrol", "permanent", "piercing", "ranged", "setup", "stalwart", "steady", "teamwork", "victory-x", "villainous"]
-references: []
 ---
 
 # FEATURED KEYWORDS

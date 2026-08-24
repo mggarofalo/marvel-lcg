@@ -72,20 +72,24 @@ pack:mc32:featured-keywords.hinder-x                 a keyword definition
 
 334 of the 859 records are named rules found this way.
 
-## References are authored, not parsed
+## References are authored, and live somewhere else
 
-Every record carries `references: []`, and every one is currently empty.
+**Nothing in this index carries a reference field**, by design.
 
 The corpus is a **one-way graph**: an exception names the rule it overrides, a
 base rule names nothing (see
-[`docs/rules-provenance.md`](../../docs/rules-provenance.md)). Which `rr:` rule
-a given pack section modifies is a judgement — `pack:mc32:featured-keywords.patrol`
-constrains thwarting, but saying *which* clause of `rr:thwart` it overrides is a
-reading, not something visible on the page.
+[`docs/rules-provenance.md`](../../docs/rules-provenance.md)). Those edges are
+hand-authored in [`../rules-graph.json`](../rules-graph.json), with a stated
+reason each, and they are kept out of this file for a blunt reason: everything
+here is destroyed and rebuilt from a PDF on every harvest. An authored edge
+stored alongside generated data would be lost on the next refresh, silently and
+completely. Generated and authored data do not share a file.
 
-Inferring it from a title match would manufacture exactly the kind of
-plausible-but-wrong relationship this corpus exists to eliminate, so the field
-is emitted empty and filled in by hand.
+Which `rr:` rule a given pack section modifies is a judgement —
+`pack:mc32:featured-keywords.patrol` constrains thwarting, but saying *which*
+clause of `rr:thwart` it overrides is a reading, not something visible on the
+page. Inferring it from a title match would manufacture exactly the
+plausible-but-wrong relationship this corpus exists to eliminate.
 
 `python -m tools.rules.refs <id>` walks the graph in both directions — the
 reverse index is computed at query time and never stored, because a

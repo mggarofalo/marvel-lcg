@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 16
 hash: "sha256:4043b6aed3c34f3d252d1e471cadc0b1f9ce13decaea2a0a9aff9a935592b2bb"
 rules: []
-references: []
 ---
 
 # SIDE SCHEME ICONS

@@ -7,7 +7,6 @@ source: "mc24_the_hood_rules_insert.pdf"
 page: 5
 hash: "sha256:a4cf39110f8dbdf6309152b695b2277efdb87e5b3e122a1a4ba8223cea496306"
 rules: []
-references: []
 ---
 
 # MODULAR SET DIFFICULTY

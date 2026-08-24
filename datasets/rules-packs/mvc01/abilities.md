@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 13
 hash: "sha256:49aca3942e507ff198d976dba2d79b3ac97ace64eb62bcc1e1f558549c5d5f77"
 rules: []
-references: []
 ---
 
 # ABILITIES

@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 22
 hash: "sha256:a9bfaf7ed6775eb171e51a4dfb067a0345ef322779b70a664ffc4727709e6369"
 rules: []
-references: []
 ---
 
 # BISHOP // LEADERSHIP

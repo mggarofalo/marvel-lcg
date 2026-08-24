@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 19
 hash: "sha256:1d1c9dfe41a57b400ec1fc10fff3eec24620434198b14ec19c07dc5d22365d10"
 rules: []
-references: []
 ---
 
 # ANCIENT RITUAL

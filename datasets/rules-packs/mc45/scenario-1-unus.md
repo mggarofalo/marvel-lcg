@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 8
 hash: "sha256:6205cca0c0070fc3f82d14ee54aa2c5aa23e31ccc9b2d56fe60d33b83ac388a2"
 rules: []
-references: []
 ---
 
 # SCENARIO #1 – UNUS

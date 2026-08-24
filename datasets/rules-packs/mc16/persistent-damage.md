@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 5
 hash: "sha256:0fbf26df67702dccc7cadc6e1aa6ab464f04b80dcd7752df44cd6ac5dca28e4d"
 rules: []
-references: []
 ---
 
 # PERSISTENT DAMAGE

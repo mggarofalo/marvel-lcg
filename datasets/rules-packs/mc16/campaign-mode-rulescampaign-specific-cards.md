@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 4
 hash: "sha256:15151b5f7330961f14c864cf33f95bf2bbd78735a75afb592fbba4b6de007bec"
 rules: []
-references: []
 ---
 
 # CAMPAIGN MODE RULESCAMPAIGN-SPECIFIC CARDS

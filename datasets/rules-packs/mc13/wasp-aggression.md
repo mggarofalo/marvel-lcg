@@ -7,7 +7,6 @@ source: "mc13_wasp_rulesheet.pdf"
 page: 1
 hash: "sha256:46dda3def70bb0d0c4ab57298ca625a74c9f833d45572dd0daeaf3e177bd7e22"
 rules: []
-references: []
 ---
 
 # WASP // AGGRESSION

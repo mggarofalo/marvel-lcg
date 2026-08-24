@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 26
 hash: "sha256:c1f42dae6d0f746e79ee0f820c3b826334349c6c9ee914c649032dd5089ef22f"
 rules: ["q-when-bloody-mary-b-typhoid-mary-b-111-flips-does-her-when-revealed-ability-or-toughness-keyword-resolve"]
-references: []
 ---
 
 # TYPHOID MARY

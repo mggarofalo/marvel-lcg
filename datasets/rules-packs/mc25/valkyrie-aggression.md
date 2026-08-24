@@ -7,7 +7,6 @@ source: "mc25_valkyrie_rulesheet.pdf"
 page: 1
 hash: "sha256:68777661c5a1816f4349b43cb315d18b156f250a15cbb71a6ca917e1bf3fd1e1"
 rules: []
-references: []
 ---
 
 # VALKYRIE // AGGRESSION

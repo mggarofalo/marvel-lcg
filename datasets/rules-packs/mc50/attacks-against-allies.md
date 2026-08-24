@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 4
 hash: "sha256:0a91983b690a100e20456616dd94fba6dcd392800838dcfdee5cc2fac3f41e7c"
 rules: []
-references: []
 ---
 
 # ATTACKS AGAINST ALLIES

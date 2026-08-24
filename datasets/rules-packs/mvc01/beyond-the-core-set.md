@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 22
 hash: "sha256:15762019ed5b47dc74a3308f13e8e40dd9749050a062313eb666eff1672cf860"
 rules: []
-references: []
 ---
 
 # BEYOND THE CORE SET

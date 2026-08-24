@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 15
 hash: "sha256:32094a5f6fb46ab0232023f54b21dcc68fb015571a0ddc3b10bc197a175f32f7"
 rules: []
-references: []
 ---
 
 # THE RAFT BREAKOUT

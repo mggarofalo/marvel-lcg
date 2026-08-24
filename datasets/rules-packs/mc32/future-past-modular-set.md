@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 5
 hash: "sha256:b8521107abab5197ad94749b9e5774076f2b4f58f3f3da9b830089d250bea583"
 rules: []
-references: []
 ---
 
 # FUTURE PAST MODULAR SET

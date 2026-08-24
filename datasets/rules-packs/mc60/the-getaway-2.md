@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 26
 hash: "sha256:23483f32691bbb58fa33e23f59607d5181b839919ed595c9d758eff77ff3008d"
 rules: ["q-can-the-forced-interrupt-on-out-front-129a-remove-threat-from-the-main-scheme-if-there-is-a-crisis-icon-in-play-or-a-minion-with-the-patrol-keyword-engaged-with-me"]
-references: []
 ---
 
 # THE GETAWAY
