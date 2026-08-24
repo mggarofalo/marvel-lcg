@@ -27,7 +27,8 @@ whole corpus.
 
 **1,773 scenes. 201,870 transitions. 1,365,439 individual changes.** They fall
 into twelve shapes and no more — *as far as a digest can see*, which is a real
-limit and is picked up in [When the table splits](#when-the-table-splits):
+limit and is picked up in
+[Play areas and game areas](#play-areas-and-game-areas):
 
 | shape | share |
 |---|---|
@@ -77,7 +78,7 @@ happened, so it is one event carrying five cards, not five events.
 
 ## The vocabulary
 
-Ten records. `py_src/tools/events/model.py` on the Python side,
+Nine records. `py_src/tools/events/model.py` on the Python side,
 `src/Marvel.Rules/Events/GameEvent.cs` on the C#, and
 `datasets/events/vocabulary.json` holding the two to each other.
 
@@ -92,11 +93,6 @@ Ten records. `py_src/tools/events/model.py` on the Python side,
 | `CardDetached` | `card`, `host` |
 | `ControlChanged` | `card`, `from`, `to` |
 | `FieldSet` | `card`, `field`, `from`, `to` |
-| `CardsChangedBoard` | `cards`, `from`, `to` |
-
-Nine of the ten were measured. The tenth is
-[below](#when-the-table-splits), and the reason it could not be measured is the
-point of that section.
 
 Every event also carries `kind`, plus `trigger` and `verb` — the engine's own
 names for why the transition happened, e.g. `WhenPlayerInTurn` and `Play`. Those
@@ -113,7 +109,7 @@ drawn from all 58 corpus shards**:
 
 - **100.0%** reproduce the next state exactly, with **no residue**, on every
   field the digest records except position.
-- All nine kinds measured from digests fire. None is speculative.
+- All nine kinds fire. None is speculative.
 
 Position is 61.1%, and the gap is not a gap in the vocabulary. It is the next
 section — and MARVEL-163 closed it: **100%, position included.** See
@@ -224,75 +220,128 @@ was wrong. The prediction and the placement were two pieces of code that had to
 agree and were never made to. They are now one function, `_Settle`, called by
 both.
 
-## When the table splits
+## Play areas and game areas
 
-**Some scenarios are more than one game at once.** The Once and Future Kang
-gives each player their own board at main-scheme stage 3 — their own main
-scheme, their own Kang — and rejoins them as each stage completes. Newer
-scenarios, including in Fear No Evil, put different main schemes in different
-play areas. The boards share a round structure and cannot target each other.
+The design note that prompted this section was that some scenarios put
+different main schemes in different play areas. Following it up changed the
+answer twice, so the rules are quoted rather than paraphrased.
 
-This is not a future problem. `py_src` implements it today:
-`World.game_areas` is a list, `World.CreateGameArea()` exists, and
-`cards/pack/toafk/kang/` calls both.
+### The vocabulary is the game's, and it is overloaded
 
-### A board is a property of the card, not of the area
+Rules Reference v1.8, [`rr:play-area`](../datasets/rules-reference/entries/play-area.md):
 
-This is the one place the model's ordering is counterintuitive, so it is worth
-stating flatly. The engine keeps **one** `MainSchemesArea` deck
-(`world.area_schemes_main`) no matter how many boards exist, and scopes a query
-by filtering it:
+> There are two types of play areas: a player's play area and the villain's
+> play area. […] A card cannot be in more than one play area at a time.
 
-```python
-def GetMainSchemes(game_area_effect):
-    game_area = Worlds.CastGameArea(game_area_effect)
-    return [x for x in world.area_schemes_main.Get()
-            if x.card.GetGameArea() == game_area]
-```
+So a play area is a **place**, every game has *players + 1* of them, and a card
+is in exactly one. That is not a new concept for a scenario to introduce — it is
+the ordinary structure of every game, and `AreaRef.Owner` already is it.
 
-Two consequences the client and the port both need:
+The overload to watch: RR calls a player's play area "*also sometimes referred
+to as a 'player's game area'*", while The Once and Future Kang's insert uses
+"game area" for something else entirely. Two published meanings for one phrase,
+one of which this codebase needs and one of which it must not accidentally
+implement.
 
-- **`AreaRef` can span boards.** Its `Id` addresses a deck, and a deck is not a
-  table. A client laying out two tables splits an area's contents card by card.
-- **A board change is not a move.** No card crosses an area and no field
-  changes, so it needs its own event — `CardsChangedBoard`, batched, because
-  Kang's split moves every one of a player's cards at once.
+### Protection Racket needs nothing new
 
-### The digest cannot see any of this
+Fear No Evil, [`pack:mc60:separate-main-schemes`](../datasets/rules-packs/mc60/separate-main-schemes.md):
 
-`CardDescriptor` has always sent `game_area` to the client. The **v2 digest
-does not record it**, and `digest.CARD_KEYS` is a frozen format — adding a field
-would change every recorded digest and invalidate the corpus (MARVEL-158).
+> Each main scheme is in the play area of the player who chose it. […] Cards in
+> a player's play area (identities, allies, upgrades, minions, etc.) that refer
+> to "the main scheme" refer only to the main scheme in the same play area.
+> Cards that are not in any player's play area (the villain, side schemes, and
+> environments) that refer to "the main scheme" apply to all main schemes.
 
-Constructed at an ordinary Kang step, because no recorded step reaches the real
-split: create a board and move 47 cards onto it, the main scheme among them.
+One game. No new containers. A main scheme sits in a player's play area, which
+`AreaRef("MainSchemesArea", owner: 2, …)` already expresses.
 
-| | |
-|---|---|
-| v2 digest | **byte-identical** |
-| events derived from digests | **none** |
-| events derived from engine state | one `CardsChangedBoard`, 47 cards |
+**What it does need is a rule, and the rule is generic.** "The main scheme"
+resolves relative to the play area of the card that said it, and falls back to
+*all* main schemes when the source is in no player's play area. That is
+resolution, and it belongs to the engine. The card text is unchanged, and no
+card datum records which scenario it is in — a card is in a place, and what the
+place means is the engine's business.
 
-**A port that put every card in the right zone at the right index but on the
-wrong board would pass every corpus digest check.** That is a hole in the
-oracle, not in the vocabulary, and it is recorded in
-[state-digest-v2.md](state-digest-v2.md#what-the-digest-cannot-see) and filed
-as MARVEL-174.
+The same paragraph shows why: a crisis icon on a side scheme "prevents threat
+from being removed from any main scheme" precisely *because* a side scheme is in
+no player's play area. The rule is stated in terms of place, so an engine that
+models place gets it for free, and one that special-cases the scenario does not.
 
-### And the corpus never gets there
+### Kang's game areas contain play areas
 
-All 42 `the_once_and_future_kang` scenes, replayed in full: **0 of 3,462 steps
-reached a second board.** The split is behind a main scheme at stage 3 and the
-bot never advances it that far.
+[`pack:mc11:areas`](../datasets/rules-packs/mc11/areas.md):
 
-So `CardsChangedBoard` is the one member of this vocabulary that a measurement
-did not produce, and `tools/events/verify.py` prints `never fired` beside it
-rather than hiding that. It is here because the mechanic is implemented and
-shipped, not because a diff found it — and the alternative was discovering it
-at the point 3,457 card ports were already written against a nine-member
-vocabulary.
+> Each stage 3A tells the player who revealed it to "create your own game area
+> and place this scheme in it." To do this, place your stage 3A on the table
+> directly in front of your play area. […] Stage 2B remains in play in a central
+> location […] though it is not part of any other game area.
 
-Covering it needs a **spec**, not a corpus entry — filed as MARVEL-175.
+[`pack:mc11:game-areas`](../datasets/rules-packs/mc11/game-areas.md):
+
+> Cards and components in one game area cannot affect another game area […]
+> While the players are in separate game areas, they continue to use the same
+> encounter deck and encounter discard pile. […] When you defeat Kang (II) in
+> your game area, you are instructed to join another game area […] choose a game
+> area and reorient the cards on the table to indicate that you have joined that
+> game area. Any side schemes that were in play in your previous game area
+> become part of the game area that you join.
+
+Three things follow, and none of them is a card property:
+
+- A game area **contains play areas** — "directly in front of your play area" —
+  plus unowned cards like side schemes. Players + one, the extra being 2B's
+  central location.
+- It is a **visibility partition**, not a location: cards cannot affect, target,
+  attack or defend across it. Meanwhile the encounter deck stays shared, so it
+  is not a partition of the whole world either.
+- Joining is a **player-level** operation. One player joins; their side schemes
+  come with them; their engaged minions stay engaged.
+
+### What the legacy engine does, and why it is not the model
+
+`py_src` tags every card with `card.game_area` and keeps one deck per zone
+regardless — `world.area_schemes_main` is a single `Deck2`, and
+`Worlds.GetMainSchemes(game_area)` filters it by `card.GetGameArea()`. It works,
+and it is an implementation shortcut rather than the rule.
+
+It was briefly copied into this document as a tenth event, `CardsChangedBoard`,
+carrying the 47 cards a split retags at once. That was wrong on three counts and
+has been reverted: "board" is not a word in this game; the unit is a player
+joining a game area, not 47 cards changing a tag; and it put a rules concept
+onto card data, which is the thing that makes data know how it is being used.
+
+**Where it belongs is state, not the event vocabulary.** A game area is a
+grouping over play areas, so the fold's state needs the grouping and an event
+would describe a *player* joining one. That is a design question for the engine
+core, filed as MARVEL-175, and it does not need answering before an engine
+exists.
+
+### The oracle is blind to all of it
+
+Whichever way it is modelled, the v2 digest cannot see it. Its `owner` is the
+card's **controller**, not the play area the card sits in, and every main scheme
+shares one `MainSchemesArea` — so a main scheme in player 2's play area and one
+in the villain's are indistinguishable to it.
+
+Demonstrated on the legacy engine, constructed at an ordinary Kang step because
+no recorded step reaches the real split: creating a game area and moving 47
+cards into it left the digest **byte-identical**.
+
+That is a property of the digest, not of any scenario, and it is the same
+weakness `AreaRef.Id` exists to work around one level up: **the digest describes
+areas rather than identifying them.** Recorded in
+[state-digest-v2.md](state-digest-v2.md#what-the-digest-cannot-see) and filed as
+MARVEL-174.
+
+### And nothing exercises either scenario
+
+- Kang: all 42 `the_once_and_future_kang` corpus scenes replayed in full,
+  **0 of 3,462 steps** reached a second game area. The split is behind a main
+  scheme at stage 3 and the bot never advances that far.
+- Protection Racket: `py_src` has no Fear No Evil cards at all, so it is a
+  forward requirement for the C# engine with published rules already in hand,
+  and not oracle behaviour to be reproduced.
 
 ## The signature
 
@@ -349,9 +398,9 @@ about, which is why they run in the fast tier.
   an interpreter executing effect nodes. That last step lands with the
   interpreter, and what this proves for it is that the vocabulary and the
   reducer are not what will be wrong.
-- **Nothing exercises `CardsChangedBoard`.** The corpus cannot reach the split
-  and a unit test only states the shape. A behavioural spec that drives Kang to
-  stage 3 is what would make it real — MARVEL-175.
+- **How play areas and game areas live in the fold's state**, and what event a
+  player joining a game area produces. MARVEL-175. Not answerable before an
+  engine exists, and not a card property whatever the answer.
 - **Ordering within a step.** The prototype emits creations, then moves, then
   reorderings, then per-card changes. The interpreter will emit in execution
   order instead, which is more useful and is not checkable until it exists.

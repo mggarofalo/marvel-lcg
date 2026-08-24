@@ -43,7 +43,6 @@ namespace Marvel.Rules.Events;
 [JsonDerivedType(typeof(CardDetached), nameof(CardDetached))]
 [JsonDerivedType(typeof(ControlChanged), nameof(ControlChanged))]
 [JsonDerivedType(typeof(FieldSet), nameof(FieldSet))]
-[JsonDerivedType(typeof(CardsChangedBoard), nameof(CardsChangedBoard))]
 public abstract record GameEvent
 {
     /// <summary>
@@ -158,46 +157,6 @@ public sealed record CardDetached(int Card, int Host) : GameEvent;
 /// <param name="To">The new controller, or <c>-1</c>.</param>
 public sealed record ControlChanged(int Card, int From, int To) : GameEvent;
 
-/// <summary>
-/// A batch of cards moved to a different parallel board.
-/// </summary>
-/// <param name="Cards">Everything that changed board together.</param>
-/// <param name="From">The board they were on.</param>
-/// <param name="To">The board they are on now.</param>
-/// <remarks>
-/// <para>
-/// <b>Some scenarios split the table.</b> The Once and Future Kang gives each
-/// player their own board at main-scheme stage 3 — their own main scheme, their
-/// own Kang — and rejoins them as each stage completes. Newer scenarios use the
-/// same mechanic. The boards share a round structure and cannot target each
-/// other.
-/// </para>
-/// <para>
-/// <b>A board is a property of the card, not of the area, and this is the one
-/// place that ordering is counterintuitive.</b> The engine keeps every main
-/// scheme in a single <c>MainSchemesArea</c> deck whatever board it belongs to,
-/// and scopes queries by filtering on the card. So a card changing board moves
-/// between no areas and changes no field: it needs its own event, and an
-/// <see cref="AreaRef"/> can span boards.
-/// </para>
-/// <para>
-/// Batched for the same reason <see cref="CardsMoved"/> is. Measured by
-/// constructing Kang's split at an ordinary step: <b>47 cards changed board at
-/// once</b>, so emitting one event each would turn a single thing that happened
-/// into 47 animations.
-/// </para>
-/// <para>
-/// <b>This is the one member of the vocabulary that was not measured from the
-/// corpus, and the reason is worth knowing.</b> The census derived the other
-/// nine by diffing digests — and the v2 digest does not record the board, so a
-/// board change is invisible to it. Constructing the split left the digest
-/// <i>byte-identical</i>. No corpus scene reaches the split either: 0 of 3,462
-/// steps across all 42 Kang scenes. It is here because the mechanic is
-/// implemented and shipped, not because a diff found it. See
-/// <c>docs/event-stream.md</c>.
-/// </para>
-/// </remarks>
-public sealed record CardsChangedBoard(IReadOnlyList<int> Cards, int From, int To) : GameEvent;
 
 /// <summary>One named value on a card changed.</summary>
 /// <param name="Card">The card's object id.</param>
