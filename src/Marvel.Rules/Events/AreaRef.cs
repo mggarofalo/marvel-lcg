@@ -36,13 +36,22 @@ namespace Marvel.Rules.Events;
 /// measurement of MARVEL-163.
 /// </para>
 /// <para>
-/// <b>An area is not a table.</b> When a scenario splits the board — The Once
-/// and Future Kang, and newer scenarios — the areas stay shared: every main
-/// scheme sits in one <c>MainSchemesArea</c> whatever board it belongs to. So
-/// <see cref="Id"/> addresses a deck and says nothing about which table to draw
-/// it on. That lives on the card, and moves through
-/// <see cref="CardsChangedBoard"/>. A client laying out two tables splits an
-/// area's contents by card, not by <see cref="AreaRef"/>.
+/// <b><see cref="Owner"/> is a play area, and that is load-bearing for more
+/// than multiplayer.</b> The Rules Reference defines exactly two kinds — a
+/// player's and the villain's — and a card is in exactly one. Scenarios lean on
+/// that: Fear No Evil's Protection Racket gives each player their own main
+/// scheme, <i>"in the play area of the player who chose it"</i>, and resolves
+/// "the main scheme" relative to the play area of whatever card said it. That
+/// needs no new field here — <c>AreaRef("MainSchemesArea", owner: 2, …)</c>
+/// already says it — and no new datum on a card. It needs the engine to resolve
+/// by place.
+/// </para>
+/// <para>
+/// The Once and Future Kang's <i>game areas</i> are a different concept wearing
+/// a confusingly similar name: a grouping <b>over</b> play areas that cards
+/// cannot affect across. That grouping is not expressible here and should not
+/// be — it belongs to the fold's state, and a player joins one. See
+/// <c>docs/event-stream.md</c>, "Play areas and game areas", and MARVEL-175.
 /// </para>
 /// <para>
 /// <b>Why <see cref="Id"/> exists.</b> The three fields above were the whole

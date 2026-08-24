@@ -19,11 +19,6 @@
       "from",
       "to"
     ],
-    "CardsChangedBoard": [
-      "cards",
-      "from",
-      "to"
-    ],
     "CardsCreated": [
       "area",
       "cards"

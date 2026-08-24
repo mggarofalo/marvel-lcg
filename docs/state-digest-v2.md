@@ -112,29 +112,32 @@ The other seventy-seven cards in v2 carry position without state:
 One known blind spot, recorded here because it is invisible by construction and
 a reader will otherwise assume the digest is total.
 
-**A card's board.** Some scenarios split the table into parallel boards — The
-Once and Future Kang gives each player their own at main-scheme stage 3, with
-its own main scheme and its own villain; newer scenarios do the same. The engine
-models this as `card.game_area`, and `CardDescriptor` has always sent it to the
-client. **No digest key carries it**, and the areas are shared: every main
-scheme sits in one `MainSchemesArea` deck whatever board it is on.
+**Which play area a card is in.** The digest's `owner` is the card's
+*controller*, not the place it sits, and every zone name maps to one shared
+ordered list. Two examples, both published:
 
-Measured by constructing the split at an ordinary Kang step — no recorded step
-reaches the real one — creating a board and moving 47 cards onto it, main scheme
-included:
+- **Protection Racket** (Fear No Evil): *"Each main scheme is in the play area
+  of the player who chose it."* Two main schemes, two play areas, one
+  `MainSchemesArea` in the digest — told apart only by `index`.
+- **The Once and Future Kang**: each player creates their own **game area** at
+  stage 3, and cards in one *"cannot affect another game area."*
 
-> the digest was **byte-identical**.
+Measured on the legacy engine, constructed at an ordinary Kang step because no
+recorded step reaches the real split: creating a game area and moving 47 cards
+into it, main scheme included, left the digest **byte-identical**.
 
-So **a port that put every card in the right zone at the right index but on the
-wrong board would pass every corpus digest check.** The corpus cannot catch it
-either: 0 of 3,462 steps across all 42 Kang scenes reach a second board.
+So **a port that put every card in the right zone at the right index but in the
+wrong play area would pass every corpus digest check.** The corpus cannot catch
+it: 0 of 3,462 steps across all 42 Kang scenes reach a second game area, and
+`py_src` does not implement Fear No Evil at all.
 
-This is stated rather than fixed. `CARD_KEYS` is a frozen format; adding a key
-would change every recorded digest and invalidate the corpus, which AGENTS.md
-non-negotiable 6 makes a decision to raise rather than take. What has been done
-instead is to carry the board in the *event stream*, where it costs nothing —
-see [event-stream.md](event-stream.md#when-the-table-splits) — and to file the
-digest question as **MARVEL-174**. The matching coverage gap is MARVEL-175.
+This is the same weakness `AreaRef.Id` exists to work around one level up — **the
+digest describes areas rather than identifying them** — and it is stated rather
+than fixed. `CARD_KEYS` is a frozen format; adding a key changes every recorded
+digest and invalidates the corpus, which AGENTS.md non-negotiable 6 makes a
+decision to raise. Filed as **MARVEL-174**; the modelling question is
+MARVEL-175, and [event-stream.md](event-stream.md#play-areas-and-game-areas)
+sets out what the rules actually require.
 
 ## The record
 

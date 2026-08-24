@@ -58,10 +58,9 @@ class FakeArea:
 
 class FakeCard:
     def __init__(self, object_id, card_id, area, *, controller=None, on_field=True,
-                 face_up=True, fields=None, board=1):
+                 face_up=True, fields=None):
         self.object_id = object_id
         self.area = area
-        self.game_area = type("GameArea", (), {"object_id": board})()
         self.state = type("State", (), {"is_face_up": face_up})()
         self._controller = controller
         self._on_field = on_field
@@ -147,37 +146,6 @@ class TestAnAreaIsIdentifiedNotDescribed(unittest.TestCase):
         self.assertNotEqual(board[3]["area"]["id"], board[4]["area"]["id"])
         self.assertTrue(board[4]["zone"].endswith("/removed"))
         self.assertEqual(board[4]["host"], 99)
-
-
-class TestTheBoardIsOnTheCard(unittest.TestCase):
-    """Scenarios that split the table keep the decks shared.
-
-    `world.area_schemes_main` is one `Deck2` for every board, and
-    `Worlds.GetMainSchemes(game_area)` filters it by `card.GetGameArea()`. So
-    two main schemes on two boards are one area and two boards, which is the
-    reverse of what a reader expects and the reason this is pinned.
-    """
-
-    def testOneAreaCanHoldTwoBoards(self):
-        area = FakeArea(17, "MainSchemesArea", SCENARIO)
-        first = FakeCard(1, "11007b", area, controller=None, board=1)
-        second = FakeCard(2, "11008b", area, controller=None, board=2)
-        area.cards.extend([first, second])
-
-        board = state.Snapshot(FakeWorld([first, second]))
-        self.assertEqual(board[1]["area"]["id"], board[2]["area"]["id"])
-        self.assertNotEqual(board[1]["board"], board[2]["board"])
-
-    def testTheBoardIsNotOnTheWire(self):
-        """Adding it to the digest would invalidate the frozen corpus."""
-        from game.world import digest
-
-        area = FakeArea(17, "MainSchemesArea", SCENARIO)
-        card = FakeCard(1, "11007b", area, controller=None, board=2)
-        area.cards.append(card)
-
-        document = digest.Parse(state.Serialize(state.Snapshot(FakeWorld([card]))))
-        self.assertNotIn("board", document["cards"][0])
 
 
 class TestASnapshotIsADigest(unittest.TestCase):
