@@ -134,7 +134,7 @@ would change every recorded digest and invalidate the corpus, which AGENTS.md
 non-negotiable 6 makes a decision to raise rather than take. What has been done
 instead is to carry the board in the *event stream*, where it costs nothing —
 see [event-stream.md](event-stream.md#when-the-table-splits) — and to file the
-digest question separately.
+digest question as **MARVEL-174**. The matching coverage gap is MARVEL-175.
 
 ## The record
 

@@ -276,7 +276,8 @@ split: create a board and move 47 cards onto it, the main scheme among them.
 **A port that put every card in the right zone at the right index but on the
 wrong board would pass every corpus digest check.** That is a hole in the
 oracle, not in the vocabulary, and it is recorded in
-[state-digest-v2.md](state-digest-v2.md#what-the-digest-cannot-see).
+[state-digest-v2.md](state-digest-v2.md#what-the-digest-cannot-see) and filed
+as MARVEL-174.
 
 ### And the corpus never gets there
 
@@ -291,7 +292,7 @@ shipped, not because a diff found it — and the alternative was discovering it
 at the point 3,457 card ports were already written against a nine-member
 vocabulary.
 
-Covering it needs a **spec**, not a corpus entry. Filed separately.
+Covering it needs a **spec**, not a corpus entry — filed as MARVEL-175.
 
 ## The signature
 
@@ -350,7 +351,7 @@ about, which is why they run in the fast tier.
   reducer are not what will be wrong.
 - **Nothing exercises `CardsChangedBoard`.** The corpus cannot reach the split
   and a unit test only states the shape. A behavioural spec that drives Kang to
-  stage 3 is what would make it real.
+  stage 3 is what would make it real — MARVEL-175.
 - **Ordering within a step.** The prototype emits creations, then moves, then
   reorderings, then per-card changes. The interpreter will emit in execution
   order instead, which is more useful and is not checkable until it exists.
