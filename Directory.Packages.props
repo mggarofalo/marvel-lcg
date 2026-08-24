@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- Central package management: versions live here, never in a .csproj.
+       A solution validated against pinned cross-language fixtures should not
+       be able to acquire two versions of the same dependency by accident. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit.v3" Version="3.1.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+</Project>

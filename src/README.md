@@ -1,6 +1,23 @@
 # src/ — C# engine
 
-Empty until the Engine Core phase begins. See [../docs/migration.md](../docs/migration.md) for the target architecture and [../docs/plane.md](../docs/plane.md) for how work is tracked.
+**Contracts first.** `Marvel.Core` holds the cross-engine RNG (MARVEL-8) and
+nothing else yet. The engine fold, the card DSL and the corpus replay harness
+are migration phases 4–6 and are not started. See [../docs/migration.md](../docs/migration.md) for the target architecture and [../docs/plane.md](../docs/plane.md) for how work is tracked.
+
+Current:
+
+```
+Directory.Build.props / Directory.Packages.props   central package management
+Marvel.slnx / global.json
+
+src/Marvel.Core          the RNG contract; no I/O, no UI, no ambient state
+tests/Marvel.Core.Tests  xUnit; the cross-language vectors are the acceptance
+```
+
+`Marvel.Core` is the one project name common to both layouts under review in
+MARVEL-159, so what lands there survives that decision. Nothing here depends on
+the presentation-layer question, which is why this could start before it was
+answered.
 
 Planned layout:
 

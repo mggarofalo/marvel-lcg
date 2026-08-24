@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Marvel.Core/Marvel.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Marvel.Core.Tests/Marvel.Core.Tests.csproj" />
+  </Folder>
+</Solution>
