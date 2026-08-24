@@ -31,7 +31,7 @@ sources. Each is vendored as a snapshot, each is diffable, and each can move.
 | **Printed card text** (MarvelSDB) | `datasets/marvelsdb/` → `datasets/cards/` | card code | a new pack ships |
 | **Official rulings** (MarvelCDB FAQ) | `datasets/marvelcdb-faq/` | ruling per card | rulings are added or revised |
 
-Two of the three already exist. The Rules Reference is the missing one.
+All three now exist. The Rules Reference was the missing one until MARVEL-154; see [`datasets/rules-reference/UPSTREAM.md`](../datasets/rules-reference/UPSTREAM.md).
 
 All three obey the existing rule: **nothing under `datasets/` may require the
 network to regenerate.** Each is *vendored* — harvested once, pinned, read
@@ -39,7 +39,27 @@ offline.
 
 ## The Rules Reference as a citation index
 
-The RR enters as a **structured citation index**, not as a copy of the document:
+Built in MARVEL-154. Implementing it changed one thing about this design, and
+the change is worth recording: **the thing a spec pins to and the thing an
+agent reads are not the same artefact.** Trying to make one serve both makes it
+bad at each — a one-sentence fragment is right for a diff and useless for
+adjudicating a rules question, and the full normative text of 261 entries is
+not something to inline into a pin.
+
+So the harvest emits both, from one parse, covered by the same hashes:
+
+| | For | Grain |
+|---|---|---|
+| `index.json` | machines — spec pinning, `tools.rules.diff` | every citable unit |
+| `entries/*.md` | agents and humans | one linked document per entry |
+| `icons.json` | both | glyph legend, derived from the document |
+
+Citations are three-tier, because the grain a spec argues from is not the
+entry: `rr:cost` is the entry, `rr:cost.3` its third clause, `rr:cost.3.1` a
+qualification of that clause. Each clause is anchored in the markdown, so a
+citation resolves to a place in a document someone can actually read.
+
+The index carries, per record:
 
 ```json
 {
