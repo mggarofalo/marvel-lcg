@@ -1,0 +1,120 @@
+using Gherkin;
+using Xunit;
+
+namespace Marvel.Core.Tests.Specs;
+
+/// <summary>
+/// MARVEL-41: do the spec files parse under the Gherkin the C# side will use?
+/// </summary>
+/// <remarks>
+/// <para>
+/// The 112 <c>.feature</c> files under <c>py_src/specs/</c> were written against
+/// <c>tools/spec/gherkin.py</c>, a hand-rolled parser. That parser accepts what
+/// it accepts; nothing has ever checked the files against the *standard*
+/// grammar. If they have drifted, every scenario has to be rewritten — and the
+/// cheapest moment to find that out is before the suite grows further, not
+/// after the C# runner exists.
+/// </para>
+/// <para>
+/// This uses the <c>Gherkin</c> package directly, which is the parser Reqnroll
+/// is built on. Referenced instead of the full BDD runner deliberately: the
+/// question is whether the *format* is compatible, and Reqnroll proper would
+/// demand step definitions for an engine that does not exist. Whether the steps
+/// can be *bound* is a separate question and a later one.
+/// </para>
+/// </remarks>
+public sealed class GherkinFormatTests
+{
+    private static IReadOnlyList<string> FeatureFiles { get; } =
+        [.. Directory.EnumerateFiles(
+                Path.Combine(RepositoryPaths.Root, "py_src", "specs"),
+                "*.feature", SearchOption.AllDirectories)
+            .OrderBy(path => path, StringComparer.Ordinal)];
+
+    [Fact]
+    public void TheSpecSuiteIsWhereItIsExpected()
+    {
+        // Without this, a moved directory turns every test below into a
+        // vacuous pass over an empty list.
+        Assert.True(FeatureFiles.Count >= 100,
+            $"expected the spec suite, found {FeatureFiles.Count} feature file(s)");
+    }
+
+    [Fact]
+    public void EveryFeatureFileParses()
+    {
+        var parser = new Parser();
+        var failures = new List<string>();
+
+        foreach (string path in FeatureFiles)
+        {
+            try
+            {
+                parser.Parse(path);
+            }
+            catch (Exception exception) when (exception is CompositeParserException or ParserException)
+            {
+                string relative = Path.GetRelativePath(RepositoryPaths.Root, path);
+                failures.Add($"{relative}: {exception.Message.Split('\n')[0]}");
+            }
+        }
+
+        Assert.Empty(failures);
+    }
+
+    [Fact]
+    public void EveryFeatureHasScenariosAndEveryScenarioHasSteps()
+    {
+        // A file that parses but yields nothing would pass the test above while
+        // meaning the format is not actually understood.
+        var parser = new Parser();
+        var empty = new List<string>();
+
+        foreach (string path in FeatureFiles)
+        {
+            var document = parser.Parse(path);
+            string relative = Path.GetRelativePath(RepositoryPaths.Root, path);
+
+            var children = document.Feature?.Children.ToList() ?? [];
+            var scenarios = children.OfType<Gherkin.Ast.Scenario>().ToList();
+            if (scenarios.Count == 0)
+            {
+                empty.Add($"{relative}: no scenarios");
+                continue;
+            }
+
+            foreach (var scenario in scenarios.Where(s => !s.Steps.Any()))
+            {
+                empty.Add($"{relative}: '{scenario.Name}' has no steps");
+            }
+        }
+
+        Assert.Empty(empty);
+    }
+
+    [Fact]
+    public void TagsSurviveTheParse()
+    {
+        // The `@card:` and `@rr:` tags are how a scenario is joined to the card
+        // dataset and to the rules corpus. A parser that dropped or mangled
+        // them would take the whole citation graph with it (MARVEL-154).
+        var parser = new Parser();
+        var tags = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (string path in FeatureFiles)
+        {
+            var document = parser.Parse(path);
+            foreach (var scenario in (document.Feature?.Children ?? [])
+                     .OfType<Gherkin.Ast.Scenario>())
+            {
+                foreach (var tag in scenario.Tags)
+                {
+                    tags.Add(tag.Name);
+                }
+            }
+        }
+
+        Assert.Contains(tags, tag => tag.StartsWith("@card:", StringComparison.Ordinal));
+        Assert.Contains(tags, tag => tag.StartsWith("@rr:", StringComparison.Ordinal));
+    }
+}

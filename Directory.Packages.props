@@ -11,6 +11,13 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="xunit.v3" Version="3.1.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+
+    <!-- The Gherkin parser Reqnroll is built on. Referenced directly rather
+         than through Reqnroll itself: MARVEL-41 asks whether the spec *format*
+         is compatible, and that is a parsing question. Pulling in the full
+         BDD runner would also require step definitions for an engine that does
+         not exist yet. -->
+    <PackageVersion Include="Gherkin" Version="34.0.0" />
   </ItemGroup>
 
 </Project>
