@@ -1250,31 +1250,31 @@
       "source": "specs/cards/core/01106-stampede.feature"
     },
     "Status cards :: a confused hero can still attack": {
-      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "sha256": "a98ec0678f0f31ebfd9ffb10b12f1c85cef19a6f53ad03a5a02d09589b6b7e26",
       "source": "specs/rules/status.feature"
     },
     "Status cards :: a confused hero cannot thwart": {
-      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "sha256": "a98ec0678f0f31ebfd9ffb10b12f1c85cef19a6f53ad03a5a02d09589b6b7e26",
       "source": "specs/rules/status.feature"
     },
     "Status cards :: a stunned hero can still thwart": {
-      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "sha256": "a98ec0678f0f31ebfd9ffb10b12f1c85cef19a6f53ad03a5a02d09589b6b7e26",
       "source": "specs/rules/status.feature"
     },
     "Status cards :: a stunned hero cannot attack": {
-      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "sha256": "a98ec0678f0f31ebfd9ffb10b12f1c85cef19a6f53ad03a5a02d09589b6b7e26",
       "source": "specs/rules/status.feature"
     },
     "Status cards :: a stunned villain's attack is cancelled and the status spent": {
-      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "sha256": "a98ec0678f0f31ebfd9ffb10b12f1c85cef19a6f53ad03a5a02d09589b6b7e26",
       "source": "specs/rules/status.feature"
     },
     "Status cards :: an unconfused hero can thwart": {
-      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "sha256": "a98ec0678f0f31ebfd9ffb10b12f1c85cef19a6f53ad03a5a02d09589b6b7e26",
       "source": "specs/rules/status.feature"
     },
     "Status cards :: an unstunned hero can attack": {
-      "sha256": "18ecd8a95056e15a924ad5adca15f392e2dbde6cbebf6bcfcb47037b30c52ba4",
+      "sha256": "a98ec0678f0f31ebfd9ffb10b12f1c85cef19a6f53ad03a5a02d09589b6b7e26",
       "source": "specs/rules/status.feature"
     },
     "Superpower Training :: a basic upgrade is not identity-specific": {
