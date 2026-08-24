@@ -106,7 +106,18 @@ class Resolution(unittest.TestCase):
 
             self.assertEqual(records["duplicated"]["villain"], ["AAA"])
             self.assertEqual(records["only_in_b"]["villain"], ["CCC"])
-            self.assertEqual(shadowed, [os.path.join(second, "duplicated.json")])
+            self.assertEqual(shadowed, [emit_setup._Posix(second, "duplicated")])
+
+    def test_a_shadowed_path_is_forward_slashed_on_every_host(self):
+        """It goes into a byte-compared fixture, so it cannot carry `os.sep`.
+
+        Nothing is shadowed today, which is precisely the problem: the two CI
+        legs would have agreed until the first collision landed and then
+        disagreed about a file neither of them touched.
+        """
+        self.assertEqual(emit_setup._Posix(os.path.join("data", "scenarios"), "rhino"),
+                         "data/scenarios/rhino.json")
+        self.assertNotIn("\\", emit_setup._Posix(os.path.join("a", "b"), "c"))
 
     def test_names_are_sorted_and_non_json_is_ignored(self):
         with tempfile.TemporaryDirectory() as root:

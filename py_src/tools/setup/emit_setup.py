@@ -92,6 +92,18 @@ def _Load(path: str, group: str) -> Dict[str, Any]:
         return _Project(Json.LoadsAs(handle.read(), _Descriptor(group)))
 
 
+def _Posix(folder: str, name: str) -> str:
+    """`folder/name.json`, always forward-slashed whatever the host uses.
+
+    This string is written into a fixture compared byte for byte, so it must
+    not carry the host's path separator -- the same reason `.gitattributes`
+    pins `eol=lf` (MARVEL-67, MARVEL-73). Nothing is shadowed today, so the
+    difference would have sat latent until the first collision landed and the
+    Windows and Linux legs disagreed about a file neither of them changed.
+    """
+    return f"{folder.replace(os.sep, '/')}/{name}.json"
+
+
 def _Names(folder: str) -> List[str]:
     """The `.json` files in `folder`, by name, in code-point order.
 
@@ -120,7 +132,7 @@ def BuildGroup(group: str, folders: Sequence[str]) -> Tuple[Dict[str, Any], List
     for folder in folders:
         for name in _Names(folder):
             if name in records:
-                shadowed.append(f"{folder}/{name}.json")
+                shadowed.append(_Posix(folder, name))
                 continue
             records[name] = _Load(os.path.join(folder, f"{name}.json"), group)
     return records, shadowed
