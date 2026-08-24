@@ -33,12 +33,30 @@ class WorldRule:
 
         self.v15_all                        = VariableBool(self, False, "v15_all")
 
+        # `v16_all` stays off: it is the bulk switch `SetRule` applies *after*
+        # the individual flags, so defaulting it on would override an explicit
+        # `no_v16_teamwork` in a scene's rules list.
         self.v16_all                        = VariableBool(self, False, "v16_all")
-        self.v16_reveal                     = VariableBool(self, False, "v16_reveal")
-        self.v16_teamwork                   = VariableBool(self, False, "v16_teamwork")
-        self.v16_player_elimination         = VariableBool(self, False, "v16_player_elimination")
-        self.v16_referential_ability        = VariableBool(self, False, "v16_referential_ability")
-        self.v16_confuse_stun               = VariableBool(self, False, "v16_confuse_stun")
+
+        # The five v1.6 behaviours default **on**, because each of them is what
+        # the vendored authority says (MARVEL-170). They were added as opt-in
+        # flags and left off, so the engine implemented the pre-v1.6 reading
+        # everywhere -- specs, corpus and self-play alike -- while
+        # `datasets/rules-reference/` is Rules Reference v1.8. Each is cited:
+        #
+        #   reveal              rr:deal-deal-an-encounter-card, rr:surge.2
+        #   teamwork            rr:teamwork.1
+        #   player_elimination  rr:player-elimination.3
+        #   referential_ability rr:referential-ability
+        #   confuse_stun        rr:attack-player-ability-type.1.1, rr:thwart.1.1
+        #
+        # `no_v16_<name>` still selects the old reading for a scene that wants
+        # it, and `v15_all` still selects the v1.5 set wholesale.
+        self.v16_reveal                     = VariableBool(self, True, "v16_reveal")
+        self.v16_teamwork                   = VariableBool(self, True, "v16_teamwork")
+        self.v16_player_elimination         = VariableBool(self, True, "v16_player_elimination")
+        self.v16_referential_ability        = VariableBool(self, True, "v16_referential_ability")
+        self.v16_confuse_stun               = VariableBool(self, True, "v16_confuse_stun")
 
         self.fix_surge                      = VariableBool(self, True, "fix_surge")
         self.fix_treachery                  = VariableBool(self, True, "fix_treachery")

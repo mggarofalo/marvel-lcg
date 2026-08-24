@@ -212,6 +212,28 @@ corner. `rr:resource.1` says bottom-left, and the Rules Reference is right.
 Trivial in itself, and precisely the class of quiet error that a spec suite
 grounded in nothing but the engine cannot surface.
 
+## The first thing the loop found
+
+Worth recording, because it is the argument for the whole document.
+
+`game/world/world_rule.py` carries versioned rule switches — `v16_reveal`,
+`v16_teamwork`, `v16_player_elimination`, `v16_referential_ability`,
+`v16_confuse_stun`. They were added as opt-in flags and **left off**, and
+nothing in `specs/`, `tools/` or `unit_test/` ever turned one on. So the engine
+implemented the pre-v1.6 reading everywhere while the vendored authority is
+v1.8. Read against their v1.8 entries, all five flag-on behaviours are what the
+rulebook says (MARVEL-170).
+
+What makes it a lesson rather than a bug report is the measurement. Flipping
+all five left the spec suite's verdict **exactly** unchanged — 456 scenarios,
+444 PASS, same 12 quarantined, before and after. Generating the same corpus
+plan under each setting settled what the suite could not: **122 of 180 scenes
+differed, 67.8%.**
+
+A passing spec suite is not evidence about a rule nobody cited. That is the
+blind spot this document exists to close, and it was hiding a whole rules
+revision.
+
 ## New expansions, new keywords
 
 The same loop, entered from the card dataset instead of the RR.
