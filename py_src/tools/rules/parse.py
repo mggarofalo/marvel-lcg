@@ -77,12 +77,25 @@ def clean_title(title: str) -> str:
 
 
 @dataclass
+class Step:
+    """One step of a numbered procedure, and its lettered sub-steps."""
+    marker: str
+    text: str
+    children: List["Step"] = field(default_factory=list)
+
+
+@dataclass
 class Entry:
     """One Rules Reference glossary entry."""
     title: str
     page: int
     definition: str = ""
     clauses: List[Clause] = field(default_factory=list)
+    # Numbered procedures, kept apart from `clauses` because the document
+    # treats them as a different kind of thing and cites them that way:
+    # "during step three of the villain phase" is the Rules Reference's own
+    # phrasing, in three separate entries.
+    steps: List[Step] = field(default_factory=list)
     see_also: List[str] = field(default_factory=list)
     redirect: str = ""          # set for "See: Other Entry" stub entries
     icons: List[str] = field(default_factory=list)
@@ -156,16 +169,22 @@ def parse_entries(lines: Sequence[Line], page_of: Sequence[int],
     child: Clause | None = None
     buffer: List[str] = []
     see_buffer: List[str] = []
+    step: Step | None = None
+    substep: Step | None = None
 
     def flush() -> None:
-        nonlocal buffer, clause, child
+        nonlocal buffer, clause, child, step, substep
         if not buffer:
             return
         text = _join(buffer)
         buffer = []
         if not text:
             return
-        if child is not None:
+        if substep is not None:
+            substep.text = _join([substep.text, text]) if substep.text else text
+        elif step is not None:
+            step.text = _join([step.text, text]) if step.text else text
+        elif child is not None:
             child.text = _join([child.text, text]) if child.text else text
         elif clause is not None:
             clause.text = _join([clause.text, text]) if clause.text else text
@@ -173,8 +192,9 @@ def parse_entries(lines: Sequence[Line], page_of: Sequence[int],
             opening.append(text)
 
     def close() -> None:
-        nonlocal entry, opening, clause, child
+        nonlocal entry, opening, clause, child, step, substep
         flush()
+        step = substep = None
         if entry is not None:
             entry.definition = _join(opening)
             if see_buffer:
@@ -238,15 +258,33 @@ def parse_entries(lines: Sequence[Line], page_of: Sequence[int],
             see_buffer.append(plain)
             continue
 
+        if line.marker and entry is not None:
+            flush()
+            if line.marker.isdigit():
+                step = Step(marker=line.marker, text="")
+                substep = None
+                entry.steps.append(step)
+            elif step is not None:
+                substep = Step(marker=line.marker, text="")
+                step.children.append(substep)
+            else:
+                # A lettered marker with no open step: not a procedure.
+                buffer = [plain]
+                continue
+            body = re.sub(r'^\s*(?:[0-9]+|[a-z])\.\s*', '', stripped)
+            buffer = [body]
+            continue
+
         if plain.startswith(BULLET):
             flush()
+            step = substep = None
             clause = Clause(text="")
             child = None
             entry.clauses.append(clause)
             buffer = [stripped.lstrip("*").lstrip()[len(BULLET):]]
             continue
 
-        if raw.startswith(SUB_INDENT) and clause is not None:
+        if raw.startswith(SUB_INDENT) and clause is not None and step is None:
             flush()
             child = Clause(text="")
             clause.children.append(child)

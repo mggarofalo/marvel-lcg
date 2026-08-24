@@ -26,6 +26,7 @@ nonsense. Columns are separated first, then each is read top to bottom.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Sequence
 
@@ -54,6 +55,16 @@ HEADING_ICON_MAX_SIZE = 12.5
 # The icon font. Its characters live in a private-use range, so they survive
 # text extraction as U+F5xx and would otherwise be mistaken for corruption.
 ICON_FONT = "MarvelLCGIcons"
+
+# The markers of the document's numbered procedures -- "1." "2." "a." "b." --
+# which are set in their own face and nothing else uses it. That is what makes
+# the procedures recoverable: the Rules Reference writes several of its most
+# load-bearing rules as ordered steps ("When an enemy initiates an attack,
+# follow these steps: ..."), and it cites them that way too -- "during step
+# three of the villain phase" appears verbatim in three other entries. A
+# procedure flattened into prose cannot be cited that way, and cannot answer
+# "was a step added" at all, which is the question RR v1.8 poses (MARVEL-171).
+MARKER_FONT = "Exo2-Black"
 
 # Emphasis inside body text. Avenir-Black and Avenir-Heavy are both used for
 # bold; the document does not distinguish them semantically.
@@ -115,6 +126,9 @@ class Line:
     top: float = 0.0
     size: float = 0.0
     heading: bool = False
+    # The leading numbered-procedure marker, if this line starts a step:
+    # "1" for `1.`, "a" for `a.`. Empty when the line is ordinary text.
+    marker: str = ""
 
     @property
     def text(self) -> str:
@@ -143,6 +157,17 @@ def _is_content(char: Dict) -> bool:
             return size <= HEADING_ICON_MAX_SIZE
         return font == HEADING_FONT
     return any(body in font for body in BODY_FONTS) and size <= BODY_MAX_SIZE
+
+
+def _leading_marker(row: Sequence[Dict]) -> str:
+    """The step number or letter this line opens with, if any."""
+    text = ""
+    for char in row:
+        if _font(char) != MARKER_FONT:
+            break
+        text += char["text"]
+    match = re.match(r'\s*([0-9]+|[a-z])\.\s*$', text)
+    return match.group(1) if match else ""
 
 
 def _style(char: Dict) -> tuple:
@@ -194,7 +219,8 @@ def _to_lines(chars: Sequence[Dict]) -> List[Line]:
         # the entry above it.
         marker = next((c for c in row if c["text"].strip()), first)
         line = Line(x0=first["x0"], top=first["top"],
-                    size=marker.get("size", 0.0), heading=_is_heading(marker))
+                    size=marker.get("size", 0.0), heading=_is_heading(marker),
+                    marker=_leading_marker(row))
         for char in row:
             bold, italic, icon = _style(char)
             if (line.spans and line.spans[-1].bold == bold

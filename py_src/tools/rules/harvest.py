@@ -210,6 +210,26 @@ def build_index(entries: Sequence[Entry], legend: Dict[str, str]) -> Dict:
             "see_also_unresolved": [name for name in entry.see_also
                                     if slug(name) not in aliases],
         })
+        for step in entry.steps:
+            records.append({
+                "id": f"rr:{key}.step.{step.marker}",
+                "title": entry.title,
+                "path": [entry.title, f"step {step.marker}"],
+                "page": entry.page,
+                "fragment": _sentence(step.text),
+                "hash": _hash(step.text),
+            })
+            for sub in step.children:
+                records.append({
+                    "id": f"rr:{key}.step.{step.marker}.{sub.marker}",
+                    "title": entry.title,
+                    "path": [entry.title, f"step {step.marker}",
+                             f"step {step.marker}{sub.marker}"],
+                    "page": entry.page,
+                    "fragment": _sentence(sub.text),
+                    "hash": _hash(sub.text),
+                })
+
         for number, clause in enumerate(entry.clauses, start=1):
             records.append({
                 "id": f"rr:{key}.{number}",
@@ -277,6 +297,8 @@ def render_markdown(entry: Entry, known: Dict[str, str]) -> str:
         fields["redirect"] = entry.redirect
     else:
         fields["hash"] = _hash(entry.definition)
+    if entry.steps:
+        fields["steps"] = len(entry.steps)
     if entry.icons:
         fields["icons"] = entry.icons
     fields["see_also"] = [f"rr:{known[slug(name)]}" for name in entry.see_also
@@ -293,6 +315,15 @@ def render_markdown(entry: Entry, known: Dict[str, str]) -> str:
 
     if entry.definition:
         out += [entry.definition, ""]
+
+    if entry.steps:
+        for step in entry.steps:
+            out.append(f'<a id="{key}-step-{step.marker}"></a>')
+            out.append(f"{step.marker}. {step.text}")
+            for sub in step.children:
+                out.append(f'    <a id="{key}-step-{step.marker}-{sub.marker}"></a>')
+                out.append(f"    {sub.marker}. {sub.text}")
+            out.append("")
 
     for number, clause in enumerate(entry.clauses, start=1):
         out.append(f'<a id="{key}-{number}"></a>')

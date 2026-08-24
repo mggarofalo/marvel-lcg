@@ -4,13 +4,29 @@ title: "PLAYER ELIMINATION"
 document: "Rules Reference"
 version: "1.8"
 page: 34
-hash: "sha256:9208457a11571c04d5d03a7a4553be22ceb10249fc12b1f4b4a35a9c4438f9c7"
+hash: "sha256:a10dd48a49c8077a0d19724a1db4351bf678d22ad70aa8801aaff668b693de73"
+steps: 5
 see_also: ["rr:ability", "rr:deal-deal-an-encounter-card", "rr:engage", "rr:game-element", "rr:hit-points", "rr:identity", "rr:minion", "rr:per-player-icon", "rr:player", "rr:player-card", "rr:player-deck", "rr:player-s-play-area", "rr:winning-the-game"]
 ---
 
 # PLAYER ELIMINATION
 
-A player is eliminated from the game if their identity is defeated. This usually occurs when the character’s remaining hit points are reduced to zero. When a player is eliminated, perform the following in order: 1. If the eliminated player has the first player token, they pass it to the next clockwise player. 2. If there are minions engaged with the eliminated player, each of those minions engages the next clockwise player, retaining any tokens, attached cards, boost cards, tucked cards, and status cards on them. 3. For each card in the eliminated player’s play area that are not owned by that player, do the following:
+A player is eliminated from the game if their identity is defeated. This usually occurs when the character’s remaining hit points are reduced to zero. When a player is eliminated, perform the following in order:
+
+<a id="player-elimination-step-1"></a>
+1. If the eliminated player has the first player token, they pass it to the next clockwise player.
+
+<a id="player-elimination-step-2"></a>
+2. If there are minions engaged with the eliminated player, each of those minions engages the next clockwise player, retaining any tokens, attached cards, boost cards, tucked cards, and status cards on them.
+
+<a id="player-elimination-step-3"></a>
+3. For each card in the eliminated player’s play area that are not owned by that player, do the following:
+
+<a id="player-elimination-step-4"></a>
+4. Place each card owned by the eliminated player in the eliminated player’s discard pile.
+
+<a id="player-elimination-step-5"></a>
+5. Remove the eliminated player’s play area and each other game element within it *(hand, deck, discard pile, cards in play, hit point dial, etc.)* from the game. When a player is eliminated, the remaining players continue to play the game. Eliminated players no longer participate in the game but are considered to win or lose along with the rest of the group, depending on how they finish.
 
 <a id="player-elimination-1"></a>
 1. If that card is an attachment with the permanent keyword, resolve its “attach to” text. If it has none or that text does not have a valid target, remove the attachment from the game.
@@ -19,7 +35,7 @@ A player is eliminated from the game if their identity is defeated. This usually
 2. Remove each non-attachment card with the permanent keyword from the game.
 
 <a id="player-elimination-3"></a>
-3. Place each other card in its owner’s discard pile. 4. Place each card owned by the eliminated player in the eliminated player’s discard pile. 5. Remove the eliminated player’s play area and each other game element within it *(hand, deck, discard pile, cards in play, hit point dial, etc.)* from the game. When a player is eliminated, the remaining players continue to play the game. Eliminated players no longer participate in the game but are considered to win or lose along with the rest of the group, depending on how they finish.
+3. Place each other card in its owner’s discard pile.
 
 <a id="player-elimination-4"></a>
 4. If all players are eliminated, the game ends and the players lose.

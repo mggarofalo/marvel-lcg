@@ -5,12 +5,38 @@ document: "Rules Reference"
 version: "1.8"
 page: 4
 hash: "sha256:80de2a2eb5797cc0fdcf1f795de59481c2fcc2786f633cc91453c77049fd722b"
+steps: 5
 see_also: ["rr:action", "rr:alteration-effect", "rr:and", "rr:cancel", "rr:delayed-effect", "rr:forced", "rr:in-play-and-out-of-play", "rr:initiating-abilities", "rr:interrupt", "rr:labeled-ability", "rr:lasting-effects", "rr:qualifiers", "rr:replacement-effect", "rr:resource-ability", "rr:response", "rr:simultaneous-resolution", "rr:special", "rr:target", "rr:then", "rr:when-defeated-abilities", "rr:when-revealed-abilities", "rr:would"]
 ---
 
 # ABILITY
 
 An ability is game text on a card that explains what the card does *(or can do)*. Several examples can be seen in Appendix III of this Rules Reference.
+
+<a id="ability-step-1"></a>
+1. Constant abilities, delayed effects, and lasting effects.
+
+<a id="ability-step-2"></a>
+2. Interrupts
+    <a id="ability-step-2-a"></a>
+    a. Status card “**Forced Interrupt**” abilities.
+    <a id="ability-step-2-b"></a>
+    b. “**Forced Interrupt**” abilities.
+    <a id="ability-step-2-c"></a>
+    c. “**Interrupt**” abilities.
+
+<a id="ability-step-3"></a>
+3. “**Boost**” and “**When Revealed**” abilities.
+
+<a id="ability-step-4"></a>
+4. Responses
+    <a id="ability-step-4-a"></a>
+    a. “**Forced Response**” abilities.
+    <a id="ability-step-4-b"></a>
+    b. “**Response**” abilities.
+
+<a id="ability-step-5"></a>
+5. Consequential damage.
 
 <a id="ability-1"></a>
 1. Card abilities only interact with cards that are in play, unless the ability specifically refers to an out-of-play area or element.
@@ -60,6 +86,6 @@ An ability is game text on a card that explains what the card does *(or can do)*
 13. If the bold timing trigger of an ability contains the word “Hero” or “Alter-Ego,” the ability can only be used if the player triggering the ability is in the specified form.
 
 <a id="ability-14"></a>
-14. If quotation marks are used around a timing trigger and colon, the quoted text is not itself a timing trigger, but is instead referring to other abilities with that trigger. **Simultaneous Timing Priority** — Some abilities have timing priority over other abilities. In order, the timing priority of abilities with **the same triggering condition** is: 1. Constant abilities, delayed effects, and lasting effects. 2. Interrupts a. Status card “**Forced Interrupt**” abilities. b. “**Forced Interrupt**” abilities. c. “**Interrupt**” abilities. 3. “**Boost**” and “**When Revealed**” abilities. 4. Responses a. “**Forced Response**” abilities. b. “**Response**” abilities. 5. Consequential damage.
+14. If quotation marks are used around a timing trigger and colon, the quoted text is not itself a timing trigger, but is instead referring to other abilities with that trigger. **Simultaneous Timing Priority** — Some abilities have timing priority over other abilities. In order, the timing priority of abilities with **the same triggering condition** is:
 
 **See also:** [Action](action.md), [Alteration Effect](alteration-effect.md), [“And”](and.md), [Cancel](cancel.md), [Delayed Effect](delayed-effect.md), [Forced](forced.md), [In Play and Out of Play](in-play-and-out-of-play.md), [Initiating Abilities](initiating-abilities.md), [Interrupt](interrupt.md), [Labeled Ability](labeled-ability.md), [Lasting Effects](lasting-effects.md), [Qualifiers](qualifiers.md), [Replacement Effect](replacement-effect.md), [Resource Ability](resource-ability.md), [Response](response.md), [Simultaneous Resolution](simultaneous-resolution.md), [Special](special.md), [Target](target.md), [“Then”](then.md), [When Defeated Abilities](when-defeated-abilities.md), [When Revealed Abilities](when-revealed-abilities.md), [“Would”](would.md)

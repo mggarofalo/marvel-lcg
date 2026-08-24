@@ -42,15 +42,25 @@ repository could say. `rr:cost.3` says it:
 | `entries/*.md` | agents and humans | one linked document per entry |
 | `icons.json` | both | glyph legend, derived from the document |
 
-**261 entries, 1,118 citable records, 1,034 resolved cross-references.**
+**261 entries, 1,198 citable records, 1,034 resolved cross-references.**
 
-Citations are three-tier, because the grain a spec argues from is not the entry:
+Citations name the grain a spec actually argues from, which is not the entry:
 
 ```
-rr:cost           the entry, and its opening definition
-rr:cost.3         the third top-level clause
-rr:cost.3.1       the first qualification of that clause
+rr:cost                     the entry, and its opening definition
+rr:cost.3                   the third top-level clause
+rr:cost.3.1                 the first qualification of that clause
+rr:villain-phase.step.3     the third step of a numbered procedure
+rr:ability.step.2.a         a lettered sub-step
 ```
+
+The `step` tier exists because the Rules Reference writes several of its most
+load-bearing rules as ordered procedures and **cites them that way itself** —
+"during step three of the villain phase" is its own phrasing, in three separate
+entries. 90 step records across 13 entries. Without them the
+Simultaneous Timing Priority chart is a run-on sentence inside one clause, and
+"was a step added to the Attack process?" — a question RR v1.8 poses directly
+— cannot be asked at all.
 
 Ids are positional rather than derived from the text, so that a citation
 survives a rewording — which is exactly when it most needs to. Inserting a
@@ -117,9 +127,10 @@ covers both.
   expansion rulebooks are prose about one hero or one scenario, with no shared
   structure to parse — and they are where new keywords arrive. They need a
   different reader. This is the second leg of MARVEL-154.
-- **Numbered procedures render inline.** The document sets some rules as
-  ordered steps ("1. Give boost card… 2. …"). They are preserved as text but
-  are not separately citable.
+- **Sub-headings inside an entry are not split.** The overview entries use a
+  bold `Name —` sub-heading form (`Constant Abilities —`, `Triggered
+  Abilities —`). These are preserved as text but do not start a new clause, so
+  a citation lands on the clause they were appended to.
 
 ## Refreshing
 
