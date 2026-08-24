@@ -22,15 +22,15 @@ Obligation is an encounter card type that represents a commitment or obstacle th
 3. Identity-specific obligation cards are part of their associated identity’s identity-specific set.
 
 <a id="obligation-4"></a>
-4. Identity-specific obligation cards can only be used alongside an identity if those cards share a set icon with that identity. If an obligation card is revealed from the encounter deck and that obligation instructs that it must be given to a s specific player *(such as “Give to the Peter Parker player”)*, place that obligation into the player’s play area who controls the associated identity. That player must decide how to resolve the obligation.
+4. Identity-specific obligation cards can only be used alongside an identity if those cards share a set icon with that identity. If an obligation card is revealed from the encounter deck and that obligation instructs that it must be given to a specific player *(such as “Give to the Peter Parker player”)*, place that obligation into the player’s play area who controls the associated identity. That player must decide how to resolve the obligation.
 
 <a id="obligation-5"></a>
 5. If an obligation cannot be given to the specified player for any reason, ignore the card’s ability, remove it from the game, and reveal an additional encounter card. If a player reveals an obligation card from the encounter deck and that obligation does not instruct that it must be given to a specific player, the player places that obligation into their play area. That player must decide how to resolve the obligation.
 
 <a id="obligation-6"></a>
-6. Only the player with the obligation in their play area can trigger abilities or pay costs on that obligation. If a player draws an obligation card from their player deck, they place that obligation into their play area. The player does not draw a card to replace the
+6. Only the player with the obligation in their play area can trigger abilities or pay costs on that obligation. If a player draws an obligation card from their player deck, they place that obligation into their play area.
 
 <a id="obligation-7"></a>
-7. obligation unless they are refilling their hand to their hand size.
+7. The player does not draw a card to replace the obligation unless they are refilling their hand to their hand size.
 
 **See also:** [Card Types](card-types.md), [Encounter Card](encounter-card.md), [Encounter Deck](encounter-deck.md), [Enters Play](enters-play.md), [Form](form-change-form.md), [Identity](identity.md), [Leaves Play](leaves-play.md), [Player](player.md), [Player Elimination](player-elimination.md), [Removed from the Game](removed-from-the-game.md)

@@ -13,7 +13,7 @@ see_also: ["rr:attach-to", "rr:dash-value", "rr:encounter-card", "rr:enters-play
 Attachment is an encounter card type. When an attachment enters play, it attaches to another card or game element.
 
 <a id="attachment-1"></a>
-1. If an attachment attaches to a character, it may modify that character’s ATK, SCH, and/or THW values as indicated by the values in the associated fields on the attachment card.
+1. If an attachment attaches to a character, it may modify that character’s ATK, SCH, and/or THW values, as indicated by the values in the associated fields on the attachment card.
     <a id="attachment-1-1"></a>
     - If an attachment has a “SCH/THW” modifier, it modifies the attached character’s SCH if that character is a villain or minion, and modifies the attached character’s THW if that character is a hero or ally.
     <a id="attachment-1-2"></a>

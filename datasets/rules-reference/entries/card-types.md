@@ -4,16 +4,16 @@ title: "CARD TYPES"
 document: "Rules Reference"
 version: "1.8"
 page: 12
-hash: "sha256:5b713c495f2c90a5571317f1e4cb0e6a46997bf0cbe86ef0dd6ed93e2ed9c41b"
+hash: "sha256:556ce2821e619e733eded154500f36897c7f14054c5399da2b74ff74e01f2814"
 see_also: ["rr:ally", "rr:attachment", "rr:encounter-card", "rr:environment", "rr:event", "rr:identity", "rr:main-scheme-main-scheme-deck", "rr:minion", "rr:obligation", "rr:player-card", "rr:player-side-scheme", "rr:resource-card", "rr:side-scheme", "rr:support", "rr:treachery", "rr:upgrade", "rr:villain-villain-deck"]
 ---
 
 # CARD TYPES
 
-A card’s card type denotes various rules and game function associated with that card.
+A card’s card type denotes various rules and game functions associated with that card.
 
 <a id="card-types-1"></a>
-1. Ally, event, identity, player side scheme, resource, support, and upgrade cards are types of player cards
+1. Ally, event, identity, player side scheme, resource, support, and upgrade cards are types of player cards.
 
 <a id="card-types-2"></a>
 2. Attachment, environment, main scheme, minion, obligation, side scheme, treachery, and villain cards are types of encounter cards.

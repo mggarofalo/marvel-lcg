@@ -4,13 +4,13 @@ title: "SIDE SCHEME"
 document: "Rules Reference"
 version: "1.8"
 page: 40
-hash: "sha256:61b6275f519c54a629ac83b8450184b85e547340892024f7dcb66ab40441bc07"
+hash: "sha256:018e6d07e992c1e4c703dc525e2e90c342792ed37e23c08cc428e97c539ffede"
 see_also: ["rr:card-types", "rr:defeat", "rr:encounter-card", "rr:enters-play", "rr:leaves-play", "rr:main-scheme-main-scheme-deck", "rr:threat", "rr:thwart", "rr:villain-s-play-area"]
 ---
 
 # SIDE SCHEME
 
-Side scheme is an encounter card type that represents additional obstacles and distractions the heroes are confronted with. If a side scheme is revealed, it enters play and is placed nex to the main scheme deck in the villain’s play area.
+Side scheme is an encounter card type that represents additional obstacles and distractions the heroes are confronted with. If a side scheme is revealed, it enters play and is placed next to the main scheme deck in the villain’s play area.
 
 <a id="side-scheme-1"></a>
 1. Each side scheme enters play with an amount of threat on it equal to the card’s starting threat value *(indicated at the bottom of the card)*.

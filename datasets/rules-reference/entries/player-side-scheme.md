@@ -16,7 +16,7 @@ Player side schemes are missions the heroes undertake to facilitate defeating th
 1. When a player side scheme enters play, it is placed next to the main scheme in the villain’s play area.
 
 <a id="player-side-scheme-2"></a>
-2. Each player side scheme enters play with an amount of threat on it equal to its starting threat value.,
+2. Each player side scheme enters play with an amount of threat on it equal to its starting threat value.
 
 <a id="player-side-scheme-3"></a>
 3. The number of player side schemes in play at any time is limited by the player side scheme limit.

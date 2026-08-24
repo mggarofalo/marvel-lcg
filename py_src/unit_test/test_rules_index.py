@@ -184,5 +184,52 @@ class TestRulesIndex(unittest.TestCase):
                         "no Cost clause states that paying spends generated resources")
 
 
+class TestColumnSplit(unittest.TestCase):
+    """The gutter is found, and a split that is not a gutter is rejected.
+
+    A fixed 300pt split shipped in the first version of the harvester and
+    corrupted 33 of 261 entries: this document sets recto and verso with
+    different margins, so on half its pages 300pt lands inside the left
+    column's text. The last character of a long line was filed under the other
+    column and reappeared elsewhere -- "a hero does not exhaust" became "a hero
+    does not exhaus". Nothing was lost, so no count noticed.
+    """
+
+    @staticmethod
+    def char(x0, x1):
+        return {"x0": x0, "x1": x1}
+
+    def test_finds_the_widest_empty_band(self):
+        from tools.rules.geometry import column_split
+        chars = ([self.char(x, x + 5) for x in range(210, 280, 5)]
+                 + [self.char(x, x + 5) for x in range(330, 390, 5)])
+        self.assertAlmostEqual(column_split(chars), 306.0, delta=6.0)
+
+    def test_a_single_column_page_falls_back(self):
+        from tools.rules.geometry import COLUMN_SPLIT, column_split
+        chars = [self.char(x, x + 5) for x in range(205, 395, 5)]
+        self.assertEqual(column_split(chars), COLUMN_SPLIT)
+
+    def test_no_characters_falls_back(self):
+        from tools.rules.geometry import COLUMN_SPLIT, column_split
+        self.assertEqual(column_split([]), COLUMN_SPLIT)
+
+    def test_straddling_reports_characters_the_split_cuts(self):
+        from tools.rules.geometry import straddling
+        chars = [self.char(290, 296), self.char(296, 302), self.char(310, 316)]
+        self.assertEqual(straddling(chars, 300.0), [chars[1]])
+        self.assertEqual(straddling(chars, 306.0), [])
+
+    def test_the_detected_split_never_cuts_a_character(self):
+        """The invariant, on synthetic pages of both margin layouts."""
+        from tools.rules.geometry import column_split, straddling
+        for left_end, right_start in ((302, 321), (290, 308)):
+            with self.subTest(left_end=left_end):
+                chars = ([self.char(x, x + 4) for x in range(60, left_end, 4)]
+                         + [self.char(x, x + 4)
+                            for x in range(right_start, 540, 4)])
+                self.assertEqual(straddling(chars, column_split(chars)), [])
+
+
 if __name__ == "__main__":
     unittest.main()

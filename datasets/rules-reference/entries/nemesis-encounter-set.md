@@ -4,13 +4,13 @@ title: "NEMESIS ENCOUNTER SET"
 document: "Rules Reference"
 version: "1.8"
 page: 30
-hash: "sha256:7ea3800c65f3b45419ce48f07d01665daf2fdbc6b8edc7a173c40f3601171f7c"
+hash: "sha256:a446bcdd5947b2f93e673dec429b247b2d40df9d04198aca9edc50e982ad9e8a"
 see_also: ["rr:identity", "rr:identity-specific-card", "rr:in-play-and-out-of-play", "rr:player"]
 ---
 
 # NEMESIS ENCOUNTER SET
 
-Each identity in the game comes with an associated nemesi encounter set. At the start of the game, each player sets aside the cards from their associated nemesis set, out of play. Cards drawn from the encounter deck may instruct the player on how to bring their nemesis set into play.
+Each identity in the game comes with an associated nemesis encounter set. At the start of the game, each player sets aside the cards from their associated nemesis set, out of play. Cards drawn from the encounter deck may instruct the player on how to bring their nemesis set into play.
 
 <a id="nemesis-encounter-set-1"></a>
 1. A nemesis encounter set is a subset of an identity- specific set.

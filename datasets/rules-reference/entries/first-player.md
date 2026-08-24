@@ -19,7 +19,7 @@ A first player is determined by the players at the beginning of the game. The fi
 2. If an encounter card requires a card ability to be resolved, a game function to be performed, or a choice to be made but does not specify which player should act, the first player does so.
 
 <a id="first-player-3"></a>
-3. If two or more effects would resolve simultaneously, the first player decides the order in which to resolve them. The first player has timing priority in the following situations
+3. If two or more effects would resolve simultaneously, the first player decides the order in which to resolve them. The first player has timing priority in the following situations:
 
 <a id="first-player-4"></a>
 4. The first player has the first opportunity to use an interrupt at each appropriate game moment. Interrupt opportunities then proceed among the remaining players in player order.

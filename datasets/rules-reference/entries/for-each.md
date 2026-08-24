@@ -25,7 +25,9 @@ see_also: ["rr:ability", "rr:target"]
     <a id="for-each-3-1"></a>
     - The game state updates after each instance *(for example, if a minion or side scheme is defeated)*.
     <a id="for-each-3-2"></a>
-    - Responses can be triggered after each instance.: *For example, if a player is engaged with a guard minion and uses an effect that says “for each resource you spent this way, choose an enemy and deal 2 damage to it,” that player can defeat the guard minion with one instance of 2 damage, making the villain a valid target for further instances. That player can trigger a response ability like “After you deal damage to an enemy” after each instance.*
+    - Responses can be triggered after each instance.
+    <a id="for-each-3-3"></a>
+    - *For example, if a player is engaged with a guard minion and uses an effect that says “for each resource you spent this way, choose an enemy and deal 2 damage to it,” that player can defeat the guard minion with one instance of 2 damage, making the villain a valid target for further instances. That player can trigger a response ability like “After you deal damage to an enemy” after each instance.*
 
 <a id="for-each-4"></a>
 4. If another ability modifies a “for each” effect, that modifier is applied to each instance of the “for each” effect. *(For example, Flurry of Blades is an event that has the effect: “For each Psi-Katana, choose an enemy and deal 2 damage to it.” If modified by an effect that says “that event deals 1 additional damage,” Flurry of Blades deals 3 damage to each chosen enemy.)*

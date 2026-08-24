@@ -13,7 +13,7 @@ see_also: ["rr:in-play-and-out-of-play", "rr:keywords", "rr:leaves-play", "rr:ow
 A card with the permanent keyword cannot be defeated, leave play, or have any part of its text box blanked, except by card abilities in the same set *(hero set, scenario set, or modular set)*. *(For example, an ability on a hero card can cause a permanent card within that hero’s set to leave play.)*
 
 <a id="permanent-1"></a>
-1. The permanent keyword is equivalent to the following constant ability: “Set this card aside during setup. Effects on cards not from this card’s set cannot defea this card, remove this card from play, or blank any part of its text box.”
+1. The permanent keyword is equivalent to the following constant ability: “Set this card aside during setup. Effects on cards not from this card’s set cannot defeat this card, remove this card from play, or blank any part of its text box.”
 
 <a id="permanent-2"></a>
 2. Permanent cards are set aside before step 1 of setup and are put into play later by abilities on other cards.

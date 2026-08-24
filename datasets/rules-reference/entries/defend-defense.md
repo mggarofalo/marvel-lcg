@@ -58,7 +58,7 @@ During an enemy attack, a player may defend against that attack using cards they
     - Any constant or boost abilities that refer to “you” refer to the defending player.
 
 <a id="defend-defense-6"></a>
-6. If no character is used to defend against an enemy attack, that attack is considered undefended. Additionally, if a defending ally is defeated before damage from the attack is dealt *(such as through a “Boost” ability)*, the attack is considered undefended
+6. If no character is used to defend against an enemy attack, that attack is considered undefended. Additionally, if a defending ally is defeated before damage from the attack is dealt *(such as through a “Boost” ability)*, the attack is considered undefended.
 
 <a id="defend-defense-7"></a>
 7. Abilities that trigger after a character defends an attack resolve after that attack ends.
