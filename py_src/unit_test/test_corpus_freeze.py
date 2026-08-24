@@ -327,7 +327,16 @@ class TestShards(Base):
                        encoding="utf-8") as handle:
             bundle = json.load(handle)
         self.assertEqual(list(bundle), ["00000-rhino-1/a.json"])
-        self.assertEqual(bundle["00000-rhino-1/a.json"]["campaign"]["name"], "Rhino")
+        # The scene's *text*, not its parsed document. The manifest hashes the
+        # bytes on disk and scenes are not canonical JSON, so a shard holding
+        # parsed documents cannot round-trip -- see
+        # `unit_test/test_corpus_expand.py`.
+        contents = bundle["00000-rhino-1/a.json"]
+        self.assertIsInstance(contents, str)
+        with open(os.path.join(self.root, "00000-rhino-1", "a.json"),
+                  encoding="utf-8") as handle:
+            self.assertEqual(contents, handle.read())
+        self.assertEqual(json.loads(contents)["campaign"]["name"], "Rhino")
 
     def test_a_scenario_name_with_awkward_characters_still_makes_a_filename(self):
         self.corpus.Scene("00000-x-1", "a.json", Scene(name="Mutagen Formula!"))

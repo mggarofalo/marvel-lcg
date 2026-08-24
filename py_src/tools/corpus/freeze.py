@@ -289,9 +289,17 @@ def Shard(root: str, manifest: Dict[str, Any], out: str) -> List[str]:
     for scenario, paths in sorted((manifest.get("shards") or {}).items()):
         bundle = {}
         for path in paths:
+            # The scene's **exact text**, not its parsed document. The manifest
+            # hashes the bytes on disk, and those bytes are not canonical JSON:
+            # re-serialising a scene loses roughly 0.3% of its length to
+            # separator and key-order differences, so a corpus expanded from
+            # shards that stored parsed documents could never match the
+            # manifest that describes it. Since the shards are the only
+            # published artefact, that made the published corpus unverifiable
+            # against its own manifest -- see `tools.corpus.expand`.
             with open(os.path.join(root, path.replace("/", os.sep)),
                       encoding="utf-8") as handle:
-                bundle[path] = json.load(handle)
+                bundle[path] = handle.read()
         name = "".join(char if char.isalnum() or char in "-_" else "_"
                        for char in scenario.lower()) or "unnamed"
         target = os.path.join(out, f"{name}.json.gz")

@@ -271,11 +271,14 @@ jobs:
             py_src/verify.json
           retention-days: 14
 
-      # MARVEL-18. There is no frozen corpus yet — freezing one is an
-      # operational step needing hours of generation and the corpus repo — so
-      # what CI can keep true is that the *mechanism* works, on a corpus that
-      # crossed an OS boundary to get here. When a real corpus is frozen, its
-      # manifest is checked into this repo and this step points at that instead.
+      # MARVEL-18. This freezes the corpus CI just generated, not the frozen
+      # one — deliberately. The gate here is that the *mechanism* works on a
+      # corpus that crossed an OS boundary to get here, and it has to be able
+      # to fail, which the tamper step below is for.
+      #
+      # The published corpus is checked by the `frozen-corpus` job below, which
+      # is a different claim: that the bytes in mggarofalo/marvel-lcg-corpus
+      # are the ones datasets/corpus/manifest.json describes.
       #
       # Quarantined scenes are excluded by name: a replay that did not
       # reproduce must not enter the corpus.
@@ -304,6 +307,57 @@ jobs:
           PY
           if python -m tools.corpus.freeze ./corpus/ --check ./corpus-manifest.json; then
             echo "::error::the integrity check accepted a modified corpus"
+            exit 1
+          fi
+          echo "rejected as expected"
+
+  frozen-corpus:
+    name: the published corpus matches its manifest
+    runs-on: ubuntu-latest
+    # 631 MB of shards to fetch and 9.7 GiB to expand, so it is nightly rather
+    # than per-push, like everything else in this workflow.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: py_src/.python-version
+
+      # Pinned by SHA, not by branch. A moving pin would make this job assert
+      # "the corpus matches itself", which is not a claim about anything.
+      - name: Fetch the pinned corpus
+        working-directory: .
+        run: |
+          PIN=$(grep -oE '`[0-9a-f]{40}`' datasets/corpus/UPSTREAM.md | head -1 | tr -d '`')
+          echo "pinned at $PIN"
+          git clone --no-checkout https://github.com/mggarofalo/marvel-lcg-corpus.git corpus-repo
+          git -C corpus-repo checkout --detach "$PIN"
+
+      # Every scene hashed as it lands, then the root hash over the whole set —
+      # per-file hashes cannot notice an omission and the root hash can.
+      - name: Expand it, and check every scene against the manifest
+        run: |
+          python -m tools.corpus.expand ../corpus-repo/ \
+            --out ./corpus/ --manifest ../datasets/corpus/manifest.json
+
+      # A gate that cannot fail is not a gate (MARVEL-43, MARVEL-65).
+      - name: And it notices a shard that changed underneath it
+        run: |
+          python - <<'PY'
+          import gzip, glob, json
+          shard = sorted(glob.glob("../corpus-repo/*.json.gz"))[0]
+          with gzip.open(shard, "rb") as handle:
+              bundle = json.loads(handle.read().decode("utf-8"))
+          key = sorted(bundle)[0]
+          bundle[key] = bundle[key].replace('"rules":', '"rules_tampered":', 1)
+          with gzip.GzipFile(shard, "wb", compresslevel=9, mtime=0) as handle:
+              handle.write(json.dumps(bundle).encode("utf-8"))
+          print("tampered", shard)
+          PY
+          if python -m tools.corpus.expand ../corpus-repo/ \
+               --out ./tampered/ --manifest ../datasets/corpus/manifest.json; then
+            echo "::error::the integrity check accepted a modified shard"
             exit 1
           fi
           echo "rejected as expected"
