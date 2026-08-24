@@ -151,9 +151,127 @@ class TestAnAreaIsNotAZoneName(unittest.TestCase):
 
         events = model.Derive(before, after)
         moved = events[0]
-        self.assertEqual(moved["from"], {"zone": "HandsArea", "owner": 1, "host": -1})
+        self.assertEqual(moved["from"],
+                         {"zone": "HandsArea", "owner": 1, "host": -1, "id": ""})
         self.assertEqual(moved["to"],
-                         {"zone": "UpgradesArea", "owner": 1, "host": 9})
+                         {"zone": "UpgradesArea", "owner": 1, "host": 9, "id": ""})
+
+    def testTheIdentitySlotIsEmptyOnADigestBoard(self):
+        """A digest cannot name an area, so the slot travels empty rather than absent.
+
+        Present-and-empty rather than missing so that a reader never has to
+        decide whether a descriptor came from a digest or an engine: the key is
+        always there, and `""` says "this area was described, not identified".
+        """
+        before = Board(Card(1, "HandsArea", 0))
+        after = Board(Card(1, "DiscardPile", 0))
+        moved = model.Derive(before, after)[0]
+        self.assertEqual(moved["from"]["id"], "")
+
+
+class TestALandingIndexDescribesTheFinalArea(unittest.TestCase):
+    """MARVEL-163. Found by replaying the corpus against engine state.
+
+    The index a card carries is read off the state the step *ends* in, where
+    every one of the step's arrivals is already present. Splicing arrivals into
+    an area one source at a time therefore puts the early ones where the late
+    ones are going to be.
+
+    This never showed up while the round trip was derived from digest diffs,
+    because `Derive` predicted the positions correctly and so emitted no
+    `AreaReordered` to disagree with -- the prediction and the placement were
+    two pieces of code, and only `Apply` was wrong.
+    """
+
+    def testTwoSourcesLandingInOneArea(self):
+        before = Board(
+            Card(1, "EncounterDiscardPile", 0),
+            Card(2, "EncounterDeck", 0),
+            Card(3, "ObligationsArea", 0))
+        # Card 3 lands *under* card 2, even though its source sorts later.
+        after = Board(
+            Card(1, "EncounterDiscardPile", 0),
+            Card(3, "EncounterDiscardPile", 1),
+            Card(2, "EncounterDiscardPile", 2))
+
+        events = model.Derive(before, after)
+        self.assertEqual(Kinds(events).count("CardsMoved"), 2)
+        self.assertNotIn("AreaReordered", Kinds(events))
+        self.assertEqual(model.Apply(before, events), after)
+
+    def testAnArrivalDoesNotDisplaceAnEarlierOne(self):
+        """Four arrivals from three sources, interleaved with what was there."""
+        before = Board(
+            Card(1, "EncounterDiscardPile", 0),
+            Card(2, "EncounterDeck", 0), Card(3, "EncounterDeck", 1),
+            Card(4, "DealtEncounterCardsDeck", 0),
+            Card(5, "RevealingArea", 0))
+        after = Board(
+            Card(1, "EncounterDiscardPile", 0),
+            Card(5, "EncounterDiscardPile", 1),
+            Card(2, "EncounterDiscardPile", 2),
+            Card(4, "EncounterDiscardPile", 3),
+            Card(3, "EncounterDiscardPile", 4))
+
+        events = model.Derive(before, after)
+        self.assertEqual(model.Apply(before, events), after)
+
+
+class TestAnEngineBoardIdentifiesItsAreas(unittest.TestCase):
+    """The area key `tools/events/state.py` supplies, and why it is needed.
+
+    Measured over the corpus: `(zone, owner, host)` names more than one area
+    for `AsideDeck` and `RemovedArea` in every game with more than one player.
+    A board built from engine objects carries the area's own object id, and the
+    triple beside it becomes description rather than address.
+    """
+
+    @staticmethod
+    def Engine(object_id, zone, index, area_id, *, owner=0, host=-1):
+        record = Card(object_id, zone, index, owner=owner, host=host)
+        record["area"] = {"zone": zone, "owner": owner, "host": host,
+                          "id": area_id}
+        return record
+
+    def testTwoAreasSharingATripleStayApart(self):
+        """Two set-aside decks, both `('AsideDeck', -1, -1)`, both from zero."""
+        engine = self.Engine
+        before = Board(
+            engine(1, "AsideDeck", 0, "20", owner=-1),
+            engine(2, "AsideDeck", 1, "20", owner=-1),
+            engine(3, "AsideDeck", 0, "35", owner=-1),
+            engine(4, "AsideDeck", 1, "35", owner=-1))
+        after = Board(
+            engine(1, "AsideDeck", 0, "20", owner=-1),
+            engine(2, "AsideDeck", 1, "20", owner=-1),
+            engine(4, "AsideDeck", 0, "35", owner=-1),
+            engine(3, "AsideDeck", 1, "35", owner=-1))
+
+        events = model.Derive(before, after)
+        # One shuffle, in one of the two decks, and it names which.
+        self.assertEqual(Kinds(events), ["AreaReordered"])
+        self.assertEqual(events[0]["area"]["id"], "35")
+        self.assertEqual(model.Apply(before, events), after)
+
+    def testAMoveDoesNotRewriteTheController(self):
+        """On an engine board, `owner` is the card's and the area's is separate.
+
+        A side scheme controlled by player 3 moving into the scenario's
+        side-scheme area keeps its controller. On a digest board the two are
+        the same field and the move implies a change of control; here it must
+        not.
+        """
+        engine = self.Engine
+        before = Board(engine(1, "HandsArea", 0, "22", owner=3))
+        after = Board(engine(1, "SideSchemesArea", 0, "18", owner=3))
+        after[1]["area"]["owner"] = -1
+
+        events = model.Derive(before, after)
+        self.assertEqual(Kinds(events), ["CardsMoved"])
+        applied = model.Apply(before, events)
+        self.assertEqual(applied[1]["owner"], 3)
+        self.assertEqual(applied[1]["area"]["owner"], -1)
+        self.assertEqual(applied, after)
 
 
 class TestTheRestOfTheVocabulary(unittest.TestCase):

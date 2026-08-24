@@ -87,7 +87,7 @@ UNIVERSAL = ("kind", "trigger", "verb")
 # -- deriving ------------------------------------------------------------
 
 
-def _Area(record: Record) -> Tuple[str, int, int]:
+def _Area(record: Record) -> Tuple[str, Any, int, str]:
     """Which ordered list a card sits in.
 
     **Not the zone name.** `HandsArea` is one name for as many areas as there
@@ -97,8 +97,30 @@ def _Area(record: Record) -> Tuple[str, int, int]:
 
     Getting this wrong merges two players' hands into one list and renumbers
     across the join, which is what the first version of this file did.
+
+    Two kinds of board reach this. A **digest board** has only what a digest
+    records, so the triple is the best available guess and the fourth slot is
+    empty -- `_Split` fills it when the guess collides. An **engine board**
+    (`tools/events/state.py`) carries the area's real object id, and then there
+    is no guessing: the fourth slot is the identity and the first three are
+    description. MARVEL-163 is the difference between the two.
     """
-    return (record["zone"], record["owner"], record["host"])
+    area = record.get("area")
+    if area is not None:
+        return (area["zone"], area["owner"], area["host"], str(area["id"]))
+    return (record["zone"], record["owner"], record["host"], "")
+
+
+def _Descriptor(area: Tuple[str, Any, int, str]) -> Dict[str, Any]:
+    """An area key, as it travels on an event.
+
+    `id` is empty on a digest board and is the area's own object id on an
+    engine board. It is carried rather than dropped because `Apply` places
+    cards by the descriptor alone -- an attach changes both a card's host and
+    its area, and recomputing the key mid-flight would make the result depend
+    on which of the two events happened to be processed first.
+    """
+    return {"zone": area[0], "owner": area[1], "host": area[2], "id": area[3]}
 
 
 def _Split(board: Board, members: List[int]) -> List[List[int]]:
@@ -153,33 +175,54 @@ def _Zones(board: Board) -> Dict[Any, List[int]]:
         # qualify the key with the lowest id in each run so the parts stay
         # distinguishable across a step.
         for run in _Split(board, members):
-            zones[key + (min(run),)] = sorted(
+            zones[key[:3] + (f"#{min(run)}",)] = sorted(
                 run, key=lambda object_id: (board[object_id]["index"], object_id))
     return zones
 
 
-def _PredictPositions(before: Board, moves: List[Tuple[int, Any, Any, int]]
-                      ) -> Dict[Tuple[str, int, int], List[int]]:
-    """Where every card lands if the only thing that happened was the moves.
+def _Settle(zones: Dict[Any, List[int]],
+            moves: Sequence[Tuple[int, Any, Any, int]]) -> Dict[Any, List[int]]:
+    """Place every mover, in the one order that makes a landing index mean
+    what it says.
 
-    Remove the movers from their source areas, keeping the rest in relative
-    order, then insert each into its destination at its recorded index. Anything
-    that still does not match afterwards is a real reorder.
+    **A landing index is a position in the area as the step leaves it, not as
+    the area stands part-way through.** That is forced by where the number
+    comes from: it is read off the recorded next state, where all of the step's
+    arrivals are already present. So every removal happens before any
+    insertion, and the insertions run in destination-index order.
+
+    Getting that wrong is not theoretical. In one Rhino game, an encounter
+    discard pile received five cards in a single step from four different
+    areas. Applying each source's batch as it came inserted the third arrival
+    at the index the fifth was going to occupy, and three cards came out in the
+    wrong order -- with no event to blame, because `Derive` had predicted the
+    positions correctly and therefore emitted no `AreaReordered`.
+
+    `Derive` and `Apply` both call this for exactly that reason. When the
+    prediction and the placement are two pieces of code, they can disagree, and
+    a disagreement between them is invisible: the derived stream looks complete
+    and the applied result is wrong. See MARVEL-163.
     """
-    zones = {area: list(members) for area, members in _Zones(before).items()}
-
     for object_id, source, _, _ in moves:
-        if object_id in zones.get(source, ()):
+        if source is not None and object_id in zones.get(source, ()):
             zones[source].remove(object_id)
 
-    # Destination index order, so two cards landing in one area do not depend on
-    # dictionary iteration order to end up in the right slots.
     for object_id, _, target, index in sorted(moves, key=lambda m: (str(m[2]), m[3])):
         members = zones.setdefault(target, [])
         position = len(members) if index < 0 or index > len(members) else index
         members.insert(position, object_id)
 
     return zones
+
+
+def _PredictPositions(before: Board, moves: List[Tuple[int, Any, Any, int]]
+                      ) -> Dict[Any, List[int]]:
+    """Where every card lands if the only thing that happened was the moves.
+
+    Anything that still does not match afterwards is a real reorder.
+    """
+    return _Settle({area: list(members) for area, members in _Zones(before).items()},
+                   moves)
 
 
 def Derive(before: Board, after: Board, trigger: str = "", verb: str = "") -> List[Event]:
@@ -198,7 +241,7 @@ def Derive(before: Board, after: Board, trigger: str = "", verb: str = "") -> Li
             by_area[_Area(after[object_id])].append(after[object_id])
         for area, records in sorted(by_area.items(), key=str):
             emit("CardsCreated",
-                 area={"zone": area[0], "owner": area[1], "host": area[2]},
+                 area=_Descriptor(area),
                  cards=records)
 
     # Moves first: everything positional is downstream of them.
@@ -213,8 +256,8 @@ def Derive(before: Board, after: Board, trigger: str = "", verb: str = "") -> Li
         by_pair[(source, target)].append((object_id, index))
     for (source, target), cards in sorted(by_pair.items(), key=lambda item: str(item[0])):
         emit("CardsMoved",
-             **{"from": {"zone": source[0], "owner": source[1], "host": source[2]},
-                "to": {"zone": target[0], "owner": target[1], "host": target[2]},
+             **{"from": _Descriptor(source),
+                "to": _Descriptor(target),
                 "cards": sorted(cards, key=lambda pair: pair[1])})
 
     # Anything the moves do not account for is a genuine reordering.
@@ -225,7 +268,7 @@ def Derive(before: Board, after: Board, trigger: str = "", verb: str = "") -> Li
         got = predicted.get(area, [])
         if want != got:
             emit("AreaReordered",
-                 area={"zone": area[0], "owner": area[1], "host": area[2]},
+                 area=_Descriptor(area),
                  order=want)
 
     # Everything else is per card and position-independent.
@@ -265,8 +308,26 @@ def Derive(before: Board, after: Board, trigger: str = "", verb: str = "") -> Li
 # -- applying ------------------------------------------------------------
 
 
-def _Key(descriptor: Dict[str, Any]) -> Tuple[str, int, int]:
-    return (descriptor["zone"], descriptor["owner"], descriptor["host"])
+def _Key(descriptor: Dict[str, Any]) -> Tuple[str, Any, int, str]:
+    return (descriptor["zone"], descriptor["owner"], descriptor["host"],
+            str(descriptor.get("id", "")))
+
+
+def _Place(record: Record, descriptor: Dict[str, Any]) -> None:
+    """Move one card into the area `descriptor` names.
+
+    On an **engine board** the area is its own object, so only the area is
+    written; the card's `owner` is its controller and changes through
+    `ControlChanged` or not at all. On a **digest board** `owner` is part of
+    the area key, so a move implies it -- `Derive` emits the `ControlChanged`
+    as well, and applying both is idempotent.
+    """
+    record["zone"] = descriptor["zone"]
+    record["host"] = descriptor["host"]
+    if "area" in record:
+        record["area"] = dict(descriptor)
+    else:
+        record["owner"] = descriptor["owner"]
 
 
 def Apply(before: Board, events: Sequence[Event]) -> Board:
@@ -283,28 +344,31 @@ def Apply(before: Board, events: Sequence[Event]) -> Board:
     }
     zones = {area: list(members) for area, members in _Zones(board).items()}
 
+    # Everything positional is settled together, before anything else runs.
+    # `_Settle` says why; the short version is that a landing index describes
+    # the area the step leaves behind, so the arrivals cannot be spliced in one
+    # event at a time.
+    arrivals: List[Tuple[int, Any, Any, int]] = []
     for event in events:
-        kind = event["kind"]
-
-        if kind == "CardsCreated":
+        if event["kind"] == "CardsCreated":
             target = _Key(event["area"])
             for record in event["cards"]:
                 copy = {**record, "fields": dict(record.get("fields") or {})}
                 board[copy["id"]] = copy
-                members = zones.setdefault(target, [])
                 if copy["index"] >= 0:
-                    members.insert(min(copy["index"], len(members)), copy["id"])
-
-        elif kind == "CardsMoved":
-            source, target = _Key(event["from"]), _Key(event["to"])
+                    arrivals.append((copy["id"], None, target, copy["index"]))
+        elif event["kind"] == "CardsMoved":
+            target = _Key(event["to"])
             for object_id, index in event["cards"]:
-                if object_id in zones.get(source, ()):
-                    zones[source].remove(object_id)
-                record = board[object_id]
-                record["zone"], record["owner"], record["host"] = target
-                members = zones.setdefault(target, [])
-                position = len(members) if index < 0 or index > len(members) else index
-                members.insert(position, object_id)
+                _Place(board[object_id], event["to"])
+                arrivals.append((object_id, _Key(event["from"]), target, index))
+    _Settle(zones, arrivals)
+
+    for event in events:
+        kind = event["kind"]
+
+        if kind in ("CardsCreated", "CardsMoved"):
+            continue
 
         elif kind == "AreaReordered":
             zones[_Key(event["area"])] = list(event["order"])
