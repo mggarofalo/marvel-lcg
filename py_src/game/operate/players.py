@@ -74,6 +74,29 @@ class Players:
             if discard_effect:
                 return
 
+            # Nothing was fulfillable. Asking again cannot help: this is a
+            # *forced* choice, so an empty answer means no offered ability
+            # could resolve, and nothing about the board changed while finding
+            # that out -- the next iteration builds the same effects, offers
+            # the same option and fails the same way, forever.
+            #
+            # It was reachable before MARVEL-158 only because a failed play
+            # discarded the card it had moved to the processing area, so the
+            # hand shrank on every pass and the loop eventually terminated by
+            # corrupting the game state. Fixing that (a failed play must not
+            # change the game) removed the accidental exit and left the loop
+            # unbounded, which is how one scenario/hero/seed combination came
+            # to spin at 100% CPU for the full generation timeout
+            # (MARVEL-172).
+            #
+            # `ResolveEffect` has already logged the failure, so the run
+            # carries an error and the scene will be quarantined rather than
+            # entering the corpus as if the discard had happened.
+            Log.Debug("EFFECT",
+                      f"{player} could not discard {size} resource icon(s); "
+                      "no offered ability resolved")
+            return
+
     @staticmethod
     def DrawUp(targets: Sequence['CardFace'], size: int|Literal["Max"], by_effect: 'Effect'):
         Players.ForEachTargets(
