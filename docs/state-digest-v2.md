@@ -311,15 +311,54 @@ schema.
 ```
 
 - **No whitespace.** `json.dumps(..., separators=(",", ":"))`.
-- **ASCII only.** `ensure_ascii=True`, so a trait or card id outside ASCII
-  encodes as `\uXXXX` identically in every language rather than as whatever the
-  local JSON writer prefers.
+- **ASCII only, and never actually escaped.** `ensure_ascii=True`. See
+  [Why no string here needs escaping](#why-no-string-here-needs-escaping) — the
+  setting is retained, but the contract is that it has nothing to do.
 - **Fixed key order.** Top level `v` then `cards`; within a record, the eight
   keys in the table order; within `fields`, sorted by code point.
 - **Cards ascending by `id`.**
 - Integers in decimal with no sign on positives; booleans as `true` / `false`.
 - The empty document is `{"v":2,"cards":[]}` — **not** the empty string. An
   absent digest and an empty one mean different things to the comparison.
+
+### Why no string here needs escaping
+
+The original wording of the bullet above claimed `ensure_ascii=True` made a
+non-ASCII trait "encode identically in every language." That is not true, and
+the correction matters, because it is what decides whether a port can use its
+platform's JSON writer or has to hand-roll one.
+
+**Two native writers cannot be made to agree on an escape.** Python emits
+`\u001f`; .NET emits `\u001F`. Hex case is not configurable on either side, and
+it applies to every escape sequence. So the moment a character needs escaping at
+all, byte equality is lost, and no combination of settings recovers it.
+
+**They agree on everything that needs no escape.** Python's `json.dumps` and
+.NET's `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` produce identical bytes for
+any string containing none of `"`, `\`, a control character, or anything above
+ASCII.
+
+**Every string a digest contains is in that set**, and by construction rather
+than luck: the three string-valued positions are the card id, the zone name and
+the field name, and all three are identifiers. Measured across the whole domain
+— 3,999 card ids, 96 zone names, and 257 field names including one `t_` key per
+trait in the card database — all 4,352 are printable ASCII, and both writers
+agree on all 4,352.
+
+The margin is one character wide. `JavaScriptEncoder.Default` scores 4,349:
+it escapes the apostrophe, and three traits carry one — `'POOL`,
+`BATROC'S BRIGADE` and `CROSSFIRE'S CREW`. That is the entire reason the C#
+side names its encoder rather than accepting the default.
+
+**So the rule is a constraint on the data, not on the writer:** no string in a
+digest may leave printable ASCII, `0x20`–`0x7E`. It is enforced over the card
+database by `unit_test/test_digest_domain.py`, and over the fixture by
+`DigestVectorTests`. A card *name* would break it immediately — names carry
+curly apostrophes and accents — which is a standing reason not to put one here.
+
+A useful side effect: because the domain needs no escaping, the digest does not
+depend on any particular runtime's escaping table, so it cannot drift when .NET
+or CPython change one.
 
 `Fingerprint()` is `sha256` of that text. Nothing records it today, because the
 document is what makes a mismatch legible. It is specified so that a corpus
@@ -450,7 +489,10 @@ For a C# port targeting byte-identical output, in dependency order:
    An empty `fields` means the card registers none, not that the zone was
    skipped.
 8. **Serialise** exactly as specified above — key order, code-point-sorted
-   fields, no whitespace, ASCII escapes.
+   fields, no whitespace. Use the platform's JSON writer; do not hand-roll an
+   escaper. Configure it to escape only what JSON requires (in .NET,
+   `JavaScriptEncoder.UnsafeRelaxedJsonEscaping`) and assert the domain rule in
+   [Why no string here needs escaping](#why-no-string-here-needs-escaping).
 9. **Compare as strings**, and diff structurally only when they differ.
 10. **Reject by default.**
 

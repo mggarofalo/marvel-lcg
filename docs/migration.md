@@ -39,14 +39,14 @@ The last two rows are now recomputed on every run of `python -m tools.cards.extr
 
 Chosen over TypeScript and Rust. Determinism control is better than TypeScript's, `yield return` iterators model suspend-for-player-input directly, and **Reqnroll** (the maintained SpecFlow successor) is the strongest Gherkin tooling available — which matters given the testing strategy below. Costs accepted: slower compile loop than TS, and no shared language with the existing web client.
 
-The existing TS/HTML/CSS client is kept and served from ASP.NET Core.
+~~The existing TS/HTML/CSS client is kept and served from ASP.NET Core.~~
 
-**This line is under review — see [presentation-layer.md](presentation-layer.md) (MARVEL-159).**
-The proposal there is to build the client in Godot and drop `Marvel.Server` and
-the TypeScript client from the MVP, which would change the fold's return
-signature to carry a semantic event stream and anchored affordances. Nothing else
-in this document is affected. Do not build against either answer until MARVEL-159
-closes.
+**Superseded on 24 August 2026 by [presentation-layer.md](presentation-layer.md)
+(MARVEL-159).** The client is built in Godot for macOS and Windows, and the
+TypeScript client is dropped. `Marvel.Server` survives as the engine host —
+in-process for local play, a Linux container for hosted play — rather than as a
+web-client server. The fold's return signature gains a semantic event stream and
+anchored affordances. Nothing else in this document is affected.
 
 ### Architecture: the engine is a fold
 
@@ -180,16 +180,21 @@ Consequences:
 
 Planned C# layout, following the conventions already in use in the receipts repo:
 
-```
-src/Directory.Build.props / Directory.Packages.props   central package management
-src/Marvel.Engine        core rules; no I/O, no RNG state
-src/Marvel.Cards         card DSL and card data
-src/Marvel.Server        ASP.NET Core; serves the web client
-src/tests/Marvel.Engine.Tests    xUnit
-src/tests/Marvel.Specs           Reqnroll
-```
+~~Planned layout, superseded by MARVEL-159.~~ The layout that replaces it,
+including the assembly wall that keeps Godot types out of the engine, is in
+[presentation-layer.md](presentation-layer.md#proposed-layout).
 
-The web client currently lives at `py_src/public/` because the Python server serves it over relative paths. Whether it moves to a shared top-level location is deferred to the Client and Integration phase — and MARVEL-159 may retire the question entirely, along with `Marvel.Server`. MARVEL-3 deferred the same question and is superseded on this point.
+Two constraints from that decision reach every project in the solution:
+
+- **`net8.0`, not `net10.0`.** `GodotSharp` 4.7.0 ships `net8.0`, and a `net8.0`
+  project cannot reference a `net10.0` library. Recorded in
+  `Directory.Build.props`.
+- **No runtime reflection, and source-generated `System.Text.Json` contexts.**
+  Both future targets that could matter — an iOS export and a Blazor WebAssembly
+  client — forbid just-in-time compilation.
+
+The web client at `py_src/public/` is not carried forward. MARVEL-3 deferred the
+question of where it should live; the answer is that it does not move.
 
 ### Deployment: `py_src` is never served
 

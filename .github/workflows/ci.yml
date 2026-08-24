@@ -87,6 +87,7 @@ jobs:
             unit_test.test_bot_timeout unit_test.test_bot_crash \
             unit_test.test_card_dataset unit_test.test_rng \
             unit_test.test_package_tools unit_test.test_digest \
+            unit_test.test_digest_domain \
             unit_test.test_log_errors unit_test.test_card_coverage \
             unit_test.test_invariants unit_test.test_verify_replays \
             unit_test.test_integrity_errors unit_test.test_config \
@@ -176,9 +177,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Two installs on purpose. `global.json` pins the SDK that builds; the
+      # assemblies target `net8.0` so Godot can reference them
+      # (Directory.Build.props), and running the tests on the .NET 8 runtime
+      # rather than rolling forward to 10 is the point -- the digest's JSON
+      # escaping is runtime behaviour, so it has to be exercised on the runtime
+      # the client will actually host.
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
+          dotnet-version: 8.0.x
 
       # `--locked-mode` would be better still, but central package management
       # writes no lock file by default; the pins in Directory.Packages.props

@@ -3,7 +3,18 @@
   <!-- Settings every project inherits. Kept here rather than repeated per
        .csproj so that "what is this solution's C# dialect" has one answer. -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- net8.0, not net10.0, and this is a hard external constraint rather
+         than conservatism: `GodotSharp` 4.7.0 ships `net8.0`, so a Godot C#
+         project targets `net8.0`, and a `net8.0` project cannot reference a
+         `net10.0` library. Godot is the presentation layer (MARVEL-159), so
+         every assembly it consumes has to sit at or below its floor.
+
+         Targeting .NET 10 from Godot is not an available alternative today:
+         it is not the default, and godotengine/godot#112701 reports the
+         managed host failing to probe shared-framework assemblies under it.
+
+         The cost is one API call: see `StateDigest.Sha256`. -->
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

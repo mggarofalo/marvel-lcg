@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using Marvel.Core.Digest;
 using Xunit;
@@ -129,17 +128,80 @@ public sealed class DigestVectorTests
     }
 
     [Theory]
-    [InlineData("plain", "\"plain\"")]
-    [InlineData("a\"b", "\"a\\\"b\"")]
-    [InlineData("a\\b", "\"a\\\\b\"")]
-    [InlineData("a/b", "\"a/b\"")]                 // Python does not escape it
-    [InlineData("a\nb", "\"a\\nb\"")]
-    [InlineData("\u00e9", "\"\\u00e9\"")]          // ensure_ascii=True
-    [InlineData("<&>", "\"<&>\"")]                 // .NET's default encoder would escape these
-    public void StringsEscapeTheWayPythonDoes(string value, string expected)
+    // Every character class the real domain contains. The apostrophe is the
+    // one that matters: three traits carry one, and it is the only place
+    // `JavaScriptEncoder.Default` would have diverged from Python.
+    [InlineData("01001b")]
+    [InlineData("HeroArea")]
+    [InlineData("PlayerDeck/removed")]
+    [InlineData("t_GENIUS")]
+    [InlineData("t_'POOL")]
+    [InlineData("t_BATROC'S BRIGADE")]
+    [InlineData("t_CROSSFIRE'S CREW")]
+    [InlineData("t_X-MEN")]
+    [InlineData("t_S.H.I.E.L.D.")]
+    [InlineData("t_CHASE!")]
+    [InlineData("t_ACTIVATION ORDER 1")]
+    public void RealDomainStringsSurviveTheWriterUnescaped(string value)
     {
-        var builder = new StringBuilder();
-        StateDigest.WriteJsonString(builder, value);
-        Assert.Equal(expected, builder.ToString());
+        // Python writes these with no escape at all, so the C# writer must too.
+        Assert.True(StateDigest.IsCanonicalSafe(value));
+        Assert.Contains($"\"card\":\"{value}\"", Canonical(value), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("\u00e9")]          // é — Python leaves raw, .NET escapes it
+    [InlineData("Spider\u2019s")]   // curly apostrophe, as printed on cards
+    [InlineData("\u00a0")]          // non-breaking space
+    [InlineData("a\u001fb")]        // Python \u001f, .NET \u001F
+    [InlineData("a\u007fb")]        // DEL
+    public void CharactersTheTwoWritersDisagreeOnAreRefusedByTheDomainRule(string value)
+    {
+        // Not a claim about what this writer does with them — a claim that they
+        // must never reach a digest, because the two engines stop agreeing
+        // here. See StateDigest.CanonicalOptions.
+        Assert.False(StateDigest.IsCanonicalSafe(value));
+    }
+
+    [Fact]
+    public void EveryStringInTheFixtureIsInsideTheDomainRule()
+    {
+        int checked_ = 0;
+        foreach (var digest in RecordedDigests())
+        {
+            foreach (var card in StateDigest.Parse(digest).Cards)
+            {
+                Assert.True(StateDigest.IsCanonicalSafe(card.Card), card.Card);
+                Assert.True(StateDigest.IsCanonicalSafe(card.Zone), card.Zone);
+                foreach (string key in card.Fields.Keys)
+                {
+                    Assert.True(StateDigest.IsCanonicalSafe(key), key);
+                }
+
+                checked_ += 2 + card.Fields.Count;
+            }
+        }
+
+        Assert.True(checked_ > 0, "the fixture carried no strings to check");
+    }
+
+    private static string Canonical(string card) =>
+        new StateDigest([new CardRecord(0, card, "HeroArea", 0, 0, -1, true,
+            new Dictionary<string, long>())]).Canonical();
+
+    private static IEnumerable<string> RecordedDigests()
+    {
+        foreach (var testCase in Cases())
+        {
+            if (!testCase.TryGetProperty("step_digests", out var digests))
+            {
+                continue;
+            }
+
+            foreach (var digest in digests.EnumerateArray())
+            {
+                yield return digest.GetString()!;
+            }
+        }
     }
 }

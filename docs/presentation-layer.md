@@ -1,10 +1,19 @@
 # Presentation layer: Godot instead of ASP.NET Core
 
-MARVEL-159. A proposal, not yet a decision. The decision is made when that issue
-closes, and this document is rewritten to record what was decided.
+MARVEL-159. **Decided on 24 August 2026.** The client is built in Godot; the
+TypeScript client and the ASP.NET Core web host are dropped from the MVP. What
+follows was written as a proposal and is kept in that voice where the reasoning
+still reads better as argument than as decree.
 
-One question is open and is called out under [Costs and open questions](#costs-and-open-questions):
-whether card art is shipped as scans or drawn procedurally.
+Two things are settled that were open when this was drafted, and one question
+remains:
+
+- **Runtime floor: `net8.0`.** Forced by Godot, and it constrains every assembly
+  in the solution. See [The runtime floor](#the-runtime-floor).
+- **Web export: gone, and it costs less than assumed.** See
+  [Export targets](#export-targets).
+- **Still open:** whether card art is shipped as scans or drawn procedurally —
+  see [Costs and open questions](#costs-and-open-questions).
 
 Release targets are settled: macOS and Windows clients, with the server also
 runnable as a Linux container. Web is explicitly not wanted, which removes the
@@ -15,7 +24,7 @@ The export-target question is answered. MARVEL-166 confirmed against Godot
 that costs is smaller than this document first assumed — see
 [Export targets](#export-targets).
 
-## What this proposes
+## What was decided
 
 Build the C# client in Godot for macOS and Windows, and drop the TypeScript web
 client. Keep `Marvel.Server`, but not in the shape `migration.md` assumed: it is
@@ -295,6 +304,61 @@ WebAssembly trimming wants the same discipline. Two different future targets, on
 requirement: source-generated `System.Text.Json` contexts, and no runtime
 reflection in the engine. Honour it from the first line of `Marvel.Core` rather
 than retrofitting it.
+
+## The runtime floor
+
+Measured on 24 August 2026, and the one part of this decision that reaches code
+already written.
+
+`GodotSharp` 4.7.0 ships **`net8.0`**. A `net8.0` project cannot reference a
+`net10.0` library — that is a NuGet error, not a warning — so every assembly
+below the wall has to sit at or below Godot's floor. `Directory.Build.props`
+now says `net8.0` for the whole solution.
+
+Targeting .NET 10 *from* Godot is not an available alternative. It is not the
+default, and [godotengine/godot#112701](https://github.com/godotengine/godot/issues/112701)
+reports the managed host failing to probe shared-framework assemblies under
+`net10.0`, with the reporter's workaround being a hand-written
+`AssemblyLoadContext` resolver. .NET 10 support is
+[still under discussion](https://github.com/godotengine/godot-proposals/discussions/13076)
+for a later release. Plan on `net8.0`.
+
+**What it cost, taken now:** one API call. `Marvel.Core` used
+`Convert.ToHexStringLower`, which arrived in .NET 9; it is now
+`Convert.ToHexString(...).ToLowerInvariant()`. Nothing else in the assembly
+needed anything above .NET 8. Taken later — after the fold, the interpreter and
+the card set — the same change is a solution-wide audit.
+
+No multi-targeting. One TFM for the solution is the whole point; a project that
+builds for two runtimes has to be *tested* on two runtimes, and the digest's
+JSON escaping is runtime behaviour.
+
+That last point has a consequence for CI. `dotnet test` on a machine with only
+the .NET 10 runtime silently rolls forward, so the tests would pass without ever
+touching .NET 8. `ci.yml` installs the 8.0 runtime alongside the pinned SDK so
+the tests run on the runtime the client will actually host. Locally,
+`DOTNET_ROLL_FORWARD=Major dotnet test` works and is not the same check.
+
+### Why the digest survived the floor unchanged
+
+Worth recording, because it is the pattern to repeat rather than a one-off.
+
+The state digest is compared byte for byte across the two engines, so its JSON
+escaping is part of the contract. The C# side originally hand-wrote an escaper
+to match Python's `json.dumps` exactly. That was the wrong instinct: a
+hand-written encoder is a maintenance liability, and it would have had to be
+re-verified against every runtime change.
+
+The replacement is `Utf8JsonWriter` with
+`JavaScriptEncoder.UnsafeRelaxedJsonEscaping` plus a constraint on the *data* —
+no digest string leaves printable ASCII. Since nothing in the domain needs
+escaping, the two writers agree, and the agreement no longer depends on either
+platform's escaping table. Full reasoning in
+[state-digest-v2.md](state-digest-v2.md#why-no-string-here-needs-escaping).
+
+The general form: when two runtimes have to agree, constrain the input domain
+until the disagreement is unreachable, rather than re-implementing one runtime's
+behaviour inside the other.
 
 ## Server topology
 
