@@ -157,3 +157,46 @@ jobs:
       # This is the cheap end of the oracle; the expensive end is determinism.yml.
       - name: Generate and replay-verify one game
         run: python main.py -bot -bot_verify
+
+  # The C# engine. A separate job because everything above defaults to
+  # `working-directory: py_src` and this builds from the repository root — and
+  # because a red Python suite and a red C# suite are different news.
+  dotnet:
+    name: C# engine (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      # `--locked-mode` would be better still, but central package management
+      # writes no lock file by default; the pins in Directory.Packages.props
+      # are what stops a transitive version from drifting between these two
+      # legs.
+      - name: Restore
+        run: dotnet restore
+
+      # Warnings are errors (Directory.Build.props). This engine is validated
+      # byte-for-byte against another implementation, so the class of bug a
+      # compiler can catch is exactly the class that is most expensive to find
+      # later.
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      # The cross-language fixtures are the acceptance criteria, not the unit
+      # tests: `datasets/rng/vectors.json` was emitted by the Python engine
+      # that generated the frozen corpus, so when C# and it disagree, C# is
+      # wrong.
+      - name: Test
+        run: dotnet test --no-build --configuration Release

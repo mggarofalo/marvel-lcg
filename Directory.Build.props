@@ -1,0 +1,32 @@
+<Project>
+
+  <!-- Settings every project inherits. Kept here rather than repeated per
+       .csproj so that "what is this solution's C# dialect" has one answer. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- A warning nobody has to fix is a warning nobody reads. This engine is
+         validated byte-for-byte against another implementation, so the class
+         of bug the compiler can catch is exactly the class that is most
+         expensive to find later. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+
+    <!-- Deterministic builds: the same source must produce the same assembly.
+         The whole project rests on reproducibility (docs/rng-contract.md,
+         docs/state-digest-contract.md); the build should not be the one part
+         that drifts. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- Invariant globalization: culture must never reach a comparison or a
+         number format. A digest that differs between a machine set to
+         tr-TR and one set to en-US is not a digest. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+</Project>

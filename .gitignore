@@ -27,9 +27,13 @@ __pycache__/
 /py_src/frozen_*/
 /py_src/verify.json
 /py_src/verify_*.json
+/py_src/corpus_v*.log
 
 # C# engine (src/)
 [Bb]in/
 [Oo]bj/
 *.user
 .vs/
+
+# Agent working state: scratch plans and per-agent worktrees. Not project data.
+/.claude/
