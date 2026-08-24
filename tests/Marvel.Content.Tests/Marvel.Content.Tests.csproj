@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Marvel.Rules.Tests</RootNamespace>
+    <RootNamespace>Marvel.Content.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/Marvel.Rules/Marvel.Rules.csproj" />
+    <ProjectReference Include="../../src/Marvel.Content/Marvel.Content.csproj" />
   </ItemGroup>
 
   <ItemGroup>

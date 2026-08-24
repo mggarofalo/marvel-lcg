@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Card data and the scenario setup format (MARVEL-159's layout).
+
+       No file or network I/O: everything here parses a string or a stream the
+       caller opened. Where the bytes come from is a packaging decision that has
+       not been made yet (loose files beside the executable, an embedded
+       resource, or a pack downloaded at runtime) and nothing in the engine
+       should have to be rewritten when it is.
+
+       No project references either. This is data; it does not need the RNG, the
+       digest, or the fold, and keeping the arrow absent means `Marvel.Rules` can
+       take a dependency on it later without a cycle. -->
+  <PropertyGroup>
+    <RootNamespace>Marvel.Content</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+</Project>
