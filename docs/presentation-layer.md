@@ -116,6 +116,12 @@ which `migration.md` already states.
 
 ### A semantic event stream
 
+**Settled by MARVEL-160 — see [event-stream.md](event-stream.md).** The
+vocabulary is nine records, measured against the corpus rather than designed:
+201,870 recorded transitions fall into twelve shapes, and a reducer over those
+records reproduces 100% of them. What follows is the argument that led there.
+
+
 Full board snapshots are enough to draw a board. They are not enough to animate
 one. An animation needs to know that card 01096 moved from hand to discard
 because an ability's cost consumed it. A snapshot only shows that the discard
@@ -169,7 +175,7 @@ in different clothes.
 ```
 src/
   Marvel.Core          ids, seeded MT19937, digest v2, canonical JSON writer
-  Marvel.Rules         the fold: state, zones, phases, timing, event bus. No cards.
+  Marvel.Rules         the fold: state, zones, phases, timing, events. No cards.
   Marvel.Cards.Dsl     node types, polymorphic deserialiser, validator, text renderer
   Marvel.Cards.Interp  nodes to transitions; emits events as a byproduct
   Marvel.Content       card data, scenario setup format, the compiled first-party set

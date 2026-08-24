@@ -87,6 +87,7 @@ jobs:
             unit_test.test_bot_timeout unit_test.test_bot_crash \
             unit_test.test_card_dataset unit_test.test_rng \
             unit_test.test_package_tools unit_test.test_digest \
+            unit_test.test_event_model \
             unit_test.test_log_errors unit_test.test_card_coverage \
             unit_test.test_invariants unit_test.test_verify_replays \
             unit_test.test_integrity_errors unit_test.test_config \
@@ -135,7 +136,7 @@ jobs:
       # regenerate-or-fail check, so a stale fixture is caught at the commit
       # that staled it rather than at the port.
       #
-      # All four compare byte for byte, through one shared definition of
+      # All five compare byte for byte, through one shared definition of
       # "stale" in py_src/tools/fixtures.py — read that file before changing
       # any of them. Line endings are part of the comparison, which is why
       # .gitattributes pinning eol=lf is load-bearing on the Windows leg
@@ -149,6 +150,9 @@ jobs:
 
       - name: Fixture staleness — JSON escaping cases
         run: python -m tools.digest.emit_escaping --check
+
+      - name: Fixture staleness — event vocabulary
+        run: python -m tools.events.emit_vocabulary --check
 
       - name: Fixture staleness — card dataset
         run: python -m tools.cards.extract --check
