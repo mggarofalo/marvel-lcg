@@ -59,7 +59,7 @@ import os
 import subprocess
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, NamedTuple, Sequence
 
 from tools.corpus import inventory as inventory_module
@@ -317,8 +317,19 @@ def Generate(plan: Plan, root: str, *, workers: int, timeout: float,
                 return Outcome(case, "skipped", 0, 0.0, "", 0, "stopped early")
             return RunCase(case, root, timeout, extra)
 
+        # `as_completed`, not `map`. `pool.map` yields results in *submission*
+        # order, so a single slow case blocks the recording of every case
+        # behind it: the workers keep running and their scene files keep
+        # landing on disk, but nothing reaches `progress.jsonl` until the slow
+        # one returns. Measured on the MARVEL-158 run -- one case that hung
+        # (MARVEL-172) held 136 finished cases unrecorded, and killing the run
+        # then lost all 136, because resumption keys off `progress.jsonl` and
+        # not off the scenes. Recording out of order costs nothing: the file is
+        # keyed by case id and read back into a dict.
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            for finished, outcome in enumerate(pool.map(Play, todo), start=1):
+            futures = {pool.submit(Play, case): case for case in todo}
+            for finished, future in enumerate(as_completed(futures), start=1):
+                outcome = future.result()
                 if outcome.status == "skipped":
                     continue
                 record = outcome.ToDict()
