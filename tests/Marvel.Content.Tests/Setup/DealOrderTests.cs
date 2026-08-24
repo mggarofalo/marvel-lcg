@@ -149,6 +149,34 @@ public sealed class DealOrderTests
     }
 
     [Fact]
+    public void SpiderDealsPeniParkerAndNotTheSuit()
+    {
+        // The one hero the engine does not deal from her own descriptor. The
+        // declared identity is the SP//dr Suit; the engine substitutes Peni
+        // Parker, whose `a` face is already the alter-ego side.
+        var sp = Catalog.Hero("sp_dr");
+        Assert.Equal(["31002a,31002b"], Dealer.IdentitySpecs(sp));
+        Assert.NotEqual(sp.Hero, Dealer.IdentitySpecs(sp));
+
+        var dealt = Dealer.DealOrder(Catalog, "rhino", ["sp_dr"]);
+        var identity = dealt.First(creation => creation.Source == CreationSource.Identity);
+        Assert.Equal("31002a", identity.Faces[0]);
+    }
+
+    [Fact]
+    public void EveryOtherHeroIsDealtFromHerOwnDescriptor()
+    {
+        // The substitution is keyed on a printed id prefix, so the test that
+        // matters is that it fires exactly once across the whole dataset.
+        var substituted = Catalog.HeroNames
+            .Where(name => !Dealer.IdentitySpecs(Catalog.Hero(name))
+                .SequenceEqual(Catalog.Hero(name).Hero.Select(Dealer.MoveBToFront)))
+            .ToList();
+
+        Assert.Equal(["sp_dr"], substituted);
+    }
+
+    [Fact]
     public void TheCatalogHoldsTheWholeDataset()
     {
         Assert.Equal(135, Catalog.CampaignNames.Count);
