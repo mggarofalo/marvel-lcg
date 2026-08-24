@@ -29,11 +29,15 @@ Feature: Status cards
   # --------------------------------------------------------------------------
   # Stun
 
+  @rr:stun-stunned.1
+  @rr:attack-player-ability-type.1.1
   Scenario: a stunned hero cannot attack
     Given "Spider-Man" is stunned
 
     Then I cannot attack "Rhino"
 
+  @rr:stun-stunned
+  @rr:thwart.1
   Scenario: a stunned hero can still thwart
     # Stun is about attacking. Spider-Man is printed THW 1.
     Given "Spider-Man" is stunned
@@ -42,12 +46,15 @@ Feature: Status cards
     When I thwart "The Break-In!"
     Then the main scheme has 4 threat
 
+  @rr:attack-player-ability-type.1
   Scenario: an unstunned hero can attack
     # The control for the restriction: `I cannot attack` has to be capable of
     # failing, and on this board the same hero takes his printed 2 off Rhino.
     When I attack "Rhino"
     Then "Rhino" has 2 damage
 
+  @rr:stun-stunned.1
+  @rr:status-cards.2
   Scenario: a stunned villain's attack is cancelled and the status spent
     # The other direction. The villain activates, the stun cancels the attack,
     # and the status card is discarded doing it -- so the hero takes nothing and
@@ -67,12 +74,16 @@ Feature: Status cards
   # --------------------------------------------------------------------------
   # Confuse
 
+  @rr:confuse-confused.1
+  @rr:thwart.1.1
   Scenario: a confused hero cannot thwart
     Given "Spider-Man" is confused
     And the main scheme has 5 threat
 
     Then I cannot thwart "The Break-In!"
 
+  @rr:confuse-confused
+  @rr:attack-player-ability-type.1
   Scenario: a confused hero can still attack
     # Confuse is about thwarting, and the mirror of the stun pair above.
     Given "Spider-Man" is confused
@@ -80,6 +91,7 @@ Feature: Status cards
     When I attack "Rhino"
     Then "Rhino" has 2 damage
 
+  @rr:thwart.1
   Scenario: an unconfused hero can thwart
     # The control.
     Given the main scheme has 5 threat
