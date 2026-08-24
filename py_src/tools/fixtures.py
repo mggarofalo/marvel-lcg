@@ -1,16 +1,19 @@
 """What "stale" means, for every generated fixture with a `--check` gate.
 
-Three tools regenerate a checked-in file and compare it with the copy in the
+Six tools regenerate a checked-in file and compare it with the copy in the
 repository (MARVEL-73):
 
-    python -m tools.rng.emit_vectors --check      datasets/rng/vectors.json
-    python -m tools.digest.emit_vectors --check   datasets/digest/vectors.json
-    python -m tools.cards.extract --check         datasets/cards/*.json
+    python -m tools.rng.emit_vectors --check        datasets/rng/vectors.json
+    python -m tools.digest.emit_vectors --check     datasets/digest/vectors.json
+    python -m tools.digest.emit_escaping --check    datasets/digest/escaping.json
+    python -m tools.events.emit_vocabulary --check  datasets/events/vocabulary.json
+    python -m tools.cards.extract --check           datasets/cards/*.json
+    python -m tools.setup.emit_setup --check        datasets/setup/setup.json
 
-All three answer the same question, so all three ask it the same way, here.
+All six answer the same question, so all six ask it the same way, here.
 A contributor has to be able to predict which gate a difference trips, and
-before this module they could not: the three had three comparisons written
-three different ways and nobody could say what any of them tolerated.
+before this module they could not: the first three had three comparisons
+written three different ways and nobody could say what any of them tolerated.
 
 **The comparison is byte for byte.** Every one of these writers opens its file
 with `newline="\\n"` and `encoding="utf-8"`, so what it produces is fully

@@ -1,0 +1,188 @@
+"""Emit the scenario, hero and encounter-set data as a cross-language dataset.
+
+Writes `datasets/setup/setup.json`, the fourth thing a C# engine needs before it
+can deal a board and the only one that was still trapped inside `py_src/`. The
+other three are already datasets: the RNG stream (`datasets/rng/`), the digest
+format (`datasets/digest/`) and the cards themselves (`datasets/cards/`).
+
+**This is a projection, not a translation.** Every record is produced by loading
+the file through the same dataclass the engine loads it through --
+`CampaignDescriptor`, `HeroDescriptor`, `EncounterSetDescriptor` -- so a key the
+engine ignores is a key this file does not contain. `deck/starter/spider_man.json`
+carries `set_aside` and `metadata`, `HeroDescriptor` declares neither, and
+`Json.ConvertDictToDataclass` drops both; so does this. A port that read the raw
+files would implement fields the oracle does not have.
+
+The one field dropped on purpose is `version`. It stamps the file format the
+Python engine wrote, `UpdateVersion` is `pass` on all three descriptors, and
+carrying it would make the dataset churn on a bump that changes no setup.
+
+Names, not paths. The engine resolves a bare name against an ordered list of
+folders (`engine/file/manager.py:FindJsonPath`), so the name is the identifier
+and the folder is an implementation detail. `RESOLUTION` below mirrors that
+order, and a name found twice is reported rather than silently taking one --
+shadowing that nobody has looked at is how two engines end up dealing different
+boards from the same request.
+
+What is deliberately not covered: `./deck/*.json`, which is gitignored, so a
+developer's own decks live there. A byte-compared fixture cannot read a folder
+whose contents differ per checkout. First-party starter decks are content; a
+deck somebody built this morning is not.
+
+Run:
+    python -m tools.setup.emit_setup
+    python -m tools.setup.emit_setup --check   # non-zero if the file is stale
+"""
+
+from __future__ import annotations
+
+import argparse
+import dataclasses
+import json
+import os
+import sys
+from typing import Any, Dict, List, Sequence, Tuple
+
+from tools import fixtures
+
+OUTPUT = os.path.join("..", "datasets", "setup", "setup.json")
+
+SETUP_VERSION = 1
+
+# The field every descriptor carries and no port should: see the module docstring.
+DROPPED = ("version",)
+
+# (group, [folders in the engine's resolution order]). Taken from
+# `engine/file/manager.py` -- `SCENARIOS_FOLDERS + [CUSTOM_SCENARIOS_FOLDER]`,
+# `STARTER_DECK_FOLDER`, `ENCOUNTER_SETS_FOLDERS` -- minus the folders that hold
+# no file of that kind (`./data/`, which holds `cards.json` and `sets_info.json`)
+# and minus `./deck/`, which is gitignored.
+RESOLUTION: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
+    ("campaigns", ("data/scenarios", "data/challenges", "data/scenarios_custom")),
+    ("heroes", ("deck/starter",)),
+    ("encounter_sets", ("data/encounter_sets", "data/nemesis")),
+)
+
+
+def _Descriptor(group: str) -> Any:
+    """The dataclass the engine loads this group's files through."""
+    from game.scene.replay.campaign import CampaignDescriptor
+    from game.scene.replay.encounter_set import EncounterSetDescriptor
+    from game.scene.replay.hero import HeroDescriptor
+
+    return {
+        "campaigns": CampaignDescriptor,
+        "heroes": HeroDescriptor,
+        "encounter_sets": EncounterSetDescriptor,
+    }[group]
+
+
+def _Project(record: Any) -> Dict[str, Any]:
+    """A descriptor instance as plain data, minus the dropped fields."""
+    projected = dataclasses.asdict(record)
+    for key in DROPPED:
+        projected.pop(key, None)
+    return projected
+
+
+def _Load(path: str, group: str) -> Dict[str, Any]:
+    from engine.lib import Json
+
+    with open(path, encoding="utf-8") as handle:
+        return _Project(Json.LoadsAs(handle.read(), _Descriptor(group)))
+
+
+def _Names(folder: str) -> List[str]:
+    """The `.json` files in `folder`, by name, in code-point order.
+
+    Sorted rather than `os.listdir` order: the fixture is compared byte for
+    byte, and directory order is a property of the filesystem.
+    """
+    if not os.path.isdir(folder):
+        return []
+    return sorted(
+        name[: -len(".json")]
+        for name in os.listdir(folder)
+        if name.endswith(".json")
+    )
+
+
+def BuildGroup(group: str, folders: Sequence[str]) -> Tuple[Dict[str, Any], List[str]]:
+    """`(name -> record, shadowed)`, resolving in the engine's folder order.
+
+    The first folder to hold a name wins, which is what `FindJsonPath` does.
+    Every later hit is reported: it is a name whose meaning depends on a search
+    order, and the point of this dataset is that a port does not have to know
+    the search order.
+    """
+    records: Dict[str, Any] = {}
+    shadowed: List[str] = []
+    for folder in folders:
+        for name in _Names(folder):
+            if name in records:
+                shadowed.append(f"{folder}/{name}.json")
+                continue
+            records[name] = _Load(os.path.join(folder, f"{name}.json"), group)
+    return records, shadowed
+
+
+def Build() -> Dict[str, Any]:
+    document: Dict[str, Any] = {
+        "contract": "docs/setup-dataset.md",
+        "generated_by": "python -m tools.setup.emit_setup",
+        "setup_version": SETUP_VERSION,
+        "note": ("Projected through the engine's own descriptor dataclasses, so "
+                 "a key the engine ignores is absent here. Names resolve in the "
+                 "order `engine/file/manager.py:FindJsonPath` searches."),
+        "resolution": {group: list(folders) for group, folders in RESOLUTION},
+    }
+
+    counts: Dict[str, int] = {}
+    shadowed: Dict[str, List[str]] = {}
+    for group, folders in RESOLUTION:
+        records, hidden = BuildGroup(group, folders)
+        document[group] = records
+        counts[group] = len(records)
+        if hidden:
+            shadowed[group] = hidden
+
+    document["counts"] = counts
+    document["shadowed"] = shadowed
+    return document
+
+
+def Render(document: Dict[str, Any]) -> str:
+    return json.dumps(document, indent=2, sort_keys=True, ensure_ascii=True) + "\n"
+
+
+def _main(argv: Sequence[str]) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--check", action="store_true",
+                        help="exit non-zero if the checked-in file is stale")
+    args = parser.parse_args(list(argv))
+
+    document = Build()
+    rendered = Render(document)
+
+    if args.check:
+        verdict = fixtures.Compare(rendered, OUTPUT)
+        if verdict != fixtures.FRESH:
+            print(fixtures.Explain(verdict, OUTPUT,
+                                   "python -m tools.setup.emit_setup"),
+                  file=sys.stderr)
+            return 1
+        print(f"{OUTPUT} is up to date")
+        return 0
+
+    os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
+    with open(OUTPUT, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(rendered)
+    counts = document["counts"]
+    print(f"wrote {OUTPUT} ("
+          + ", ".join(f"{counts[group]} {group}" for group, _ in RESOLUTION)
+          + ")")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main(sys.argv[1:]))
