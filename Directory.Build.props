@@ -13,8 +13,14 @@
          it is not the default, and godotengine/godot#112701 reports the
          managed host failing to probe shared-framework assemblies under it.
 
-         The cost is one API call: see `StateDigest.Sha256`. -->
-    <TargetFramework>net8.0</TargetFramework>
+         The cost is one API call: see `StateDigest.Sha256`.
+
+         Named as well as set, because `Directory.Build.targets` gates on it:
+         a project that quietly overrides `TargetFramework` fails the build
+         rather than discovering the incompatibility when Godot first tries to
+         reference it. -->
+    <MarvelTargetFramework>net8.0</MarvelTargetFramework>
+    <TargetFramework>$(MarvelTargetFramework)</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

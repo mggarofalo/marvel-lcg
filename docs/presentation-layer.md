@@ -38,7 +38,8 @@ deal later:
    animate what happened rather than diff two board snapshots.
 2. The prompt becomes a list of affordances anchored to board objects, rather
    than a list of option strings.
-3. A build gate proves the engine assemblies cannot reference Godot.
+3. A build gate proves the engine assemblies cannot reference Godot, and
+   cannot drift above its runtime floor.
 
 Everything else in `docs/migration.md` survives unchanged.
 
@@ -212,10 +213,35 @@ enough to replace.
 | `View` | all of the above | `GodotSharp`, wall-clock time |
 | `Godot` | everything | game state, except through the fold |
 
-Enforce the wall in the build, not by convention. A step that fails if any
-assembly below `Marvel.Godot` references `GodotSharp` is about ten lines. It is
-the difference between intending to keep the engine portable and proving it. It
-belongs in `ci.yml` alongside the three fixture staleness gates.
+Enforce the wall in the build, not by convention. **Done in MARVEL-162** — the
+gate is two `<Error>` targets in `Directory.Build.targets`, so it fails a local
+build and not only CI.
+
+It reads `@(ReferencePath)` *after* `ResolveReferences`, which is the list the
+compiler will actually be handed: every ProjectReference, every PackageReference
+and their transitive closures, plus any bare `<Reference>` pointing at a .dll on
+disk. Reading the `.csproj` files instead would catch a project that names Godot
+and miss a package three levels down that depends on it — and it is the second
+one that will happen.
+
+A second target pins the runtime floor. `TargetFramework` has to equal
+`$(MarvelTargetFramework)`, because the failure to guard against is not subtle
+reasoning about framework compatibility; it is someone creating a project next
+year, taking whatever TFM the SDK offers, and finding out when Godot tries to
+reference it.
+
+Both deny by default. `Marvel.Godot` opts out with
+`<MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>`, which is a deliberate
+edit to a `.csproj` rather than something that happens by adding a package.
+
+**And both were watched firing.** `tools/godot-wall.sh` builds four throwaway
+projects under `tests/godot-wall/` that are supposed to fail, and checks that
+they fail with the right error code. One of them — `Marvel.WallProbe` — names
+Godot nowhere and reaches it through an intermediate project, which is the case
+a `.csproj` scan would wave through. Another proves the opt-out still works,
+without which `Marvel.Godot` could not build at all. It runs offline: the
+`GodotSharp` they reference is a one-class stub. An `<Error>` condition nobody
+has watched evaluate to true is a claim about a build, not a property of one.
 
 ## Testing and verification
 
@@ -531,8 +557,10 @@ noted.
    Coordinate explicitly with MARVEL-41 so the label contract is designed once.
 
 4. Prove the engine assemblies cannot reference Godot. Module `Foundations`,
-   labels `tooling` and `dx`, priority Medium. A `ci.yml` gate next to the three
-   fixture staleness checks.
+   labels `tooling` and `dx`, priority Medium. A `ci.yml` gate next to the
+   fixture staleness checks. **Filed as MARVEL-162; done.** It landed as an
+   MSBuild gate rather than a CI-only one, so it fails a local build too, and it
+   grew a second target for the runtime floor and a proof that both fire.
 
 5. Verify the event stream against the corpus. Module `Corpus and Oracle`, label
    `testing`, priority Medium, blocked by issue 2 and by MARVEL-158.

@@ -10,7 +10,9 @@ to C#. Work is tracked in the Plane project `MARVEL` — see [docs/plane.md](doc
 
 ```
 py_src/     Python reference engine (the game as it exists today) + tooling
-src/        C# engine (empty until the Engine Core phase)
+src/        C# engine — `Marvel.Core`, `Marvel.Rules`
+tests/      C# tests, plus `godot-wall/` (projects that must fail to build)
+tools/      repo-level scripts that are not Python-engine tooling
 datasets/   generated and vendored data both engines consume
 docs/       project documentation, decisions, and audits
 ```
@@ -131,6 +133,7 @@ as important.
 | `datasets/cards/`, `tools/cards/extract` | [card-dataset.md](docs/card-dataset.md) |
 | the card ability DSL | [card-dsl.md](docs/card-dsl.md) |
 | the client, the fold's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
+| adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#dependency-rules) |
 | `engine/config.py`, arg groups, crash capture, packaging, visibility filtering, `Build.release` | [engine-conventions.md](docs/engine-conventions.md) |
 | a scene saved before `0.5.9.205` | [state-digest-contract.md](docs/state-digest-contract.md) |
 | Plane issues, modules, labels, priority | [plane.md](docs/plane.md) |
@@ -168,6 +171,11 @@ python -m tools.cards.rulings <card_id>          # print the ruling
 python -m tools.rng.emit_vectors                 # after touching the RNG
 python -m tools.digest.emit_vectors              # after touching anything the digest reads
 python -m tools.cards.extract                    # after touching data/cards.json or datasets/marvelsdb/
+
+# --- the C# side (run from the repository root, not py_src/) ---------------
+dotnet build                                     # the wall gates every project
+dotnet test
+bash tools/godot-wall.sh                         # prove both gates still fire
 
 # --- determinism probes ----------------------------------------------------
 python -m tools.determinism.check_runs --runs 6
@@ -242,7 +250,7 @@ says nothing.
 
 | Workflow | Runs | What |
 |---|---|---|
-| [`ci.yml`](.github/workflows/ci.yml) | every push to `master`, every PR | both unit tiers, three fixture staleness checks, trusted specs, one generated-and-verified game, `git status` clean |
+| [`ci.yml`](.github/workflows/ci.yml) | every push to `master`, every PR | both unit tiers, five fixture staleness checks, trusted specs, one generated-and-verified game, `git status` clean, the C# build and test suite, and the Godot wall |
 | [`determinism.yml`](.github/workflows/determinism.yml) | nightly 06:00 UTC, or manually | `check_runs` across fresh processes, cross-OS digest comparison, replay and invariant probes |
 
 Both pin Python from `py_src/.python-version`, install from `requirements.lock`,

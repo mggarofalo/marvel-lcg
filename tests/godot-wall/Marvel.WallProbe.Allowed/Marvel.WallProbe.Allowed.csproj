@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The presentation layer's case: references Godot directly and builds,
+       because it said so out loud. -->
+  <PropertyGroup>
+    <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../GodotSharp/GodotSharp.csproj" />
+  </ItemGroup>
+
+</Project>
