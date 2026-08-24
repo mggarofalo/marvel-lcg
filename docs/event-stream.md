@@ -26,7 +26,8 @@ opinion. `py_src/tools/events/census.py` diffs consecutive digests across the
 whole corpus.
 
 **1,773 scenes. 201,870 transitions. 1,365,439 individual changes.** They fall
-into twelve shapes and no more:
+into twelve shapes and no more — *as far as a digest can see*, which is a real
+limit and is picked up in [When the table splits](#when-the-table-splits):
 
 | shape | share |
 |---|---|
@@ -76,7 +77,7 @@ happened, so it is one event carrying five cards, not five events.
 
 ## The vocabulary
 
-Nine records. `py_src/tools/events/model.py` on the Python side,
+Ten records. `py_src/tools/events/model.py` on the Python side,
 `src/Marvel.Rules/Events/GameEvent.cs` on the C#, and
 `datasets/events/vocabulary.json` holding the two to each other.
 
@@ -91,6 +92,11 @@ Nine records. `py_src/tools/events/model.py` on the Python side,
 | `CardDetached` | `card`, `host` |
 | `ControlChanged` | `card`, `from`, `to` |
 | `FieldSet` | `card`, `field`, `from`, `to` |
+| `CardsChangedBoard` | `cards`, `from`, `to` |
+
+Nine of the ten were measured. The tenth is
+[below](#when-the-table-splits), and the reason it could not be measured is the
+point of that section.
 
 Every event also carries `kind`, plus `trigger` and `verb` — the engine's own
 names for why the transition happened, e.g. `WhenPlayerInTurn` and `Play`. Those
@@ -107,7 +113,7 @@ drawn from all 58 corpus shards**:
 
 - **100.0%** reproduce the next state exactly, with **no residue**, on every
   field the digest records except position.
-- All nine kinds fire. None is speculative.
+- All nine kinds measured from digests fire. None is speculative.
 
 Position is 61.1%, and the gap is not a gap in the vocabulary. It is the next
 section — and MARVEL-163 closed it: **100%, position included.** See
@@ -218,6 +224,75 @@ was wrong. The prediction and the placement were two pieces of code that had to
 agree and were never made to. They are now one function, `_Settle`, called by
 both.
 
+## When the table splits
+
+**Some scenarios are more than one game at once.** The Once and Future Kang
+gives each player their own board at main-scheme stage 3 — their own main
+scheme, their own Kang — and rejoins them as each stage completes. Newer
+scenarios, including in Fear No Evil, put different main schemes in different
+play areas. The boards share a round structure and cannot target each other.
+
+This is not a future problem. `py_src` implements it today:
+`World.game_areas` is a list, `World.CreateGameArea()` exists, and
+`cards/pack/toafk/kang/` calls both.
+
+### A board is a property of the card, not of the area
+
+This is the one place the model's ordering is counterintuitive, so it is worth
+stating flatly. The engine keeps **one** `MainSchemesArea` deck
+(`world.area_schemes_main`) no matter how many boards exist, and scopes a query
+by filtering it:
+
+```python
+def GetMainSchemes(game_area_effect):
+    game_area = Worlds.CastGameArea(game_area_effect)
+    return [x for x in world.area_schemes_main.Get()
+            if x.card.GetGameArea() == game_area]
+```
+
+Two consequences the client and the port both need:
+
+- **`AreaRef` can span boards.** Its `Id` addresses a deck, and a deck is not a
+  table. A client laying out two tables splits an area's contents card by card.
+- **A board change is not a move.** No card crosses an area and no field
+  changes, so it needs its own event — `CardsChangedBoard`, batched, because
+  Kang's split moves every one of a player's cards at once.
+
+### The digest cannot see any of this
+
+`CardDescriptor` has always sent `game_area` to the client. The **v2 digest
+does not record it**, and `digest.CARD_KEYS` is a frozen format — adding a field
+would change every recorded digest and invalidate the corpus (MARVEL-158).
+
+Constructed at an ordinary Kang step, because no recorded step reaches the real
+split: create a board and move 47 cards onto it, the main scheme among them.
+
+| | |
+|---|---|
+| v2 digest | **byte-identical** |
+| events derived from digests | **none** |
+| events derived from engine state | one `CardsChangedBoard`, 47 cards |
+
+**A port that put every card in the right zone at the right index but on the
+wrong board would pass every corpus digest check.** That is a hole in the
+oracle, not in the vocabulary, and it is recorded in
+[state-digest-v2.md](state-digest-v2.md#what-the-digest-cannot-see).
+
+### And the corpus never gets there
+
+All 42 `the_once_and_future_kang` scenes, replayed in full: **0 of 3,462 steps
+reached a second board.** The split is behind a main scheme at stage 3 and the
+bot never advances it that far.
+
+So `CardsChangedBoard` is the one member of this vocabulary that a measurement
+did not produce, and `tools/events/verify.py` prints `never fired` beside it
+rather than hiding that. It is here because the mechanic is implemented and
+shipped, not because a diff found it — and the alternative was discovering it
+at the point 3,457 card ports were already written against a nine-member
+vocabulary.
+
+Covering it needs a **spec**, not a corpus entry. Filed separately.
+
 ## The signature
 
 ```
@@ -273,6 +348,9 @@ about, which is why they run in the fast tier.
   an interpreter executing effect nodes. That last step lands with the
   interpreter, and what this proves for it is that the vocabulary and the
   reducer are not what will be wrong.
+- **Nothing exercises `CardsChangedBoard`.** The corpus cannot reach the split
+  and a unit test only states the shape. A behavioural spec that drives Kang to
+  stage 3 is what would make it real.
 - **Ordering within a step.** The prototype emits creations, then moves, then
   reorderings, then per-card changes. The interpreter will emit in execution
   order instead, which is more useful and is not checkable until it exists.

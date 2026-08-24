@@ -36,6 +36,15 @@ namespace Marvel.Rules.Events;
 /// measurement of MARVEL-163.
 /// </para>
 /// <para>
+/// <b>An area is not a table.</b> When a scenario splits the board — The Once
+/// and Future Kang, and newer scenarios — the areas stay shared: every main
+/// scheme sits in one <c>MainSchemesArea</c> whatever board it belongs to. So
+/// <see cref="Id"/> addresses a deck and says nothing about which table to draw
+/// it on. That lives on the card, and moves through
+/// <see cref="CardsChangedBoard"/>. A client laying out two tables splits an
+/// area's contents by card, not by <see cref="AreaRef"/>.
+/// </para>
+/// <para>
 /// <b>Why <see cref="Id"/> exists.</b> The three fields above were the whole
 /// type until MARVEL-163 replayed the corpus against engine state and counted.
 /// They are not a key: two areas share a triple for <c>AsideDeck</c> — a

@@ -13,6 +13,21 @@ but load-bearing: **the vocabulary is lossless.** Every observable transition ca
 be expressed by these records and nothing is left over. A vocabulary that fails
 this cannot be fixed later by a better interpreter.
 
+## Why the board is an event and the area is not
+
+Some scenarios split the table into parallel boards -- The Once and Future Kang
+gives each player their own at main-scheme stage 3, with its own main scheme and
+its own villain, and rejoins them later. The engine models that on the **card**
+(`card.game_area`) and leaves the decks shared: `world.area_schemes_main` is one
+`Deck2` for every board.
+
+So a board change moves no card between areas and changes no field. It is its
+own event, shaped exactly like `ControlChanged`, and it is the one member of
+this vocabulary that was **not** measured from the corpus -- `census.py` diffs
+digests, the digest does not record the board, and no corpus scene reaches the
+split anyway (0 of 3,462 steps across all 42 Kang scenes). It is here because
+the mechanic is implemented, shipped and invisible. See `docs/event-stream.md`.
+
 ## Why position is not an event
 
 The naive reading of the census is that `card.reordered` -- 17% of all observed
@@ -41,6 +56,7 @@ The measured effect of that distinction is in `docs/event-stream.md`.
     CardAttached      gained a host
     CardDetached      lost its host
     ControlChanged    a different player controls it
+    CardsChangedBoard a batch moving to a different parallel table
     FieldSet          one named value, from and to; either may be absent
 
 Every event also carries the step's `Trigger` and `Verb` -- the engine's own
@@ -64,9 +80,16 @@ Event = Dict[str, Any]
 # Declared rather than inferred so it can be a *contract*: `emit_vocabulary.py`
 # writes it to `datasets/events/vocabulary.json`, the C# side asserts its
 # `[JsonDerivedType]` set matches, and `unit_test/test_event_model.py` asserts
-# `Derive` never emits anything outside it and that every member actually fires
-# somewhere in the corpus. A vocabulary with a member nothing produces is
-# speculation; one missing a member the engine produces is a silent hole.
+# `Derive` never emits anything outside it. A vocabulary with a member nothing
+# produces is speculation; one missing a member the engine produces is a silent
+# hole.
+#
+# Nine of the ten fire somewhere in the corpus. `CardsChangedBoard` does not,
+# and calling that speculation would be the wrong reading: the mechanic is
+# implemented and shipped, the corpus cannot reach it (0 of 3,462 steps across
+# all 42 Kang scenes), and the census that measured the other nine works by
+# diffing digests -- which cannot see a board at all. `tools/events/verify.py`
+# prints `never fired` beside it rather than hiding the gap.
 VOCABULARY = {
     "CardsCreated":    ("area", "cards"),
     "CardsMoved":      ("from", "to", "cards"),
@@ -77,6 +100,7 @@ VOCABULARY = {
     "CardDetached":    ("card", "host"),
     "ControlChanged":  ("card", "from", "to"),
     "FieldSet":        ("card", "field", "from", "to"),
+    "CardsChangedBoard": ("cards", "from", "to"),
 }
 
 # Present on every event. `trigger` and `verb` are the engine's own names for
@@ -260,6 +284,18 @@ def Derive(before: Board, after: Board, trigger: str = "", verb: str = "") -> Li
                 "to": _Descriptor(target),
                 "cards": sorted(cards, key=lambda pair: pair[1])})
 
+    # Splitting the table moves whole boards at once -- Kang's stage 3 moved 47
+    # cards in one step when it was measured -- so this batches for the same
+    # reason `CardsMoved` does. `.get` on both sides rather than a `"board" in`
+    # guard: a digest board has no boards at all and must produce nothing here.
+    by_board: Dict[Tuple[Any, Any], List[int]] = collections.defaultdict(list)
+    for object_id in sorted(set(before) & set(after)):
+        was, now = before[object_id].get("board", -1), after[object_id].get("board", -1)
+        if was != now:
+            by_board[(was, now)].append(object_id)
+    for (was, now), cards in sorted(by_board.items(), key=str):
+        emit("CardsChangedBoard", cards=cards, **{"from": was, "to": now})
+
     # Anything the moves do not account for is a genuine reordering.
     predicted = _PredictPositions(before, moves)
     actual = _Zones(after)
@@ -294,6 +330,7 @@ def Derive(before: Board, after: Board, trigger: str = "", verb: str = "") -> Li
         if old["owner"] != new["owner"]:
             emit("ControlChanged", card=object_id,
                  **{"from": old["owner"], "to": new["owner"]})
+
 
         old_fields = old.get("fields") or {}
         new_fields = new.get("fields") or {}
@@ -388,6 +425,10 @@ def Apply(before: Board, events: Sequence[Event]) -> Board:
 
         elif kind == "ControlChanged":
             board[event["card"]]["owner"] = event["to"]
+
+        elif kind == "CardsChangedBoard":
+            for object_id in event["cards"]:
+                board[object_id]["board"] = event["to"]
 
         elif kind == "FieldSet":
             fields = board[event["card"]]["fields"]

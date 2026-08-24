@@ -217,6 +217,78 @@ class TestALandingIndexDescribesTheFinalArea(unittest.TestCase):
         self.assertEqual(model.Apply(before, events), after)
 
 
+class TestTheTableCanSplit(unittest.TestCase):
+    """A board is not an area, and the digest cannot see it at all.
+
+    The Once and Future Kang gives each player their own board at main-scheme
+    stage 3, each with its own main scheme and its own Kang, and rejoins them
+    later. Newer scenarios do the same. The engine keeps that on the *card*
+    (`card.game_area`) and leaves the decks shared -- `world.area_schemes_main`
+    is one `Deck2` for every board.
+
+    So a board change moves no card between areas and changes no field.
+    Measured by constructing the split at an ordinary Kang step: 47 cards
+    changed board, the main scheme among them, and the v2 digest was
+    byte-identical.
+    """
+
+    @staticmethod
+    def OnBoard(object_id, zone, index, area_id, board, **kw):
+        record = Card(object_id, zone, index, **kw)
+        record["area"] = {"zone": zone, "owner": kw.get("owner", 0),
+                          "host": kw.get("host", -1), "id": area_id}
+        record["board"] = board
+        return record
+
+    def testTwoMainSchemesShareOneArea(self):
+        """Which is the whole reason the board is on the card and not the area."""
+        board = self.OnBoard
+        before = Board(
+            board(1, "MainSchemesArea", 0, "17", 1, owner=-1),
+            board(2, "MainSchemesArea", 1, "17", 1, owner=-1))
+        after = Board(
+            board(1, "MainSchemesArea", 0, "17", 1, owner=-1),
+            board(2, "MainSchemesArea", 1, "17", 2, owner=-1))
+
+        events = model.Derive(before, after)
+        self.assertEqual(Kinds(events), ["CardsChangedBoard"])
+        # No move: the deck did not change, and an animation that slid the card
+        # out of the scheme row would be lying.
+        self.assertEqual(events[0]["cards"], [2])
+        self.assertEqual(model.Apply(before, events), after)
+
+    def testASplitIsOneEventNotFortySeven(self):
+        """Batched for the same reason `CardsMoved` is."""
+        board = self.OnBoard
+        before = Board(*[board(i, "HandsArea", i, "22", 1) for i in range(1, 8)])
+        after = Board(*[board(i, "HandsArea", i, "22", 2) for i in range(1, 8)])
+
+        events = model.Derive(before, after)
+        self.assertEqual(Kinds(events), ["CardsChangedBoard"])
+        self.assertEqual(events[0]["cards"], [1, 2, 3, 4, 5, 6, 7])
+        self.assertEqual((events[0]["from"], events[0]["to"]), (1, 2))
+
+    def testTwoBoardsRejoiningAreTwoEvents(self):
+        """Kang rejoins boards as each stage completes, one at a time."""
+        board = self.OnBoard
+        before = Board(board(1, "HandsArea", 0, "22", 2),
+                       board(2, "HandsArea", 0, "23", 3))
+        after = Board(board(1, "HandsArea", 0, "22", 1),
+                      board(2, "HandsArea", 0, "23", 1))
+
+        events = model.Derive(before, after)
+        self.assertEqual(Kinds(events), ["CardsChangedBoard", "CardsChangedBoard"])
+        self.assertEqual({(e["from"], e["to"]) for e in events}, {(2, 1), (3, 1)})
+        self.assertEqual(model.Apply(before, events), after)
+
+    def testADigestBoardProducesNoBoardEvents(self):
+        """A digest cannot see boards, so deriving from one must invent none."""
+        before = Board(Card(1, "HandsArea", 0))
+        after = Board(Card(1, "DiscardPile", 0))
+
+        self.assertNotIn("CardsChangedBoard", Kinds(model.Derive(before, after)))
+
+
 class TestAnEngineBoardIdentifiesItsAreas(unittest.TestCase):
     """The area key `tools/events/state.py` supplies, and why it is needed.
 
