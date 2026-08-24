@@ -30,6 +30,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 # The `game.*` packages import each other circularly and only resolve once the
 # `engine` package has been imported.
@@ -117,16 +118,12 @@ class MirrorsTheEngineSearchOrder(unittest.TestCase):
         # Nothing is ever found, so the search runs to the end of the list --
         # which is the point -- and then warns. `nullable=False` would
         # `Log.Assert` instead, so the warning is the quiet branch already.
-        exists, warn = FileManager.Exists, Log.Warn
-        FileManager.Exists = staticmethod(spy)
-        Log.Warn = staticmethod(lambda *args, **kwargs: None)
-        try:
+        with mock.patch.object(FileManager, "Exists", staticmethod(spy)), \
+                mock.patch.object(Log, "Warn", staticmethod(lambda *a, **k: None)):
             FileManager.FindJsonPath(load_type, "no_such_name_exists", nullable=True)
-        finally:
-            FileManager.Exists, Log.Warn = exists, warn
         return seen
 
-    def test_every_group_walks_a_prefix_of_what_the_engine_walks(self):
+    def test_every_group_walks_what_the_engine_walks_minus_the_exclusions(self):
         for group, folders in emit_setup.RESOLUTION:
             engine_order = self._EngineOrder(emit_setup.LOAD_TYPE[group])
             kept = [f for f in engine_order if f not in emit_setup.EXCLUDED[group]]
