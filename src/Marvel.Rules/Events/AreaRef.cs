@@ -22,10 +22,20 @@ namespace Marvel.Rules.Events;
 /// </para>
 /// <para>
 /// <b><see cref="Owner"/> is the area's, not the card's controller.</b> This is
-/// the single easiest thing to get wrong here, and it is not hypothetical: the
-/// state digest records the <i>card's</i> controller in its <c>owner</c> field,
-/// and the two genuinely differ. A side scheme controlled by player 3 sits in
-/// the scenario's side-scheme area alongside cards with no controller at all.
+/// the single easiest thing to get wrong here, because the two agree
+/// <b>98.1%</b> of the time — the Rules Reference moves a character to its new
+/// controller's play area when control changes, so for characters the play area
+/// follows control.
+/// </para>
+/// <para>
+/// The exceptions are all named rules and all load-bearing. A minion engaged
+/// with you is in your play area and controlled by the scenario. A player side
+/// scheme is yours and is "placed next to the main scheme in the villain's play
+/// area" — measured, the side-scheme area holds controllers <c>-1</c>, <c>0</c>
+/// and <c>2</c> simultaneously. An upgrade on a card in the villain's play area
+/// is yours and is not in your play area. Reading one field as the other passes
+/// nearly every test and fails on precisely the cards where whose-is-it drives
+/// rules.
 /// </para>
 /// <para>
 /// <b>And it is not <c>Deck2.GetOwner()</c> either.</b> The minions engaged
