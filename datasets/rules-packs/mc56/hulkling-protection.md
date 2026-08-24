@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 18
 hash: "sha256:eee0a420bf0c6ea0fa7942a02bcd5387371c16d414d1f013820a01a4f2650eb8"
 rules: []
-references: []
 ---
 
 # HULKLING // PROTECTION

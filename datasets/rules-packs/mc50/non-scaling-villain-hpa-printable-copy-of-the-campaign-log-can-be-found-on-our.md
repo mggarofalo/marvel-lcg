@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 4
 hash: "sha256:fdaf3633ff96003b81a1303a4e211c0566fa4f744b0c3f2abd28964825a216dc"
 rules: []
-references: []
 ---
 
 # NON-SCALING VILLAIN HPA printable copy of the campaign log can be found on our

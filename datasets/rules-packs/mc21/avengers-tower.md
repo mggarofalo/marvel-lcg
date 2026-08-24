@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 11
 hash: "sha256:ff23f4457c07e80e74f2987fd47bde79d3d9d92e77bb986281abdc97205eacd1"
 rules: []
-references: []
 ---
 
 # AVENGERS TOWER

@@ -7,7 +7,6 @@ source: "mc31_spdr_rulesheet.pdf"
 page: 1
 hash: "sha256:e8b683457b2bcd4ceef3a04b3620d9e54e5f41042c0ecc8fa8971852dc351150"
 rules: ["new-rule-separated-identity-card", "new-keyword-patrol", "new-keyword-permanent", "new-keyword-steady"]
-references: []
 ---
 
 # SP//DR HERO PACK

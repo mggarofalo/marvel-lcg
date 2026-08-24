@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 4
 hash: "sha256:e261bef78747061b0970367663c4e8c3f5c208524e09c177922903e406d818c6"
 rules: []
-references: []
 ---
 
 # CAMPAIGN LOG

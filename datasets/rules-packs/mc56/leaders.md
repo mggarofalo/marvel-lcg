@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 3
 hash: "sha256:1105f6a0e1c72fc6c0a143027ecc8edcc47edd038264ff23bb8e1a64e1156846"
 rules: []
-references: []
 ---
 
 # LEADERS

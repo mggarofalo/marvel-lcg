@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 9
 hash: "sha256:9a94c1de7ec479eab6991f17158147b4d819e57e87a3eef946a0f5c7f7c67ac7"
 rules: []
-references: []
 ---
 
 # WIDEAWAKE

@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 22
 hash: "sha256:d6d864410fcacabaa977f5ccd0e6d4453847c182a83aeecda6a117b16fcb2534"
 rules: ["q-when-enchantress-advances-and-puts-future-of-despair-into-play-through-her-when-revealed-ability-how-much-threat-will-future-of-despair-have-on-it", "q-if-a-attachment-is-attached-to-my-identity-do-i-have-to-use-its-forced-action-ability-even-if-i-cannot-benefit-from-its-effect", "q-if-the-spell-blast-treachery-causes-enchantress-to-initiate-an-attack-against-me-while-my-identity-is-in-alter-ego-form-what-happens"]
-references: []
 ---
 
 # ENCHANTRESS SCENARIO

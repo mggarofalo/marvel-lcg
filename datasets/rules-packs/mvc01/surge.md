@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 24
 hash: "sha256:070322bd2564cd781486c355c8d738c104807785358edcb878f95b7ae05a5bfa"
 rules: []
-references: []
 ---
 
 # SURGE

@@ -7,7 +7,6 @@ source: "mc44_deadpool_rules_insert-web.pdf"
 page: 2
 hash: "sha256:16af0fa899ba5e5ff73358af6011dc9f9d156c176f65fe89d77e74d160ffac98"
 rules: []
-references: []
 ---
 
 # THE ‘POOL ASPECT

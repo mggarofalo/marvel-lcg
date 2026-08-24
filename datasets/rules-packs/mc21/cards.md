@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 6
 hash: "sha256:155fc7571295b98562e7d41b503a8311aa3e8c3bf6bee993f90ae6c3fc233def"
 rules: []
-references: []
 ---
 
 # CARDS

@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 8
 hash: "sha256:95d064fedd9e7a42d1fd0c9d2056efac862a5fe4fdfa5fd630d8a96780b4ba09"
 rules: []
-references: []
 ---
 
 # SPIDER-WOMAN

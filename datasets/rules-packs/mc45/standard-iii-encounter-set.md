@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 3
 hash: "sha256:40871cc9ccaac9df612929d3ef41d777a14c3b4a120587a3b1e5944598ecdf1a"
 rules: []
-references: []
 ---
 
 # STANDARD III ENCOUNTER SET

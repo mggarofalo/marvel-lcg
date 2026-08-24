@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 14
 hash: "sha256:750efc33d7e36a7c992efd7e8ea28e1130a8aedfba44f34da5055f7f617767c9"
 rules: []
-references: []
 ---
 
 # SCENARIO #4 - NEBULA

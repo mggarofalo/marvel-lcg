@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 11
 hash: "sha256:db3af4de9c53b649d28707fed75ced8cf5a83b2c24cb01d9a471818dee9f059d"
 rules: []
-references: []
 ---
 
 # CHOOSING A VILLAIN

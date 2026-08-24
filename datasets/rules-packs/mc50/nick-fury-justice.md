@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 7
 hash: "sha256:71bd4478b40ca2fd83e41e2c98f07786f0b860e6ef6ea45e3a82f73d049434c0"
 rules: []
-references: []
 ---
 
 # NICK FURY // JUSTICE

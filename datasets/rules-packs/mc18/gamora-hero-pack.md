@@ -7,7 +7,6 @@ source: "mc18_gamora_rulesheet.pdf"
 page: 1
 hash: "sha256:f87450ef7eb1a9e3d0603662271e4fdce65355ee63d2edb1fc5005005262eda5"
 rules: ["frequently-asked-questions"]
-references: []
 ---
 
 # GAMORA HERO PACK

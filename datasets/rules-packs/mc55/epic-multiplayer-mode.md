@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 11
 hash: "sha256:3ac877ed5e2585a1d2679408656c6f961e241322b01e105d29f841a7ba88c920"
 rules: []
-references: []
 ---
 
 # EPIC MULTIPLAYER MODE

@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 5
 hash: "sha256:766b84a168478a8a4d1634c2a296bdf59c4c375903a085809c2a6b269b1556af"
 rules: []
-references: []
 ---
 
 # PURPLE MAN

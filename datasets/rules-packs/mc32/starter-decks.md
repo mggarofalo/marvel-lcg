@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 22
 hash: "sha256:074789c4fc2f348b2ca1c64a9e68c3b939f3df3a35488dc08547a60c77959999"
 rules: []
-references: []
 ---
 
 # STARTER DECKS

@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 24
 hash: "sha256:c8ca76f3d1128902886bceda112b7549ae9d22ea719d8f6cb0c8e1bb2c91dea4"
 rules: ["is-equal-to-the-victory-condition-the-players-win-the"]
-references: []
 ---
 
 # MODULAR DIFFICULTY

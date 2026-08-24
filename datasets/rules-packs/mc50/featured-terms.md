@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 3
 hash: "sha256:1bd634cce136884b84494c8cd5784a0ab36f8fe6cda0147b100c648e90ab5feb"
 rules: ["find", "tuck"]
-references: []
 ---
 
 # FEATURED TERMS

@@ -7,7 +7,6 @@ source: "mc57_rulebook-web.pdf"
 page: 4
 hash: "sha256:43c04172613894bb89e1fa7744a68c88d788194dfdd459731bff964850fcbe65"
 rules: []
-references: []
 ---
 
 # MODES OF PLAY

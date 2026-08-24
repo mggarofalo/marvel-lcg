@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 8
 hash: "sha256:2f52a44d52a01f1e1c36981729c27f7baa1c82e298fff6d7840986ca76e77ad9"
 rules: []
-references: []
 ---
 
 # SCENARIO PROGRESSION

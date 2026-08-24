@@ -7,7 +7,6 @@ source: "mc19_drax_rulesheet.pdf"
 page: 1
 hash: "sha256:b33d044175bab85775762810eb3fb409727f4cdd25dc405f78fc56d6bab5b398"
 rules: ["new-keyword-piercing"]
-references: []
 ---
 
 # DRAX HERO PACK

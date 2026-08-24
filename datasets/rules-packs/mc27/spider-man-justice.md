@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 20
 hash: "sha256:13724ce7a152ad859677a550dfd1246b26ce5c9eae109f4cc782f281033f7413"
 rules: []
-references: []
 ---
 
 # SPIDER-MAN // JUSTICE

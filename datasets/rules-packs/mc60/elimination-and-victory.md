@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 9
 hash: "sha256:720bb4b5468f19bd3d3cffba6b4bc84de275dbf904ceeba1085800bf182f27d1"
 rules: []
-references: []
 ---
 
 # ELIMINATION AND VICTORY

@@ -7,7 +7,6 @@ source: "mc43_x-23_rules_insert-web.pdf"
 page: 1
 hash: "sha256:d86ec8cb4269676464327c465fe28af94c79110acd4a39bb1ae74745424e8f4f"
 rules: ["new-card-type-player-side-scheme", "new-keyword-assault", "new-keyword-linked-card-title", "featured-keyword-piercing", "featured-keyword-victory-x"]
-references: []
 ---
 
 # X-23 HERO PACK

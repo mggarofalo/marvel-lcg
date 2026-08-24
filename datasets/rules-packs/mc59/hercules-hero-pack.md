@@ -7,7 +7,6 @@ source: "mc59_rulesheet-web_1.pdf"
 page: 1
 hash: "sha256:ad9b39c70d1f3fa014c32ed9fbd1d92d697961e30b46c330396b8e3279c60a85"
 rules: ["the-gift-and-labor-decks", "alternate-player-encounter-card-backs", "featured-terms"]
-references: []
 ---
 
 # HERCULES HERO PACK

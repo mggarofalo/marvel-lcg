@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 20
 hash: "sha256:c344d74425ff65347132144ee804b3715e4be3d6f7c5972e36240c0ff5c880fb"
 rules: []
-references: []
 ---
 
 # JOURNEY THROUGH HEL

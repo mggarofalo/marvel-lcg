@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 6
 hash: "sha256:3fb8ab3d108194f11de8cb2ab9ae4b74a9c699225eb6b1f86b0ed8fb999d494a"
 rules: []
-references: []
 ---
 
 # EXPERT CAMPAIGNELIMINATION AND VICTORY

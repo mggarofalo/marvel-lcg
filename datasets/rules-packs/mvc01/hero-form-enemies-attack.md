@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 16
 hash: "sha256:8616a6d3b7ac14eedb65a8580cc828de5d32dc0e3372d7fc181183e3d0a7ef10"
 rules: []
-references: []
 ---
 
 # HERO FORM: ENEMIES ATTACK

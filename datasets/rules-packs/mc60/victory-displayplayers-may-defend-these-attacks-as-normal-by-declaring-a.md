@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 4
 hash: "sha256:7b51bf1295f5638574883325a0bed63a1dc52f201ef381734318b757682a8fba"
 rules: []
-references: []
 ---
 
 # VICTORY DISPLAYPlayers may defend these attacks as normal by declaring a

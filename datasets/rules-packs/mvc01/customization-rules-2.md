@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 23
 hash: "sha256:e86396db0c9cf7399d5aa9109bf5290eb141a963b113f549eb3fcd3eecd479d9"
 rules: ["the-doomsday-chair-encounter-set-modular"]
-references: []
 ---
 
 # CUSTOMIZATION RULES

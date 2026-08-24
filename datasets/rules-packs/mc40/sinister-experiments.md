@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 16
 hash: "sha256:66a73c5218d2d8c0922a5aa5982193ecfa1e6e42e9373760782c7d1ebfb3c3f9"
 rules: []
-references: []
 ---
 
 # SINISTER EXPERIMENTS

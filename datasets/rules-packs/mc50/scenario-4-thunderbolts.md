@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 15
 hash: "sha256:44c9ff9a7c99cb693c23ec542de56958b1628d5c553b1e6585ad03703b2838d2"
 rules: []
-references: []
 ---
 
 # SCENARIO #4 - THUNDERBOLTS

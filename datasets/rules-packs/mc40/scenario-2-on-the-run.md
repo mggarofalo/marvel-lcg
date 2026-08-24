@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 11
 hash: "sha256:43a609b6ef94053cfa02b6b413dc1768458b138ecc039b2af04799c4b853abe6"
 rules: []
-references: []
 ---
 
 # SCENARIO #2 - ON THE RUN

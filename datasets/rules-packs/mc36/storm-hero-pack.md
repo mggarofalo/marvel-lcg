@@ -7,7 +7,6 @@ source: "mc36_storm_rules_insert.pdf"
 page: 1
 hash: "sha256:a45ed832dd6c98f76fecf26ba817feb82f6bb50fc3ad56d143a0d5cc7b651f45"
 rules: ["the-weather-deck", "new-keyword-permanent", "new-keyword-piercing", "new-keyword-stalwart"]
-references: []
 ---
 
 # STORM HERO PACK

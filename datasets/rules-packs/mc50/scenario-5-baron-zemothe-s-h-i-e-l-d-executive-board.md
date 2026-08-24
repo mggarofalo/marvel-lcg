@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 18
 hash: "sha256:e93aee0496540f5a78be0046b526c6d3a0cbe10f26674dfe5a4f1910a679ae26"
 rules: []
-references: []
 ---
 
 # SCENARIO #5 - BARON ZEMOTHE S.H.I.E.L.D. EXECUTIVE BOARD

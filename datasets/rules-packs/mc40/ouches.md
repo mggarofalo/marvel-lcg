@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 6
 hash: "sha256:716ff6d32ab32b32064915bcda2fbe190c72d62b7088f4f7c73802637f761aa7"
 rules: []
-references: []
 ---
 
 # ouches

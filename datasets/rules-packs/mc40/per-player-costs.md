@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 5
 hash: "sha256:961201731db74356bf6c335aafc3cfe89e133b58e3bb391400f3f0a0d52fd8e6"
 rules: []
-references: []
 ---
 
 # PER PLAYER () COSTS

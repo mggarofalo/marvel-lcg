@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 20
 hash: "sha256:0930e1e03db3b5fad77938fed83dfae23cac584b5665e31307231bf8fcd4f13c"
 rules: ["leader-has-the-same-card-title-as-my-identity-or-ally", "encounter-deck-during-competitive-play", "does-it-trigger-the-forced-response-on-energy-channel", "98", "attached-when-it-s-defeated-in-competitive-mode"]
-references: []
 ---
 
 # ROUND STRUCTURE

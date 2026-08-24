@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 17
 hash: "sha256:8d4b966c87649bef6e31314a96fd387e1ffe9c0a008002fe98545529d07a677f"
 rules: []
-references: []
 ---
 
 # THE GLIDER COUNTER

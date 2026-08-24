@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 11
 hash: "sha256:4073e1fa7088e014e870547565c78f68cf27f002e11284137437ddb461cea68f"
 rules: []
-references: []
 ---
 
 # ALLY LIMIT

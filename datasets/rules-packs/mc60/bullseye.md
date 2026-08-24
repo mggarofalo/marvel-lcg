@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 5
 hash: "sha256:198aac6cf0dbb9f946ac04627d7c502307a697dd0ce34af95a8c4d3f9bd78312"
 rules: []
-references: []
 ---
 
 # BULLSEYE

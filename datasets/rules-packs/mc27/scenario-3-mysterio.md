@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 13
 hash: "sha256:a503862b2ff38f18641e6e20d7c3a123f52cb7c24bcb5daad1513d8fd6e92ff5"
 rules: []
-references: []
 ---
 
 # SCENARIO #3 - MYSTERIO

@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 18
 hash: "sha256:bab32a1d5d15502a2acc0a5784449991f387dcebb29478de7c5f66d891f00d84"
 rules: []
-references: []
 ---
 
 # THE CARDS

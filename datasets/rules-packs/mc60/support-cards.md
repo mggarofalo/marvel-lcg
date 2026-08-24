@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 21
 hash: "sha256:f678010e9ddbe60c5677ac4ed66a20e589b28723ca46144dd9115936bf1612c2"
 rules: []
-references: []
 ---
 
 # SUPPORT CARDS

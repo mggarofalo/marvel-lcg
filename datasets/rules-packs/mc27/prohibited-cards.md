@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 4
 hash: "sha256:edf421edf2c9f949ea841e466eddbe239a410bd18b9f7ce40e5b3791a475c03c"
 rules: []
-references: []
 ---
 
 # PROHIBITED CARDS

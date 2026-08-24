@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 15
 hash: "sha256:21852a9720699be91d8f1f6550dc4929765c3af8463576391eaaec86a100207d"
 rules: []
-references: []
 ---
 
 # SCHEME

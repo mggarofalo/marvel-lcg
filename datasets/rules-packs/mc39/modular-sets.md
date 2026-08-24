@@ -7,7 +7,6 @@ source: "mc39_mojomania_rules_insert-compressed.pdf"
 page: 2
 hash: "sha256:960ade2d46cabb6720f8d77c028c6106119324e1c761a6068c1ddb79b43ba2dc"
 rules: []
-references: []
 ---
 
 # MODULAR SETS

@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 11
 hash: "sha256:cf6303818fb4fe1ab11d0546a0876204f56b7ff9351c6d7d5c1cb72997078596"
 rules: []
-references: []
 ---
 
 # RESOURCE COSTS

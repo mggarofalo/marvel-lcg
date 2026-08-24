@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 9
 hash: "sha256:11b234df317b1d98cd3e92954f3c2499eba9625c84d23804e7a896c2b813825d"
 rules: []
-references: []
 ---
 
 # MODULAR DIFFICULTY

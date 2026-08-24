@@ -7,7 +7,6 @@ source: "mc33_cyclops_rules_insert.pdf"
 page: 1
 hash: "sha256:e6ad15778f48bdee9c262ff97487be40158a11a249156f8cfa7c56cd7df5a4b2"
 rules: []
-references: []
 ---
 
 # CYCLOPS // SCOTT SUMMERS

@@ -7,7 +7,6 @@ source: "mc03_wrecking_crew_rules_insert-compressed.pdf"
 page: 7
 hash: "sha256:5d30c8e6b9628aaf4694deabb11615a9e5a5b64e75e68dd01feb814f76806dae"
 rules: []
-references: []
 ---
 
 # SIGNATURE SIDE SCHEMES

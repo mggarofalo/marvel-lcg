@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 9
 hash: "sha256:cf17efc14172fce86609ec07406240be45090f2fe87180323a0f3b6017cb914d"
 rules: ["preparation"]
-references: []
 ---
 
 # SCENARIO #1 - BLACK WIDOWcard of the encounter deck and resolves any “”

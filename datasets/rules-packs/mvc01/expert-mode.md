@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 23
 hash: "sha256:17034285ade2d080e236d7e853a31f825fe1264ea5899139cb1b3f72116df208"
 rules: []
-references: []
 ---
 
 # EXPERT MODE

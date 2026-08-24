@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 19
 hash: "sha256:2f0657ec2f995f542c14244b53a4f0d3344c712f72eace3192d1bdee355b99d4"
 rules: []
-references: []
 ---
 
 # THE ACCUSATION

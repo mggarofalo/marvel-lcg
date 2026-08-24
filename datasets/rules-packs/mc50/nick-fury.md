@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 22
 hash: "sha256:5f13efa68a980ccd64f5394155c46d4e33593eb3e019198a14cf96bcdbaec1c3"
 rules: ["q-is-the-threat-that-the-stealth-upgrade-35b-places-on-itself-placed-on-the-main-scheme-first", "q-if-nick-fury-s-stealth-upgrade-35b-is-in-play-nick-is-in-hero-form-and-the-villain-is-stunned-what-happens", "q-if-nick-fury-s-stealth-upgrade-35b-is-in-play-what-happens-if-nick-defends-for-another-player"]
-references: []
 ---
 
 # NICK FURY

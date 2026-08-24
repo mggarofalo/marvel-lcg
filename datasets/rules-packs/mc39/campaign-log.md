@@ -7,7 +7,6 @@ source: "mc39_mojomania_rules_insert-compressed.pdf"
 page: 4
 hash: "sha256:e5f060b505f9ad36670f0623d450f37d0da6eed3bbc7c23504d1e3db188c7a7b"
 rules: []
-references: []
 ---
 
 # CAMPAIGN LOG

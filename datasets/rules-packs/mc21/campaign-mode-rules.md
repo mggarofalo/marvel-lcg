@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 4
 hash: "sha256:553c84183aef9845fa47975055873342b7923f71704810508edb4cad75ed2408"
 rules: []
-references: []
 ---
 
 # CAMPAIGN MODE RULES

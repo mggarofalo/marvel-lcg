@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 3
 hash: "sha256:56d6bd3abe3fb827e44ad2ec5c20690db87764aa80d10b64f54510a71b30f302"
 rules: []
-references: []
 ---
 
 # AMPLIFY ICON

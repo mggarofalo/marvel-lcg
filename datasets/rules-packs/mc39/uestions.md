@@ -7,7 +7,6 @@ source: "mc39_mojomania_rules_insert-compressed.pdf"
 page: 18
 hash: "sha256:a254389c6792c5f582837d2854bf8e8f99f2bfd506de8ddfee0a78323ef7ab1f"
 rules: ["q-if-a-character-s-attack-places-enough-damage-on-stinger-tail-to-discard-it-does-that-character-take-retaliate-damage-from-stinger-tail", "q-if-both-stinger-tail-and-undercover-mojo-are-in-play-which-card-s-forced-interrupt-triggers", "q-do-the-environment-cards-surge-when-revealed-from-spiral-s-show-deck-or-by-mojo-s-wheel-of-genres", "q-does-the-forced-interrupt-on-wild-wild-mojo-increase-consequential-damage", "q-how-is-overkill-damage-affected-by-the-forced-interrupt-on-wild-wild-mojo"]
-references: []
 ---
 
 # UESTIONS

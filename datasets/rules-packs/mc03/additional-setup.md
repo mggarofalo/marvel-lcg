@@ -7,7 +7,6 @@ source: "mc03_wrecking_crew_rules_insert-compressed.pdf"
 page: 2
 hash: "sha256:dab1493a225dd344b529d3baab8a330ccaecd36b271e31aba647c76ff949c812"
 rules: ["prepare-villains-and-dials", "add-side-schemes", "prepare-encounter-decks", "the-final-layout"]
-references: []
 ---
 
 # ADDITIONAL SETUP

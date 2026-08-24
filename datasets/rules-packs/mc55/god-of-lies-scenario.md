@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 23
 hash: "sha256:79c366c6841bbdfce512b88c35d78b8ff9e3394c0fc137febce7bbba9e678538"
 rules: ["q-when-an-villain-flips-to-its-fading-figment-side-who-resolves-the-text", "q-if-the-second-bulleted-effect-on-the-stories-and-lies-treachery-causes-an-villain-to-initiate-an-attack-against-me-while-my-identity-is-in-alter-ego-form-what-happens"]
-references: []
 ---
 
 # GOD OF LIES SCENARIO

@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 5
 hash: "sha256:129db445aff128558f8511f1579bc49946d89af1ebfd1ca525b86e8397db98f7"
 rules: []
-references: []
 ---
 
 # HOPE SUMMERSATTACKS AGAINST ALLIES

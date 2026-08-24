@@ -7,7 +7,6 @@ source: "mc24_the_hood_rules_insert.pdf"
 page: 3
 hash: "sha256:532d9384a7d7b1aa5a7245698d939e869bb4e4ab0b31ce0f440bd8569fe4f3ef"
 rules: ["hinder-x", "incite-x", "permanent", "setup", "steady-new", "villainous"]
-references: []
 ---
 
 # IMPORTANT KEYWORDS

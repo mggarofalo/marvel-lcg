@@ -7,7 +7,6 @@ source: "mc44_deadpool_rules_insert-web.pdf"
 page: 2
 hash: "sha256:2223f5d2fad14c9964a75a389e16cdcc1a2e9c79caf5ea1478ef01ef33ff8d6f"
 rules: []
-references: []
 ---
 
 # PER PLAYER () COSTS

@@ -7,7 +7,6 @@ source: "mc39_mojomania_rules_insert-compressed.pdf"
 page: 2
 hash: "sha256:15eb8d04356226825df4888182d6ec4c811effdeece085f14670f84bc72bf098"
 rules: ["requires-a-specific-number-of-modular-sets-longshot-does-not-count-as-one-of-those-sets"]
-references: []
 ---
 
 # LONGSHOT

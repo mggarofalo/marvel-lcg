@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 7
 hash: "sha256:28fb4c97e853875ba0ab0984ad903a9c6bc962560ea734500a81d654a11dd8cb"
 rules: []
-references: []
 ---
 
 # SCENARIO #1 - SABRETOOTH

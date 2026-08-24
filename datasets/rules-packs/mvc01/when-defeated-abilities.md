@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 17
 hash: "sha256:071ff78be924bc968c29dbd80ab97cca23da151fac6b0b5a601df4e3261a34a7"
 rules: []
-references: []
 ---
 
 # WHEN DEFEATED ABILITIES

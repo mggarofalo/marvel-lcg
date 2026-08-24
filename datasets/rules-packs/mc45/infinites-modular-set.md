@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 8
 hash: "sha256:8f9016acf5a0806f71fab957dbf704e83b8a0684903bb51009b4c405559f2c6d"
 rules: []
-references: []
 ---
 
 # INFINITES MODULAR SET

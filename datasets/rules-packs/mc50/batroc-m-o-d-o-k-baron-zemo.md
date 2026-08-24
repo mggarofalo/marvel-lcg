@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 22
 hash: "sha256:cd101844fdbf93b9296907fde687f7883f53a129fa051178241ca27a7417c8d5"
 rules: ["q-am-i-considered-to-have-defeated-one-of-these-villains-if-i-reduce-their-hit-points-to-0"]
-references: []
 ---
 
 # BATROC / M.O.D.O.K. / BARON ZEMO

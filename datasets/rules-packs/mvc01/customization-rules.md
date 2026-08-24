@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 22
 hash: "sha256:4e400e9c58e7b20face76b372bbfc1871edf6061fbf6e09c269c48f968880fa5"
 rules: []
-references: []
 ---
 
 # CUSTOMIZATION RULES

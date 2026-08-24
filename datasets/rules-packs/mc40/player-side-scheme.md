@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 3
 hash: "sha256:a18f6709a82b6b5daac1d9a2f41e41818dc04d4c5ac677402f1b0d0f6b6d62f6"
 rules: []
-references: []
 ---
 
 # PLAYER SIDE SCHEME

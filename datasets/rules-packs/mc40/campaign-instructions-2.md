@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 11
 hash: "sha256:4132b50a16265ebfb3e62517a1461e577c59ea2b878baa66c5d9804ffad6750d"
 rules: ["before-resolving-the-setup-text-on-gotta-get"]
-references: []
 ---
 
 # CAMPAIGN INSTRUCTIONS

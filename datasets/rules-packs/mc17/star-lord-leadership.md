@@ -7,7 +7,6 @@ source: "mc17_star-lord_rulesheet.pdf"
 page: 1
 hash: "sha256:f712fbf50d2714161e5db877f2be838f50a79273e99debd3728d2201814d32a3"
 rules: []
-references: []
 ---
 
 # STAR-LORD // LEADERSHIP

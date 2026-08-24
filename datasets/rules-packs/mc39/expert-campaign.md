@@ -7,7 +7,6 @@ source: "mc39_mojomania_rules_insert-compressed.pdf"
 page: 5
 hash: "sha256:d0dcad7cb5bee944a2723b9612a0882493cd1b9c1e2410633ec800f954d76b4d"
 rules: ["persistent-damage"]
-references: []
 ---
 
 # EXPERT CAMPAIGN

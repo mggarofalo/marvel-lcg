@@ -7,7 +7,6 @@ source: "mc11_once_and_future_kang_rules_insert-compressed.pdf"
 page: 6
 hash: "sha256:8e2265f740b00fe6d491e772f28f09e8488707d03a6b523d9c33347987dcbb94"
 rules: []
-references: []
 ---
 
 # ADJUSTABLE DIFFICULTY

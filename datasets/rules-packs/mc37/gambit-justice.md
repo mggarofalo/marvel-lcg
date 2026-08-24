@@ -7,7 +7,6 @@ source: "mc37_gambit_rules_insert.pdf"
 page: 1
 hash: "sha256:45463faa921f52753c606d72ee0be4c3562799a01fdcea41e6d7ae4e15d13b6a"
 rules: []
-references: []
 ---
 
 # GAMBIT // JUSTICE

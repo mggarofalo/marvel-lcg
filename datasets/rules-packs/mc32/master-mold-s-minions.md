@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 12
 hash: "sha256:a34b56fc2605ddae26467a68ac901d30d752a729d651f6d9bbdbae5498949bb0"
 rules: []
-references: []
 ---
 
 # MASTER MOLD’S MINIONS

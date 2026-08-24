@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 18
 hash: "sha256:a75656f0d2da2392c3a26de8b8ef30f188d88ea23b8a09b536c686f2de480691"
 rules: []
-references: []
 ---
 
 # SCENARIO #5 - MAGNETO

@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 16
 hash: "sha256:e87bc8e19f38f2bdcc14aec71f11f06b1f58220a5fc3b26e166d77d72c15f2b9"
 rules: []
-references: []
 ---
 
 # DEAL ENCOUNTER CARDS

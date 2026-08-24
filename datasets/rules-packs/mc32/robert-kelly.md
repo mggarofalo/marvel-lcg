@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 7
 hash: "sha256:99ed95bbdb21c40e036cad4d34c95f831dcf32dc178f7b58e45e2048d7e2340d"
 rules: []
-references: []
 ---
 
 # ROBERT KELLY

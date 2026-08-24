@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 23
 hash: "sha256:65bdc3f0a24a96082f4f1978848b9fb9f566a61cac86df14cb0c923bb8a22617"
 rules: []
-references: []
 ---
 
 # NEMESIS SETS

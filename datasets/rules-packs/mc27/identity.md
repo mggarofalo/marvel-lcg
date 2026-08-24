@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 11
 hash: "sha256:7241bef708081c720be201fa6866708bbea9ab69208c9724d91de3d3071273c8"
 rules: []
-references: []
 ---
 
 # IDENTITY

@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 16
 hash: "sha256:6ab796bcffdc98dfea735ec54ee19fa29297e5842196f580a318c60210ccd601"
 rules: []
-references: []
 ---
 
 # ENCOUNTER SET

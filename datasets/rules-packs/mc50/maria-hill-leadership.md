@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 7
 hash: "sha256:06383c04e404bb90aa11e940cd5dee487612ebe387dc7a1b99232c9fa2f6006c"
 rules: []
-references: []
 ---
 
 # MARIA HILL // LEADERSHIP

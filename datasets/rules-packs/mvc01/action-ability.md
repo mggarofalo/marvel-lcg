@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 13
 hash: "sha256:e734fd3ed2a499bd90474a5ec0cb8c24c471dd4b13e4da3381898e36737ebcc8"
 rules: []
-references: []
 ---
 
 # ACTION ABILITY

@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 14
 hash: "sha256:fd52eab79562478e2bb8caecb53b905ed4a3c660ff9f7e61747a42bfa3287d88"
 rules: ["if-apocalypse-is-defeated-with-no-longer-worthy-attached-the-players-win-the-game"]
-references: []
 ---
 
 # STOP THE APOCALYPSE

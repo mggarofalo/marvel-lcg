@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 15
 hash: "sha256:da840986d766566b91ee63d99c4a4b8fde3ece6d96d6b74ce3517518ad9d0370"
 rules: []
-references: []
 ---
 
 # THUNDERBOLT BACKUP

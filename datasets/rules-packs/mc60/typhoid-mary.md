@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 5
 hash: "sha256:82a185120e95e0aa6b0cb837058ecce9050e6fcef62c9e4e7ba5c29477a1a92b"
 rules: []
-references: []
 ---
 
 # TYPHOID MARY

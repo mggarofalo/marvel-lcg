@@ -7,7 +7,6 @@ source: "mc07_black_widow_rulesheet.pdf"
 page: 1
 hash: "sha256:8466863f6774eebf40234c86b50848be1ca9186faab875b1d76d20afec84fc6c"
 rules: []
-references: []
 ---
 
 # BLACK WIDOW // JUSTICE

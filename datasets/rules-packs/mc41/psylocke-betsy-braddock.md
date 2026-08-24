@@ -7,7 +7,6 @@ source: "mc41_psylocke_rules_insert-web.pdf"
 page: 1
 hash: "sha256:373f21618bee108b70c63f1f95da1da79f2b71c0aebca5fb7cc423dc61f25423"
 rules: []
-references: []
 ---
 
 # PSYLOCKE // BETSY BRADDOCK

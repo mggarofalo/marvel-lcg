@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 18
 hash: "sha256:ebd6cb05a6d5a2457ff4a86047f025e571cc7aeea60ca76b1fe887fec719e742"
 rules: []
-references: []
 ---
 
 # CAMPAIGN INSTRUCTIONS

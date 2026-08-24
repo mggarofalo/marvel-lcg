@@ -7,7 +7,6 @@ source: "mc47_jubilee_rules_insert-web.pdf"
 page: 1
 hash: "sha256:b8e49f9fa8def62b7e6dd0ec433c5578d2a359581385e07e611bfe0d13c4aeaa"
 rules: []
-references: []
 ---
 
 # JUBILEE // JUSTICE

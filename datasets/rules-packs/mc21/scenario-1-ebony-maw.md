@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 6
 hash: "sha256:0032519a0ce94c7719abdacc6503060d9ae2688041d4c51dee0e2d71795a7465"
 rules: []
-references: []
 ---
 
 # SCENARIO #1 - EBONY MAW

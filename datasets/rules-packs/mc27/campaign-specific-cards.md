@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 4
 hash: "sha256:e56d865439591b516aa494dd4b9b4cdbdb4d07d533de90d0e2a2ddeb475915bc"
 rules: []
-references: []
 ---
 
 # CAMPAIGN-SPECIFIC CARDS

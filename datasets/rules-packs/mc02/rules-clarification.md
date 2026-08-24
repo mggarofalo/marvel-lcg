@@ -7,7 +7,6 @@ source: "mc02_green_goblin_rules_insert.pdf"
 page: 7
 hash: "sha256:5de49304cd12a57321e5b86ce84a42264b6b4cca1b78ac46e9c4a40c65d7b32f"
 rules: ["goblin-minions-activiation-timing"]
-references: []
 ---
 
 # RULES CLARIFICATION

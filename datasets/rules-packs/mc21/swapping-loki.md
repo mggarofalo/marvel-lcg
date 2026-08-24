@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 24
 hash: "sha256:75fd468be7e948834f9037f3b665b5f23822bca7e4ae583adda1be9fcffd02e5"
 rules: []
-references: []
 ---
 
 # SWAPPING LOKI

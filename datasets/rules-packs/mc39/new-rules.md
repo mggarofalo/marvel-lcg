@@ -7,7 +7,6 @@ source: "mc39_mojomania_rules_insert-compressed.pdf"
 page: 7
 hash: "sha256:3ab17d19c46839f99357e46fbbccf6428f4265e732c779958fb3b0c8ae592ae0"
 rules: ["ratings-counters", "in-order-to-win-the-magog-scenario-the-players-must-wow-the-crowd-by-earning-ten-ratings-counters-per", "scheme-but-instead-by-earning-ten-ratings-counters"]
-references: []
 ---
 
 # NEW RULES

@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 16
 hash: "sha256:bb933233bc4bc6c157d9269af17636a4a6e1d2987cf37e5f015b3bd8e6f1f3be"
 rules: []
-references: []
 ---
 
 # UNIQUE RULE AND OTHER ABILITIESGive the attacking leader a facedown boost card

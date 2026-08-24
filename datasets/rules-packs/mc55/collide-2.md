@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 21
 hash: "sha256:5e8ac534893623e5fa7b88e984bf4453a4c753828d6122c722e3a2073319b926"
 rules: []
-references: []
 ---
 
 # COLLIDE

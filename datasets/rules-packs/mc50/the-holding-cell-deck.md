@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 13
 hash: "sha256:78a9bc2ed70ed8fc5450a903a7a7d559e12f67757ca8f5f35bdbabfcdac21257"
 rules: []
-references: []
 ---
 
 # THE HOLDING CELL DECK

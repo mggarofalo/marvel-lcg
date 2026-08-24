@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 9
 hash: "sha256:316d75575507690c0e8af6f8c2470f9f19b76f29a77e58ef347ddeea3ce14177"
 rules: []
-references: []
 ---
 
 # READY AND EXHAUSTED

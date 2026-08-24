@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 13
 hash: "sha256:84cbde2e85be3596b8cfb2a4075dd8be5fc81dfc1a402248578439aa08587098"
 rules: []
-references: []
 ---
 
 # PLAYER DECK

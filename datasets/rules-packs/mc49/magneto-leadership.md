@@ -7,7 +7,6 @@ source: "mc49_magneto_rules_insert.pdf"
 page: 1
 hash: "sha256:aaa7d6c30b7eae3e127f135c75d617c195173a5d456910cbaa7cac1d6c4009eb"
 rules: []
-references: []
 ---
 
 # MAGNETO // LEADERSHIP

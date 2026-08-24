@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 20
 hash: "sha256:2820a7dc0b38fdb0aab5e55594c363b61712a2da5345ae60bdb9b16839be5530"
 rules: []
-references: []
 ---
 
 # SCENARIO #4 - HELA

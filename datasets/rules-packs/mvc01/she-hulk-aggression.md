@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 21
 hash: "sha256:343c696e151eb54db8767e84c64b3b04dca7d895491bbf6973232edfceda317d"
 rules: []
-references: []
 ---
 
 # SHE-HULK / AGGRESSION

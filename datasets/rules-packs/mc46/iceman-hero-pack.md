@@ -7,7 +7,6 @@ source: "mc46_iceman_rules_insert-web.pdf"
 page: 1
 hash: "sha256:a247d23bf6b77a40f43d0023fe3131b985f76969df4aa3bc338556ed4f53b195"
 rules: ["frostbite-upgrade", "new-card-type-player-side-scheme", "featured-term-indirect-damage", "featured-keyword-permanent", "featured-keyword-victory-x"]
-references: []
 ---
 
 # ICEMAN HERO PACK

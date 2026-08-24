@@ -7,7 +7,6 @@ source: "mc43_x-23_rules_insert-web.pdf"
 page: 1
 hash: "sha256:0c0ba39e495989fbd683c024a0e2c5f6ac48e2cc108fd8c2315bc89e2edee56f"
 rules: []
-references: []
 ---
 
 # X-23 // LAURA KINNEY

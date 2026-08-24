@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 22
 hash: "sha256:e9a5c603f8c8d3eb9d2c720b76014a8d1916d2639d19620088df81f8fe107a97"
 rules: ["q-how-does-the-reluctant-foe-attachment-171-work"]
-references: []
 ---
 
 # BARON ZEMO

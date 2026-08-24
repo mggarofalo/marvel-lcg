@@ -7,7 +7,6 @@ source: "mc61_rulesheet-web.pdf"
 page: 1
 hash: "sha256:62ac307fa9f47c9555b9f6470fce4c3986c92215d293eba02bd523c35b1610e2"
 rules: ["new-keyword-prerequisite-form-or", "new-keyword-starting", "new-term-exactly-defeat", "featured-terms"]
-references: []
 ---
 
 # JESSICA JONES HERO PACK

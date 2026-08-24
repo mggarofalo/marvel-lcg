@@ -7,7 +7,6 @@ source: "mc28_nova_rulesheet.pdf"
 page: 1
 hash: "sha256:dcd01ed2fdb22d67a370b7ed226f23f52c9cc1c834cabc9f89da95053b9a9b50"
 rules: ["rule-clarification-stacking-tough-status-cards", "new-keyword-requirement-resources"]
-references: []
 ---
 
 # NOVA HERO PACK

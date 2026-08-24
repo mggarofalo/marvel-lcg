@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 15
 hash: "sha256:5f9c3c02fd171b3744a062eb5bc9d810b06faf41a37bceaa92b7e00ad9063c1d"
 rules: []
-references: []
 ---
 
 # STEP ONE — PLACE THREAT

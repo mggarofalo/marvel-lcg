@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 5
 hash: "sha256:46f57f1c06ea968f0c26909204390f1dd03ec0ee0224a2a65e990262a6c05c43"
 rules: []
-references: []
 ---
 
 # HAMMERHEAD

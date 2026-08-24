@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 7
 hash: "sha256:896d59a9a6e77e6d590837382517d587405fa9674e318118057076a97673b1fe"
 rules: []
-references: []
 ---
 
 # REGISTRATION SCENARIOS

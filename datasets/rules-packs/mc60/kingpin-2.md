@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 26
 hash: "sha256:be6b8571d5c8034a9dc44073a589f8330a2d4d076587cf64211b84d9e789a361"
 rules: ["q-does-black-cat-169-retain-the-villainous-keyword-while-she-is-an-ally"]
-references: []
 ---
 
 # KINGPIN

@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 11
 hash: "sha256:b9e2ed8b31bfd7b41cf0beea578d07fff24df55b81d788dfa44892b13e93b06a"
 rules: []
-references: []
 ---
 
 # SCENARIO #2 - BATROC

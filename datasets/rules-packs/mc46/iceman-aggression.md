@@ -7,7 +7,6 @@ source: "mc46_iceman_rules_insert-web.pdf"
 page: 1
 hash: "sha256:8577752ac31952f24ea30358fb915283f72594d3ddd9f45dff2d5a5c845842b9"
 rules: []
-references: []
 ---
 
 # ICEMAN // AGGRESSION

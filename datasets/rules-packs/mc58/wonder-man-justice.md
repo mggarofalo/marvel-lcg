@@ -7,7 +7,6 @@ source: "mc58_rulesheet-web_1.pdf"
 page: 1
 hash: "sha256:cd6e26107bdbaece5d32062ea397362882fdeac0da13513338936d6aeedec8c2"
 rules: []
-references: []
 ---
 
 # WONDER MAN // JUSTICE

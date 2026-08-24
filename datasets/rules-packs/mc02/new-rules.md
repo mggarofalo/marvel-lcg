@@ -7,7 +7,6 @@ source: "mc02_green_goblin_rules_insert.pdf"
 page: 4
 hash: "sha256:00a82c925f7b12681a47c06cb87636ed1d03670de57bdb606948f9c2f107f88b"
 rules: ["when-the-villain-changes-form", "when-a-villain-stage-is-defeated", "when-norman-osborn-attacks", "when-green-goblin-schemes", "when-revealed-green-goblin-when-revealed-norman-osborn"]
-references: []
 ---
 
 # NEW RULES

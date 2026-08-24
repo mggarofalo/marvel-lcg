@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 5
 hash: "sha256:f6cdbd69dd67b9b4638ea41c5a833857bcfd51d66a8536bb47c112cb05d683fc"
 rules: []
-references: []
 ---
 
 # EXECUTIVE BOARD

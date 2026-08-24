@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 4
 hash: "sha256:12fd8bfa0b81099c9b459b5cbeb0dd41ac958ff546e7ab93c7d05d65f900a043"
 rules: []
-references: []
 ---
 
 # AMPLIFY ICON () (UPDATED)

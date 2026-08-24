@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 20
 hash: "sha256:5e61972653ef1864c8c6d79a26ea7b0da10e537a7fe0b265e7cf3000c9fb2bc6"
 rules: []
-references: []
 ---
 
 # EXPERT CAMPAIGN RULES

@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 6
 hash: "sha256:b12046aecd0d5a33e02dd5146c77740c97276527e5bfb8c653c5a7f071006b07"
 rules: []
-references: []
 ---
 
 # MODULAR SET

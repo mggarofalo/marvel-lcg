@@ -7,7 +7,6 @@ source: "mc42_angel_rules_insert-web.pdf"
 page: 1
 hash: "sha256:438409572998b98e73ebf8c7494c88a2d98ac2edddefc119610823c9806c139a"
 rules: ["foldable-cards", "new-card-type-player-side-scheme", "featured-keyword-alliance", "featured-keyword-piercing", "featured-keyword-team-up", "featured-keyword-victory-x"]
-references: []
 ---
 
 # ANGEL HERO PACK

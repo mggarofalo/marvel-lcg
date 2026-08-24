@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 5
 hash: "sha256:ddc85812fab14f58c26d4ac0ae1a56ef4d34acf86db25ad891af161112da8299"
 rules: []
-references: []
 ---
 
 # UNITS AND THE MARKET

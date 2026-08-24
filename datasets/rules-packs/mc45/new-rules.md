@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 3
 hash: "sha256:a026fa14ea3e5b4d4087b9986b087463caf127622392cdfe1f31ebfb0bb6129b"
 rules: ["find"]
-references: []
 ---
 
 # NEW RULES

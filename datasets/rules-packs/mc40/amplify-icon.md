@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 5
 hash: "sha256:b5b7f11558057c2753586472d716b7f86aa1c2c22c4264fa0020bba33e441caf"
 rules: []
-references: []
 ---
 
 # AMPLIFY ICON

@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 9
 hash: "sha256:a64d97ca7e64e3b3a399738de1200150eab39a3ceb6d70e22e99c303434159e3"
 rules: []
-references: []
 ---
 
 # MULTIPLE VILLAINS

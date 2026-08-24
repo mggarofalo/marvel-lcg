@@ -7,7 +7,6 @@ source: "mc28_nova_rulesheet.pdf"
 page: 1
 hash: "sha256:45285f6e1dc9849b5a3aeaac829238f67cc47aea3c3f149708f49b10e0bf95cb"
 rules: []
-references: []
 ---
 
 # NOVA // AGGRESSION

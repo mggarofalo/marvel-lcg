@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 16
 hash: "sha256:fd39c27a9bdc81b27486e7d0647cff44e53eabff144e0efa80a55ccf4db28dfe"
 rules: []
-references: []
 ---
 
 # SCENARIO #3 - THANOS

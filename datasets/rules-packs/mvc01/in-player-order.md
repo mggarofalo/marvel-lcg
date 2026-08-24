@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 9
 hash: "sha256:632d19b6c3d9075e0b6ff0f7f91fe71022293ec67cd59259f1b8065a52aff991"
 rules: []
-references: []
 ---
 
 # “IN PLAYER ORDER”

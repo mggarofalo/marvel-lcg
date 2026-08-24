@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 12
 hash: "sha256:0e83388ce7479d0f94508313f0a02ba1764eaca8590f99c78a1297f459bd4634"
 rules: []
-references: []
 ---
 
 # DEALING DAMAGE

@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 20
 hash: "sha256:b17c032bddf9714d640125740244160326633c319bbd3dc1c53c72f931d27db5"
 rules: []
-references: []
 ---
 
 # GROOT // PROTECTION

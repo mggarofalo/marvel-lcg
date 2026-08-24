@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 15
 hash: "sha256:fe929f407fa476754597f6b7b7f9b7ad44cbf1ff7f699930aaf1d7fe72e230ff"
 rules: []
-references: []
 ---
 
 # MINION ACTIVATIONS

@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 9
 hash: "sha256:ca482e50844aceff67a5b0113da74173a1770aae2f8bc0f85c6e43551680306e"
 rules: ["find"]
-references: []
 ---
 
 # FEATURED TERMS

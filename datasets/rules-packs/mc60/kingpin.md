@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 23
 hash: "sha256:fa1e3c35673665de9762f37e6510ead85615e6306ff3fe0acefcc14815c3d7ef"
 rules: []
-references: []
 ---
 
 # KINGPIN

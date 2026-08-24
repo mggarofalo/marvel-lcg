@@ -7,7 +7,6 @@ source: "mc11_once_and_future_kang_rules_insert-compressed.pdf"
 page: 2
 hash: "sha256:e55865d7847a5bf81266a89d9f67790757d2d72679d3b258de2d115f32bbed11"
 rules: ["incite-x", "piercing", "villainous"]
-references: []
 ---
 
 # NEW KEYWORDS

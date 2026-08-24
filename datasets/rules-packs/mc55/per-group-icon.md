@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 4
 hash: "sha256:018dc4ba2c12a727f5adade7d167a7ea6f3815705fe0e79928fc36e337d0b947"
 rules: []
-references: []
 ---
 
 # PER GROUP ICON ()

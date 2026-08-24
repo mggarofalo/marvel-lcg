@@ -7,7 +7,6 @@ source: "mc06_thor_rulesheet.pdf"
 page: 1
 hash: "sha256:4765df893e1bb8808e61cc3f2b26ccd4bf57ad43909ca3d432fd2ce4b5ed6e9b"
 rules: []
-references: []
 ---
 
 # THOR HERO PACK

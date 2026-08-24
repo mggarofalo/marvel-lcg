@@ -7,7 +7,6 @@ source: "mc44_deadpool_rules_insert-web.pdf"
 page: 2
 hash: "sha256:579cd96e3873199038583bf31f8ad532755d4a0255c468288fc536425e461207"
 rules: ["alliance", "ranged", "victory-x"]
-references: []
 ---
 
 # FEATURED KEYWORDS

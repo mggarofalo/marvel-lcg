@@ -7,7 +7,6 @@ source: "mc20_venom_rulesheet.pdf"
 page: 1
 hash: "sha256:84667333fee0fe65321a153c8aaedfcadbc37fb25fd975a36ac88e720933d895"
 rules: ["new-keyword-patrol", "new-keyword-ranged", "frequently-asked-questions"]
-references: []
 ---
 
 # VENOM HERO PACK

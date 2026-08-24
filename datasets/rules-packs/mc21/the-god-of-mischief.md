@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 24
 hash: "sha256:1a0da2d03eeb344e4c9359d6909ccefa428d29dba0821896768e6a1232772fee"
 rules: []
-references: []
 ---
 
 # THE GOD OF MISCHIEF

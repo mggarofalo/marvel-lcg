@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 11
 hash: "sha256:e3efbea0ff846a48295c8259bc00ae7a4471f13158183e806e7327bd146eaaab"
 rules: ["form-once-each-round-only-during-their-own-turn"]
-references: []
 ---
 
 # CHANGING FORM

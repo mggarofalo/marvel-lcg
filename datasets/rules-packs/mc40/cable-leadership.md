@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 22
 hash: "sha256:66e3b76c4b94e46b8040d69b2d35dfdd324ae724e53d0176ffdbc81fc5576620"
 rules: []
-references: []
 ---
 
 # CABLE // LEADERSHIP

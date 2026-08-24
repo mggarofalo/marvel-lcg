@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 5
 hash: "sha256:b19f96a80e96e1b4c68183540e3635253595599262f9de86523435cf1331b4ed"
 rules: []
-references: []
 ---
 
 # SIDE MISSIONS OVERVIEW

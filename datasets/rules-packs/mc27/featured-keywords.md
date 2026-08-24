@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 3
 hash: "sha256:ffdc22fc123bce0e8ed2af7dddf4591a801aedead8706be10271f381ddea9268"
 rules: ["hinder-x", "incite-x", "patrol", "permanent", "piercing", "setup", "stalwart", "steady", "team-up", "villainous", "victory-x"]
-references: []
 ---
 
 # FEATURED KEYWORDS

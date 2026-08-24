@@ -7,7 +7,6 @@ source: "mc41_psylocke_rules_insert-web.pdf"
 page: 1
 hash: "sha256:0ced51523c99986aabcc14a1c56a02632b6dfe705555e9355ec8b93ac8a8a38f"
 rules: ["new-card-type-player-side-scheme", "featured-keyword-piercing", "featured-keyword-ranged", "featured-keyword-team-up", "featured-keyword-victory-x"]
-references: []
 ---
 
 # PSYLOCKE HERO PACK

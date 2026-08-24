@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 19
 hash: "sha256:5ffddc7e2b24ef43e83404f56e93c055b7a350f010c99d57957fb805ab7f936f"
 rules: []
-references: []
 ---
 
 # SWAPPING AVATARS OF LOKI

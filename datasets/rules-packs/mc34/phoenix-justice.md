@@ -7,7 +7,6 @@ source: "mc34_phoenix_rules_insert.pdf"
 page: 1
 hash: "sha256:e3e62d71d64d904f4f98601b53e947ed8570c0a53d5ad706a93d3151ac7d39b5"
 rules: []
-references: []
 ---
 
 # PHOENIX // JUSTICE

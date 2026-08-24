@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 3
 hash: "sha256:051729425edb208496715aa3b3051582b7b393f92a6bf90c32d0f38ab59895c2"
 rules: ["form", "hinder-x", "incite-x", "patrol", "permanent", "piercing", "ranged", "setup", "stalwart", "steady", "team-up", "victory-x", "villainous", "vulnerable"]
-references: []
 ---
 
 # FEATURED KEYWORDS

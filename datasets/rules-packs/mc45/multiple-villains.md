@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 11
 hash: "sha256:6748319e9cb4f8a643af3c86808d0cac52cb895964fd7267042bcd2caa978793"
 rules: []
-references: []
 ---
 
 # MULTIPLE VILLAINS

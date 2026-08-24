@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 4
 hash: "sha256:f9a34765f9825b2018c1888c48bc3504791322e29aad68be301c28ff56a86abc"
 rules: []
-references: []
 ---
 
 # ALL-PURPOSE COUNTERSCAMPAIGN MODE RULES

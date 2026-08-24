@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 15
 hash: "sha256:dd7462138c2c06cc4f8a91a9247e1b5121c7beafc4b461fdf92fec2d32bb76c0"
 rules: []
-references: []
 ---
 
 # MULTIPLE VILLAINS

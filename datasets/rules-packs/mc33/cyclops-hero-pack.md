@@ -7,7 +7,6 @@ source: "mc33_cyclops_rules_insert.pdf"
 page: 1
 hash: "sha256:d4eb1e4e7700a1b36bbcbac17c4f8933d5d2a1bdc2abcee97d44df84642b0519"
 rules: ["new-keyword-piercing", "new-keyword-ranged", "new-keyword-stalwart", "new-keyword-team-up", "new-keyword-temporary", "new-keyword-villainous", "frequently-asked-questions"]
-references: []
 ---
 
 # CYCLOPS HERO PACK

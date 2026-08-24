@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 22
 hash: "sha256:c0dabd3c80acf68310d29afbcd875c8efcb386642f676a2b9ef9703d134762a0"
 rules: []
-references: []
 ---
 
 # DOMINO // JUSTICE

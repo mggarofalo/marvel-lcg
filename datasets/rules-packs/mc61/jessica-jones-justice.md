@@ -7,7 +7,6 @@ source: "mc61_rulesheet-web.pdf"
 page: 1
 hash: "sha256:8118c920c3034ca35ce1473cb6e2069375ae5350e3c5efe01d604a5acd98ffc6"
 rules: []
-references: []
 ---
 
 # JESSICA JONES // JUSTICE

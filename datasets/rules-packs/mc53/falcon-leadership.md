@@ -7,7 +7,6 @@ source: "mc53_rulesheet-web.pdf"
 page: 1
 hash: "sha256:a398050e1929447e1688e59b5832f89f3a579951c82e9af64c4f9eafbe6c0588"
 rules: []
-references: []
 ---
 
 # FALCON // LEADERSHIP

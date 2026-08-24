@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 15
 hash: "sha256:2d34f47da8c5bbe2268caf96806b36897c9b77240b7dba61ddf811cad3eb3e78"
 rules: ["scheme-2b-the-players-lose-the-game"]
-references: []
 ---
 
 # VARIABLE MAIN SCHEMES

@@ -7,7 +7,6 @@ source: "mc55_rulebook-web.pdf"
 page: 7
 hash: "sha256:bd13f4ed6ffdcb4296f1b875495d1645edf7330ed94902e2ad2a6a7ce817fab8"
 rules: []
-references: []
 ---
 
 # FORCED ACTIONS

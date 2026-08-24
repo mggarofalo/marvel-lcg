@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 18
 hash: "sha256:2a7c5feb36255db3d1a0daf44f3f5ed77bfa69b014e18d9c4fb01750576b9325"
 rules: []
-references: []
 ---
 
 # TIGRA // AGGRESSION

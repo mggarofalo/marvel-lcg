@@ -7,7 +7,6 @@ source: "mc11_once_and_future_kang_rules_insert-compressed.pdf"
 page: 7
 hash: "sha256:281d42af87b3b229aecaa90e24f22222a1d8f1a4e3723fc2fdee9b26de5d2f11"
 rules: []
-references: []
 ---
 
 # RULES CLARIFICATIONS

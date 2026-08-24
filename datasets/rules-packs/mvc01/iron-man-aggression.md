@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 20
 hash: "sha256:ed33c86c65af5c68255d16e0986ba669f5d528fe2037a80f52d656207e4241f2"
 rules: []
-references: []
 ---
 
 # IRON MAN / AGGRESSION

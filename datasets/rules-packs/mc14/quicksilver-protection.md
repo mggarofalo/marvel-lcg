@@ -7,7 +7,6 @@ source: "mc14_quicksilver_rulesheet.pdf"
 page: 1
 hash: "sha256:7ab0d3a4567df4f57adf770236a279738314a4ea3058f000035b7f748c71b7ab"
 rules: []
-references: []
 ---
 
 # QUICKSILVER // PROTECTION

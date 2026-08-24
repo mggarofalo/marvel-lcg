@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 3
 hash: "sha256:86289ece33daa9e1b21416dd7a0fb725735832cc8324ba56e10fc67f64055190"
 rules: []
-references: []
 ---
 
 # FOUR ASPECTS

@@ -7,7 +7,6 @@ source: "mc59_rulesheet-web_1.pdf"
 page: 1
 hash: "sha256:c617fd0547cf7ece8a5f0858e96b59c71a11147605385b87d15c87cb1418798a"
 rules: []
-references: []
 ---
 
 # HERCULES // LEADERSHIP

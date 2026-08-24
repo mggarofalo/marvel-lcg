@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 14
 hash: "sha256:133fc311518d64e0d917a08093631e1d55bff56e5e06fde02303e9e9a9081094"
 rules: []
-references: []
 ---
 
 # MOMENTUM COUNTERS

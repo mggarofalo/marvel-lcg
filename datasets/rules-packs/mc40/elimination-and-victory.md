@@ -7,7 +7,6 @@ source: "mc40_next_evolution_rulebook-web.pdf"
 page: 7
 hash: "sha256:43e5d378bf86f2360fbbf726b0366526ceeeea6354bd63d205be66e8375afdb4"
 rules: []
-references: []
 ---
 
 # ELIMINATION AND VICTORY

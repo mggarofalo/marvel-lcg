@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 21
 hash: "sha256:f5ee73b93357aeeba5adb7f8e1bc417c3fb9154983e53ec0bea6bd0017bb9796"
 rules: []
-references: []
 ---
 
 # CAMPAIGN INSTRUCTIONS

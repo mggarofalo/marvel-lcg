@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 6
 hash: "sha256:2f66a659db22c6982faafd1600902eee65be41bb1dd44c29a6a7162f4fa962c5"
 rules: []
-references: []
 ---
 
 # PERSISTENT DAMAGE

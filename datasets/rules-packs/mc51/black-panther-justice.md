@@ -7,7 +7,6 @@ source: "mc51_rulesheet-web.pdf"
 page: 1
 hash: "sha256:59b62161826726c91af5c03dceea9932f1434dff310f00dec22ebe6b93a8f9b1"
 rules: []
-references: []
 ---
 
 # BLACK PANTHER // JUSTICE

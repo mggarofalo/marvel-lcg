@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 6
 hash: "sha256:15e8f1cdbe2ba5e09bdb6fdf8dfe06eaf9816ae398f952290f7fd3d25b96b4ed"
 rules: []
-references: []
 ---
 
 # PERSISTENT DAMAGE

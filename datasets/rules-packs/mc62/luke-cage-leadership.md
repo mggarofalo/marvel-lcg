@@ -7,7 +7,6 @@ source: "mc62_rulesheet-web.pdf"
 page: 1
 hash: "sha256:597fd564a8e290bbe84a931e0947b466f13f5aab4780c387e51d669ef5ce97ac"
 rules: []
-references: []
 ---
 
 # LUKE CAGE // LEADERSHIP

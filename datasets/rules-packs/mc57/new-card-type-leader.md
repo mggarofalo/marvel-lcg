@@ -7,7 +7,6 @@ source: "mc57_rulebook-web.pdf"
 page: 2
 hash: "sha256:282d4b2cd333a85f72bc5af2e3ca02010f58c83bc2376ec8dff2afe626d68cdf"
 rules: []
-references: []
 ---
 
 # NEW CARD TYPE: LEADER

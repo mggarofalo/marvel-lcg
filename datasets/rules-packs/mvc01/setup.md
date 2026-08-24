@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 4
 hash: "sha256:a2ffcd94b4a7ac447c468e70b004a386f031ccda1aeb3e3e35560df818866b0b"
 rules: ["collect-tokens-and-status"]
-references: []
 ---
 
 # SETUP

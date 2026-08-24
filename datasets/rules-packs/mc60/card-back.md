@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 4
 hash: "sha256:32e1d6042266617884ac67317ddbbef1bf204c2f61ee84b8df88d812ba01c4f5"
 rules: []
-references: []
 ---
 
 # CARD BACK

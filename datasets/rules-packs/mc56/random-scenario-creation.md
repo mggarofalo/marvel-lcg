@@ -7,7 +7,6 @@ source: "mc56_rulebook-web_1.pdf"
 page: 5
 hash: "sha256:9aea21682dc92c3e498b175e824dc4d09b844259cedd06b7fc0b5397a36d04dc"
 rules: []
-references: []
 ---
 
 # RANDOM SCENARIO CREATION

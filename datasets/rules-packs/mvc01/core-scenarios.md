@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 23
 hash: "sha256:0e12e39317c508b329f9830b988afe9f40a78a7001522f1ed6b6cf023790a5de"
 rules: []
-references: []
 ---
 
 # CORE SCENARIOS

@@ -7,7 +7,6 @@ source: "mc50_rulebook-web.pdf"
 page: 4
 hash: "sha256:eb144d288f2402b38358dbe79aa4c93266142fb24369b72d7d1b8898bd9f33ef"
 rules: []
-references: []
 ---
 
 # AMPLIFY ICON ()scenario #1 – Black Widow and ending with scenario

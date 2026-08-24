@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 15
 hash: "sha256:73540fec55205e2c4ac95eeb1b68ad1518cdc5736c31234dfbd3bbb9f7b667d8"
 rules: []
-references: []
 ---
 
 # ACTIVATION ORDER

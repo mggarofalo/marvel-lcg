@@ -7,7 +7,6 @@ source: "mc39_mojomania_rules_insert-compressed.pdf"
 page: 16
 hash: "sha256:8c232824a2ecd26e240eecf337c1238d61c2a5ffd2134800e65ba006c58d786a"
 rules: ["set-aside-encounter-sets", "wheel-of-genres"]
-references: []
 ---
 
 # NEW RULES

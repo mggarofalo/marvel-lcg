@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 13
 hash: "sha256:e2840c64efd02cf77b939c26f91feeaa92b87c9bf0f596524f893bfaf63713ce"
 rules: []
-references: []
 ---
 
 # SEPARATE MAIN SCHEMES

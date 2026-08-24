@@ -7,7 +7,6 @@ source: "mc60_rulebook-web.pdf"
 page: 4
 hash: "sha256:f6a7bc61ccbdda150dd2db36951ded30c6bbb757ac6fb8c733e93239262845c8"
 rules: []
-references: []
 ---
 
 # FEATURED TERMSPLAYER SIDE SCHEMES

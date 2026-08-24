@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 17
 hash: "sha256:65cb53dcbd9206c2561cc319566640f1beb098d3f81c24e9f6919119429d9c14"
 rules: []
-references: []
 ---
 
 # NEMESIS SIDE SCHEMES

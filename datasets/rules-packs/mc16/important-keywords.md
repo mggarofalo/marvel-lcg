@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 3
 hash: "sha256:b0cde23a2e0ecc5156a477b6fe1ddb85ca5d92e4d011bc54e760fb955400c871"
 rules: ["hinder-x", "incite-x", "patrol", "permanent", "piercing", "ranged", "setup", "stalwart", "team-up", "villainous", "victory-x"]
-references: []
 ---
 
 # IMPORTANT KEYWORDS

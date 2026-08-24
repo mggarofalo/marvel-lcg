@@ -7,7 +7,6 @@ source: "mc45_age_of_apocalypse_rulebook.pdf"
 page: 6
 hash: "sha256:5f50c1be77c604101301fb2f6d4597cbe468422689c9da7b413e4d329c8e6d8d"
 rules: []
-references: []
 ---
 
 # MISSION ATTEMPTS

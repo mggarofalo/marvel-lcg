@@ -7,7 +7,6 @@ source: "mvc01_learn_to_play_eng-compressed.pdf"
 page: 2
 hash: "sha256:2842ba56a7104d6f36b39853922a5fd98e8765bb7041e0c20041e8a946118250"
 rules: []
-references: []
 ---
 
 # CARD GAME

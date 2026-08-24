@@ -7,7 +7,6 @@ source: "mc16_galaxys_most_wanted_rules_website-compressed.pdf"
 page: 5
 hash: "sha256:e3748733d315f137fdfa05b2acc5b66ab6da30c3f6f69eddd009792a8a6ab5a1"
 rules: []
-references: []
 ---
 
 # ELIMINATION AND VICTORY

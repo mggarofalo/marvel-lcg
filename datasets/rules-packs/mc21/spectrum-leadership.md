@@ -7,7 +7,6 @@ source: "mc21_the_mad_titans_shadow_rulebook-compressed.pdf"
 page: 3
 hash: "sha256:e0ba521881b4644c9a54945d0a5e9ca13b3c4957c56c11aa3268a0ef4e648f78"
 rules: []
-references: []
 ---
 
 # SPECTRUM // LEADERSHIP

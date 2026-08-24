@@ -7,7 +7,6 @@ source: "mc27_sinister_motives_rules_v5-compressed.pdf"
 page: 21
 hash: "sha256:f03085b6469c0dc711cdc3a956790d60524ea037f19ba946f257197d1b6f7f57"
 rules: ["q-can-i-use-cards-from-the-spider-man-miles-morales-set-when-i-play-spider-man-peter-parker-and-vice-versa"]
-references: []
 ---
 
 # SPIDER-MAN (MILES MORALES)

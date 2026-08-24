@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 4
 hash: "sha256:449a166d5cc13dbca33bc6474363173870739e5418ef0e93cd12c93001955341"
 rules: []
-references: []
 ---
 
 # CAMPAIGN MODE RULES

@@ -7,7 +7,6 @@ source: "mc38_rogue_rules_insert.pdf"
 page: 1
 hash: "sha256:e872815dfa6721980a7ef109a2739ebeed3216ef7c53e3f1916127e9ce2860da"
 rules: ["new-keyword-stalwart", "new-keyword-team-up", "new-keyword-teamwork", "new-keyword-villainous", "rules-clarification", "frequently-asked-questions"]
-references: []
 ---
 
 # ROGUE HERO PACK

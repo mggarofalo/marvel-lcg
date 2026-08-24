@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 22
 hash: "sha256:9a2791fbdac00ffd3b77b2d090a4c9d0dba3a3e3bf7787bc33d6095a67d30f38"
 rules: []
-references: []
 ---
 
 # AGGRESSION

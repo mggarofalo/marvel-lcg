@@ -7,7 +7,6 @@ source: "mc57_rulebook-web.pdf"
 page: 9
 hash: "sha256:213e3e502235febe663e95c80b9b2b2dd99c8c664a6fdb3ac917b87f960ff01d"
 rules: []
-references: []
 ---
 
 # COMPETITIVE MODE

@@ -7,7 +7,6 @@ source: "mc12_ant-man_rulesheet.pdf"
 page: 1
 hash: "sha256:7243decd00db61ca93b754607db58f03f9d1e567321770221f7ddc5639d5a15d"
 rules: ["foldable-cards", "new-keyword-team-up", "rules-clarifications"]
-references: []
 ---
 
 # ANT-MAN HERO PACK

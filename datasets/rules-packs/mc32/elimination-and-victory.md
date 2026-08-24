@@ -7,7 +7,6 @@ source: "mc32_mutant_genesis_rulebook_v5-compressed.pdf"
 page: 5
 hash: "sha256:b741a5b7f459ba665e6e5c222fbaf85d419bdb529a0a761daa85807971785c78"
 rules: []
-references: []
 ---
 
 # ELIMINATION AND VICTORY

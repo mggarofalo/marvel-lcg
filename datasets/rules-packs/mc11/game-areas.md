@@ -7,7 +7,6 @@ source: "mc11_once_and_future_kang_rules_insert-compressed.pdf"
 page: 5
 hash: "sha256:a566129958928343e857f3b9f2c03d8aea28a1d4dcc7ef5b526efb1134a35ad2"
 rules: ["game-area-cannot-affect-another-game-area-with-the"]
-references: []
 ---
 
 # GAME AREAS
