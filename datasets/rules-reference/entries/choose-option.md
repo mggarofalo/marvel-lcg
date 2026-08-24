@@ -1,0 +1,28 @@
+---
+id: "rr:choose-option"
+title: "CHOOSE (OPTION)"
+document: "Rules Reference"
+version: "1.8"
+page: 12
+hash: "sha256:69705d922699867f46b9824ffe5ce8cb1a87c55a950f1baf25ecd56e41a29ca5"
+see_also: ["rr:ability", "rr:player", "rr:target"]
+---
+
+# CHOOSE (OPTION)
+
+. Some abilities instruct a player to choose between multiple options. *For example, “Choose to either take 1 damage or discard 1 card from your hand.”*
+
+<a id="choose-option-1"></a>
+1. When an encounter card requires a player to choose an option, they cannot choose an option that requires one or more targets if there are no valid targets for that option.
+
+<a id="choose-option-2"></a>
+2. When a player card requires a player to choose an option, they cannot choose an option that cannot be at least partially resolved. This includes options that:
+    <a id="choose-option-2-1"></a>
+    - Have a cost the player cannot pay.
+    <a id="choose-option-2-2"></a>
+    - Require one or more targets and there are no valid targets.
+
+<a id="choose-option-3"></a>
+3. When a card requires a player to choose multiple options from a list, that player cannot choose the same option multiple times.
+
+**See also:** [Ability](ability.md), [Player](player.md), [Target](target.md)
