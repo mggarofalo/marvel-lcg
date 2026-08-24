@@ -66,6 +66,15 @@ QUARANTINE = os.path.join("specs", "quarantine.json")
 
 TAG_PREFIX = "rr:"
 
+# `@rr:none` — this scenario asserts something the rulebook does not speak to,
+# and saying so is a claim rather than an omission. `specs/rules/option-binding`
+# is the case it was added for: it pins which *option* an assertion binds to
+# when two cards share the label "Play", which is spec vocabulary, not a rule.
+# Without this, such a file sits in the ungrounded count forever and the number
+# never reaches zero however much work is done -- so the number stops meaning
+# anything.
+NONE_TAG = "rr:none"
+
 
 def read_json(path: str) -> Dict[str, Any]:
     if not os.path.exists(path):
@@ -85,7 +94,12 @@ def load_index(path: str = RULES_INDEX) -> Dict[str, Any]:
 
 def cited_ids(case) -> List[str]:
     """The `@rr:` tags on a scenario, as citation ids."""
-    return [tag for tag in case.tags if tag.startswith(TAG_PREFIX)]
+    return [tag for tag in case.tags
+            if tag.startswith(TAG_PREFIX) and tag != NONE_TAG]
+
+
+def declines_citation(case) -> bool:
+    return NONE_TAG in case.tags
 
 
 class RulesCoverage:
@@ -107,10 +121,13 @@ class RulesCoverage:
         # treatment `tools.spec.coverage` gives an unknown `@card:` tag.
         self.unknown_tags: Dict[str, List[str]] = collections.defaultdict(list)
         self.ungrounded: List[str] = []
+        self.declined: List[str] = []
 
         for case in cases:
             citations = cited_ids(case)
-            if not citations and self._is_rules_spec(case):
+            if declines_citation(case):
+                self.declined.append(case.case_id)
+            elif not citations and self._is_rules_spec(case):
                 self.ungrounded.append(case.case_id)
             for citation in citations:
                 if citation not in self.records:
@@ -189,6 +206,7 @@ class RulesCoverage:
             "suspect_entries": len(self.suspect),
             "unknown_tags": sum(len(v) for v in self.unknown_tags.values()),
             "stale_pins": len(self.stale),
+            "declined": len(self.declined),
         }
 
 
@@ -269,6 +287,9 @@ def main(argv: Sequence[str] | None = None) -> int:
           "   assert the engine, cite nothing")
     print(f"  suspected engine rules errors {summary['suspect_entries']:>4}"
           "   cited rule, failing scenario")
+    if summary["declined"]:
+        print(f"  deliberately uncited           {summary['declined']:>4}"
+              "   @rr:none -- no rule to cite")
     if summary["stale_pins"]:
         print(f"  citations on stale pins        {summary['stale_pins']:>4}"
               "   scenario edited since it was trusted")
@@ -285,6 +306,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         report = dict(summary)
         report["uncited"] = coverage.Uncited()
         report["ungrounded"] = list(coverage.ungrounded)
+        report["declined"] = list(coverage.declined)
         report["suspect"] = {k: list(v) for k, v in coverage.suspect.items()}
         report["unknown_tags"] = {k: list(v)
                                   for k, v in coverage.unknown_tags.items()}

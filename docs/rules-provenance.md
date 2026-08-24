@@ -212,6 +212,43 @@ corner. `rr:resource.1` says bottom-left, and the Rules Reference is right.
 Trivial in itself, and precisely the class of quiet error that a spec suite
 grounded in nothing but the engine cannot surface.
 
+## Rules point one way: exceptions reference bases, never the reverse
+
+**A base rule states the default and says nothing about its exceptions. An
+exception states what it does and that it overrides the base.** The Rules
+Reference itself is written this way where it states priority at all, and the
+corpus follows it rather than inventing a web of mutual cross-references.
+
+The rulebook does *not* consistently help here. It frequently states only the
+exceptions and leaves the reader to construct the base rule by noticing what is
+absent. Reproducing that faithfully would make the corpus useless for the thing
+it is for: an agent adjudicating one situation should find one self-contained
+rule, not a scavenger hunt.
+
+The worked example is damage to a minion. `rr:damage` is complete on its own —
+damage is placed on the character it was dealt to, and a defeated character is
+discarded. Nothing transfers anywhere. "Excess damage is lost" is therefore not
+a rule at all; it is the base rule with no exception applied. `rr:overkill` is
+what *adds* a transfer, and overkill is where that relationship belongs.
+
+So the base damage rule must never be written as "the extra point goes nowhere,
+in particular not to the villain" — overkill does not generally apply to
+damaging a minion, and mentioning it there imports an exception into a case
+that does not have one.
+
+### What this means for citations
+
+A **control** scenario — one that establishes what happens when the exception
+is *absent* — cites the **base** rule, not the exception. Nine citations in
+`specs/rules/` were initially wrong this way: "a card without surge reveals
+nothing more" cited `rr:surge`, when its claim is entirely about
+`rr:villain-phase.step.4`; "with no guard in play the villain is attackable"
+cited `rr:guard` rather than `rr:attack-player-ability-type.1`.
+
+The test is simple: **if the exception vanished from the game, would the
+scenario still pass?** If yes, it is a base-rule claim and must cite the base
+rule.
+
 ## The first thing the loop found
 
 Worth recording, because it is the argument for the whole document.

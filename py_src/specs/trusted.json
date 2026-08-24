@@ -138,19 +138,19 @@
       "source": "specs/cards/core/01138b-assault-on-norad.feature"
     },
     "Basic actions :: a basic attack deals the hero's ATK and exhausts them": {
-      "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
+      "sha256": "d8c7df8fb2407f992b293370c4fd245d29080a394df3559d0c14b162623ba4eb",
       "source": "specs/rules/basic-actions.feature"
     },
     "Basic actions :: a basic thwart removes the hero's THW from the main scheme": {
-      "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
+      "sha256": "d8c7df8fb2407f992b293370c4fd245d29080a394df3559d0c14b162623ba4eb",
       "source": "specs/rules/basic-actions.feature"
     },
     "Basic actions :: an alter-ego is not offered an attack": {
-      "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
+      "sha256": "d8c7df8fb2407f992b293370c4fd245d29080a394df3559d0c14b162623ba4eb",
       "source": "specs/rules/basic-actions.feature"
     },
     "Basic actions :: changing form flips the identity to its hero side": {
-      "sha256": "6dd4cffc05a659e22792752dfadf349f650386745d1996557f708938bfaf47b4",
+      "sha256": "d8c7df8fb2407f992b293370c4fd245d29080a394df3559d0c14b162623ba4eb",
       "source": "specs/rules/basic-actions.feature"
     },
     "Black Panther :: a basic attack deals his printed ATK 2, and he has 11 hit points": {
@@ -362,75 +362,75 @@
       "source": "specs/cards/core/01108-crowd-control.feature"
     },
     "Damage and threat :: a card effect is stopped by the icon too, and is still spent": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: a completed main scheme ends the game": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: a crisis icon stops threat coming off the main scheme, and still costs the exhaust": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: a second crisis scheme behaves the same way": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: a side scheme without the icon does not stop it": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: an ally is stopped by the icon as well": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: an ally that attacks takes consequential damage": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: an ally that thwarts takes consequential damage too": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: damage stays on the enemy it was dealt to": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: excess damage is lost rather than carried to another enemy": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: one short of the threshold does not end the game": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: the crisis scheme itself can still be thwarted": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: the hero takes no consequential damage for the same actions": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: the same ally thwart lands with no crisis in play": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: the same card effect lands with no crisis in play": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: threat accelerates once per round while the villain attacks": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: thwarting removes threat from the scheme it names": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Damage and threat :: two side schemes without the icon still do not stop it": {
-      "sha256": "8ea220ef92273c4e95dac36a716a99f4ffe11469cd1628b7f8fab00828d8e551",
+      "sha256": "7559673494ccbacc69241433c2f3112ca448aa55b137fb6f77a05a138a689940",
       "source": "specs/rules/damage-and-threat.feature"
     },
     "Defense Network :: it arrives on its printed threat plus one for the hero": {
@@ -706,51 +706,51 @@
       "source": "specs/cards/search/46018-keep-up-the-pressure.feature"
     },
     "Keywords :: a card without surge reveals nothing more": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a guard minion puts the villain out of reach": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a minion without quickstrike waits for the next villain phase": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a quickstrike minion attacks the moment it engages": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: a tough minion takes no damage from the first attack": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: retaliate answers the villain that attacked": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: retaliate does not fire when the hero is the one attacking": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: surge reveals one more encounter card": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: the guard itself is still attackable": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: the villain becomes attackable once the guard is defeated": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: toughness cancels the damage rather than reducing it": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Keywords :: with no guard in play the villain is attackable": {
-      "sha256": "6b66b1b47878492a873c6c51b518054cef18f1286546d0e95f03cbfe080f0208",
+      "sha256": "9b78afb965e27b3ee527386eec223766455766d84fdf106a85625c1c449f3ad8",
       "source": "specs/rules/keywords.feature"
     },
     "Klaw (I) :: a scheming Klaw spends one, because scheming is not attacking": {
@@ -878,15 +878,15 @@
       "source": "specs/cards/core/01084-nick-fury.feature"
     },
     "Option binding :: a filtered-out Play leaves the other card's Play untouched": {
-      "sha256": "670796bd14569cc2d54412ba8bc1560298e3630070f1b4d92c50150879e0340d",
+      "sha256": "2e34e3042ac905c2e379e35570a5984c571f7dc888a3038572b1f2f2932e0463",
       "source": "specs/rules/option-binding.feature"
     },
     "Option binding :: two cards offering Play answer for their own targets": {
-      "sha256": "670796bd14569cc2d54412ba8bc1560298e3630070f1b4d92c50150879e0340d",
+      "sha256": "2e34e3042ac905c2e379e35570a5984c571f7dc888a3038572b1f2f2932e0463",
       "source": "specs/rules/option-binding.feature"
     },
     "Option binding :: writing the hand the other way round moves neither answer": {
-      "sha256": "670796bd14569cc2d54412ba8bc1560298e3630070f1b4d92c50150879e0340d",
+      "sha256": "2e34e3042ac905c2e379e35570a5984c571f7dc888a3038572b1f2f2932e0463",
       "source": "specs/rules/option-binding.feature"
     },
     "Panther Claws :: as a step that is not the final one it deals 2": {
@@ -1446,51 +1446,51 @@
       "source": "specs/cards/core/01045-the-golden-city.feature"
     },
     "The crisis-icon bypass :: an ally ignoring the icon is not you ignoring it": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: an ally that ignores the icon thwarts the main scheme through it": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: an ally whose basic THW ignores the icon removes threat through it": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: an effect that ignores the icon and counts it does both": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: an effect that ignores the icon removes threat the icon would have blocked": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: ignoring the icon fires a response the board can see": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: no crisis icon in play is no response, not a silent one": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: the ally's bypass does not extend to the hero thwarting beside it": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: the same ally removes the same 2 with no crisis in play": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: the same ally removes the same 3 with no crisis in play": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: the same effect removes the same 3 with no crisis in play": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "The crisis-icon bypass :: the same effect removes the same 6 with an acceleration icon instead": {
-      "sha256": "ee551f6021ce32e871fec03778af9b03fcdc3bdb4f4195559c93244246cba533",
+      "sha256": "f30b0268c1cf3012ef360f5c945a13deca9fc9086e97ebd04c93d5093cd8a3ce",
       "source": "specs/rules/crisis-bypass.feature"
     },
     "Timing priority :: a constant alone prevents the damage": {

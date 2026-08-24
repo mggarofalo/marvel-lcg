@@ -62,6 +62,7 @@ Feature: Keywords
   # cancels the next damage entirely, however large, and is discarded doing it.
 
   @card:01102
+  @rr:tough
   Scenario: a tough minion takes no damage from the first attack
     # Sandman is printed 4 hit points and enters play tough. Spider-Man's
     # printed ATK 2 is cancelled in full, not reduced.
@@ -72,6 +73,8 @@ Feature: Keywords
     Then "Sandman #1" has 0 damage
     And "Sandman #1" is not tough
 
+  @rr:tough
+  @rr:toughness
   Scenario: toughness cancels the damage rather than reducing it
     # The point of "however large". A tough card takes nothing from an attack
     # that would otherwise have defeated it outright.
@@ -95,6 +98,7 @@ Feature: Keywords
   # step that can see it (MARVEL-84).
 
   @card:01101
+  @rr:guard.1
   Scenario: a guard minion puts the villain out of reach
     Given the encounter deck is "Hydra Mercenary", "Hydra Mercenary"
     And "Hydra Mercenary #1" is in play
@@ -102,6 +106,7 @@ Feature: Keywords
     Then I cannot attack "Rhino"
 
   @card:01101
+  @rr:guard.1
   Scenario: the guard itself is still attackable
     # The restriction is about the villain, not about attacking at all. Without
     # this the scenario above would also pass against an engine that had
@@ -112,6 +117,7 @@ Feature: Keywords
     When I attack "Hydra Mercenary #1"
     Then "Hydra Mercenary #1" has 2 damage
 
+  @rr:attack-player-ability-type.1
   Scenario: with no guard in play the villain is attackable
     # The control for the restriction. `I cannot attack` must be capable of
     # failing, or the scenario above establishes nothing -- so here is the same
@@ -120,6 +126,7 @@ Feature: Keywords
     Then "Rhino" has 2 damage
 
   @card:01101
+  @rr:guard.1
   Scenario: the villain becomes attackable once the guard is defeated
     # Hellcat is printed ATK 1 and the minion has 1 hit point left, so the ally
     # clears the guard and the hero -- still ready, having done nothing yet --
@@ -144,6 +151,7 @@ Feature: Keywords
   # character." Black Panther is the only core-set identity that prints it.
 
   @card:01040a
+  @rr:retaliate-x.1
   Scenario: retaliate answers the villain that attacked
     # Black Panther is printed Retaliate 1 and 11 hit points; Rhino's printed
     # ATK 2 is boosted to 3 by Hydra Mercenary's boost icon. The hero declines
@@ -158,6 +166,7 @@ Feature: Keywords
     And "Rhino" has 1 damage
 
   @card:01040a
+  @rr:retaliate-x.1
   Scenario: retaliate does not fire when the hero is the one attacking
     # "After this character is attacked" -- attacking is not being attacked, so
     # nothing comes back at Black Panther for swinging first.
@@ -178,6 +187,7 @@ Feature: Keywords
   # boost card, the second is revealed, and the third is what surge reaches.
 
   @card:01121
+  @rr:surge.1
   Scenario: surge reveals one more encounter card
     Given the hero is "iron_man"
     And my deck is "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
@@ -190,6 +200,7 @@ Feature: Keywords
     And "Hydra Mercenary #1" is not in play
 
   @card:01101
+  @rr:villain-phase.step.4
   Scenario: a card without surge reveals nothing more
     # The control. Three identical minions: the first boosts, the second is
     # revealed and enters play, and the third is never reached.
@@ -211,6 +222,7 @@ Feature: Keywords
   # villain phase, so it shows up as a second defence prompt in the same round.
 
   @card:01167
+  @rr:quickstrike.1
   Scenario: a quickstrike minion attacks the moment it engages
     # Rhino's printed ATK 2 boosted to 3, then Vulture's printed ATK 3 -- 6 in
     # one round. A minion's own attack is not boosted, which is why the second
@@ -226,6 +238,7 @@ Feature: Keywords
     And I have 6 damage
 
   @card:01101
+  @rr:villain-phase.step.2
   Scenario: a minion without quickstrike waits for the next villain phase
     # The control, and the reason the number above is worth writing down: the
     # same round against a plain minion is one defence and 3 damage.

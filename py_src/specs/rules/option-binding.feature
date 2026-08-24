@@ -85,6 +85,7 @@ Feature: Option binding
   # --------------------------------------------------------------------------
   # Ordering: the same two claims, twice, over a hand written both ways.
 
+  @rr:none
   Scenario: two cards offering Play answer for their own targets
     Given my hand is "Haymaker", "01043a"
     And "Panther Claws" is in play
@@ -94,6 +95,7 @@ Feature: Option binding
     And the legal targets for "Play" on "Haymaker" are
       | Rhino |
 
+  @rr:none
   Scenario: writing the hand the other way round moves neither answer
     # The control for the scenario above, and the whole of the ordering claim.
     # The board is identical and only the order the two events sit in the hand
@@ -114,6 +116,7 @@ Feature: Option binding
   # rather than controlled -- see the header for why the failing direction has
   # no passing spelling.
 
+  @rr:none
   Scenario: a filtered-out Play leaves the other card's Play untouched
     # Combat Training is an upgrade the hero controls and is not a
     # [[Black Panther]] upgrade, so Wakanda Forever! has nothing to resolve and
