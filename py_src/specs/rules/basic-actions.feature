@@ -8,6 +8,7 @@ Feature: Basic actions
     Given the scenario is "rhino"
     And the hero is "spider_man"
 
+  @rr:form-change-form.1
   Scenario: changing form flips the identity to its hero side
     Given I am in alter-ego form
 
@@ -15,6 +16,8 @@ Feature: Basic actions
     Then I am in hero form
     And I am not prompted again
 
+  @rr:attack-player-ability-type.1
+  @rr:basic-power.1.1
   Scenario: a basic attack deals the hero's ATK and exhausts them
     # Spider-Man's hero side is printed ATK 2. Rhino stage 1 has 14 hit points
     # against one player.
@@ -25,6 +28,8 @@ Feature: Basic actions
     And "Rhino" has 2 damage
     And I am exhausted
 
+  @rr:thwart.1
+  @rr:basic-power.1.2
   Scenario: a basic thwart removes the hero's THW from the main scheme
     # Spider-Man's hero side is printed THW 1.
     Given I am in hero form
@@ -34,6 +39,8 @@ Feature: Basic actions
     Then the main scheme has 4 threat
     And I am exhausted
 
+  @rr:basic-power.1.1
+  @rr:activation.1
   Scenario: an alter-ego is not offered an attack
     Given I am in alter-ego form
 

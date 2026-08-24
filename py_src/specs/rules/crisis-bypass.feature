@@ -61,6 +61,8 @@ Feature: The crisis-icon bypass
   # same printed shape without the last clause, and it removes nothing.
 
   @card:04008
+  @rr:ignore
+  @rr:crisis-icon.1
   Scenario: an effect that ignores the icon removes threat the icon would have blocked
     # Hawkeye's Bow is in play because the printed cost exhausts it, and the
     # Energy pays the printed cost of 1.
@@ -84,6 +86,7 @@ Feature: The crisis-icon bypass
     And I am not prompted again
 
   @card:04008
+  @rr:threat
   Scenario: the same effect removes the same 3 with no crisis in play
     # The control. Same hand, same bow, no icon: still 3, so the scenario above
     # measured the bypass and not Cable Arrow.
@@ -106,6 +109,8 @@ Feature: The crisis-icon bypass
   # name with the Shadowcat hero identity (32030a).
 
   @card:32002
+  @rr:ignore
+  @rr:crisis-icon.1
   Scenario: an ally that ignores the icon thwarts the main scheme through it
     # The direct comparison is "an ally is stopped by the icon as well" in
     # damage-and-threat.feature: Black Cat thwarts the same board for nothing
@@ -121,6 +126,7 @@ Feature: The crisis-icon bypass
     And "32002" is exhausted
 
   @card:32002
+  @rr:thwart.1
   Scenario: the same ally removes the same 2 with no crisis in play
     Given the hero is "spider_man"
     And I am in hero form
@@ -131,6 +137,7 @@ Feature: The crisis-icon bypass
     Then the main scheme has 3 threat
 
   @card:32002
+  @rr:ignore
   Scenario: the ally's bypass does not extend to the hero thwarting beside it
     # The control that says what kind of thing the bypass is. Shadowcat's
     # ability is `UnitIgnoreKeywordIcons("This", ...)`, so it is a property of
@@ -160,6 +167,8 @@ Feature: The crisis-icon bypass
   # named by id for the same reason as Shadowcat.
 
   @card:21191
+  @rr:ignore
+  @rr:crisis-icon.1
   Scenario: an ally whose basic THW ignores the icon removes threat through it
     Given the hero is "spider_man"
     And I am in hero form
@@ -172,6 +181,7 @@ Feature: The crisis-icon bypass
     And "21191" has 2 damage
 
   @card:21191
+  @rr:thwart.1
   Scenario: the same ally removes the same 3 with no crisis in play
     # The control, and it also pins that the consequential damage is not part of
     # what the bypass changes: 2 either way.
@@ -201,6 +211,8 @@ Feature: The crisis-icon bypass
   # first clause had an icon to ignore.
 
   @card:44023
+  @rr:ignore
+  @rr:crisis-icon
   Scenario: an effect that ignores the icon and counts it does both
     # 6 threat off the main scheme: 5 from the first clause plus 1 from the
     # second, for the one icon in play. Blocked, it would still read 6.
@@ -215,6 +227,7 @@ Feature: The crisis-icon bypass
     And "Under Attack" has 2 threat
 
   @card:44023
+  @rr:acceleration-icon
   Scenario: the same effect removes the same 6 with an acceleration icon instead
     # The control. One icon either way, so the second clause is unchanged; the
     # main scheme empties the same way with nothing to ignore.
@@ -247,6 +260,8 @@ Feature: The crisis-icon bypass
   # would look like.
 
   @card:32035
+  @rr:response
+  @rr:ignore
   Scenario: ignoring the icon fires a response the board can see
     Given the hero is "hawkeye"
     And I am in hero form
@@ -266,6 +281,7 @@ Feature: The crisis-icon bypass
     And "32035" is exhausted
 
   @card:32035
+  @rr:response
   Scenario: no crisis icon in play is no response, not a silent one
     # The control. Cable Arrow says it ignores crisis icons whether or not one
     # is in play, so the message has to be tied to an icon actually having been
@@ -283,6 +299,8 @@ Feature: The crisis-icon bypass
     And the main scheme has 2 threat
 
   @card:32035
+  @rr:ignore
+  @rr:you-your
   Scenario: an ally ignoring the icon is not you ignoring it
     # The second control, and it is about the word "you". The message names the
     # character that removed the threat, and Intangible Interference asks

@@ -120,6 +120,24 @@ class TestAgainstTheCommittedIndex(unittest.TestCase):
         self.assertEqual(summary["unknown_tags"], 0)
         self.assertEqual(summary["stale_pins"], 0)
 
+    def test_no_rules_scenario_is_ungrounded(self):
+        """A ratchet, not a milestone.
+
+        Every scenario under `specs/rules/` cites a rule or says `@rr:none`,
+        and the point of pinning it here is the *next* one: a rules spec
+        authored without a citation is a claim about the rulebook grounded in
+        nothing but the engine's own behaviour, which is the failure mode this
+        whole dataset exists to close. Cheaper to catch when it is written than
+        to retrofit later -- see the sequencing note in
+        `docs/rules-provenance.md`.
+        """
+        import os
+        from tools.rules.coverage import RULES_INDEX, build
+        if not os.path.exists(RULES_INDEX):
+            self.skipTest("no rules index present")
+        coverage = build()
+        self.assertEqual(coverage.ungrounded, [])
+
 
 if __name__ == "__main__":
     unittest.main()
