@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Names Godot nowhere. Fails anyway, because `GodotSharp` arrives on
+       ReferencePath through Middle — which is the whole point. -->
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.WallProbe.Middle/Marvel.WallProbe.Middle.csproj" />
+  </ItemGroup>
+
+</Project>

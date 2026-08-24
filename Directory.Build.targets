@@ -1,0 +1,67 @@
+<Project>
+
+  <!-- The wall (MARVEL-162).
+
+       docs/presentation-layer.md draws a line: everything below `Marvel.Godot`
+       is engine, everything at or above it is presentation. The line is only
+       worth drawing if the build refuses to cross it, so these two targets run
+       on every project in the repository and default to denying.
+
+       Why it matters is determinism, not tidiness. AGENTS.md lists four things
+       that must never enter a gameplay path, and Godot supplies three of them
+       as conveniences: `Time`, `RandomNumberGenerator`, and the frame `delta`.
+       An assembly that cannot see `GodotSharp` cannot reach any of them, which
+       is what buys the presentation layer the freedom to use wall-clock time
+       and unseeded randomness for animation — nothing it does can feed back
+       into game state.
+
+       Both gates are proven to fire, offline, by `tools/godot-wall.sh`. A gate
+       nobody has watched fail is an assertion about a build, not a property of
+       one. -->
+
+  <PropertyGroup>
+    <!-- Set to `true` in a .csproj to opt that project out. Only the Godot
+         project and its own tests have any business doing so, and doing it is
+         a deliberate, reviewable edit rather than something that happens by
+         adding a package. -->
+    <MarvelMayReferenceGodot Condition="'$(MarvelMayReferenceGodot)' == ''">false</MarvelMayReferenceGodot>
+  </PropertyGroup>
+
+  <!-- Resolved references, not declared ones. `ReferencePath` is what the
+       compiler will actually be handed after `ResolveReferences` has walked
+       every ProjectReference, every PackageReference and their transitive
+       closures — so a package three levels down that happens to depend on
+       `GodotSharp` is caught, and so is a bare `<Reference Include>` pointing
+       at a .dll on disk. Scanning the .csproj files would catch neither. -->
+  <Target Name="MarvelGodotWall"
+          AfterTargets="ResolveReferences"
+          Condition="'$(MarvelMayReferenceGodot)' != 'true'">
+
+    <ItemGroup>
+      <MarvelGodotReference Include="@(ReferencePath)"
+                            Condition="$([System.String]::Copy('%(ReferencePath.Filename)').StartsWith('GodotSharp'))" />
+    </ItemGroup>
+
+    <Error Code="MARVELWALL"
+           Condition="'@(MarvelGodotReference)' != ''"
+           Text="$(MSBuildProjectName) resolves @(MarvelGodotReference->'%(Filename)', ', '). It sits below the wall, so it must not see Godot: see docs/presentation-layer.md. If this project genuinely is the presentation layer, set &lt;MarvelMayReferenceGodot&gt;true&lt;/MarvelMayReferenceGodot&gt; in its .csproj." />
+  </Target>
+
+  <!-- The runtime floor.
+
+       `GodotSharp` 4.7.0 ships net8.0, and a net8.0 project cannot reference a
+       net10.0 library, so every assembly below the wall sits at or below
+       Godot's floor. The failure this guards against is not subtle reasoning
+       about framework compatibility — it is someone creating a new project
+       next year, taking whatever TFM the SDK offers by default, and finding
+       out at the point Godot tries to reference it. -->
+  <Target Name="MarvelRuntimeFloor"
+          BeforeTargets="CoreCompile"
+          Condition="'$(TargetFramework)' != '' and '$(MarvelTargetFrameworkOverride)' != 'true'">
+
+    <Error Code="MARVELTFM"
+           Condition="'$(TargetFramework)' != '$(MarvelTargetFramework)'"
+           Text="$(MSBuildProjectName) targets $(TargetFramework), but the solution's floor is $(MarvelTargetFramework) and Godot cannot reference anything above it (Directory.Build.props). Do not raise this one project; raise the floor, or set &lt;MarvelTargetFrameworkOverride&gt;true&lt;/MarvelTargetFrameworkOverride&gt; if this assembly is genuinely never consumed by Godot." />
+  </Target>
+
+</Project>

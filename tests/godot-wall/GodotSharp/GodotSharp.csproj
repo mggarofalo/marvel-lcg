@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Stands in for the real `GodotSharp` package. The wall matches on the
+       resolved assembly's file name, so all this has to get right is its name. -->
+  <PropertyGroup>
+    <AssemblyName>GodotSharp</AssemblyName>
+    <RootNamespace>Godot</RootNamespace>
+    <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
+  </PropertyGroup>
+
+</Project>

@@ -214,3 +214,16 @@ jobs:
       # wrong.
       - name: Test
         run: dotnet test --no-build --configuration Release
+
+      # The wall (MARVEL-162). `Directory.Build.targets` fails any build below
+      # `Marvel.Godot` that can see `GodotSharp`, or that targets a framework
+      # Godot cannot reference -- so the Build step above is already the
+      # positive case, on every project in the solution, on both legs.
+      #
+      # This is the other half: it builds four throwaway projects that are
+      # *supposed* to fail and checks that they fail for the stated reason. An
+      # `<Error>` condition nobody has watched evaluate to true is a claim
+      # about a build rather than a property of one. Offline -- the GodotSharp
+      # it references is a stub. See tests/godot-wall/README.md.
+      - name: The wall's gates fire
+        run: bash tools/godot-wall.sh

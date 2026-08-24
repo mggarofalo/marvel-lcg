@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The hop. Stands in for a package that innocently depends on Godot.
+       Opted out itself, so the only thing the run can be measuring is what
+       happens one level further down. -->
+  <PropertyGroup>
+    <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../GodotSharp/GodotSharp.csproj" />
+  </ItemGroup>
+
+</Project>

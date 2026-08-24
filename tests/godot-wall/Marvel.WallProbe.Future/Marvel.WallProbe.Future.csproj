@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The mistake that will actually happen: a new project, and whatever TFM
+       the SDK offers that year. Nothing here mentions Godot; the point is that
+       Godot could not reference it. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+</Project>
