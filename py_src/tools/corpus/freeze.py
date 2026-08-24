@@ -7,6 +7,12 @@
 From here the corpus is immutable and every later phase validates against it.
 A corpus that can drift is not an oracle. See MARVEL-18.
 
+That is a claim about *this* corpus, not about the project. Freezing marks a
+phase boundary -- work stops on `py_src`, starts on the C# engine -- and a
+later rules fix means a *new* corpus at a new SHA, not a mutated one. What must
+never happen is a frozen corpus changing underneath a validation run; cutting a
+second one is ordinary.
+
 ## What is hashed, and what is only recorded
 
 The root hash covers the **scene files and nothing else**. That is a decision
