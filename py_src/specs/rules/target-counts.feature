@@ -55,6 +55,8 @@ Feature: Target counts
   # offers one more candidate than the card allows and the 3 is the card's.
 
   @card:01042
+  @rr:choose-game-element.3
+  @rr:choose-game-element.2
   Scenario: up to 3 is a ceiling of 3 even with four cards to choose from
     # Both halves of the selection stated together, which is the pairing the
     # ceiling step exists to complete: `the legal targets` says which cards may
@@ -72,6 +74,7 @@ Feature: Target counts
     And the target maximum for "Play" on "01042" is 3
 
   @card:01042
+  @rr:choose-game-element.3
   Scenario: a fifth card in the pile does not raise the ceiling
     # The control for the scenario above. If the number 3 came from the board
     # rather than from the card it would move here, and it does not.
@@ -97,6 +100,8 @@ Feature: Target counts
   # are the direct control that the old 1..N range cannot satisfy.
 
   @card:01043a
+  @rr:special
+  @rr:choose-game-element.3
   Scenario: an each-you-control effect takes as many targets as the board offers
     Given I am in hero form
     And my hand is "01043a", "Vibranium"
@@ -107,6 +112,7 @@ Feature: Target counts
     And the target maximum for "Play" on "01043a" is 2
 
   @card:01043a
+  @rr:special
   Scenario: a third upgrade raises that ceiling to three
     # Combat Training is deliberately not used here: it is an upgrade the hero
     # controls and it is not a [[Black Panther]] upgrade, so it would not move
