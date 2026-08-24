@@ -122,6 +122,41 @@ public sealed class EventVocabularyTests
         Assert.Equal(0, Assert.IsType<FieldSet>(EventJson.Read(EventJson.Write(zeroed))).To);
     }
 
+    [Fact]
+    public void TwoAreasSharingATripleAreNotTheSameArea()
+    {
+        // MARVEL-163 replayed the corpus against engine state and counted:
+        // `AsideDeck` names one area per player — a set-aside nemesis deck
+        // each, all owned by the scenario, none hanging off a card — and did
+        // so on 5,969 of 6,554 sampled steps. The triple is a description;
+        // `Id` is the address.
+        var first = AreaRef.Scenario("AsideDeck", "20");
+        var second = AreaRef.Scenario("AsideDeck", "35");
+
+        Assert.NotEqual(first, second);
+        Assert.Equal(first, AreaRef.Scenario("AsideDeck", "20"));
+    }
+
+    [Fact]
+    public void AnAreaDescribedFromADigestSaysSo()
+    {
+        // A consumer rebuilding areas out of digests cannot know an identity,
+        // so it leaves one empty rather than inventing one. `IsIdentified` is
+        // how a reader tells "this addresses an area" from "this describes the
+        // best guess a digest supports".
+        Assert.False(AreaRef.Scenario("AsideDeck").IsIdentified);
+        Assert.True(AreaRef.Scenario("AsideDeck", "20").IsIdentified);
+    }
+
+    [Fact]
+    public void TheAreasIdentityIsOnTheWire()
+    {
+        var original = new AreaReordered(AreaRef.Player("PlayerDeck", 1, "22"), [4, 2, 9]);
+
+        var restored = Assert.IsType<AreaReordered>(EventJson.Read(EventJson.Write(original)));
+        Assert.Equal("22", restored.Area.Id);
+    }
+
     public static TheoryData<GameEvent> EveryKind() => [.. Samples];
 
     private static GameEvent Sample(Type type) =>

@@ -110,7 +110,8 @@ drawn from all 58 corpus shards**:
 - All nine kinds fire. None is speculative.
 
 Position is 61.1%, and the gap is not a gap in the vocabulary. It is the next
-section.
+section — and MARVEL-163 closed it: **100%, position included.** See
+[Verified against engine state](#verified-against-engine-state).
 
 ## Why the digest cannot verify position
 
@@ -138,14 +139,97 @@ What it does fix is `AreaRef`: its `Owner` is **the area's owner**, filled in by
 an engine that knows, and explicitly not the field of the same name in the
 digest.
 
+## Verified against engine state
+
+MARVEL-163. The prediction above was checkable, so it was checked.
+
+`tools/replay/observe.py` replays corpus scenes in-process and hands every
+decision to a callback. The seam is `Controller.ChoiceOne` — the only place the
+engine stops and asks, and the same place the per-step digest is taken, so a
+snapshot made there *is* the state that digest describes rather than something
+argued to be equivalent. `tools/events/state.py` builds the board from engine
+objects; `tools/events/verify.py` derives, applies and compares.
+
+Every step is checked twice, and the first check is what makes the second one
+mean anything:
+
+1. the snapshot must serialise to the digest the engine computed at the same
+   instant, **byte for byte**;
+2. `Apply(before, Derive(before, after))` must reproduce `after` — both as a v2
+   document and as *placement*, every card in the same area object at the same
+   index.
+
+**58 scenes, one from each shard, every one replayed to the end. 6,554 steps,
+6,496 transitions, 31,980 events.**
+
+| | |
+|---|---|
+| snapshot == digest | **100.0%** (6,554/6,554) |
+| digest reproduced | **100.0%** (6,496/6,496) |
+| placement reproduced | **100.0%** (6,496/6,496) |
+
+Position went from 61.1% to 100%, and 35.0% of steps are still silent — the
+same figure the digest census measured, from a different source.
+
+### What it found: an area needs an identity
+
+`AreaRef` was `(Zone, Owner, Host)`. Measured over those steps, that triple
+**names more than one area** in three cases:
+
+| triple | steps | areas |
+|---|---|---|
+| `AsideDeck`, scenario, no host | 5,969 | one set-aside nemesis deck per player |
+| `RemovedArea`, scenario, no host | 4,318 | 2 |
+| `EncounterDeck`, scenario, host c51 | 16 | 2 |
+
+So the triple *describes* an area and cannot *address* one. `AreaRef` gained an
+`Id`, empty when a consumer is working from digests and filled in by an engine
+that knows. `IsIdentified` is how a reader tells the two apart.
+
+Getting the owner itself right took two attempts, and the first is worth
+recording: `Deck2.GetOwner()` is not it. `player.engaged_minions` is
+`Deck2(world.GetScenario(), ..., related_player=self)` — the minions engaged
+with a player are *owned* by the scenario and *sit* in front of that player.
+Reading only the owner answers `-1` for every player's engagement area at once,
+and that alone accounted for 380 of the first run's 621 ambiguous steps.
+`play_area` is the field that answers the question `AreaRef.Owner` is asking.
+
+### What it found: a landing index describes the final area
+
+The other finding is a reducer bug, and it is the kind that only a second source
+of truth can surface.
+
+In one Rhino game, an encounter discard pile received five cards in a single
+step from four different source areas. `Apply` walked the `CardsMoved` events in
+order and spliced each source's batch in as it came — which put the third
+arrival at the index the fifth was going to occupy. Three cards came out in the
+wrong order.
+
+**An index a card carries is a position in the area as the step leaves it, not
+as the area stands part-way through.** That is forced by where the number comes
+from: it is read off the recorded next state, where all of the step's arrivals
+are already present. So every removal happens before any insertion, and the
+insertions run in destination-index order.
+
+The reason this survived a 100% round trip over digest diffs is worth stating,
+because the same shape of mistake will recur: `Derive` predicted the positions
+*correctly*, so it emitted no `AreaReordered` to disagree with, and only `Apply`
+was wrong. The prediction and the placement were two pieces of code that had to
+agree and were never made to. They are now one function, `_Settle`, called by
+both.
+
 ## The signature
 
 ```
-(state, input) -> (state, Affordance[], GameEvent[])
+(state, input) -> (state, Prompt?, GameEvent[])
 ```
 
 Affordances are MARVEL-161 and are designed alongside this so the two are not
-invented twice. The event half is settled here.
+invented twice; they arrive inside a `Prompt`, which carries why the engine is
+asking as well as what may be done. The event half is settled here.
+
+The two sides are deliberately asymmetric. A prompt is **absent** when the game
+is over and never empty; the event list is empty on 35% of steps.
 
 Three constraints on the records, all of which are cheap now and expensive later:
 
@@ -170,9 +254,13 @@ already requires of the card DSL.
 ```bash
 cd py_src
 python -m tools.events.census ~/Source/marvel-lcg-corpus --json census.json
+python -m tools.events.verify ~/Source/marvel-lcg-corpus --per-shard 1
 python -m tools.events.emit_vocabulary --check
-python -m unittest unit_test.test_event_model
+python -m unittest unit_test.test_event_model unit_test.test_event_verify
 ```
+
+`verify` boots the engine once per scene, so one shard-wide pass is a couple of
+minutes. It exits non-zero on any shortfall.
 
 The census needs the corpus, pinned in `datasets/corpus/UPSTREAM.md`. The unit
 tests do not: they state the same properties on boards small enough to reason
@@ -180,8 +268,11 @@ about, which is why they run in the fast tier.
 
 ## What is not settled here
 
-- **MARVEL-163**, verifying the stream against the corpus, once an engine emits
-  it rather than a differ deriving it.
+- **The stream is derived, not emitted.** MARVEL-163 verified it against engine
+  *state*; the events still come from comparing two snapshots rather than from
+  an interpreter executing effect nodes. That last step lands with the
+  interpreter, and what this proves for it is that the vocabulary and the
+  reducer are not what will be wrong.
 - **Ordering within a step.** The prototype emits creations, then moves, then
   reorderings, then per-card changes. The interpreter will emit in execution
   order instead, which is more useful and is not checkable until it exists.

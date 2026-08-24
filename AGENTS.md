@@ -156,6 +156,7 @@ python -m tools.coverage.report replays/         # what the run actually exercis
 python -m tools.coverage.reach --corpus ./corpus/ # gate: a played card must be in the allowlist
 
 # --- replay verification ---------------------------------------------------
+python -m tools.events.verify ~/Source/marvel-lcg-corpus --per-shard 1
 python main.py -verify_replays                            # every folder in replay_folders
 python main.py -verify_replays -verify_folders ./corpus/
 python -m tools.determinism.check_corpus --runs 100
