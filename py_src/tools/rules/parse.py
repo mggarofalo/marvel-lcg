@@ -101,6 +101,24 @@ class Entry:
     icons: List[str] = field(default_factory=list)
 
 
+def undouble(text: str) -> str:
+    """Undo the faux-bold render, which repeats every character.
+
+    InDesign fakes a heavier weight on some titles by drawing them twice with a
+    small offset, so extraction yields `HHEERROO PPAACCKK`. The doubling is
+    per *word* -- the spaces between them are not repeated -- so it has to be
+    undone per word too, and a whole-string stride returns nonsense.
+    """
+    words = []
+    for word in text.split(" "):
+        if (len(word) >= 4 and len(word) % 2 == 0
+                and all(word[i] == word[i + 1] for i in range(0, len(word), 2))):
+            words.append(word[::2])
+        else:
+            words.append(word)
+    return " ".join(words)
+
+
 def is_banner(text: str) -> bool:
     """A doubled-render section title rather than an entry heading."""
     squashed = text.replace(" ", "")

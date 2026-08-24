@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Sequence
+from typing import Callable, Dict, List, Sequence, Tuple
 
 # Where to look for the gutter on the 612pt page this document uses, and the
 # fallback if the search comes up empty.
@@ -109,6 +109,45 @@ FURNITURE_FONTS = ("Exo2-Regular-SC850", "Exo2-ExtraBoldItalic")
 LINE_TOLERANCE = 3.0
 
 
+@dataclass(frozen=True)
+class Profile:
+    """Which fonts play which role in one family of documents.
+
+    The Rules Reference and the pack documents are set by the same publisher in
+    different templates: the RR headings are `ExoMVC-Bold`, an insert's are
+    `Exo2-ExtraBoldItalic`, and an insert marks its flavour text -- the
+    S.H.I.E.L.D. briefings -- by setting whole pages in the oblique face. So
+    the roles are constant across the corpus and the *fonts filling them* are
+    not, which is what this exists to carry.
+    """
+    heading_fonts: Tuple[str, ...] = (HEADING_FONT,)
+    heading_min_size: float = HEADING_MIN_SIZE
+    body_fonts: Tuple[str, ...] = BODY_FONTS
+    body_max_size: float = BODY_MAX_SIZE
+    # A floor as well as a ceiling. The pack documents set their credits and
+    # legal fine print in the same face as their rules, two or three points
+    # smaller -- so size is what separates "this is how the scenario works"
+    # from "Graphic Design: Chris Beck". The Rules Reference has no such text,
+    # which is why the default admits everything.
+    body_min_size: float = 0.0
+    # What to do when no gutter is found. The Rules Reference is two columns on
+    # every page, so a page that appears to have none is a detection failure
+    # and the measured constant is the safer answer. The pack documents mix
+    # one- and two-column pages freely, and forcing a split on a single-column
+    # page cuts centred headings in half -- "COMPONENTS" arrived as "COM" and
+    # "PONENTS", as two separate sections.
+    fallback_split: float | None = COLUMN_SPLIT
+    furniture_fonts: Tuple[str, ...] = FURNITURE_FONTS
+    icon_font: str = ICON_FONT
+    heading_icon_max_size: float = HEADING_ICON_MAX_SIZE
+    marker_font: str = MARKER_FONT
+    bold_fonts: Tuple[str, ...] = BOLD_FONTS
+    italic_fonts: Tuple[str, ...] = ITALIC_FONTS
+
+
+RULES_REFERENCE = Profile()
+
+
 @dataclass
 class Span:
     """A run of characters sharing one style."""
@@ -140,46 +179,50 @@ def _font(char: Dict) -> str:
     return char.get("fontname", "").split("+")[-1]
 
 
-def _is_heading(char: Dict) -> bool:
-    return _font(char) == HEADING_FONT and char.get("size", 0) >= HEADING_MIN_SIZE
+def _is_heading(char: Dict, profile: Profile = RULES_REFERENCE) -> bool:
+    font, size = _font(char), char.get("size", 0)
+    return (any(h in font for h in profile.heading_fonts)
+            and size >= profile.heading_min_size)
 
 
-def _is_content(char: Dict) -> bool:
+def _is_content(char: Dict, profile: Profile = RULES_REFERENCE) -> bool:
     """Is this character part of the rules text, rather than of a figure?"""
     font, size = _font(char), char.get("size", 0.0)
-    if size >= HEADING_MIN_SIZE:
+    if size >= profile.heading_min_size:
         # Heading-sized: the heading face at any size, and icons only at the
         # size headings set them. The card figures print the same glyphs much
         # larger (13.4pt and 16.75pt against a heading's 12pt), and without the
         # ceiling those decorative copies are read as part of the rule and
         # prepended to its text.
-        if font == ICON_FONT:
-            return size <= HEADING_ICON_MAX_SIZE
-        return font == HEADING_FONT
-    return any(body in font for body in BODY_FONTS) and size <= BODY_MAX_SIZE
+        if font == profile.icon_font:
+            return size <= profile.heading_icon_max_size
+        return any(h in font for h in profile.heading_fonts)
+    return (any(body in font for body in profile.body_fonts)
+            and profile.body_min_size <= size <= profile.body_max_size)
 
 
-def _leading_marker(row: Sequence[Dict]) -> str:
+def _leading_marker(row: Sequence[Dict], profile: Profile = RULES_REFERENCE) -> str:
     """The step number or letter this line opens with, if any."""
     text = ""
     for char in row:
-        if _font(char) != MARKER_FONT:
+        if _font(char) != profile.marker_font:
             break
         text += char["text"]
     match = re.match(r'\s*([0-9]+|[a-z])\.\s*$', text)
     return match.group(1) if match else ""
 
 
-def _style(char: Dict) -> tuple:
+def _style(char: Dict, profile: Profile = RULES_REFERENCE) -> tuple:
     font = _font(char)
     return (
-        any(b in font for b in BOLD_FONTS),
-        any(i in font for i in ITALIC_FONTS),
-        font == ICON_FONT,
+        any(b in font for b in profile.bold_fonts),
+        any(i in font for i in profile.italic_fonts),
+        font == profile.icon_font,
     )
 
 
-def _to_lines(chars: Sequence[Dict]) -> List[Line]:
+def _to_lines(chars: Sequence[Dict],
+              profile: Profile = RULES_REFERENCE) -> List[Line]:
     """Group characters into lines, merging runs that share a style.
 
     Grouping is by vertical position and ordering is by horizontal position,
@@ -219,10 +262,11 @@ def _to_lines(chars: Sequence[Dict]) -> List[Line]:
         # the entry above it.
         marker = next((c for c in row if c["text"].strip()), first)
         line = Line(x0=first["x0"], top=first["top"],
-                    size=marker.get("size", 0.0), heading=_is_heading(marker),
-                    marker=_leading_marker(row))
+                    size=marker.get("size", 0.0),
+                    heading=_is_heading(marker, profile),
+                    marker=_leading_marker(row, profile))
         for char in row:
-            bold, italic, icon = _style(char)
+            bold, italic, icon = _style(char, profile)
             if (line.spans and line.spans[-1].bold == bold
                     and line.spans[-1].italic == italic
                     and line.spans[-1].icon == icon):
@@ -234,15 +278,17 @@ def _to_lines(chars: Sequence[Dict]) -> List[Line]:
     return lines
 
 
-def column_split(chars: Sequence[Dict]) -> float:
+def column_split(chars: Sequence[Dict],
+                 profile: Profile | None = None) -> float | None:
     """The x coordinate separating the two columns, found by looking.
 
     The widest vertical band no character touches, within the range a gutter
     could plausibly occupy. Returns the fallback when the page is a single
     column, or when nothing clean enough to be a gutter turns up.
     """
+    fallback = COLUMN_SPLIT if profile is None else profile.fallback_split
     if not chars:
-        return COLUMN_SPLIT
+        return fallback
 
     low, high = GUTTER_SEARCH
     covered = bytearray(high - low)
@@ -262,7 +308,7 @@ def column_split(chars: Sequence[Dict]) -> float:
             best_width, best_start = run, offset - run + 1
 
     if best_start is None or best_width < MIN_GUTTER_WIDTH:
-        return COLUMN_SPLIT
+        return fallback
     return low + best_start + best_width / 2.0
 
 
@@ -279,20 +325,23 @@ def straddling(chars: Sequence[Dict], split: float) -> List[Dict]:
     return [c for c in chars if c["x0"] < split < c["x1"]]
 
 
-def page_lines(page, skip: Callable[[str], bool] | None = None) -> List[Line]:
+def page_lines(page, skip: Callable[[str], bool] | None = None,
+               profile: Profile = RULES_REFERENCE) -> List[Line]:
     """Every line on `page`, left column first, then right.
 
     A heading wide enough to cross the gutter is assigned to the left column,
     which is where it starts and where it reads.
     """
     chars = [c for c in page.chars
-             if _is_content(c)
-             and not any(f in _font(c) for f in FURNITURE_FONTS)]
-    split = column_split(chars)
-    left = [c for c in chars if c["x0"] < split]
-    right = [c for c in chars if c["x0"] >= split]
-
-    lines = _to_lines(left) + _to_lines(right)
+             if _is_content(c, profile)
+             and not any(f in _font(c) for f in profile.furniture_fonts)]
+    split = column_split(chars, profile)
+    if split is None:
+        lines = _to_lines(chars, profile)
+    else:
+        left = [c for c in chars if c["x0"] < split]
+        right = [c for c in chars if c["x0"] >= split]
+        lines = _to_lines(left, profile) + _to_lines(right, profile)
     if skip is not None:
         lines = [line for line in lines if not skip(line.text.strip())]
     return [line for line in lines if line.text.strip()]

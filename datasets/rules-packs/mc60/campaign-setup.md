@@ -1,0 +1,15 @@
+---
+id: "pack:mc60:campaign-setup"
+title: "CAMPAIGN SETUP"
+pack: "mc60"
+kind: "rulebook"
+source: "mc60_rulebook-web.pdf"
+page: 9
+hash: "sha256:97c012b2eeb1906907d815599d043e96c24592a565cb5c49549bc24e5f5c666f"
+rules: []
+references: []
+---
+
+# CAMPAIGN SETUP
+
+Before beginning setup for each game, perform the following steps: Gather the five campaign environments (205–209). Check the campaign log and remove each card matching a Completed or Failed scenario. Shuffle the remaining campaign environments and draw two at random. If there is only one remaining, draw it. In the Campaign Log, each scenario matching a drawn environment by marking the first unmarked box to the right of that scenario. If there was only one environment drawn, mark two boxes instead. If a scenario has three Xs to its right, it has Failed. The players as a group choose any scenario to play that has not been Completed or Failed. If each scenario is either Completed or Failed, the players must choose the Kingpin scenario and skip to step 6. Determine the villain via the following criteria and record the name of the chosen villain next to the scenario in the campaign log: If there is already a villain listed for the chosen scenario, that villain must be chosen. If it is the players’ first time through the campaign, they may choose the first villain in the list on page 8 that is not recorded in the campaign log. Otherwise, choose an villain at random that is not already recorded in the campaign log. Gather your chosen main scheme, your chosen villain, and their corresponding encounter sets. Proceed with scenario setup until player setup. Each player searches their deck for each card whose title is recorded in the “Allies/Supports Removed from the Campaign” section of the campaign log and removes those cards from the game. Any player whose deck is below the minimum deck size must add cards to their deck until they satisfy normal deck customization rules. Proceed with player setup. Expert Campaign Only: Set each player’s hit points to their remaining hit point value recorded in the campaign log for the previous scenario. Expert Campaign Only: Each player may deal themself one facedown encounter card to heal damage from their identity equal to its REC. Place the environment for each Completed scenario into play side faceup and the environment for each Failed scenario into play side faceup. Resolve the “Setup” abilities on each of these cards. If “Trust Established?” is checked in the campaign log and “Mary Defeated?” is not, put the Typhoid Mary campaign ally (210A) into play under any player’s control. If the chosen scenario is the Kingpin scenario, turn to page 23. Otherwise, turn to the map on the next page to find the chosen scenario’s page in the rulebook and follow the additional setup instructions there.
