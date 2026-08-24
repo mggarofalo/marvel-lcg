@@ -165,10 +165,12 @@ A citation index makes the question systematic instead of incidental. Once every
 rules spec carries a citation:
 
 ```bash
-python -m tools.rules.coverage
+python -m tools.rules.coverage              # the summary
+python -m tools.rules.coverage --uncited --sort   # what to author next
+python -m tools.rules.coverage --suspect    # cited rules whose spec fails
 ```
 
-answers three things that cannot be asked today:
+Built in MARVEL-154. It answers three things that could not be asked before it:
 
 - **Which RR entries have no citing spec?** Unverified rules. This is the honest
   measure of how much of the rulebook the engine is actually proved against, and
@@ -182,6 +184,33 @@ answers three things that cannot be asked today:
 Your expectation is that there are some errors and that they are not severe.
 This is how you find out, rather than discovering them one at a time through
 adversarial review of unrelated PRs.
+
+### The baseline, measured
+
+The first run, before any authoring:
+
+```
+  entries                  0 / 215   cited (0.0%)
+  citable records          0 / 1071  cited (0.0%)
+  ungrounded rules scenarios      88   assert the engine, cite nothing
+```
+
+**None of the rulebook was proved against anything.** That is not a surprise —
+it is the blind spot this document opens by naming, now with a number on it.
+The 88 are every scenario under `specs/rules/`: each passes, and each confirms
+only that the engine agrees with itself.
+
+`specs/rules/resource-icons.feature` was cited as the worked example, taking it
+to 5 / 215. The remaining nine files are the obvious next work, and
+`--uncited --sort` ranks what is left by clause count — `rr:keywords` (29),
+`rr:attack-enemy-activation` (25), `rr:defend-defense` (24), `rr:cost` (20),
+`rr:target` (20).
+
+Citing one file also produced the first thing the loop caught. The header of
+`resource-icons.feature` said resource icons are printed in a card's *top-left*
+corner. `rr:resource.1` says bottom-left, and the Rules Reference is right.
+Trivial in itself, and precisely the class of quiet error that a spec suite
+grounded in nothing but the engine cannot surface.
 
 ## New expansions, new keywords
 

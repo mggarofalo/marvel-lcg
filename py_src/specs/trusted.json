@@ -1010,27 +1010,27 @@
       "source": "specs/cards/core/01146-repair-sequence.feature"
     },
     "Resource icons :: Vibranium carries two wild icons": {
-      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
+      "sha256": "e5d73ba826bb8b6cf954957a0ffdbcfd9d81de502f57bbae3e10fe70adfd2378",
       "source": "specs/rules/resource-icons.feature"
     },
     "Resource icons :: an energy icon pays a cost that names energy": {
-      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
+      "sha256": "e5d73ba826bb8b6cf954957a0ffdbcfd9d81de502f57bbae3e10fe70adfd2378",
       "source": "specs/rules/resource-icons.feature"
     },
     "Resource icons :: the first printing carries one energy icon and nothing else": {
-      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
+      "sha256": "e5d73ba826bb8b6cf954957a0ffdbcfd9d81de502f57bbae3e10fe70adfd2378",
       "source": "specs/rules/resource-icons.feature"
     },
     "Resource icons :: the fourth printing carries one wild icon and nothing else": {
-      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
+      "sha256": "e5d73ba826bb8b6cf954957a0ffdbcfd9d81de502f57bbae3e10fe70adfd2378",
       "source": "specs/rules/resource-icons.feature"
     },
     "Resource icons :: the second printing carries one mental icon and nothing else": {
-      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
+      "sha256": "e5d73ba826bb8b6cf954957a0ffdbcfd9d81de502f57bbae3e10fe70adfd2378",
       "source": "specs/rules/resource-icons.feature"
     },
     "Resource icons :: the third printing carries one physical icon and nothing else": {
-      "sha256": "5184430e2e87664fd423bf3b095bafb1dd9ca99c01814fef3180512fc8204605",
+      "sha256": "e5d73ba826bb8b6cf954957a0ffdbcfd9d81de502f57bbae3e10fe70adfd2378",
       "source": "specs/rules/resource-icons.feature"
     },
     "Rhino (I) :: at one hero the villain has its printed 14 hit points": {

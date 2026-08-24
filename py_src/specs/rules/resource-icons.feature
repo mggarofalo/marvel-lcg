@@ -1,4 +1,4 @@
-# Resource icons: what a player card prints in its top-left corner, and what
+# Resource icons: what a player card prints in its bottom-left corner, and what
 # that buys. MARVEL-120.
 #
 # Every player card carries between zero and two resource icons in one of four
@@ -66,6 +66,8 @@ Feature: Resource icons
   # here.
 
   @card:01043a
+  @rr:resource.2
+  @rr:energy-resource
   Scenario: the first printing carries one energy icon and nothing else
     Given my hand is "01043a"
 
@@ -75,6 +77,8 @@ Feature: Resource icons
     And "01043a" has 0 "wild" resource icons
 
   @card:01043b
+  @rr:resource.2
+  @rr:mental-resource
   Scenario: the second printing carries one mental icon and nothing else
     Given my hand is "01043b"
 
@@ -84,6 +88,8 @@ Feature: Resource icons
     And "01043b" has 0 "wild" resource icons
 
   @card:01043c
+  @rr:resource.2
+  @rr:physical-resource
   Scenario: the third printing carries one physical icon and nothing else
     Given my hand is "01043c"
 
@@ -93,6 +99,8 @@ Feature: Resource icons
     And "01043c" has 0 "wild" resource icons
 
   @card:01043d
+  @rr:resource.2
+  @rr:wild-resource
   Scenario: the fourth printing carries one wild icon and nothing else
     Given my hand is "01043d"
 
@@ -105,6 +113,8 @@ Feature: Resource icons
   # Two icons on one card
 
   @card:01044
+  @rr:resource.1
+  @rr:wild-resource
   Scenario: Vibranium carries two wild icons
     # A resource card with no ability text, so its icons are the whole of it.
     # The count needed two scenarios to bound from either side before this step
@@ -132,6 +142,8 @@ Feature: Resource icons
 
   @card:01043a
   @card:01068
+  @rr:resource.1
+  @rr:resource.4
   Scenario: an energy icon pays a cost that names energy
     Given "Vision" is in play
     And my hand is "01043a"
