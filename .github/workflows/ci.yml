@@ -108,7 +108,7 @@ jobs:
             unit_test.test_dsl_blockers unit_test.test_select_rules \
             unit_test.test_may_choose_one \
             unit_test.test_target_before_payment \
-            unit_test.test_world_visibility
+            unit_test.test_world_visibility unit_test.test_setup_dataset
 
       - name: Unit suite — engine-booting tier
         run: |
@@ -137,7 +137,7 @@ jobs:
       # regenerate-or-fail check, so a stale fixture is caught at the commit
       # that staled it rather than at the port.
       #
-      # All five compare byte for byte, through one shared definition of
+      # All six compare byte for byte, through one shared definition of
       # "stale" in py_src/tools/fixtures.py — read that file before changing
       # any of them. Line endings are part of the comparison, which is why
       # .gitattributes pinning eol=lf is load-bearing on the Windows leg
@@ -157,6 +157,9 @@ jobs:
 
       - name: Fixture staleness — card dataset
         run: python -m tools.cards.extract --check
+
+      - name: Fixture staleness — setup dataset
+        run: python -m tools.setup.emit_setup --check
 
       - name: Trusted behavioral specs
         run: python -m tools.spec.validate --trusted-only

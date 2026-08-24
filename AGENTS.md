@@ -131,6 +131,7 @@ as important.
 | the spec campaign, sharding, depth tiers | [spec-campaign.md](docs/spec-campaign.md) |
 | refreshing a vendored snapshot, a new RR version, a new pack | [rules-provenance.md](docs/rules-provenance.md) |
 | `datasets/cards/`, `tools/cards/extract` | [card-dataset.md](docs/card-dataset.md) |
+| `datasets/setup/`, scenario or starter-deck data, setup order | [setup-dataset.md](docs/setup-dataset.md) |
 | the card ability DSL | [card-dsl.md](docs/card-dsl.md) |
 | the client, the fold's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#dependency-rules) |
@@ -173,6 +174,7 @@ python -m tools.cards.rulings <card_id>          # print the ruling
 python -m tools.rng.emit_vectors                 # after touching the RNG
 python -m tools.digest.emit_vectors              # after touching anything the digest reads
 python -m tools.cards.extract                    # after touching data/cards.json or datasets/marvelsdb/
+python -m tools.setup.emit_setup                 # after touching data/scenarios/, data/encounter_sets/, deck/starter/
 
 # --- the C# side (run from the repository root, not py_src/) ---------------
 dotnet build                                     # the wall gates every project
