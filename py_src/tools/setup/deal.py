@@ -11,7 +11,9 @@ Read out of the engine rather than invented:
     game/event/manager.py:RegisterPlayRule      the rules card, then challenges
     game/player/element/player_setup.py:SelectIdentity
                                                identity, obligations, nemesis,
-                                               hero deck then player deck
+                                               hero deck then player deck --
+                                               and the `HACK_HERO_ID` branch,
+                                               see `IdentitySpecs`
     game/world/world.py:SelectScenario          main schemes, then the villain
     game/world/world.py:Initialize              scenario encounters, then each
                                                encounter set in order
@@ -83,6 +85,41 @@ def MoveBToFront(spec: str) -> str:
                     + [p for p in parts if not p.endswith("b")])
 
 
+# `player_setup.py:8`, the engine's own name for it. A hero whose first spec
+# starts with this prefix does not get the treatment above: `SelectIdentity`
+# discards the descriptor's list outright and creates one hard-coded card.
+HACK_HERO_ID = "3100"
+HACK_IDENTITY = "31002a,31002b"
+
+
+def IdentitySpecs(hero: Dict[str, Any]) -> List[str]:
+    """The specs the engine creates for this hero's identity, in order.
+
+    Normally one `MoveBToFront` per entry in `hero["hero"]`. SP//dr is the
+    exception and it is not a flag or a rule, it is two lines of engine
+    (`player_setup.py:222`):
+
+        if hero_names[0].startswith(HACK_HERO_ID):
+            hero_names = ["31002a,31002b"]
+
+    It is doing the same job `MoveBToFront` does everywhere else -- start the
+    game in alter-ego form -- by substitution rather than reordering, because
+    SP//dr's two sides are two *cards* and not two faces of one. The declared
+    `31001a,31001b` is the SP//dr Suit; `31002a,31002b` is Peni Parker, and the
+    descriptor carries her under the dropped `set_aside` key. So Peni is created
+    as the identity, her `a` face is already the alter-ego and needs no reorder,
+    and her own setup ability puts the suit into play afterwards. The card at
+    the first player-owned `object_id` is `31002a`, not `31001b`.
+
+    Reproduced here rather than left to the card DSL because this one is
+    decidable from the dataset: the branch reads the hero spec and nothing else.
+    """
+    specs = list(hero["hero"])
+    if specs and specs[0].startswith(HACK_HERO_ID):
+        return [HACK_IDENTITY]
+    return [MoveBToFront(spec) for spec in specs]
+
+
 def DealOrder(setup: Dict[str, Any], campaign_name: str,
               hero_names: Sequence[str]) -> List[Creation]:
     """Every card the engine creates during setup, in allocation order.
@@ -99,8 +136,8 @@ def DealOrder(setup: Dict[str, Any], campaign_name: str,
 
     for seat, hero_name in enumerate(hero_names):
         hero = setup["heroes"][hero_name]
-        for spec in hero["hero"]:
-            creations.append(Creation(MoveBToFront(spec), "identity", seat))
+        for spec in IdentitySpecs(hero):
+            creations.append(Creation(spec, "identity", seat))
         for spec in hero["obligations"]:
             creations.append(Creation(spec, "obligation", seat))
         for spec in hero["nemesis_set"]:

@@ -87,6 +87,78 @@ class SetupDataset(unittest.TestCase):
         self.assertIn("campaigns", self.setup["resolution"])
 
 
+class MirrorsTheEngineSearchOrder(unittest.TestCase):
+    """`RESOLUTION` is `FindJsonPath`'s own order, minus a declared exclusion.
+
+    Nothing else ties the two together. Add a folder to `SCENARIOS_FOLDERS` and
+    the dataset would quietly stop covering a scenario the engine can still
+    load, with every byte-comparison gate green, because the gate only asks
+    whether the file matches what the emitter produces -- not whether the
+    emitter still looks where the engine looks.
+    """
+
+    def _EngineOrder(self, load_type: str):
+        """The folders `FindJsonPath` walks for `load_type`, in order.
+
+        Read out of the function rather than re-derived from the module
+        constants: `get_type_path_list` is a closure, it composes a different
+        pair of lists per type, and it prepends `./` to all of them. Spying on
+        `Exists` is the only way to see the composition it actually performs.
+        """
+        from engine.file import FileManager
+        from engine.log import Log
+
+        seen = []
+
+        def spy(path: str) -> bool:
+            seen.append(os.path.normpath(os.path.dirname(path)).replace(os.sep, "/"))
+            return False
+
+        # Nothing is ever found, so the search runs to the end of the list --
+        # which is the point -- and then warns. `nullable=False` would
+        # `Log.Assert` instead, so the warning is the quiet branch already.
+        exists, warn = FileManager.Exists, Log.Warn
+        FileManager.Exists = staticmethod(spy)
+        Log.Warn = staticmethod(lambda *args, **kwargs: None)
+        try:
+            FileManager.FindJsonPath(load_type, "no_such_name_exists", nullable=True)
+        finally:
+            FileManager.Exists, Log.Warn = exists, warn
+        return seen
+
+    def test_every_group_walks_a_prefix_of_what_the_engine_walks(self):
+        for group, folders in emit_setup.RESOLUTION:
+            engine_order = self._EngineOrder(emit_setup.LOAD_TYPE[group])
+            kept = [f for f in engine_order if f not in emit_setup.EXCLUDED[group]]
+            self.assertEqual(kept, list(folders), group)
+
+    def test_the_excluded_folders_are_folders_the_engine_really_searches(self):
+        """An exclusion for a folder nobody searches is a stale comment."""
+        for group, _ in emit_setup.RESOLUTION:
+            engine_order = self._EngineOrder(emit_setup.LOAD_TYPE[group])
+            for folder in emit_setup.EXCLUDED[group]:
+                self.assertIn(folder, engine_order, f"{group}: {folder}")
+
+    def test_the_working_directory_is_searched_first_and_holds_no_setup_file(self):
+        """`.` is the exclusion that cannot show up in `shadowed`.
+
+        `FindJsonPath` prepends `./` to every list, so a name found there beats
+        every folder the dataset does read. `shadowed` only records the *later*
+        hit, so this collision would be invisible in the file rather than
+        reported in it. The whole defence is that `py_src/` holds one `.json`
+        and it is not a campaign, a hero or an encounter set.
+        """
+        for group, _ in emit_setup.RESOLUTION:
+            self.assertEqual(self._EngineOrder(emit_setup.LOAD_TYPE[group])[0], ".")
+            self.assertIn(".", emit_setup.EXCLUDED[group])
+
+        setup = _Load(SETUP_DATASET, "datasets/setup")
+        for name in emit_setup._Names("."):
+            for group, _ in emit_setup.RESOLUTION:
+                self.assertNotIn(name, setup[group],
+                                 f"./{name}.json shadows the {group} named {name}")
+
+
 class Resolution(unittest.TestCase):
     """Names resolve in the engine's folder order, and collisions are visible."""
 
@@ -201,6 +273,36 @@ class DealOrder(unittest.TestCase):
                         seats.index(1))
         self.assertTrue(all(s == deal.SCENARIO
                             for s in seats[max(i for i, s in enumerate(seats) if s == 1) + 1:]))
+
+    def test_sp_dr_is_dealt_the_card_the_engine_hard_codes(self):
+        """The one hero whose identity is not the identity it declares.
+
+        `SelectIdentity` tests the first spec against `HACK_HERO_ID` ('3100')
+        and, on a hit, throws the descriptor's list away for a literal
+        `31002a,31002b` -- Peni Parker, whom the descriptor carries under the
+        dropped `set_aside` key -- with no `move_b_to_front`. So the card at
+        SP//dr's first `object_id` is `31002a`, not `31001b`, and a port that
+        applied the normal rule would be wrong from the second card of the game
+        onwards.
+
+        This is not card-script behaviour and it is not a rule flag: the branch
+        reads the hero spec and nothing else, so the dataset already contains
+        everything needed to reproduce it.
+        """
+        order = deal.DealOrder(self.setup, "rhino", ["sp_dr"])
+        identity = [c for c in order if c.source == "identity"]
+        self.assertEqual([c.spec for c in identity], ["31002a,31002b"])
+        self.assertEqual(identity[0].faces[0], "31002a")
+
+        # And the hero it displaces is still what the dataset declares.
+        self.assertEqual(self.setup["heroes"]["sp_dr"]["hero"], ["31001a,31001b"])
+
+    def test_every_other_hero_takes_the_ordinary_identity_path(self):
+        """One exception, and the test says which one rather than how many."""
+        exceptional = [name for name, hero in self.setup["heroes"].items()
+                       if deal.IdentitySpecs(hero)
+                       != [deal.MoveBToFront(s) for s in hero["hero"]]]
+        self.assertEqual(exceptional, ["sp_dr"])
 
     def test_move_b_to_front_puts_the_alter_ego_first(self):
         self.assertEqual(deal.MoveBToFront("01001a,01001b"), "01001b,01001a")

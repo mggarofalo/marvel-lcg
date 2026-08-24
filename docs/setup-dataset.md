@@ -38,10 +38,25 @@ same order, the first hit wins, and any later hit is written into a `shadowed`
 key rather than silently discarded — a name whose meaning depends on a search
 order is exactly what a second engine will get wrong. It is empty today.
 
-`./deck/*.json` is **not** covered. It is gitignored, so it holds whatever decks
-the developer built this morning, and a fixture compared byte for byte cannot
-read a folder that differs per checkout. First-party starter decks are content;
-a deck somebody made is not.
+Three folders the engine searches are **not** read. `./deck/` is gitignored, so
+it holds whatever decks the developer built this morning, and a fixture compared
+byte for byte cannot read a folder that differs per checkout — first-party
+starter decks are content, a deck somebody made is not. The other two hold no
+file of any of these kinds: `./data/` holds `cards.json` and its three
+neighbours, none of them a scenario or an encounter set; and `.`, the working
+directory, which `FindJsonPath` prepends to *every* list and searches first,
+holds `launch.json` and nothing else — reading it would emit a `launch`
+campaign, a `launch` hero and a `launch` encounter set out of one editor config.
+
+`.` is the exclusion worth stating out loud, because it is searched **first**.
+A collision there would win in the engine and would not appear under
+`shadowed`, which only records the later hit. So the emitter's folder list is
+held against the order `FindJsonPath` really walks — read out of the function by
+spying on `FileManager.Exists`, not re-derived from the module constants — and
+against the claim that `py_src/` holds no name any group also holds. Add a
+folder to `SCENARIOS_FOLDERS` and that test fails; without it the dataset would
+have quietly stopped covering a scenario the engine can still load, with every
+byte-comparison gate still green.
 
 ## It is a projection, not a translation
 
@@ -112,6 +127,26 @@ the first one dealt.
 A port that flipped both, or neither, would still pass a test that only checked
 which card was at which id. That is why the exception is pinned by name.
 
+### The one hero who is not who she says she is
+
+SP//dr declares `31001a,31001b` and the engine creates `31002a,31002b`.
+`SelectIdentity` tests the first spec against `HACK_HERO_ID` — the literal
+string `'3100'` — and on a hit discards the descriptor's list for a hard-coded
+`31002a,31002b`, with no `move_b_to_front`.
+
+It is the same job the `b`-face reorder does everywhere else — begin the game
+in alter-ego form — done by substitution instead, because SP//dr's two sides
+are two *cards* rather than two faces of one. `31001` is the SP//dr Suit and
+`31002` is Peni Parker, whom the descriptor carries under the dropped
+`set_aside` key. Peni is created as the identity, her `a` face is already the
+alter-ego so no reorder is needed, and her own setup ability puts the suit into
+play. The card at SP//dr's first `object_id` is `31002a`, not `31001b`.
+
+`deal.IdentitySpecs` reproduces the branch. It is the one piece of card-specific
+engine behaviour the deal order does implement, because it is the one that is
+decidable from the dataset: the branch reads the hero spec and nothing else.
+Everything else in this shape is a card script and waits for phase 5.
+
 ### What the deal order does not cover yet
 
 Measured over **48 boards** — 24 heroes against `rhino`, 24 scenarios against
@@ -130,6 +165,16 @@ belongs with the card data rather than here, and lands with it.
 **Setup abilities on a card.** Doctor Strange's Invocation cards appear right
 after his identity, put there by an ability firing on `WhenPlayerSelectHero`.
 That is card script behaviour and it ports with the card DSL, phase 5.
+
+This class also runs the other way, which is easy to miss because the common
+case only ever *adds* cards. `AbilityFactory.SetModularSetsAside` — Mojo's
+`39025a`, The Hood's `24004a` — rewrites `message.encounter_set_names` during
+`WhenGameBeginSetup` and caps how many modular sets reach the encounter deck.
+Mojo declares six and a solo game keeps two, so the board is *smaller* than the
+campaign record describes, not larger. The Hood declares exactly the seven its
+cap allows, which is why it reproduces the deal order exactly and Mojo does not.
+Same class, same phase; the dataset is still right about what each campaign
+declares.
 
 **Status cards created during setup.** Six of the challenge campaigns allocate a
 `Tough` while the encounter deck is being built. Same class as the last one, and

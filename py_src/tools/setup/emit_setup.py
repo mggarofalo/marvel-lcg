@@ -24,10 +24,11 @@ order, and a name found twice is reported rather than silently taking one --
 shadowing that nobody has looked at is how two engines end up dealing different
 boards from the same request.
 
-What is deliberately not covered: `./deck/*.json`, which is gitignored, so a
-developer's own decks live there. A byte-compared fixture cannot read a folder
-whose contents differ per checkout. First-party starter decks are content; a
-deck somebody built this morning is not.
+Three of the folders the engine searches are not read: `.` and `./data/`,
+which hold no file of any of these kinds, and `./deck/`, which is gitignored
+and so differs per checkout. They are listed with their reasons in `EXCLUDED`,
+and the omission is pinned by a test that reads the search order out of
+`FindJsonPath` rather than trusting this paragraph.
 
 Run:
     python -m tools.setup.emit_setup
@@ -52,16 +53,47 @@ SETUP_VERSION = 1
 # The field every descriptor carries and no port should: see the module docstring.
 DROPPED = ("version",)
 
-# (group, [folders in the engine's resolution order]). Taken from
-# `engine/file/manager.py` -- `SCENARIOS_FOLDERS + [CUSTOM_SCENARIOS_FOLDER]`,
-# `STARTER_DECK_FOLDER`, `ENCOUNTER_SETS_FOLDERS` -- minus the folders that hold
-# no file of that kind (`./data/`, which holds `cards.json` and `sets_info.json`)
-# and minus `./deck/`, which is gitignored.
+# (group, [folders in the engine's resolution order]). A sub-sequence of what
+# `FindJsonPath` actually walks for the matching load type, in the same order,
+# minus `EXCLUDED` below. `unit_test.test_setup_dataset` reads the real order
+# out of the engine and holds this against it, so a folder added to
+# `engine/file/manager.py` fails a test rather than silently going uncovered.
 RESOLUTION: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
     ("campaigns", ("data/scenarios", "data/challenges", "data/scenarios_custom")),
     ("heroes", ("deck/starter",)),
     ("encounter_sets", ("data/encounter_sets", "data/nemesis")),
 )
+
+# The engine load type each group is resolved as, so the test can ask
+# `FindJsonPath` itself rather than re-deriving the list from the constants.
+LOAD_TYPE: Dict[str, str] = {
+    "campaigns": "Campaign",
+    "heroes": "Hero",
+    "encounter_sets": "EncounterSet",
+}
+
+# The folders the engine searches that this tool does not read, and why. Two of
+# them hold no file of the kind being resolved, so reading them would put junk
+# in the dataset rather than leave a gap in it. The third could hold one, and is
+# excluded anyway:
+#
+#   `.`      the working directory, which `FindJsonPath` prepends to every
+#            list and searches *first*. In `py_src/` it holds `launch.json`
+#            and nothing else, so reading it would emit a `launch` campaign, a
+#            `launch` hero and a `launch` encounter set out of one editor
+#            config. Because it is searched first rather than last, a real
+#            collision here would win in the engine and never appear in
+#            `shadowed` -- so it is pinned by a test rather than by a comment.
+#   `data`   holds `cards.json`, `cards_custom.json`, `sets_info.json` and
+#            `translate_cn.json`. None is a scenario or an encounter set.
+#   `deck`   gitignored, so it holds whatever decks the developer built this
+#            morning. A byte-compared fixture cannot read a folder whose
+#            contents differ per checkout.
+EXCLUDED: Dict[str, Tuple[str, ...]] = {
+    "campaigns": (".", "data"),
+    "heroes": (".", "deck"),
+    "encounter_sets": (".", "data"),
+}
 
 
 def _Descriptor(group: str) -> Any:
