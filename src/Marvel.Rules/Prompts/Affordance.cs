@@ -4,7 +4,8 @@ namespace Marvel.Rules.Prompts;
 /// One thing a player can do right now, anchored to the object they click.
 /// </summary>
 /// <param name="Id">
-/// What gets folded back in to take this. Opaque to the client.
+/// What gets folded back in to take this. Opaque to the client, and valid only
+/// within the session that issued it — see the remarks.
 /// </param>
 /// <param name="Verb">
 /// What kind of thing this is — <c>Play</c>, <c>Attack</c>, <c>Thwart</c>,
@@ -31,6 +32,24 @@ namespace Marvel.Rules.Prompts;
 /// Why this cannot be taken, or <c>null</c> when it can.
 /// </param>
 /// <remarks>
+/// <para>
+/// <b><paramref name="Id"/> is a handle, not a name.</b> Effect object ids are
+/// allocated per session, so an id written down in one run does not necessarily
+/// name the same option in another. MARVEL-164 measured it against the frozen
+/// corpus and the drift is real but narrow — nine of 5,809 recorded inputs, all
+/// under <c>WhenResolveSpecialAbility</c>, and every one of the nine
+/// <b>exactly 25 too high</b>, across four scenes in four different campaigns.
+/// The engine has always known this: it re-resolves a
+/// recorded input through <c>CommandDescriptor.FindNewEffectId</c> rather than
+/// trusting the number.
+/// </para>
+/// <para>
+/// What survives a session boundary is <paramref name="AnchorId"/> and
+/// <paramref name="Verb"/> together, and that pair resolved every drifted
+/// input uniquely. Both are on this record already, so nothing needs adding —
+/// but a consumer that persists an affordance (a replay, a saved macro, a
+/// tutorial script) must persist the pair and not the id.
+/// </para>
 /// <para>
 /// This replaces a list of option strings. The strings were enough for a web
 /// client that repaints a document; a game needs to know which card on the table
@@ -71,10 +90,18 @@ public sealed record Affordance(
     /// that is simply not clickable.
     /// </para>
     /// <para>
-    /// Not observed in the 6,351 options sampled for <c>docs/affordances.md</c>
-    /// — a bot that plays what it can afford does not surface many. The
-    /// mechanism is real and predates this type: the Python client already greys
-    /// out on it. Treat the zero as a gap in the sample, not in the engine.
+    /// Not observed once in 6,351 sampled options, nor in the <b>19,103</b>
+    /// options MARVEL-164 rendered while replaying the corpus — a larger sample
+    /// drawn differently, from real corpus games rather than bot games. A bot
+    /// that plays what it can afford does not surface many.
+    /// </para>
+    /// <para>
+    /// The mechanism is real and predates this type: <c>Effect.failures</c>
+    /// carries "pay cost, need 3, but only have 2", and the Python client is
+    /// already built on it — <c>BotOption.is_selectable</c> is literally
+    /// <c>failure_reason == ""</c>. Treat the zero as a gap in the sample, not
+    /// in the engine, and require a case rather than a count from anyone
+    /// proposing to delete this.
     /// </para>
     /// </remarks>
     public bool IsLegal => Illegal is null;

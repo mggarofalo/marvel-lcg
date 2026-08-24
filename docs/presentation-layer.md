@@ -563,10 +563,15 @@ noted.
    grew a second target for the runtime floor and a proof that both fire.
 
 5. Verify the event stream against the corpus. Module `Corpus and Oracle`, label
-   `testing`, priority Medium, blocked by issue 2 and by MARVEL-158.
+   `testing`, priority Medium, blocked by issue 2 and by MARVEL-158. **Filed as
+   MARVEL-163; done.** 100% including position, and it found two defects: an
+   area needs an identity, and a landing index describes the area the step
+   leaves. See [event-stream.md](event-stream.md#verified-against-engine-state).
 
 6. Verify affordance completeness against the corpus. Module `Corpus and Oracle`,
    label `testing`, priority Medium, blocked by issue 3 and by MARVEL-158.
+   **Filed as MARVEL-164; done.** See
+   [affordances.md](affordances.md#verified-against-the-corpus).
 
 7. Decide how cards are drawn: scans or procedural rendering. Module
    `Client and Integration`, labels `frontend` and `spike`, priority Low. Names
