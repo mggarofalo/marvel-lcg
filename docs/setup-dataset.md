@@ -205,3 +205,72 @@ one step per board, and compares the recorded `(object_id, name)` pairs with
 tool that tests the tool that tests the engine is the third generation
 [AGENTS.md](../AGENTS.md#scope-discipline) warns about. Re-derive it if the
 figure needs refreshing.
+
+## Dealing it in C#
+
+`Marvel.Content` reads this dataset and `datasets/cards/`; `Marvel.Rules.State`
+holds the world and lays the board out. The acceptance test is the digest, byte
+for byte:
+
+> `rhino / spider_man / 12345`, step 0 — 81 cards, ids 0–80, every zone, index,
+> owner, host, face and field identical to `datasets/digest/vectors.json`.
+
+That is the whole state model and none of the rules. Five things had to be right
+at once, and each was measured rather than guessed.
+
+**Two RNG calls, in this order.** The player deck, then the encounter deck.
+Nothing else in setup consumes randomness — not the opening hand, which is dealt
+off the top of an already-shuffled deck. Both shuffles draw from one seeded
+stream, so swapping them changes every card's position, and the obligations have
+to go on top of the encounter deck **before** it is shuffled rather than after.
+
+**A card is face down in exactly three places.** A draw pile that is not a
+discard pile, and a hand. The obvious candidate, `DeckTypeFlags.is_face_up`, is
+wrong: it is `False` for `RemovedArea` and `VillainDeck` and cards in both are
+recorded face up. The predicate that holds agrees with all **571 card records
+across the seven recorded steps**, over twelve distinct zones, in which `face_up`
+is a function of the zone with no exceptions — including
+`EncounterDiscardPile`, which is a deck and is nonetheless face up, and which is
+what rules out the simpler "decks are hidden".
+
+**An area's owner is not the seat whose area it is.** A card takes the owner of
+the place it was *made* in. A player's nemesis pile is *theirs* and is owned by
+the *scenario*, so an obligation dealt for seat 0 records `owner: -1` while
+sitting in a pile that plainly belongs to that seat. This was the first and only
+byte difference in the first full run of the comparison — the digest named the
+card and the field, which is exactly what it is for. `Area` therefore carries
+both `Owner` and `RelatedPlayer`, the same distinction MARVEL-163 found between
+`Deck2.GetOwner()` and `deck.play_area`.
+
+**Out of play, every field is zero.** Across the 78 out-of-play cards on this
+board the only non-zero entries are the `t_<TRAIT>` keys and `printed_stage` —
+which is set when the card is built rather than when it enters play, so a villain
+still in the villain deck records its stage and nothing else. The three cards in
+play carry their printed values. `k_` keys are token pools and appear **only in
+play**, which is why the two villain stages register different key sets.
+
+**Fourteen face classes, one key set each.** Read off the classes a real board
+instantiates. The registered key set is part of the contract — zero-valued fields
+are emitted precisely so that a port which forgets to register `recover` fails on
+the key rather than passing by luck.
+
+### The trait gap
+
+The digest keys traits as `t_HERO_FOR_HIRE` and `t_S.H.I.E.L.D`; the card dataset
+carries MarvelSDB's printed spelling, `Hero for Hire` and `S.H.I.E.L.D.`.
+Upper-casing, dropping a trailing full stop and turning spaces into underscores
+reproduces every `t_` key on this board.
+
+**Derivation is not the same as having the engine's list.** Compared across 3,999
+cards, the printed traits and the Python engine's own trait lists disagree
+outright on **142** — the engine gives `01172` the `CRIMINAL` trait and the
+printed card has none; `02033` is the other way round. None is on the milestone
+board, so this is a gap rather than a failure, and it will surface the moment a
+replay reaches one of them. The fix is for `datasets/cards/` to carry the
+engine's trait list beside the printed one.
+
+### What this does not yet do
+
+No card abilities and no fold, so a board whose setup fires an ability is out of
+scope — the three deviation classes above say which. Steps 1–20 of the same game
+are MARVEL-173.

@@ -8,12 +8,17 @@
        resource, or a pack downloaded at runtime) and nothing in the engine
        should have to be rewritten when it is.
 
-       No project references either. This is data; it does not need the RNG, the
-       digest, or the fold, and keeping the arrow absent means `Marvel.Rules` can
-       take a dependency on it later without a cycle. -->
+       References `Marvel.Rules` and nothing else. That is the direction the
+       layout requires: content sits above the rules, so the rules declare what
+       they need from a printed card (`ICardFacts`) and this satisfies it. An
+       arrow the other way would put card data underneath the fold. -->
   <PropertyGroup>
     <RootNamespace>Marvel.Content</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
+  </ItemGroup>
 
 </Project>
