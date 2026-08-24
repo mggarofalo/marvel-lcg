@@ -2,69 +2,167 @@
   "note": "Hand-authored. The one-way rule reference graph: an exception names the rule it overrides or extends; a base rule names nothing. Generated indexes under datasets/rules-reference/ and datasets/rules-packs/ are rebuilt from PDFs on every harvest and deliberately carry no reference field, so authored edges live here and only here. Each edge records why, because a plausible-but-wrong relationship is the failure mode this corpus exists to eliminate. Reverse lookup is computed at query time by tools/rules/refs.py and never stored. See docs/rules-provenance.md.",
   "version": 1,
   "edges": {
-    "rr:overkill": {
-      "references": ["rr:damage"],
-      "why": "Base damage application places damage on the character it was dealt to and nothing transfers. Overkill adds a transfer of the excess to the villain or the controlling identity."
-    },
-    "rr:piercing": {
-      "references": ["rr:tough"],
-      "why": "Tough prevents damage. Piercing discards tough status cards from the attacked character before damage is dealt, so it removes the prevention rather than the damage."
-    },
-    "rr:tough": {
-      "references": ["rr:damage"],
-      "why": "A tough status card cancels the damage a character would take, which is an exception to base damage application."
-    },
-    "rr:guard": {
-      "references": ["rr:attack-player-ability-type"],
-      "why": "Base rules let a hero or ally attack any enemy that can be attacked. Guard removes the villain from that set while the guarding minion is engaged."
-    },
-    "rr:quickstrike": {
-      "references": ["rr:villain-phase.step.2"],
-      "why": "Minions activate during step two of the villain phase. Quickstrike makes a minion attack on engaging, outside that step."
-    },
-    "rr:surge": {
-      "references": ["rr:villain-phase.step.4"],
-      "why": "Step four reveals the cards a player was dealt. Surge adds another card to that process when the card carrying it is revealed."
-    },
-    "rr:villainous": {
-      "references": ["rr:basic-power"],
-      "why": "A basic power is used at its printed value. Villainous gives the character a boost card whose icons modify that value for the activation."
+    "rr:acceleration-icon": {
+      "references": [
+        "rr:villain-phase.step.1"
+      ],
+      "why": "Step one places the main scheme's printed acceleration threat. Each acceleration icon in play adds one more."
     },
     "rr:assault": {
-      "references": ["rr:thwart.1"],
+      "references": [
+        "rr:thwart.1"
+      ],
       "why": "A basic thwart removes threat equal to the character's THW. Assault substitutes ATK for THW against a scheme carrying the keyword."
     },
+    "rr:confuse-confused": {
+      "references": [
+        "rr:thwart.1"
+      ],
+      "why": "A character may use its basic thwart power. A confused status card cancels the next thwart and removes itself instead."
+    },
+    "rr:crisis-icon": {
+      "references": [
+        "rr:threat"
+      ],
+      "why": "Threat is removed from a scheme by thwarting and by card effects. A crisis icon in play forbids player cards from removing it from the main scheme."
+    },
+    "rr:guard": {
+      "references": [
+        "rr:attack-player-ability-type"
+      ],
+      "why": "Base rules let a hero or ally attack any enemy that can be attacked. Guard removes the villain from that set while the guarding minion is engaged."
+    },
+    "rr:hinder-x": {
+      "references": [
+        "rr:threat"
+      ],
+      "why": "Threat is placed on schemes. Hinder X puts X threat on the card carrying the keyword as it enters play."
+    },
+    "rr:incite-x": {
+      "references": [
+        "rr:threat"
+      ],
+      "why": "Threat arrives on the main scheme from scheming and from card effects. Incite X places X of it when the card is revealed."
+    },
+    "rr:overkill": {
+      "references": [
+        "rr:damage"
+      ],
+      "why": "Base damage application places damage on the character it was dealt to and nothing transfers. Overkill adds a transfer of the excess to the villain or the controlling identity."
+    },
+    "rr:patrol": {
+      "references": [
+        "rr:thwart.1"
+      ],
+      "why": "A character may use its basic thwart power against a scheme. Patrol forbids the engaged player using cards they control to thwart the main scheme."
+    },
+    "rr:peril": {
+      "references": [
+        "rr:table-talk"
+      ],
+      "why": "Players may normally consult and act freely during another player's resolution. Peril forbids the consultation and forbids other players playing cards or triggering abilities while it resolves."
+    },
+    "rr:permanent": {
+      "references": [
+        "rr:leaves-play"
+      ],
+      "why": "A card in play can be defeated or otherwise leave play. Permanent forbids it except to abilities in the same set."
+    },
+    "rr:piercing": {
+      "references": [
+        "rr:tough"
+      ],
+      "why": "Tough prevents damage. Piercing discards tough status cards from the attacked character before damage is dealt, so it removes the prevention rather than the damage."
+    },
+    "rr:quickstrike": {
+      "references": [
+        "rr:villain-phase.step.2"
+      ],
+      "why": "Minions activate during step two of the villain phase. Quickstrike makes a minion attack on engaging, outside that step."
+    },
+    "rr:ranged": {
+      "references": [
+        "rr:retaliate-x"
+      ],
+      "why": "Retaliate deals damage back to an attacker. Ranged makes an attack ignore it."
+    },
+    "rr:requirement-resources": {
+      "references": [
+        "rr:cost"
+      ],
+      "why": "A resource cost may normally be paid with any mix of types. Requirement forbids playing the card unless the specified resources are among those spent."
+    },
+    "rr:retaliate-x": {
+      "references": [
+        "rr:attack-enemy-activation"
+      ],
+      "why": "An enemy attack resolves against the defender. Retaliate adds damage back to the attacker after it does."
+    },
     "rr:stalwart": {
-      "references": ["rr:status-cards"],
+      "references": [
+        "rr:status-cards"
+      ],
       "why": "Status cards may be given to a character. Stalwart forbids the confused and stunned ones outright."
     },
     "rr:steady": {
-      "references": ["rr:status-cards.1"],
+      "references": [
+        "rr:status-cards.1"
+      ],
       "why": "A character cannot hold more than one status card of each type. Steady raises that limit by one for confused and for stunned."
     },
     "rr:stun-stunned": {
-      "references": ["rr:attack-player-ability-type.1"],
+      "references": [
+        "rr:attack-player-ability-type.1"
+      ],
       "why": "A character may use its basic attack power. A stunned status card cancels the next such attack and removes itself instead."
     },
-    "rr:confuse-confused": {
-      "references": ["rr:thwart.1"],
-      "why": "A character may use its basic thwart power. A confused status card cancels the next thwart and removes itself instead."
+    "rr:surge": {
+      "references": [
+        "rr:villain-phase.step.4"
+      ],
+      "why": "Step four reveals the cards a player was dealt. Surge adds another card to that process when the card carrying it is revealed."
     },
-    "rr:retaliate-x": {
-      "references": ["rr:attack-enemy-activation"],
-      "why": "An enemy attack resolves against the defender. Retaliate adds damage back to the attacker after it does."
+    "rr:teamwork": {
+      "references": [
+        "rr:villain-phase.step.2"
+      ],
+      "why": "Minions activate during step two of the villain phase. Teamwork makes a minion activate on entering play, outside that step."
     },
-    "rr:crisis-icon": {
-      "references": ["rr:threat"],
-      "why": "Threat is removed from a scheme by thwarting and by card effects. A crisis icon in play forbids player cards from removing it from the main scheme."
+    "rr:temporary": {
+      "references": [
+        "rr:leaves-play"
+      ],
+      "why": "A card in play remains until something removes it. Temporary forces its discard at the end of the round."
     },
-    "rr:acceleration-icon": {
-      "references": ["rr:villain-phase.step.1"],
-      "why": "Step one places the main scheme's printed acceleration threat. Each acceleration icon in play adds one more."
+    "rr:tough": {
+      "references": [
+        "rr:damage"
+      ],
+      "why": "A tough status card cancels the damage a character would take, which is an exception to base damage application."
     },
-    "rr:peril": {
-      "references": ["rr:simultaneous-resolution"],
-      "why": "Players may normally consult and resolve together. Peril requires the resolving player to act alone, without table talk."
+    "rr:toughness": {
+      "references": [
+        "rr:tough"
+      ],
+      "why": "Tough is a status a character can be given. Toughness gives it automatically on entering play."
+    },
+    "rr:uses-x-type": {
+      "references": [
+        "rr:all-purpose-counter"
+      ],
+      "why": "All-purpose counters are a shared token pool. Uses X places X of them on the card as it enters play, as its own supply."
+    },
+    "rr:victory-x": {
+      "references": [
+        "rr:victory-display"
+      ],
+      "why": "A card leaving play goes to a discard pile or out of the game. Victory X sends it to the victory display instead, worth X."
+    },
+    "rr:villainous": {
+      "references": [
+        "rr:basic-power"
+      ],
+      "why": "A basic power is used at its printed value. Villainous gives the character a boost card whose icons modify that value for the activation."
     }
   }
 }
