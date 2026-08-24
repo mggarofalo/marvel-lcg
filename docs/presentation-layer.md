@@ -12,8 +12,8 @@ remains:
   in the solution. See [The runtime floor](#the-runtime-floor).
 - **Web export: gone, and it costs less than assumed.** See
   [Export targets](#export-targets).
-- **Still open:** whether card art is shipped as scans or drawn procedurally —
-  see [Costs and open questions](#costs-and-open-questions).
+- **Card rendering: procedural.** Decided the same day, and *not* on licensing
+  grounds. See [How cards are drawn](#how-cards-are-drawn).
 
 Release targets are settled: macOS and Windows clients, with the server also
 runnable as a Linux container. Web is explicitly not wanted, which removes the
@@ -341,24 +341,27 @@ the tests run on the runtime the client will actually host. Locally,
 
 ### Why the digest survived the floor unchanged
 
-Worth recording, because it is the pattern to repeat rather than a one-off.
+Worth recording, because the pattern generalises.
 
 The state digest is compared byte for byte across the two engines, so its JSON
-escaping is part of the contract. The C# side originally hand-wrote an escaper
-to match Python's `json.dumps` exactly. That was the wrong instinct: a
-hand-written encoder is a maintenance liability, and it would have had to be
-re-verified against every runtime change.
+escaping is part of the contract. The C# side originally hand-wrote an escaper to
+match Python's `json.dumps` exactly. That was the wrong instinct twice over: a
+hand-written encoder is a maintenance liability, and it would have to be
+re-verified against every runtime change — which is exactly the kind of thing a
+TFM floor makes you think about.
 
 The replacement is `Utf8JsonWriter` with
-`JavaScriptEncoder.UnsafeRelaxedJsonEscaping` plus a constraint on the *data* —
-no digest string leaves printable ASCII. Since nothing in the domain needs
-escaping, the two writers agree, and the agreement no longer depends on either
-platform's escaping table. Full reasoning in
-[state-digest-v2.md](state-digest-v2.md#why-no-string-here-needs-escaping).
+`JavaScriptEncoder.UnsafeRelaxedJsonEscaping`, plus two regex passes that
+reconcile the two writers' remaining differences. The platform writer keeps
+responsibility for everything structural; the normaliser only adjusts spelling.
+Full reasoning in
+[state-digest-v2.md](state-digest-v2.md#reconciling-two-json-writers).
 
-The general form: when two runtimes have to agree, constrain the input domain
-until the disagreement is unreachable, rather than re-implementing one runtime's
-behaviour inside the other.
+The general form: when two runtimes have to agree, let each use its native tool
+and reconcile the output mechanically — rather than reimplementing one runtime's
+behaviour inside the other, or constraining the data until the disagreement
+becomes unreachable. The second of those was the first answer here, and it
+worked, but it made the digest's *contents* hostage to a JSON quirk.
 
 ## Server topology
 
@@ -406,13 +409,65 @@ Something is being served now. The rule needs an owner on the C# side. This is a
 cooperative game, so a permissive policy is legitimate — it still has to be
 chosen rather than arrived at by nobody checking.
 
+## How cards are drawn
+
+MARVEL-165, decided 24 August 2026: **procedural**, and the reason is not the one
+this document expected.
+
+The draft framed this as a licensing problem — scans are fine for a localhost
+tool and not for a distributable game. That pressure turned out not to apply.
+The audience is the author and possibly a few friends, so the distribution
+question that would have forced procedural rendering does not arise. The choice
+is made on merit instead.
+
+The merit is **a card can be drawn in its current state rather than its printed
+state.** A scan shows what was printed: base cost, base attack, the traits the
+card shipped with. A procedurally drawn card shows what the card *is right now* —
+cost reduced by an ally, attack buffed for the phase, a keyword granted this
+turn, a trait added by an upgrade. Scan-based clients invariably end up bolting
+badges and overlays on top to say the same thing, and the overlays and the rules
+drift apart. Here the renderer reads the same state the digest does.
+
+### Two things, not one
+
+"Procedural" settles the frame, not the picture. Splitting them is what makes
+this tractable:
+
+| part | source |
+|---|---|
+| frame, name, cost, stats, traits, rules text, keywords | drawn from card data, live |
+| the illustration in the art box | still an image file |
+
+So procedural rendering narrows the image question to the art box; it does not
+remove it. Images are the client's responsibility for now, and move to
+`Marvel.Server` when that exists. A user-supplied art pack is explicitly not a
+requirement yet.
+
+### Why this is cheaper than it sounds
+
+`data/cards.json` already carries everything the renderer needs, for all 4,344
+cards: `name`, `subname`, `type`, `faction`, `traits`, the full `stats` block,
+marked-up `text` and `text_plain`, `flavor` and `errata` — see
+[card-dataset.md](card-dataset.md#cardsjson). The renderer's inputs exist and are
+already regenerated and hash-pinned on every `tools.cards.extract` run.
+
+What does not exist is layout, a frame per card type and faction, and the icon
+glyphs.
+
+### Consequences for the view layer
+
+- `Marvel.View` owns card layout, and layout is its largest single piece of work.
+  This is the decision the doc warned should be made "early rather than
+  discovered late," and it is why it is recorded before that assembly exists.
+- The renderer consumes **current** state, so it reads from the same place the
+  affordance list does (MARVEL-161) rather than from static card data alone.
+- Localisation is **not** a requirement now. Procedural rendering happens to make
+  it a string table rather than a second art set, which is a free option kept
+  open rather than a goal.
+
 ## Costs and open questions
 
-Card art changes category. A localhost development tool that uses card scans is
-one thing. A distributable game is another. There is a real mitigation available:
-because cards are data with a text renderer, the client can draw cards
-procedurally instead of shipping scans. That choice shapes the view layer, so it
-should be made early rather than discovered late.
+Card art: **decided, see [How cards are drawn](#how-cards-are-drawn).**
 
 Phase 6 gets much bigger. "Reconnecting the existing web client" becomes
 "building a game client". That is the actual goal, so the cost is worth paying,

@@ -311,9 +311,9 @@ schema.
 ```
 
 - **No whitespace.** `json.dumps(..., separators=(",", ":"))`.
-- **ASCII only, and never actually escaped.** `ensure_ascii=True`. See
-  [Why no string here needs escaping](#why-no-string-here-needs-escaping) — the
-  setting is retained, but the contract is that it has nothing to do.
+- **ASCII only.** `ensure_ascii=True`. A port whose JSON writer disagrees
+  reconciles afterwards — see
+  [Reconciling two JSON writers](#reconciling-two-json-writers).
 - **Fixed key order.** Top level `v` then `cards`; within a record, the eight
   keys in the table order; within `fields`, sorted by code point.
 - **Cards ascending by `id`.**
@@ -321,44 +321,71 @@ schema.
 - The empty document is `{"v":2,"cards":[]}` — **not** the empty string. An
   absent digest and an empty one mean different things to the comparison.
 
-### Why no string here needs escaping
+### Reconciling two JSON writers
 
 The original wording of the bullet above claimed `ensure_ascii=True` made a
-non-ASCII trait "encode identically in every language." That is not true, and
-the correction matters, because it is what decides whether a port can use its
-platform's JSON writer or has to hand-roll one.
+non-ASCII trait "encode identically in every language." It does not, and the
+correction is the reason this section exists.
 
-**Two native writers cannot be made to agree on an escape.** Python emits
-`\u001f`; .NET emits `\u001F`. Hex case is not configurable on either side, and
-it applies to every escape sequence. So the moment a character needs escaping at
-all, byte equality is lost, and no combination of settings recovers it.
+**No two native JSON writers agree on an escape.** Python emits `\u001f`; .NET
+emits `\u001F`. Hex case is not configurable on either side, and it applies to
+every escape sequence. On top of that, `ensure_ascii=True` escapes every
+non-ASCII character while .NET's relaxed encoder leaves most of them raw. So
+byte equality is not reachable by configuration.
 
-**They agree on everything that needs no escape.** Python's `json.dumps` and
-.NET's `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` produce identical bytes for
-any string containing none of `"`, `\`, a control character, or anything above
-ASCII.
+It is reachable by **normalising afterwards**, and that is what a port does.
+Both differences are mechanical:
 
-**Every string a digest contains is in that set**, and by construction rather
-than luck: the three string-valued positions are the card id, the zone name and
-the field name, and all three are identifiers. Measured across the whole domain
-— 3,999 card ids, 96 zone names, and 257 field names including one `t_` key per
-trait in the card database — all 4,352 are printable ASCII, and both writers
-agree on all 4,352.
+1. escape every non-ASCII UTF-16 code unit as lowercase `\uXXXX` — one escape
+   per code unit, so an astral character becomes a surrogate pair, which is what
+   `ensure_ascii=True` produces;
+2. lowercase the hex of any escape the writer already emitted.
 
-The margin is one character wide. `JavaScriptEncoder.Default` scores 4,349:
-it escapes the apostrophe, and three traits carry one — `'POOL`,
-`BATROC'S BRIGADE` and `CROSSFIRE'S CREW`. That is the entire reason the C#
-side names its encoder rather than accepting the default.
+Two regex passes. Python is the definition and needs no normalisation of its
+own; the port converges on it.
 
-**So the rule is a constraint on the data, not on the writer:** no string in a
-digest may leave printable ASCII, `0x20`–`0x7E`. It is enforced over the card
-database by `unit_test/test_digest_domain.py`, and over the fixture by
-`DigestVectorTests`. A card *name* would break it immediately — names carry
-curly apostrophes and accents — which is a standing reason not to put one here.
+#### The one thing that makes this subtle
 
-A useful side effect: because the domain needs no escaping, the digest does not
-depend on any particular runtime's escaping table, so it cannot drift when .NET
-or CPython change one.
+A string's *content* can read like an escape sequence. Python spells a literal
+backslash `\\`, so the text `\u0041` appears in the document as `\\u0041` — and
+a pass that scans for `\u` rewrites text it must not touch.
+
+The fix is an alternation that consumes backslash pairs first:
+
+```
+\\\\|\\u([0-9a-fA-F]{4})
+```
+
+Because `\\\\` is tried first, a run of backslashes is always consumed in pairs
+and a `\u` following an odd backslash is never treated as an escape. This was
+the stated reason for believing the job needed a hand-written encoder. It does
+not.
+
+#### It is checked, not reasoned about
+
+`datasets/digest/escaping.json` carries 420 cases: 20 hand-picked for the ways a
+normaliser breaks — literal backslash before `u`, odd-length backslash runs, an
+escape adjacent to an astral character, every C0 control — and 400 fuzzed over
+an alphabet of backslashes, `u`, hex digits and surrogate halves. Regenerate
+with `python -m tools.digest.emit_escaping`; `--check` is the fourth fixture
+staleness gate.
+
+The C# implementation passes all 420, and normalising a digest Python itself
+wrote is the identity — the other half of the claim, asserted against every
+recorded document in `vectors.json`.
+
+#### What this costs, and what it buys
+
+About 6 microseconds per digest, most of it spent matching nothing: card ids,
+zone names and field names are all printable ASCII, so in practice neither pass
+fires. Measured across the whole domain when this landed — 3,999 card ids, 96
+zone names and 257 field names, 4,352 strings — every one is left unescaped by
+both writers already.
+
+What it buys is that the digest's contents are **not constrained by a JSON
+escaping quirk**. A card name, with its curly apostrophe or its accent, can go
+into a digest the day that becomes useful, and the two engines will still agree
+byte for byte.
 
 `Fingerprint()` is `sha256` of that text. Nothing records it today, because the
 document is what makes a mismatch legible. It is specified so that a corpus
@@ -491,8 +518,9 @@ For a C# port targeting byte-identical output, in dependency order:
 8. **Serialise** exactly as specified above — key order, code-point-sorted
    fields, no whitespace. Use the platform's JSON writer; do not hand-roll an
    escaper. Configure it to escape only what JSON requires (in .NET,
-   `JavaScriptEncoder.UnsafeRelaxedJsonEscaping`) and assert the domain rule in
-   [Why no string here needs escaping](#why-no-string-here-needs-escaping).
+   `JavaScriptEncoder.UnsafeRelaxedJsonEscaping`), then normalise its output as
+   in [Reconciling two JSON writers](#reconciling-two-json-writers) and check it
+   against `datasets/digest/escaping.json`.
 9. **Compare as strings**, and diff structurally only when they differ.
 10. **Reject by default.**
 

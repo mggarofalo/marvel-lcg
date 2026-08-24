@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Marvel.Core.Digest;
 using Xunit;
@@ -144,45 +145,52 @@ public sealed class DigestVectorTests
     [InlineData("t_ACTIVATION ORDER 1")]
     public void RealDomainStringsSurviveTheWriterUnescaped(string value)
     {
-        // Python writes these with no escape at all, so the C# writer must too.
-        Assert.True(StateDigest.IsCanonicalSafe(value));
+        // Python writes these with no escape at all, so the C# writer must too,
+        // and normalisation must leave them alone.
         Assert.Contains($"\"card\":\"{value}\"", Canonical(value), StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("\u00e9")]          // é — Python leaves raw, .NET escapes it
-    [InlineData("Spider\u2019s")]   // curly apostrophe, as printed on cards
-    [InlineData("\u00a0")]          // non-breaking space
-    [InlineData("a\u001fb")]        // Python \u001f, .NET \u001F
-    [InlineData("a\u007fb")]        // DEL
-    public void CharactersTheTwoWritersDisagreeOnAreRefusedByTheDomainRule(string value)
+    [Fact]
+    public void EveryEscapingCaseMatchesPython()
     {
-        // Not a claim about what this writer does with them — a claim that they
-        // must never reach a digest, because the two engines stop agreeing
-        // here. See StateDigest.CanonicalOptions.
-        Assert.False(StateDigest.IsCanonicalSafe(value));
+        // `datasets/digest/escaping.json` — 20 strings hand-picked for the ways
+        // a normaliser breaks, plus 400 fuzzed over an alphabet of backslashes,
+        // `u`, hex digits and surrogate halves. The hand-picked ones exist
+        // because the first argument against doing this with a regex was that
+        // string content reading like `\u0041` would be rewritten; it is not,
+        // because the pattern consumes backslash pairs first.
+        using var stream = File.OpenRead(RepositoryPaths.Dataset("digest", "escaping.json"));
+        using var document = JsonDocument.Parse(stream);
+
+        int cases = 0;
+        foreach (var element in document.RootElement.GetProperty("cases").EnumerateArray())
+        {
+            string name = element.GetProperty("name").GetString()!;
+            string expect = element.GetProperty("expect").GetString()!;
+
+            var builder = new StringBuilder();
+            foreach (var codepoint in element.GetProperty("codepoints").EnumerateArray())
+            {
+                builder.Append(char.ConvertFromUtf32(codepoint.GetInt32()));
+            }
+
+            Assert.Contains($"\"card\":{expect}", Canonical(builder.ToString()), StringComparison.Ordinal);
+            cases++;
+        }
+
+        Assert.Equal(420, cases);
     }
 
     [Fact]
-    public void EveryStringInTheFixtureIsInsideTheDomainRule()
+    public void NormalisationIsAnIdentityOnPythonsOwnOutput()
     {
-        int checked_ = 0;
-        foreach (var digest in RecordedDigests())
+        // The recorded digests were written by Python. Normalising them must
+        // change nothing — otherwise the C# side is not converging on the
+        // fixture, it is inventing a third form.
+        foreach (string digest in RecordedDigests())
         {
-            foreach (var card in StateDigest.Parse(digest).Cards)
-            {
-                Assert.True(StateDigest.IsCanonicalSafe(card.Card), card.Card);
-                Assert.True(StateDigest.IsCanonicalSafe(card.Zone), card.Zone);
-                foreach (string key in card.Fields.Keys)
-                {
-                    Assert.True(StateDigest.IsCanonicalSafe(key), key);
-                }
-
-                checked_ += 2 + card.Fields.Count;
-            }
+            Assert.Equal(digest, StateDigest.Normalise(digest));
         }
-
-        Assert.True(checked_ > 0, "the fixture carried no strings to check");
     }
 
     private static string Canonical(string card) =>

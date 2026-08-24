@@ -1,8 +1,10 @@
 using System.Buffers;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Marvel.Core.Digest;
 
@@ -32,7 +34,7 @@ namespace Marvel.Core.Digest;
 /// is a constraint rather than an observation.
 /// </para>
 /// </remarks>
-public sealed class StateDigest
+public sealed partial class StateDigest
 {
     /// <summary>The digest format version.</summary>
     public const int Version = 2;
@@ -55,51 +57,81 @@ public sealed class StateDigest
         Cards = [.. cards.OrderBy(card => card.Id)];
     }
 
-    /// <summary>
-    /// How the canonical text is written, and the one setting that matters.
-    /// </summary>
+    /// <summary>How the canonical text is written before normalisation.</summary>
     /// <remarks>
-    /// <para>
-    /// Python writes the fixture with <c>json.dumps(separators=(",", ":"),
-    /// ensure_ascii=True)</c>. No .NET encoder reproduces that for arbitrary
-    /// strings, and it is worth being precise about why, because the reason
-    /// bounds what this contract can promise.
-    /// </para>
-    /// <para>
-    /// Python emits <c>\u001f</c>; .NET emits <c>\u001F</c>. Hex case is not
-    /// configurable on either side, so once a character needs escaping at all,
-    /// the two writers disagree — and no combination of settings fixes it.
-    /// Agreement is therefore only reachable by keeping digest strings clear of
-    /// characters that need escaping.
-    /// </para>
-    /// <para>
-    /// They are clear of them, and not by luck: a digest holds card ids, zone
-    /// names and field names, and every one of those is an identifier. Measured
-    /// across the whole domain — 3,999 card ids, 96 zone names and 257 field
-    /// names, the last including one <c>t_</c> key per trait in the card
-    /// database — all 4,352 strings are printable ASCII, and this encoder
-    /// reproduces Python byte for byte on every one.
-    /// </para>
-    /// <para>
-    /// <see cref="JavaScriptEncoder.Default"/> does not: it escapes the
-    /// apostrophe, and three traits carry one — <c>'POOL</c>,
-    /// <c>BATROC'S BRIGADE</c> and <c>CROSSFIRE'S CREW</c>. That is the whole
-    /// margin between the two encoders on real data, and it is why the choice
-    /// is spelled out here rather than left to the default.
-    /// </para>
-    /// <para>
-    /// The constraint that keeps this true is that no digest string leaves
-    /// printable ASCII. It is enforced on the Python side, over the card
-    /// database, by <c>test_digest_domain.py</c>; the fixture is checked here.
-    /// A card <i>name</i> in a digest would break it — names carry curly
-    /// apostrophes and accents — which is a good reason never to put one there.
-    /// </para>
+    /// The relaxed encoder rather than the default one, because it escapes only
+    /// what JSON requires. That leaves <see cref="Normalise"/> with two
+    /// mechanical differences to fix instead of a general re-encoding job — and
+    /// in particular it does not escape the apostrophe, which three traits
+    /// carry (<c>'POOL</c>, <c>BATROC'S BRIGADE</c>, <c>CROSSFIRE'S CREW</c>).
     /// </remarks>
     internal static readonly JsonWriterOptions CanonicalOptions = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         Indented = false,
     };
+
+    // Every non-ASCII UTF-16 code unit. Matching per code unit rather than per
+    // rune is deliberate: an astral character is two matches and becomes a
+    // surrogate pair, which is what `ensure_ascii=True` emits for it.
+    [GeneratedRegex(@"[^\x00-\x7f]")]
+    private static partial Regex NonAscii();
+
+    // An escape sequence, or a pair of backslashes. The pair comes first and
+    // that ordering is the whole correctness argument: a literal backslash in
+    // string content is spelled `\\`, so consuming pairs first means content
+    // that reads like `\u0041` can never be mistaken for an escape.
+    [GeneratedRegex(@"\\\\|\\u([0-9a-fA-F]{4})")]
+    private static partial Regex Escape();
+
+    /// <summary>
+    /// Reconciles this writer's output with Python's <c>json.dumps</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The digest is compared byte for byte, so the spelling of the JSON is the
+    /// contract. Two differences survive every configuration option either
+    /// platform offers:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description><b>Hex case.</b> Python writes <c>\u001f</c>, .NET
+    /// writes <c>\u001F</c>, and neither exposes a switch.</description></item>
+    /// <item><description><b>Escape or not.</b> Python's <c>ensure_ascii=True</c>
+    /// escapes every non-ASCII character; the relaxed encoder leaves most of
+    /// them raw.</description></item>
+    /// </list>
+    /// <para>
+    /// Both are mechanical, so they are fixed here rather than by hand-writing
+    /// an encoder. The platform writer still decides everything structural —
+    /// which characters JSON requires escaped, surrogate validity, the short
+    /// forms — and this only adjusts the spelling afterwards.
+    /// </para>
+    /// <para>
+    /// Correctness rests on the ordering inside <see cref="Escape"/>; see the
+    /// comment there. It is checked against
+    /// <c>datasets/digest/escaping.json</c>, 420 cases of which 400 are fuzzed
+    /// over an alphabet of backslashes, <c>u</c>, hex digits and surrogate
+    /// halves — because "obviously correct" is exactly the claim that was wrong
+    /// the first time.
+    /// </para>
+    /// <para>
+    /// On the strings a digest actually contains this does nothing at all: card
+    /// ids, zone names and field names are printable ASCII, so neither pass
+    /// matches. Measured at about 6 microseconds per digest, which is why there
+    /// is no fast path to get wrong.
+    /// </para>
+    /// </remarks>
+    internal static string Normalise(string text)
+    {
+        string escaped = NonAscii().Replace(
+            text, match => "\\u" + ((int)match.Value[0]).ToString("x4", CultureInfo.InvariantCulture));
+
+        return Escape().Replace(
+            escaped,
+            match => match.Groups[1].Success
+                ? "\\u" + match.Groups[1].Value.ToLowerInvariant()
+                : match.Value);
+    }
 
     /// <summary>The canonical text. This is what gets compared.</summary>
     public string Canonical()
@@ -119,7 +151,7 @@ public sealed class StateDigest
             writer.WriteEndObject();
         }
 
-        return Encoding.UTF8.GetString(buffer.WrittenSpan);
+        return Normalise(Encoding.UTF8.GetString(buffer.WrittenSpan));
     }
 
     /// <summary>SHA-256 of the canonical text.</summary>
@@ -176,27 +208,4 @@ public sealed class StateDigest
         return new StateDigest(cards);
     }
 
-    /// <summary>
-    /// Whether <paramref name="value"/> is safe to put in a digest.
-    /// </summary>
-    /// <remarks>
-    /// Printable ASCII, <c>0x20</c> to <c>0x7E</c>. Outside that range this
-    /// writer and Python's stop agreeing — see <see cref="CanonicalOptions"/>.
-    /// Exposed so the check can be a test rather than a per-step cost: the
-    /// domain is fixed by the card database, so it is cheaper to prove once
-    /// than to assert on every one of the corpus's 1,773 scenes.
-    /// </remarks>
-    public static bool IsCanonicalSafe(string value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        foreach (char c in value)
-        {
-            if (c < 0x20 || c > 0x7E)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
 }
