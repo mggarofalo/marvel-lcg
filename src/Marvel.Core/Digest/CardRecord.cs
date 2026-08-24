@@ -1,5 +1,4 @@
-using System.Globalization;
-using System.Text;
+using System.Text.Json;
 
 namespace Marvel.Core.Digest;
 
@@ -29,23 +28,18 @@ public sealed record CardRecord(
     bool FaceUp,
     IReadOnlyDictionary<string, long> Fields)
 {
-    internal void WriteTo(StringBuilder builder)
+    internal void WriteTo(Utf8JsonWriter writer)
     {
-        builder.Append("{\"id\":").Append(Id.ToString(CultureInfo.InvariantCulture));
+        writer.WriteStartObject();
+        writer.WriteNumber("id", Id);
+        writer.WriteString("card", Card);
+        writer.WriteString("zone", Zone);
+        writer.WriteNumber("owner", Owner);
+        writer.WriteNumber("index", Index);
+        writer.WriteNumber("host", Host);
+        writer.WriteBoolean("face_up", FaceUp);
 
-        builder.Append(",\"card\":");
-        StateDigest.WriteJsonString(builder, Card);
-
-        builder.Append(",\"zone\":");
-        StateDigest.WriteJsonString(builder, Zone);
-
-        builder.Append(",\"owner\":").Append(Owner.ToString(CultureInfo.InvariantCulture));
-        builder.Append(",\"index\":").Append(Index.ToString(CultureInfo.InvariantCulture));
-        builder.Append(",\"host\":").Append(Host.ToString(CultureInfo.InvariantCulture));
-        builder.Append(",\"face_up\":").Append(FaceUp ? "true" : "false");
-
-        builder.Append(",\"fields\":{");
-        bool first = true;
+        writer.WriteStartObject("fields");
 
         // Ordinal — by code point, which is what the spec says and what
         // Python's `sorted()` does on `str`. A culture-aware comparison would
@@ -54,16 +48,10 @@ public sealed record CardRecord(
         // a byte comparison.
         foreach (var field in Fields.OrderBy(f => f.Key, StringComparer.Ordinal))
         {
-            if (!first)
-            {
-                builder.Append(',');
-            }
-
-            first = false;
-            StateDigest.WriteJsonString(builder, field.Key);
-            builder.Append(':').Append(field.Value.ToString(CultureInfo.InvariantCulture));
+            writer.WriteNumber(field.Key, field.Value);
         }
 
-        builder.Append("}}");
+        writer.WriteEndObject();
+        writer.WriteEndObject();
     }
 }

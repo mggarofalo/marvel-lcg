@@ -135,7 +135,7 @@ jobs:
       # regenerate-or-fail check, so a stale fixture is caught at the commit
       # that staled it rather than at the port.
       #
-      # All three compare byte for byte, through one shared definition of
+      # All four compare byte for byte, through one shared definition of
       # "stale" in py_src/tools/fixtures.py — read that file before changing
       # any of them. Line endings are part of the comparison, which is why
       # .gitattributes pinning eol=lf is load-bearing on the Windows leg
@@ -146,6 +146,9 @@ jobs:
 
       - name: Fixture staleness — state digest vectors
         run: python -m tools.digest.emit_vectors --check
+
+      - name: Fixture staleness — JSON escaping cases
+        run: python -m tools.digest.emit_escaping --check
 
       - name: Fixture staleness — card dataset
         run: python -m tools.cards.extract --check
@@ -176,9 +179,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Two installs on purpose. `global.json` pins the SDK that builds; the
+      # assemblies target `net8.0` so Godot can reference them
+      # (Directory.Build.props), and running the tests on the .NET 8 runtime
+      # rather than rolling forward to 10 is the point -- the digest's JSON
+      # escaping is runtime behaviour, so it has to be exercised on the runtime
+      # the client will actually host.
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
+          dotnet-version: 8.0.x
 
       # `--locked-mode` would be better still, but central package management
       # writes no lock file by default; the pins in Directory.Packages.props

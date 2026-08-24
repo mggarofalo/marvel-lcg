@@ -1,10 +1,11 @@
-"""What the three fixture `--check` gates call stale (`tools/fixtures.py`).
+"""What the four fixture `--check` gates call stale (`tools/fixtures.py`).
 
 The gates regenerate a checked-in file and compare:
 
-    python -m tools.rng.emit_vectors --check      datasets/rng/vectors.json
-    python -m tools.digest.emit_vectors --check   datasets/digest/vectors.json
-    python -m tools.cards.extract --check         datasets/cards/*.json
+    python -m tools.rng.emit_vectors --check       datasets/rng/vectors.json
+    python -m tools.digest.emit_vectors --check    datasets/digest/vectors.json
+    python -m tools.digest.emit_escaping --check   datasets/digest/escaping.json
+    python -m tools.cards.extract --check          datasets/cards/*.json
 
 Before MARVEL-73 they disagreed about what a difference was, and the
 disagreement was invisible until a Windows clone with `core.autocrlf=true`
@@ -207,16 +208,17 @@ class TestProvenanceHash(unittest.TestCase):
 class TestTheGatesAgree(unittest.TestCase):
     """The point of the issue: one definition, used by all three gates.
 
-    Stated as a test because "they agree" is otherwise a claim about three
+    Stated as a test because "they agree" is otherwise a claim about four
     files that will be edited separately. Import-level, so it survives a
     rewrite of any of the three that keeps calling `tools.fixtures`.
     """
 
-    def test_all_three_gates_take_their_verdict_from_tools_fixtures(self):
+    def test_all_four_gates_take_their_verdict_from_tools_fixtures(self):
+        from tools.digest import emit_escaping
         from tools.digest import emit_vectors as digest_vectors
         from tools.rng import emit_vectors as rng_vectors
 
-        for module in (rng_vectors, digest_vectors, extract):
+        for module in (rng_vectors, digest_vectors, emit_escaping, extract):
             with self.subTest(module=module.__name__):
                 self.assertIs(module.fixtures, fixtures)
 

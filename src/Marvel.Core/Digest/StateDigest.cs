@@ -1,7 +1,10 @@
+using System.Buffers;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Marvel.Core.Digest;
 
@@ -23,8 +26,15 @@ namespace Marvel.Core.Digest;
 /// languages, because every JSON writer has opinions about key order,
 /// whitespace and non-ASCII.
 /// </para>
+/// <para>
+/// The writer is <see cref="Utf8JsonWriter"/> with
+/// <see cref="JavaScriptEncoder.UnsafeRelaxedJsonEscaping"/>, which reproduces
+/// Python's <c>json.dumps</c> exactly over the strings a digest can contain —
+/// see <see cref="CanonicalOptions"/> for what "can contain" means and why it
+/// is a constraint rather than an observation.
+/// </para>
 /// </remarks>
-public sealed class StateDigest
+public sealed partial class StateDigest
 {
     /// <summary>The digest format version.</summary>
     public const int Version = 2;
@@ -47,31 +57,115 @@ public sealed class StateDigest
         Cards = [.. cards.OrderBy(card => card.Id)];
     }
 
+    /// <summary>How the canonical text is written before normalisation.</summary>
+    /// <remarks>
+    /// The relaxed encoder rather than the default one, because it escapes only
+    /// what JSON requires. That leaves <see cref="Normalise"/> with two
+    /// mechanical differences to fix instead of a general re-encoding job — and
+    /// in particular it does not escape the apostrophe, which three traits
+    /// carry (<c>'POOL</c>, <c>BATROC'S BRIGADE</c>, <c>CROSSFIRE'S CREW</c>).
+    /// </remarks>
+    internal static readonly JsonWriterOptions CanonicalOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Indented = false,
+    };
+
+    // Every non-ASCII UTF-16 code unit. Matching per code unit rather than per
+    // rune is deliberate: an astral character is two matches and becomes a
+    // surrogate pair, which is what `ensure_ascii=True` emits for it.
+    [GeneratedRegex(@"[^\x00-\x7f]")]
+    private static partial Regex NonAscii();
+
+    // An escape sequence, or a pair of backslashes. The pair comes first and
+    // that ordering is the whole correctness argument: a literal backslash in
+    // string content is spelled `\\`, so consuming pairs first means content
+    // that reads like `\u0041` can never be mistaken for an escape.
+    [GeneratedRegex(@"\\\\|\\u([0-9a-fA-F]{4})")]
+    private static partial Regex Escape();
+
+    /// <summary>
+    /// Reconciles this writer's output with Python's <c>json.dumps</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The digest is compared byte for byte, so the spelling of the JSON is the
+    /// contract. Two differences survive every configuration option either
+    /// platform offers:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description><b>Hex case.</b> Python writes <c>\u001f</c>, .NET
+    /// writes <c>\u001F</c>, and neither exposes a switch.</description></item>
+    /// <item><description><b>Escape or not.</b> Python's <c>ensure_ascii=True</c>
+    /// escapes every non-ASCII character; the relaxed encoder leaves most of
+    /// them raw.</description></item>
+    /// </list>
+    /// <para>
+    /// Both are mechanical, so they are fixed here rather than by hand-writing
+    /// an encoder. The platform writer still decides everything structural —
+    /// which characters JSON requires escaped, surrogate validity, the short
+    /// forms — and this only adjusts the spelling afterwards.
+    /// </para>
+    /// <para>
+    /// Correctness rests on the ordering inside <see cref="Escape"/>; see the
+    /// comment there. It is checked against
+    /// <c>datasets/digest/escaping.json</c>, 420 cases of which 400 are fuzzed
+    /// over an alphabet of backslashes, <c>u</c>, hex digits and surrogate
+    /// halves — because "obviously correct" is exactly the claim that was wrong
+    /// the first time.
+    /// </para>
+    /// <para>
+    /// On the strings a digest actually contains this does nothing at all: card
+    /// ids, zone names and field names are printable ASCII, so neither pass
+    /// matches. Measured at about 6 microseconds per digest, which is why there
+    /// is no fast path to get wrong.
+    /// </para>
+    /// </remarks>
+    internal static string Normalise(string text)
+    {
+        string escaped = NonAscii().Replace(
+            text, match => "\\u" + ((int)match.Value[0]).ToString("x4", CultureInfo.InvariantCulture));
+
+        return Escape().Replace(
+            escaped,
+            match => match.Groups[1].Success
+                ? "\\u" + match.Groups[1].Value.ToLowerInvariant()
+                : match.Value);
+    }
+
     /// <summary>The canonical text. This is what gets compared.</summary>
     public string Canonical()
     {
-        var builder = new StringBuilder();
-        builder.Append("{\"v\":").Append(Version).Append(",\"cards\":[");
-        for (int i = 0; i < Cards.Count; i++)
+        var buffer = new ArrayBufferWriter<byte>();
+        using (var writer = new Utf8JsonWriter(buffer, CanonicalOptions))
         {
-            if (i > 0)
+            writer.WriteStartObject();
+            writer.WriteNumber("v", Version);
+            writer.WriteStartArray("cards");
+            foreach (var card in Cards)
             {
-                builder.Append(',');
+                card.WriteTo(writer);
             }
 
-            Cards[i].WriteTo(builder);
+            writer.WriteEndArray();
+            writer.WriteEndObject();
         }
 
-        builder.Append("]}");
-        return builder.ToString();
+        return Normalise(Encoding.UTF8.GetString(buffer.WrittenSpan));
     }
 
     /// <summary>SHA-256 of the canonical text.</summary>
     public string Fingerprint() => Sha256(Canonical());
 
     /// <summary>SHA-256 of a string, lowercase hex.</summary>
+    /// <remarks>
+    /// <c>Convert.ToHexStringLower</c> would say this in one call, but it
+    /// arrived in .NET 9 and this assembly targets .NET 8 so that Godot can
+    /// reference it — see <c>Directory.Build.props</c>. It is the only place
+    /// the floor costs anything.
+    /// </remarks>
     public static string Sha256(string text) =>
-        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
 
     /// <summary>Reads a canonical document back into records.</summary>
     /// <remarks>
@@ -114,50 +208,4 @@ public sealed class StateDigest
         return new StateDigest(cards);
     }
 
-    /// <summary>
-    /// Escapes a string the way Python's <c>json.dumps(ensure_ascii=True)</c>
-    /// does, which is what the fixture was written with.
-    /// </summary>
-    /// <remarks>
-    /// Hand-written rather than delegated to a JSON writer because the writers
-    /// disagree in exactly the places that matter here. .NET's default encoder
-    /// escapes <c>&amp;</c>, <c>&lt;</c> and <c>+</c>; its
-    /// <c>UnsafeRelaxedJsonEscaping</c> leaves non-ASCII unescaped. Python
-    /// escapes neither the first set nor leaves the second alone. A card id or
-    /// trait outside ASCII has to encode as <c>\uXXXX</c> identically in both
-    /// engines or the byte comparison fails on a card nobody has touched.
-    /// </remarks>
-    internal static void WriteJsonString(StringBuilder builder, string value)
-    {
-        builder.Append('"');
-        foreach (char c in value)
-        {
-            switch (c)
-            {
-                case '"': builder.Append("\\\""); break;
-                case '\\': builder.Append("\\\\"); break;
-                case '\b': builder.Append("\\b"); break;
-                case '\f': builder.Append("\\f"); break;
-                case '\n': builder.Append("\\n"); break;
-                case '\r': builder.Append("\\r"); break;
-                case '\t': builder.Append("\\t"); break;
-                default:
-                    // Python escapes control characters and everything above
-                    // ASCII, and nothing else. Notably it does *not* escape
-                    // the forward slash.
-                    if (c < 0x20 || c > 0x7E)
-                    {
-                        builder.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
-                    }
-                    else
-                    {
-                        builder.Append(c);
-                    }
-
-                    break;
-            }
-        }
-
-        builder.Append('"');
-    }
 }

@@ -1,10 +1,19 @@
 # Presentation layer: Godot instead of ASP.NET Core
 
-MARVEL-159. A proposal, not yet a decision. The decision is made when that issue
-closes, and this document is rewritten to record what was decided.
+MARVEL-159. **Decided on 24 August 2026.** The client is built in Godot; the
+TypeScript client and the ASP.NET Core web host are dropped from the MVP. What
+follows was written as a proposal and is kept in that voice where the reasoning
+still reads better as argument than as decree.
 
-One question is open and is called out under [Costs and open questions](#costs-and-open-questions):
-whether card art is shipped as scans or drawn procedurally.
+Two things are settled that were open when this was drafted, and one question
+remains:
+
+- **Runtime floor: `net8.0`.** Forced by Godot, and it constrains every assembly
+  in the solution. See [The runtime floor](#the-runtime-floor).
+- **Web export: gone, and it costs less than assumed.** See
+  [Export targets](#export-targets).
+- **Card rendering: procedural.** Decided the same day, and *not* on licensing
+  grounds. See [How cards are drawn](#how-cards-are-drawn).
 
 Release targets are settled: macOS and Windows clients, with the server also
 runnable as a Linux container. Web is explicitly not wanted, which removes the
@@ -15,7 +24,7 @@ The export-target question is answered. MARVEL-166 confirmed against Godot
 that costs is smaller than this document first assumed — see
 [Export targets](#export-targets).
 
-## What this proposes
+## What was decided
 
 Build the C# client in Godot for macOS and Windows, and drop the TypeScript web
 client. Keep `Marvel.Server`, but not in the shape `migration.md` assumed: it is
@@ -296,6 +305,64 @@ requirement: source-generated `System.Text.Json` contexts, and no runtime
 reflection in the engine. Honour it from the first line of `Marvel.Core` rather
 than retrofitting it.
 
+## The runtime floor
+
+Measured on 24 August 2026, and the one part of this decision that reaches code
+already written.
+
+`GodotSharp` 4.7.0 ships **`net8.0`**. A `net8.0` project cannot reference a
+`net10.0` library — that is a NuGet error, not a warning — so every assembly
+below the wall has to sit at or below Godot's floor. `Directory.Build.props`
+now says `net8.0` for the whole solution.
+
+Targeting .NET 10 *from* Godot is not an available alternative. It is not the
+default, and [godotengine/godot#112701](https://github.com/godotengine/godot/issues/112701)
+reports the managed host failing to probe shared-framework assemblies under
+`net10.0`, with the reporter's workaround being a hand-written
+`AssemblyLoadContext` resolver. .NET 10 support is
+[still under discussion](https://github.com/godotengine/godot-proposals/discussions/13076)
+for a later release. Plan on `net8.0`.
+
+**What it cost, taken now:** one API call. `Marvel.Core` used
+`Convert.ToHexStringLower`, which arrived in .NET 9; it is now
+`Convert.ToHexString(...).ToLowerInvariant()`. Nothing else in the assembly
+needed anything above .NET 8. Taken later — after the fold, the interpreter and
+the card set — the same change is a solution-wide audit.
+
+No multi-targeting. One TFM for the solution is the whole point; a project that
+builds for two runtimes has to be *tested* on two runtimes, and the digest's
+JSON escaping is runtime behaviour.
+
+That last point has a consequence for CI. `dotnet test` on a machine with only
+the .NET 10 runtime silently rolls forward, so the tests would pass without ever
+touching .NET 8. `ci.yml` installs the 8.0 runtime alongside the pinned SDK so
+the tests run on the runtime the client will actually host. Locally,
+`DOTNET_ROLL_FORWARD=Major dotnet test` works and is not the same check.
+
+### Why the digest survived the floor unchanged
+
+Worth recording, because the pattern generalises.
+
+The state digest is compared byte for byte across the two engines, so its JSON
+escaping is part of the contract. The C# side originally hand-wrote an escaper to
+match Python's `json.dumps` exactly. That was the wrong instinct twice over: a
+hand-written encoder is a maintenance liability, and it would have to be
+re-verified against every runtime change — which is exactly the kind of thing a
+TFM floor makes you think about.
+
+The replacement is `Utf8JsonWriter` with
+`JavaScriptEncoder.UnsafeRelaxedJsonEscaping`, plus two regex passes that
+reconcile the two writers' remaining differences. The platform writer keeps
+responsibility for everything structural; the normaliser only adjusts spelling.
+Full reasoning in
+[state-digest-v2.md](state-digest-v2.md#reconciling-two-json-writers).
+
+The general form: when two runtimes have to agree, let each use its native tool
+and reconcile the output mechanically — rather than reimplementing one runtime's
+behaviour inside the other, or constraining the data until the disagreement
+becomes unreachable. The second of those was the first answer here, and it
+worked, but it made the digest's *contents* hostage to a JSON quirk.
+
 ## Server topology
 
 Decided 23 August 2026. `migration.md` treats `Marvel.Server` as a later phase for
@@ -342,13 +409,65 @@ Something is being served now. The rule needs an owner on the C# side. This is a
 cooperative game, so a permissive policy is legitimate — it still has to be
 chosen rather than arrived at by nobody checking.
 
+## How cards are drawn
+
+MARVEL-165, decided 24 August 2026: **procedural**, and the reason is not the one
+this document expected.
+
+The draft framed this as a licensing problem — scans are fine for a localhost
+tool and not for a distributable game. That pressure turned out not to apply.
+The audience is the author and possibly a few friends, so the distribution
+question that would have forced procedural rendering does not arise. The choice
+is made on merit instead.
+
+The merit is **a card can be drawn in its current state rather than its printed
+state.** A scan shows what was printed: base cost, base attack, the traits the
+card shipped with. A procedurally drawn card shows what the card *is right now* —
+cost reduced by an ally, attack buffed for the phase, a keyword granted this
+turn, a trait added by an upgrade. Scan-based clients invariably end up bolting
+badges and overlays on top to say the same thing, and the overlays and the rules
+drift apart. Here the renderer reads the same state the digest does.
+
+### Two things, not one
+
+"Procedural" settles the frame, not the picture. Splitting them is what makes
+this tractable:
+
+| part | source |
+|---|---|
+| frame, name, cost, stats, traits, rules text, keywords | drawn from card data, live |
+| the illustration in the art box | still an image file |
+
+So procedural rendering narrows the image question to the art box; it does not
+remove it. Images are the client's responsibility for now, and move to
+`Marvel.Server` when that exists. A user-supplied art pack is explicitly not a
+requirement yet.
+
+### Why this is cheaper than it sounds
+
+`data/cards.json` already carries everything the renderer needs, for all 4,344
+cards: `name`, `subname`, `type`, `faction`, `traits`, the full `stats` block,
+marked-up `text` and `text_plain`, `flavor` and `errata` — see
+[card-dataset.md](card-dataset.md#cardsjson). The renderer's inputs exist and are
+already regenerated and hash-pinned on every `tools.cards.extract` run.
+
+What does not exist is layout, a frame per card type and faction, and the icon
+glyphs.
+
+### Consequences for the view layer
+
+- `Marvel.View` owns card layout, and layout is its largest single piece of work.
+  This is the decision the doc warned should be made "early rather than
+  discovered late," and it is why it is recorded before that assembly exists.
+- The renderer consumes **current** state, so it reads from the same place the
+  affordance list does (MARVEL-161) rather than from static card data alone.
+- Localisation is **not** a requirement now. Procedural rendering happens to make
+  it a string table rather than a second art set, which is a free option kept
+  open rather than a goal.
+
 ## Costs and open questions
 
-Card art changes category. A localhost development tool that uses card scans is
-one thing. A distributable game is another. There is a real mitigation available:
-because cards are data with a text renderer, the client can draw cards
-procedurally instead of shipping scans. That choice shapes the view layer, so it
-should be made early rather than discovered late.
+Card art: **decided, see [How cards are drawn](#how-cards-are-drawn).**
 
 Phase 6 gets much bigger. "Reconnecting the existing web client" becomes
 "building a game client". That is the actual goal, so the cost is worth paying,

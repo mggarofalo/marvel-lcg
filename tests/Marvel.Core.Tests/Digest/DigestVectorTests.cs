@@ -129,17 +129,87 @@ public sealed class DigestVectorTests
     }
 
     [Theory]
-    [InlineData("plain", "\"plain\"")]
-    [InlineData("a\"b", "\"a\\\"b\"")]
-    [InlineData("a\\b", "\"a\\\\b\"")]
-    [InlineData("a/b", "\"a/b\"")]                 // Python does not escape it
-    [InlineData("a\nb", "\"a\\nb\"")]
-    [InlineData("\u00e9", "\"\\u00e9\"")]          // ensure_ascii=True
-    [InlineData("<&>", "\"<&>\"")]                 // .NET's default encoder would escape these
-    public void StringsEscapeTheWayPythonDoes(string value, string expected)
+    // Every character class the real domain contains. The apostrophe is the
+    // one that matters: three traits carry one, and it is the only place
+    // `JavaScriptEncoder.Default` would have diverged from Python.
+    [InlineData("01001b")]
+    [InlineData("HeroArea")]
+    [InlineData("PlayerDeck/removed")]
+    [InlineData("t_GENIUS")]
+    [InlineData("t_'POOL")]
+    [InlineData("t_BATROC'S BRIGADE")]
+    [InlineData("t_CROSSFIRE'S CREW")]
+    [InlineData("t_X-MEN")]
+    [InlineData("t_S.H.I.E.L.D.")]
+    [InlineData("t_CHASE!")]
+    [InlineData("t_ACTIVATION ORDER 1")]
+    public void RealDomainStringsSurviveTheWriterUnescaped(string value)
     {
-        var builder = new StringBuilder();
-        StateDigest.WriteJsonString(builder, value);
-        Assert.Equal(expected, builder.ToString());
+        // Python writes these with no escape at all, so the C# writer must too,
+        // and normalisation must leave them alone.
+        Assert.Contains($"\"card\":\"{value}\"", Canonical(value), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EveryEscapingCaseMatchesPython()
+    {
+        // `datasets/digest/escaping.json` — 20 strings hand-picked for the ways
+        // a normaliser breaks, plus 400 fuzzed over an alphabet of backslashes,
+        // `u`, hex digits and surrogate halves. The hand-picked ones exist
+        // because the first argument against doing this with a regex was that
+        // string content reading like `\u0041` would be rewritten; it is not,
+        // because the pattern consumes backslash pairs first.
+        using var stream = File.OpenRead(RepositoryPaths.Dataset("digest", "escaping.json"));
+        using var document = JsonDocument.Parse(stream);
+
+        int cases = 0;
+        foreach (var element in document.RootElement.GetProperty("cases").EnumerateArray())
+        {
+            string name = element.GetProperty("name").GetString()!;
+            string expect = element.GetProperty("expect").GetString()!;
+
+            var builder = new StringBuilder();
+            foreach (var codepoint in element.GetProperty("codepoints").EnumerateArray())
+            {
+                builder.Append(char.ConvertFromUtf32(codepoint.GetInt32()));
+            }
+
+            Assert.Contains($"\"card\":{expect}", Canonical(builder.ToString()), StringComparison.Ordinal);
+            cases++;
+        }
+
+        Assert.Equal(420, cases);
+    }
+
+    [Fact]
+    public void NormalisationIsAnIdentityOnPythonsOwnOutput()
+    {
+        // The recorded digests were written by Python. Normalising them must
+        // change nothing — otherwise the C# side is not converging on the
+        // fixture, it is inventing a third form.
+        foreach (string digest in RecordedDigests())
+        {
+            Assert.Equal(digest, StateDigest.Normalise(digest));
+        }
+    }
+
+    private static string Canonical(string card) =>
+        new StateDigest([new CardRecord(0, card, "HeroArea", 0, 0, -1, true,
+            new Dictionary<string, long>())]).Canonical();
+
+    private static IEnumerable<string> RecordedDigests()
+    {
+        foreach (var testCase in Cases())
+        {
+            if (!testCase.TryGetProperty("step_digests", out var digests))
+            {
+                continue;
+            }
+
+            foreach (var digest in digests.EnumerateArray())
+            {
+                yield return digest.GetString()!;
+            }
+        }
     }
 }
