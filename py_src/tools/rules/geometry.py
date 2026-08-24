@@ -29,10 +29,22 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Sequence
 
-# The gutter, on the 612pt page this document uses. Measured rather than
-# assumed: character x0 values cluster into 60-290 and 310-545 with eight
-# strays between, which are the wide entry headings that span both columns.
+# Where to look for the gutter on the 612pt page this document uses, and the
+# fallback if the search comes up empty.
+#
+# The gutter is found per page rather than fixed, because this document has
+# two of them: recto and verso carry different margins, so the empty band sits
+# at roughly 291-308 on one and 303-321 on the other. A single split at 300 is
+# right for the first and *inside the text* of the second -- it clipped the
+# final character off any left-column line that ran long, which is how
+# "a hero does not exhaust" reached the corpus as "a hero does not exhaus".
+# One dropped letter per affected line, in a dataset whose entire purpose is
+# to be quotable.
+GUTTER_SEARCH = (200, 400)
 COLUMN_SPLIT = 300.0
+
+# A real gutter is wider than the space between two words.
+MIN_GUTTER_WIDTH = 6
 
 # A heading is this font at this size, and nothing else in the document is.
 HEADING_FONT = "ExoMVC-Bold"
@@ -196,6 +208,51 @@ def _to_lines(chars: Sequence[Dict]) -> List[Line]:
     return lines
 
 
+def column_split(chars: Sequence[Dict]) -> float:
+    """The x coordinate separating the two columns, found by looking.
+
+    The widest vertical band no character touches, within the range a gutter
+    could plausibly occupy. Returns the fallback when the page is a single
+    column, or when nothing clean enough to be a gutter turns up.
+    """
+    if not chars:
+        return COLUMN_SPLIT
+
+    low, high = GUTTER_SEARCH
+    covered = bytearray(high - low)
+    for char in chars:
+        start = max(low, int(char["x0"]))
+        stop = min(high, int(char["x1"]) + 1)
+        for x in range(start, stop):
+            covered[x - low] = 1
+
+    best_width, best_start, run = 0, None, 0
+    for offset, filled in enumerate(covered):
+        if filled:
+            run = 0
+            continue
+        run += 1
+        if run > best_width:
+            best_width, best_start = run, offset - run + 1
+
+    if best_start is None or best_width < MIN_GUTTER_WIDTH:
+        return COLUMN_SPLIT
+    return low + best_start + best_width / 2.0
+
+
+def straddling(chars: Sequence[Dict], split: float) -> List[Dict]:
+    """Characters the split runs through, which means it is not a gutter.
+
+    A column boundary that cuts a glyph in half is not a boundary. This is the
+    cheap invariant that would have caught the fixed 300pt split immediately:
+    on half the pages it sat inside the left column's text, so the last
+    character of a long line was filed under the *other* column and reappeared
+    somewhere else entirely. Nothing was lost, so no count could notice; the
+    text was simply wrong.
+    """
+    return [c for c in chars if c["x0"] < split < c["x1"]]
+
+
 def page_lines(page, skip: Callable[[str], bool] | None = None) -> List[Line]:
     """Every line on `page`, left column first, then right.
 
@@ -205,8 +262,9 @@ def page_lines(page, skip: Callable[[str], bool] | None = None) -> List[Line]:
     chars = [c for c in page.chars
              if _is_content(c)
              and not any(f in _font(c) for f in FURNITURE_FONTS)]
-    left = [c for c in chars if c["x0"] < COLUMN_SPLIT]
-    right = [c for c in chars if c["x0"] >= COLUMN_SPLIT]
+    split = column_split(chars)
+    left = [c for c in chars if c["x0"] < split]
+    right = [c for c in chars if c["x0"] >= split]
 
     lines = _to_lines(left) + _to_lines(right)
     if skip is not None:

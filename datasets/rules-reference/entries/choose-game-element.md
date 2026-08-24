@@ -24,6 +24,6 @@ The phrase “choose a [game element]” *(such as an ally, a minion, or a schem
     - The same target cannot be chosen multiple times this way.
 
 <a id="choose-game-element-4"></a>
-4. An effect that can choose “any number” of targets does not successfully resolve if zero of those targets are chosen. s
+4. An effect that can choose “any number” of targets does not successfully resolve if zero of those targets are chosen.
 
 **See also:** [Ability](ability.md), [Game Element](game-element.md), [Player](player.md), [Target](target.md)

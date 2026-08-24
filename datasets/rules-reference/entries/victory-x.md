@@ -13,7 +13,7 @@ see_also: ["rr:defeat", "rr:discard-pile", "rr:keywords", "rr:reminder-text", "r
 When a card with the victory X keyword leaves play under the following conditions, place it in the victory display instead of its owner’s discard pile:
 
 <a id="victory-x-1"></a>
-1. The victory X keyword is equivalent to the following) ability based on the card with the keyword:
+1. The victory X keyword is equivalent to the following ability based on the card with the keyword:
     <a id="victory-x-1-1"></a>
     - Character or side scheme: “**When Defeated**: Add this card to the victory display.”
     <a id="victory-x-1-2"></a>

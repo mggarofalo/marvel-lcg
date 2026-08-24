@@ -15,7 +15,7 @@ An attack is a type of enemy activation. When an enemy initiates an attack, it t
 <a id="attack-enemy-activation-1"></a>
 1. Enemy attacks are always initiated against both a player and a character.
     <a id="attack-enemy-activation-1-1"></a>
-    - Normally the attacked character is the player’s hero, but abilities can instead cause an enemy to attack a player’s alter-ego or an ally that player controls. In all of these cases, the player is still, considered attacked.
+    - Normally the attacked character is the player’s hero, but abilities can instead cause an enemy to attack a player’s alter-ego or an ally that player controls. In all of these cases, the player is still considered attacked.
     <a id="attack-enemy-activation-1-2"></a>
     - If a character other than the attacked character defends the attack, that character becomes the new target of that attack.
     <a id="attack-enemy-activation-1-3"></a>

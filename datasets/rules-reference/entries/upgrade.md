@@ -4,13 +4,13 @@ title: "UPGRADE"
 document: "Rules Reference"
 version: "1.8"
 page: 46
-hash: "sha256:ecd35de1586ecdb24345f4a7b5deaf1dcbd4bf54d044b386d5b604aa32711a41"
+hash: "sha256:486730c1298f81fc76f17a18f918d91718b61d1422d4171cb8c5fb8d1da9c57f"
 see_also: ["rr:attach-to", "rr:card-types", "rr:enters-play", "rr:identity", "rr:in-play-and-out-of-play", "rr:leaves-play", "rr:ownership-and-control", "rr:player-card", "rr:player-s-play-area"]
 ---
 
 # UPGRADE
 
-Upgrade is a player card type that represents powers, attacks, equipment, and other assets that are *(in most cases* at an identity’s immediate disposal.
+Upgrade is a player card type that represents powers, attacks, equipment, and other assets that are *(in most cases)* at an identity’s immediate disposal.
 
 <a id="upgrade-1"></a>
 1. An upgrade is active so long as it is in play, and it remains in play until a card ability causes it to leave play.

@@ -4,13 +4,13 @@ title: "CHOOSE (OPTION)"
 document: "Rules Reference"
 version: "1.8"
 page: 12
-hash: "sha256:69705d922699867f46b9824ffe5ce8cb1a87c55a950f1baf25ecd56e41a29ca5"
+hash: "sha256:9e430a96706ae0e838f4039d752427e330bd73e3e3c4d232724a75a55107e7c9"
 see_also: ["rr:ability", "rr:player", "rr:target"]
 ---
 
 # CHOOSE (OPTION)
 
-. Some abilities instruct a player to choose between multiple options. *For example, “Choose to either take 1 damage or discard 1 card from your hand.”*
+Some abilities instruct a player to choose between multiple options. *For example, “Choose to either take 1 damage or discard 1 card from your hand.”*
 
 <a id="choose-option-1"></a>
 1. When an encounter card requires a player to choose an option, they cannot choose an option that requires one or more targets if there are no valid targets for that option.

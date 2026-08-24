@@ -13,13 +13,13 @@ see_also: ["rr:card-types", "rr:discard", "rr:identity", "rr:labeled-ability", "
 Event is a player card type that is generally played for an instantaneous effect. Each time a player plays an event card, that player places it faceup on the table in front of them *(the event is not in play)*, pays its costs, resolves its effects *(unless those effects are canceled)*, and then places the card in its owner’s discard pile after those effects resolve *(or are canceled)*.
 
 <a id="event-1"></a>
-1. If an event has more than one triggered ability on it, the player playing it chooses one of those abilities to trigger when playing that event..
+1. If an event has more than one triggered ability on it, the player playing it chooses one of those abilities to trigger when playing that event.
 
 <a id="event-2"></a>
 2. If the effects of an event are canceled, the card is still considered to have been played, and its costs remain paid. Only the effects are canceled.
 
 <a id="event-3"></a>
-3. An event card cannot be played if it requires one or. more targets and does not have at least one valid target.
+3. An event card cannot be played if it requires one or more targets and does not have at least one valid target.
 
 <a id="event-4"></a>
 4. Event cards are considered to be an extension of an identity. Attacks, thwarts, defenses, action abilities, and triggered abilities that resolve from a player playing an event are also considered to be performed by that player’s identity.

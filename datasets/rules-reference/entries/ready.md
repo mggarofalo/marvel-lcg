@@ -15,6 +15,6 @@ Cards enter play in a ready state, positioned so that their controller can read 
 <a id="ready-1"></a>
 1. If a player is instructed to ready an exhausted card, the card is returned to its ready state.
     <a id="ready-1-1"></a>
-    - If there is an additional cost for a player to ready a card, that player can choose not to pay that cost. If they do not pay the cost, the card does not ready
+    - If there is an additional cost for a player to ready a card, that player can choose not to pay that cost. If they do not pay the cost, the card does not ready.
 
 **See also:** [Enters Play](enters-play.md), [Exhausted](exhausted.md)

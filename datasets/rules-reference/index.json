@@ -3,7 +3,7 @@
   "version": "1.8",
   "tier": "rr",
   "entry_count": 261,
-  "record_count": 1117,
+  "record_count": 1118,
   "icons": {
     "": "acceleration",
     "": "amplify",
@@ -1091,8 +1091,8 @@
         "clause 1"
       ],
       "page": 8,
-      "fragment": "If an attachment attaches to a character, it may modify that character’s ATK, SCH, and/or THW values as indicated by the values in the associated fields on the attachment card.",
-      "hash": "sha256:903e1ad75787814c162588da35e6581bb681480d7ae7e1d74ede30a1e3c7298b"
+      "fragment": "If an attachment attaches to a character, it may modify that character’s ATK, SCH, and/or THW values, as indicated by the values in the associated fields on the attachment card.",
+      "hash": "sha256:b9c0e913c5c604d57d1bb9db3d92bb0ad47127e214a0d466a178f953e4e42616"
     },
     {
       "id": "rr:attachment.1.1",
@@ -1250,7 +1250,7 @@
       ],
       "page": 8,
       "fragment": "Normally the attacked character is the player’s hero, but abilities can instead cause an enemy to attack a player’s alter-ego or an ally that player controls.",
-      "hash": "sha256:9946b6d2e20c40b1733154ad02e829135b4c75de3afc38b058e5f7bfee1989d3"
+      "hash": "sha256:59bcf3757558eb3422bed8ca2885b6261ee74e270a101d86813cfbb623bcf15a"
     },
     {
       "id": "rr:attack-enemy-activation.1.2",
@@ -1591,7 +1591,7 @@
       ],
       "page": 10,
       "fragment": "If a triggered ability is labeled as an attack—such as “Hero Action (attack)”—resolving that ability is considered to attack the specified target.",
-      "hash": "sha256:83fdccea187c225f36d21176c0902a34542142b48446d6e28951e5e828d7ce9c"
+      "hash": "sha256:ecff471aa8d1f03925e04597f6e64fd07eeb1f2112132a7565e9e759f7732a67"
     },
     {
       "id": "rr:attack-player-ability-type.2.1",
@@ -1625,8 +1625,8 @@
         "clause 3"
       ],
       "page": 10,
-      "fragment": "If an ability says “Make the following X attacks in order,” followed by two or more instances of damage each of those instances is considered a separate attack.",
-      "hash": "sha256:479c2e4ca270c1be0d3a23fec3b9592c88ced1032ae71ec1c1092bb569ff8d71"
+      "fragment": "If an ability says “Make the following X attacks in order,” followed by two or more instances of damage, each of those instances is considered a separate attack.",
+      "hash": "sha256:c671496182b6f5e27dc65d6fa70540fbad6dbaebeb6be6b8293831d3fffb49c7"
     },
     {
       "id": "rr:attack-player-ability-type.3.1",
@@ -1769,8 +1769,8 @@
         "clause 2"
       ],
       "page": 10,
-      "fragment": "Players may defend these attacks as normal by t declaring a hero or an ally as the defender.",
-      "hash": "sha256:4c6f3638949f7567126167c5ff82ccfa0d99b9888f34a8c9c316bc80c1ca9492"
+      "fragment": "Players may defend these attacks as normal by declaring a hero or an ally as the defender.",
+      "hash": "sha256:be2502d01ac125f291341c45efc35471ee02f996ecdc3d01875cf6c50f8201b7"
     },
     {
       "id": "rr:attacks-against-allies.3",
@@ -1790,8 +1790,8 @@
         "BASE VALUE"
       ],
       "page": 10,
-      "fragment": ", A defined value before modifiers are applied.",
-      "hash": "sha256:45416b196770d65d1381704afaa369d2dd88fad4a8fef0dd3756f274bc0f9835",
+      "fragment": "A defined value before modifiers are applied.",
+      "hash": "sha256:22137ef599f4ee066da3a7b867bc0deaee3557e5fa19d65de8435e9197b19b0a",
       "see_also": [
         "rr:modifiers",
         "rr:printed"
@@ -2242,8 +2242,8 @@
         "CARD TYPES"
       ],
       "page": 12,
-      "fragment": "A card’s card type denotes various rules and game function associated with that card.",
-      "hash": "sha256:5b713c495f2c90a5571317f1e4cb0e6a46997bf0cbe86ef0dd6ed93e2ed9c41b",
+      "fragment": "A card’s card type denotes various rules and game functions associated with that card.",
+      "hash": "sha256:556ce2821e619e733eded154500f36897c7f14054c5399da2b74ff74e01f2814",
       "see_also": [
         "rr:ally",
         "rr:attachment",
@@ -2275,8 +2275,8 @@
         "clause 1"
       ],
       "page": 12,
-      "fragment": "Ally, event, identity, player side scheme, resource, support, and upgrade cards are types of player cards",
-      "hash": "sha256:040668b13de7c7a8563a1b905d0b5f769495861723938da3e4ef42e82bb4863d"
+      "fragment": "Ally, event, identity, player side scheme, resource, support, and upgrade cards are types of player cards.",
+      "hash": "sha256:b437e32b9d5e412a6c267d11c0e8c87208a41cd9b314e0955b8e5187b2187b60"
     },
     {
       "id": "rr:card-types.2",
@@ -2424,7 +2424,7 @@
       ],
       "page": 12,
       "fragment": "An effect that can choose “any number” of targets does not successfully resolve if zero of those targets are chosen.",
-      "hash": "sha256:4a8eb67ab76f96acffde9692944a4528ee2c615f5f499bee161331005496f7a8"
+      "hash": "sha256:33bfed1a9d3db4a065c8550b190a0c3ca9060352ba0241758e881be70340114b"
     },
     {
       "id": "rr:choose-option",
@@ -2433,8 +2433,8 @@
         "CHOOSE (OPTION)"
       ],
       "page": 12,
-      "fragment": ". Some abilities instruct a player to choose between multiple options.",
-      "hash": "sha256:69705d922699867f46b9824ffe5ce8cb1a87c55a950f1baf25ecd56e41a29ca5",
+      "fragment": "Some abilities instruct a player to choose between multiple options.",
+      "hash": "sha256:9e430a96706ae0e838f4039d752427e330bd73e3e3c4d232724a75a55107e7c9",
       "see_also": [
         "rr:ability",
         "rr:player",
@@ -3657,7 +3657,7 @@
       ],
       "page": 15,
       "fragment": "If no character is used to defend against an enemy attack, that attack is considered undefended.",
-      "hash": "sha256:2ea143ef476c79e02a5d9d3e7a89d4d91743265980db16951c50ff89d4fbdd1a"
+      "hash": "sha256:04faa8d864eca026a99721e6a2813994ad81b5812e51e7cc1031b1c03ecf4eda"
     },
     {
       "id": "rr:defend-defense.7",
@@ -3847,8 +3847,8 @@
         "DISCARD PILE"
       ],
       "page": 16,
-      "fragment": ". A discard pile is an out-of-play area that contains cards that have been discarded throughout the game.",
-      "hash": "sha256:f75bc186bcd13af43efc410240d5d5e498ac6897faad2145d7fa1a9ae2f31936",
+      "fragment": "A discard pile is an out-of-play area that contains cards that have been discarded throughout the game.",
+      "hash": "sha256:968eed89fe858f084917cff7a878bc1c64baffc46d3cc902fce30c6dff19a36b",
       "see_also": [
         "rr:discard",
         "rr:in-play-and-out-of-play",
@@ -4279,8 +4279,8 @@
         "ENERGY RESOURCE"
       ],
       "page": 18,
-      "fragment": "An energy resource ([energy]) is one of the four types of resources",
-      "hash": "sha256:c22069761e910d7c149604b0dbb03cfa4341fe785c997d7aa96513d3b1931b6b",
+      "fragment": "An energy resource ([energy]) is one of the four types of resources.",
+      "hash": "sha256:5fc571c88af57d265d551d7a37bbffa269e01012344e92bc9c2cbfb011d479c9",
       "see_also": [
         "rr:ability",
         "rr:cost",
@@ -4311,8 +4311,8 @@
         "clause 2"
       ],
       "page": 18,
-      "fragment": "Some card abilities specifically require energy resources to be spent in order to resolve their effects",
-      "hash": "sha256:4567bc55a20146f3deafb3aca1082f1a5c5c2cf569cbe8c0a86cc424c89a4c64"
+      "fragment": "Some card abilities specifically require energy resources to be spent in order to resolve their effects.",
+      "hash": "sha256:eb02d69131156d77c5aac8fd32e7722bb050c4a339c5152f72d1cf00fae6f467"
     },
     {
       "id": "rr:engage",
@@ -4439,8 +4439,8 @@
         "clause 1"
       ],
       "page": 18,
-      "fragment": "If an event has more than one triggered ability on it, the player playing it chooses one of those abilities to trigger when playing that event..",
-      "hash": "sha256:75db9ea37386914e0d4a76e0b20ec0fc5e629472429008d1fdaaf254ddf42b51"
+      "fragment": "If an event has more than one triggered ability on it, the player playing it chooses one of those abilities to trigger when playing that event.",
+      "hash": "sha256:47af9e8c6c163bc40468fab945c7824e275dd06f8ef83d95784775f9946b1916"
     },
     {
       "id": "rr:event.2",
@@ -4461,8 +4461,8 @@
         "clause 3"
       ],
       "page": 18,
-      "fragment": "An event card cannot be played if it requires one or.",
-      "hash": "sha256:e1770cba0dde11c6413455eb41c6c12c5cfe0dbc68cc47079fd445995b37ab0f"
+      "fragment": "An event card cannot be played if it requires one or more targets and does not have at least one valid target.",
+      "hash": "sha256:75fc8e6207d73c4afe1f1dcb56b5bc6a6d47fcee26d220cd5676b2ee7ccadf27"
     },
     {
       "id": "rr:event.4",
@@ -4772,7 +4772,7 @@
       ],
       "page": 19,
       "fragment": "If two or more effects would resolve simultaneously, the first player decides the order in which to resolve them.",
-      "hash": "sha256:186db91bdc62569586aef84df3c09b8e176517830e2617d64fc9117e1376bfbb"
+      "hash": "sha256:d2bc196b96ab5ef63182440b2705abb0c2f1cfea9e9799d26c0ce1de1162bab0"
     },
     {
       "id": "rr:first-player.4",
@@ -4937,8 +4937,20 @@
         "qualification 2"
       ],
       "page": 20,
-      "fragment": "Responses can be triggered after each instance.: For example, if a player is engaged with a guard minion and uses an effect that says “for each resource you spent this way, choose an enemy and deal 2 damage to it,” that player can defeat the guard minion with one instance of 2 damage, making the villain a valid target for further instances.",
-      "hash": "sha256:3f4ed5e92ed515c87f95fc63a5af11d2e6bc3ad39433e6ecd4b2b83a1db9f099"
+      "fragment": "Responses can be triggered after each instance.",
+      "hash": "sha256:1700b9e0fef8d06d62f4835834b6a40d0ab1f8b1132a08277c19e254e388f39b"
+    },
+    {
+      "id": "rr:for-each.3.3",
+      "title": "“FOR EACH”",
+      "path": [
+        "“FOR EACH”",
+        "clause 3",
+        "qualification 3"
+      ],
+      "page": 20,
+      "fragment": "For example, if a player is engaged with a guard minion and uses an effect that says “for each resource you spent this way, choose an enemy and deal 2 damage to it,” that player can defeat the guard minion with one instance of 2 damage, making the villain a valid target for further instances.",
+      "hash": "sha256:9d53eec61bb1cc627c1c5a5f31f25de8fc73411588f81f09e94dc36bafec012e"
     },
     {
       "id": "rr:for-each.4",
@@ -6817,8 +6829,8 @@
         "clause 2"
       ],
       "page": 26,
-      "fragment": "When a player resolves an ability labeled “(attack),” that ability is considered to be an attack made by tha player’s identity.",
-      "hash": "sha256:0bdef2b93f9932dcc1b75d775da2eb345f76a12c1efa3aef59569bc310936149"
+      "fragment": "When a player resolves an ability labeled “(attack),” that ability is considered to be an attack made by that player’s identity.",
+      "hash": "sha256:e01ad11c95a3fbe3c604e7025107f9dd7cc52816564c67cc26aa8abf08a335cd"
     },
     {
       "id": "rr:labeled-ability.3",
@@ -6968,7 +6980,7 @@
       ],
       "page": 26,
       "fragment": "A lasting effect expires as soon as the timing point specified by its duration is reached.",
-      "hash": "sha256:f3a5781bd030926187ffc8dc8a60a9f1394cbb15523f5a398b65ecddf1ec0063"
+      "hash": "sha256:2beb3fa33f81253345eba96076be16397fb21f5e3655cc4c60383cdab7b4b208"
     },
     {
       "id": "rr:lasting-effects.6",
@@ -8031,8 +8043,8 @@
         "NEMESIS ENCOUNTER SET"
       ],
       "page": 30,
-      "fragment": "Each identity in the game comes with an associated nemesi encounter set.",
-      "hash": "sha256:7ea3800c65f3b45419ce48f07d01665daf2fdbc6b8edc7a173c40f3601171f7c",
+      "fragment": "Each identity in the game comes with an associated nemesis encounter set.",
+      "hash": "sha256:a446bcdd5947b2f93e673dec429b247b2d40df9d04198aca9edc50e982ad9e8a",
       "see_also": [
         "rr:identity",
         "rr:identity-specific-card",
@@ -8190,7 +8202,7 @@
       ],
       "page": 30,
       "fragment": "Identity-specific obligation cards can only be used alongside an identity if those cards share a set icon with that identity.",
-      "hash": "sha256:f8b145218df0138324fbd6ff00e7c3f749ca14f5f9619d6d52c6a205f2306a8d"
+      "hash": "sha256:b99cf811a0955a487a0753bba051fba9a3d7bf3fd4c50181109a1988cd873b94"
     },
     {
       "id": "rr:obligation.5",
@@ -8212,7 +8224,7 @@
       ],
       "page": 30,
       "fragment": "Only the player with the obligation in their play area can trigger abilities or pay costs on that obligation.",
-      "hash": "sha256:8a47cf51c9e15ecf927a7180ce971d5fb087a0bc6e4bc6c0dd44547280426dd0"
+      "hash": "sha256:b0e14dfadf00aa3fa020f234978c8b9cd7b2c1a6986e01e57ffdda479d4272b9"
     },
     {
       "id": "rr:obligation.7",
@@ -8222,8 +8234,8 @@
         "clause 7"
       ],
       "page": 30,
-      "fragment": "obligation unless they are refilling their hand to their hand size.",
-      "hash": "sha256:a03b16e1f4c2f1dada1e0550762851380ed7d001d93526a0df0ed087e91ba054"
+      "fragment": "The player does not draw a card to replace the obligation unless they are refilling their hand to their hand size.",
+      "hash": "sha256:cbfb9b69601aacaaf0c58c571ff863a1cdd16bccc451ade64320e8af478cfc9c"
     },
     {
       "id": "rr:otherwise",
@@ -8667,7 +8679,7 @@
       ],
       "page": 32,
       "fragment": "The permanent keyword is equivalent to the following constant ability: “Set this card aside during setup.",
-      "hash": "sha256:0aa9bf764ecc831a31a3510ed1bc8527123acadcf0db8b830d5d21a82765c4f2"
+      "hash": "sha256:6b17ea60ed907be146d4f34488cb68e48e6a32f786c56a02fd05db3c347ee460"
     },
     {
       "id": "rr:permanent.2",
@@ -8786,7 +8798,7 @@
       ],
       "page": 32,
       "fragment": "An attack with the piercing keyword discards any tough status cards from the attacked character before dealing damage.",
-      "hash": "sha256:f20f26cd92e875fefcd7e8e7e5f97216bcb0a7de012074e4ee968b767c877db8",
+      "hash": "sha256:8eb625cb506d2bfb5514ef3874d3cfb0460660f37f7bec03cc4c37c7f1b7a370",
       "see_also": [
         "rr:attack-enemy-activation",
         "rr:attack-player-ability-type",
@@ -8807,8 +8819,8 @@
         "clause 1"
       ],
       "page": 32,
-      "fragment": "ability: “Before this attack deals damage to a character, discard each tough status card from that character.”",
-      "hash": "sha256:aa29129b03eec1e9bb615897748b83cd833125393a37219bc60d50a46213b661"
+      "fragment": "The piercing keyword is equivalent to the following ability: “Before this attack deals damage to a character, discard each tough status card from that character.”",
+      "hash": "sha256:7e0569cbc89d0be80a329be41caf5777293d56f904016a0c3f31f665dd69425a"
     },
     {
       "id": "rr:piercing.2",
@@ -8829,7 +8841,7 @@
       ],
       "page": 32,
       "fragment": "Playing a card involves paying the card’s cost and placing the card in the play area.",
-      "hash": "sha256:3b3eecdf3d38140c85e7567275746ddf1ee635764a709c090f83c52a2468e4eb",
+      "hash": "sha256:1eb7dd9fa404cfa3dd1b1a31a243bf6ae2a1260149850f793fc3278fc065879b",
       "see_also": [
         "rr:enters-play",
         "rr:in-play-and-out-of-play",
@@ -9173,7 +9185,7 @@
       ],
       "page": 34,
       "fragment": "A player is eliminated from the game if their identity is defeated.",
-      "hash": "sha256:de845bba82ce9ba6ca459f398c1802d1f37f82fbf4305a036f36989a49610745",
+      "hash": "sha256:9208457a11571c04d5d03a7a4553be22ceb10249fc12b1f4b4a35a9c4438f9c7",
       "see_also": [
         "rr:ability",
         "rr:deal-deal-an-encounter-card",
@@ -9335,8 +9347,8 @@
         "clause 2"
       ],
       "page": 34,
-      "fragment": "Each player side scheme enters play with an amount of threat on it equal to its starting threat value.,",
-      "hash": "sha256:026c87b74e09fec5a53fba91bd224259fdd1bd1be6eee2aa429271de3deabba3"
+      "fragment": "Each player side scheme enters play with an amount of threat on it equal to its starting threat value.",
+      "hash": "sha256:6b50a04178bff109f435fed0fc352ebac83db58d325f44fcd6a4e6ededcf0fee"
     },
     {
       "id": "rr:player-side-scheme.3",
@@ -9823,8 +9835,8 @@
         "clause 1"
       ],
       "page": 36,
-      "fragment": "The quickstrike keyword is equivalent to the following triggered ability: “Forced Response (Hero): After thi minion engages a player, it attacks that player.”",
-      "hash": "sha256:8768b6cb6d22709015113e838a5ae6ff8ce14ff60e322356d014250336427abb"
+      "fragment": "The quickstrike keyword is equivalent to the following triggered ability: “Forced Response (Hero): After this minion engages a player, it attacks that player.”",
+      "hash": "sha256:73d33e236d5055a3ccde768e399e18878c6fb0da43e3d58200aaae9b8bf5e303"
     },
     {
       "id": "rr:quickstrike.2",
@@ -9902,7 +9914,7 @@
       ],
       "page": 36,
       "fragment": "If there is an additional cost for a player to ready a card, that player can choose not to pay that cost.",
-      "hash": "sha256:6ab4fb80b531c2045dbf43b36501daed052aa31c2777dc0628c715dc78be5e1b"
+      "hash": "sha256:6a0a39c19e7479bf41f0598468af85488fcae81724b1778cb48094dcd41d9471"
     },
     {
       "id": "rr:rec",
@@ -9920,8 +9932,8 @@
         "RECOVER, RECOVERY"
       ],
       "page": 36,
-      "fragment": "Recovery is a basic power a player can use in alter-ego form To recover, the player exhausts their alter-ego and heals a number of hit points equal to their REC value.",
-      "hash": "sha256:5d22a6fdf4360cf4992d8d4a08951d62dbbb00e28a86a4a44c38e710030c65a4",
+      "fragment": "Recovery is a basic power a player can use in alter-ego form.",
+      "hash": "sha256:dd96d32b1934ae1c2d2efa4367d07797d31ac4fdcd07a2e67bd8ee3591b27da3",
       "see_also": [
         "rr:basic-power",
         "rr:form-change-form",
@@ -9950,7 +9962,7 @@
       ],
       "page": 36,
       "fragment": "Some abilities refer to specific cards by name.",
-      "hash": "sha256:39e0ce7aa6c8ca7837bb48f7cfb17bc71338de055a3364cc550dd490e5d4d1f4",
+      "hash": "sha256:596be3cef75cade533ce38d09633374234f5dfd400748b0142248b88f25ee5a1",
       "see_also": [
         "rr:ability",
         "rr:character",
@@ -10018,8 +10030,8 @@
         "REMOVED FROM THE GAME"
       ],
       "page": 36,
-      "fragment": ". A card that has been removed from the game is set aside and does not interact with the game in any manner for the duration of its removal.",
-      "hash": "sha256:6b64f2c2ab360c92565e7d638fa7202b58c4275be73182969c22443f755cee95",
+      "fragment": "A card that has been removed from the game is set aside and does not interact with the game in any manner for the duration of its removal.",
+      "hash": "sha256:630fce4f4845c18c28469224152dce1220876a2082110da86a3a74b63b067deb",
       "see_also": [
         "rr:in-play-and-out-of-play",
         "rr:leaves-play"
@@ -11046,7 +11058,7 @@
       ],
       "page": 40,
       "fragment": "Side scheme is an encounter card type that represents additional obstacles and distractions the heroes are confronted with.",
-      "hash": "sha256:61b6275f519c54a629ac83b8450184b85e547340892024f7dcb66ab40441bc07",
+      "hash": "sha256:018e6d07e992c1e4c703dc525e2e90c342792ed37e23c08cc428e97c539ffede",
       "see_also": [
         "rr:card-types",
         "rr:defeat",
@@ -11209,8 +11221,8 @@
         "clause 2"
       ],
       "page": 40,
-      "fragment": "Cards in the “Standard” classification are any cards that have the word “Standard” printed by the bottom t of the card in its encounter set name area.",
-      "hash": "sha256:f45701d45d511d11898ef112ad43c58c0298095f55ee185dd48155223412ae19"
+      "fragment": "Cards in the “Standard” classification are any cards that have the word “Standard” printed by the bottom of the card in its encounter set name area.",
+      "hash": "sha256:ee8c42aa97e4ecd9e3376bc32d1d7589dbe5e05eb398fef2036727419fd4ca65"
     },
     {
       "id": "rr:star-icon",
@@ -12834,8 +12846,8 @@
         "UPGRADE"
       ],
       "page": 46,
-      "fragment": "Upgrade is a player card type that represents powers, attacks, equipment, and other assets that are (in most cases at an identity’s immediate disposal.",
-      "hash": "sha256:ecd35de1586ecdb24345f4a7b5deaf1dcbd4bf54d044b386d5b604aa32711a41",
+      "fragment": "Upgrade is a player card type that represents powers, attacks, equipment, and other assets that are (in most cases) at an identity’s immediate disposal.",
+      "hash": "sha256:486730c1298f81fc76f17a18f918d91718b61d1422d4171cb8c5fb8d1da9c57f",
       "see_also": [
         "rr:attach-to",
         "rr:card-types",
@@ -12987,8 +12999,8 @@
         "clause 1"
       ],
       "page": 46,
-      "fragment": "The victory X keyword is equivalent to the following) ability based on the card with the keyword:",
-      "hash": "sha256:1bbda1c5f680c5264f3df5f95d843226a9ccf38aeda93b760fb87eb8726f55c5"
+      "fragment": "The victory X keyword is equivalent to the following ability based on the card with the keyword:",
+      "hash": "sha256:82eaf3167fd5e56386155ad8f60827a93316f636615a961d77f50bc31f6a3214"
     },
     {
       "id": "rr:victory-x.1.1",

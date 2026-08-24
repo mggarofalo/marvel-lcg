@@ -20,7 +20,7 @@ Some effects cause a villain or minion to attack an ally directly. When this occ
     - Any boost abilities that refer to “you” refer to the player who controls the attacked ally.
 
 <a id="attacks-against-allies-2"></a>
-2. Players may defend these attacks as normal by t declaring a hero or an ally as the defender.
+2. Players may defend these attacks as normal by declaring a hero or an ally as the defender.
 
 <a id="attacks-against-allies-3"></a>
 3. If the attack has overkill and defeats an ally (whether that ally was the attacked ally or a defending ally), any excess damage from that attack is dealt to the identity of the player who controlled the defeated ally.

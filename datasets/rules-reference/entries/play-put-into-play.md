@@ -4,13 +4,13 @@ title: "PLAY, PUT INTO PLAY"
 document: "Rules Reference"
 version: "1.8"
 page: 32
-hash: "sha256:3b3eecdf3d38140c85e7567275746ddf1ee635764a709c090f83c52a2468e4eb"
+hash: "sha256:1eb7dd9fa404cfa3dd1b1a31a243bf6ae2a1260149850f793fc3278fc065879b"
 see_also: ["rr:enters-play", "rr:in-play-and-out-of-play", "rr:initiating-abilities", "rr:leaves-play", "rr:play-restrictions-and-permissions"]
 ---
 
 # PLAY, PUT INTO PLAY
 
-Playing a card involves paying the card’s cost and placing the card in the play area. This causes the card to enter play *(or, in the case of an event card, to resolve its ability and be placed in the discard pile)*. Cards are played from a player’s t hand. Some abilities cause cards to be put into play. This bypasses the need to pay the card’s cost as well as any restrictions or prohibitions regarding playing that card. A card that is put into play enters play in its controller’s play area.
+Playing a card involves paying the card’s cost and placing the card in the play area. This causes the card to enter play *(or, in the case of an event card, to resolve its ability and be placed in the discard pile)*. Cards are played from a player’s hand. Some abilities cause cards to be put into play. This bypasses the need to pay the card’s cost as well as any restrictions or prohibitions regarding playing that card. A card that is put into play enters play in its controller’s play area.
 
 <a id="play-put-into-play-1"></a>
 1. Cards with the text “[type] form only” can only be played or put into play by a player whose identity is in the specified form.

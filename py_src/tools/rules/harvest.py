@@ -75,7 +75,7 @@ import re
 import sys
 from typing import Dict, List, Sequence
 
-from tools.rules.geometry import page_lines
+from tools.rules.geometry import column_split, page_lines, straddling
 from tools.rules.parse import Clause, Entry, is_banner, parse_entries
 
 DEFAULT_PDF = os.path.expanduser(
@@ -312,6 +312,25 @@ def render_markdown(entry: Entry, known: Dict[str, str]) -> str:
     return "\n".join(out)
 
 
+def _check_gutter(page, number: int) -> None:
+    """Refuse to parse a page whose column split lands inside a word."""
+    from tools.rules.geometry import FURNITURE_FONTS, _font, _is_content
+
+    chars = [c for c in page.chars
+             if _is_content(c) and not any(f in _font(c) for f in FURNITURE_FONTS)]
+    if not chars:
+        return
+    split = column_split(chars)
+    cut = straddling(chars, split)
+    if cut:
+        sample = "".join(c["text"] for c in cut[:8])
+        raise SystemExit(
+            f"page {number}: the column split at x={split:.1f} runs through "
+            f"{len(cut)} character(s) ({sample!r}), so it is not a gutter. "
+            "Parsing would silently move those characters into the other "
+            "column.")
+
+
 def harvest(pdf_path: str) -> Dict[str, str]:
     """Parse the PDF. Returns the file tree to write, path -> contents."""
     import pdfplumber
@@ -321,7 +340,9 @@ def harvest(pdf_path: str) -> Dict[str, str]:
 
         lines, pages = [], []
         for index in range(GLOSSARY_FIRST_PAGE - 1, GLOSSARY_LAST_PAGE):
-            for line in page_lines(pdf.pages[index], _is_furniture):
+            page = pdf.pages[index]
+            _check_gutter(page, index + 1)
+            for line in page_lines(page, _is_furniture):
                 lines.append(line)
                 pages.append(index + 1)
 

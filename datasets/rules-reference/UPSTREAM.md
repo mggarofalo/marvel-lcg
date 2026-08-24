@@ -42,7 +42,7 @@ repository could say. `rr:cost.3` says it:
 | `entries/*.md` | agents and humans | one linked document per entry |
 | `icons.json` | both | glyph legend, derived from the document |
 
-**261 entries, 1,117 citable records, 1,034 resolved cross-references.**
+**261 entries, 1,118 citable records, 1,034 resolved cross-references.**
 
 Citations are three-tier, because the grain a spec argues from is not the entry:
 
@@ -86,6 +86,26 @@ What CI does verify is this snapshot's internal consistency —
 clause anchors, icon coverage, and front-matter agreement with the index. Every
 one of them is pinned to a defect the parser actually shipped during
 development.
+
+## The gutter, and why it is found rather than fixed
+
+Worth knowing before touching `geometry.py`. This document sets recto and verso
+with **different margins**, so the empty band between its two columns is at
+roughly 291-308pt on one and 303-321pt on the other. The first version of the
+harvester used a single measured split at 300pt, which is correct for the first
+layout and lands *inside the left column's text* on the second.
+
+The effect was not a crash and not a loss. The final character of any
+left-column line that ran long was filed under the other column and reappeared
+elsewhere in the page — so "a hero does not exhaust" entered the corpus as
+"a hero does not exhaus". **33 of 261 entries were affected**, each by a
+dropped trailing character, in a dataset whose entire purpose is to be
+quotable.
+
+The split is now found per page as the widest character-free band, and
+`harvest` refuses to parse a page whose split cuts through a glyph — a split
+that bisects a character is not a gutter. `unit_test/test_rules_index.py`
+covers both.
 
 ## Known gaps
 

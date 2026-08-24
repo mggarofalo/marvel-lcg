@@ -20,14 +20,14 @@ Some game effects and card abilities reference an attack. There are a few differ
     - An ability that allows a hero or ally to “make a basic attack without exhausting” can allow an exhausted character to make a basic attack.
 
 <a id="attack-player-ability-type-2"></a>
-2. If a triggered ability is labeled as an attack—such as “**Hero Action** *(attack)*”—resolving that ability is considered to attack the specified target. Unless specified by the ability’s text, a hero does not exhaus when using such an ability.
+2. If a triggered ability is labeled as an attack—such as “**Hero Action** *(attack)*”—resolving that ability is considered to attack the specified target. Unless specified by the ability’s text, a hero does not exhaust when using such an ability.
     <a id="attack-player-ability-type-2-1"></a>
     - An ability labeled as an attack is considered a single attack, even if that attack deals multiple instances of damage.
     <a id="attack-player-ability-type-2-2"></a>
     - When an attack ability has its damage increased by another ability, each instance of damage in that attack ability that does not use the word “additional” is increased by the specified amount.
 
 <a id="attack-player-ability-type-3"></a>
-3. If an ability says “Make the following X attacks in order,” followed by two or more instances of damage each of those instances is considered a separate attack.
+3. If an ability says “Make the following X attacks in order,” followed by two or more instances of damage, each of those instances is considered a separate attack.
     <a id="attack-player-ability-type-3-1"></a>
     - An ability that increases the damage of an attack only increases the damage of one of that ability’s attacks, though such an ability can be triggered separately for each attack.
 

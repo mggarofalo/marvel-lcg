@@ -18,4 +18,4 @@ A character’s remaining hit points is the amount of damage that character can 
 <a id="remaining-hit-points-2"></a>
 2. To calculate remaining hit points for an ally or minion, start with the character’s maximum hit points *(as indicated by its printed value modified by any card abilities or game effects)*, and subtract their sustained damage *(the number of damage counters on them)*.
 
-**See also:** [Hit Points](hit-points.md), [Identity](identity.md), [Sustained Damage](sustained-damage.md), [Villain .](villain-villain-deck.md)
+**See also:** [Hit Points](hit-points.md), [Identity](identity.md), [Sustained Damage](sustained-damage.md), [Villain](villain-villain-deck.md)

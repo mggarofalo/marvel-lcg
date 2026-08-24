@@ -4,13 +4,13 @@ title: "DISCARD PILE"
 document: "Rules Reference"
 version: "1.8"
 page: 16
-hash: "sha256:f75bc186bcd13af43efc410240d5d5e498ac6897faad2145d7fa1a9ae2f31936"
+hash: "sha256:968eed89fe858f084917cff7a878bc1c64baffc46d3cc902fce30c6dff19a36b"
 see_also: ["rr:discard", "rr:in-play-and-out-of-play", "rr:ownership-and-control", "rr:player", "rr:shuffle"]
 ---
 
 # DISCARD PILE
 
-. A discard pile is an out-of-play area that contains cards that have been discarded throughout the game.
+A discard pile is an out-of-play area that contains cards that have been discarded throughout the game.
 
 <a id="discard-pile-1"></a>
 1. Each player has their own discard pile, and the encounter deck has its own discard pile.

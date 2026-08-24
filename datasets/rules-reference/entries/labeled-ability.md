@@ -16,7 +16,7 @@ A labeled ability is a triggered ability with a parenthetical following its bold
 1. The identity of the player using the labeled ability is considered to be performing the labeled effect when the labeled ability begins resolving *(after costs have been paid)*.
 
 <a id="labeled-ability-2"></a>
-2. When a player resolves an ability labeled “*(attack),*” that ability is considered to be an attack made by tha player’s identity.
+2. When a player resolves an ability labeled “*(attack),*” that ability is considered to be an attack made by that player’s identity.
 
 <a id="labeled-ability-3"></a>
 3. When a player resolves an ability labeled “*(defense),*” that ability is considered to be a defense made by that player’s identity.

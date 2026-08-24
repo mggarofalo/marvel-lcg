@@ -25,7 +25,7 @@ Some card abilities create effects or conditions that affect the game for a spec
 4. If a card enters play *(or changes status to meet the criteria of a specified set of affected cards)* after the creation of a lasting effect, it is still affected by that lasting effect.
 
 <a id="lasting-effects-5"></a>
-5. A lasting effect expires as soon as the timing point specified by its duration is reached. This means that an “until the end of the round” lasting effect expires just before an “at the end of the round” ability or delayed effect may initiate. t
+5. A lasting effect expires as soon as the timing point specified by its duration is reached. This means that an “until the end of the round” lasting effect expires just before an “at the end of the round” ability or delayed effect may initiate.
 
 <a id="lasting-effects-6"></a>
 6. A lasting effect that expires at the end of a specified time period can only be initiated during that time period.
