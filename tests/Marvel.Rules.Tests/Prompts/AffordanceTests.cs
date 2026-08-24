@@ -172,4 +172,40 @@ public sealed class AffordanceTests
         Assert.Equal(37, restored.Affordances[0].AnchorId);
         Assert.Equal("B", restored.Affordances[0].CostOptions[0].Generators[0].Generates);
     }
+
+    [Fact]
+    public void AGroupedRequestIgnoresTheCount()
+    {
+        // MARVEL-164, Explosive Arrow: "choose a player -> deal 3 damage to the
+        // villain and each minion engaged with that player", played against a
+        // player with one minion. Three cards were pooled, so the flat range
+        // said [3, 3]; both legal selections had two.
+        var request = new TargetRequest(
+            Legal: [143, 3, 152],
+            Min: 3,
+            Max: 3,
+            Groups: [[143, 3], [143, 152]],
+            Rule: "VillainAndMinionsEngagedSamePlayer");
+
+        Assert.True(request.IsGrouped);
+        Assert.True(request.Allows([143, 3]));
+        Assert.True(request.Allows([143, 152]));
+
+        // Every one of the three is in `Legal`, and there are three of them,
+        // so a client reading the flat fields would accept this. It is not a
+        // legal selection.
+        Assert.False(request.Allows([143, 3, 152]));
+    }
+
+    [Fact]
+    public void AnUngroupedRequestIsTheFlatListAndTheCount()
+    {
+        var request = new TargetRequest(Legal: [1, 2, 3], Min: 1, Max: 2);
+
+        Assert.True(request.Allows([2]));
+        Assert.True(request.Allows([1, 3]));
+        Assert.False(request.Allows([1, 2, 3]));
+        Assert.False(request.Allows([]));
+        Assert.False(request.Allows([9]));
+    }
 }

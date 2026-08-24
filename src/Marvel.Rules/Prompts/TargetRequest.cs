@@ -4,8 +4,11 @@ namespace Marvel.Rules.Prompts;
 /// What still has to be chosen before an affordance can resolve.
 /// </summary>
 /// <param name="Legal">Every object that may be chosen.</param>
-/// <param name="Min">Fewest that must be chosen.</param>
-/// <param name="Max">Most that may be chosen.</param>
+/// <param name="Min">
+/// Fewest that must be chosen. <b>Meaningless when <see cref="Groups"/> is
+/// non-empty</b> — see the remarks.
+/// </param>
+/// <param name="Max">Most that may be chosen. Same caveat.</param>
 /// <param name="Groups">
 /// Complete legal selections, when the rule groups its candidates instead of
 /// taking them all. Empty for every ordinary rule.
@@ -31,6 +34,17 @@ namespace Marvel.Rules.Prompts;
 /// is only a hint for highlighting.
 /// </para>
 /// <para>
+/// <b>A grouped request's <see cref="Min"/> and <see cref="Max"/> describe the
+/// pooled candidate list, not a legal selection, and a client that enforced
+/// them would reject legal play.</b> Measured in MARVEL-164: the bot played
+/// Explosive Arrow — <i>"choose a player → deal 3 damage to the villain and
+/// each minion engaged with that player"</i> — against a player with one
+/// minion. Two groups were offered, <c>[villain, minion A]</c> and
+/// <c>[villain, minion B]</c>; the flat range said <c>[3, 3]</c>, because three
+/// cards were in the pool; the legal selection had two. Use
+/// <see cref="Allows"/> rather than reading the fields.
+/// </para>
+/// <para>
 /// Measured over 6,351 sampled options: a target request is present on
 /// <b>86.5%</b>. Two thirds of those offer exactly one legal target, so the
 /// common case is a choice with one answer — but 20% offer two or more, which
@@ -50,4 +64,27 @@ public sealed record TargetRequest(
 {
     /// <summary>Whether the selection rule constrains it beyond a count.</summary>
     public bool IsGrouped => Groups is { Count: > 0 };
+
+    /// <summary>Whether <paramref name="selection"/> is a legal answer.</summary>
+    /// <remarks>
+    /// The two readings are mutually exclusive on purpose. When groups are
+    /// present they are authoritative and the count is not applied at all;
+    /// when they are absent the flat list and the count are. Encoding it here
+    /// rather than describing it is deliberate: the rule was stated in prose
+    /// on this type from the start, and MARVEL-164 still found a real
+    /// selection that prose would have rejected.
+    /// </remarks>
+    public bool Allows(IReadOnlyList<int> selection)
+    {
+        ArgumentNullException.ThrowIfNull(selection);
+
+        if (IsGrouped)
+        {
+            return Groups!.Any(group => selection.All(group.Contains));
+        }
+
+        return selection.Count >= Min
+            && selection.Count <= Max
+            && selection.All(Legal.Contains);
+    }
 }

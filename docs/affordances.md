@@ -180,11 +180,103 @@ Each game boots the engine, so this takes seconds per game. It is a tool, not a
 unit test — `tests/Marvel.Rules.Tests/Prompts/` states the shape rules that
 follow from it, on data small enough to read.
 
+## Verified against the corpus
+
+MARVEL-164. Keeping eight of fourteen fields is a bet: that the six dropped
+carry nothing a player needs, and that the eight carry everything. The corpus
+settles it, because it recorded every input a bot actually chose.
+
+> For every recorded step: the input the corpus holds must be expressible using
+> only the `Prompt` the affordance model would have carried.
+
+`py_src/tools/affordances/verify.py` replays corpus scenes through
+`tools/replay/observe.py` — the same in-process harness MARVEL-163 built — and
+at every decision projects the engine's rendered options down to the eight
+fields and nothing else. It never falls back to the `Effect` behind them, which
+would measure the engine's own resolution rather than the model's.
+
+**58 scenes, one from each shard. 6,554 steps: 5,809 choices, 745 declines.**
+
+| | | |
+|---|---|---|
+| 1 | the chosen effect is in the offered list | **100%** (5,809/5,809) |
+| 2 | targets are in `TargetRequest.Legal` | **100%** (4,147/4,147) |
+| | the count is inside min/max | **100%** (4,137/4,137) |
+| | the selection is inside a `Group` | **100%** (10/10) |
+| 3 | resources are in `CostOption.Sources` | **100%** (922/922) |
+| | declining was offered | **100%** (745/745) |
+
+Level 3 is the one that mattered. Only 7.3% of priced affordances have a single
+way to pay, so a generator set narrower than reality passes levels 1 and 2 and
+still leaves a client unable to express a legal payment. The engine resolves a
+recorded resource against the effect's own
+`checker.cost_for_different_target.GetAllPayEffects()`; the model carries
+`target_payment`. Nobody had checked that those agree. They do.
+
+### `Id` is a handle, not a name
+
+Nine of 5,809 recorded inputs named an effect id the offered list did not have.
+That is not a missing affordance — every one of the nine was **exactly 25 too
+high**, all under `WhenResolveSpecialAbility`, in four scenes across four
+different campaigns.
+
+Effect object ids are allocated per session and a recording is a different
+session, which is why the engine re-resolves a recorded input through
+`CommandDescriptor.FindNewEffectId` rather than trusting the number it wrote
+down. What survives the boundary is `(AnchorId, Verb)`, and that pair resolved
+all nine **uniquely**.
+
+Both fields are already on `Affordance`, so nothing needs adding. What this
+buys is a rule: a consumer that persists an affordance — a replay, a saved
+macro, a tutorial script — persists the pair, never the id.
+
+### A grouped selection is not a count
+
+`TargetRequest` said in prose that `Groups` is authoritative when present. It
+did not say that `Min` and `Max` then become unfollowable, and they do:
+
+> **Explosive Arrow** — *Hero Action: Exhaust Hawkeye's Bow and choose a player
+> → deal 3 damage to the villain and each minion engaged with that player.*
+
+Played against a player with one minion. Two groups were offered,
+`[villain, minion A]` and `[villain, minion B]`; the flat range said `[3, 3]`,
+because three cards were in the pool; the legal selection had two. **Two of the
+ten grouped selections in the sample had a size the flat range forbids.** A
+client that enforced both would reject legal play.
+
+The rule is now executable rather than described — `TargetRequest.Allows` — for
+the plain reason that the prose was already there and this happened anyway.
+
+### `Legality` is still unobserved, at three times the sample
+
+`failure_reason` did not appear once in **19,103 rendered options**, and neither
+did `target_must_include_traits`. That is not new evidence in a new direction —
+it is the [same zero](#legality-survives-with-a-caveat-about-the-evidence) from
+the census, at 3x the sample and drawn differently: real corpus games rather
+than bot games.
+
+The reading is unchanged, and so is the reason. The mechanism is real and
+predates this work; a bot that plays what it can afford does not surface it.
+What has changed is how much sampling now stands behind "gap in the sample, not
+in the engine" — enough that anyone proposing to delete `Illegal` should be
+required to produce a case rather than a count.
+
+### Reproducing
+
+```bash
+cd py_src
+python -m tools.affordances.verify ~/Source/marvel-lcg-corpus --per-shard 1
+python -m unittest unit_test.test_affordance_verify
+```
+
+Exits non-zero on any shortfall. The unit tests need no corpus.
+
 ## What is not settled here
 
-- **MARVEL-164**, affordance completeness against the corpus: every input the
-  corpus recorded at a step must appear in the affordance list offered at that
-  step. Cheap, high value, and it needs the engine.
+- **Whether the offered list is *complete*.** This proves every input the bot
+  took was expressible. It cannot prove that some legal action the bot never
+  took is in the list, because the corpus records choices and not the sets they
+  came from. That is a spec question, not a corpus one.
 - **Ordering.** The census does not check whether affordance order is stable or
   meaningful. It has to be stable for replay; whether it is meaningful for
   display is a view question.

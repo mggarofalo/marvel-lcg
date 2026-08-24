@@ -19,6 +19,8 @@ callback four things a digest cannot carry:
     effects    what the engine offered, before anything chose
     recorded   what the corpus answered with, if the recording still has a step
     message    the timing point the decision opened at
+    priority   turn-level or mid-resolution, as an enum the engine maintains
+    is_forced  whether declining is legal
 
 The wrapper mirrors `ChoiceOne`'s two early returns. A call that the engine
 would drop -- no effects, or a game already over -- is not a step, and counting
@@ -57,7 +59,30 @@ class Observation:
     effects: Sequence[Any]
     by_effect: Any
     message: Any
+    priority: Any = None
+    is_forced: Any = False
     recorded: Any = None
+
+    @property
+    def kind(self) -> str:
+        """`Normal`, `Response`, `Interrupt`, `ForcedInterrupt`.
+
+        The engine's `TimingPriority`, which is what reaches a client as
+        `ability_type` -- and is `PromptKind` in the affordance model. Read
+        from the engine rather than inferred from a trigger name.
+        """
+        return getattr(self.priority, "name", "") or ""
+
+    @property
+    def cancellable(self) -> bool:
+        """Whether declining is a legal answer.
+
+        `Controller.ChoiceOne` passes exactly this to the client as
+        `show_cancel=is_forced == False`. It is a property of the prompt, not
+        of any option -- which is why an affordance's target range cannot stand
+        in for it.
+        """
+        return self.is_forced is False
 
     @property
     def trigger(self) -> str:
@@ -125,7 +150,7 @@ _initialized = False
 
 
 @contextlib.contextmanager
-def _hooked(on_choice: Callable[[Any, Sequence[Any], Any, Any], None]) -> Iterator[None]:
+def _hooked(on_choice: Callable[..., None]) -> Iterator[None]:
     """Wrap `Controller.ChoiceOne` for the duration of a replay."""
     from engine.controller.controller import Controller
 
@@ -135,7 +160,7 @@ def _hooked(on_choice: Callable[[Any, Sequence[Any], Any, Any], None]) -> Iterat
         # `ChoiceOne`'s own two early returns, mirrored. Neither becomes a step
         # in the replay history, so neither may become an observation.
         if len(effect_list) != 0 and self.game.state.is_running:
-            on_choice(self, effect_list, by_effect, message)
+            on_choice(self, effect_list, by_effect, message, priority, is_forced)
         return original(self, effect_list, by_effect, message, priority, is_forced)
 
     Controller.ChoiceOne = wrapper  # type: ignore[method-assign]
@@ -183,7 +208,7 @@ def replay_text(scene: str, text: str,
         pass
 
     def on_choice(controller: Any, effects: Sequence[Any], by_effect: Any,
-                  message: Any) -> None:
+                  message: Any, priority: Any, is_forced: Any) -> None:
         replay = controller.manager.replay
         step = replay.replay_step_id
         recorded = (replay.replay_inputs[step]
@@ -196,6 +221,8 @@ def replay_text(scene: str, text: str,
             effects=effects,
             by_effect=by_effect,
             message=message,
+            priority=priority,
+            is_forced=is_forced,
             recorded=recorded,
         ))
         result.steps += 1
