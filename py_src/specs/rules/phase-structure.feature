@@ -48,6 +48,8 @@ Feature: Phase structure
     And my deck is "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
     And the encounter deck is "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary"
 
+  @rr:round-overview
+  @rr:player-phase
   Scenario: a game begins in the player phase of round 1
     Given I am in hero form
 
@@ -57,6 +59,8 @@ Feature: Phase structure
     And the game is not over
     And the main scheme has 0 threat
 
+  @rr:player-phase
+  @rr:villain-phase
   Scenario: ending the last player's turn hands the round to the villain
     Given I am in hero form
 
@@ -66,6 +70,9 @@ Feature: Phase structure
     When I pass
     Then it is round 2
 
+  @rr:villain-phase
+  @rr:attack-enemy-activation
+  @rr:defend-defense
   Scenario: the villain phase stops at enemy activation to ask for a defence
     # Deliberately the narrow assertion. "The villain phase" cannot tell threat
     # placement from enemy activation, and the order of those two is exactly the
@@ -80,6 +87,8 @@ Feature: Phase structure
     When I pass
     Then it is round 2
 
+  @rr:activation.1
+  @rr:attack-enemy-activation
   Scenario: a hero who ends their turn in hero form is attacked
     # Rhino stage 1 is printed ATK 2, boosted to 3 by Hydra Mercenary's 1 boost
     # icon. Iron Man is printed 9 hit points and declines to defend, so all of
@@ -91,6 +100,8 @@ Feature: Phase structure
     Then I have 3 damage
     And it is round 2
 
+  @rr:activation.1
+  @rr:scheme-enemy-activation
   Scenario: an alter-ego is schemed against rather than attacked
     # The villain activates against each player: attack if they are in hero
     # form, scheme if they are in alter-ego form. An alter-ego is never asked to
@@ -105,6 +116,8 @@ Feature: Phase structure
     And it is round 2
     And the main scheme has 3 threat
 
+  @rr:villain-phase
+  @rr:acceleration-icon
   Scenario: a hero form round accelerates the scheme without the villain scheming
     # The villain attacked rather than schemed, so the only threat placed is the
     # main scheme's own acceleration -- printed 1 on The Break-In! stage 1B.
@@ -114,6 +127,8 @@ Feature: Phase structure
     When I pass
     Then the main scheme has 1 threat
 
+  @rr:end-of-player-phase
+  @rr:hand-size
   Scenario: ending a turn with cards in hand asks to discard before drawing up
     # The end of a player's turn is "discard any number of cards, then draw up
     # to your hand size", and the engine only asks when there is something to
@@ -136,6 +151,8 @@ Feature: Phase structure
     When I choose "End Phase"
     Then it is round 3
 
+  @rr:round-overview
+  @rr:player-phase
   Scenario: the round comes back around a second time
     # Two defences in the second villain phase, not one. The encounter card
     # dealt during the first villain phase was a Hydra Mercenary, which enters

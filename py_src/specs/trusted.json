@@ -930,35 +930,35 @@
       "source": "specs/cards/search/32038-phase-strike.feature"
     },
     "Phase structure :: a game begins in the player phase of round 1": {
-      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "sha256": "21e41c93f0f2a8d47ab5f04120d17736192d805b5d4f4916b9e52fe9b2ee1da6",
       "source": "specs/rules/phase-structure.feature"
     },
     "Phase structure :: a hero form round accelerates the scheme without the villain scheming": {
-      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "sha256": "21e41c93f0f2a8d47ab5f04120d17736192d805b5d4f4916b9e52fe9b2ee1da6",
       "source": "specs/rules/phase-structure.feature"
     },
     "Phase structure :: a hero who ends their turn in hero form is attacked": {
-      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "sha256": "21e41c93f0f2a8d47ab5f04120d17736192d805b5d4f4916b9e52fe9b2ee1da6",
       "source": "specs/rules/phase-structure.feature"
     },
     "Phase structure :: an alter-ego is schemed against rather than attacked": {
-      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "sha256": "21e41c93f0f2a8d47ab5f04120d17736192d805b5d4f4916b9e52fe9b2ee1da6",
       "source": "specs/rules/phase-structure.feature"
     },
     "Phase structure :: ending a turn with cards in hand asks to discard before drawing up": {
-      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "sha256": "21e41c93f0f2a8d47ab5f04120d17736192d805b5d4f4916b9e52fe9b2ee1da6",
       "source": "specs/rules/phase-structure.feature"
     },
     "Phase structure :: ending the last player's turn hands the round to the villain": {
-      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "sha256": "21e41c93f0f2a8d47ab5f04120d17736192d805b5d4f4916b9e52fe9b2ee1da6",
       "source": "specs/rules/phase-structure.feature"
     },
     "Phase structure :: the round comes back around a second time": {
-      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "sha256": "21e41c93f0f2a8d47ab5f04120d17736192d805b5d4f4916b9e52fe9b2ee1da6",
       "source": "specs/rules/phase-structure.feature"
     },
     "Phase structure :: the villain phase stops at enemy activation to ask for a defence": {
-      "sha256": "d3e34917de737beaaf27ab18491a21c281aa41926d25c219ec8ef401ca76eef2",
+      "sha256": "21e41c93f0f2a8d47ab5f04120d17736192d805b5d4f4916b9e52fe9b2ee1da6",
       "source": "specs/rules/phase-structure.feature"
     },
     "Preemptive Strike :: 05014 cancels the boost icon and deals 1 damage to the villain": {
@@ -1342,19 +1342,19 @@
       "source": "specs/cards/core/01048-tactical-genius.feature"
     },
     "Target counts :: a fifth card in the pile does not raise the ceiling": {
-      "sha256": "824a73634ce042a6944631502aefef987bacb8feb87019ca6792f4ed13011c2b",
+      "sha256": "3159518d000acf7c7f9fa8c9d20ab22e5d8ebaa72a14791a38144d1f45b55f0c",
       "source": "specs/rules/target-counts.feature"
     },
     "Target counts :: a third upgrade raises that ceiling to three": {
-      "sha256": "824a73634ce042a6944631502aefef987bacb8feb87019ca6792f4ed13011c2b",
+      "sha256": "3159518d000acf7c7f9fa8c9d20ab22e5d8ebaa72a14791a38144d1f45b55f0c",
       "source": "specs/rules/target-counts.feature"
     },
     "Target counts :: an each-you-control effect takes as many targets as the board offers": {
-      "sha256": "824a73634ce042a6944631502aefef987bacb8feb87019ca6792f4ed13011c2b",
+      "sha256": "3159518d000acf7c7f9fa8c9d20ab22e5d8ebaa72a14791a38144d1f45b55f0c",
       "source": "specs/rules/target-counts.feature"
     },
     "Target counts :: up to 3 is a ceiling of 3 even with four cards to choose from": {
-      "sha256": "824a73634ce042a6944631502aefef987bacb8feb87019ca6792f4ed13011c2b",
+      "sha256": "3159518d000acf7c7f9fa8c9d20ab22e5d8ebaa72a14791a38144d1f45b55f0c",
       "source": "specs/rules/target-counts.feature"
     },
     "Taunt :: 42016 makes the villain attack, only the hero may defend, and draws 3": {
