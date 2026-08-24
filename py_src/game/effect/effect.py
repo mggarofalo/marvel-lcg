@@ -519,24 +519,96 @@ class Effect(Object):
 
     ################################################################################
     #
+
+    def GetTargetGroups(self, select_rule: str) -> List[List[int]]:
+        """Complete selections a select rule would accept, when a flat list cannot say.
+
+        `SelectorRule.AfterSelectTargets` wants exactly one villain, all minion
+        targets engaged with a single player, and *every* legal minion of that
+        player present. A flat candidate list cannot say that, so anything
+        choosing targets from the wire alone -- the bot -- picked the whole pool
+        and had the ability rejected while it resolved (MARVEL-158). The client
+        does not need this because it reads the board directly.
+        """
+        from game.card.face.base import Villain
+        from game.card.face.card_type import Minion
+
+        if select_rule in ("DifferentType", "DifferentCards"):
+            # "Choose two cards of different types" / "of different titles".
+            # `AfterSelectTargets` checks the *selection*, and the flat
+            # candidate list cannot express the constraint, so a reader picking
+            # the first n legal targets picks an illegal set whenever the pool
+            # opens with two of a kind. Engine order, first legal set.
+            need = self.context.target_range[0]
+            if need <= 0:
+                return []
+            picked: List[Any] = []
+            seen: set[Any] = set()
+            for face in self.context.all_legal_targets:
+                key = type(face) if select_rule == "DifferentType" else face.name
+                if key in seen:
+                    continue
+                seen.add(key)
+                picked.append(face)
+                if len(picked) == need:
+                    break
+            if len(picked) < need:
+                return []
+            return [[face.card.object_id for face in picked]]
+
+        if not select_rule.startswith("VillainAndMinions"):
+            return []
+
+        legal = list(self.context.all_legal_targets)
+        villains = [face for face in legal if Villain.IsType(face)]
+        minions = [face for face in legal if Minion.IsType(face)]
+
+        by_player: Dict[int, List['CardFace']] = {}
+        for face in minions:
+            player = face.GetEngagedPlayer()
+            if player is None:
+                continue
+            by_player.setdefault(player.player_id, []).append(face)
+
+        groups: List[List[int]] = []
+        for villain in villains:
+            # Sorted so the enumeration does not depend on dict insertion order
+            # reaching a recorded replay (AGENTS.md, determinism).
+            for player_id in sorted(by_player):
+                groups.append([villain.card.object_id]
+                              + [face.card.object_id for face in by_player[player_id]])
+            if not by_player:
+                groups.append([villain.card.object_id])
+        return groups
+
     def Render(self, by_effect: 'Effect|None', bind_player_id: int) -> 'EffectDescriptor':
         def get_pay_info(effect: 'Effect') -> Dict[int, 'EffectDescriptor.Payment']:
-            def get_cost_str_rule(effect: 'Effect', target: 'CardFace|None') -> Tuple[str, List[str]]:
+            def get_cost_str_rule(effect: 'Effect', target: 'CardFace|None'
+                                  ) -> Tuple[str, List[str], str, List[str]]:
                 if effect.failures.GetText(bind_player_id):
                     # this should not happen
-                    return ("0", [])
+                    return ("0", [], "", [])
                 if effect.context.ignore_resource_cost:
-                    return ("*", [])
+                    return ("*", [], "", [])
                 if effect.checker.cost_for_different_target.HasTarget(target):
                     cost = effect.checker.cost_for_different_target.GetCost(target)
                     if cost.rule.or_res != None:
-                        return ("1", [])
+                        # This used to flatten to a bare "1" with no rules, which
+                        # is readable for a human and unusable for anything
+                        # planning a payment: the bot paid one resource of the
+                        # wrong type, the engine checked the real cost, and the
+                        # ability failed mid-resolution -- corrupting the corpus
+                        # it was being generated into (MARVEL-158). Send both
+                        # readings and let the reader satisfy either.
+                        return (cost.text_legacy, cost.GetRuleText(),
+                                cost.rule.or_res.text_legacy,
+                                cost.rule.or_res.GetRuleText())
                     else:
-                        return (cost.text_legacy, cost.GetRuleText())
+                        return (cost.text_legacy, cost.GetRuleText(), "", [])
                 # if target in effect.for_select_target_dict:
                 #     # return effect.this_effect_cost.text_legacy
                 #     return effect.for_select_target_dict[target].cost.text_legacy
-                return ("", [])
+                return ("", [], "", [])
 
             payinfo_dict: Dict[int, EffectDescriptor.Payment] = {}
             for target in effect.checker.cost_for_different_target.target_cost:
@@ -545,11 +617,13 @@ class Effect(Object):
                 else:
                     target_id = target.card.object_id
 
-                cost_text, cost_rule = get_cost_str_rule(effect, target)
+                cost_text, cost_rule, or_text, or_rule = get_cost_str_rule(effect, target)
                 payinfo_dict[target_id] = EffectDescriptor.Payment(
                     cost=cost_text,
                     payment=[],
-                    rule=cost_rule
+                    rule=cost_rule,
+                    or_cost=or_text,
+                    or_rule=or_rule
                 )
                 if effect.context.ignore_resource_cost:
                     continue
@@ -594,6 +668,7 @@ class Effect(Object):
             bind_id=bind_id,
             bind_player_id=bind_player_id,
             all_legal_targets=[face.card.object_id for face in self.context.all_legal_targets],
+            target_groups=self.GetTargetGroups(select_rule),
             target_num_range=list(self.context.target_range),
             target_payment=get_pay_info(self),
             select_rule=select_rule,

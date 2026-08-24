@@ -51,6 +51,9 @@ class InputModule:
 
         self.calculated_digest: str = ""
 
+        # See `Clean`.
+        self.digest_mismatches: int = 0
+
         self.is_replay: bool = False
 
         self.break_on: List[int] = []
@@ -65,6 +68,12 @@ class InputModule:
         self.replay_step_id = 0
         self.is_updated = False
         self.calculated_digest = ""
+        # How many steps compared unequal. A verification verdict is set by
+        # `Log.HasError`, which any engine error trips -- so without this a
+        # scene whose digests all matched was still quarantined saying the
+        # digest did not match, which is a wrong reason rather than a missing
+        # one (MARVEL-158).
+        self.digest_mismatches = 0
 
     def Clear(self):
         self.break_on = []
@@ -151,6 +160,8 @@ class InputModule:
         from game.world import digest
 
         disable_assert = DISABLE_DIGEST_ERROR_ASSERT.value
+
+        self.digest_mismatches += 1
 
         try:
             diff_ids, report = digest.Diff(recorded, self.calculated_digest)

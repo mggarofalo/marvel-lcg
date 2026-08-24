@@ -79,12 +79,26 @@ class BotCommand:
         if not option.is_selectable:
             return None
 
-        target_count = option.target_num_range[0]
-        if option.pay_size_is_effect and PAY_VARIABLE_CARD_COST.value:
-            target_count = option.target_num_range[1]
-        if len(option.all_legal_targets) < target_count:
-            return None
-        targets = option.all_legal_targets[:target_count]
+        if BotCommand.IsConstrainedSelectRule(option.select_rule):
+            # A grouping rule: the pool holds every player's minions but only
+            # one villain plus one player's whole group is a legal selection,
+            # so `target_num_range` is not a count to slice by. First group, in
+            # engine order, to keep the choice deterministic.
+            if not option.target_groups:
+                # No group at all means no selection can satisfy the rule -- the
+                # pool has no villain in it, and the rule wants exactly one. The
+                # engine offers the option anyway; taking it up would fail while
+                # resolving, which is the thing a recorded game cannot afford
+                # (MARVEL-158). Treat it as unaffordable and move on.
+                return None
+            targets = option.target_groups[0]
+        else:
+            target_count = option.target_num_range[0]
+            if option.pay_size_is_effect and PAY_VARIABLE_CARD_COST.value:
+                target_count = option.target_num_range[1]
+            if len(option.all_legal_targets) < target_count:
+                return None
+            targets = option.all_legal_targets[:target_count]
 
         resources = BotCommand.BuildPayment(option, targets)
         if resources is None:
@@ -95,6 +109,19 @@ class BotCommand:
             [str(x) for x in targets],
             [str(x) for x in resources],
         )
+
+
+    @staticmethod
+    def IsConstrainedSelectRule(select_rule: str) -> bool:
+        """Does this rule constrain the *combination* rather than each target?
+
+        For these the engine sends complete legal selections in
+        `target_groups`, because a flat candidate list plus a count cannot say
+        which combinations are legal and `AfterSelectTargets` checks the
+        combination.
+        """
+        return (select_rule.startswith("VillainAndMinions")
+                or select_rule in ("DifferentType", "DifferentCards"))
 
     @staticmethod
     def BuildPayment(option: 'BotOption', targets: List[int],
@@ -124,23 +151,43 @@ class BotCommand:
             Log.Debug(CATEGORY_NAME, f"Cannot plan payment for {option.name!r} ({target_cost.cost!r}): {exc}")
             return None
 
+
+    @staticmethod
+    def BuildCost(target_cost: 'BotTargetCost') -> 'Cost':
+        """The engine's cost, rebuilt from what the wire carried.
+
+        Both readings, when the cost has two. `Resources.IsMatchCost` tries the
+        alternative first, so a payment that satisfies either is accepted --
+        which is the point: planning against only one reading is what made the
+        bot pay a resource of the wrong type and the ability fail while it was
+        resolving (MARVEL-158).
+        """
+        from game.element.cost import Cost
+
+        def build(text: str, rule: Sequence[str], alternative: 'Cost|None') -> 'Cost':
+            return Cost(
+                Cast(Any, text),
+                up_to           = ("UpTo" in rule) or None,
+                same_type       = ("SameType" in rule) or None,
+                different_type  = ("DifferentType" in rule) or None,
+                from_hand       = ("FromHand" in rule) or None,
+                variable        = ("Variable" in rule) or None,
+                or_cost         = alternative,
+            )
+
+        alternative = (build(target_cost.or_cost, target_cost.or_rule, None)
+                       if target_cost.or_cost else None)
+        return build(target_cost.cost, target_cost.rule, alternative)
+
     @staticmethod
     def BuildExactPayment(target_cost: 'BotTargetCost', amount: int) -> 'List[int]|None':
         """First exact legal resource combination, preserving engine order."""
-        from game.element.cost import Cost
         from game.element.resources import Resources
 
         if amount < 0:
             return None
 
-        cost = Cost(
-            Cast(Any, target_cost.cost),
-            up_to           = ("UpTo" in target_cost.rule) or None,
-            same_type       = ("SameType" in target_cost.rule) or None,
-            different_type  = ("DifferentType" in target_cost.rule) or None,
-            from_hand       = ("FromHand" in target_cost.rule) or None,
-            variable        = ("Variable" in target_cost.rule) or None,
-        )
+        cost = BotCommand.BuildCost(target_cost)
 
         zero = Resources.FromText("0")
         if amount == 0 and zero.IsMatchCost(cost):
@@ -185,7 +232,6 @@ class BotCommand:
 
     @staticmethod
     def BuildPaymentInternal(target_cost: 'BotTargetCost') -> 'List[int]|None':
-        from game.element.cost import Cost
         from game.element.resources import Resources
 
         maximal = BotCommand.IsSpendItsOwnEffect(target_cost) and PAY_VARIABLE_COST.value
@@ -193,14 +239,7 @@ class BotCommand:
         if target_cost.cost in NO_COST_TEXTS and not maximal:
             return []
 
-        cost = Cost(
-            Cast(Any, target_cost.cost),
-            up_to           = ("UpTo" in target_cost.rule) or None,
-            same_type       = ("SameType" in target_cost.rule) or None,
-            different_type  = ("DifferentType" in target_cost.rule) or None,
-            from_hand       = ("FromHand" in target_cost.rule) or None,
-            variable        = ("Variable" in target_cost.rule) or None,
-        )
+        cost = BotCommand.BuildCost(target_cost)
 
         if maximal:
             return BotCommand.BuildMaximalPayment(target_cost, cost)

@@ -417,10 +417,26 @@ class PlayerAction:
 
             if effect != fallthrough_effect:
                 if type(message) == Message.WhenPlayerInTurn:
-                    game.controller_manager.replay.Pop()
-                    if not Build.release:
-                        game.controller_manager.skip.Clean()
-                    message.world.render.PresentForceNoWait(is_update=False)
+                    # The step stays in the recording. Popping it assumes a
+                    # refused answer changed nothing, and that is not true: the
+                    # attempt has already moved the card to the processing area
+                    # and paid the ability's cost, and neither is undoable --
+                    # there is no transaction around "attempt an ability". A
+                    # dropped step leaves the scene with state changes no input
+                    # explains, which is precisely what a replay cannot
+                    # reproduce (MARVEL-158). Keeping it means the replay makes
+                    # the same failed attempt and lands in the same state.
+                    if not game.controller_manager.skip.is_skipping:
+                        # Surfacing a refused action is for whoever is watching.
+                        # Nobody is while the controller is fast-forwarding -- a
+                        # replay, or the bot -- and `PresentForceNoWait` asserts
+                        # exactly that the fast-forward is off, so calling it
+                        # here brought the replay down. Keeping the failed step
+                        # (above) is what makes a replay reach this branch at
+                        # all, so the guard belongs here.
+                        if not Build.release:
+                            game.controller_manager.skip.Clean()
+                        message.world.render.PresentForceNoWait(is_update=False)
                     Log.Assert(CATEGORY_NAME, f"{effect} failed")
                     # engine.DebugBreak()
                     break
@@ -453,9 +469,15 @@ class PlayerAction:
         # Fix for https://itch.io/t/4493777/interaction-between-magik-mutant-protector-defensive-energy
         if effect.ability.is_play and not effect.ability.flags.is_delay_ability:
             from_area = this.card.area
+            # Where in that area, so a failed play can be undone exactly. Putting
+            # the card back at the end of the pile is still a state change, and a
+            # state change is what the recording cannot survive -- see below.
+            from_index = (from_area.cards.index(this.card)
+                          if this.card in from_area.cards else -1)
             Faces.MoveAllToProcessingArea([this], effect)
         else:
             from_area = None
+            from_index = -1
 
         player = self.GetPlayer()
 
@@ -471,8 +493,19 @@ class PlayerAction:
                 effect.ResolveSelf(message, effect)
             return True
         else:
-            if effect.ability.is_play:
-                Faces.DiscardAll([this], effect)
+            if effect.ability.is_play and from_area != None:
+                # A play that fails `CheckBeforeActive` never happened. The card
+                # was moved to the processing area a few lines above -- before
+                # anything had decided the effect could be activated -- so the
+                # failure path has to put it back. Upstream discarded it, which
+                # loses the card and, worse, desynchronises the recording:
+                # `ChoiceAndSpellEffect` pops the step when `ResolveEffect`
+                # returns False, so the scene keeps a discard that no recorded
+                # input explains and every replay of it diverges (MARVEL-158).
+                # `Pop` is only sound while a refused answer changes nothing.
+                Faces.MoveAllTo([this], from_area, effect)
+                if from_index >= 0:
+                    from_area.Insert(from_index, this.card)
 
         # Fix "45017"
         if effect.ability.selectors and \

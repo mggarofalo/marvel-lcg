@@ -43,17 +43,20 @@ def GetRemainingSetasideThunderboltMinion(effect: 'Effect'):
     return faces
 
 def EachPlayerEngagesEachMinionEngagedWithThePlayerClockwiseFromThem(effect: 'Effect'):
-    minions: Dict[int, List[Minion]] = {}
+    # Seating order comes from the players still in the game, not from a count.
+    # `Worlds.GetPlayers` drops a player whose hero area is empty, so once anyone
+    # is knocked out the surviving `player_id`s stop being 0..n-1 -- and wrapping
+    # on `len(players)` back to a literal 0 then reads a seat nobody holds.
+    seats = Worlds.GetPlayers(effect)
+    order = [player.player_id for player in seats]
 
-    for player in Worlds.GetPlayers(effect):
-        player_id = player.player_id
-        minions[player_id] = player.GetEngagedMinions()
+    minions: Dict[int, List[Minion]] = {}
+    for player in seats:
+        minions[player.player_id] = player.GetEngagedMinions()
 
     def action(player: 'Player'):
-        player_id = player.player_id + 1
-        if player_id >= len(Worlds.GetPlayers(effect)):
-            player_id = 0
-        for minion in minions[player_id]:
+        clockwise = order[(order.index(player.player_id) + 1) % len(order)]
+        for minion in minions[clockwise]:
             minion.EngagePlayer(player, effect)
 
     Players.ForEachPlayer(effect, action)
