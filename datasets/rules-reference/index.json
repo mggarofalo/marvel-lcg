@@ -3,7 +3,7 @@
   "version": "1.8",
   "tier": "rr",
   "entry_count": 261,
-  "record_count": 1118,
+  "record_count": 1198,
   "icons": {
     "": "acceleration",
     "": "amplify",
@@ -64,9 +64,119 @@
       ],
       "page": 4,
       "fragment": "The following is an overview of a game round, and the glossary entries that cover each part of the game round.",
-      "hash": "sha256:143054f2235c1a4ac7699a7947223b8baa02e37b5edf9e4d561896871dd7236c",
+      "hash": "sha256:b61b77fbabd0597dc96ace96d6e04c9ee141492a8fc2ef8ff60732b64fbd7585",
       "see_also": [],
       "see_also_unresolved": []
+    },
+    {
+      "id": "rr:round-overview.step.1",
+      "title": "ROUND OVERVIEW",
+      "path": [
+        "ROUND OVERVIEW",
+        "step 1"
+      ],
+      "page": 4,
+      "fragment": "Player phase begins.",
+      "hash": "sha256:10dfdec16c116c5f23f0f0220469e88c4ec7fb5f5b5e2c0501d9437a15ce2627"
+    },
+    {
+      "id": "rr:round-overview.step.2",
+      "title": "ROUND OVERVIEW",
+      "path": [
+        "ROUND OVERVIEW",
+        "step 2"
+      ],
+      "page": 4,
+      "fragment": "Each player takes a turn.",
+      "hash": "sha256:a46d55d39627d045c0b3215859323041fdb848a59e9db766ca757629fc254f9e"
+    },
+    {
+      "id": "rr:round-overview.step.3",
+      "title": "ROUND OVERVIEW",
+      "path": [
+        "ROUND OVERVIEW",
+        "step 3"
+      ],
+      "page": 4,
+      "fragment": "Player phase ends.",
+      "hash": "sha256:04b082ccdad1feac7dd2a406c6d071528b010d728fa41fa0c2daae37d4bbd013"
+    },
+    {
+      "id": "rr:round-overview.step.4",
+      "title": "ROUND OVERVIEW",
+      "path": [
+        "ROUND OVERVIEW",
+        "step 4"
+      ],
+      "page": 4,
+      "fragment": "Villain phase begins.",
+      "hash": "sha256:23ec7d310e98f8eec2a3d04680386c225c8b7bb6736cce5c26f968e32686b3a9"
+    },
+    {
+      "id": "rr:round-overview.step.5",
+      "title": "ROUND OVERVIEW",
+      "path": [
+        "ROUND OVERVIEW",
+        "step 5"
+      ],
+      "page": 4,
+      "fragment": "Place threat on main scheme.",
+      "hash": "sha256:f8d88fd9573c0d53cee791bc9af3befecf52623dab36ae4824e324816e8073f1"
+    },
+    {
+      "id": "rr:round-overview.step.6",
+      "title": "ROUND OVERVIEW",
+      "path": [
+        "ROUND OVERVIEW",
+        "step 6"
+      ],
+      "page": 4,
+      "fragment": "Villain and minions activate.",
+      "hash": "sha256:d00113f5eef1533420d4c35864e8706f51bf92898661d7ede9493cff4e610f35"
+    },
+    {
+      "id": "rr:round-overview.step.7",
+      "title": "ROUND OVERVIEW",
+      "path": [
+        "ROUND OVERVIEW",
+        "step 7"
+      ],
+      "page": 4,
+      "fragment": "Deal encounter cards.",
+      "hash": "sha256:8dbbff90e1448eab61c8a2a1f640ed4bcbab97cfb4618d07119f062a460d4b9b"
+    },
+    {
+      "id": "rr:round-overview.step.8",
+      "title": "ROUND OVERVIEW",
+      "path": [
+        "ROUND OVERVIEW",
+        "step 8"
+      ],
+      "page": 4,
+      "fragment": "Reveal and resolve encounter cards.",
+      "hash": "sha256:2c6c09f251b1153a8f423170efbcd08cb5713878f8aa9cd3e55317541e63ad94"
+    },
+    {
+      "id": "rr:round-overview.step.9",
+      "title": "ROUND OVERVIEW",
+      "path": [
+        "ROUND OVERVIEW",
+        "step 9"
+      ],
+      "page": 4,
+      "fragment": "Pass the first player token.",
+      "hash": "sha256:1d33e1a47229922a39a437641a8a72d4d560359042493e76d2e2b2fb622f4231"
+    },
+    {
+      "id": "rr:round-overview.step.10",
+      "title": "ROUND OVERVIEW",
+      "path": [
+        "ROUND OVERVIEW",
+        "step 10"
+      ],
+      "page": 4,
+      "fragment": "End the round.",
+      "hash": "sha256:57b23afcf8e12cbaccee129b7c4b5a2be01e8f3b8b20c1e8a5de345b5b67b7c4"
     },
     {
       "id": "rr:ability",
@@ -102,6 +212,121 @@
         "rr:would"
       ],
       "see_also_unresolved": []
+    },
+    {
+      "id": "rr:ability.step.1",
+      "title": "ABILITY",
+      "path": [
+        "ABILITY",
+        "step 1"
+      ],
+      "page": 4,
+      "fragment": "Constant abilities, delayed effects, and lasting effects.",
+      "hash": "sha256:80da64374c3702dab1bc2160225d01dd39c0ff5b5013079d202c6649f271b463"
+    },
+    {
+      "id": "rr:ability.step.2",
+      "title": "ABILITY",
+      "path": [
+        "ABILITY",
+        "step 2"
+      ],
+      "page": 4,
+      "fragment": "Interrupts",
+      "hash": "sha256:395f8e35fb989ca41ba2d862b336d4caedf3faf68ce0d97b3986c0e29666cc4d"
+    },
+    {
+      "id": "rr:ability.step.2.a",
+      "title": "ABILITY",
+      "path": [
+        "ABILITY",
+        "step 2",
+        "step 2a"
+      ],
+      "page": 4,
+      "fragment": "Status card “Forced Interrupt” abilities.",
+      "hash": "sha256:acd094748bc4564cb5345f835777298023291cdc4a32a6208c2b62fe2262c3b1"
+    },
+    {
+      "id": "rr:ability.step.2.b",
+      "title": "ABILITY",
+      "path": [
+        "ABILITY",
+        "step 2",
+        "step 2b"
+      ],
+      "page": 4,
+      "fragment": "“Forced Interrupt” abilities.",
+      "hash": "sha256:b11c0275abc13685633e27f7717dd89e951971b5950c3ff865f9ed4c6c7d138d"
+    },
+    {
+      "id": "rr:ability.step.2.c",
+      "title": "ABILITY",
+      "path": [
+        "ABILITY",
+        "step 2",
+        "step 2c"
+      ],
+      "page": 4,
+      "fragment": "“Interrupt” abilities.",
+      "hash": "sha256:57d3da119c0a6e35ebce555db98a538bd91691e672a06c8a2940460b7844193e"
+    },
+    {
+      "id": "rr:ability.step.3",
+      "title": "ABILITY",
+      "path": [
+        "ABILITY",
+        "step 3"
+      ],
+      "page": 4,
+      "fragment": "“Boost” and “When Revealed” abilities.",
+      "hash": "sha256:0dc4e8bf196cd736f924b2656a96f90beaa9619547577bcfc782c8105193a9ee"
+    },
+    {
+      "id": "rr:ability.step.4",
+      "title": "ABILITY",
+      "path": [
+        "ABILITY",
+        "step 4"
+      ],
+      "page": 4,
+      "fragment": "Responses",
+      "hash": "sha256:9b4c6d73aac13b77f1707fa753a4fd40c415f944751b9ebce8f7e728453f8c00"
+    },
+    {
+      "id": "rr:ability.step.4.a",
+      "title": "ABILITY",
+      "path": [
+        "ABILITY",
+        "step 4",
+        "step 4a"
+      ],
+      "page": 4,
+      "fragment": "“Forced Response” abilities.",
+      "hash": "sha256:35254610538b68cb82855c61683e71da35e9ad0396dc5825c6cd7bb6c66ffeb5"
+    },
+    {
+      "id": "rr:ability.step.4.b",
+      "title": "ABILITY",
+      "path": [
+        "ABILITY",
+        "step 4",
+        "step 4b"
+      ],
+      "page": 4,
+      "fragment": "“Response” abilities.",
+      "hash": "sha256:604385b1cb367d852a3b1bca2bb3dc12efc9a89ddb720689b0a5a486b6029ba9"
+    },
+    {
+      "id": "rr:ability.step.5",
+      "title": "ABILITY",
+      "path": [
+        "ABILITY",
+        "step 5"
+      ],
+      "page": 4,
+      "fragment": "Consequential damage.",
+      "hash": "sha256:2db5c23446324e406fc85b84470019c80afe5ada97b756fd905f1a86291e71a9"
     },
     {
       "id": "rr:ability.1",
@@ -303,7 +528,7 @@
       ],
       "page": 4,
       "fragment": "If quotation marks are used around a timing trigger and colon, the quoted text is not itself a timing trigger, but is instead referring to other abilities with that trigger.",
-      "hash": "sha256:9f0b93ba3d9fc4b6a75a95a141a917ecd1c817c03cdb78ab1eb71e12aa92d944"
+      "hash": "sha256:424a57a79ce8743812481b4b967557344b578b1b8a2c34cb3e2b6c2c5650012b"
     },
     {
       "id": "rr:acceleration-icon",
@@ -1230,6 +1455,156 @@
       "see_also_unresolved": []
     },
     {
+      "id": "rr:attack-enemy-activation.step.1",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 1"
+      ],
+      "page": 8,
+      "fragment": "Give boost card: If a villain, or a minion with the villainous keyword, is attacking, give it one facedown boost card from the encounter deck.",
+      "hash": "sha256:8e61c53b070859d57d1779491547332c652e149876f6a526d6dbddbc4cb6bb45"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.2",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 2"
+      ],
+      "page": 8,
+      "fragment": "Declare defender: If a player wishes to defend, that player exhausts a hero or ally as the defender.",
+      "hash": "sha256:0d8c5ddb13731cea93748140bfc730650f1670d44ed306e2e7c5561681d84415"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.3",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 3"
+      ],
+      "page": 8,
+      "fragment": "Flip boost cards: Flip and resolve each of the attacking enemy’s boost cards, one at a time and in the order in which they were dealt, by doing the following:",
+      "hash": "sha256:ee8dadd11821f2b5cae18df5887a6943f02223201952c9d8f573d412e0e8a72a"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.3.a",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 3",
+        "step 3a"
+      ],
+      "page": 8,
+      "fragment": "Flip the boost card faceup.",
+      "hash": "sha256:06a30cd22c492ccd3f3702b7df6f0e0c3de63f520682f98f181a2b2dc4c8be0a"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.3.b",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 3",
+        "step 3b"
+      ],
+      "page": 8,
+      "fragment": "Resolve any “Boost” abilities, indicated by the star icon in the boost area.",
+      "hash": "sha256:95712bb6bac6b40c08dd6620e4d5c27b046c8353ccd409cc4059c94371d259bd"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.3.c",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 3",
+        "step 3c"
+      ],
+      "page": 8,
+      "fragment": "Increase the attacking enemy’s ATK value by one for each boost icon on the card.",
+      "hash": "sha256:8cbc287160c0813c4bfbb2c9fdf095f3ef64383e646e6ab0e9b2d96d691940ba"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.3.d",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 3",
+        "step 3d"
+      ],
+      "page": 8,
+      "fragment": "Discard the boost card.",
+      "hash": "sha256:c3d92dc25c374e77b024319d923736487b5832d930d96cc7314ff07e9d77f19a"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.3.e",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 3",
+        "step 3e"
+      ],
+      "page": 8,
+      "fragment": "If the enemy has any boost cards remaining, repeat these steps with the next boost card.",
+      "hash": "sha256:76b7c84ac5a712b68518298e943216fc22332ec9d8b55c5025a1792bbdfcf279"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.4",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 4"
+      ],
+      "page": 8,
+      "fragment": "Calculate damage: Determine how much damage will be dealt by the attack.",
+      "hash": "sha256:0d7abb75964c891970a1281f37be39b13cc8518ae4e874090a714a686d7f3c1c"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.5",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 5"
+      ],
+      "page": 8,
+      "fragment": "Deal damage: Deal the amount of damage calculated in the previous step, based on the following:",
+      "hash": "sha256:231afd6714d9a89d27064611416eb34179752f1204c6d7db70969eff761638c9"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.6",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 6"
+      ],
+      "page": 8,
+      "fragment": "The attack finishes resolving and the following types of abilities trigger in order:",
+      "hash": "sha256:727a4834b510653c33f7a891d5154d267d880418dff903014d0f27a0864ade18"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.6.a",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 6",
+        "step 6a"
+      ],
+      "page": 8,
+      "fragment": "Forced abilities (such as the retaliate keyword) with the following triggers (in any order): “after [character] attacks [and damages/defeats] [you/an ally]...” “after [character] is attacked...” “after [character] defends [and takes no damage]...” “after [character] [takes/deals] damage...”",
+      "hash": "sha256:9b2af79b8a2165b31a23e9263fd8b050e20bce9d4463b96b8f3e60d782e69360"
+    },
+    {
+      "id": "rr:attack-enemy-activation.step.6.b",
+      "title": "ATTACK (ENEMY ACTIVATION)",
+      "path": [
+        "ATTACK (ENEMY ACTIVATION)",
+        "step 6",
+        "step 6b"
+      ],
+      "page": 8,
+      "fragment": "Non-forced abilities with the triggers listed above.",
+      "hash": "sha256:b0ee8805df23c95c981693900af6ced3180a587b145e2b74d6895504f60fcccc"
+    },
+    {
       "id": "rr:attack-enemy-activation.1",
       "title": "ATTACK (ENEMY ACTIVATION)",
       "path": [
@@ -1286,55 +1661,7 @@
       ],
       "page": 8,
       "fragment": "Abilities that trigger “When/After [enemy] attacks you” are resolved when/after a player is attacked, regardless of which character they control was attacked.",
-      "hash": "sha256:effcc970355f0ae3f18747d4f716665190436d5cec531baa261a4a387b885a3d"
-    },
-    {
-      "id": "rr:attack-enemy-activation.1.5",
-      "title": "ATTACK (ENEMY ACTIVATION)",
-      "path": [
-        "ATTACK (ENEMY ACTIVATION)",
-        "clause 1",
-        "qualification 5"
-      ],
-      "page": 8,
-      "fragment": "The defending character becomes the target character for the attack.",
-      "hash": "sha256:951fb920c506a775247a1c1ba8f0a5d9953bbacb906b52d0f997ad3b4c2b61d5"
-    },
-    {
-      "id": "rr:attack-enemy-activation.1.6",
-      "title": "ATTACK (ENEMY ACTIVATION)",
-      "path": [
-        "ATTACK (ENEMY ACTIVATION)",
-        "clause 1",
-        "qualification 6"
-      ],
-      "page": 8,
-      "fragment": "If a player other than the target player defends, the defending player becomes the target player for the attack.",
-      "hash": "sha256:5594d8fd23e3ac56792d8b454fd593898c89bd27472e7d2d6e0a55df16a4266c"
-    },
-    {
-      "id": "rr:attack-enemy-activation.1.7",
-      "title": "ATTACK (ENEMY ACTIVATION)",
-      "path": [
-        "ATTACK (ENEMY ACTIVATION)",
-        "clause 1",
-        "qualification 7"
-      ],
-      "page": 8,
-      "fragment": "The base damage is equal to the attacking enemy’s ATK, including modifiers from abilities in play and boost icons resolved for the attack.",
-      "hash": "sha256:7058b5f7b45ac9606dc02dd1ba44b779346ef178f4eec8499e91025cea62aa27"
-    },
-    {
-      "id": "rr:attack-enemy-activation.1.8",
-      "title": "ATTACK (ENEMY ACTIVATION)",
-      "path": [
-        "ATTACK (ENEMY ACTIVATION)",
-        "clause 1",
-        "qualification 8"
-      ],
-      "page": 8,
-      "fragment": "If a hero has been declared the defender of the attack, reduce the amount of damage dealt by that hero’s DEF value.",
-      "hash": "sha256:6889a5cae0d09c5044fc41a66305e38f0cdfe9400c91d4306ba39398df1aef93"
+      "hash": "sha256:2d391d1eb8bf7c65ad1a8abe7839adeabb49818f6ca9c492dc368aa727718612"
     },
     {
       "id": "rr:attack-enemy-activation.2",
@@ -1427,55 +1754,7 @@
       ],
       "page": 8,
       "fragment": "The targeted character is considered to have been attacked.",
-      "hash": "sha256:306e98631f79a2d85e35778d2edbf2397e0cc9ad10ef9a3d8e060e38ffbea660"
-    },
-    {
-      "id": "rr:attack-enemy-activation.4.2",
-      "title": "ATTACK (ENEMY ACTIVATION)",
-      "path": [
-        "ATTACK (ENEMY ACTIVATION)",
-        "clause 4",
-        "qualification 2"
-      ],
-      "page": 8,
-      "fragment": "“after [character] attacks [and damages/defeats] [you/an ally]...”",
-      "hash": "sha256:4eca2f6e93579dbba7f027222bc641db341758b2a9be06f198f6c654a8280635"
-    },
-    {
-      "id": "rr:attack-enemy-activation.4.3",
-      "title": "ATTACK (ENEMY ACTIVATION)",
-      "path": [
-        "ATTACK (ENEMY ACTIVATION)",
-        "clause 4",
-        "qualification 3"
-      ],
-      "page": 8,
-      "fragment": "“after [character] is attacked...”",
-      "hash": "sha256:0a2558cdd309b0f2d6d58061b2d577c1fa156b8bb06cece68ac2510d88e308e3"
-    },
-    {
-      "id": "rr:attack-enemy-activation.4.4",
-      "title": "ATTACK (ENEMY ACTIVATION)",
-      "path": [
-        "ATTACK (ENEMY ACTIVATION)",
-        "clause 4",
-        "qualification 4"
-      ],
-      "page": 8,
-      "fragment": "“after [character] defends [and takes no damage]...”",
-      "hash": "sha256:e01cba24e06270e4632034eb28d7c496ad71a1ac682de3bed75ed831bd6bfef6"
-    },
-    {
-      "id": "rr:attack-enemy-activation.4.5",
-      "title": "ATTACK (ENEMY ACTIVATION)",
-      "path": [
-        "ATTACK (ENEMY ACTIVATION)",
-        "clause 4",
-        "qualification 5"
-      ],
-      "page": 8,
-      "fragment": "“after [character] [takes/deals] damage...” b.",
-      "hash": "sha256:6ee8dd1873e978eff3f4d5420619f42215017d56ba8d9d3e9df0caa52264e733"
+      "hash": "sha256:4425b2fdb4627ded7aa08f994661d714cf5ffa906051740d3449f07da0da0bd1"
     },
     {
       "id": "rr:attack-enemy-activation.5",
@@ -1546,6 +1825,39 @@
         "rr:villain-villain-deck"
       ],
       "see_also_unresolved": []
+    },
+    {
+      "id": "rr:attack-player-ability-type.step.7",
+      "title": "ATTACK (PLAYER ABILITY TYPE)",
+      "path": [
+        "ATTACK (PLAYER ABILITY TYPE)",
+        "step 7"
+      ],
+      "page": 10,
+      "fragment": "Forced abilities (such as the retaliate keyword) with the following triggers (in any order): “after [character] attacks [and damages/defeats] [an enemy/a minion]...” “after [character] is attacked...”",
+      "hash": "sha256:583216ed07f87289fc90990ed54503d8b1d80e046e55bd045dd18ceb8c59028c"
+    },
+    {
+      "id": "rr:attack-player-ability-type.step.8",
+      "title": "ATTACK (PLAYER ABILITY TYPE)",
+      "path": [
+        "ATTACK (PLAYER ABILITY TYPE)",
+        "step 8"
+      ],
+      "page": 10,
+      "fragment": "Non-forced abilities with the triggers listed above.",
+      "hash": "sha256:e38e2a587072e95173abf7615e0e1c7e632dfcd38789f7abf94125a64d382fae"
+    },
+    {
+      "id": "rr:attack-player-ability-type.step.9",
+      "title": "ATTACK (PLAYER ABILITY TYPE)",
+      "path": [
+        "ATTACK (PLAYER ABILITY TYPE)",
+        "step 9"
+      ],
+      "page": 10,
+      "fragment": "Consequential damage (for allies).",
+      "hash": "sha256:2924d976fedcd1fbb356c6dc3c3e8844127bf0d6a59c3eaa6555752730ab09a0"
     },
     {
       "id": "rr:attack-player-ability-type.1",
@@ -1682,32 +1994,8 @@
         "clause 6"
       ],
       "page": 10,
-      "fragment": "The order of resolution for abilities triggered by the resolution of an attack is as follows: 7.",
-      "hash": "sha256:ed00a83fe96ad72a1b3fcee7ec84bdda1202b0ce33a4e31e67f041af65f11a4f"
-    },
-    {
-      "id": "rr:attack-player-ability-type.6.1",
-      "title": "ATTACK (PLAYER ABILITY TYPE)",
-      "path": [
-        "ATTACK (PLAYER ABILITY TYPE)",
-        "clause 6",
-        "qualification 1"
-      ],
-      "page": 10,
-      "fragment": "“after [character] attacks [and damages/defeats] [an enemy/a minion]...”",
-      "hash": "sha256:90317513fa3c16ec43c688afd4856188727cd312ca00b43f83472f6ece2dd8bf"
-    },
-    {
-      "id": "rr:attack-player-ability-type.6.2",
-      "title": "ATTACK (PLAYER ABILITY TYPE)",
-      "path": [
-        "ATTACK (PLAYER ABILITY TYPE)",
-        "clause 6",
-        "qualification 2"
-      ],
-      "page": 10,
-      "fragment": "“after [character] is attacked...” 8.",
-      "hash": "sha256:88f5eb84a24c54286c17a5faaf102640ba8d45e6b0174d027cc9ad98a9518ab6"
+      "fragment": "The order of resolution for abilities triggered by the resolution of an attack is as follows:",
+      "hash": "sha256:3a22ea22c57d46474fbb2f9621b4dbb98621534347c3fcc4c96678a01b5db4e7"
     },
     {
       "id": "rr:attacks-against-allies",
@@ -3157,6 +3445,105 @@
       "see_also_unresolved": []
     },
     {
+      "id": "rr:damage.step.1",
+      "title": "DAMAGE",
+      "path": [
+        "DAMAGE",
+        "step 1"
+      ],
+      "page": 14,
+      "fragment": "Abilities that trigger “when [character] would deal/be dealt any amount of damage...”",
+      "hash": "sha256:223fca40f33287043570ebc2b1eb5ff7eef8b567f1979831a02a63bd7464c540"
+    },
+    {
+      "id": "rr:damage.step.2",
+      "title": "DAMAGE",
+      "path": [
+        "DAMAGE",
+        "step 2"
+      ],
+      "page": 14,
+      "fragment": "Tough status cards.",
+      "hash": "sha256:4de07f17501ac72a8c69799d3a0ab3d908f8a15d3eb05e716b974f690554b747"
+    },
+    {
+      "id": "rr:damage.step.3",
+      "title": "DAMAGE",
+      "path": [
+        "DAMAGE",
+        "step 3"
+      ],
+      "page": 14,
+      "fragment": "Abilities that trigger “when [character] would take any amount of damage...”",
+      "hash": "sha256:79ee4c26922554c061c8d1c03ba40bc6c17522a0796c63b626cfee6908598037"
+    },
+    {
+      "id": "rr:damage.step.4",
+      "title": "DAMAGE",
+      "path": [
+        "DAMAGE",
+        "step 4"
+      ],
+      "page": 14,
+      "fragment": "Abilities that trigger “when [character] takes any amount of damage...”",
+      "hash": "sha256:96659f68dd45f2138c908065404f96c8758e7fa090d0bfc627980b867c10761a"
+    },
+    {
+      "id": "rr:damage.step.5",
+      "title": "DAMAGE",
+      "path": [
+        "DAMAGE",
+        "step 5"
+      ],
+      "page": 14,
+      "fragment": "Placing of damage on the character.",
+      "hash": "sha256:51ae8fcff4953dd8db30ca016703fa909f24a17e295eca4fa2f41fb7611025ed"
+    },
+    {
+      "id": "rr:damage.step.6",
+      "title": "DAMAGE",
+      "path": [
+        "DAMAGE",
+        "step 6"
+      ],
+      "page": 14,
+      "fragment": "Abilities that trigger “when [character] would be defeated...”",
+      "hash": "sha256:5a8e43fc0758ca5b33d08a419f02a4a3faad6a0db1849790f62b34eb38c2a3ee"
+    },
+    {
+      "id": "rr:damage.step.7",
+      "title": "DAMAGE",
+      "path": [
+        "DAMAGE",
+        "step 7"
+      ],
+      "page": 14,
+      "fragment": "Abilities that trigger “when [character] is defeated...” (including “When Defeated” abilities).",
+      "hash": "sha256:31afc7123243db08ad1d164abb5bf38005dc33940664d4215d6e1a453abc432b"
+    },
+    {
+      "id": "rr:damage.step.8",
+      "title": "DAMAGE",
+      "path": [
+        "DAMAGE",
+        "step 8"
+      ],
+      "page": 14,
+      "fragment": "Discarding of a defeated character.",
+      "hash": "sha256:0351260f14a976d9928c9d04b12ea32080922e2b2215e7d1704c78ec5f63d427"
+    },
+    {
+      "id": "rr:damage.step.9",
+      "title": "DAMAGE",
+      "path": [
+        "DAMAGE",
+        "step 9"
+      ],
+      "page": 14,
+      "fragment": "Abilities that trigger “after [character] deals/is dealt/takes any amount of damage...” or “after [character] defeats/is defeated...”",
+      "hash": "sha256:f7ad405b5e793e4e6ac23b840788b734fd08cb9476df6bcbc721cc0fdd87d0e8"
+    },
+    {
       "id": "rr:damage.1",
       "title": "DAMAGE",
       "path": [
@@ -3222,8 +3609,8 @@
         "qualification 3"
       ],
       "page": 14,
-      "fragment": "The order of resolution for effects surrounding the dealing and taking of damage are as follows: 1.",
-      "hash": "sha256:0395975d11f844ca37c4152a2fa45612f5c47782d5daa6179bf5b6fd93603391"
+      "fragment": "The order of resolution for effects surrounding the dealing and taking of damage are as follows:",
+      "hash": "sha256:440ff6459579f687cc147407961bbcf3286f04db0780655d5f9c9357c77eff7b"
     },
     {
       "id": "rr:dash-value",
@@ -4215,8 +4602,8 @@
         "END OF PLAYER PHASE"
       ],
       "page": 18,
-      "fragment": "To end the player phase, perform the following steps: 1.",
-      "hash": "sha256:723b7dd4819b1c020709e60c3775a0c2f791b063bb1c07478ab50ed23ce79e48",
+      "fragment": "To end the player phase, perform the following steps:",
+      "hash": "sha256:3256832f2668285976fa73867e631b28e23047c1950e228deeb45ced7d7378e1",
       "see_also": [
         "rr:discard",
         "rr:draw-drawing-cards",
@@ -4228,6 +4615,61 @@
         "rr:ready"
       ],
       "see_also_unresolved": []
+    },
+    {
+      "id": "rr:end-of-player-phase.step.1",
+      "title": "END OF PLAYER PHASE",
+      "path": [
+        "END OF PLAYER PHASE",
+        "step 1"
+      ],
+      "page": 18,
+      "fragment": "In player order, each player may discard any number of cards from their hand, and must discard down to their hand size if they have more cards than their hand size.",
+      "hash": "sha256:26e7b762ae33c327efd16c3fe0653361f32e0bc2a72d8fb27a881a9fac1bc815"
+    },
+    {
+      "id": "rr:end-of-player-phase.step.2",
+      "title": "END OF PLAYER PHASE",
+      "path": [
+        "END OF PLAYER PHASE",
+        "step 2"
+      ],
+      "page": 18,
+      "fragment": "Each player simultaneously draws up to their hand size.",
+      "hash": "sha256:f5210754f5a20453de62e5e7b3662157bd3ff7639d4d39ab2f70b04e8e1b9cb1"
+    },
+    {
+      "id": "rr:end-of-player-phase.step.3",
+      "title": "END OF PLAYER PHASE",
+      "path": [
+        "END OF PLAYER PHASE",
+        "step 3"
+      ],
+      "page": 18,
+      "fragment": "Each player simultaneously readies all of their cards.",
+      "hash": "sha256:973d6a1759b491170ba4d83df0e94e017886b74d4542ac76b83f83002a6a443b"
+    },
+    {
+      "id": "rr:end-of-player-phase.step.4",
+      "title": "END OF PLAYER PHASE",
+      "path": [
+        "END OF PLAYER PHASE",
+        "step 4"
+      ],
+      "page": 18,
+      "fragment": "Any effects that last “until the end of the [player] phase” end.",
+      "hash": "sha256:08509fc29d29064a555de6b50182be76300b8bc8d7dde1a7489fcc147ffdc4f3"
+    },
+    {
+      "id": "rr:end-of-player-phase.step.5",
+      "title": "END OF PLAYER PHASE",
+      "path": [
+        "END OF PLAYER PHASE",
+        "step 5"
+      ],
+      "page": 18,
+      "fragment": "Resolve any “when/after the [player] phase ends” effects.",
+      "hash": "sha256:9afd27e57e0411e26e9aeedde5a0ec2b5fc7f325409952f78ed6a9c591ccf4a9"
     },
     {
       "id": "rr:enemy",
@@ -6304,7 +6746,7 @@
       ],
       "page": 24,
       "fragment": "When a player wishes to play a card or initiate a triggered ability, that player first declares their intent.",
-      "hash": "sha256:86802afe477d9b639ea17d525768500d185d07dd25e23c0f3bd2bce5cbd86796",
+      "hash": "sha256:36cd5f7b244e4746f0df84399f8fb394b63853dd34ce0231a858f5cf6d7674db",
       "see_also": [
         "rr:ability",
         "rr:cost",
@@ -6312,6 +6754,83 @@
         "rr:target"
       ],
       "see_also_unresolved": []
+    },
+    {
+      "id": "rr:initiating-abilities.step.1",
+      "title": "INITIATING ABILITIES",
+      "path": [
+        "INITIATING ABILITIES",
+        "step 1"
+      ],
+      "page": 24,
+      "fragment": "If playing a card, the player places that card faceup on the table in front of them.",
+      "hash": "sha256:f479eaa6b1e84e259849975c04486d2c9c759abbe1417ed3397b09ff3ddf3c51"
+    },
+    {
+      "id": "rr:initiating-abilities.step.2",
+      "title": "INITIATING ABILITIES",
+      "path": [
+        "INITIATING ABILITIES",
+        "step 2"
+      ],
+      "page": 24,
+      "fragment": "Check play restrictions: can the card be played, or the ability initiated, at this time?",
+      "hash": "sha256:ca18dc54600445d838421abc64ebfc01fd91c26e4c99bbfa372a189d4b559c75"
+    },
+    {
+      "id": "rr:initiating-abilities.step.3",
+      "title": "INITIATING ABILITIES",
+      "path": [
+        "INITIATING ABILITIES",
+        "step 3"
+      ],
+      "page": 24,
+      "fragment": "Determine the cost (or costs) to play the card or initiate the ability and the player’s ability to pay them, taking modifiers into account.",
+      "hash": "sha256:effa4bb8a568f9a28f5e8c6018306453d30525fd7180ddc9291967d69749d811"
+    },
+    {
+      "id": "rr:initiating-abilities.step.4",
+      "title": "INITIATING ABILITIES",
+      "path": [
+        "INITIATING ABILITIES",
+        "step 4"
+      ],
+      "page": 24,
+      "fragment": "Apply any modifiers to the cost(s).",
+      "hash": "sha256:f34c100e0bfde773ed4d86d86239e259a9e46b22e244326e57650296fe38eae1"
+    },
+    {
+      "id": "rr:initiating-abilities.step.5",
+      "title": "INITIATING ABILITIES",
+      "path": [
+        "INITIATING ABILITIES",
+        "step 5"
+      ],
+      "page": 24,
+      "fragment": "Pay the cost(s).",
+      "hash": "sha256:0908bc93400dfb43d206a0643747041a36670ea9e71bebd7c0b0d391da6e3ec1"
+    },
+    {
+      "id": "rr:initiating-abilities.step.6",
+      "title": "INITIATING ABILITIES",
+      "path": [
+        "INITIATING ABILITIES",
+        "step 6"
+      ],
+      "page": 24,
+      "fragment": "The card commences being played, or the effects of the ability attempt to initiate.",
+      "hash": "sha256:65e1482a90744a513c46db7faef7e997cc4e53627aeb01279f36c34aa68c5937"
+    },
+    {
+      "id": "rr:initiating-abilities.step.7",
+      "title": "INITIATING ABILITIES",
+      "path": [
+        "INITIATING ABILITIES",
+        "step 7"
+      ],
+      "page": 24,
+      "fragment": "The card is played or the ability (if not canceled in the previous step) resolves.",
+      "hash": "sha256:f2c16e18ba5e7620087bc4822ff2d3aab72d385c26a82e84d8a4acd8f44a6933"
     },
     {
       "id": "rr:initiating-abilities.1",
@@ -7278,6 +7797,39 @@
       "see_also_unresolved": []
     },
     {
+      "id": "rr:main-scheme-main-scheme-deck.step.1",
+      "title": "MAIN SCHEME, MAIN SCHEME DECK",
+      "path": [
+        "MAIN SCHEME, MAIN SCHEME DECK",
+        "step 1"
+      ],
+      "page": 27,
+      "fragment": "Remove the top main scheme card from the game.",
+      "hash": "sha256:52d4e78b92f716a31b346b4a8730e4d006c7e73e6a2fabfda6c464d482b16a6f"
+    },
+    {
+      "id": "rr:main-scheme-main-scheme-deck.step.2",
+      "title": "MAIN SCHEME, MAIN SCHEME DECK",
+      "path": [
+        "MAIN SCHEME, MAIN SCHEME DECK",
+        "step 2"
+      ],
+      "page": 27,
+      "fragment": "Resolve any “When Revealed” ability on the “A” side of the new top card of the main scheme deck.",
+      "hash": "sha256:df3be910ab72b304a259ba2d6bad633df85c90e2d98135abb896f08b812378da"
+    },
+    {
+      "id": "rr:main-scheme-main-scheme-deck.step.3",
+      "title": "MAIN SCHEME, MAIN SCHEME DECK",
+      "path": [
+        "MAIN SCHEME, MAIN SCHEME DECK",
+        "step 3"
+      ],
+      "page": 27,
+      "fragment": "Flip the top card of the main scheme deck to its “B” side, place threat on that card equal to its starting threat value, and resolve any “When Revealed” ability on that side of the card.",
+      "hash": "sha256:e15963d252facdf1eb2c3f05c36e61857ffd2b4b36dae1250711b91a43d56918"
+    },
+    {
       "id": "rr:main-scheme-main-scheme-deck.1",
       "title": "MAIN SCHEME, MAIN SCHEME DECK",
       "path": [
@@ -7331,8 +7883,8 @@
         "clause 3"
       ],
       "page": 27,
-      "fragment": "When the main scheme deck advances, follow these steps: 1.",
-      "hash": "sha256:719a54469e6530430f1c03fc417106b94d3daa2952a52f76f01d2efdcbd55c21"
+      "fragment": "When the main scheme deck advances, follow these steps:",
+      "hash": "sha256:1d74a56988f17f69a80cefc17eb0fb1e15036fa83723240b6cbc670b22b6e981"
     },
     {
       "id": "rr:main-scheme-main-scheme-deck.4",
@@ -9185,7 +9737,7 @@
       ],
       "page": 34,
       "fragment": "A player is eliminated from the game if their identity is defeated.",
-      "hash": "sha256:9208457a11571c04d5d03a7a4553be22ceb10249fc12b1f4b4a35a9c4438f9c7",
+      "hash": "sha256:a10dd48a49c8077a0d19724a1db4351bf678d22ad70aa8801aaff668b693de73",
       "see_also": [
         "rr:ability",
         "rr:deal-deal-an-encounter-card",
@@ -9202,6 +9754,61 @@
         "rr:winning-the-game"
       ],
       "see_also_unresolved": []
+    },
+    {
+      "id": "rr:player-elimination.step.1",
+      "title": "PLAYER ELIMINATION",
+      "path": [
+        "PLAYER ELIMINATION",
+        "step 1"
+      ],
+      "page": 34,
+      "fragment": "If the eliminated player has the first player token, they pass it to the next clockwise player.",
+      "hash": "sha256:3953c5e58b41a09cfd515e27f3edbff4bee1525c70974f6c5e6130e27ed32a98"
+    },
+    {
+      "id": "rr:player-elimination.step.2",
+      "title": "PLAYER ELIMINATION",
+      "path": [
+        "PLAYER ELIMINATION",
+        "step 2"
+      ],
+      "page": 34,
+      "fragment": "If there are minions engaged with the eliminated player, each of those minions engages the next clockwise player, retaining any tokens, attached cards, boost cards, tucked cards, and status cards on them.",
+      "hash": "sha256:61777aba0e07049729c3cdbac5a711d6699cd204e1efddd2377432013ac1c2b0"
+    },
+    {
+      "id": "rr:player-elimination.step.3",
+      "title": "PLAYER ELIMINATION",
+      "path": [
+        "PLAYER ELIMINATION",
+        "step 3"
+      ],
+      "page": 34,
+      "fragment": "For each card in the eliminated player’s play area that are not owned by that player, do the following:",
+      "hash": "sha256:4f7b2cd1cb3ed556984c1e74601750ae25390e874d8fc6edbb6612d6edab4d82"
+    },
+    {
+      "id": "rr:player-elimination.step.4",
+      "title": "PLAYER ELIMINATION",
+      "path": [
+        "PLAYER ELIMINATION",
+        "step 4"
+      ],
+      "page": 34,
+      "fragment": "Place each card owned by the eliminated player in the eliminated player’s discard pile.",
+      "hash": "sha256:b2e544de87b670adba3f216d96b99bb2b49473d050262dc8ae89ffd51272e5ff"
+    },
+    {
+      "id": "rr:player-elimination.step.5",
+      "title": "PLAYER ELIMINATION",
+      "path": [
+        "PLAYER ELIMINATION",
+        "step 5"
+      ],
+      "page": 34,
+      "fragment": "Remove the eliminated player’s play area and each other game element within it (hand, deck, discard pile, cards in play, hit point dial, etc.) from the game.",
+      "hash": "sha256:43636963c01289922dc0e2ab3ca6437505cc2fb969f313e5fcf6e0425043fd22"
     },
     {
       "id": "rr:player-elimination.1",
@@ -9234,7 +9841,7 @@
       ],
       "page": 34,
       "fragment": "Place each other card in its owner’s discard pile.",
-      "hash": "sha256:e0e0c4c39cf31fd8c30849362b24d716a8624e8dee6be39142501bedf6356410"
+      "hash": "sha256:2880b25d1461a0d81e0a64dce8d9489633ca221933e1e432f7c07930792f1fac"
     },
     {
       "id": "rr:player-elimination.4",
@@ -9962,7 +10569,7 @@
       ],
       "page": 36,
       "fragment": "Some abilities refer to specific cards by name.",
-      "hash": "sha256:596be3cef75cade533ce38d09633374234f5dfd400748b0142248b88f25ee5a1",
+      "hash": "sha256:5799913fe365e9f0a73cb89c83b606ecb038704a154a113835442dd2b1305888",
       "see_also": [
         "rr:ability",
         "rr:character",
@@ -9971,6 +10578,39 @@
         "rr:identity-specific-card"
       ],
       "see_also_unresolved": []
+    },
+    {
+      "id": "rr:referential-ability.step.1",
+      "title": "REFERENTIAL ABILITY",
+      "path": [
+        "REFERENTIAL ABILITY",
+        "step 1"
+      ],
+      "page": 36,
+      "fragment": "The card on which the referential ability is printed.",
+      "hash": "sha256:4a2fb9990606cc68fd1e606aa58639b175d12dd218977c92be7440c3bfd24993"
+    },
+    {
+      "id": "rr:referential-ability.step.2",
+      "title": "REFERENTIAL ABILITY",
+      "path": [
+        "REFERENTIAL ABILITY",
+        "step 2"
+      ],
+      "page": 36,
+      "fragment": "Cards associated with the same identity, including: The identity card Identity-specific cards The identity’s obligation cards The identity’s nemesis set Cards belonging to a side deck used by the identity.",
+      "hash": "sha256:e71d18925e7de9dc85f51f98dd363ffc0dc54ee5db67c56e2bf0191ebc48bfdd"
+    },
+    {
+      "id": "rr:referential-ability.step.3",
+      "title": "REFERENTIAL ABILITY",
+      "path": [
+        "REFERENTIAL ABILITY",
+        "step 3"
+      ],
+      "page": 36,
+      "fragment": "Player cards (if the ability is on a player card) or encounter cards (if the ability is on an encounter card).",
+      "hash": "sha256:3f4e52019910c8c6eddb79ab44da74b925aab50db7e032cef011ec6075bfb51e"
     },
     {
       "id": "rr:remaining-hit-points",
@@ -10569,7 +11209,7 @@
       ],
       "page": 38,
       "fragment": "During step four of the villain phase, each player (in player order) reveals and resolves all facedown encounter cards that have been dealt to them, one card at a time in the order in which they were dealt.",
-      "hash": "sha256:4d258a7a9785eb16b878dde966cabadeda6c6719f5825ede15907c03c47bf929",
+      "hash": "sha256:8dae21af93196f6c1736304fef6d942e3c8198e419488ad77f9775c944bcd5da",
       "see_also": [
         "rr:attachment",
         "rr:choose-game-element",
@@ -10587,6 +11227,50 @@
         "rr:villain-phase"
       ],
       "see_also_unresolved": []
+    },
+    {
+      "id": "rr:reveal.step.1",
+      "title": "REVEAL",
+      "path": [
+        "REVEAL",
+        "step 1"
+      ],
+      "page": 38,
+      "fragment": "Turn the encounter card faceup.",
+      "hash": "sha256:18f4b6bab0fbf9f67ba0115c1ea0f02561779cffc3718c257d9c81b781f0c185"
+    },
+    {
+      "id": "rr:reveal.step.2",
+      "title": "REVEAL",
+      "path": [
+        "REVEAL",
+        "step 2"
+      ],
+      "page": 38,
+      "fragment": "If the encounter card’s type is:",
+      "hash": "sha256:3c4cc094798b66d29c40db241bc15e875511bc17c9539c2a786d11b898976401"
+    },
+    {
+      "id": "rr:reveal.step.3",
+      "title": "REVEAL",
+      "path": [
+        "REVEAL",
+        "step 3"
+      ],
+      "page": 38,
+      "fragment": "Resolve each “When Revealed” ability on that card (including those provided by keywords).",
+      "hash": "sha256:288e79ad906e75459eb066b7e16e6f4261b649b88508d7721d3c392023ad7fd3"
+    },
+    {
+      "id": "rr:reveal.step.4",
+      "title": "REVEAL",
+      "path": [
+        "REVEAL",
+        "step 4"
+      ],
+      "page": 38,
+      "fragment": "If the card is a treachery, discard it.",
+      "hash": "sha256:209a87c8625f238babee3a8bf96dfdc671fb93bfd46d4d676bf52c38688eaea8"
     },
     {
       "id": "rr:reveal.1",
@@ -10675,7 +11359,7 @@
       ],
       "page": 38,
       "fragment": "Other: Place it on the table in front of the player revealing it.",
-      "hash": "sha256:23cd754ac9cc7b70c546da9cae82e6902eaaaffd400380628b2640b3300c6ac5"
+      "hash": "sha256:5fed90e8004ed103d149e848c7131b86ca60f6569c932395e3dc52df0a3799af"
     },
     {
       "id": "rr:reveal.8",
@@ -10810,7 +11494,7 @@
       ],
       "page": 39,
       "fragment": "A scheme is a type of enemy activation.",
-      "hash": "sha256:2da2038d4a4876eec0e8318d8116ba16f6dac5e6002683227245da5b62af43e8",
+      "hash": "sha256:763e3853f7560ce0889a52f237293fba8dd1862795850a80a0e3525c70cb4ee9",
       "see_also": [
         "rr:activation",
         "rr:boost-boost-icon",
@@ -10821,6 +11505,99 @@
         "rr:villainous"
       ],
       "see_also_unresolved": []
+    },
+    {
+      "id": "rr:scheme-enemy-activation.step.1",
+      "title": "SCHEME (ENEMY ACTIVATION)",
+      "path": [
+        "SCHEME (ENEMY ACTIVATION)",
+        "step 1"
+      ],
+      "page": 39,
+      "fragment": "If a villain, or a minion with the villainous keyword, is scheming, give it one facedown boost card from the encounter deck.",
+      "hash": "sha256:d2ff65e648442d369279b070728177194eb2ec9479f5b74f3e7781f6ee04968f"
+    },
+    {
+      "id": "rr:scheme-enemy-activation.step.2",
+      "title": "SCHEME (ENEMY ACTIVATION)",
+      "path": [
+        "SCHEME (ENEMY ACTIVATION)",
+        "step 2"
+      ],
+      "page": 39,
+      "fragment": "Resolve each of the scheming enemy’s boost cards, one at a time and in the order in which they were dealt, by doing the following:",
+      "hash": "sha256:1199f6bae53e5e9aea3ece2b0e94d8a45c5949e5e54eb8db10188f6d9f65f138"
+    },
+    {
+      "id": "rr:scheme-enemy-activation.step.2.a",
+      "title": "SCHEME (ENEMY ACTIVATION)",
+      "path": [
+        "SCHEME (ENEMY ACTIVATION)",
+        "step 2",
+        "step 2a"
+      ],
+      "page": 39,
+      "fragment": "Flip the boost card faceup.",
+      "hash": "sha256:06a30cd22c492ccd3f3702b7df6f0e0c3de63f520682f98f181a2b2dc4c8be0a"
+    },
+    {
+      "id": "rr:scheme-enemy-activation.step.2.b",
+      "title": "SCHEME (ENEMY ACTIVATION)",
+      "path": [
+        "SCHEME (ENEMY ACTIVATION)",
+        "step 2",
+        "step 2b"
+      ],
+      "page": 39,
+      "fragment": "Resolve any “Boost” abilities, indicated by the star icon in the boost area.",
+      "hash": "sha256:95712bb6bac6b40c08dd6620e4d5c27b046c8353ccd409cc4059c94371d259bd"
+    },
+    {
+      "id": "rr:scheme-enemy-activation.step.2.c",
+      "title": "SCHEME (ENEMY ACTIVATION)",
+      "path": [
+        "SCHEME (ENEMY ACTIVATION)",
+        "step 2",
+        "step 2c"
+      ],
+      "page": 39,
+      "fragment": "Increase the scheming enemy’s SCH value by one for each boost icon on the card.",
+      "hash": "sha256:1e61ddd81a850ca60805a1d9c18ce0c2d048b43f63e2ec08324f479c210478c7"
+    },
+    {
+      "id": "rr:scheme-enemy-activation.step.2.d",
+      "title": "SCHEME (ENEMY ACTIVATION)",
+      "path": [
+        "SCHEME (ENEMY ACTIVATION)",
+        "step 2",
+        "step 2d"
+      ],
+      "page": 39,
+      "fragment": "Discard the boost card.",
+      "hash": "sha256:c3d92dc25c374e77b024319d923736487b5832d930d96cc7314ff07e9d77f19a"
+    },
+    {
+      "id": "rr:scheme-enemy-activation.step.2.e",
+      "title": "SCHEME (ENEMY ACTIVATION)",
+      "path": [
+        "SCHEME (ENEMY ACTIVATION)",
+        "step 2",
+        "step 2e"
+      ],
+      "page": 39,
+      "fragment": "If the enemy has any boost cards remaining, repeat these steps with the next boost card.",
+      "hash": "sha256:76b7c84ac5a712b68518298e943216fc22332ec9d8b55c5025a1792bbdfcf279"
+    },
+    {
+      "id": "rr:scheme-enemy-activation.step.3",
+      "title": "SCHEME (ENEMY ACTIVATION)",
+      "path": [
+        "SCHEME (ENEMY ACTIVATION)",
+        "step 3"
+      ],
+      "page": 39,
+      "fragment": "Place threat on the main scheme equal to the scheming enemy’s modified SCH value.",
+      "hash": "sha256:e752064adde67e3204e601a567dc158c1e0c54a98a2cac2a01089e942c27c454"
     },
     {
       "id": "rr:search",
@@ -13254,8 +14031,8 @@
         "VILLAIN PHASE"
       ],
       "page": 47,
-      "fragment": "The steps of the villain phase are: 1.",
-      "hash": "sha256:a30aca00a09038e3e71b0ae07521909af31a7d54e31a78771696c3a78a736aa6",
+      "fragment": "The steps of the villain phase are:",
+      "hash": "sha256:4ffbfb40a27bb74afe5f97b896e98a987e482988ebaf3dd7af17a35a2d9fbe74",
       "see_also": [
         "rr:acceleration-icon",
         "rr:activation",
@@ -13274,6 +14051,120 @@
         "rr:villain-villain-deck"
       ],
       "see_also_unresolved": []
+    },
+    {
+      "id": "rr:villain-phase.step.1",
+      "title": "VILLAIN PHASE",
+      "path": [
+        "VILLAIN PHASE",
+        "step 1"
+      ],
+      "page": 47,
+      "fragment": "Place Threat.",
+      "hash": "sha256:e5e48f73e48422891937f90edd4e6a9d7d8004de641a4c2427e61b85c147a6d4"
+    },
+    {
+      "id": "rr:villain-phase.step.2",
+      "title": "VILLAIN PHASE",
+      "path": [
+        "VILLAIN PHASE",
+        "step 2"
+      ],
+      "page": 47,
+      "fragment": "Enemies Activate.",
+      "hash": "sha256:b1b6e234199b9338e60ce584971be49dcff0657cb72998c2a3363fab70c07c3a"
+    },
+    {
+      "id": "rr:villain-phase.step.2.a",
+      "title": "VILLAIN PHASE",
+      "path": [
+        "VILLAIN PHASE",
+        "step 2",
+        "step 2a"
+      ],
+      "page": 47,
+      "fragment": "The villain activates against the player.",
+      "hash": "sha256:3bc06daab53f1100f74fc9c3bf52ec01fba8de226eb2e454f6564e5727821185"
+    },
+    {
+      "id": "rr:villain-phase.step.2.b",
+      "title": "VILLAIN PHASE",
+      "path": [
+        "VILLAIN PHASE",
+        "step 2",
+        "step 2b"
+      ],
+      "page": 47,
+      "fragment": "Each minion engaged with the player activates against them, in the order of that player’s choice.",
+      "hash": "sha256:d633be7be3facba2abf95192e89beb281d3275925c17971a5668f8f82d35dedb"
+    },
+    {
+      "id": "rr:villain-phase.step.3",
+      "title": "VILLAIN PHASE",
+      "path": [
+        "VILLAIN PHASE",
+        "step 3"
+      ],
+      "page": 47,
+      "fragment": "Deal Encounter Cards.",
+      "hash": "sha256:8ee4adf390ce1e28b26cf793429022c95414c063700d18c8d0bcac55bc16295c"
+    },
+    {
+      "id": "rr:villain-phase.step.4",
+      "title": "VILLAIN PHASE",
+      "path": [
+        "VILLAIN PHASE",
+        "step 4"
+      ],
+      "page": 47,
+      "fragment": "Reveal Encounter Cards.",
+      "hash": "sha256:42dba23cd71708a79651b442190b06481c7a2cd74abe60f144eec33df689751a"
+    },
+    {
+      "id": "rr:villain-phase.step.5",
+      "title": "VILLAIN PHASE",
+      "path": [
+        "VILLAIN PHASE",
+        "step 5"
+      ],
+      "page": 47,
+      "fragment": "Pass First Player Token.",
+      "hash": "sha256:4f12ab762b4b9e5b34651f47b177782dfd6cdca2c7d412568c4495b74f8f1334"
+    },
+    {
+      "id": "rr:villain-phase.step.6",
+      "title": "VILLAIN PHASE",
+      "path": [
+        "VILLAIN PHASE",
+        "step 6"
+      ],
+      "page": 47,
+      "fragment": "End of Villain Phase and Round.",
+      "hash": "sha256:a2953809c5468230ffcfeb8cdcc165c9404f6c364b5b820dfa881e28a587cf41"
+    },
+    {
+      "id": "rr:villain-phase.step.6.a",
+      "title": "VILLAIN PHASE",
+      "path": [
+        "VILLAIN PHASE",
+        "step 6",
+        "step 6a"
+      ],
+      "page": 47,
+      "fragment": "Any effects that last “until the end of the [villain] phase” or “until the end of the round” end.",
+      "hash": "sha256:cdebb9f4891d2b9090504e473e3dc098ef6fad9c394d76ecf09eef625a02a1f4"
+    },
+    {
+      "id": "rr:villain-phase.step.6.b",
+      "title": "VILLAIN PHASE",
+      "path": [
+        "VILLAIN PHASE",
+        "step 6",
+        "step 6b"
+      ],
+      "page": 47,
+      "fragment": "Resolve any “when/after the [villain] phase ends” or “when/after the round ends” effects.",
+      "hash": "sha256:99808e2e3d429b2c7363e788d8bf566c7c4fc5eba05c51bab8014d58f549f549"
     },
     {
       "id": "rr:villain-s-play-area",

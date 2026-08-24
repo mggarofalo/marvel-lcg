@@ -1494,59 +1494,59 @@
       "source": "specs/rules/crisis-bypass.feature"
     },
     "Timing priority :: a constant alone prevents the damage": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: a forced response has already resolved when the optional one is offered": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: a tough status card cancels an attack and is discarded": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: a villain attack opens three windows in order": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: a when-defeated ability places its threat with nothing to race": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: an interrupt at the damage window prevents the whole attack": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: an interrupt at the initiation window resolves before the attack lands": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: an optional response deals its damage when nothing intervenes": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: declining every window leaves the hand at hand size": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: declining the interrupt leaves only the when-defeated": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: the Armored Rhino Suit takes damage that would have gone to Rhino": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: the constant resolves first and leaves the tough card unspent": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: the interrupt removes its threat before the when-defeated adds any": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Timing priority :: toughness resolves first and leaves the Suit nothing to absorb": {
-      "sha256": "e6b9c56e8588241d41bc401dd658a676a0e44ac88e9d177d365b34ee6b8531b4",
+      "sha256": "cd2831e7bc5cfc32a102a35bb56671aabf944b9536f754dff104f48297660c0a",
       "source": "specs/rules/timing-priority.feature"
     },
     "Tony Stark :: exactly the top three cards are offered, and the fourth is not": {

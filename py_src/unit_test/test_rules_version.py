@@ -38,7 +38,10 @@ RULES_INDEX = os.path.join("..", "datasets", "rules-reference", "index.json")
 CITED = {
     "v16_reveal": ("rr:deal-deal-an-encounter-card", "rr:surge.2"),
     "v16_teamwork": ("rr:teamwork.1",),
-    "v16_player_elimination": ("rr:player-elimination.3",),
+    # Step 4 specifically: cards *owned by* the eliminated player. Clause 3 is
+    # the neighbouring rule about each *other* card, and was what this cited
+    # until the harvester learned to parse numbered procedures (MARVEL-171).
+    "v16_player_elimination": ("rr:player-elimination.step.4",),
     "v16_referential_ability": ("rr:referential-ability",),
     "v16_confuse_stun": ("rr:attack-player-ability-type.1.1", "rr:thwart.1.1"),
 }

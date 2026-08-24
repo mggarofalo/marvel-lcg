@@ -25,7 +25,7 @@ During their turn, a player may perform the following options, in any order. Eac
 4. Use** an ally card they control in play to attack an enemy or thwart a scheme.
 
 <a id="player-turn-5"></a>
-5. Trigger** an “**Action**” ability on: a. A card in play they control. b. An encounter card in play. c. Any card in play with text that allows that player to trigger its action ability. d. An event card in their hand *(by playing that event)*.
+5. Trigger** an “**Action**” ability on: a. A card in play they control. b. An encounter card in play. c. Any card in play with text that allows that player to trigger its action ability. d. An event card in their hand (by playing that event).
     <a id="player-turn-5-1"></a>
     - If the action ability is preceded by “Hero” or “Alter- Ego”, the player must be in the specified form in order to trigger the ability.
 

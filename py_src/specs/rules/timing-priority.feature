@@ -110,12 +110,15 @@ Feature: Timing priority
   # transcript. Writing it twice would put one transcript in the trusted suite
   # under two names.
 
+  @rr:ability.step.1
   Scenario: a constant alone prevents the damage
     Given "Dragnet" is in play
 
     When I attack "Rhino"
     Then "Rhino" has 0 damage
 
+  @rr:ability.step.1
+  @rr:ability.step.2.a
   Scenario: the constant resolves first and leaves the tough card unspent
     # The decisive one. If Status had gone first, the tough card would have
     # cancelled the damage and been discarded, and Rhino would end not tough.
@@ -147,6 +150,8 @@ Feature: Timing priority
   # three scenarios are one experiment: each ability alone establishes what it
   # does, and the third shows which one got the damage when both wanted it.
 
+  @rr:ability.step.2.a
+  @rr:tough
   Scenario: a tough status card cancels an attack and is discarded
     Given "Rhino" is tough
 
@@ -154,6 +159,7 @@ Feature: Timing priority
     Then "Rhino" has 0 damage
     And "Rhino" is not tough
 
+  @rr:replacement-effect
   Scenario: the Armored Rhino Suit takes damage that would have gone to Rhino
     # Spider-Man is printed ATK 2, and all 2 land on the Suit rather than on
     # Rhino. The Suit counts them as damage counters on itself; at 5 it is
@@ -164,6 +170,8 @@ Feature: Timing priority
     Then "Rhino" has 0 damage
     And "Armored Rhino Suit" has 2 "damage" counters
 
+  @rr:ability.step.2.a
+  @rr:tough
   Scenario: toughness resolves first and leaves the Suit nothing to absorb
     # The decisive one. If the Forced Interrupt had gone first, the Suit would
     # hold 2 damage counters and Rhino would still be tough. It holds none and
@@ -194,6 +202,9 @@ Feature: Timing priority
   # phase-structure.feature -- a round draws from both, and a scene that starts
   # empty ends the game rather than reaching the villain phase.
 
+  @rr:interrupt
+  @rr:response
+  @rr:ability.step.3
   Scenario: a villain attack opens three windows in order
     Given my hand is "Backflip"
     And my deck is "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
@@ -216,6 +227,8 @@ Feature: Timing priority
     When I pass
     Then I have 3 damage
 
+  @rr:interrupt
+  @rr:ability.step.2.c
   Scenario: an interrupt at the damage window prevents the whole attack
     # Backflip is printed "Interrupt (defense): When you would take any amount
     # of damage from an attack, prevent all of that damage." Rhino's boosted
@@ -231,6 +244,8 @@ Feature: Timing priority
     When I play "Backflip"
     Then I have 0 damage
 
+  @rr:interrupt
+  @rr:ability.step.2.c
   Scenario: an interrupt at the initiation window resolves before the attack lands
     # Spider-Sense is printed "Interrupt: When the villain initiates an attack
     # against you, draw 1 card." The attack still lands for its full 3 -- the
@@ -251,6 +266,8 @@ Feature: Timing priority
     Then I have 3 damage
     And I have 6 cards in hand
 
+  @rr:forced
+  @rr:interrupt
   Scenario: declining every window leaves the hand at hand size
     # The control for the scenario above. Same board, same beats, one answer
     # different, one card fewer.
@@ -284,6 +301,8 @@ Feature: Timing priority
   #
   # The two scenarios differ by one Given.
 
+  @rr:response
+  @rr:ability.step.4.b
   Scenario: an optional response deals its damage when nothing intervenes
     # Hawkeye is printed to enter play with 4 arrow counters and spends one to
     # do this. Hydra Mercenary is printed 3 hit points, so 2 damage leaves it
@@ -296,6 +315,9 @@ Feature: Timing priority
     Then "Hydra Mercenary #1" has 2 damage
     And "Hawkeye" has 3 "arrow" counters
 
+  @rr:ability.step.4.a
+  @rr:ability.step.4.b
+  @rr:forced
   Scenario: a forced response has already resolved when the optional one is offered
     # The decisive one, and it is decisive twice over.
     #
@@ -344,6 +366,7 @@ Feature: Timing priority
   # Jolt enters at 5 hit points and Gatekeeper grants +2, so 5 damage leaves it
   # one Spider-Man attack from defeat.
 
+  @rr:when-defeated-abilities
   Scenario: a when-defeated ability places its threat with nothing to race
     # The control. Jolt alone, defeated, takes the main scheme from 2 to 5.
     Given the main scheme has 2 threat
@@ -353,6 +376,8 @@ Feature: Timing priority
     When I attack "Jolt"
     Then the main scheme has 5 threat
 
+  @rr:ability.step.2
+  @rr:when-defeated-abilities
   Scenario: the interrupt removes its threat before the when-defeated adds any
     # The decisive one. 3, not 1: the removal found 2 threat and clamped to 0,
     # and Jolt's 3 went onto an empty scheme. Had Boost gone first the scheme
@@ -367,6 +392,8 @@ Feature: Timing priority
     Then "Jolt" is not in play
     And the main scheme has 3 threat
 
+  @rr:interrupt
+  @rr:when-defeated-abilities
   Scenario: declining the interrupt leaves only the when-defeated
     # The second control, and the one that shows the Interrupt is optional. Same
     # board, same beats, the offer declined -- and the result is the first

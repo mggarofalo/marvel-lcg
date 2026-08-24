@@ -4,13 +4,26 @@ title: "REVEAL"
 document: "Rules Reference"
 version: "1.8"
 page: 38
-hash: "sha256:4d258a7a9785eb16b878dde966cabadeda6c6719f5825ede15907c03c47bf929"
+hash: "sha256:8dae21af93196f6c1736304fef6d942e3c8198e419488ad77f9775c944bcd5da"
+steps: 4
 see_also: ["rr:attachment", "rr:choose-game-element", "rr:choose-option", "rr:deal-deal-an-encounter-card", "rr:encounter-card", "rr:enters-play", "rr:environment", "rr:in-player-order", "rr:minion", "rr:obligation", "rr:player", "rr:side-scheme", "rr:treachery", "rr:villain-phase"]
 ---
 
 # REVEAL
 
-During step four of the villain phase, each player *(in player order)* reveals and resolves all facedown encounter cards that have been dealt to them, one card at a time in the order in which they were dealt. To reveal an encounter card, follow these steps: 1. Turn the encounter card faceup. 2. If the encounter card’s type is:
+During step four of the villain phase, each player *(in player order)* reveals and resolves all facedown encounter cards that have been dealt to them, one card at a time in the order in which they were dealt. To reveal an encounter card, follow these steps:
+
+<a id="reveal-step-1"></a>
+1. Turn the encounter card faceup.
+
+<a id="reveal-step-2"></a>
+2. If the encounter card’s type is:
+
+<a id="reveal-step-3"></a>
+3. Resolve each “**When Revealed**” ability on that card *(including those provided by keywords)*.
+
+<a id="reveal-step-4"></a>
+4. If the card is a treachery, discard it. If a player is instructed by card text to reveal an encounter card from the encounter deck or any other game area, this same resolution procedure applies.
 
 <a id="reveal-1"></a>
 1. Attachment**: It enters play attached to the game element specified by its “attach to” text. If it does not have “attach to” text, place it on the table in front of the player revealing it. *(It is not in play.)*
@@ -33,7 +46,7 @@ During step four of the villain phase, each player *(in player order)* reveals a
 6. Treachery**: Place it on the table in front of the player revealing it. *(It is not in play.)*
 
 <a id="reveal-7"></a>
-7. Other**: Place it on the table in front of the player revealing it. *(It is not in play.)* 3. Resolve each “**When Revealed**” ability on that card *(including those provided by keywords)*. 4. If the card is a treachery, discard it. If a player is instructed by card text to reveal an encounter card from the encounter deck or any other game area, this same resolution procedure applies.
+7. Other**: Place it on the table in front of the player revealing it. *(It is not in play.)*
 
 <a id="reveal-8"></a>
 8. Responses (both forced and non-forced) to any step of the revealing of an encounter card are not resolved until after all steps of the reveal process have been completed.

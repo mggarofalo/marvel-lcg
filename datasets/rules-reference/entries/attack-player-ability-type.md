@@ -5,12 +5,22 @@ document: "Rules Reference"
 version: "1.8"
 page: 10
 hash: "sha256:ba7ff75c1f1f34f0293b3cb27d5a27a87a540b22558539e3715c33fb3746e6ad"
+steps: 3
 see_also: ["rr:ally", "rr:basic-power", "rr:damage", "rr:defend-defense", "rr:enemy", "rr:identity", "rr:labeled-ability", "rr:minion", "rr:modifiers", "rr:retaliate-x", "rr:target", "rr:villain-villain-deck"]
 ---
 
 # ATTACK (PLAYER ABILITY TYPE)
 
 Some game effects and card abilities reference an attack. There are a few different ways an attack can occur:
+
+<a id="attack-player-ability-type-step-7"></a>
+7. Forced abilities *(such as the retaliate keyword)* with the following triggers (in any order): “after [character] attacks [and damages/defeats] [an enemy/a minion]...” “after [character] is attacked...”
+
+<a id="attack-player-ability-type-step-8"></a>
+8. Non-forced abilities with the triggers listed above.
+
+<a id="attack-player-ability-type-step-9"></a>
+9. Consequential damage (for allies).
 
 <a id="attack-player-ability-type-1"></a>
 1. A hero or ally can use their basic attack power to attack an enemy. A character must exhaust to use this power. This deals damage equal to the character’s ATK value to the enemy.
@@ -40,10 +50,6 @@ Some game effects and card abilities reference an attack. There are a few differ
     - Each attacked enemy with the retaliate X keyword that is still in play after the attack resolves deals its retaliate damage to the attacking character.
 
 <a id="attack-player-ability-type-6"></a>
-6. The order of resolution for abilities triggered by the resolution of an attack is as follows: 7. Forced abilities *(such as the retaliate keyword)* with the following triggers (in any order):
-    <a id="attack-player-ability-type-6-1"></a>
-    - “after [character] attacks [and damages/defeats] [an enemy/a minion]...”
-    <a id="attack-player-ability-type-6-2"></a>
-    - “after [character] is attacked...” 8. Non-forced abilities with the triggers listed above. 9. Consequential damage (for allies).
+6. The order of resolution for abilities triggered by the resolution of an attack is as follows:
 
 **See also:** [Ally](ally.md), [Basic Power](basic-power.md), [Damage](damage.md), [Defend](defend-defense.md), [Enemy](enemy.md), [Identity](identity.md), [Labeled Ability](labeled-ability.md), [Minion](minion.md), [Modifiers](modifiers.md), [Retaliate X](retaliate-x.md), [Target](target.md), [Villain](villain-villain-deck.md)
