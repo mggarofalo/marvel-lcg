@@ -174,5 +174,6 @@ public sealed class EventVocabularyTests
         new CardDetached(2, 9),
         new ControlChanged(2, 0, 1),
         new FieldSet(2, "health", 10, 8),
+        new CardsChangedBoard([49, 101], From: 1, To: 2),
     ];
 }

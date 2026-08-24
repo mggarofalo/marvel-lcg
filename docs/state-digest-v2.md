@@ -107,6 +107,35 @@ The other seventy-seven cards in v2 carry position without state:
 {"id":0,"card":"rule_a","zone":"RemovedArea","owner":-1,"index":0,"host":-1,"face_up":true,"fields":{}}
 ```
 
+## What the digest cannot see
+
+One known blind spot, recorded here because it is invisible by construction and
+a reader will otherwise assume the digest is total.
+
+**A card's board.** Some scenarios split the table into parallel boards — The
+Once and Future Kang gives each player their own at main-scheme stage 3, with
+its own main scheme and its own villain; newer scenarios do the same. The engine
+models this as `card.game_area`, and `CardDescriptor` has always sent it to the
+client. **No digest key carries it**, and the areas are shared: every main
+scheme sits in one `MainSchemesArea` deck whatever board it is on.
+
+Measured by constructing the split at an ordinary Kang step — no recorded step
+reaches the real one — creating a board and moving 47 cards onto it, main scheme
+included:
+
+> the digest was **byte-identical**.
+
+So **a port that put every card in the right zone at the right index but on the
+wrong board would pass every corpus digest check.** The corpus cannot catch it
+either: 0 of 3,462 steps across all 42 Kang scenes reach a second board.
+
+This is stated rather than fixed. `CARD_KEYS` is a frozen format; adding a key
+would change every recorded digest and invalidate the corpus, which AGENTS.md
+non-negotiable 6 makes a decision to raise rather than take. What has been done
+instead is to carry the board in the *event stream*, where it costs nothing —
+see [event-stream.md](event-stream.md#when-the-table-splits) — and to file the
+digest question as **MARVEL-174**. The matching coverage gap is MARVEL-175.
+
 ## The record
 
 Eight keys, all present on every card, always in this order.
