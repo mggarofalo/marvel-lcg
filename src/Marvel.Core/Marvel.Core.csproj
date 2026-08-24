@@ -8,4 +8,13 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- The canonical string escaper is internal: it is a detail of how the
+         digest is written, not something game code should reach for. The tests
+         exercise it directly because it is the piece most likely to differ
+         between languages, and a round-trip test alone would not distinguish
+         "escapes correctly" from "escapes and unescapes symmetrically wrong". -->
+    <InternalsVisibleTo Include="Marvel.Core.Tests" />
+  </ItemGroup>
+
 </Project>
