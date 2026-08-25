@@ -206,7 +206,14 @@ public sealed class Game
                 // step, so the trace is identical whether the refill happens
                 // before this prompt or after it. Left out rather than guessed.
                 Phase = GamePhase.VillainPhase;
-                var happened = VillainPhase.Run(world, facts, abilities);
+                var happened = new List<GameEvent>();
+
+                // rr:end-of-player-phase.step.4 and .step.5. Steps 1 to 3 --
+                // discard down to hand size, draw up to it, ready every card --
+                // are not implemented; see PhaseEnd.EndPlayerPhase.
+                PhaseEnd.EndPlayerPhase(world, abilities, Round, happened);
+
+                happened.AddRange(VillainPhase.Run(world, facts, abilities, Round));
 
                 if (world.IsOver)
                 {

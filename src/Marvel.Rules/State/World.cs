@@ -36,6 +36,7 @@ public sealed class World
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(players);
         this.facts = facts;
         Players = players;
+        Effects = new Timing.ContinuousEffects(this);
 
         // An ordinary game has exactly one game area holding every play area,
         // and nothing in the rules distinguishes that from having none. Making
@@ -48,6 +49,17 @@ public sealed class World
             whole.Add(PlayArea.Of(seat));
         }
     }
+
+    /// <summary>
+    /// Everything continuously in force: constant abilities, lasting effects
+    /// and delayed effects.
+    /// </summary>
+    /// <remarks>
+    /// Part of the board rather than of the fold, because a lasting effect
+    /// outlives the turn that made it and has to be saved with the game. See
+    /// <c>docs/timing.md</c>.
+    /// </remarks>
+    public Timing.ContinuousEffects Effects { get; }
 
     /// <summary>The seat value meaning "the scenario", not a player.</summary>
     public const int Scenario = -1;

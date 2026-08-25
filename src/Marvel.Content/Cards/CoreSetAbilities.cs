@@ -1,6 +1,7 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Fold;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Content.Cards;
 
@@ -46,6 +47,26 @@ public sealed class CoreSetAbilities : ICardAbilities
     /// </remarks>
     public static IReadOnlySet<string> Implemented { get; } =
         new HashSet<string>(StringComparer.Ordinal) { ImTough, Charge };
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Always empty, and that is a statement about these two cards rather than
+    /// a stub. "I'm Tough" (01105) is a "When Revealed" and "Charge" (01099) an
+    /// attachment whose one triggered ability is a <b>Forced Interrupt</b> that
+    /// fires when Rhino attacks — a window this engine can open, on an
+    /// occurrence it cannot yet reach, because the recorded hero never leaves
+    /// alter-ego form and a villain only attacks a hero (<c>rr:activation.1</c>).
+    /// So no ported card is waiting in any window.
+    /// </remarks>
+    public IReadOnlyList<PendingAbility> Waiting(
+        World world, Occurrence occurrence, WindowKind window) => [];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Resolve(
+        World world, Occurrence occurrence, PendingAbility ability) =>
+        throw new RulesNotImplementedException(
+            $"no card here waits in a window, so '{ability.Type}' on card "
+            + $"{ability.Card} cannot be resolved from one");
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)

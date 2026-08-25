@@ -46,9 +46,9 @@ public enum EffectSource
 /// card that has already gone to the discard.
 /// </param>
 /// <param name="Affects">The object id this applies to, or <c>null</c> for a board-wide effect.</param>
-/// <param name="Until">
-/// The timing point it expires at — <c>rr:lasting-effects.5</c>. Null for a
-/// constant ability, which instead lasts while its card is in play.
+/// <param name="Lasts">
+/// How long, as the card states it. <see cref="Duration.WhileInPlay"/> for a
+/// constant ability, which states no duration of its own.
 /// </param>
 public sealed record ContinuousEffect(
     EffectSource Source,
@@ -56,7 +56,7 @@ public sealed record ContinuousEffect(
     long Amount = 0,
     int? Card = null,
     int? Affects = null,
-    string? Until = null)
+    Duration? Lasts = null)
 {
     /// <summary>
     /// Always <see cref="TimingPriority.Continuous"/>.
@@ -108,16 +108,16 @@ public sealed record ContinuousEffect(
 /// lasting effect." An entry names a condition, and the condition is re-read.
 /// </para>
 /// </remarks>
-public sealed class ContinuousEffects
+public sealed class ContinuousEffects(World world)
 {
-    private readonly List<ContinuousEffect> registered = [];
+    private readonly List<Entry> entries = [];
 
     /// <summary>Everything registered, in force or not.</summary>
     /// <remarks>
     /// For a save, and for a test that wants to see a stale entry rather than
     /// have it filtered away. <see cref="Active"/> is what the game reads.
     /// </remarks>
-    public IReadOnlyList<ContinuousEffect> Registered => registered;
+    public IReadOnlyList<ContinuousEffect> Registered => [.. entries.Select(entry => entry.Effect)];
 
     /// <summary>Put an effect into force.</summary>
     /// <remarks>
@@ -130,17 +130,19 @@ public sealed class ContinuousEffects
     public Registration Register(ContinuousEffect effect)
     {
         ArgumentNullException.ThrowIfNull(effect);
-        registered.Add(effect);
-        return new Registration(this, effect);
+        var entry = new Entry(effect);
+        entries.Add(entry);
+        return new Registration(this, entry);
     }
 
     /// <summary>Everything actually in force on this board, right now.</summary>
-    /// <param name="world">The board to read the conditions against.</param>
-    public IReadOnlyList<ContinuousEffect> Active(World world)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        return [.. registered.Where(effect => InForce(effect, world))];
-    }
+    /// <remarks>
+    /// Read afresh every time rather than cached onto the board, which is what
+    /// <c>rr:modifiers</c> and <c>rr:lasting-effects.3</c> both describe. Cheap
+    /// and called often is the intended shape.
+    /// </remarks>
+    public IReadOnlyList<ContinuousEffect> Active() =>
+        [.. entries.Select(entry => entry.Effect).Where(InForce)];
 
     /// <summary>
     /// End every lasting effect whose duration names this timing point.
@@ -153,11 +155,94 @@ public sealed class ContinuousEffects
     /// </remarks>
     /// <param name="timingPoint">The point that has been reached.</param>
     /// <returns>How many effects ended.</returns>
-    public int Expire(string timingPoint) =>
-        registered.RemoveAll(effect =>
-            string.Equals(effect.Until, timingPoint, StringComparison.Ordinal));
+    public int Expire(string timingPoint)
+    {
+        ArgumentNullException.ThrowIfNull(timingPoint);
+        return entries.RemoveAll(entry =>
+            string.Equals(entry.Effect.Lasts?.Until, timingPoint, StringComparison.Ordinal));
+    }
 
-    private static bool InForce(ContinuousEffect effect, World world)
+    /// <summary>
+    /// Apply one use of an effect, and end it if that was its last.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The bound that is not a timing point: "reduce the cost of the next card
+    /// you play by 1" is spent by a card being played, whenever that happens.
+    /// An effect with no <see cref="Duration.Uses"/> is unlimited and this only
+    /// reports that it applied.
+    /// </para>
+    /// <para>
+    /// When the same effect is registered twice, one of the two is spent and
+    /// the other is not, which is what <c>rr:ability.10</c> asks for: each
+    /// instance affects the game independently.
+    /// </para>
+    /// </remarks>
+    /// <param name="effect">The effect being applied.</param>
+    /// <returns>False when no registered copy of it had a use left.</returns>
+    public bool Use(ContinuousEffect effect)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+
+        var entry = entries.FirstOrDefault(
+            candidate => candidate.Effect == effect && candidate.Remaining != 0);
+        if (entry is null)
+        {
+            return false;
+        }
+
+        if (entry.Remaining is int remaining)
+        {
+            entry.Remaining = remaining - 1;
+            if (entry.Remaining <= 0)
+            {
+                entries.Remove(entry);
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Resolve every delayed effect waiting on a condition that has just
+    /// occurred, and end those that were waiting for the last time.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:delayed-effect.1</c> — they resolve "automatically and immediately
+    /// after their specified timing point or future condition occurs or becomes
+    /// true, and before responses to that point or condition may be used". So
+    /// this is called at the occurrence, not from the response window.
+    /// <c>rr:delayed-effect.2</c> is why the result is a plain list rather than
+    /// anything that goes into a window: "it is not treated as a new triggered
+    /// ability, even if the delayed effect was originally created by a triggered
+    /// ability".
+    /// </remarks>
+    /// <param name="condition">The condition that has occurred.</param>
+    public IReadOnlyList<ContinuousEffect> Occur(string condition)
+    {
+        ArgumentNullException.ThrowIfNull(condition);
+
+        var due = entries
+            .Where(entry => string.Equals(
+                entry.Effect.Lasts?.OnCondition, condition, StringComparison.Ordinal))
+            .ToList();
+
+        foreach (var entry in due)
+        {
+            if (entry.Remaining is null or <= 1)
+            {
+                entries.Remove(entry);
+            }
+            else
+            {
+                entry.Remaining -= 1;
+            }
+        }
+
+        return [.. due.Select(entry => entry.Effect)];
+    }
+
+    private bool InForce(ContinuousEffect effect)
     {
         if (effect.Source != EffectSource.ConstantAbility)
         {
@@ -171,7 +256,20 @@ public sealed class ContinuousEffects
             && DeckTypes.IsInPlay(world.Cards[card].Area.Type);
     }
 
-    private void Remove(ContinuousEffect effect) => registered.Remove(effect);
+    private void Remove(Entry entry) => entries.Remove(entry);
+
+    /// <summary>One registered effect and its remaining uses.</summary>
+    /// <remarks>
+    /// The effect itself is immutable, because it has to be writable to a save.
+    /// How much of it is left over is not part of what the card says, so it
+    /// lives here.
+    /// </remarks>
+    internal sealed class Entry(ContinuousEffect effect)
+    {
+        public ContinuousEffect Effect { get; } = effect;
+
+        public int? Remaining { get; set; } = effect.Lasts?.Uses;
+    }
 
     /// <summary>A registered effect, and the means to end it.</summary>
     /// <remarks>
@@ -179,12 +277,23 @@ public sealed class ContinuousEffects
     /// delayed effect that has resolved and is spent
     /// (<c>rr:delayed-effect.1</c>). Disposing twice is harmless.
     /// </remarks>
-    public sealed class Registration(ContinuousEffects effects, ContinuousEffect effect) : IDisposable
+    public sealed class Registration : IDisposable
     {
+        private readonly ContinuousEffects effects;
+        private readonly Entry entry;
         private bool disposed;
 
+        internal Registration(ContinuousEffects effects, Entry entry)
+        {
+            this.effects = effects;
+            this.entry = entry;
+        }
+
         /// <summary>What was registered.</summary>
-        public ContinuousEffect Effect { get; } = effect;
+        public ContinuousEffect Effect => entry.Effect;
+
+        /// <summary>How many applications are left, or null for unlimited.</summary>
+        public int? Remaining => entry.Remaining;
 
         /// <summary>End it.</summary>
         public void Dispose()
@@ -195,7 +304,7 @@ public sealed class ContinuousEffects
             }
 
             disposed = true;
-            effects.Remove(Effect);
+            effects.Remove(entry);
         }
     }
 }

@@ -94,13 +94,45 @@ necessary) updates the count of any variable quantity that is being modified."*
 the game state updates". So the loop is the rule, and `ContinuousEffects.Active`
 is meant to be cheap and called often rather than cached onto the board.
 
-Where the three kinds differ is only in **how an entry leaves**:
+Where the three kinds differ is only in **how an entry leaves**, and that is
+stated by the effect itself.
+
+## A duration is a condition, not a timing point
+
+`rr:lasting-effects` describes a duration as what the card says — *"for a
+specified duration (such as 'until the end of the phase' or 'until the end of
+this attack')"*. Timing points are its examples, not its definition, and
+`rr:delayed-effect.1` names both shapes in one sentence: a delayed effect
+resolves after its *"specified timing point **or future condition** occurs or
+becomes true"*.
+
+So `Duration` carries three nullable bounds:
+
+| | Means | Cited |
+|---|---|---|
+| `Until` | a timing point — "until the end of the round" | `rr:lasting-effects.5` |
+| `OnCondition` | a future condition — "the next time an enemy attacks you" | `rr:delayed-effect.1` |
+| `Uses` | how many applications remain — "the next card you play" | |
+
+**An effect ends at whichever comes first.** "Reduce the cost of the next ally
+you play this phase by 1" carries a timing point *and* a use count: play the ally
+and it is spent, play nothing and the phase ending takes it. Modelling only one
+bound leaves a discount available next round, or spends one that was never used.
+That is why these are three bounds on one record rather than three kinds of
+effect.
+
+`Uses` is also the count on a condition — "the next 2 times X happens" is
+`OnCondition` with `Uses` of 2.
+
+`Duration.WhileInPlay` is all three absent. A constant ability states no duration
+of its own; that its card must stay in play is the general rule from
+`rr:ability`, not something the card says.
 
 | Kind | How it ends |
 |---|---|
-| constant ability | its card leaves play — derived |
-| lasting effect | its timing point is reached (`Expire`), or it is cancelled |
-| delayed effect | it resolves, and its registration is disposed |
+| constant ability | its card leaves play — **derived** |
+| lasting effect | `Expire` at its timing point, or `Use` spends its last application |
+| delayed effect | `Occur` when its condition happens, or its registration is disposed |
 
 A constant ability is derived rather than deregistered because the rules make it
 derivable: `rr:ability` says it "becomes active as soon as its card enters play
@@ -124,17 +156,54 @@ entry has to be something that can be written down. Anything holding a delegate
 could not be. What an entry *does* is decided by reading its `Kind` and `Amount`,
 which is the price of a game that can be put down and picked up.
 
+## Ending a phase
+
+The rules state this twice in the same shape, so `PhaseEnd` implements it once.
+
+| | |
+|---|---|
+| `rr:villain-phase.step.6` | *End of Villain Phase and Round.* (a) effects bound to the phase or the round end; (b) resolve "when/after the phase ends" and "when/after the round ends" effects |
+| `rr:end-of-player-phase.step.4`, `.step.5` | the same two steps for the player phase |
+
+**Ending a phase is an occurrence, so it has an interrupt window before it.**
+That is not read into the rules — `rr:temporary.1` states it outright, that the
+temporary keyword *"is equivalent to the following triggered ability: **Forced
+Interrupt:** When the round ends, discard this card from play"*. A forced
+interrupt resolves before its triggering condition (`rr:interrupt.3`), so a
+temporary card is discarded **before** step 6a expires anything. The full order:
+
+```
+interrupt window   →   6a expire   →   delayed effects come due   →   response window
+```
+
+Delayed effects sit in the middle because `rr:delayed-effect.1` puts them
+"before responses to that point or condition may be used".
+
+The villain phase's ending is **one occurrence carrying two conditions**, the
+phase ending and the round ending. `rr:triggering-condition.2` is why that is one
+interrupt window and one response window rather than two of each — an ability
+answering "when the round ends" gets a single turn even though both conditions
+became true at once.
+
+The player phase ends effects bound to `EndOfPlayerPhase` and **not** those bound
+to `EndOfRound`, which outlive it. Expiring both would end a lasting effect half
+a round early on a board that looks entirely normal.
+
 ## What this does not do yet
 
-- **Nothing expires.** `rr:villain-phase.step.6` — *End of Villain Phase and
-  Round* — is not implemented. `VillainPhase.Run` covers steps 1 to 5, so the
-  point at which effects lasting "until the end of the round" would end is never
-  reached. `ContinuousEffects.Expire` exists and nothing calls it.
-- **Nothing opens a window.** No card in `CoreSetAbilities` has an interrupt or
-  a response, and the recorded milestone game never reaches one: its hero never
-  leaves alter-ego form and declines every option. So every claim in
-  `AbilityWindowTests` rests on its citation and on nothing else — which is
-  what the citations are for.
+- **Nothing opens a window.** No ported card has an interrupt or a response the
+  engine can reach. "Charge" (01099) has a Forced Interrupt that fires when Rhino
+  attacks — a window this engine can open, on an occurrence it cannot reach,
+  because the recorded hero never leaves alter-ego form and a villain only
+  attacks a hero (`rr:activation.1`). So every claim in `AbilityWindowTests`
+  rests on its citation and nothing else, which is what the citations are for.
+- **Steps 1 to 3 of `rr:end-of-player-phase`** — discard down to hand size, draw
+  up to it, ready every card — are not implemented. `rr:player-phase.1` puts them
+  before the expiry point, and the recorded game cannot say when they happen: its
+  hand is full at every step and its one player readies nothing.
+- **An optional ability in a window throws** rather than being declined on the
+  player's behalf, and so do two forced abilities at one moment (`rr:forced.5`
+  gives that order to the first player). Both need MARVEL-179.
 - **The decision function cannot express a window.** `Decision(Affordance,
   Targets)` has no way to say "I am using an interrupt in the window before you
-  place that threat". See MARVEL-179.
+  place that threat". MARVEL-179.

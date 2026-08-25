@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Fold;
 
@@ -31,6 +32,28 @@ public interface ICardAbilities
     /// <param name="player">The seat it was dealt to.</param>
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player);
+
+    /// <summary>
+    /// The abilities on cards in play that are waiting to act in this window.
+    /// </summary>
+    /// <remarks>
+    /// Asked once per window rather than per card, because eligibility depends
+    /// on more than the card: <c>rr:interrupt.1</c> restricts a player to
+    /// abilities on cards they control or on encounter cards, and
+    /// <c>rr:ability.3</c> stops an ability that names targets from initiating
+    /// with none. Both are questions about the board.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="occurrence">What is happening.</param>
+    /// <param name="window">Which of its two windows is open.</param>
+    IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window);
+
+    /// <summary>Resolves one ability that was waiting in a window.</summary>
+    /// <param name="world">The world.</param>
+    /// <param name="occurrence">What it is timed to.</param>
+    /// <param name="ability">Which ability, from <see cref="Waiting"/>.</param>
+    /// <returns>What changed.</returns>
+    IReadOnlyList<GameEvent> Resolve(World world, Occurrence occurrence, PendingAbility ability);
 }
 
 /// <summary>Nothing has an ability. What an engine with no cards ported does.</summary>
@@ -38,6 +61,16 @@ public sealed class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<PendingAbility> Waiting(
+        World world, Occurrence occurrence, WindowKind window) => [];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Resolve(
+        World world, Occurrence occurrence, PendingAbility ability) =>
+        throw new RulesNotImplementedException(
+            "nothing is waiting in any window, so nothing can be resolved from one");
 }
 
 /// <summary>
@@ -70,8 +103,9 @@ public static class VillainPhase
     /// The board reached a rule this engine does not have — a minion engaged
     /// with a player, or a villain that would attack rather than scheme.
     /// </exception>
+    /// <param name="round">Which round this is, so its ending is one identifiable occurrence.</param>
     public static IReadOnlyList<GameEvent> Run(
-        World world, ICardFacts facts, ICardAbilities abilities)
+        World world, ICardFacts facts, ICardAbilities abilities, int round = 0)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -94,6 +128,7 @@ public static class VillainPhase
         var dealt = DealEncounterCards(world);
         RevealEncounterCards(world, abilities, dealt, events);
         PassFirstPlayerToken(world);
+        PhaseEnd.EndVillainPhase(world, abilities, round, events);
 
         return events;
     }
