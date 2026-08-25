@@ -194,19 +194,39 @@ public sealed class PlayerPhaseTests
     }
 
     [Fact]
-    public void AnAffordanceKeepsItsHandleWhenItIsOfferedAgain()
+    public void DistinctOptionsGetDistinctHandles()
     {
-        // Not a comparison with the recording -- the numbers differ and must --
-        // but the same property the recording has: `End Phase` is id 1 at
-        // recorded steps 2, 4 and 6 rather than three different ids. A client
-        // that caches a handle across prompts is not broken by either engine.
+        // The half of the handle contract this slice can reach. `Game` caches
+        // handles on `(verb, anchor)` so that a re-offered option keeps its id
+        // -- the property the recording has, where `End Phase` is id 1 at steps
+        // 2, 4 and 6 rather than three different ids. **That half is not tested
+        // here and cannot be**: no option is offered twice before the villain
+        // phase, so nothing in this game re-offers anything. It becomes
+        // testable with the second recorded transition.
+        //
+        // What is testable is the other half, and it is the half a cache gets
+        // wrong: two different options must not collide onto one handle.
         var game = Begin();
+        int mulligan = game.Pending!.Affordances.Single().Id;
         game.Fold(Decision.Decline);
-        int turn = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm).Id;
-        var mulliganAgain = Begin().Pending!.Affordances[0].Id;
+        int changeForm = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm).Id;
+        game.Fold(Decision.Decline);
+        int endPhase = game.Pending!.Affordances.Single().Id;
 
-        Assert.NotEqual(turn, mulliganAgain);
-        Assert.Equal(mulliganAgain, Begin().Pending!.Affordances[0].Id);
+        Assert.Equal(3, new HashSet<int> { mulligan, changeForm, endPhase }.Count);
+    }
+
+    [Fact]
+    public void HandlesDoNotDependOnAnythingOutsideTheGame()
+    {
+        // Two identically dealt games hand out identical handles. A counter
+        // that leaked across games -- a static, a clock, a hash of an address
+        // -- would pass every other test here and make a replay unrepeatable.
+        var first = Begin();
+        var second = Begin();
+
+        Assert.Equal(first.Pending!.Affordances.Single().Id,
+                     second.Pending!.Affordances.Single().Id);
     }
 
     private static void AssertAffordances(JsonElement expected, Prompt actual, string where)

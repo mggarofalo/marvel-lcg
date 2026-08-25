@@ -127,10 +127,13 @@ verb appearing that nothing derives fails the build.
 **Affordance ids are not compared, and must not be.** They are session handles —
 the Python engine allocates effect object ids, and MARVEL-164 measured nine of
 5,809 recorded inputs drifting, every one exactly 25 too high. `(AnchorId, Verb)`
-is the durable key and resolved all nine uniquely. The C# fold reproduces the
-*property* the recording has — the same option re-offered keeps its handle,
-which is why `End Phase` is id 1 at recorded steps 2, 4 and 6 — without
-reproducing the numbers.
+is the durable key and resolved all nine uniquely. The C# fold *implements* the
+property the recording has — handles are cached on `(verb, anchor)`, so a
+re-offered option keeps its id, which is why `End Phase` is id 1 at recorded
+steps 2, 4 and 6 rather than three different ids — but **that half is not
+tested, because nothing is offered twice before the villain phase.** What is
+tested is that distinct options do not collide onto one handle, and that two
+identically dealt games hand out identical ones.
 
 ### Why three steps is more than it sounds
 
