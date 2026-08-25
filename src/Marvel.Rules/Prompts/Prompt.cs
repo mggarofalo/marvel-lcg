@@ -76,6 +76,15 @@ public enum Question
     /// their hand size. Both halves are one question.
     /// </summary>
     Discard,
+
+    /// <summary>
+    /// Which character, if any, defends an enemy attack —
+    /// <c>rr:attack-enemy-activation.step.2</c>, a step of its own with its own
+    /// name. Not an <see cref="Element"/>: <c>rr:choose-game-element.1</c> puts
+    /// that question to the player resolving an ability that says "choose", and
+    /// nobody is resolving an ability here.
+    /// </summary>
+    Defender,
 }
 
 /// <summary>

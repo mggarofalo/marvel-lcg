@@ -60,7 +60,11 @@ public static class Sequence
                     ? WindowKind.Interrupt
                     : WindowKind.Response;
 
-                if (Offering.Work(world, abilities, step.Occurrence, kind, events) is { } asked)
+                // The agenda's occurrence and not a fresh one per read:
+                // `rr:triggering-condition.1` is per occurrence, and the
+                // occurrence is what remembers which abilities have used it.
+                var occurrence = world.Agenda.Occurrence!;
+                if (Offering.Work(world, abilities, occurrence, kind, events) is { } asked)
                 {
                     return asked;
                 }
@@ -69,7 +73,14 @@ public static class Sequence
                 continue;
             }
 
-            VillainPhase.Take(world, facts, abilities, step, events);
+            // A step may itself have a question -- declaring a defender is one
+            // -- and until it is answered the step has not happened, so the
+            // agenda stays where it is.
+            if (VillainPhase.Take(world, facts, abilities, step, events) is { } asking)
+            {
+                return asking;
+            }
+
             world.Agenda.Advance();
 
             if (world.IsOver)
@@ -93,15 +104,17 @@ public static class Sequence
     /// <i>further</i> abilities and the board has just changed.
     /// </remarks>
     /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
     /// <param name="abilities">What cards do.</param>
     /// <param name="asked">The question that was put.</param>
     /// <param name="input">The answer.</param>
     /// <param name="events">Where to record what resolved.</param>
     public static void Answer(
-        World world, ICardAbilities abilities, Prompt asked, Decision input,
+        World world, ICardFacts facts, ICardAbilities abilities, Prompt asked, Decision input,
         List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(asked);
         ArgumentNullException.ThrowIfNull(input);
@@ -109,8 +122,18 @@ public static class Sequence
 
         if (world.Windows.Current is not { } window)
         {
-            throw new RulesNotImplementedException(
-                $"'{asked.Label}' was answered with no window open");
+            // No window means the step itself asked. `Work` left the agenda on
+            // that step's `Apply`, so answering it is what makes the step
+            // happen -- and then it advances like any other.
+            if (world.Agenda.Current is not { } step)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{asked.Label}' was answered with nothing outstanding");
+            }
+
+            VillainPhase.Answered(world, facts, step, input, events);
+            world.Agenda.Advance();
+            return;
         }
 
         if (input.IsDecline)

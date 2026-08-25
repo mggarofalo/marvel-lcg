@@ -137,6 +137,7 @@ as important.
 | `datasets/digest/prompts.json`, `Marvel.Rules.Play`, what a prompt offers | [prompt-dataset.md](docs/prompt-dataset.md) |
 | play areas, game areas, anything resolving by *where a card is* | [places.md](docs/places.md) |
 | `Marvel.Rules.Play`, the villain phase, what a revealed card does | [villain-phase.md](docs/villain-phase.md) |
+| enemy attacks, defending, damage, a ported card acting in a window | [enemy-attacks.md](docs/enemy-attacks.md) |
 | the card ability DSL | [card-dsl.md](docs/card-dsl.md) |
 | the client, the engine's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#dependency-rules) |

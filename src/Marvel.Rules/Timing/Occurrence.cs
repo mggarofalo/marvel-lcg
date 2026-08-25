@@ -40,7 +40,18 @@ public enum WindowKind
 /// Every triggering condition this occurrence creates. More than one is the
 /// <c>rr:triggering-condition.2</c> case, and they still share these windows.
 /// </param>
-public sealed record Occurrence(int Id, IReadOnlyList<string> Conditions)
+/// <param name="Subject">
+/// The card this is happening to or because of, or <c>-1</c>. An enemy for an
+/// activation, the revealed card for a reveal.
+/// </param>
+/// <param name="Player">
+/// The seat it concerns, or <c>-1</c>. A card cannot answer "when the villain
+/// attacks <b>you</b>" without it — <c>rr:attack-enemy-activation.1.4</c> makes
+/// that phrase mean the attacked <i>player</i>, whichever character was
+/// targeted.
+/// </param>
+public sealed record Occurrence(
+    int Id, IReadOnlyList<string> Conditions, int Subject = -1, int Player = -1)
 {
     private readonly HashSet<(WindowKind Window, int Card)> spent = [];
 
@@ -51,6 +62,11 @@ public sealed record Occurrence(int Id, IReadOnlyList<string> Conditions)
         : this(id, [condition])
     {
     }
+
+    /// <summary>Whether this occurrence creates a named triggering condition.</summary>
+    /// <param name="condition">One of <c>rr:triggering-condition</c>'s occurrences.</param>
+    public bool Is(string condition) =>
+        Conditions.Contains(condition, StringComparer.Ordinal);
 
     /// <summary>Whether a card's ability may still be triggered in this window.</summary>
     /// <param name="window">Which window.</param>

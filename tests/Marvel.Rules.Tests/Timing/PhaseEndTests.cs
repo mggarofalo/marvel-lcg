@@ -124,7 +124,8 @@ public sealed class PhaseEndTests
     {
         // "Delayed effects resolve automatically and immediately after their
         // specified timing point or future condition occurs." One that came due
-        // and did nothing is a rule that silently did not happen.
+        // and did nothing is a rule that silently did not happen -- so a kind
+        // nothing knows how to resolve is named rather than dropped.
         var world = Board();
         world.Effects.Register(new ContinuousEffect(
             EffectSource.DelayedEffect, "deal-damage", Amount: 2,
@@ -132,7 +133,7 @@ public sealed class PhaseEndTests
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => PhaseEnd.EndVillainPhase(world, []));
-        Assert.Contains("come due", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("came due", thrown.Message, StringComparison.Ordinal);
     }
 
     /// <summary>Schedules step 6 and walks it, windows and all.</summary>

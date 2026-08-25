@@ -1,6 +1,6 @@
 # The villain phase
 
-`src/Marvel.Rules/Resolve/VillainPhase.cs`. MARVEL-173.
+`src/Marvel.Rules/Play/VillainPhase.cs`. MARVEL-173.
 
 The first thing in the C# engine that moves the board — and, with the modifier
 layer below, the last thing MARVEL-173 needed.
@@ -19,22 +19,27 @@ be argued against the published text:
 |---|---|---|
 | 1 | Place Threat | the main scheme's acceleration field, per player |
 | 2 | Enemies Activate | in player order; the villain, then engaged minions |
+| | ↳ Attack *or* Scheme | `rr:activation.1`; an attack has [six steps of its own](enemy-attacks.md) |
 | 3 | Deal Encounter Cards | one each, plus one per hazard icon |
 | 4 | Reveal Encounter Cards | in player order, in the order dealt |
 | 5 | Pass First Player Token | clockwise |
 | 6 | End of Villain Phase and Round | lasting effects end |
 
-**Only step 4 needs to know what a card says.** Everything else — the threat, the
+**Two places need to know what a card says**, and both go through the same seam.
+Step 4 asks a revealed card what it does; the window around an activation asks
+the board what is waiting in it. Everything else — the threat, the
 scheme-versus-attack choice, the boost card, the discard — is the Rules
-Reference, and `ICardAbilities` is the one seam a card's own behaviour comes
-through. That is what makes the interpreter a drop-in later rather than a
-rewrite: `docs/card-dsl.md` designs it and opens with "nothing here is
-implemented", so until it exists `Marvel.Content.Cards.CoreSetAbilities` holds
-**one card**, and the rule is to add one only when a recorded step reaches it.
+Reference, and `ICardAbilities` is the one way a card's own behaviour enters. That
+is what makes the interpreter a drop-in later rather than a rewrite:
+`docs/card-dsl.md` designs it and opens with "nothing here is implemented", so
+until it exists `Marvel.Content.Cards.CoreSetAbilities` holds **three cards**,
+and the rule is to add one only when a step some test reaches actually needs it.
 
 Whether the villain schemes or attacks is `rr:activation.1`: hero form and it
 attacks, alter-ego form and it schemes. Which face is showing *is* which form,
-so no separate flag is needed.
+so no separate flag is needed. They are two different steps with two different
+triggering conditions, and the attack is much the larger of them — see
+[enemy-attacks.md](enemy-attacks.md).
 
 ## What the recording forced, that the rules text does not say
 
@@ -117,7 +122,7 @@ That is the argument for mutation-testing a suite whose strongest check is a
 single recorded game: the recording is the best evidence available and is not
 the same thing as complete coverage.
 
-`tests/Marvel.Rules.Tests/Resolve/VillainPhaseTests.cs` holds all of them on
+`tests/Marvel.Rules.Tests/Play/VillainPhaseTests.cs` holds all of them on
 hand-built boards — three players, boost values of 0, 1 and 3, thresholds above
 and below and exactly at the target.
 
@@ -136,9 +141,9 @@ and every one of the 170 is an attachment or an upgrade. So a card that prints a
 modifier does not need an ability to apply it — `StateFields` reads it off
 whatever is hosted on the card being described.
 
-The Python ability on Charge is the *other* half: a Forced Interrupt that fires
-when Rhino attacks. No recorded step reaches it, because the hero never leaves
-alter-ego form.
+The *other* half of Charge is a Forced Interrupt that fires when Rhino attacks,
+and it is implemented — on a hand-built board, because no recorded step reaches
+it: the hero never leaves alter-ego form. [enemy-attacks.md](enemy-attacks.md).
 
 **The modifier only counts while the attachment is in play.** The recorded game
 cannot tell — its one modifier sits in `UpgradesArea`, and its one other hosted
@@ -156,8 +161,13 @@ never entered play. So the printed constants are filled when the card registers
 `health` is the exception and stays gated on being in play: the same minion
 reaches the discard with `health: 0` against a printed `HP 3`. Whether that is
 "printed only while in play" or "a pool filled on entry" the recording cannot
-say, because nothing in it takes damage. It becomes a pool the moment damage
-exists.
+say, because nothing in it takes damage.
+
+Now that something does, it is neither: `health` is printed hit points **less the
+damage on the card** (`rr:damage.1`), and damage is a counter on `Card` rather
+than a token pool, because the digest records no damage key at all. On every
+recorded board the subtrahend is zero, which is why the recording still cannot
+tell a subtraction from a printed constant.
 
 ## The villain wins
 

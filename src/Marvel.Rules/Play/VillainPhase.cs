@@ -1,4 +1,5 @@
 using Marvel.Rules.Events;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
@@ -107,16 +108,24 @@ public static class VillainPhase
     }
 
     /// <summary>Take one step of the villain phase.</summary>
+    /// <remarks>
+    /// Returns a prompt when the step itself has something to ask, which one of
+    /// them does: <c>rr:attack-enemy-activation.step.2</c> asks whether anybody
+    /// defends. That is not a window — nobody is using an ability — so it is the
+    /// step that stops, and the answer comes back to
+    /// <see cref="Answered"/>.
+    /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="abilities">What cards do.</param>
     /// <param name="step">Which step.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <returns>The question the step is waiting on, or null.</returns>
     /// <exception cref="RulesNotImplementedException">
     /// The board reached a rule this engine does not have — a minion engaged
-    /// with a player, or a villain that would attack rather than scheme.
+    /// with a player, or an attack that would defeat its target.
     /// </exception>
-    public static void Take(
+    public static Prompt? Take(
         World world, ICardFacts facts, ICardAbilities abilities,
         PhaseStep step, List<GameEvent> events)
     {
@@ -132,11 +141,34 @@ public static class VillainPhase
                 break;
 
             case Steps.EnemiesActivate:
-                PlanActivations(world, facts, step, events);
+                PlanActivations(world, facts, step);
                 break;
 
-            case Steps.Activate:
+            case Steps.Scheme:
                 Scheme(world, facts, world.Cards[step.Subject], events);
+                break;
+
+            case Steps.Attack:
+                Attack.Initiate(world, step);
+                break;
+
+            case Steps.GiveBoostCard:
+                Attack.GiveBoostCard(world, events);
+                break;
+
+            case Steps.DeclareDefender:
+                return Attack.DeclareDefender(world, facts);
+
+            case Steps.FlipBoostCards:
+                Attack.FlipBoostCards(world, facts, events);
+                break;
+
+            case Steps.DealAttackDamage:
+                Attack.DealDamage(world, facts, events);
+                break;
+
+            case Steps.EndAttack:
+                Attack.End(world, events);
                 break;
 
             case Steps.DealEncounterCards:
@@ -163,14 +195,36 @@ public static class VillainPhase
                 throw new RulesNotImplementedException(
                     $"the villain phase has no step '{step.What}'");
         }
+
+        return null;
+    }
+
+    /// <summary>Give a step the answer it stopped for.</summary>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="step">The step that asked.</param>
+    /// <param name="input">The player's answer.</param>
+    /// <param name="events">Where to record what happened.</param>
+    public static void Answered(
+        World world, ICardFacts facts, PhaseStep step, Decision input, List<GameEvent> events)
+    {
+        switch (step.What)
+        {
+            case Steps.DeclareDefender:
+                Attack.Defend(world, facts, input, events);
+                break;
+
+            default:
+                throw new RulesNotImplementedException(
+                    $"step '{step.What}' asked nothing and cannot take an answer");
+        }
     }
 
     /// <summary>
     /// Step 2, as one activation per player — <c>rr:villain-phase.step.2</c>,
     /// "in player order, each player resolves".
     /// </summary>
-    private static void PlanActivations(
-        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    private static void PlanActivations(World world, ICardFacts facts, PhaseStep step)
     {
         var villain = world.TheCardIn(DeckType.VillainArea);
         if (villain is null)
@@ -180,17 +234,6 @@ public static class VillainPhase
 
         foreach (int seat in PlayerOrder(world))
         {
-            // `rr:activation.1`: hero form and the villain attacks, alter-ego
-            // form and it schemes. Which face is showing *is* which form, so
-            // this needs no separate flag.
-            var identity = world.Seats[seat].IdentityCard;
-            if (facts.Kind(identity.FaceId) != CardKind.AlterEgo)
-            {
-                throw new RulesNotImplementedException(
-                    $"the villain would attack {world.Seats[seat].Name}, who is in hero form; "
-                    + "only the scheme half of an activation is implemented");
-            }
-
             // `rr:villain-phase.step.2.b`. A minion engaged with a player
             // activates too, and nothing on the milestone board is ever engaged.
             var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat));
@@ -201,8 +244,15 @@ public static class VillainPhase
                     + "would activate, and minion activation is not implemented");
             }
 
+            // `rr:activation.1`: hero form and the villain attacks, alter-ego
+            // form and it schemes. Which face is showing *is* which form, so
+            // this needs no separate flag.
+            var identity = world.Seats[seat].IdentityCard;
+            bool attacking = facts.Kind(identity.FaceId) != CardKind.AlterEgo;
+
             world.Agenda.Then(new PhaseStep(
-                Steps.Activate, step.Round, 2, Index: seat, Subject: villain.ObjectId));
+                attacking ? Steps.Attack : Steps.Scheme,
+                step.Round, 2, Index: seat, Subject: villain.ObjectId, Seat: seat));
         }
     }
 
@@ -324,7 +374,7 @@ public static class VillainPhase
             // its own with its own windows, in the order dealt.
             world.Agenda.Then(new PhaseStep(
                 Steps.RevealEncounterCard, step.Round, 4,
-                Index: seat, Subject: card.ObjectId));
+                Index: seat, Subject: card.ObjectId, Seat: seat));
             order += 1;
         }
 

@@ -134,6 +134,7 @@ public sealed class AffordanceTests
     [Rule("rr:first-player.3")]
     [Rule("rr:initiating-abilities.step.5")]
     [Rule("rr:end-of-player-phase.step.1")]
+    [Rule("rr:attack-enemy-activation.step.2")]
     [Fact]
     public void EveryQuestionIsOneTheRulebookAsks()
     {
@@ -144,6 +145,7 @@ public sealed class AffordanceTests
             [
                 Question.TurnOption, Question.Opportunity, Question.Element,
                 Question.Option, Question.Order, Question.Payment, Question.Discard,
+                Question.Defender,
             ],
             Enum.GetValues<Question>());
     }

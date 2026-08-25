@@ -71,6 +71,26 @@ public sealed class Card
     public bool Ready { get; private set; } = true;
 
     /// <summary>
+    /// Damage on the card. <c>rr:damage</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Not a token pool, and that is measured rather than chosen.</b> The
+    /// digest records a character's remaining <c>health</c> and no damage key
+    /// at all — <c>StateFields</c> says so in as many words — so damage is what
+    /// is subtracted from printed hit points, not something counted beside
+    /// them. Putting it in <see cref="Tokens"/> would register a key the
+    /// recorded boards do not have.
+    /// </para>
+    /// <para>
+    /// <c>rr:damage.4</c>: damage stays on a character until it is healed or
+    /// the character leaves play, which is why this is state on the card rather
+    /// than a number an attack carries.
+    /// </para>
+    /// </remarks>
+    public long Damage { get; private set; }
+
+    /// <summary>
     /// Tokens sitting on this card, by the digest's own key.
     /// </summary>
     /// <remarks>
@@ -114,6 +134,21 @@ public sealed class Card
             ? index
             : throw new ArgumentException($"card {ObjectId} has no face '{faceId}'", nameof(faceId));
     }
+
+    /// <summary>Puts damage on the card.</summary>
+    /// <remarks>
+    /// Clamped at zero for the same reason tokens are: healing more than a
+    /// character has taken leaves it undamaged rather than over-healed
+    /// (<c>rr:heal</c>).
+    /// </remarks>
+    /// <param name="amount">How much. Negative heals.</param>
+    public void TakeDamage(long amount) => Damage = Math.Max(0, Damage + amount);
+
+    /// <summary>Exhausts the card. <c>rr:exhaust-ready</c>.</summary>
+    public void Exhaust() => Ready = false;
+
+    /// <summary>Readies the card. <c>rr:exhaust-ready</c>.</summary>
+    public void Refresh() => Ready = true;
 
     /// <summary>Turns the card face up where it lies.</summary>
     /// <remarks>
