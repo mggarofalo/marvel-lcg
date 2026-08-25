@@ -97,12 +97,16 @@ public sealed class Game
     // session and drift -- see the remarks on `Affordance.Id`.
     private readonly Dictionary<(string Verb, int Anchor), int> handles = [];
     private readonly World world;
+    private readonly ICardFacts facts;
+    private readonly ICardAbilities abilities;
 
     private int nextHandle;
 
-    private Game(World world)
+    private Game(World world, ICardFacts facts, ICardAbilities abilities)
     {
         this.world = world;
+        this.facts = facts;
+        this.abilities = abilities;
         Phase = GamePhase.Mulligan;
         Active = world.FirstPlayer;
         Round = 0;
@@ -129,6 +133,12 @@ public sealed class Game
 
     /// <summary>Opens a dealt board and asks the first question.</summary>
     /// <param name="world">A world from <see cref="WorldSetup.Deal"/>.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">
+    /// What revealed cards do. Defaults to <see cref="NoCardAbilities"/>, which
+    /// is an engine with no cards ported — every villain phase then places
+    /// threat and discards correctly and no card's own text ever fires.
+    /// </param>
     /// <remarks>
     /// Setup itself is not folded — <see cref="WorldSetup"/> runs it and hands
     /// back a world. So this produces no events, and a client attaching here
@@ -137,10 +147,11 @@ public sealed class Game
     /// <c>CardsCreated</c> and two <c>AreaReordered</c>, and nothing records
     /// them today to check against.
     /// </remarks>
-    public static Game Begin(World world)
+    public static Game Begin(World world, ICardFacts facts, ICardAbilities? abilities = null)
     {
         ArgumentNullException.ThrowIfNull(world);
-        return new Game(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        return new Game(world, facts, abilities ?? new NoCardAbilities());
     }
 
     /// <summary>Applies one answer and produces the next question.</summary>
@@ -190,19 +201,18 @@ public sealed class Game
                 return new FoldResult(world, Pending, []);
 
             case GamePhase.EndPhase:
-                // The boundary. Two rules are missing and only one of them is
-                // the villain phase:
-                //
-                // The end phase itself refills the hand to hand size, and this
-                // game cannot say when. The recorded hand is already full at
-                // every step, so the trace is identical whether the refill
-                // happens before the prompt or after it, and implementing it
-                // now would pin an order nothing has checked.
-                throw new RulesNotImplementedException(
-                    "the villain phase is not implemented, and neither is the "
-                    + "hand refill that precedes it; the recorded game cannot "
-                    + "distinguish when the refill happens because the hand is "
-                    + "already full at every recorded step");
+                // The end phase refills the hand to hand size, and this game
+                // still cannot say when: the recorded hand is full at every
+                // step, so the trace is identical whether the refill happens
+                // before this prompt or after it. Left out rather than guessed.
+                Phase = GamePhase.VillainPhase;
+                var happened = VillainPhase.Run(world, facts, abilities);
+
+                Round++;
+                Phase = GamePhase.PlayerTurn;
+                Active = world.FirstPlayer;
+                Pending = TurnPrompt();
+                return new FoldResult(world, Pending, happened);
 
             default:
                 throw new RulesNotImplementedException($"the {Phase} phase is not implemented");

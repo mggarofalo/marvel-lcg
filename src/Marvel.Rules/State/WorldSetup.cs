@@ -138,6 +138,13 @@ public static class WorldSetup
             var scheme = mainSchemeDeck.Cards[0];
             World.MoveToTop(scheme, mainSchemeArea);
             scheme.TurnTo(scheme.Faces[^1]);
+
+            // Starting threat is placed once, on entry. Every scheme on a
+            // recorded opening board starts at zero, so this is invisible until
+            // a scenario that does not appears -- which is the reason to place
+            // it rather than to leave the field derived from print.
+            scheme.PlaceTokens("k_threat",
+                facts.PrintedValue(scheme.FaceId, "StartingThreat", players));
         }
 
         // 5. The first villain stage enters play; the later stages wait.

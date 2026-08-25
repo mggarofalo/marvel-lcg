@@ -213,6 +213,9 @@ public sealed class CardCatalog : ICardFacts
         "Treachery" => CardKind.Treachery,
         "Minion" => CardKind.Minion,
         "MainScheme" => CardKind.MainScheme,
+        // Engine-only. Tough, stunned and confused are cards, made mid-game
+        // and attached to whoever gained the status.
+        "Status" => CardKind.Status,
         "Villain" => CardKind.EncounterVillain,
         "SideScheme" => CardKind.EncounterSideScheme,
         _ => CardKind.Unknown,

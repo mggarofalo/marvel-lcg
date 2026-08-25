@@ -72,7 +72,13 @@ public sealed class World
     public IReadOnlyList<GameArea> GameAreas => gameAreas;
 
     /// <summary>The seat holding the first player token.</summary>
-    public int FirstPlayer { get; internal set; }
+    /// <remarks>
+    /// Passed clockwise at the end of every villain phase
+    /// (<c>rr:villain-phase.5</c>). It reaches the digest as
+    /// <c>k_first_player_token</c> on that seat's identity, so moving it is a
+    /// board change even though no card moves.
+    /// </remarks>
+    public int FirstPlayer { get; set; }
 
     /// <summary>Makes an empty game area.</summary>
     /// <remarks>
@@ -175,6 +181,56 @@ public sealed class World
         return seat;
     }
 
+    /// <summary>Finds the area matching a place, making it if there is none.</summary>
+    /// <remarks>
+    /// <para>
+    /// Areas appear during a game — an encounter discard pile the first time
+    /// something is discarded, a status area the first time a card gains a
+    /// status — so the fold needs to name a place before it necessarily exists.
+    /// </para>
+    /// <para>
+    /// Safe to find-or-create because an area's identity is not on the wire:
+    /// the digest records a card's <i>zone name</i>, index and host, none of
+    /// which move when an area is made earlier or later. <c>AreaRef.Id</c> does
+    /// carry it, and an event stream built across a session where an area was
+    /// created at a different moment would number them differently — which is
+    /// the same session-scoped-handle rule that governs affordance ids.
+    /// </para>
+    /// </remarks>
+    /// <param name="type">What kind of place it is.</param>
+    /// <param name="playArea">Which play area it sits in. Defaults to the villain's.</param>
+    /// <param name="host">The card it hangs off, or -1.</param>
+    /// <param name="cardOwner">Who a card made here belongs to, or -1.</param>
+    public Area AreaOf(
+        DeckType type, PlayArea? playArea = null, int host = -1, int cardOwner = Scenario)
+    {
+        var where = playArea ?? PlayArea.Villains;
+        foreach (var area in areas)
+        {
+            if (area.Type == type && area.PlayArea == where && area.Host == host)
+            {
+                return area;
+            }
+        }
+
+        return CreateArea(type, cardOwner, where, host);
+    }
+
+    /// <summary>The one card in an area of this type, or null.</summary>
+    /// <param name="type">What kind of place to look in.</param>
+    public Card? TheCardIn(DeckType type)
+    {
+        foreach (var area in areas)
+        {
+            if (area.Type == type && area.Cards.Count > 0)
+            {
+                return area.Cards[0];
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>Makes an area.</summary>
     /// <param name="type">What kind of place it is.</param>
     /// <param name="cardOwner">Who a card made here belongs to, or -1 for the scenario.</param>
@@ -252,7 +308,7 @@ public sealed class World
                 ? found
                 : (card.Area.Type + "/absent", -1);
 
-            bool inPlay = IsInPlay(card.Area.Type);
+            bool inPlay = DeckTypes.IsInPlay(card.Area.Type);
             records.Add(new CardRecord(
                 Id: card.ObjectId,
                 Card: card.FaceId,
@@ -262,17 +318,11 @@ public sealed class World
                 Host: card.Area.Host,
                 FaceUp: card.FaceUp,
                 Fields: StateFields.For(
-                    card, facts, Players, inPlay,
+                    card, facts, Players, inPlay, card.HasRegisteredTokens,
                     hasFirstPlayerToken: card.Owner == FirstPlayer
                                          && card.Area.Type == DeckType.HeroArea)));
         }
 
         return new StateDigest(records);
     }
-
-    private static bool IsInPlay(DeckType type) => type is
-        DeckType.UpgradesArea or DeckType.AlliesArea or DeckType.SupportsArea or
-        DeckType.EngagedEnemiesArea or DeckType.HeroArea or DeckType.ObligationsArea or
-        DeckType.MainSchemesArea or DeckType.SideSchemesArea or DeckType.VillainArea or
-        DeckType.EnvironmentArea or DeckType.EvidenceArea or DeckType.RuleArea;
 }

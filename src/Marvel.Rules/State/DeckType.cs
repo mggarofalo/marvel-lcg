@@ -100,4 +100,37 @@ public static class DeckTypes
     /// <param name="type">The kind of place.</param>
     public static bool FaceDownOnEntry(DeckType type) =>
         type == DeckType.HandsArea || (Decks.Contains(type) && !FaceUpFlagged.Contains(type));
+    /// <summary>Whether a card in this kind of place is <i>in play</i>.</summary>
+    /// <remarks>
+    /// <c>rr:in-play-and-out-of-play</c>. Read off the recorded milestone board
+    /// rather than from <c>DeckTypeFlags</c>, which answers a different
+    /// question.
+    /// </remarks>
+    /// <param name="type">The kind of place.</param>
+    public static bool IsInPlay(DeckType type) => type is
+        DeckType.UpgradesArea or DeckType.AlliesArea or DeckType.SupportsArea or
+        DeckType.EngagedEnemiesArea or DeckType.HeroArea or DeckType.ObligationsArea or
+        DeckType.MainSchemesArea or DeckType.SideSchemesArea or DeckType.VillainArea or
+        DeckType.EnvironmentArea or DeckType.EvidenceArea or DeckType.RuleArea;
+
+    /// <summary>Whether a card in this kind of place registers its token pools.</summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Not the same question as <see cref="IsInPlay"/>, and the recording
+    /// forces them apart.</b> Both treacheries in the first villain phase come
+    /// out of the encounter deck with no <c>k_threat</c> key and end in the
+    /// discard pile with one — and neither ever reaches an in-play zone. The
+    /// boost card goes through <c>BoostingArea</c> and the encounter card
+    /// through <c>RevealingArea</c>.
+    /// </para>
+    /// <para>
+    /// The two also rule out the tempting alternative, that <i>being revealed</i>
+    /// is what registers the pool: the engine's log never says the boost card
+    /// was revealed, and it gets a pool anyway. What the two have in common is
+    /// the place they passed through.
+    /// </para>
+    /// </remarks>
+    /// <param name="type">The kind of place.</param>
+    public static bool GrantsTokenPool(DeckType type) =>
+        IsInPlay(type) || type is DeckType.BoostingArea or DeckType.RevealingArea;
 }

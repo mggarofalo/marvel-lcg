@@ -11,9 +11,19 @@ namespace Marvel.Rules.Fold;
 /// is not written yet" from "somebody left a stub in".
 /// </para>
 /// <para>
-/// <b>Thrown before anything is applied.</b> A caller that catches this still
-/// holds a world in the state it was in before the fold, so the boundary is a
-/// place the engine stops rather than a place it half-finishes.
+/// <b>Where it is thrown from decides what the caller still holds, and the two
+/// cases are different.</b> A decision the fold refuses — taking an affordance
+/// rather than declining one — is refused before the world is touched, so the
+/// caller keeps the board they had. A rule reached <i>part-way through</i> a
+/// phase cannot promise that: the villain phase places threat and discards a
+/// boost card before it ever reveals the card it cannot resolve, and unwinding
+/// that would need a snapshot.
+/// </para>
+/// <para>
+/// So treat the world as <b>unusable</b> after catching one from inside a
+/// phase. Re-folding from a snapshot plus inputs is how the engine recovers
+/// anyway (<c>docs/presentation-layer.md</c>), which is why this is a
+/// documented property rather than a transaction.
 /// </para>
 /// </remarks>
 public sealed class RulesNotImplementedException : Exception

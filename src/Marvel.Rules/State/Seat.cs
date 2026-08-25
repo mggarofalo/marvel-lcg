@@ -63,5 +63,12 @@ public sealed class Seat
     public Area Hero { get; }
 
     /// <summary>The identity card, once the deal has made it.</summary>
-    public Card IdentityCard { get; internal set; } = null!;
+    /// <remarks>
+    /// Settable because a seat's identity is established by whoever builds the
+    /// board, and <c>WorldSetup</c> is not the only thing that does: a test
+    /// board assembled by hand has to say which card is whose. It is not a
+    /// thing the rules change — a hero flips form, and flipping is a face
+    /// change on this same card.
+    /// </remarks>
+    public Card IdentityCard { get; set; } = null!;
 }

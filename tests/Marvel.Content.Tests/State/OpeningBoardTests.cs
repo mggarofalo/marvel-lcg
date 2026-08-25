@@ -68,7 +68,7 @@ public sealed class OpeningBoardTests
 
         if (recorded != dealt)
         {
-            Assert.Fail(FirstDifference(recorded, dealt));
+            Assert.Fail(DigestDiff.Describe(recorded, dealt));
         }
     }
 
@@ -109,32 +109,5 @@ public sealed class OpeningBoardTests
         }
 
         return cards;
-    }
-
-    // The digest exists so a divergence names a card and a field. Printing two
-    // 11 KB strings would throw that away at the moment it is most needed.
-    private static string FirstDifference(string recorded, string dealt)
-    {
-        using var expected = JsonDocument.Parse(recorded);
-        using var actual = JsonDocument.Parse(dealt);
-        var left = expected.RootElement.GetProperty("cards").EnumerateArray().ToList();
-        var right = actual.RootElement.GetProperty("cards").EnumerateArray().ToList();
-
-        if (left.Count != right.Count)
-        {
-            return $"the recording has {left.Count} cards, the dealt board has {right.Count}";
-        }
-
-        for (int index = 0; index < left.Count; index++)
-        {
-            string a = left[index].GetRawText();
-            string b = right[index].GetRawText();
-            if (a != b)
-            {
-                return $"card {index} differs\n  recorded {a}\n  dealt    {b}";
-            }
-        }
-
-        return "the card arrays agree; the difference is elsewhere in the document";
     }
 }
