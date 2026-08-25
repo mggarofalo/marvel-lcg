@@ -18,6 +18,7 @@ from typing import Dict, List
 # Ordered by how much they should worry a spec author, most first.
 KINDS = (
     "engine_text_diverges",
+    "engine_traits_diverge",
     "engine_text_missing",
     "engine_text_corrupt",
     "engine_markup_escaped",
@@ -39,6 +40,11 @@ DESCRIPTIONS: Dict[str, str] = {
         "The engine's card text says something different from the printed text, "
         "after formatting is normalised away. Author the spec from the printed "
         "text; the difference is either an engine bug or a stale transcription.",
+    "engine_traits_diverge":
+        "The engine's trait list says something different from the printed "
+        "traits, after spelling is normalised away. The digest is built from "
+        "the engine's list, so this is what a port must reproduce -- and where "
+        "the two disagree, one of them is wrong about the card.",
     "engine_text_missing":
         "The card has printed text but the engine stores none for it.",
     "engine_text_corrupt":

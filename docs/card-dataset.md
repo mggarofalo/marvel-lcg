@@ -128,6 +128,9 @@ Every record has every field; absence is a value, never a missing key.
   // engine has never heard of this card.
   "engine": {
     "pack": "core", "set_name": "Spider-Man", "type": "Ally",
+    // The engine's own trait list. NOT the printed `traits` above, and the
+    // list the state digest is built from. See "Two trait lists" below.
+    "traits": ["HERO FOR HIRE"],
     "attributes": {"Cost": "2", "HP": "2", "ATK": "1", "THW": "1*", "RES": "Y", "Class": "Hero"},
     "text": "<b>Forced Response</b>: After you play Black Cat, discard ...",
     "text_comparison": "exact",
@@ -168,6 +171,37 @@ Notes on the fields that are easy to misread:
   printed. Upstream stores the trait line as one string, `"Location.
   S.H.I.E.L.D."`, and the separator is a period *and a space* — splitting on
   every period shredded both acronyms into single letters until MARVEL-85.
+
+### Two trait lists, and the digest is built from the second one
+
+`traits` is MarvelSDB's printed spelling. `engine.traits` is the Python
+engine's own list. **They are different lists, and a port must read the
+second.** `CardFace.GetInfoTraits` keys every `t_` field in the state digest
+from `engine.traits`, so that is what byte equality is measured against.
+
+The spelling differs and is derivable — the engine stores `HERO FOR HIRE` where
+MarvelSDB prints `Hero for Hire`, and `S.H.I.E.L.D` where MarvelSDB prints
+`S.H.I.E.L.D.`. The digest key is then
+`trait.replace(' ', '_').replace('!', '')` and nothing else, because the
+engine's traits are already upper-case and already carry no trailing stop.
+
+**The `!` is not cosmetic.** Two traits carry one — `CHASE!` and `TRAP!`, on
+five cards (`27102a`, `27102b`, `47031`, `47032`, `47033`). The digest key is
+`t_TRAP`. A port deriving keys from the printed traits emits `t_TRAP!` and
+fails the byte comparison on every step one of those cards is in play.
+
+**The contents differ too, and that is not derivable.** Compared across the
+3,999 cards both sources have, they disagree about the card itself on
+**twelve** — reported as `engine_traits_diverge` and enumerated in
+`anomalies.json`. Seven are traits the engine has and the printed card does not
+(`01172` Whiplash is `CRIMINAL` to the engine and untraited in print), two are
+the other way round (`42016` Taunt is `TACTIC` in print and untraited to the
+engine), and three disagree outright — including `39029`, where the engine
+spells the trait **`THESPYAN`**.
+
+Twelve is small, and it was filed as 142. The original measurement compared the
+raw lists, which counts `Vehicle` against `VEHICLE` as a disagreement; 2,489 of
+3,999 differ that way and none of those is a defect. See MARVEL-177.
 - **`player_choice_calls` and `player_choice_helpers` answer the same question
   with different evidence.** The first is the set of prompt APIs the script
   itself names. The second is the `game/operate/` helpers it calls that reach a
@@ -259,6 +293,7 @@ anything.
 |---|---:|---|
 | `card_not_implemented` | 549 | MarvelSDB has the card, no engine script implements it |
 | `engine_text_diverges` | 197 | engine text says something different from the printed text |
+| `engine_traits_diverge` | 12 | engine trait list says something different from the printed traits |
 | `engine_text_missing` | 81 | printed text exists, the engine stores none |
 | `card_not_in_marvelsdb` | 46 | engine-only: internals, status tokens, the fan-made challenges |
 | `no_text_anywhere` | 43 | neither source has text and nothing implements it |
@@ -270,7 +305,10 @@ anything.
 | `upstream_text_key_typo` | 1 | card 28022 spells its text `scheme text` upstream |
 
 The `engine_*` kinds are the ones that change how you work: **314 cards**
-(197 + 81 + 36) have engine text you must not author from. The four unclaimed
+(197 + 81 + 36) have engine text you must not author from. The twelve
+`engine_traits_diverge` cards are a different warning — there the engine is
+*authoritative*, because the digest is built from its list, and the printed
+card is the thing that disagrees. The four unclaimed
 scripts are expected — `endless/endless.py`, two `campaign.py` modules and one
 disabled variant are engine code that happens to live under `cards/pack/`.
 

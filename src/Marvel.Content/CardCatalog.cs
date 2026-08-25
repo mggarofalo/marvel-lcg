@@ -15,10 +15,9 @@ namespace Marvel.Content;
 /// this file exists.
 /// </para>
 /// <para>
-/// <b>Traits are derived, not read.</b> The dataset carries MarvelSDB's printed
-/// spelling — <c>Hero for Hire</c>, <c>S.H.I.E.L.D.</c> — while the digest keys
-/// them as <c>t_HERO_FOR_HIRE</c> and <c>t_S.H.I.E.L.D</c>. See
-/// <see cref="TraitKey"/> for the transformation and for what it cannot fix.
+/// <b>Traits are read from the engine's list, not derived from the printed
+/// one.</b> They are two different lists and the digest is built from the
+/// engine's — see <see cref="TraitKey"/> and <c>docs/card-dataset.md</c>.
 /// </para>
 /// </remarks>
 public sealed class CardCatalog : ICardFacts
@@ -74,32 +73,42 @@ public sealed class CardCatalog : ICardFacts
     }
 
     /// <summary>
-    /// The digest's spelling of a printed trait, without the <c>t_</c> prefix.
+    /// The digest's spelling of an engine trait, without the <c>t_</c> prefix.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Upper-case, trailing full stop dropped, spaces to underscores:
-    /// <c>Hero for Hire</c> becomes <c>HERO_FOR_HIRE</c> and
-    /// <c>S.H.I.E.L.D.</c> becomes <c>S.H.I.E.L.D</c>. Reproduces every
-    /// <c>t_</c> key on the milestone board.
+    /// <c>CardFace.GetInfoTraits</c> builds every key as
+    /// <c>f"t_{trait.replace(' ', '_').replace('!', '')}"</c> over the engine's
+    /// own trait list, so this is those two substitutions and nothing else. The
+    /// engine's traits are already upper-case and already carry no trailing
+    /// stop — <c>A.I.M</c> and <c>S.H.I.E.L.D</c> are stored that way.
     /// </para>
     /// <para>
-    /// <b>What it cannot fix.</b> Derivation is not the same as having the
-    /// engine's list. Compared across 3,999 cards the printed traits and the
-    /// Python engine's own trait lists disagree outright on <b>142</b> — the
-    /// engine gives <c>01172</c> the <c>CRIMINAL</c> trait and the printed card
-    /// has none; <c>02033</c> is the other way round. None of the 142 is on the
-    /// milestone board, so this is a gap and not yet a failure, and it will
-    /// surface the moment a corpus replay reaches one of them. The fix is for
-    /// the card dataset to carry the engine's trait list beside the printed one,
-    /// which is a change to <c>datasets/cards/</c> and belongs in its own issue.
+    /// <b>Two traits carry the <c>!</c>:</b> <c>CHASE!</c> and <c>TRAP!</c>, on
+    /// five cards between them (<c>27102a</c>, <c>27102b</c>, <c>47031</c>,
+    /// <c>47032</c>, <c>47033</c>). Dropping it is not cosmetic — the digest key
+    /// is <c>t_TRAP</c>, and a port that kept the <c>!</c> would emit
+    /// <c>t_TRAP!</c> and fail the byte comparison on every step those cards are
+    /// in play.
+    /// </para>
+    /// <para>
+    /// <b>This is not the printed spelling, and the difference is not only
+    /// spelling.</b> MARVEL-177 measured the two lists across 3,999 cards:
+    /// they disagree about the card itself on <b>twelve</b> — the engine gives
+    /// <c>01172</c> the <c>CRIMINAL</c> trait and the printed card has none;
+    /// <c>42016</c> is the other way round; <c>39029</c> is an engine typo,
+    /// <c>THESPYAN</c> for <c>THESPIAN</c>. They are reported as
+    /// <c>engine_traits_diverge</c> in <c>datasets/cards/anomalies.json</c>.
+    /// Reading the engine's list is what makes the twelve visible data rather
+    /// than a silent divergence.
     /// </para>
     /// </remarks>
-    /// <param name="printedTrait">The trait as MarvelSDB prints it.</param>
-    public static string TraitKey(string printedTrait)
+    /// <param name="engineTrait">The trait as the engine's data stores it.</param>
+    public static string TraitKey(string engineTrait)
     {
-        ArgumentNullException.ThrowIfNull(printedTrait);
-        return printedTrait.ToUpperInvariant().TrimEnd('.').Replace(' ', '_');
+        ArgumentNullException.ThrowIfNull(engineTrait);
+        return engineTrait.Replace(" ", "_", StringComparison.Ordinal)
+                          .Replace("!", string.Empty, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -145,25 +154,28 @@ public sealed class CardCatalog : ICardFacts
 
     private static Entry ReadEntry(JsonElement element)
     {
+        // Deliberately not the top-level `traits`, which is MarvelSDB's
+        // printed list. A card the engine does not have gets none, which is
+        // right: the engine cannot put a card it has never heard of into a
+        // digest.
         var traits = new List<string>();
-        if (element.TryGetProperty("traits", out var printed)
-            && printed.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var trait in printed.EnumerateArray())
-            {
-                string? text = trait.GetString();
-                if (!string.IsNullOrEmpty(text))
-                {
-                    traits.Add(TraitKey(text));
-                }
-            }
-        }
-
         var attributes = new Dictionary<string, string>(StringComparer.Ordinal);
         var kind = CardKind.Unknown;
         if (element.TryGetProperty("engine", out var engine)
             && engine.ValueKind == JsonValueKind.Object)
         {
+            if (engine.TryGetProperty("traits", out var engineTraits)
+                && engineTraits.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var trait in engineTraits.EnumerateArray())
+                {
+                    if (trait.GetString() is { Length: > 0 } text)
+                    {
+                        traits.Add(TraitKey(text));
+                    }
+                }
+            }
+
             if (engine.TryGetProperty("type", out var type) && type.GetString() is string name)
             {
                 kind = ToKind(name);

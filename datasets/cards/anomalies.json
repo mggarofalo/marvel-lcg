@@ -2,6 +2,7 @@
   "dataset_version": 1,
   "counts": {
     "engine_text_diverges": 197,
+    "engine_traits_diverge": 12,
     "engine_text_missing": 81,
     "engine_text_corrupt": 36,
     "engine_markup_escaped": 5,
@@ -810,6 +811,61 @@
         {
           "id": "56177",
           "detail": "Venom Blast"
+        }
+      ]
+    },
+    {
+      "kind": "engine_traits_diverge",
+      "description": "The engine's trait list says something different from the printed traits, after spelling is normalised away. The digest is built from the engine's list, so this is what a port must reproduce -- and where the two disagree, one of them is wrong about the card.",
+      "count": 12,
+      "cards": [
+        {
+          "id": "01172",
+          "detail": "Whiplash: printed [] vs engine ['CRIMINAL']"
+        },
+        {
+          "id": "07006",
+          "detail": "Magic Crowbar: printed [] vs engine ['WEAPON']"
+        },
+        {
+          "id": "07007",
+          "detail": "Wrecker's Command: printed [] vs engine ['CONDITION']"
+        },
+        {
+          "id": "12027",
+          "detail": "Yellowjacket: printed [] vs engine ['CRIMINAL']"
+        },
+        {
+          "id": "12028",
+          "detail": "Size Increase: printed [] vs engine ['CONDITION']"
+        },
+        {
+          "id": "18027",
+          "detail": "In a Bind: printed [] vs engine ['ARMOR', 'TECH']"
+        },
+        {
+          "id": "25032",
+          "detail": "Seduced: printed [] vs engine ['CONDITION']"
+        },
+        {
+          "id": "39029",
+          "detail": "Supporting Actor: printed ['ROBOT', 'THESPIAN'] vs engine ['ROBOT', 'THESPYAN']"
+        },
+        {
+          "id": "39056",
+          "detail": "Magneto 2.6: printed ['ELITE', 'PROGRAM'] vs engine ['PROGRAM']"
+        },
+        {
+          "id": "42016",
+          "detail": "Taunt: printed ['TACTIC'] vs engine []"
+        },
+        {
+          "id": "50180",
+          "detail": "Disavowed: printed ['S.H.I.E.L.D'] vs engine []"
+        },
+        {
+          "id": "51040",
+          "detail": "Energy Truncheon: printed ['TECH', 'WEAPON'] vs engine ['ELITE', 'THUNDERBOLT']"
         }
       ]
     },
