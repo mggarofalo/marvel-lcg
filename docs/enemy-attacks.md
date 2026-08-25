@@ -1,13 +1,16 @@
 # Enemy attacks, and cards waiting in windows
 
-`src/Marvel.Rules/Play/Attack.cs`, `src/Marvel.Content/Cards/CoreSetAbilities.cs`.
+`src/Marvel.Rules/Play/Attack.cs`, `src/Marvel.Cards/`,
+`datasets/abilities/abilities.json`.
 
 The timing spine in [timing.md](timing.md) was built and cited before anything
-used it, and until now nothing did: `CoreSetAbilities.Waiting` returned an empty
-list and said so in as many words. This is what makes it load-bearing.
+used it, and until now nothing did: no card the engine had could wait in a
+window. This is what makes it load-bearing.
 
-**Three ported cards now act through it**, and two of them wait in the same
-window.
+**Three authored cards now act through it**, and two of them wait in the same
+window. None of them is code: each is a row in
+`datasets/abilities/abilities.json`, run by the interpreter in
+[card-dsl.md](card-dsl.md).
 
 | card | ability | tier |
 |---|---|---|
@@ -84,6 +87,20 @@ that is being modified."*
 
 ## What Charge actually is
 
+Data, first of all — this, in the ability dataset:
+
+```json
+{ "name": "Charge",
+  "trigger": { "event": "WhenEnemyAttacks",
+               "timing": "ForcedInterrupt", "subject": "attachedTo" },
+  "effect": { "seq": [
+    { "grantUntil": { "keyword": "overkill", "card": "trigger.subject",
+                      "until": "EndOfAttack" } },
+    { "delayUntil": { "condition": "WhenAttackEnds",
+                      "effect": { "discard": "this" } } } ] } }
+```
+
+
 The star on Charge is in its **ATK field**, not its boost field, and
 `rr:star-icon.2` says what that means: a reminder *"to check that attachment's
 text box whenever the attached enemy uses the value that field is modifying to
@@ -140,11 +157,14 @@ a measurement gap, not a guess to be filled in — see
 ## Reproducing
 
 ```bash
-# the real Rhino board: two ported cards in one window
+# the real Rhino board: two authored cards in one window
 dotnet test tests/Marvel.Content.Tests --filter CardsInWindowsTests
 
 # the six steps, separated from each other on synthetic boards
 dotnet test tests/Marvel.Rules.Tests --filter AttackTests
+
+# the dataset held against the engine it is written for
+dotnet test tests/Marvel.Content.Tests --filter AbilityDataTests
 ```
 
 Every claim here rests on a citation and a hand-built board, because the

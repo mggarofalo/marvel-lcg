@@ -1,4 +1,5 @@
-using Marvel.Content.Cards;
+using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
 using Marvel.Content.Setup;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -16,8 +17,9 @@ namespace Marvel.Content.Tests.Play;
 /// <remarks>
 /// <para>
 /// The timing spine was built and cited before anything used it, and until now
-/// nothing did: <c>CoreSetAbilities.Waiting</c> returned an empty list and said
-/// so in as many words. These are the tests that make it load-bearing.
+/// nothing did: the engine had no card whose ability could wait in one. These
+/// are the tests that make it load-bearing — and every card in them is a row in
+/// <c>datasets/abilities/abilities.json</c> rather than a line of C#.
 /// </para>
 /// <para>
 /// <b>Two cards, one window, and that is the point.</b> Rhino attacking is a
@@ -109,8 +111,8 @@ public sealed class CardsInWindowsTests
         // Two seats, because at one the question does not arise: every attack
         // is against you when you are the only player there is.
         var world = Deal("spider_man", "she_hulk");
-        var abilities = new CoreSetAbilities();
-        world.Seats[0].IdentityCard.TurnTo(CoreSetAbilities.SpiderMan);
+        var abilities = AuthoredCards.Runner();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
         int rhino = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
 
         var mine = new Occurrence(1, [Steps.EnemyAttacks], Subject: rhino, Player: 0);
@@ -161,7 +163,7 @@ public sealed class CardsInWindowsTests
         // there is still hosted and still does nothing.
         var (world, abilities, _) = Attacking();
         var rhino = world.TheCardIn(DeckType.VillainArea)!;
-        var spare = world.Cards.Last(card => card.FaceId == CoreSetAbilities.Charge);
+        var spare = world.Cards.Last(card => card.FaceId == AuthoredCards.Charge);
         World.MoveToTop(
             spare,
             world.AreaOf(DeckType.StatusArea, rhino.Area.PlayArea, rhino.ObjectId));
@@ -319,7 +321,7 @@ public sealed class CardsInWindowsTests
     }
 
     /// <summary>A board part-way through being set up for an attack.</summary>
-    private sealed record Board(World World, CoreSetAbilities Abilities, Card Charge);
+    private sealed record Board(World World, AbilityRunner Abilities, Card Charge);
 
     /// <summary>A dealt board with Rhino about to attack a hero-form Spider-Man.</summary>
     private static Board Attacking()
@@ -355,17 +357,17 @@ public sealed class CardsInWindowsTests
     /// <summary>Hero form, and Charge in play.</summary>
     private static Board Prepare(World world)
     {
-        var abilities = new CoreSetAbilities();
+        var abilities = AuthoredCards.Runner();
 
         // `rr:activation.1` -- the villain attacks an identity in hero form and
         // schemes against one in alter-ego form. Turning the card is the whole
         // of changing form; there is no separate flag.
-        world.Seats[0].IdentityCard.TurnTo(CoreSetAbilities.SpiderMan);
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
 
         // Put into play by the card's own ported text, "Attach to Rhino",
         // rather than by placing it on the table here. The Rhino set holds more
         // than one copy, so this is the first of them and not the only one.
-        var charge = world.Cards.First(card => card.FaceId == CoreSetAbilities.Charge);
+        var charge = world.Cards.First(card => card.FaceId == AuthoredCards.Charge);
         abilities.WhenRevealed(world, charge, 0);
 
         return new Board(world, abilities, charge);

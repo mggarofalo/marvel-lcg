@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Marvel.Content.Cards;
+using Marvel.Content.Tests.Cards;
 using Marvel.Content.Setup;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -66,7 +66,7 @@ public sealed class PlayerPhaseTests
             [.. Heroes.Select(hero => Setup.Hero(hero).Name)],
             Seed),
         Cards,
-        new CoreSetAbilities());
+        AuthoredCards.Runner());
 
     [Fact]
     public void TheFirstThreeRecordedBoardsAreProducedByFolding()
@@ -353,9 +353,9 @@ public sealed class PlayerPhaseTests
         Assert.True(Statuses.Has(game.State, villain, Statuses.Tough));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => new CoreSetAbilities().WhenRevealed(
+            () => AuthoredCards.Runner().WhenRevealed(
                 game.State,
-                game.State.Cards.First(card => card.FaceId == CoreSetAbilities.ImTough),
+                game.State.Cards.First(card => card.FaceId == AuthoredCards.ImTough),
                 0));
         Assert.Contains("surge", thrown.Message, StringComparison.OrdinalIgnoreCase);
     }

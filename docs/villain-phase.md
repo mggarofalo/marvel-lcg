@@ -29,11 +29,12 @@ be argued against the published text:
 Step 4 asks a revealed card what it does; the window around an activation asks
 the board what is waiting in it. Everything else — the threat, the
 scheme-versus-attack choice, the boost card, the discard — is the Rules
-Reference, and `ICardAbilities` is the one way a card's own behaviour enters. That
-is what makes the interpreter a drop-in later rather than a rewrite:
-`docs/card-dsl.md` designs it and opens with "nothing here is implemented", so
-until it exists `Marvel.Content.Cards.CoreSetAbilities` holds **three cards**,
-and the rule is to add one only when a step some test reaches actually needs it.
+Reference, and `ICardAbilities` is the one way a card's own behaviour enters.
+
+Behind that seam there is no code per card. A card is a row in
+`datasets/abilities/abilities.json` and `src/Marvel.Cards` runs it —
+[card-dsl.md](card-dsl.md). There were three rows when this was written, and the
+rule is to add one only when something a test reaches actually needs it.
 
 Whether the villain schemes or attacks is `rr:activation.1`: hero form and it
 attacks, alter-ego form and it schemes. Which face is showing *is* which form,

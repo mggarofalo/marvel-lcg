@@ -72,36 +72,6 @@ public static class DelayedEffects
                 $"a delayed effect due at '{condition}' would discard a card it does not name");
         }
 
-        var card = world.Cards[id];
-
-        // `rr:discard.1` -- an encounter card goes to the encounter discard
-        // pile and a player card to its owner's. An attachment on the villain
-        // is the scenario's, which is what owner -1 says.
-        var discard = card.Owner < 0
-            ? world.AreaOf(DeckType.EncounterDiscardPile)
-            : world.AreaOf(DeckType.DiscardPile, PlayArea.Of(card.Owner), cardOwner: card.Owner);
-
-        var from = card.Area;
-        int host = from.Host;
-        World.MoveToTop(card, discard);
-
-        events.Add(new CardsMoved(
-            Places.Reference(from),
-            Places.Reference(discard),
-            [new Landing(card.ObjectId, discard.Cards.Count - 1)])
-        {
-            Trigger = condition, Verb = "Discard",
-        });
-
-        if (host >= 0)
-        {
-            // `rr:attachment.4` -- an attachment that leaves play stops being
-            // attached, and a client that drew it hanging off the villain has
-            // to be told to take it away.
-            events.Add(new CardDetached(card.ObjectId, host)
-            {
-                Trigger = condition, Verb = "Discard",
-            });
-        }
+        Play.Discard.Card(world, world.Cards[id], condition, events);
     }
 }

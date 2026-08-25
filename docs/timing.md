@@ -377,9 +377,12 @@ an empty window does.
   written because Charge needs it. The vocabulary beyond that is
   `docs/card-dsl.md`'s business.
 - **Three cards register continuous effects, and no more.** The list is real —
-  Charge grants overkill, boost icons raise an enemy's ATK — but it is three
-  cards' worth, because no card ability is data yet.
+  Charge grants overkill, boost icons raise an enemy's ATK — but three authored
+  cards is the whole card pool. Growing it is adding rows to
+  `datasets/abilities/abilities.json` and, where a row names a node nothing has,
+  one case in the interpreter.
 
-What this **does** do now is [enemy-attacks.md](enemy-attacks.md): two ported
+What this **does** do now is [enemy-attacks.md](enemy-attacks.md): two authored
 cards waiting in one window on the real Rhino board, one forced and one
-optional, and the lasting and delayed effects the forced one creates.
+optional, and the lasting and delayed effects the forced one creates. Neither is
+code — see [card-dsl.md](card-dsl.md).

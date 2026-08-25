@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Marvel.Core/Marvel.Core.csproj" />
     <Project Path="src/Marvel.Rules/Marvel.Rules.csproj" />
+    <Project Path="src/Marvel.Cards/Marvel.Cards.csproj" />
     <Project Path="src/Marvel.Content/Marvel.Content.csproj" />
   </Folder>
   <Folder Name="/tests/">

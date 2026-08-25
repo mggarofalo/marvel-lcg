@@ -167,6 +167,12 @@ The label stays exactly as MARVEL-41 requires, so the spec suite is unaffected.
 `AnchorId` and `Legality` are additions, and both are derivable from the ability
 envelope that card-dsl.md already describes as declarative.
 
+`Marvel.Cards` is one project rather than the two below it, and that is a
+deliberate deviation with an expiry: the split is between a *reader* and a
+*runner*, and what would justify it — a validator and a text renderer — does not
+exist. The namespaces are already `Dsl` and `Run`, so splitting them is moving
+files. See [card-dsl.md](card-dsl.md), "What is implemented".
+
 ### One rule to protect the DSL
 
 Keep animation and pacing metadata out of the card DSL.
@@ -183,8 +189,9 @@ in different clothes.
 src/
   Marvel.Core          ids, seeded MT19937, digest v2, canonical JSON writer
   Marvel.Rules         the engine: state, zones, phases, timing, events. No cards.
-  Marvel.Cards.Dsl     node types, polymorphic deserialiser, validator, text renderer
-  Marvel.Cards.Interp  nodes to transitions; emits events as a byproduct
+  Marvel.Cards         node types, deserialiser, interpreter  [exists, as one project]
+  Marvel.Cards.Dsl     ... to split out when there is a validator and a text renderer
+  Marvel.Cards.Interp  ... to split out with it
   Marvel.Content       card data, scenario setup format, the compiled first-party set
   Marvel.Sim           headless: bots, policies, corpus replay, spec host, CLI driver
   Marvel.View          engine-agnostic view model: affordances, event-to-beat mapping

@@ -261,6 +261,9 @@ public static class Steps
     /// <summary>"When an attack ends" — <c>rr:attack-enemy-activation.step.6</c>.</summary>
     public const string AttackEnds = "WhenAttackEnds";
 
+    /// <summary>"When a card is revealed" — <c>rr:reveal</c>.</summary>
+    public const string CardRevealed = "WhenCardRevealed";
+
     private static readonly Dictionary<string, string[]> Conditions = new(StringComparer.Ordinal)
     {
         [PlaceThreat] = ["WhenThreatPlaced"],
@@ -278,7 +281,7 @@ public static class Steps
         [DealAttackDamage] = ["WhenDamageDealt"],
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
-        [RevealEncounterCard] = ["WhenCardRevealed"],
+        [RevealEncounterCard] = [CardRevealed],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 
         // Two conditions at one moment, because `rr:villain-phase.step.6` is
@@ -293,4 +296,17 @@ public static class Steps
     /// <param name="what">One of the step names here.</param>
     public static IReadOnlyList<string> ConditionsOf(string what) =>
         Conditions.TryGetValue(what, out var conditions) ? conditions : [what];
+
+    /// <summary>
+    /// Every triggering condition any step in this engine produces.
+    /// </summary>
+    /// <remarks>
+    /// Derived from the table above rather than listed again, so that it cannot
+    /// fall behind it. What it is for: an authored card names the condition it
+    /// answers, and a card naming one nothing ever produces would sit in the
+    /// dataset looking implemented and never fire. Holding the two sets against
+    /// each other turns that into a failing test.
+    /// </remarks>
+    public static IReadOnlySet<string> EveryCondition { get; } =
+        new HashSet<string>(Conditions.Values.SelectMany(each => each), StringComparer.Ordinal);
 }

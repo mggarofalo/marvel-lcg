@@ -14,8 +14,10 @@ This document follows that rule. The 30 were identified in MARVEL-92; all 30
 were read, and the node set below exists because of specific ones. Where a node
 is here for one card, that card is named.
 
-Nothing here is implemented. This is the design the port is measured against,
-and the place to argue with it is before `src/Marvel.Cards` exists.
+This was the design the port was measured against, with nothing implemented.
+**A first slice now runs** — see [What is implemented](#what-is-implemented) at
+the end. The rest is still design, and the place to argue with it is still
+before it is built.
 
 ## The finding that reframes the problem
 
@@ -538,10 +540,9 @@ it will show.
   hold. Individual verdicts are not trustworthy. The ranking is more so, but the
   two rows that carry most of the curve are the two mechanisms that were wrong
   the first time, so treat even that as provisional until an interpreter exists.
-- **No node has been executed.** Four cards are written out above, which shows
-  the node set carries them on paper. Nothing has parsed or run them; the next
-  step is an interpreter and those four as fixtures, not more design. Two of the
-  four sketches were wrong on first writing — one dropped a guard, one quietly
+- **Most nodes have not been executed.** Fourteen of them have; see below. The
+  four cards written out above are still on paper, and two of those four
+  sketches were wrong on first writing — one dropped a guard, one quietly
   changed behaviour — which is the argument for fixtures rather than prose.
 - **Prompt order will change.** 40041's imperative form interleaves resource
   colours in a `while` loop that the printed text does not describe. A flat
@@ -573,3 +574,74 @@ the behavioural spec campaign, MARVEL-68 — currently 5 of 3,996 cards.
 So: **convert cards that have a scenario; do not convert cards that do not.**
 Then measure the share expressible without an escape hatch per tier, and stop
 widening the DSL rather than widening it to reach the tail.
+
+## What is implemented
+
+`src/Marvel.Cards`, and three cards in `datasets/abilities/abilities.json`.
+
+**Why it exists now rather than after the design settled.** It was standing in
+the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
+`switch` on printed card id, and the moment the engine could reach a second and
+third card it started to grow — which is the "cards as scripts" inversion this
+whole document exists to undo. A placeholder that grows is not a placeholder.
+
+### The slice
+
+| | |
+|---|---|
+| Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
+| Control | `seq`, `if` |
+| Tests | `and`, `or`, `not`, `exists`, `hasStatus` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil` |
+| Queries | `query: villain`, `query: mainScheme` |
+| Bindings | `this`, `attachedTo`, `trigger.subject`, `trigger.player` |
+
+`grantUntil` and `delayUntil` are two nodes rather than one because the rules
+make them two things: `rr:lasting-effects` is a condition that holds for a
+duration, `rr:delayed-effect` is an effect that resolves at a point. The engine
+already told them apart (`EffectSource`), and collapsing them in the DSL would
+have put the distinction back on the interpreter.
+
+### Three decisions worth arguing with
+
+**The parser knows no vocabulary.** An object stays an object; whether a given
+object is a node or a map of fields is decided by the interpreter when it asks.
+The alternative was tried first and does not work: `{"not": {"hasStatus": …}}`
+holds a node and `{"hasStatus": {"card": …, "status": …}}` holds two fields, and
+a reader that guessed would need the node list — making every new node a change
+to the reader as well as to the interpreter.
+
+**A trigger names a triggering condition, spelled as the engine spells it** —
+`WhenEnemyAttacks`, not a DSL word translated into one. `rr:triggering-condition`
+is a rules vocabulary, and a second vocabulary beside it is a table that drifts.
+`Steps.EveryCondition` is derived from the engine's own step table and every
+authored trigger is held against it, so a card naming a condition nothing fires
+is a failing test rather than a card that never triggers.
+
+**`timing` is the ability type, not the tier.** card-dsl.md said `TimingPriority`
+and "must not become" a new invention. A card prints its *type* — "Forced
+Interrupt", "When Revealed" — and `rr:ability` gives types an order, so the type
+is what the data carries and the tier is derived from it. Same enumeration, one
+level down, and no new invention either way.
+
+### What the data has that code did not
+
+Being data buys three checks that a class per card could not have:
+
+- every trigger names a condition some step actually produces;
+- every authored id is a printed card id;
+- every timing sits in a window or is the occurrence.
+
+And one distinction it could not express: **authored-and-does-nothing is not the
+same as nobody having read the card.** A card in the dataset with no abilities
+has been read; one absent from it throws when revealed. Without that, an
+unported encounter card resolves to silence and the board is plausible and
+wrong.
+
+### What is deliberately still missing
+
+`gainSurge` is the honest example. "I'm Tough" has a surge branch, the data says
+so, and the interpreter throws naming the node. That is the shape every gap
+should have: the card is complete, the engine is not, and the message says which
+node to write. Growing the engine is adding a case; growing the game is adding a
+row; they are different activities and they now read differently.
