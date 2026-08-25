@@ -1,5 +1,5 @@
 using Marvel.Rules.Events;
-using Marvel.Rules.Fold;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
@@ -18,8 +18,8 @@ namespace Marvel.Content.Cards;
 /// </para>
 /// <para>
 /// It is not a parallel path, because there is exactly one way a card's
-/// behaviour enters the fold — <see cref="ICardAbilities"/> — and the
-/// interpreter replaces what is behind it without the villain phase or the fold
+/// behaviour enters the engine — <see cref="ICardAbilities"/> — and the
+/// interpreter replaces what is behind it without the villain phase or the engine
 /// changing. It is also deliberately tiny: <b>one card</b>, the one the recorded
 /// milestone game reveals in round one. Every card added here before the
 /// interpreter exists is a card that has to be removed again, so the rule is to
@@ -60,6 +60,12 @@ public sealed class CoreSetAbilities : ICardAbilities
     /// </remarks>
     public IReadOnlyList<PendingAbility> Waiting(
         World world, Occurrence occurrence, WindowKind window) => [];
+
+    /// <inheritdoc/>
+    public Marvel.Rules.Prompts.Affordance Describe(World world, PendingAbility ability) =>
+        throw new RulesNotImplementedException(
+            $"no card here waits in a window, so '{ability.Type}' on card "
+            + $"{ability.Card} cannot be described for one");
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Resolve(

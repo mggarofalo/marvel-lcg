@@ -177,7 +177,7 @@ decides."* That needs a uniqueness concept the engine does not have, and the
 combine case needs a prompt. It is a fourth rule of place and it belongs here when
 uniqueness exists.
 
-**The fold cannot tell a client a join happened.** `World.Join` is one operation
+**The engine cannot tell a client a join happened.** `World.Join` is one operation
 on state, which is what MARVEL-175 asks for and what PR #115 got wrong. But no
 event describes it, and adding one is a decision rather than an oversight — see
 below.
@@ -193,7 +193,7 @@ and adds:
 > about *state*, not about this list.
 
 A player joining a game area is the first change that is **emittable but not
-derivable**: the fold could announce it, and a reducer over digests can never
+derivable**: the engine could announce it, and a reducer over digests can never
 discover it, because the digest cannot see it. So the vocabulary cannot grow this
 member from measurement, which is how every other member got there.
 
@@ -202,7 +202,7 @@ indicate that you have joined that game area"* — a client plainly needs to be 
 Three ways out, and it is the same shape of call as MARVEL-174's:
 
 1. Leave the vocabulary alone. A client re-reads the grouping from state after
-   every fold. Cheapest; loses the "one visual beat" property every other event
+   every resolve. Cheapest; loses the "one visual beat" property every other event
    has.
 2. Add a tenth kind and accept that one member is justified by published rules
    rather than by the corpus. Honest, but it weakens the fixture's stated

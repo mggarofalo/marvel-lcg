@@ -25,7 +25,7 @@ public sealed class CardCatalogTests
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
     [Theory]
-    // Already upper-case in the engine's data, so nothing to fold.
+    // Already upper-case in the engine's data, so nothing to resolve.
     [InlineData("CRIMINAL", "CRIMINAL")]
     // Spaces become underscores. 39 engine traits have one.
     [InlineData("HERO FOR HIRE", "HERO_FOR_HIRE")]

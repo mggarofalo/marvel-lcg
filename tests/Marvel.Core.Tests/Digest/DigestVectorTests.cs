@@ -13,7 +13,7 @@ namespace Marvel.Core.Tests.Digest;
 /// <remarks>
 /// <para>
 /// The fixture records whole-game traces, so the half that <i>populates</i> the
-/// records (checklist steps 1–7) cannot be tested until the engine fold exists.
+/// records (checklist steps 1–7) cannot be tested until the engine resolve exists.
 /// What can be tested now is steps 8 and 9 — serialise exactly, compare as
 /// strings — and those are the steps most likely to differ between languages.
 /// </para>

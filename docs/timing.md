@@ -192,7 +192,7 @@ a round early on a board that looks entirely normal.
 ## The window stack
 
 Where the game is, when it is part-way through resolving something, is a value
-on `World` — `World.Resolution`, a stack of open windows.
+on `World` — `World.Windows`, a stack of open windows.
 
 A stack because windows nest: an interrupt that plays a card is itself an
 occurrence with windows of its own, and the outer window is still open
@@ -264,6 +264,38 @@ rulebook. That is a corpus spelling, so the translation lives at the corpus
 boundary — `PlayerPhaseTests.RecordedKind` — rather than in the engine's
 vocabulary.
 
+## Working a window
+
+`rr:ability` puts an interrupt window before every occurrence and a response
+window after it, so that is the shape of everything the engine does — placing
+threat, dealing damage, revealing a card, ending a phase. `Moment.Resolve`
+writes it once, because a step that forgot its windows would look exactly like a
+step that had none to open.
+
+**Almost every one of those windows asks nobody anything**, and that is what
+makes wrapping every occurrence cheap enough to be the default. `Offering` keeps
+three cases apart:
+
+| | |
+|---|---|
+| **nothing eligible for a player** | skipped, no prompt — they were never asked, because there was nothing to ask about |
+| **a forced ability** | resolved, and the player is *told*: what reaches the client is an event, not a question |
+| **an optional ability** | offered, always |
+
+The third is worth being precise about. An interrupt window holding exactly one
+ability is still a real choice, because `rr:ability.11` makes declining the other
+answer — so the prompt is cancellable. That is a different thing from a question
+with one possible answer, which should never be asked at all.
+
+Two forced abilities at one moment are the exception that *is* a question, and a
+different one: `rr:forced.5` gives the first player the order, so the prompt is a
+`Question.Order` and it is **not** cancellable — they all resolve either way.
+
+Between two forced abilities the board is re-read, never applied from a stale
+list: `rr:forced.6`, "each forced ability must resolve as completely as possible
+before the next forced ability being triggered by the same triggering condition
+may initiate."
+
 ## What this does not do yet
 
 - **Nothing opens a window.** No ported card has an interrupt or a response the
@@ -276,8 +308,7 @@ vocabulary.
   up to it, ready every card — are not implemented. `rr:player-phase.1` puts them
   before the expiry point, and the recorded game cannot say when they happen: its
   hand is full at every step and its one player readies nothing.
-- **The fold does not drive the stack yet.** `World.Resolution` is built and
-  held against the rules, and `Game.Fold` still resolves the villain phase in
-  one uninterruptible call. Until it drives the stack, `PhaseEnd` throws on an
-  optional ability waiting in a window, and on two forced abilities at one
-  moment (`rr:forced.5` gives that order to the first player). MARVEL-179.
+- **The engine does not drive the stack yet.** `World.Windows` is built and
+  held against the rules, and windows open and close correctly around every
+  villain-phase occurrence, but `Game.Resolve` cannot yet return a prompt from
+  inside one. MARVEL-179.

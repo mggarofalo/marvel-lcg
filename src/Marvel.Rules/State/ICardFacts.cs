@@ -43,7 +43,7 @@ public enum CardKind
 /// </para>
 /// <para>
 /// Everything here is printed. Nothing on this interface may depend on the state
-/// of a game — that is what makes it safe for the fold to consult.
+/// of a game — that is what makes it safe for the engine to consult.
 /// </para>
 /// </remarks>
 public interface ICardFacts

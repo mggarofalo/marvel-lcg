@@ -2,7 +2,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 
-namespace Marvel.Rules.Fold;
+namespace Marvel.Rules.Play;
 
 /// <summary>Where a game is in the round structure.</summary>
 /// <remarks>
@@ -31,7 +31,7 @@ public enum GamePhase
 }
 
 /// <summary>
-/// The fold: a world, where it is in the round, and what it will ask next.
+/// The engine: a world, where it is in the round, and what it will ask next.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -60,7 +60,7 @@ public enum GamePhase
 /// </para>
 /// <para>
 /// <b>Not a hot path yet.</b> <c>docs/presentation-layer.md</c> asks for LINQ out
-/// of the fold and a flat array of cards. The flat array is already how
+/// of the engine and a flat array of cards. The flat array is already how
 /// <see cref="World"/> stores them; the LINQ here is in prompt construction,
 /// which runs once per decision rather than once per effect node, and it will be
 /// measured before it is optimised.
@@ -113,10 +113,10 @@ public sealed class Game
         Pending = MulliganPrompt();
     }
 
-    /// <summary>The verbs this fold derives from state alone.</summary>
+    /// <summary>The verbs this resolve derives from state alone.</summary>
     public static IReadOnlySet<string> DerivedVerbs => Derived;
 
-    /// <summary>The world. The fold's first argument.</summary>
+    /// <summary>The world. The engine's first argument.</summary>
     public World State => world;
 
     /// <summary>Where the game is in the round structure.</summary>
@@ -140,7 +140,7 @@ public sealed class Game
     /// threat and discards correctly and no card's own text ever fires.
     /// </param>
     /// <remarks>
-    /// Setup itself is not folded — <see cref="WorldSetup"/> runs it and hands
+    /// Setup is not resolved this way — <see cref="WorldSetup"/> runs it and hands
     /// back a world. So this produces no events, and a client attaching here
     /// gets a board to draw rather than a board being dealt. Emitting setup as
     /// events is worth doing and is not free: it is roughly eighty
@@ -161,7 +161,7 @@ public sealed class Game
     /// have. Thrown before the world is touched.
     /// </exception>
     /// <exception cref="InvalidOperationException">The game is already over.</exception>
-    public FoldResult Fold(Decision input)
+    public Resolution Resolve(Decision input)
     {
         ArgumentNullException.ThrowIfNull(input);
 
@@ -172,7 +172,7 @@ public sealed class Game
 
         if (!input.IsDecline)
         {
-            // Every affordance this fold offers is one that has to *do*
+            // Every affordance this resolve offers is one that has to *do*
             // something, and none of them are written. Naming the verb rather
             // than saying "not implemented" is the difference between a
             // one-line diagnosis and a debugging session.
@@ -180,7 +180,7 @@ public sealed class Game
                 .FirstOrDefault(affordance => affordance.Id == input.Affordance)?.Verb
                 ?? $"affordance {input.Affordance}";
             throw new RulesNotImplementedException(
-                $"taking '{verb}' is not implemented; this fold only declines");
+                $"taking '{verb}' is not implemented; this resolve only declines");
         }
 
         switch (Phase)
@@ -190,7 +190,7 @@ public sealed class Game
                 Round = 1;
                 Phase = GamePhase.PlayerTurn;
                 Pending = TurnPrompt();
-                return new FoldResult(world, Pending, []);
+                return new Resolution(world, Pending, []);
 
             case GamePhase.PlayerTurn:
                 // Declining the main turn ends it. Progress in the game's terms
@@ -198,7 +198,7 @@ public sealed class Game
                 // decision in the corpus at 187 of 320 declines.
                 Phase = GamePhase.EndPhase;
                 Pending = EndPhasePrompt();
-                return new FoldResult(world, Pending, []);
+                return new Resolution(world, Pending, []);
 
             case GamePhase.EndPhase:
                 // The end phase refills the hand to hand size, and this game
@@ -221,14 +221,14 @@ public sealed class Game
                     // asked of a player after a game is over.
                     Phase = GamePhase.Over;
                     Pending = null;
-                    return new FoldResult(world, null, happened);
+                    return new Resolution(world, null, happened);
                 }
 
                 Round++;
                 Phase = GamePhase.PlayerTurn;
                 Active = world.FirstPlayer;
                 Pending = TurnPrompt();
-                return new FoldResult(world, Pending, happened);
+                return new Resolution(world, Pending, happened);
 
             default:
                 throw new RulesNotImplementedException($"the {Phase} phase is not implemented");

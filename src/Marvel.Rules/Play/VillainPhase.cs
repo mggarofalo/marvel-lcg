@@ -2,7 +2,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
-namespace Marvel.Rules.Fold;
+namespace Marvel.Rules.Play;
 
 /// <summary>
 /// What a card does when it is revealed from the encounter deck.
@@ -21,10 +21,10 @@ namespace Marvel.Rules.Fold;
 /// is implemented". Until it exists, <c>Marvel.Content</c> supplies the handful
 /// of cards a recorded transition actually reaches, and this interface is what
 /// stops that being a parallel path: there is one place a card's behaviour can
-/// enter the fold, and the interpreter replaces what is behind it.
+/// enter the engine, and the interpreter replaces what is behind it.
 /// </para>
 /// </remarks>
-public interface ICardAbilities
+public interface ICardAbilities : IWindowAbilities
 {
     /// <summary>Resolves a revealed encounter card's "When Revealed" ability.</summary>
     /// <param name="world">The world.</param>
@@ -33,27 +33,7 @@ public interface ICardAbilities
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player);
 
-    /// <summary>
-    /// The abilities on cards in play that are waiting to act in this window.
-    /// </summary>
-    /// <remarks>
-    /// Asked once per window rather than per card, because eligibility depends
-    /// on more than the card: <c>rr:interrupt.1</c> restricts a player to
-    /// abilities on cards they control or on encounter cards, and
-    /// <c>rr:ability.3</c> stops an ability that names targets from initiating
-    /// with none. Both are questions about the board.
-    /// </remarks>
-    /// <param name="world">The world.</param>
-    /// <param name="occurrence">What is happening.</param>
-    /// <param name="window">Which of its two windows is open.</param>
-    IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window);
 
-    /// <summary>Resolves one ability that was waiting in a window.</summary>
-    /// <param name="world">The world.</param>
-    /// <param name="occurrence">What it is timed to.</param>
-    /// <param name="ability">Which ability, from <see cref="Waiting"/>.</param>
-    /// <returns>What changed.</returns>
-    IReadOnlyList<GameEvent> Resolve(World world, Occurrence occurrence, PendingAbility ability);
 }
 
 /// <summary>Nothing has an ability. What an engine with no cards ported does.</summary>
@@ -71,6 +51,11 @@ public sealed class NoCardAbilities : ICardAbilities
         World world, Occurrence occurrence, PendingAbility ability) =>
         throw new RulesNotImplementedException(
             "nothing is waiting in any window, so nothing can be resolved from one");
+
+    /// <inheritdoc/>
+    public Prompts.Affordance Describe(World world, PendingAbility ability) =>
+        throw new RulesNotImplementedException(
+            "nothing is waiting in any window, so nothing can be described from one");
 }
 
 /// <summary>
@@ -113,13 +98,17 @@ public static class VillainPhase
 
         var events = new List<GameEvent>();
 
-        PlaceThreat(world, facts, events);
+        // rr:villain-phase.step.1. An occurrence like any other, so it has an
+        // interrupt window before it and a response window after it.
+        Moment.Resolve(
+            world, abilities, new Occurrence(Moment.Id(round, 1, 0), "WhenThreatPlaced"), events,
+            () => PlaceThreat(world, facts, events));
         if (world.IsOver)
         {
             return events;
         }
 
-        EnemiesActivate(world, facts, events);
+        EnemiesActivate(world, facts, abilities, round, events);
         if (world.IsOver)
         {
             return events;
@@ -156,7 +145,8 @@ public static class VillainPhase
     }
 
     /// <summary>Step 2. In player order, the villain activates against each player.</summary>
-    private static void EnemiesActivate(World world, ICardFacts facts, List<GameEvent> events)
+    private static void EnemiesActivate(
+        World world, ICardFacts facts, ICardAbilities abilities, int round, List<GameEvent> events)
     {
         var villain = world.TheCardIn(DeckType.VillainArea);
         if (villain is null)
@@ -177,9 +167,14 @@ public static class VillainPhase
                     + "only the scheme half of an activation is implemented");
             }
 
-            Scheme(world, facts, villain, events);
+            // rr:activation.1. The activation is the occurrence; the boost
+            // card and the threat are inside it.
+            Moment.Resolve(
+                world, abilities,
+                new Occurrence(Moment.Id(round, 2, seat), "WhenEnemyActivates"), events,
+                () => Scheme(world, facts, villain, events));
 
-            // `rr:villain-phase.2b`. A minion engaged with a player activates
+            // `rr:villain-phase.step.2.b`. A minion engaged with a player activates
             // too, and nothing on the milestone board is ever engaged.
             var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat));
             if (engaged.Cards.Count > 0)

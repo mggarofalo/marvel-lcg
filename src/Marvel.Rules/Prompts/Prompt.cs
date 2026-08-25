@@ -105,7 +105,7 @@ public enum Question
 /// <param name="Affordances">What the player may do.</param>
 /// <remarks>
 /// <para>
-/// This is the other half of the fold's return value:
+/// This is the other half of the engine's return value:
 /// </para>
 /// <code>
 /// (state, input) -> (state, Prompt?, GameEvent[])

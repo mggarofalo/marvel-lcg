@@ -4,7 +4,7 @@ namespace Marvel.Rules.Prompts;
 /// One thing a player can do right now, anchored to the object they click.
 /// </summary>
 /// <param name="Id">
-/// What gets folded back in to take this. Opaque to the client, and valid only
+/// What gets handed back to take this. Opaque to the client, and valid only
 /// within the session that issued it — see the remarks.
 /// </param>
 /// <param name="Verb">

@@ -43,7 +43,7 @@ public readonly record struct Window(
 /// </para>
 /// </remarks>
 /// <param name="world">The board this belongs to.</param>
-public sealed class Resolution(World world)
+public sealed class Windows(World world)
 {
     private readonly List<Window> open = [];
 

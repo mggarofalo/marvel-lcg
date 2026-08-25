@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
-using Marvel.Rules.Fold;
+using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.Tests;
@@ -114,7 +115,7 @@ public sealed class PhaseEndTests
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => PhaseEnd.EndVillainPhase(world, waiting, occurrenceId: 1, []));
-        Assert.Contains("rr:forced.5", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("in what order", thrown.Message, StringComparison.Ordinal);
     }
 
     [Rule("rr:delayed-effect.1")]
@@ -168,18 +169,24 @@ public sealed class PhaseEndTests
 
         public IReadOnlyList<GameEvent> Resolve(
             World asked, Occurrence occurrence, PendingAbility ability) => [];
+
+        public Affordance Describe(World asked, PendingAbility ability) =>
+            new(ability.Card, "Use", ability.Card, ability.Player, $"ability on {ability.Card}");
     }
 
     /// <summary>Puts a fixed set of abilities into every window.</summary>
     private sealed class Waiting(params PendingAbility[] abilities) : ICardAbilities
     {
-        IReadOnlyList<PendingAbility> ICardAbilities.Waiting(
+        IReadOnlyList<PendingAbility> IWindowAbilities.Waiting(
             World world, Occurrence occurrence, WindowKind window) => abilities;
 
         public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
 
         public IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability) => [];
+
+        public Affordance Describe(World world, PendingAbility ability) =>
+            new(ability.Card, "Use", ability.Card, ability.Player, $"ability on {ability.Card}");
     }
 
     private sealed class Facts : ICardFacts

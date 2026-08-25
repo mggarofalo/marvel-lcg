@@ -134,11 +134,11 @@ as important.
 | ability timing, interrupt and response windows, continuous effects | [timing.md](docs/timing.md) |
 | `datasets/cards/`, `tools/cards/extract` | [card-dataset.md](docs/card-dataset.md) |
 | `datasets/setup/`, scenario or starter-deck data, setup order | [setup-dataset.md](docs/setup-dataset.md) |
-| `datasets/digest/prompts.json`, `Marvel.Rules.Fold`, what a prompt offers | [prompt-dataset.md](docs/prompt-dataset.md) |
+| `datasets/digest/prompts.json`, `Marvel.Rules.Play`, what a prompt offers | [prompt-dataset.md](docs/prompt-dataset.md) |
 | play areas, game areas, anything resolving by *where a card is* | [places.md](docs/places.md) |
-| `Marvel.Rules.Fold`, the villain phase, what a revealed card does | [villain-phase.md](docs/villain-phase.md) |
+| `Marvel.Rules.Play`, the villain phase, what a revealed card does | [villain-phase.md](docs/villain-phase.md) |
 | the card ability DSL | [card-dsl.md](docs/card-dsl.md) |
-| the client, the fold's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
+| the client, the engine's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#dependency-rules) |
 | `engine/config.py`, arg groups, crash capture, packaging, visibility filtering, `Build.release` | [engine-conventions.md](docs/engine-conventions.md) |
 | a scene saved before `0.5.9.205` | [state-digest-contract.md](docs/state-digest-contract.md) |

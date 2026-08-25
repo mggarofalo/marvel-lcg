@@ -74,7 +74,7 @@ would churn the fixture on a bump that changes no setup.
 
 `modular_sets` stays separate from `encounter_sets`. `SceneLoader.NewFromJson`
 appends one to the other *only when the caller names no sets of its own*, so
-folding them at emit time would make the other case — a scenario played with
+resolving them at emit time would make the other case — a scenario played with
 chosen modulars — inexpressible. `deal.EncounterSetNames` does the join.
 
 ## The order a board is dealt in
@@ -271,6 +271,6 @@ engine's trait list beside the printed one.
 
 ### What this does not yet do
 
-No card abilities and no fold, so a board whose setup fires an ability is out of
+No card abilities and no resolve, so a board whose setup fires an ability is out of
 scope — the three deviation classes above say which. Steps 1–20 of the same game
 are MARVEL-173.

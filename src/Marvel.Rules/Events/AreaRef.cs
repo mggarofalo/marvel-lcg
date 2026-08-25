@@ -60,7 +60,7 @@ namespace Marvel.Rules.Events;
 /// The Once and Future Kang's <i>game areas</i> are a different concept wearing
 /// a confusingly similar name: a grouping <b>over</b> play areas that cards
 /// cannot affect across. That grouping is not expressible here and should not
-/// be — it belongs to the fold's state, and a player joins one. See
+/// be — it belongs to the engine's state, and a player joins one. See
 /// <c>docs/event-stream.md</c>, "Play areas and game areas", and MARVEL-175.
 /// </para>
 /// <para>

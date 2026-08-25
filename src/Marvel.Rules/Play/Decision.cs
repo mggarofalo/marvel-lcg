@@ -1,7 +1,7 @@
-namespace Marvel.Rules.Fold;
+namespace Marvel.Rules.Play;
 
 /// <summary>
-/// One answer to one prompt. The fold's input.
+/// One answer to one prompt. The engine's input.
 /// </summary>
 /// <param name="Affordance">
 /// Which of the prompt's affordances is being taken, by

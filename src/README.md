@@ -1,7 +1,7 @@
 # src/ — C# engine
 
 **Contracts first.** `Marvel.Core` holds the cross-engine RNG (MARVEL-8) and
-the state-digest serialiser (MARVEL-9/44). The engine fold, the card DSL and the corpus replay harness
+the state-digest serialiser (MARVEL-9/44). The engine resolve, the card DSL and the corpus replay harness
 are migration phases 4–6 and are not started. See [../docs/migration.md](../docs/migration.md) for the target architecture and [../docs/plane.md](../docs/plane.md) for how work is tracked.
 
 Current:

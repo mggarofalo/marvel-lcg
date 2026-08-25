@@ -611,7 +611,7 @@ consequences, and they are real defects rather than tidiness:
   decision the printed card does not grant.
 
 **Neither is fixable in a card script.** It is a design input for the Engine
-Core fold: if payment and targeting are separate inputs to
+Core resolve: if payment and targeting are separate inputs to
 `(state, input) -> (state, prompt)` rather than one decision, the prompt for
 targets can be raised *after* the cost is known and the count becomes an
 ordinary bound. Settle it there deliberately rather than reproducing the

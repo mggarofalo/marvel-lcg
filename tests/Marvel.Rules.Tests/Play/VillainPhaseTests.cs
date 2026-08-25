@@ -1,10 +1,10 @@
 using Marvel.Tests;
 using Marvel.Rules.Events;
-using Marvel.Rules.Fold;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Xunit;
 
-namespace Marvel.Rules.Tests.Fold;
+namespace Marvel.Rules.Tests.Play;
 
 /// <summary>
 /// The villain phase on boards the recording cannot reach.
@@ -29,7 +29,7 @@ public sealed class VillainPhaseTests
     [Rule("rr:scheme-enemy-activation.step.3")]
     [Theory]
     // SCH 1, and a boost card worth nothing: the recorded round one, which is
-    // why a fold that ignored boost icons entirely passed every test.
+    // why a resolve that ignored boost icons entirely passed every test.
     [InlineData(0, 1)]
     // SCH 1 plus one boost icon: the recorded round two, at 2.
     [InlineData(1, 2)]
@@ -37,7 +37,7 @@ public sealed class VillainPhaseTests
     public void BoostIconsAddToTheSchemeValue(int boost, int expected)
     {
         // Threat placed is the *modified* SCH, so the two steps have to be
-        // read together: a fold that placed printed SCH would be right
+        // read together: a resolve that placed printed SCH would be right
         // whenever the boost card happened to be worth nothing.
         var printed = new Printed()
             .With("villain", ("SCH", "1"))
@@ -174,7 +174,7 @@ public sealed class VillainPhaseTests
     [Theory]
     // The recorded game reaches 8 threat against a target of 7, so *greater*
     // and *at least* both complete the scheme there and the boundary is
-    // untested by it: a fold that required strictly greater produces every
+    // untested by it: a resolve that required strictly greater produces every
     // recorded digest and ends the game one round late.
     [InlineData(2, 2, true)]
     [InlineData(2, 3, false)]
@@ -200,7 +200,7 @@ public sealed class VillainPhaseTests
     {
         // The recorded game cannot tell: its one modifier is an attachment in
         // `UpgradesArea`, which is in play, and its one other hosted card is a
-        // Tough with no modifier printed on it. So a fold that counted
+        // Tough with no modifier printed on it. So a resolve that counted
         // modifiers from anywhere produces every recorded digest.
         //
         // A discarded attachment does not modify the card it used to be on.

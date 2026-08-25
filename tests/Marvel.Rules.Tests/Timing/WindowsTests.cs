@@ -27,9 +27,9 @@ public sealed class ResolutionTests
 
         foreach (var kind in new[] { WindowKind.Interrupt, WindowKind.Response })
         {
-            var window = world.Resolution.Open(new Occurrence(1, "WhenAttacked"), kind);
+            var window = world.Windows.Open(new Occurrence(1, "WhenAttacked"), kind);
             Assert.Equal(2, window.Asking);
-            world.Resolution.Close();
+            world.Windows.Close();
         }
     }
 
@@ -43,7 +43,7 @@ public sealed class ResolutionTests
         // clockwise player.
         var world = Board(players: 3);
         world.FirstPlayer = 1;
-        var resolution = world.Resolution;
+        var resolution = world.Windows;
         resolution.Open(new Occurrence(1, "WhenAttacked"), WindowKind.Interrupt);
 
         Assert.Equal(1, resolution.Current!.Value.Asking);
@@ -61,7 +61,7 @@ public sealed class ResolutionTests
         // "Once *all* players decide they do not wish to resolve any (further)
         // interrupts..." One player declining is not the end of a window.
         var world = Board(players: 3);
-        var resolution = world.Resolution;
+        var resolution = world.Windows;
         resolution.Open(new Occurrence(1, "WhenAttacked"), WindowKind.Interrupt);
 
         Assert.False(resolution.Pass());
@@ -81,7 +81,7 @@ public sealed class ResolutionTests
         // `rr:in-player-order.1` keeps the sequence going clockwise rather than
         // restarting it at the first player.
         var world = Board(players: 3);
-        var resolution = world.Resolution;
+        var resolution = world.Windows;
         resolution.Open(new Occurrence(1, "WhenAttacked"), WindowKind.Interrupt);
 
         Assert.False(resolution.Pass());   // p0 declines
@@ -105,7 +105,7 @@ public sealed class ResolutionTests
         // A window that closed after one lap would silently refuse the second
         // interrupt of a player who had two.
         var world = Board(players: 2);
-        var resolution = world.Resolution;
+        var resolution = world.Windows;
         resolution.Open(new Occurrence(1, "WhenAttacked"), WindowKind.Interrupt);
 
         for (int lap = 0; lap < 4; lap++)
@@ -124,8 +124,8 @@ public sealed class ResolutionTests
         // player, which is why the recorded milestone game can never show that
         // the loop above exists.
         var world = Board(players: 1);
-        world.Resolution.Open(new Occurrence(1, "WhenAttacked"), WindowKind.Interrupt);
-        Assert.True(world.Resolution.Pass());
+        world.Windows.Open(new Occurrence(1, "WhenAttacked"), WindowKind.Interrupt);
+        Assert.True(world.Windows.Pass());
     }
 
     [Rule("rr:initiating-abilities.3")]
@@ -138,7 +138,7 @@ public sealed class ResolutionTests
         // source: it "does not stop from completing if that card leaves play
         // during this sequence".
         var world = Board(players: 2);
-        var resolution = world.Resolution;
+        var resolution = world.Windows;
         var outer = new Occurrence(1, "WhenAttacked");
         var inner = new Occurrence(2, "WhenCardPlayed");
 
@@ -164,7 +164,7 @@ public sealed class ResolutionTests
         // triggering condition cannot be triggered." There is nothing left to
         // interrupt, so the remaining players are not asked.
         var world = Board(players: 4);
-        var resolution = world.Resolution;
+        var resolution = world.Windows;
         resolution.Open(new Occurrence(1, "WhenAttacked"), WindowKind.Interrupt);
 
         resolution.Close();
@@ -176,9 +176,9 @@ public sealed class ResolutionTests
     public void ThereIsNoWindowToAnswerBeforeOneIsOpened()
     {
         var world = Board(players: 2);
-        Assert.Null(world.Resolution.Current);
-        Assert.False(world.Resolution.IsResolving);
-        Assert.Throws<InvalidOperationException>(() => world.Resolution.Pass());
+        Assert.Null(world.Windows.Current);
+        Assert.False(world.Windows.IsResolving);
+        Assert.Throws<InvalidOperationException>(() => world.Windows.Pass());
     }
 
     private static World Board(int players)

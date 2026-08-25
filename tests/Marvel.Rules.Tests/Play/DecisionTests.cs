@@ -1,8 +1,8 @@
-using Marvel.Rules.Fold;
+using Marvel.Rules.Play;
 using Marvel.Tests;
 using Xunit;
 
-namespace Marvel.Rules.Tests.Fold;
+namespace Marvel.Rules.Tests.Play;
 
 /// <summary>What one answer to one prompt can say.</summary>
 public sealed class DecisionTests

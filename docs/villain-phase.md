@@ -1,12 +1,12 @@
 # The villain phase
 
-`src/Marvel.Rules/Fold/VillainPhase.cs`. MARVEL-173.
+`src/Marvel.Rules/Resolve/VillainPhase.cs`. MARVEL-173.
 
 The first thing in the C# engine that moves the board — and, with the modifier
 layer below, the last thing MARVEL-173 needed.
 
 **All seven recorded digests of `rhino / spider_man / 12345` are produced by
-folding, and the game ends after exactly seven prompts,** which is what the
+resolving, and the game ends after exactly seven prompts,** which is what the
 recording does. The fixture asks for twenty steps and holds seven because the
 villain wins in round three.
 
@@ -81,7 +81,7 @@ rule alone gives 1 and looks half-right.
 ## What the other two recorded boards say
 
 `vectors.json` carries two more games as per-step hashes. Both diverge at
-**step 0** — the deal, not the fold:
+**step 0** — the deal, not the engine:
 
 | board | C# deals | the engine deals |
 |---|---:|---:|
@@ -90,8 +90,8 @@ rule alone gives 1 and looks half-right.
 
 Cards short at setup, which is the deal-order coverage gap MARVEL-176 already
 measured: scenarios whose setup fires a card ability, or allocates a status card
-mid-setup, deal more cards than the deal order describes. Nothing here is a fold
-gap, and the fold cannot be measured against either board until the deal is
+mid-setup, deal more cards than the deal order describes. Nothing here is a resolve
+gap, and the engine cannot be measured against either board until the deal is
 right.
 
 ## What one player and one lucky card cannot test
@@ -117,7 +117,7 @@ That is the argument for mutation-testing a suite whose strongest check is a
 single recorded game: the recording is the best evidence available and is not
 the same thing as complete coverage.
 
-`tests/Marvel.Rules.Tests/Fold/VillainPhaseTests.cs` holds all of them on
+`tests/Marvel.Rules.Tests/Resolve/VillainPhaseTests.cs` holds all of them on
 hand-built boards — three players, boost values of 0, 1 and 3, thresholds above
 and below and exactly at the target.
 
@@ -142,7 +142,7 @@ alter-ego form.
 
 **The modifier only counts while the attachment is in play.** The recorded game
 cannot tell — its one modifier sits in `UpgradesArea`, and its one other hosted
-card is a Tough with nothing printed on it — so a fold that counted modifiers
+card is a Tough with nothing printed on it — so a resolve that counted modifiers
 from anywhere passes every recorded digest. A discarded attachment does not
 modify the card it used to be on, and that needs a hand-built board to state.
 
@@ -171,7 +171,7 @@ the engine's own log completes the scheme in the middle of the villain's
 activation and never deals the encounter cards that would have followed.
 
 **"Equal to or greater" is untested by the recording**, which reaches 8 against
-a target of 7 — so *strictly greater* also fires there, and a fold that required
+a target of 7 — so *strictly greater* also fires there, and a resolve that required
 it produces every recorded digest and ends the game a round late. The boundary
 needs a hand-built board.
 

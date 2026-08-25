@@ -89,7 +89,7 @@ the rulebook, and the Python engine was not.
 A test with no `[Rule]` is not a lesser test — it is a test whose authority is
 something other than the Rules Reference:
 
-- **the corpus**, for tests that hold the fold against a recorded game. Most of
+- **the corpus**, for tests that hold the engine against a recorded game. Most of
   `PlayerPhaseTests` is this, and it is the strongest evidence available.
 - **printed card text**, pinned through `datasets/cards/`.
 - **a rules pack**, for expansion and scenario rules that amend the base game.

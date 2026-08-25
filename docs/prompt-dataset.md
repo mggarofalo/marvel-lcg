@@ -1,7 +1,7 @@
 # The prompt dataset
 
 `datasets/digest/prompts.json` is the acceptance fixture for the half of the
-fold's return value that nothing else records.
+resolve's return value that nothing else records.
 
 ```
 (state, input) -> (state, Prompt?, GameEvent[])
@@ -112,13 +112,13 @@ Three notes on that table, all of them things a port gets wrong quietly:
   which is the `HandsArea` read bottom to top and is not sorted. Sorting it
   changes which card a client highlights first.
 
-## What the C# fold covers, and what it does not
+## What the C# resolve covers, and what it does not
 
-`Marvel.Rules.Fold.Game` implements **the player phase for a player who
+`Marvel.Rules.Play.Game` implements **the player phase for a player who
 declines, and the villain phase**. `Game.DerivedVerbs` is the set of affordances
 it builds from state alone — `Resolve Mulligans`, `Change_Form`, `End Phase`.
 
-`tests/Marvel.Content.Tests/Fold/PlayerPhaseTests.cs` holds it against both
+`tests/Marvel.Content.Tests/Resolve/PlayerPhaseTests.cs` holds it against both
 fixtures for steps 0, 1 and 2, and pins the gap as a set rather than a count:
 the verbs the recording offers minus `DerivedVerbs` is exactly `{Play}`, so a
 verb appearing that nothing derives fails the build.
@@ -126,7 +126,7 @@ verb appearing that nothing derives fails the build.
 **Affordance ids are not compared, and must not be.** They are session handles —
 the Python engine allocates effect object ids, and MARVEL-164 measured nine of
 5,809 recorded inputs drifting, every one exactly 25 too high. `(AnchorId, Verb)`
-is the durable key and resolved all nine uniquely. The C# fold *implements* the
+is the durable key and resolved all nine uniquely. The C# resolve *implements* the
 property the recording has — handles are cached on `(verb, anchor)`, so a
 re-offered option keeps its id, which is why `End Phase` is id 1 at recorded
 steps 2, 4 and 6 rather than three different ids — but **that half is not
@@ -140,7 +140,7 @@ The seven recorded steps are only **three distinct boards**: 0, 1 and 2 are one
 board, 3 and 4 another, 5 and 6 a third. A declining player moves nothing, and
 the board only changes in the villain phase.
 
-The fold now produces **five of the seven** — steps 0 to 4, two of the three
+The engine now produces **five of the seven** — steps 0 to 4, two of the three
 distinct boards. See [the villain phase](villain-phase.md) for what the second
 transition needed and what the third still does.
 
@@ -150,7 +150,7 @@ that also happen to be equal, for the wrong reason.
 
 ### The boundary
 
-Folding past step 4 throws `RulesNotImplementedException` naming the card it
+Resolving past step 4 throws `RulesNotImplementedException` naming the card it
 stopped on — `01099` Charge, an attachment that modifies Rhino's printed attack.
 See [villain-phase.md](villain-phase.md#what-step-5-needs).
 

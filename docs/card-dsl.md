@@ -82,7 +82,7 @@ two cards or fewer, which reads alarming; those 335 account for 2.0% of call
 sites. The risk they carry is correctness, not size — each is a rule nobody will
 think about twice — but they are not a reason the DSL has to be large.
 
-**The question vocabulary is 21 operations.** In the fold architecture
+**The question vocabulary is 21 operations.** In the engine architecture
 (`(state, input) -> (state, prompt)`) every one of these is a suspend point, so
 this is the single most important bounded set in the design. **Do not hand-write
 the list.** `tools/cards/scripts.py` derives it from `PlayerAsk` plus three entry
@@ -166,7 +166,7 @@ form has and a naive design would lose:
 - Questions **nest**. `Erratic Teleportation` (39019) has "you may spend a mental
   resource to look at the top card" — an optional cost paid *inside* a When
   Revealed, whose payment opens its own resource-selection dialogue, and whose
-  outcome gates everything after. A flat prompt model cannot hold this; the fold
+  outcome gates everything after. A flat prompt model cannot hold this; the engine
   can.
 
 **Bindings.** Four kinds, each demanded by more than one card:

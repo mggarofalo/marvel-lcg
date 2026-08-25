@@ -2,7 +2,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
-namespace Marvel.Rules.Fold;
+namespace Marvel.Rules.Play;
 
 /// <summary>
 /// Ending a phase: the effects that expire, and the abilities that answer.
@@ -106,77 +106,29 @@ public static class PhaseEnd
         ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(events);
 
-        // Before the phase ends. rr:interrupt.3, and rr:temporary.1 is the
-        // keyword that lives here.
-        Window(world, abilities, occurrence, WindowKind.Interrupt, events);
-
-        // Step 6a / step 4. The phase has now ended, so everything bounded by
-        // its ending is gone -- rr:lasting-effects.5.
-        foreach (var timingPoint in expiring)
+        Moment.Resolve(world, abilities, occurrence, events, () =>
         {
-            world.Effects.Expire(timingPoint);
-        }
-
-        // Delayed effects waiting on this moment resolve here, "before
-        // responses to that point or condition may be used" -- rr:delayed-
-        // effect.1 -- which is what puts this between the two windows.
-        foreach (var condition in occurrence.Conditions)
-        {
-            var due = world.Effects.Occur(condition);
-            if (due.Count > 0)
+            // Step 6a / step 4. The phase has now ended, so everything bounded
+            // by its ending is gone -- rr:lasting-effects.5.
+            foreach (var timingPoint in expiring)
             {
-                throw new RulesNotImplementedException(
-                    $"{due.Count} delayed effect(s) come due at '{condition}' and "
-                    + "resolving one is not implemented");
-            }
-        }
-
-        // Step 6b / step 5.
-        Window(world, abilities, occurrence, WindowKind.Response, events);
-    }
-
-    private static void Window(
-        World world,
-        ICardAbilities abilities,
-        Occurrence occurrence,
-        WindowKind kind,
-        List<GameEvent> events)
-    {
-        foreach (var tier in AbilityWindow.Tiers(
-            abilities.Waiting(world, occurrence, kind), kind, occurrence))
-        {
-            var (mandatory, optional) = AbilityWindow.Split(tier);
-
-            if (optional.Count > 0)
-            {
-                // Offering it needs a prompt that can name a window, which the
-                // fold's Decision cannot express yet (MARVEL-179). Throwing is
-                // the alternative to silently declining on the player's behalf,
-                // which would be a board that is right about everything except
-                // the ability nobody was offered.
-                throw new RulesNotImplementedException(
-                    $"{optional.Count} optional {tier.Priority} ability(s) are waiting in the "
-                    + $"{kind} window of '{string.Join("/", occurrence.Conditions)}' and the "
-                    + "decision function cannot offer one (MARVEL-179)");
+                world.Effects.Expire(timingPoint);
             }
 
-            // rr:forced.6 -- each resolves as completely as possible before the
-            // next from the same condition initiates, so they are walked one at
-            // a time rather than gathered and applied together.
-            foreach (var ability in mandatory)
+            // Delayed effects waiting on this moment resolve here, "before
+            // responses to that point or condition may be used" --
+            // rr:delayed-effect.1 -- which is what puts this between the two
+            // windows rather than in the response one.
+            foreach (var condition in occurrence.Conditions)
             {
-                if (mandatory.Count > 1)
+                var due = world.Effects.Occur(condition);
+                if (due.Count > 0)
                 {
-                    // rr:forced.5 gives this order to the first player, and
-                    // nothing can ask them yet.
                     throw new RulesNotImplementedException(
-                        $"{mandatory.Count} forced abilities initiate at the same moment and the "
-                        + "first player chooses the order (rr:forced.5); asking is not implemented");
+                        $"{due.Count} delayed effect(s) come due at '{condition}' and "
+                        + "resolving one is not implemented");
                 }
-
-                occurrence.Trigger(kind, ability.Card);
-                events.AddRange(abilities.Resolve(world, occurrence, ability));
             }
-        }
+        });
     }
 }
