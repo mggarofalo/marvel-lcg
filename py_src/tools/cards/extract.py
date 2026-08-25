@@ -58,6 +58,39 @@ SUMMARY_FILE = "summary.json"
 ESCAPED_MARKUP = "<\\/"
 
 
+def TraitKey(engine_trait: str) -> str:
+    """An engine trait as the digest keys it, without the `t_` prefix.
+
+    `CardFace.GetInfoTraits` builds every key as
+    `f"t_{trait.replace(' ', '_').replace('!', '')}"` over the engine's own
+    trait list. Two traits carry the `!`: `CHASE!` and `TRAP!`, on five cards
+    between them.
+
+    The engine's traits are already upper-case and already have no trailing
+    stop -- `A.I.M` and `S.H.I.E.L.D` are stored that way. So a port reading
+    this list needs only these two substitutions, and a port deriving keys from
+    the *printed* traits instead needs upper-casing and stop-trimming as well,
+    and still gets `t_TRAP!` wrong.
+    """
+    return engine_trait.replace(" ", "_").replace("!", "")
+
+
+def PrintedTraitKey(printed_trait: str) -> str:
+    """A printed trait rendered the way the engine would spell it.
+
+    Only for *comparing* the two lists, so that a difference reported here is a
+    difference about the card rather than about punctuation. MarvelSDB prints
+    `Trap!`, `S.H.I.E.L.D.` and `Hero for Hire`; the engine stores `TRAP!`,
+    `S.H.I.E.L.D` and `HERO FOR HIRE`, and keys all three without the `!`, the
+    trailing stop or the spaces.
+
+    **Not how the digest is built, and a port must not use it.** It agrees with
+    `TraitKey` on all but twelve of 3,999 cards, which is exactly often enough
+    to look right -- and those twelve are the point.
+    """
+    return TraitKey(printed_trait.upper().rstrip("."))
+
+
 # --------------------------------------------------------------------------
 # Building one record
 # --------------------------------------------------------------------------
@@ -111,6 +144,10 @@ def _EngineRecord(
         "pack": card.pack,
         "set_name": card.set_name,
         "type": card.type,
+        # The list the *digest* is built from. `traits` at the top level is
+        # MarvelSDB's printed spelling and is not the same list -- see
+        # `TraitKey` below and `docs/card-dataset.md`.
+        "traits": list(card.traits),
         "attributes": card.attributes,
         "text": card.text,
         "text_comparison": _CompareText(printed, card.text),
@@ -244,6 +281,13 @@ def _CollectAnomalies(
         has_script = bool(known and known["script"])
 
         if known is not None:
+            printed_keys = sorted({PrintedTraitKey(trait) for trait in record["traits"]})
+            engine_keys = sorted({TraitKey(trait) for trait in known["traits"]})
+            if printed_keys != engine_keys:
+                found.Add("engine_traits_diverge", card_id,
+                          f"{record['name']}: printed {printed_keys or '[]'} "
+                          f"vs engine {engine_keys or '[]'}")
+
             comparison = known["text_comparison"]
             if comparison == "wording":
                 found.Add("engine_text_diverges", card_id, record["name"])

@@ -584,6 +584,7 @@
   },
   "anomalies": {
     "engine_text_diverges": 197,
+    "engine_traits_diverge": 12,
     "engine_text_missing": 81,
     "engine_text_corrupt": 36,
     "engine_markup_escaped": 5,

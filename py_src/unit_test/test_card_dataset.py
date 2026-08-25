@@ -17,6 +17,7 @@ the script text instead gets Holding Cell wrong. It costs about a second.
 import ast
 import dataclasses
 import json
+import os
 import re
 import tempfile
 import unittest
@@ -1683,3 +1684,125 @@ class TestPrintedHeroTimingMatchesTheRegisteredFlag(unittest.TestCase):
         self.assertGreater(len(self.Printed("Hero Response")), 100)
         self.assertGreater(len(self.registered["Hero Action"]), 500)
         self.assertGreater(len(self.registered["Hero Response"]), 100)
+
+
+class TestTraitKeys(unittest.TestCase):
+    """The two trait lists, and which one the digest is built from.
+
+    `traits` is MarvelSDB's printed spelling; `engine.traits` is the Python
+    engine's own list. `CardFace.GetInfoTraits` keys every `t_` field in the
+    state digest from the second, so `engine.traits` is what a port must read
+    and `extract.TraitKey` is the whole transformation.
+
+    Reading the printed list instead passes almost every test -- the two agree
+    on all but twelve of 3,999 cards -- which is why the twelve are pinned as
+    data rather than left to be noticed. MARVEL-177.
+    """
+
+    def test_the_key_is_the_engines_two_substitutions(self):
+        # Not upper-casing and not stop-trimming: the engine's traits are
+        # already `HERO FOR HIRE` and `S.H.I.E.L.D`, so anything more would be
+        # compensating for reading the wrong list.
+        self.assertEqual(extract.TraitKey("CRIMINAL"), "CRIMINAL")
+        self.assertEqual(extract.TraitKey("HERO FOR HIRE"), "HERO_FOR_HIRE")
+        self.assertEqual(extract.TraitKey("S.H.I.E.L.D"), "S.H.I.E.L.D")
+        self.assertEqual(extract.TraitKey("WEB-WARRIOR"), "WEB-WARRIOR")
+
+    def test_a_bang_trait_loses_its_bang(self):
+        # `CHASE!` and `TRAP!` are the only two, on five cards between them.
+        # The digest key is `t_TRAP`, so keeping the `!` fails byte equality on
+        # every step one of those cards is in play.
+        self.assertEqual(extract.TraitKey("TRAP!"), "TRAP")
+        self.assertEqual(extract.TraitKey("CHASE!"), "CHASE")
+
+    def test_the_printed_key_folds_everything_the_engine_already_folded(self):
+        # Only used for *comparing* the two lists, so a difference reported as
+        # an anomaly is a difference about the card rather than about
+        # punctuation.
+        self.assertEqual(extract.PrintedTraitKey("Hero for Hire"), "HERO_FOR_HIRE")
+        self.assertEqual(extract.PrintedTraitKey("S.H.I.E.L.D."), "S.H.I.E.L.D")
+        self.assertEqual(extract.PrintedTraitKey("Trap!"), "TRAP")
+        self.assertEqual(extract.PrintedTraitKey("Vehicle"), "VEHICLE")
+
+    def test_the_two_keys_agree_on_punctuation_and_case(self):
+        # The property that makes the anomaly count mean something. Every one
+        # of these pairs is the *same trait* written two ways, and none of them
+        # is a disagreement about the card.
+        for printed, engine in (("Hero for Hire", "HERO FOR HIRE"),
+                                ("S.H.I.E.L.D.", "S.H.I.E.L.D"),
+                                ("A.I.M.", "A.I.M"),
+                                ("Trap!", "TRAP!"),
+                                ("Chase!", "CHASE!"),
+                                ("Web-Warrior", "WEB-WARRIOR"),
+                                ("Vehicle", "VEHICLE")):
+            with self.subTest(printed=printed):
+                self.assertEqual(extract.PrintedTraitKey(printed),
+                                 extract.TraitKey(engine))
+
+
+class TestTraitDataset(unittest.TestCase):
+    """What the emitted dataset says about traits."""
+
+    @classmethod
+    def setUpClass(cls):
+        path = os.path.join("..", "datasets", "cards", "cards.json")
+        if not os.path.exists(path):
+            raise unittest.SkipTest("run from py_src/ -- datasets/cards missing")
+        with open(path, encoding="utf-8") as handle:
+            cls.cards = {row["card_id"]: row for row in json.load(handle)["cards"]}
+
+        anomalies = os.path.join("..", "datasets", "cards", "anomalies.json")
+        with open(anomalies, encoding="utf-8") as handle:
+            groups = json.load(handle)["groups"]
+        cls.diverging = next(g for g in groups if g["kind"] == "engine_traits_diverge")
+
+    def test_every_engine_record_carries_a_trait_list(self):
+        # Absence is a value in this dataset, never a missing key. A port that
+        # had to branch on whether the key exists would be reading a different
+        # contract from the one the other fields keep.
+        missing = [card_id for card_id, row in self.cards.items()
+                   if row["engine"] is not None and "traits" not in row["engine"]]
+        self.assertEqual(missing, [])
+
+    def test_the_engines_list_is_not_the_printed_list(self):
+        # The claim the whole field exists for. If these were the same list the
+        # field would be dead weight; the count is asserted loosely because it
+        # moves with every MarvelSDB snapshot.
+        differ = sum(1 for row in self.cards.values()
+                     if row["engine"] is not None
+                     and list(row["traits"]) != list(row["engine"]["traits"]))
+        self.assertGreater(differ, 1000)
+
+    def test_the_divergences_are_about_cards_and_not_punctuation(self):
+        # Every reported divergence must survive normalisation on both sides.
+        # Without this the anomaly would report `Vehicle` against `VEHICLE` and
+        # bury the real ones -- which is exactly what the first measurement of
+        # MARVEL-177 did, reporting 142.
+        for entry in self.diverging["cards"]:
+            row = self.cards[entry["id"]]
+            printed = sorted({extract.PrintedTraitKey(t) for t in row["traits"]})
+            engine = sorted({extract.TraitKey(t) for t in row["engine"]["traits"]})
+            with self.subTest(card=entry["id"]):
+                self.assertNotEqual(printed, engine)
+
+    def test_no_divergence_goes_unreported(self):
+        reported = {entry["id"] for entry in self.diverging["cards"]}
+        for card_id, row in self.cards.items():
+            if row["engine"] is None:
+                continue
+            printed = sorted({extract.PrintedTraitKey(t) for t in row["traits"]})
+            engine = sorted({extract.TraitKey(t) for t in row["engine"]["traits"]})
+            if printed != engine:
+                self.assertIn(card_id, reported)
+
+    def test_the_milestone_board_is_untouched(self):
+        # Why MARVEL-176's byte parity survived this change: every card on
+        # `rhino / spider_man / 12345` agrees between the two lists.
+        for card_id, expected in (("01001a", ["AVENGER"]),
+                                  ("01001b", ["GENIUS"]),
+                                  ("01094", ["BRUTE", "CRIMINAL"])):
+            with self.subTest(card=card_id):
+                row = self.cards[card_id]
+                self.assertEqual(
+                    sorted(extract.TraitKey(t) for t in row["engine"]["traits"]),
+                    expected)
