@@ -3,10 +3,12 @@
   <!-- The fold: state, zones, phases, timing, events. No cards, no I/O, no UI.
        See docs/presentation-layer.md, "Proposed layout".
 
-       Today it holds only the event stream (MARVEL-160). The fold itself lands
-       with the engine core; the events are here first because the return
-       signature has to be settled before an interpreter is written against it,
-       and retrofitting a semantic stream after the card ports is not viable. -->
+       Holds the event stream (MARVEL-160) and, since MARVEL-176, the state
+       model: cards, areas, the digest, and the setup that deals an opening
+       board. The fold itself is still to come; the events were here first
+       because the return signature had to be settled before an interpreter was
+       written against it, and retrofitting a semantic stream after the card
+       ports is not viable. -->
   <PropertyGroup>
     <RootNamespace>Marvel.Rules</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

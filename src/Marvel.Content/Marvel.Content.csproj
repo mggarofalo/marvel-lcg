@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Card data and the scenario setup format (MARVEL-159's layout).
+
+       No file or network I/O: everything here parses a string or a stream the
+       caller opened. Where the bytes come from is a packaging decision that has
+       not been made yet (loose files beside the executable, an embedded
+       resource, or a pack downloaded at runtime) and nothing in the engine
+       should have to be rewritten when it is.
+
+       References `Marvel.Rules` and nothing else. That is the direction the
+       layout requires: content sits above the rules, so the rules declare what
+       they need from a printed card (`ICardFacts`) and this satisfies it. An
+       arrow the other way would put card data underneath the fold. -->
+  <PropertyGroup>
+    <RootNamespace>Marvel.Content</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
+  </ItemGroup>
+
+</Project>

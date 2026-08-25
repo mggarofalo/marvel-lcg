@@ -2,9 +2,11 @@
   <Folder Name="/src/">
     <Project Path="src/Marvel.Core/Marvel.Core.csproj" />
     <Project Path="src/Marvel.Rules/Marvel.Rules.csproj" />
+    <Project Path="src/Marvel.Content/Marvel.Content.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Marvel.Core.Tests/Marvel.Core.Tests.csproj" />
     <Project Path="tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj" />
+    <Project Path="tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj" />
   </Folder>
 </Solution>

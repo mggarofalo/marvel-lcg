@@ -17,4 +17,9 @@
     <ProjectReference Include="../../src/Marvel.Core/Marvel.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- One copy, linked. See tests/Shared/RepositoryPaths.cs. -->
+    <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
+  </ItemGroup>
+
 </Project>

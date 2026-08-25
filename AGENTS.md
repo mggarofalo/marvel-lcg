@@ -10,7 +10,7 @@ to C#. Work is tracked in the Plane project `MARVEL` — see [docs/plane.md](doc
 
 ```
 py_src/     Python reference engine (the game as it exists today) + tooling
-src/        C# engine — `Marvel.Core`, `Marvel.Rules`
+src/        C# engine — `Marvel.Core`, `Marvel.Rules`, `Marvel.Content`
 tests/      C# tests, plus `godot-wall/` (projects that must fail to build)
 tools/      repo-level scripts that are not Python-engine tooling
 datasets/   generated and vendored data both engines consume
