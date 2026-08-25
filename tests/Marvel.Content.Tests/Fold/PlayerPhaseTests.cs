@@ -167,16 +167,15 @@ public sealed class PlayerPhaseTests
     }
 
     [Fact]
-    public void FiveOfTheSevenRecordedBoardsAreProducedByFolding()
+    public void EveryRecordedBoardIsProducedByFolding()
     {
-        // Steps 0-4. The two that remain need a subsystem this does not have:
-        // step 5 reveals `01099` Charge, an attachment that attaches to Rhino
-        // and takes his attack from 2 to 5. That is a modifier on another
-        // card's printed stats, and it is the next piece rather than this one.
+        // MARVEL-173's acceptance criterion, the other way round from the one
+        // MARVEL-176 met: produce the recorded `step_digests` as *output*
+        // rather than reproducing them as input.
         var recorded = RecordedDigests();
         var game = Begin();
 
-        for (int step = 0; step <= 4; step++)
+        for (int step = 0; step < recorded.Count; step++)
         {
             if (step > 0)
             {
@@ -189,6 +188,73 @@ public sealed class PlayerPhaseTests
                 Assert.Fail($"step {step}: {DigestDiff.Describe(recorded[step], produced)}");
             }
         }
+    }
+
+    [Fact]
+    public void TheWholeTraceHashesToTheRecordedValue()
+    {
+        // One value covering all seven steps in order, which is what the
+        // fixture carries it for: a port can fail fast before working out which
+        // step diverged. It is also the check that a per-step comparison cannot
+        // make -- that the steps came out in the recorded *order*.
+        var game = Begin();
+        var produced = new List<string> { game.State.Digest().Canonical() };
+        while (game.Pending is not null)
+        {
+            var result = game.Fold(Decision.Decline);
+            if (result.Prompt is not null)
+            {
+                produced.Add(result.State.Digest().Canonical());
+            }
+        }
+
+        using var vectors = JsonDocument.Parse(
+            File.ReadAllText(RepositoryPaths.Dataset("digest", "vectors.json")));
+        var board = vectors.RootElement.GetProperty("cases")[0];
+
+        string expected = board.GetProperty("trace_sha256").GetString()!;
+        byte[] hashed = System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(string.Join("\n", produced)));
+        Assert.Equal(expected, Convert.ToHexString(hashed).ToLowerInvariant());
+    }
+
+    [Fact]
+    public void TheGameEndsAfterExactlyTheRecordedNumberOfDecisions()
+    {
+        // The fixture asks for twenty steps and holds seven, because the
+        // recorded game *ends* -- the headless run reports `game_over`. So the
+        // step count is a claim about the trace and not a budget that happened
+        // to be hit, and an engine that stopped early or ran on would produce
+        // every recorded digest and still be wrong.
+        var game = Begin();
+        int prompts = 1;
+        while (game.Fold(Decision.Decline).Prompt is not null)
+        {
+            prompts++;
+        }
+
+        Assert.Equal(RecordedDigests().Count, prompts);
+        Assert.Equal(GamePhase.Over, game.Phase);
+        Assert.True(game.State.IsOver);
+    }
+
+    [Fact]
+    public void TheVillainWinsByCompletingTheMainScheme()
+    {
+        // `rr:main-scheme-main-scheme-deck.2`: threat at or above the target
+        // completes the scheme, and completing the final stage wins the game.
+        // The Rhino deck holds one stage, so this is that case -- and it is why
+        // the recording stops at seven steps of a twenty-step request.
+        var game = Begin();
+        while (game.Pending is not null)
+        {
+            game.Fold(Decision.Decline);
+        }
+
+        var scheme = game.State.TheCardIn(DeckType.MainSchemesArea)!;
+        Assert.True(scheme.Tokens["k_threat"]
+                    >= Cards.PrintedValue(scheme.FaceId, "TargetThreat", 1));
+        Assert.Equal(1, scheme.Tokens["is_completed"]);
     }
 
     [Fact]
@@ -290,20 +356,15 @@ public sealed class PlayerPhaseTests
     }
 
     [Fact]
-    public void ARevealedCardWithNoAbilityWrittenSaysWhichCard()
+    public void FoldingPastTheEndIsRefusedRatherThanIgnored()
     {
-        // The boundary, and it moved: it used to be the villain phase itself.
-        // Now it is one card. Step 5 reveals `01099` Charge, an attachment that
-        // modifies Rhino's printed attack -- a subsystem, not a card.
         var game = Begin();
-        for (int step = 1; step <= 4; step++)
+        while (game.Pending is not null)
         {
             game.Fold(Decision.Decline);
         }
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => game.Fold(Decision.Decline));
-        Assert.Contains("01099", thrown.Message, StringComparison.Ordinal);
+        Assert.Throws<InvalidOperationException>(() => game.Fold(Decision.Decline));
     }
 
     [Fact]

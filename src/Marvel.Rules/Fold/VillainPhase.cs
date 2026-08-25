@@ -80,7 +80,17 @@ public static class VillainPhase
         var events = new List<GameEvent>();
 
         PlaceThreat(world, facts, events);
+        if (world.IsOver)
+        {
+            return events;
+        }
+
         EnemiesActivate(world, facts, events);
+        if (world.IsOver)
+        {
+            return events;
+        }
+
         var dealt = DealEncounterCards(world);
         RevealEncounterCards(world, abilities, dealt, events);
         PassFirstPlayerToken(world);
@@ -107,6 +117,7 @@ public static class VillainPhase
 
         long amount = facts.PrintedValue(scheme.FaceId, "EscalationThreat", world.Players);
         Threat(scheme, amount, "villain phase, place threat", events);
+        CheckCompleted(world, facts, scheme, events);
     }
 
     /// <summary>Step 2. In player order, the villain activates against each player.</summary>
@@ -161,6 +172,7 @@ public static class VillainPhase
         if (target is not null)
         {
             Threat(target, scheme, "scheme", events);
+            CheckCompleted(world, facts, target, events);
         }
     }
 
@@ -261,6 +273,17 @@ public static class VillainPhase
 
             events.AddRange(abilities.WhenRevealed(world, card, player));
 
+            // `rr:reveal`: what happens next is decided by the card's type. A
+            // treachery resolves and is discarded; an attachment or a minion
+            // *enters play* and stays there. Rather than switching on the type
+            // here, this asks where the card is: an ability that put it
+            // somewhere has already answered, and one that did not leaves it in
+            // the revealing area to be discarded.
+            if (card.Area.Type != DeckType.RevealingArea)
+            {
+                continue;
+            }
+
             var from = card.Area;
             World.MoveToTop(card, discard);
             events.Add(new CardsMoved(
@@ -284,6 +307,57 @@ public static class VillainPhase
         {
             yield return (world.FirstPlayer + offset) % world.Players;
         }
+    }
+
+    /// <summary>Ends the game when the last main scheme completes.</summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:main-scheme-main-scheme-deck.2</c>: "If the amount of threat on a
+    /// main scheme is equal to or greater than its target threat value, that
+    /// main scheme is completed and the main scheme deck advances. <b>If the
+    /// villain completes the final stage of the main scheme deck, the villain
+    /// wins the game.</b>"
+    /// </para>
+    /// <para>
+    /// <b>Only the final stage is implemented, because it is the one the
+    /// recording reaches.</b> The Rhino scenario's main scheme deck holds one
+    /// card, so completing it is the villain winning. Advancing to a next stage
+    /// is three more steps of that same rule — remove, resolve, flip and place
+    /// starting threat — and it throws rather than being skipped, because a
+    /// scheme that completed and did not advance would sit there accumulating
+    /// threat forever.
+    /// </para>
+    /// <para>
+    /// Checked after each placement rather than at the end of the phase: the
+    /// engine's own log completes the scheme in the middle of the villain's
+    /// activation, and never deals the encounter cards that would have followed.
+    /// The recorded game ends there, on step 6, which is why the fixture holds
+    /// seven steps of a twenty-step request.
+    /// </para>
+    /// </remarks>
+    private static void CheckCompleted(
+        World world, ICardFacts facts, Card scheme, List<GameEvent> events)
+    {
+        long threat = scheme.Tokens.TryGetValue("k_threat", out long held) ? held : 0;
+        long target = facts.PrintedValue(scheme.FaceId, "TargetThreat", world.Players);
+        if (target <= 0 || threat < target)
+        {
+            return;
+        }
+
+        if (world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0)
+        {
+            throw new RulesNotImplementedException(
+                $"the main scheme completed at {threat} of {target} threat and the deck would "
+                + "advance to its next stage; advancing is not implemented");
+        }
+
+        scheme.PlaceTokens("is_completed", 1);
+        world.IsOver = true;
+        events.Add(new FieldSet(scheme.ObjectId, "is_completed", 0, 1)
+        {
+            Trigger = "main scheme completed", Verb = "Complete",
+        });
     }
 
     private static void Threat(Card scheme, long amount, string trigger, List<GameEvent> events)

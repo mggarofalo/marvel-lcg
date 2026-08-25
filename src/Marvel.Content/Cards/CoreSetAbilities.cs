@@ -34,6 +34,9 @@ public sealed class CoreSetAbilities : ICardAbilities
     /// <summary>The printed id of "I'm Tough".</summary>
     public const string ImTough = "01105";
 
+    /// <summary>The printed id of "Charge".</summary>
+    public const string Charge = "01099";
+
     /// <summary>The cards this knows about.</summary>
     /// <remarks>
     /// Public so a test can state the coverage gap as a set rather than
@@ -42,7 +45,7 @@ public sealed class CoreSetAbilities : ICardAbilities
     /// rather than returning empty.
     /// </remarks>
     public static IReadOnlySet<string> Implemented { get; } =
-        new HashSet<string>(StringComparer.Ordinal) { ImTough };
+        new HashSet<string>(StringComparer.Ordinal) { ImTough, Charge };
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
@@ -53,10 +56,50 @@ public sealed class CoreSetAbilities : ICardAbilities
         return card.FaceId switch
         {
             ImTough => ImToughRevealed(world, card),
+            Charge => ChargeRevealed(world, card),
             _ => throw new RulesNotImplementedException(
                 $"card '{card.FaceId}' was revealed and no ability is written for it; "
                 + $"this engine knows {Implemented.Count} card(s), pending the interpreter"),
         };
+    }
+
+    // "Charge" (01099). Printed: "Attach to Rhino." The Python is
+    // `AbilityFactory.AttachToFaceWhenPutIntoPlay(CardFinder(name="Rhino"))`,
+    // which is the declarative half of the ability -- the imperative handler is
+    // the Forced Interrupt that fires when Rhino *attacks*, and no recorded step
+    // reaches it because the hero never leaves alter-ego form.
+    //
+    // The +3 attack is not here. It is `ATK+ 3` in the printed data, and
+    // `StateFields` reads it off whatever is attached: a card that prints a
+    // modifier does not need an ability to apply it.
+    private static IReadOnlyList<GameEvent> ChargeRevealed(World world, Card card)
+    {
+        var villain = world.TheCardIn(DeckType.VillainArea);
+        if (villain is null)
+        {
+            throw new RulesNotImplementedException(
+                "\"Charge\" attaches to Rhino and there is no villain in play");
+        }
+
+        var onto = world.AreaOf(
+            DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId,
+            villain.Area.CardOwner);
+        var from = card.Area;
+        World.MoveToTop(card, onto);
+
+        return
+        [
+            new CardsMoved(
+                Places.Reference(from), Places.Reference(onto),
+                [new Landing(card.ObjectId, onto.Cards.Count - 1)])
+            {
+                Trigger = "WhenCardRevealed", Verb = "Attach",
+            },
+            new CardAttached(card.ObjectId, villain.ObjectId)
+            {
+                Trigger = "WhenCardRevealed", Verb = "Attach",
+            },
+        ];
     }
 
     // "I'm Tough" (01105). The Python is:

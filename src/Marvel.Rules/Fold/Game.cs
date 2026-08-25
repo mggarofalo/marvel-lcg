@@ -208,6 +208,15 @@ public sealed class Game
                 Phase = GamePhase.VillainPhase;
                 var happened = VillainPhase.Run(world, facts, abilities);
 
+                if (world.IsOver)
+                {
+                    // The only thing that makes a prompt absent. Nothing is
+                    // asked of a player after a game is over.
+                    Phase = GamePhase.Over;
+                    Pending = null;
+                    return new FoldResult(world, null, happened);
+                }
+
                 Round++;
                 Phase = GamePhase.PlayerTurn;
                 Active = world.FirstPlayer;
