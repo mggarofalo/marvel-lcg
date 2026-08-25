@@ -380,7 +380,7 @@ the test pins the set itself.
 counters — `card`, `effect`, `message` — have ids that reach something anyone
 keeps. That is measured, not chosen: `m`, `e` and `c` are the only id prefixes
 anywhere in a saved scene, and `card` is the only one on the v2 digest wire
-(`owner` there is a seat index, not the `player` counter). Folding the rest in
+(`owner` there is a seat index, not the `player` counter). Resolving the rest in
 made the harness assert that the engine allocated the same number of *internal
 query objects*, which moves whenever anything asks the engine a question — twice
 in one day, both benign, an investigation each time.

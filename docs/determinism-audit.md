@@ -68,7 +68,7 @@ and it is the only wall-clock value anywhere in the engine that can.
 **Recommendation.** The corpus generator must force `timeout = 0` and refuse to
 generate from any scene whose timeout is non-zero. Record the value in the
 corpus metadata. In the C# engine, a timeout is a property of the transport, not
-of the fold, and should not be able to synthesise an input.
+of the engine, and should not be able to synthesise an input.
 
 **Status: fixed (MARVEL-32).** Three layers, because each one alone can be
 bypassed.
@@ -126,7 +126,7 @@ plays a whole game and asserts nothing was saved. Against the pre-fix code it
 saves a scene containing a literal fabricated decline and reports success.
 
 The C# note above still stands and is unaddressed here: a timeout belongs to
-the transport, not the fold.
+the transport, not the engine.
 
 ### F2 — On-card effect ordering comes from a `set` of `CardFace` (High)
 
@@ -823,7 +823,7 @@ on the v2 digest wire — `owner` there is a seat index, not the `player` counte
 
 `ObjectManager.index_dict` also counts `check_message`, `forced_effect`,
 `paying_effect`, `choose_effect`, `game_area`, `deck`, `player` and `scenario`.
-None of those ids is ever written down, and folding them in made the harness
+None of those ids is ever written down, and resolving them in made the harness
 assert something stronger than "the engine is deterministic": it asserted "the
 engine allocated the same number of internal query objects", which moves
 whenever anything asks the engine a question rather than when behaviour changes.

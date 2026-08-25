@@ -7,7 +7,7 @@ namespace Marvel.Rules.State;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The first argument of the fold. Cards are held in a flat list indexed by
+/// The board: the first argument whenever the game resolves a decision. Cards are held in a flat list indexed by
 /// <c>object_id</c>, which is also their creation order — the id allocator is a
 /// counter and ids are never reused, so the list is append-only and
 /// <c>cards[i].ObjectId == i</c> always.
@@ -36,6 +36,9 @@ public sealed class World
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(players);
         this.facts = facts;
         Players = players;
+        Effects = new Timing.ContinuousEffects(this);
+        Windows = new Timing.Windows(this);
+        Agenda = new Play.Agenda();
 
         // An ordinary game has exactly one game area holding every play area,
         // and nothing in the rules distinguishes that from having none. Making
@@ -48,6 +51,36 @@ public sealed class World
             whole.Add(PlayArea.Of(seat));
         }
     }
+
+    /// <summary>
+    /// Everything continuously in force: constant abilities, lasting effects
+    /// and delayed effects.
+    /// </summary>
+    /// <remarks>
+    /// Part of the board rather than of the engine, because a lasting effect
+    /// outlives the turn that made it and has to be saved with the game. See
+    /// <c>docs/timing.md</c>.
+    /// </remarks>
+    public Timing.ContinuousEffects Effects { get; }
+
+    /// <summary>
+    /// Where the game is when it is part-way through resolving something: the
+    /// stack of open interrupt and response windows.
+    /// </summary>
+    /// <remarks>
+    /// On the board because a half-resolved occurrence has to be saved with the
+    /// game. See <c>docs/timing.md</c>.
+    /// </remarks>
+    public Timing.Windows Windows { get; }
+
+    /// <summary>
+    /// What the game still has to do, and where in it the game is.
+    /// </summary>
+    /// <remarks>
+    /// A phase is a list of steps on the board rather than a call, so that the
+    /// game can stop in the middle of one. See <c>docs/timing.md</c>.
+    /// </remarks>
+    public Play.Agenda Agenda { get; }
 
     /// <summary>The seat value meaning "the scenario", not a player.</summary>
     public const int Scenario = -1;
@@ -73,7 +106,7 @@ public sealed class World
 
     /// <summary>Whether the game has ended.</summary>
     /// <remarks>
-    /// The fold answers a <c>null</c> prompt once this is set, which is the only
+    /// The engine answers a <c>null</c> prompt once this is set, which is the only
     /// thing that makes a prompt absent. Nothing is asked of a player after a
     /// game is over.
     /// </remarks>
@@ -114,7 +147,7 @@ public sealed class World
     /// as 47 cards changing a tag and was reverted for it.
     /// </para>
     /// <para>
-    /// <b>The fold cannot yet tell a client this happened.</b> The event
+    /// <b>The engine cannot yet tell a client this happened.</b> The event
     /// vocabulary is the set that explains every state change in the frozen
     /// corpus, and a game area is invisible to the digest the corpus is made of
     /// (MARVEL-174) — so this change is emittable but not derivable, and no
@@ -194,7 +227,7 @@ public sealed class World
     /// <para>
     /// Areas appear during a game — an encounter discard pile the first time
     /// something is discarded, a status area the first time a card gains a
-    /// status — so the fold needs to name a place before it necessarily exists.
+    /// status — so the engine needs to name a place before it necessarily exists.
     /// </para>
     /// <para>
     /// Safe to find-or-create because an area's identity is not on the wire:

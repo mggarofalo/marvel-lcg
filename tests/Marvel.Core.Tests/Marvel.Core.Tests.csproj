@@ -21,6 +21,8 @@
     <!-- One copy, linked. See tests/Shared/RepositoryPaths.cs. -->
     <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
     <Compile Include="../Shared/DigestDiff.cs" Link="DigestDiff.cs" />
+    <Compile Include="../Shared/Rule.cs" Link="Rule.cs" />
+    <Compile Include="../Shared/RuleCitations.cs" Link="RuleCitations.cs" />
   </ItemGroup>
 
 </Project>

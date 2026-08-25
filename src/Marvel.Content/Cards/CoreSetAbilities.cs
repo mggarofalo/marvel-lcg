@@ -1,6 +1,7 @@
 using Marvel.Rules.Events;
-using Marvel.Rules.Fold;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Content.Cards;
 
@@ -17,8 +18,8 @@ namespace Marvel.Content.Cards;
 /// </para>
 /// <para>
 /// It is not a parallel path, because there is exactly one way a card's
-/// behaviour enters the fold — <see cref="ICardAbilities"/> — and the
-/// interpreter replaces what is behind it without the villain phase or the fold
+/// behaviour enters the engine — <see cref="ICardAbilities"/> — and the
+/// interpreter replaces what is behind it without the villain phase or the engine
 /// changing. It is also deliberately tiny: <b>one card</b>, the one the recorded
 /// milestone game reveals in round one. Every card added here before the
 /// interpreter exists is a card that has to be removed again, so the rule is to
@@ -46,6 +47,32 @@ public sealed class CoreSetAbilities : ICardAbilities
     /// </remarks>
     public static IReadOnlySet<string> Implemented { get; } =
         new HashSet<string>(StringComparer.Ordinal) { ImTough, Charge };
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Always empty, and that is a statement about these two cards rather than
+    /// a stub. "I'm Tough" (01105) is a "When Revealed" and "Charge" (01099) an
+    /// attachment whose one triggered ability is a <b>Forced Interrupt</b> that
+    /// fires when Rhino attacks — a window this engine can open, on an
+    /// occurrence it cannot yet reach, because the recorded hero never leaves
+    /// alter-ego form and a villain only attacks a hero (<c>rr:activation.1</c>).
+    /// So no ported card is waiting in any window.
+    /// </remarks>
+    public IReadOnlyList<PendingAbility> Waiting(
+        World world, Occurrence occurrence, WindowKind window) => [];
+
+    /// <inheritdoc/>
+    public Marvel.Rules.Prompts.Affordance Describe(World world, PendingAbility ability) =>
+        throw new RulesNotImplementedException(
+            $"no card here waits in a window, so '{ability.Type}' on card "
+            + $"{ability.Card} cannot be described for one");
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Resolve(
+        World world, Occurrence occurrence, PendingAbility ability) =>
+        throw new RulesNotImplementedException(
+            $"no card here waits in a window, so '{ability.Type}' on card "
+            + $"{ability.Card} cannot be resolved from one");
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)

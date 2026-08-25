@@ -1,6 +1,6 @@
 # The semantic event stream
 
-MARVEL-160. The fold's return signature gains a list of events describing what
+MARVEL-160. The engine's return signature gains a list of events describing what
 happened, alongside the state it produced.
 
 This was settled before the interpreter exists, deliberately. Retrofitting a
@@ -53,7 +53,7 @@ area rather than ceasing to exist. There is therefore no destruction event, and
 that is a measurement rather than an assumption.
 
 **35.3% of steps change nothing at all.** An input that only opens a prompt
-produces an empty event list. Empty and absent are different, and the fold
+produces an empty event list. Empty and absent are different, and the engine
 returns the former.
 
 ## Position is a consequence, not an event
@@ -312,7 +312,7 @@ joining a game area, not 47 cards changing a tag; and it put a rules concept
 onto card data, which is the thing that makes data know how it is being used.
 
 **Where it belongs is state, not the event vocabulary.** A game area is a
-grouping over play areas, so the fold's state needs the grouping and an event
+grouping over play areas, so the engine's state needs the grouping and an event
 would describe a *player* joining one. That was filed as MARVEL-175 and is now
 answered in [places.md](places.md): `PlayArea`, `GameArea` and the rules that
 resolve by place live in `Marvel.Rules.State`, and `World.Join` moves a play area
@@ -411,7 +411,7 @@ about, which is why they run in the fast tier.
   an interpreter executing effect nodes. That last step lands with the
   interpreter, and what this proves for it is that the vocabulary and the
   reducer are not what will be wrong.
-- **How play areas and game areas live in the fold's state**, and what event a
+- **How play areas and game areas live in the engine's state**, and what event a
   player joining a game area produces. MARVEL-175. Not answerable before an
   engine exists, and not a card property whatever the answer.
 - **Ordering within a step.** The prototype emits creations, then moves, then

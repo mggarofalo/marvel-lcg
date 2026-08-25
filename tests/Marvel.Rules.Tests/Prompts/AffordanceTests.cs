@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
+using Marvel.Rules.Timing;
+using Marvel.Tests;
 using Xunit;
 
 namespace Marvel.Rules.Tests.Prompts;
@@ -118,22 +120,49 @@ public sealed class AffordanceTests
         // 34.8% of prompts offer exactly one affordance and 81% are
         // cancellable. Without this a client cannot tell "your only move" from
         // "your only move, or pass".
-        var prompt = new Prompt(0, PromptKind.Normal, "WhenPlayerInTurn",
+        var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed, "WhenPlayerInTurn",
                                 "Spider-Man's turn", Cancellable: true, [Play()]);
 
         Assert.Single(prompt.Affordances);
         Assert.True(prompt.Cancellable);
     }
 
-    [Theory]
-    [InlineData(PromptKind.Normal)]
-    [InlineData(PromptKind.Response)]
-    [InlineData(PromptKind.Interrupt)]
-    [InlineData(PromptKind.ForcedInterrupt)]
-    public void EveryPromptKindIsOneTheEngineProduces(PromptKind kind)
+    [Rule("rr:player-turn")]
+    [Rule("rr:first-player.4")]
+    [Rule("rr:choose-game-element")]
+    [Rule("rr:choose-option")]
+    [Rule("rr:first-player.3")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:end-of-player-phase.step.1")]
+    [Fact]
+    public void EveryQuestionIsOneTheRulebookAsks()
     {
-        // All four were observed in the census. None is speculative.
-        Assert.True(Enum.IsDefined(kind));
+        // One member per kind of question the Rules Reference describes, each
+        // citing where. The four members this replaced were a census of what
+        // one sampled corpus happened to contain -- a sample, not a domain.
+        Assert.Equal(
+            [
+                Question.TurnOption, Question.Opportunity, Question.Element,
+                Question.Option, Question.Order, Question.Payment, Question.Discard,
+            ],
+            Enum.GetValues<Question>());
+    }
+
+    [Rule("rr:first-player.4")]
+    [Rule("rr:first-player.5")]
+    [Fact]
+    public void AnInterruptAndAResponseAreOneQuestionInTwoTiers()
+    {
+        // The rules ask the same thing in both windows -- "the first player has
+        // the first opportunity to use an interrupt / a response" -- and the
+        // difference is the tier. Making them two questions would put the
+        // timing in two places.
+        var interrupt = new Prompt(0, Question.Opportunity, TimingPriority.Interrupt,
+                                   "WhenUnitBeingAttack", "Defend?", true, [Play()]);
+        var response = interrupt with { When = TimingPriority.Response };
+
+        Assert.Equal(interrupt.Asking, response.Asking);
+        Assert.NotEqual(interrupt.When, response.When);
     }
 
     [Fact]
@@ -141,7 +170,7 @@ public sealed class AffordanceTests
     {
         // So a client can tie an event to the decision it came out of.
         const string Trigger = "WhenUnitBeingAttack";
-        var prompt = new Prompt(0, PromptKind.Interrupt, Trigger, "Defend?",
+        var prompt = new Prompt(0, Question.Opportunity, TimingPriority.Interrupt, Trigger, "Defend?",
                                 Cancellable: true, [Play()]);
         var moved = new CardsMoved(AreaRef.Player("HandsArea", 0),
                                    AreaRef.Player("DiscardPile", 0),
@@ -154,7 +183,7 @@ public sealed class AffordanceTests
     public void APromptRoundTripsThroughTheWire()
     {
         var prompt = new Prompt(
-            1, PromptKind.Response, "AfterCardEnterPlay", "Respond?",
+            1, Question.Opportunity, TimingPriority.Response, "AfterCardEnterPlay", "Respond?",
             Cancellable: true,
             [
                 Play() with

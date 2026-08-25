@@ -34,7 +34,7 @@ as a Linux container.
 Three things follow from that, and each one costs almost nothing now and a great
 deal later:
 
-1. The fold's return signature gains a semantic event stream, so the client can
+1. The engine's return signature gains a semantic event stream, so the client can
    animate what happened rather than diff two board snapshots.
 2. The prompt becomes a list of affordances anchored to board objects, rather
    than a list of option strings.
@@ -52,7 +52,7 @@ This document does not reopen any of the following. They are recorded in
 | Decided | Where |
 |---|---|
 | C# as the target language | migration.md, "Target language" |
-| The engine is a fold: `(state, input) -> (state, prompt or gameOver)` | migration.md, "Architecture" |
+| The engine is a resolve: `(state, input) -> (state, prompt or gameOver)` | migration.md, "Architecture" |
 | Cards become data, not sandboxed scripts | migration.md, MARVEL-92 |
 | The DSL node set, and where compiled code begins | card-dsl.md |
 | One repo, `src/` and `py_src/` | MARVEL-3 |
@@ -66,13 +66,13 @@ goal is a game, it is the wrong answer.
 
 ## Why Godot fits
 
-### The fold is already a game loop
+### The engine is already a game loop
 
 The Python engine blocks a thread inside `Controller.ChoiceOne`, and
 `WorldRender.PresentInternal` serialises the whole board on every present. That
 suits a browser, which diffs a document and repaints.
 
-Godot wants the opposite: a pump that drains events and runs tweens. The fold
+Godot wants the opposite: a pump that drains events and runs tweens. The engine
 gives exactly that. Input pushes a value in, `_Process` drains what comes out.
 Nothing has to bend.
 
@@ -155,7 +155,7 @@ Proposed shape:
 
 ```
 Affordance {
-  Id            // what gets folded back in
+  Id            // what gets resolved back in
   Kind          // play, attack, thwart, choose-target, pay-cost, ...
   AnchorId      // the card or player object the player interacts with
   Label         // the existing domain-level label, unchanged
@@ -182,7 +182,7 @@ in different clothes.
 ```
 src/
   Marvel.Core          ids, seeded MT19937, digest v2, canonical JSON writer
-  Marvel.Rules         the fold: state, zones, phases, timing, events. No cards.
+  Marvel.Rules         the engine: state, zones, phases, timing, events. No cards.
   Marvel.Cards.Dsl     node types, polymorphic deserialiser, validator, text renderer
   Marvel.Cards.Interp  nodes to transitions; emits events as a byproduct
   Marvel.Content       card data, scenario setup format, the compiled first-party set
@@ -211,7 +211,7 @@ enough to replace.
 | `Rules` | `Core` | card content, prompts as UI |
 | `Cards.*` | `Core`, `Rules` | file or network I/O, Godot |
 | `View` | all of the above | `GodotSharp`, wall-clock time |
-| `Godot` | everything | game state, except through the fold |
+| `Godot` | everything | game state, except through the engine |
 
 Enforce the wall in the build, not by convention. **Done in MARVEL-162** — the
 gate is two `<Error>` targets in `Directory.Build.targets`, so it fails a local
@@ -252,7 +252,7 @@ Three oracles already exist. Two more come with this proposal.
    exist today. The first C# written should be the RNG and the digest reader,
    tested against those files, before any game logic. That is MARVEL-8.
 
-2. Corpus replay in `Marvel.Sim`. Fold the recorded inputs, compare the digest
+2. Corpus replay in `Marvel.Sim`. Resolve the recorded inputs, compare the digest
    at every step. Digest v2 prints a card-by-card, field-by-field diff on
    mismatch. This is the mechanism that makes the port converge.
 
@@ -272,16 +272,16 @@ Three oracles already exist. Two more come with this proposal.
 
 A card game is not performance-bound. Three places genuinely are:
 
-The fold, run across a 10,000-game corpus. Use a flat array of cards indexed by
+The engine, run across a 10,000-game corpus. Use a flat array of cards indexed by
 object id, not a dictionary graph. Object id allocation order is already part of
 the cross-engine contract, so a flat array is the natural shape anyway. Keep LINQ
-out of the fold's hot path.
+out of the engine's hot path.
 
 Digest computation, at roughly 5.7 MB per 491 steps raw. Write with
 `Utf8JsonWriter` into a pooled buffer. Use `System.IO.Hashing` for the manifest.
 Do not use Newtonsoft.
 
-Undo and replay. Re-fold from a snapshot plus inputs rather than using persistent
+Undo and replay. Re-resolve from a snapshot plus inputs rather than using persistent
 data structures. It is cheaper to implement, cheaper to reason about, and it is
 how the corpus already works.
 
@@ -293,7 +293,7 @@ Libraries worth naming:
   over JSON Schema validation: the node set is closed, so the type system is the
   schema, and an unknown node fails closed for free.
 - `CommunityToolkit.HighPerformance` for spans and pooling.
-- BenchmarkDotNet, on the fold and the digest only.
+- BenchmarkDotNet, on the engine and the digest only.
 
 Do not use an entity component system. A few hundred entities with very rich
 per-entity rules is the case it handles worst.
@@ -364,7 +364,7 @@ for a later release. Plan on `net8.0`.
 **What it cost, taken now:** one API call. `Marvel.Core` used
 `Convert.ToHexStringLower`, which arrived in .NET 9; it is now
 `Convert.ToHexString(...).ToLowerInvariant()`. Nothing else in the assembly
-needed anything above .NET 8. Taken later — after the fold, the interpreter and
+needed anything above .NET 8. Taken later — after the engine, the interpreter and
 the card set — the same change is a solution-wide audit.
 
 No multi-targeting. One TFM for the solution is the whole point; a project that
@@ -421,7 +421,7 @@ those are two code paths and they will diverge. The bugs will only appear in the
 hosted case, which is the case that is harder to debug.
 
 So the client always speaks the same interface. Only the transport changes:
-in-process for the bundled case, a socket for the container. The fold makes this
+in-process for the bundled case, a socket for the container. The engine makes this
 straightforward, because `(state, input) -> (state, affordances, events)` says
 nothing about where the function runs.
 
@@ -511,7 +511,7 @@ Phase 6 gets much bigger. "Reconnecting the existing web client" becomes
 "building a game client". That is the actual goal, so the cost is worth paying,
 but it should be re-scoped openly rather than absorbed.
 
-Keep a non-Godot driver permanently. A console driver over the fold, living in
+Keep a non-Godot driver permanently. A console driver over the engine, living in
 `Marvel.Sim`. The engine must be playable before Godot opens, and when Godot
 breaks you need to know whether the rules still work.
 
@@ -549,7 +549,7 @@ noted.
    `docs/presentation-layer.md` with a pointer added from `migration.md` where it
    currently assumes ASP.NET Core. Supersedes the frontend half of MARVEL-3.
 
-2. Extend the fold signature with a semantic event stream. Module `Engine Core`,
+2. Extend the engine signature with a semantic event stream. Module `Engine Core`,
    priority High, blocked by the presentation decision. This must land before the
    interpreter exists. Retrofitting it after 3,457 card ports is not viable.
 
@@ -587,7 +587,7 @@ Phases 1 to 3 are unaffected. They run against the Python engine and produce
 artifacts that outlive both clients. MARVEL-158, generating and freezing the
 corpus, stays the critical path and stays Urgent.
 
-Inside phase 4, the fold's signature should be settled before the interpreter is
+Inside phase 4, the engine's signature should be settled before the interpreter is
 written:
 
 ```

@@ -6,7 +6,7 @@ namespace Marvel.Rules.State;
 /// <remarks>
 /// <para>
 /// Promoted out of <c>WorldSetup</c>, where it was a private record used to
-/// carry areas between the steps of a deal. The fold needs the same grouping for
+/// carry areas between the steps of a deal. The engine needs the same grouping for
 /// a different reason — a prompt is put to a seat, and answering it reads that
 /// seat's hand — so it belongs to the state rather than to the procedure that
 /// builds it.
@@ -16,7 +16,7 @@ namespace Marvel.Rules.State;
 /// one player; the Rules Reference's <i>play area</i> is a grouping a card can
 /// be in, which decides what "the main scheme" resolves to and what a game area
 /// contains. MARVEL-175 is that model, and this type is deliberately smaller
-/// than it: adding areas here that the fold does not use would be guessing at
+/// than it: adding areas here that the engine does not use would be guessing at
 /// its shape.
 /// </para>
 /// </remarks>

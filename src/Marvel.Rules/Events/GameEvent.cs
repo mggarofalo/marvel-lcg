@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Marvel.Rules.Events;
 
 /// <summary>
-/// One thing that happened, in the fold's return value. <b>A wire type.</b>
+/// One thing that happened, in the engine's return value. <b>A wire type.</b>
 /// </summary>
 /// <remarks>
 /// <para>

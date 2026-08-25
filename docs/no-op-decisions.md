@@ -312,7 +312,7 @@ this limit has to survive: a legitimate game that repeats state for a while and
 still completes. At 256 it clears it by a factor of 25.
 `bot_stall_limit` defaults to **256**, twenty-five times the measured maximum and
 still two orders of magnitude below the wall it replaces. The margin is wider than
-the tight limit's eight-fold one because a revisited state is a weaker signal than
+the tight limit's eight-resolve one because a revisited state is a weaker signal than
 a frozen one.
 
 ### What it does not do

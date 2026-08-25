@@ -7,7 +7,7 @@ namespace Marvel.Rules.State;
 /// <para>
 /// <b>An area is identified, not described.</b> <c>(zone, owner, host)</c> does
 /// not name an area uniquely — measured over 6,554 corpus steps it collides on
-/// 5,969 of them — so the area carries an <see cref="Id"/> that the fold hands
+/// 5,969 of them — so the area carries an <see cref="Id"/> that the engine hands
 /// out. MARVEL-175 and <c>docs/event-stream.md</c>.
 /// </para>
 /// <para>

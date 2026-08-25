@@ -1,7 +1,8 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
-namespace Marvel.Rules.Fold;
+namespace Marvel.Rules.Play;
 
 /// <summary>
 /// What a card does when it is revealed from the encounter deck.
@@ -20,10 +21,10 @@ namespace Marvel.Rules.Fold;
 /// is implemented". Until it exists, <c>Marvel.Content</c> supplies the handful
 /// of cards a recorded transition actually reaches, and this interface is what
 /// stops that being a parallel path: there is one place a card's behaviour can
-/// enter the fold, and the interpreter replaces what is behind it.
+/// enter the engine, and the interpreter replaces what is behind it.
 /// </para>
 /// </remarks>
-public interface ICardAbilities
+public interface ICardAbilities : IWindowAbilities
 {
     /// <summary>Resolves a revealed encounter card's "When Revealed" ability.</summary>
     /// <param name="world">The world.</param>
@@ -31,6 +32,8 @@ public interface ICardAbilities
     /// <param name="player">The seat it was dealt to.</param>
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player);
+
+
 }
 
 /// <summary>Nothing has an ability. What an engine with no cards ported does.</summary>
@@ -38,6 +41,21 @@ public sealed class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<PendingAbility> Waiting(
+        World world, Occurrence occurrence, WindowKind window) => [];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Resolve(
+        World world, Occurrence occurrence, PendingAbility ability) =>
+        throw new RulesNotImplementedException(
+            "nothing is waiting in any window, so nothing can be resolved from one");
+
+    /// <inheritdoc/>
+    public Prompts.Affordance Describe(World world, PendingAbility ability) =>
+        throw new RulesNotImplementedException(
+            "nothing is waiting in any window, so nothing can be described from one");
 }
 
 /// <summary>
@@ -62,40 +80,130 @@ public sealed class NoCardAbilities : ICardAbilities
 /// </remarks>
 public static class VillainPhase
 {
-    /// <summary>Runs one villain phase.</summary>
-    /// <param name="world">The world.</param>
+    /// <summary>Schedule the villain phase's six steps.</summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:villain-phase</c> lists six, and they are six values here rather
+    /// than the order of six method calls. That is not tidiness: a window may
+    /// hold an ability somebody has to be asked about, and a phase that is a
+    /// call has nowhere to stop. See <see cref="Agenda"/>.
+    /// </para>
+    /// <para>
+    /// Steps 2 and 4 are headings rather than occurrences, so they open no
+    /// windows of their own; what happens under them — one activation, one card
+    /// revealed — is scheduled when they are reached.
+    /// </para>
+    /// </remarks>
+    /// <param name="agenda">What the game still has to do.</param>
+    /// <param name="round">Which round this is.</param>
+    public static void Schedule(Agenda agenda, int round)
+    {
+        ArgumentNullException.ThrowIfNull(agenda);
+        agenda.Add(new PhaseStep(Steps.PlaceThreat, round, 1));
+        agenda.Add(new PhaseStep(Steps.EnemiesActivate, round, 2, Plan: true));
+        agenda.Add(new PhaseStep(Steps.DealEncounterCards, round, 3));
+        agenda.Add(new PhaseStep(Steps.PassFirstPlayerToken, round, 5));
+        agenda.Add(new PhaseStep(Steps.EndVillainPhase, round, 6));
+    }
+
+    /// <summary>Take one step of the villain phase.</summary>
+    /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
-    /// <param name="abilities">What revealed cards do.</param>
+    /// <param name="abilities">What cards do.</param>
+    /// <param name="step">Which step.</param>
+    /// <param name="events">Where to record what happened.</param>
     /// <exception cref="RulesNotImplementedException">
     /// The board reached a rule this engine does not have — a minion engaged
     /// with a player, or a villain that would attack rather than scheme.
     /// </exception>
-    public static IReadOnlyList<GameEvent> Run(
-        World world, ICardFacts facts, ICardAbilities abilities)
+    public static void Take(
+        World world, ICardFacts facts, ICardAbilities abilities,
+        PhaseStep step, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(events);
 
-        var events = new List<GameEvent>();
-
-        PlaceThreat(world, facts, events);
-        if (world.IsOver)
+        switch (step.What)
         {
-            return events;
+            case Steps.PlaceThreat:
+                PlaceThreat(world, facts, events);
+                break;
+
+            case Steps.EnemiesActivate:
+                PlanActivations(world, facts, step, events);
+                break;
+
+            case Steps.Activate:
+                Scheme(world, facts, world.Cards[step.Subject], events);
+                break;
+
+            case Steps.DealEncounterCards:
+                DealEncounterCards(world, step, events);
+                break;
+
+            case Steps.RevealEncounterCard:
+                RevealEncounterCard(world, abilities, world.Cards[step.Subject], step.Index, events);
+                break;
+
+            case Steps.PassFirstPlayerToken:
+                PassFirstPlayerToken(world);
+                break;
+
+            case Steps.EndVillainPhase:
+                PhaseEnd.EndVillainPhase(world, events);
+                break;
+
+            case Steps.EndPlayerPhase:
+                PhaseEnd.EndPlayerPhase(world, events);
+                break;
+
+            default:
+                throw new RulesNotImplementedException(
+                    $"the villain phase has no step '{step.What}'");
+        }
+    }
+
+    /// <summary>
+    /// Step 2, as one activation per player — <c>rr:villain-phase.step.2</c>,
+    /// "in player order, each player resolves".
+    /// </summary>
+    private static void PlanActivations(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        var villain = world.TheCardIn(DeckType.VillainArea);
+        if (villain is null)
+        {
+            return;
         }
 
-        EnemiesActivate(world, facts, events);
-        if (world.IsOver)
+        foreach (int seat in PlayerOrder(world))
         {
-            return events;
+            // `rr:activation.1`: hero form and the villain attacks, alter-ego
+            // form and it schemes. Which face is showing *is* which form, so
+            // this needs no separate flag.
+            var identity = world.Seats[seat].IdentityCard;
+            if (facts.Kind(identity.FaceId) != CardKind.AlterEgo)
+            {
+                throw new RulesNotImplementedException(
+                    $"the villain would attack {world.Seats[seat].Name}, who is in hero form; "
+                    + "only the scheme half of an activation is implemented");
+            }
+
+            // `rr:villain-phase.step.2.b`. A minion engaged with a player
+            // activates too, and nothing on the milestone board is ever engaged.
+            var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat));
+            if (engaged.Cards.Count > 0)
+            {
+                throw new RulesNotImplementedException(
+                    $"{engaged.Cards.Count} minion(s) engaged with {world.Seats[seat].Name} "
+                    + "would activate, and minion activation is not implemented");
+            }
+
+            world.Agenda.Then(new PhaseStep(
+                Steps.Activate, step.Round, 2, Index: seat, Subject: villain.ObjectId));
         }
-
-        var dealt = DealEncounterCards(world);
-        RevealEncounterCards(world, abilities, dealt, events);
-        PassFirstPlayerToken(world);
-
-        return events;
     }
 
     /// <summary>Step 1. Threat from the main scheme's acceleration field.</summary>
@@ -118,42 +226,6 @@ public static class VillainPhase
         long amount = facts.PrintedValue(scheme.FaceId, "EscalationThreat", world.Players);
         Threat(scheme, amount, "villain phase, place threat", events);
         CheckCompleted(world, facts, scheme, events);
-    }
-
-    /// <summary>Step 2. In player order, the villain activates against each player.</summary>
-    private static void EnemiesActivate(World world, ICardFacts facts, List<GameEvent> events)
-    {
-        var villain = world.TheCardIn(DeckType.VillainArea);
-        if (villain is null)
-        {
-            return;
-        }
-
-        foreach (int seat in PlayerOrder(world))
-        {
-            // `rr:activation.1`: hero form and the villain attacks, alter-ego
-            // form and it schemes. Which face is showing *is* which form, so
-            // this needs no separate flag.
-            var identity = world.Seats[seat].IdentityCard;
-            if (facts.Kind(identity.FaceId) != CardKind.AlterEgo)
-            {
-                throw new RulesNotImplementedException(
-                    $"the villain would attack {world.Seats[seat].Name}, who is in hero form; "
-                    + "only the scheme half of an activation is implemented");
-            }
-
-            Scheme(world, facts, villain, events);
-
-            // `rr:villain-phase.2b`. A minion engaged with a player activates
-            // too, and nothing on the milestone board is ever engaged.
-            var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat));
-            if (engaged.Cards.Count > 0)
-            {
-                throw new RulesNotImplementedException(
-                    $"{engaged.Cards.Count} minion(s) engaged with {world.Seats[seat].Name} "
-                    + "would activate; minion activation is not implemented");
-            }
-        }
     }
 
     /// <summary>An enemy schemes. <c>rr:scheme-enemy-activation</c>.</summary>
@@ -227,10 +299,10 @@ public static class VillainPhase
     /// Hazard icons deal additional cards. Nothing on the milestone board has
     /// one, and a board that did would deal too few here — so it throws.
     /// </remarks>
-    private static List<(int Player, Card Card)> DealEncounterCards(World world)
+    private static void DealEncounterCards(World world, PhaseStep step, List<GameEvent> events)
     {
-        var dealt = new List<(int, Card)>();
         var deck = world.AreaOf(DeckType.EncounterDeck);
+        int order = 0;
 
         foreach (int seat in PlayerOrder(world))
         {
@@ -247,56 +319,58 @@ public static class VillainPhase
             // would make a two-player board deal in the wrong order.
             var pending = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
             pending.Append(card);
-            dealt.Add((seat, card));
+
+            // rr:villain-phase.step.4. Each revealed card is an occurrence of
+            // its own with its own windows, in the order dealt.
+            world.Agenda.Then(new PhaseStep(
+                Steps.RevealEncounterCard, step.Round, 4,
+                Index: seat, Subject: card.ObjectId));
+            order += 1;
         }
 
-        return dealt;
+        _ = order;
+        _ = events;
     }
 
     /// <summary>Step 4. Each player reveals their cards, in the order dealt.</summary>
-    private static void RevealEncounterCards(
-        World world, ICardAbilities abilities,
-        List<(int Player, Card Card)> dealt, List<GameEvent> events)
+    private static void RevealEncounterCard(
+        World world, ICardAbilities abilities, Card card, int player, List<GameEvent> events)
     {
-        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
-
-        foreach (var (player, card) in dealt)
+        // Same reason as the boost card: the revealing area is where an
+        // encounter card registers its pools.
+        World.MoveToTop(card, world.AreaOf(DeckType.RevealingArea));
+        card.TurnFaceUp();
+        events.Add(new CardsFlipped([card.ObjectId], true)
         {
-            // Same reason as the boost card: the revealing area is where an
-            // encounter card registers its pools.
-            World.MoveToTop(card, world.AreaOf(DeckType.RevealingArea));
-            card.TurnFaceUp();
-            events.Add(new CardsFlipped([card.ObjectId], true)
-            {
-                Trigger = "villain phase", Verb = "Reveal",
-            });
+            Trigger = "villain phase", Verb = "Reveal",
+        });
 
-            events.AddRange(abilities.WhenRevealed(world, card, player));
+        events.AddRange(abilities.WhenRevealed(world, card, player));
 
-            // `rr:reveal`: what happens next is decided by the card's type. A
-            // treachery resolves and is discarded; an attachment or a minion
-            // *enters play* and stays there. Rather than switching on the type
-            // here, this asks where the card is: an ability that put it
-            // somewhere has already answered, and one that did not leaves it in
-            // the revealing area to be discarded.
-            if (card.Area.Type != DeckType.RevealingArea)
-            {
-                continue;
-            }
-
-            var from = card.Area;
-            World.MoveToTop(card, discard);
-            events.Add(new CardsMoved(
-                Places.Reference(from),
-                Places.Reference(discard),
-                [new Landing(card.ObjectId, discard.Cards.Count - 1)])
-            {
-                Trigger = "villain phase", Verb = "Reveal",
-            });
+        // `rr:reveal`: what happens next is decided by the card's type. A
+        // treachery resolves and is discarded; an attachment or a minion
+        // *enters play* and stays there. Rather than switching on the type
+        // here, this asks where the card is: an ability that put it somewhere
+        // has already answered, and one that did not leaves it in the revealing
+        // area to be discarded.
+        if (card.Area.Type != DeckType.RevealingArea)
+        {
+            return;
         }
+
+        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
+        var from = card.Area;
+        World.MoveToTop(card, discard);
+        events.Add(new CardsMoved(
+            Places.Reference(from),
+            Places.Reference(discard),
+            [new Landing(card.ObjectId, discard.Cards.Count - 1)])
+        {
+            Trigger = "villain phase", Verb = "Reveal",
+        });
     }
 
-    /// <summary>Step 5. <c>rr:villain-phase.5</c>, to the next clockwise player.</summary>
+    /// <summary>Step 5. <c>rr:villain-phase.step.5</c>, to the next clockwise player.</summary>
     private static void PassFirstPlayerToken(World world) =>
         world.FirstPlayer = world.Players > 0 ? (world.FirstPlayer + 1) % world.Players : 0;
 

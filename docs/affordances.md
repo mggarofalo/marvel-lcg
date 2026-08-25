@@ -4,7 +4,7 @@ MARVEL-161. The prompt stops being a list of option strings and becomes a list o
 things the player can do, each anchored to the board object they click.
 
 Designed alongside [event-stream.md](event-stream.md) on purpose. The two halves
-of the fold's return value share a `Trigger`, and inventing that twice is how
+of the engine's return value share a `Trigger`, and inventing that twice is how
 they would come to disagree.
 
 ## Why strings were enough and are not any more
@@ -159,7 +159,7 @@ read hidden state through a field that was only meant to say what is clickable.
 suite depends on it. `AnchorId`, `Targets` and `Costs` are additions beside it,
 never a replacement for it.
 
-## The fold
+## The engine
 
 ```
 (state, input) -> (state, Prompt?, GameEvent[])

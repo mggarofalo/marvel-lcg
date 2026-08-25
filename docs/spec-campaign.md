@@ -212,7 +212,7 @@ For all of them a scenario is not a second claim about a second card; it is the
 same claim about the same code and the same printed card, written twice.
 `coverage.py` credits the first id's scenarios to the rest, so they do not
 appear as work to do, and the report says how many it credited rather than
-folding them in silently.
+resolving them in silently.
 
 The credit is earned per card, never assumed from a name or a link:
 

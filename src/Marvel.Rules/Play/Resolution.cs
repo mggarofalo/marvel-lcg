@@ -2,10 +2,10 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 
-namespace Marvel.Rules.Fold;
+namespace Marvel.Rules.Play;
 
 /// <summary>
-/// What one fold produces: the state, the next question, and what happened.
+/// What one resolve produces: the state, the next question, and what happened.
 /// </summary>
 /// <param name="State">
 /// The world after the input was applied. <b>The same instance that went in.</b>
@@ -22,11 +22,11 @@ namespace Marvel.Rules.Fold;
 /// (state, input) -> (state, Prompt?, GameEvent[])
 /// </code>
 /// <para>
-/// <b><paramref name="State"/> is returned, not copied.</b> The fold mutates the
+/// <b><paramref name="State"/> is returned, not copied.</b> The engine mutates the
 /// world in place and hands back the same object. That is the decision the
-/// presentation-layer document already made — <i>"re-fold from a snapshot plus
+/// presentation-layer document already made — <i>"re-resolve from a snapshot plus
 /// inputs rather than using persistent data structures"</i> — and it is why
-/// undo and replay are built on re-folding rather than on structural sharing. It
+/// undo and replay are built on re-resolving rather than on structural sharing. It
 /// is on the return value anyway, because the shape is the contract and a caller
 /// should not have to know which of the two it is holding.
 /// </para>
@@ -37,11 +37,11 @@ namespace Marvel.Rules.Fold;
 /// state at all.
 /// </para>
 /// </remarks>
-public sealed record FoldResult(
+public sealed record Resolution(
     World State,
     Prompt? Prompt,
     IReadOnlyList<GameEvent> Events)
 {
-    /// <summary>Whether the game ended on this fold.</summary>
+    /// <summary>Whether the game ended on this resolve.</summary>
     public bool IsOver => Prompt is null;
 }

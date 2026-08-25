@@ -2,22 +2,23 @@ using System.Text.Json;
 using Marvel.Content.Cards;
 using Marvel.Content.Setup;
 using Marvel.Rules.Events;
-using Marvel.Rules.Fold;
+using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
-namespace Marvel.Content.Tests.Fold;
+namespace Marvel.Content.Tests.Play;
 
 /// <summary>
-/// The fold, against the first three recorded steps of the milestone game.
+/// The engine, against the first three recorded steps of the milestone game.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <c>OpeningBoardTests</c> proves the board <c>rhino / spider_man / 12345</c>
 /// is dealt from. This proves the loop runs on it: three recorded steps produced
-/// as the output of folding two answers, rather than one board produced by
+/// as the output of resolving two answers, rather than one board produced by
 /// dealing.
 /// </para>
 /// <para>
@@ -73,13 +74,13 @@ public sealed class PlayerPhaseTests
         var recorded = RecordedDigests();
         var game = Begin();
 
-        // Step 0: dealt, nothing folded yet.
+        // Step 0: dealt, nothing resolved yet.
         Assert.Equal(recorded[0], game.State.Digest().Canonical());
 
         // Steps 1 and 2: two declines.
         for (int step = 1; step <= 2; step++)
         {
-            var result = game.Fold(Decision.Decline);
+            var result = game.Resolve(Decision.Decline);
             Assert.Same(game.State, result.State);
             Assert.Equal(recorded[step], result.State.Digest().Canonical());
         }
@@ -88,7 +89,7 @@ public sealed class PlayerPhaseTests
     [Fact]
     public void DecliningChangesNothingAndSaysSo()
     {
-        // The event list is the fold's account of what changed. A decline that
+        // The event list is the engine's account of what changed. A decline that
         // emitted events would be claiming a change the digest denies, and a
         // digest that moved under an empty event list would be the same lie the
         // other way round. Both are checked together because either alone
@@ -98,7 +99,7 @@ public sealed class PlayerPhaseTests
 
         for (int step = 1; step <= 2; step++)
         {
-            var result = game.Fold(Decision.Decline);
+            var result = game.Resolve(Decision.Decline);
             Assert.Empty(result.Events);
             Assert.Equal(before, result.State.Digest().Canonical());
         }
@@ -132,7 +133,7 @@ public sealed class PlayerPhaseTests
 
             string where = $"step {step}";
             Assert.Equal(expected.GetProperty("player").GetInt32(), actual.Player);
-            Assert.Equal(expected.GetProperty("kind").GetString(), actual.Kind.ToString());
+            Assert.Equal(expected.GetProperty("kind").GetString(), RecordedKind(actual));
             Assert.Equal(expected.GetProperty("trigger").GetString(), actual.Trigger);
             Assert.Equal(expected.GetProperty("label").GetString(), actual.Label);
             Assert.Equal(expected.GetProperty("cancellable").GetBoolean(), actual.Cancellable);
@@ -142,7 +143,7 @@ public sealed class PlayerPhaseTests
 
             if (step < 2)
             {
-                game.Fold(Decision.Decline);
+                game.Resolve(Decision.Decline);
             }
         }
     }
@@ -179,7 +180,7 @@ public sealed class PlayerPhaseTests
         {
             if (step > 0)
             {
-                game.Fold(Decision.Decline);
+                game.Resolve(Decision.Decline);
             }
 
             string produced = game.State.Digest().Canonical();
@@ -201,7 +202,7 @@ public sealed class PlayerPhaseTests
         var produced = new List<string> { game.State.Digest().Canonical() };
         while (game.Pending is not null)
         {
-            var result = game.Fold(Decision.Decline);
+            var result = game.Resolve(Decision.Decline);
             if (result.Prompt is not null)
             {
                 produced.Add(result.State.Digest().Canonical());
@@ -228,7 +229,7 @@ public sealed class PlayerPhaseTests
         // every recorded digest and still be wrong.
         var game = Begin();
         int prompts = 1;
-        while (game.Fold(Decision.Decline).Prompt is not null)
+        while (game.Resolve(Decision.Decline).Prompt is not null)
         {
             prompts++;
         }
@@ -238,17 +239,18 @@ public sealed class PlayerPhaseTests
         Assert.True(game.State.IsOver);
     }
 
+    [Rule("rr:main-scheme-main-scheme-deck.2")]
+    [Rule("rr:main-scheme-main-scheme-deck.2.1")]
     [Fact]
     public void TheVillainWinsByCompletingTheMainScheme()
     {
-        // `rr:main-scheme-main-scheme-deck.2`: threat at or above the target
-        // completes the scheme, and completing the final stage wins the game.
-        // The Rhino deck holds one stage, so this is that case -- and it is why
+        // The Rhino deck holds one stage, so completing it is completing the
+        // final stage, and the villain wins outright -- which is why
         // the recording stops at seven steps of a twenty-step request.
         var game = Begin();
         while (game.Pending is not null)
         {
-            game.Fold(Decision.Decline);
+            game.Resolve(Decision.Decline);
         }
 
         var scheme = game.State.TheCardIn(DeckType.MainSchemesArea)!;
@@ -264,11 +266,11 @@ public sealed class PlayerPhaseTests
         // where the game first changes anything -- and where four things that
         // setup cannot exercise first happen at once.
         var game = Begin();
-        game.Fold(Decision.Decline);
-        game.Fold(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
 
         int before = game.State.Cards.Count;
-        var result = game.Fold(Decision.Decline);
+        var result = game.Resolve(Decision.Decline);
 
         // A card made mid-game, which is the append-only id contract tested by
         // something other than dealing. The Tough is id 81 on a board of 81.
@@ -291,6 +293,7 @@ public sealed class PlayerPhaseTests
         Assert.All(discard.Cards, card => Assert.True(card.FaceUp));
     }
 
+    [Rule("rr:scheme-enemy-activation.step.2.d")]
     [Fact]
     public void TheBoostCardIsDiscardedBeforeTheEncounterCard()
     {
@@ -300,26 +303,28 @@ public sealed class PlayerPhaseTests
         // dealt. Drawing them the other way round shifts every card left in the
         // encounter deck and every board after this one.
         var game = Begin();
-        game.Fold(Decision.Decline);
-        game.Fold(Decision.Decline);
-        var result = game.Fold(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        var result = game.Resolve(Decision.Decline);
 
         var discard = result.State.AreaOf(DeckType.EncounterDiscardPile);
         Assert.Equal(["01186", "01105"], discard.Cards.Select(card => card.FaceId));
     }
 
+    [Rule("rr:villain-phase.step.1")]
+    [Rule("rr:scheme-enemy-activation.step.3")]
     [Fact]
     public void ThreatComesFromTwoPlacesAndBothAreCounted()
     {
         // `k_threat` 0 -> 2 is not one rule. One is the main scheme's own
-        // escalation (`rr:villain-phase.1`, `1*` at one player) and one is
-        // Rhino scheming (`rr:scheme-enemy-activation.3`, SCH 1 plus a boost
-        // card worth nothing). Either alone gives 1, which is why the total is
-        // checked against the parts.
+        // escalation (`rr:villain-phase.step.1`, `1*` at one player) and one
+        // is Rhino scheming (`rr:scheme-enemy-activation.step.3`, SCH 1 plus a
+        // boost card worth nothing). Either alone gives 1, which is why the
+        // total is checked against the parts.
         var game = Begin();
-        game.Fold(Decision.Decline);
-        game.Fold(Decision.Decline);
-        var result = game.Fold(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        var result = game.Resolve(Decision.Decline);
 
         var scheme = result.State.TheCardIn(DeckType.MainSchemesArea)!;
         Assert.Equal(2, scheme.Tokens["k_threat"]);
@@ -340,9 +345,9 @@ public sealed class PlayerPhaseTests
         // works. Surge is not implemented, so the honest outcome is a named
         // refusal rather than a Tough that silently stacks.
         var game = Begin();
-        game.Fold(Decision.Decline);
-        game.Fold(Decision.Decline);
-        game.Fold(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
 
         var villain = game.State.TheCardIn(DeckType.VillainArea)!;
         Assert.True(Statuses.Has(game.State, villain, Statuses.Tough));
@@ -356,28 +361,29 @@ public sealed class PlayerPhaseTests
     }
 
     [Fact]
-    public void FoldingPastTheEndIsRefusedRatherThanIgnored()
+    public void ResolvingPastTheEndIsRefusedRatherThanIgnored()
     {
         var game = Begin();
         while (game.Pending is not null)
         {
-            game.Fold(Decision.Decline);
+            game.Resolve(Decision.Decline);
         }
 
-        Assert.Throws<InvalidOperationException>(() => game.Fold(Decision.Decline));
+        Assert.Throws<InvalidOperationException>(() => game.Resolve(Decision.Decline));
     }
 
+    [Rule("rr:villain-phase.step.5")]
     [Fact]
     public void TheFirstPlayerTokenIsPassedEvenWithOnePlayer()
     {
-        // `rr:villain-phase.5`. At one player it comes back to the same seat,
-        // so the modulo is doing the work and an implementation that only
+        // At one player the token comes back to the same seat, so the modulo
+        // is doing the work and an implementation that only
         // incremented would put the token on a seat that does not exist -- and
         // `k_first_player_token` would vanish from the digest.
         var game = Begin();
-        game.Fold(Decision.Decline);
-        game.Fold(Decision.Decline);
-        var result = game.Fold(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        var result = game.Resolve(Decision.Decline);
 
         Assert.Equal(0, result.State.FirstPlayer);
         Assert.Contains("\"k_first_player_token\":1", result.State.Digest().Canonical());
@@ -390,7 +396,7 @@ public sealed class PlayerPhaseTests
         var mulligan = game.Pending!.Affordances[0];
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => game.Fold(Decision.Take(mulligan.Id)));
+            () => game.Resolve(Decision.Take(mulligan.Id)));
         Assert.Contains(Game.ResolveMulligans, thrown.Message, StringComparison.Ordinal);
     }
 
@@ -409,9 +415,9 @@ public sealed class PlayerPhaseTests
         // wrong: two different options must not collide onto one handle.
         var game = Begin();
         int mulligan = game.Pending!.Affordances.Single().Id;
-        game.Fold(Decision.Decline);
+        game.Resolve(Decision.Decline);
         int changeForm = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm).Id;
-        game.Fold(Decision.Decline);
+        game.Resolve(Decision.Decline);
         int endPhase = game.Pending!.Affordances.Single().Id;
 
         Assert.Equal(3, new HashSet<int> { mulligan, changeForm, endPhase }.Count);
@@ -437,9 +443,9 @@ public sealed class PlayerPhaseTests
                 affordance.GetProperty("verb").GetString()!))
             .ToList();
 
-        // The fold offers every derived verb the recording offers, and nothing
+        // The engine offers every derived verb the recording offers, and nothing
         // it does not. `Play` is filtered out of the recording rather than
-        // tolerated in the fold: an extra affordance is as wrong as a missing
+        // tolerated in the engine: an extra affordance is as wrong as a missing
         // one, and only this direction catches it.
         Assert.Equal(recorded.Count, actual.Affordances.Count);
 
@@ -499,4 +505,37 @@ public sealed class PlayerPhaseTests
         Assert.Equal((int)Seed, board.GetProperty("seed").GetInt32());
         return board;
     }
+
+    /// <summary>
+    /// How the recording spells this prompt's kind.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A translation, and it lives here rather than on <c>Prompt</c> on purpose.
+    /// The recorded <c>kind</c> is the name of a member of the Python engine's
+    /// <c>TimingPriority</c>, an enum with twelve members of which four —
+    /// <c>Rule</c>, <c>Statistics</c>, <c>Normal</c>, <c>End</c> — name nothing
+    /// in the Rules Reference. It also flattens two questions the rules keep
+    /// apart: <i>what</i> is being asked and <i>when</i>.
+    /// </para>
+    /// <para>
+    /// So the engine carries <see cref="Question"/> and
+    /// <see cref="TimingPriority"/>, both read off the rulebook, and this is
+    /// where they are bent into the corpus's spelling. Every other engine that
+    /// wants the recording to line up needs this function; none of them should
+    /// have to think in it.
+    /// </para>
+    /// </remarks>
+    private static string RecordedKind(Prompt prompt) => prompt switch
+    {
+        // "Normal" is the recording's word for a question that is not timed
+        // around an occurrence at all -- a turn option, a target, a payment.
+        { When: TimingPriority.Untimed } => "Normal",
+        { When: TimingPriority.StatusForcedInterrupt or TimingPriority.ForcedInterrupt }
+            => "ForcedInterrupt",
+        { When: TimingPriority.Interrupt } => "Interrupt",
+        { When: TimingPriority.ForcedResponse } => "ForcedResponse",
+        { When: TimingPriority.Response } => "Response",
+        _ => prompt.When.ToString(),
+    };
 }

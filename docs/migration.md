@@ -45,10 +45,10 @@ Chosen over TypeScript and Rust. Determinism control is better than TypeScript's
 (MARVEL-159).** The client is built in Godot for macOS and Windows, and the
 TypeScript client is dropped. `Marvel.Server` survives as the engine host —
 in-process for local play, a Linux container for hosted play — rather than as a
-web-client server. The fold's return signature gains a semantic event stream and
+web-client server. The engine's return signature gains a semantic event stream and
 anchored affordances. Nothing else in this document is affected.
 
-### Architecture: the engine is a fold
+### Architecture: the engine is a resolve
 
 ```
 (state, input) -> (state, Prompt?, GameEvent[])
@@ -56,13 +56,13 @@ anchored affordances. Nothing else in this document is affected.
 
 ~~`(state, input) -> (state, prompt | gameOver)`~~ — **extended by MARVEL-160 and
 MARVEL-161.** The prompt is now a list of affordances anchored to board objects
-([affordances.md](affordances.md)), and the fold also returns a semantic event
+([affordances.md](affordances.md)), and the engine also returns a semantic event
 stream describing what happened ([event-stream.md](event-stream.md)). A prompt is
 absent when the game is over, which is what the old `| gameOver` said.
 
 No blocking, no threads in gameplay paths. "Ask the player" is a `yield`, not an I/O wait.
 
-This falls out of the change rather than being extra work: replay becomes a fold over the recorded input list, undo becomes re-folding a prefix, tests lose all timing flake, and driving the engine from an agent or a bot becomes a function call instead of a websocket client.
+This falls out of the change rather than being extra work: replay becomes a resolve over the recorded input list, undo becomes re-resolving a prefix, tests lose all timing flake, and driving the engine from an agent or a bot becomes a function call instead of a websocket client.
 
 ### Cards become data, not sandboxed scripts
 
@@ -239,7 +239,7 @@ Vary spec depth by card complexity rather than writing a fixed number per card. 
 1. **Foundations** — guidance, get the Python engine running reproducibly, decide repo layout and corpus storage
 2. **Corpus and Oracle** — headless bot, determinism audit, coverage-directed corpus, freeze it
 3. **Spec Extraction** — card text dataset, puzzle harness, validation runner, rules-engine specs
-4. **Engine Core** — the C# fold
+4. **Engine Core** — the C# resolve
 5. **Card DSL and Port** — DSL against the hard cases, then the 3,457 ports
 6. **Client and Integration**
 

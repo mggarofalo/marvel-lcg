@@ -61,7 +61,7 @@ public static class DeckTypes
 {
     // `is_deck`, `is_in_hand` and `is_face_up` from `DeckTypeFlags` in the
     // Python engine. Only the three that decide `face_up` are carried; the rest
-    // of the flag set is not needed until the fold is.
+    // of the flag set is not needed until the engine is.
     private static readonly HashSet<DeckType> Decks =
     [
         DeckType.PlayerDeck, DeckType.DiscardPile, DeckType.AdditionalDeck,

@@ -48,7 +48,7 @@ public sealed record CardBlueprint(string Spec, SetupSlot Slot, int Seat);
 /// </para>
 /// <para>
 /// No card abilities. A scenario whose setup fires an ability — Doctor Strange's
-/// Invocations, a challenge that places a status card — needs the fold, and the
+/// Invocations, a challenge that places a status card — needs the engine, and the
 /// deal order documents which those are.
 /// </para>
 /// </remarks>

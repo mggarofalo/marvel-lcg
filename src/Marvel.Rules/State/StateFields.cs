@@ -311,7 +311,7 @@ public static class StateFields
 
             default:
                 // Every other kind reaches play only by being played, which is
-                // the fold's business and not setup's.
+                // the engine's business and not setup's.
                 break;
         }
     }

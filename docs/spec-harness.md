@@ -25,8 +25,8 @@ That is differential spec extraction, and it is what `tools/spec/` implements.
 
 ## A scenario is a transcript
 
-The engine is a fold `(state, input) -> (state, prompt)`. A scenario is a
-literal trace of that fold: **one `When` per decision**, with `Then`s
+The engine is a resolve `(state, input) -> (state, prompt)`. A scenario is a
+literal trace of that resolve: **one `When` per decision**, with `Then`s
 interleaved wherever the board is worth checking.
 
 ```gherkin

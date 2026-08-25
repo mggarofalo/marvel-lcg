@@ -1,8 +1,9 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
-namespace Marvel.Rules.Fold;
+namespace Marvel.Rules.Play;
 
 /// <summary>Where a game is in the round structure.</summary>
 /// <remarks>
@@ -31,7 +32,7 @@ public enum GamePhase
 }
 
 /// <summary>
-/// The fold: a world, where it is in the round, and what it will ask next.
+/// The engine: a world, where it is in the round, and what it will ask next.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -60,7 +61,7 @@ public enum GamePhase
 /// </para>
 /// <para>
 /// <b>Not a hot path yet.</b> <c>docs/presentation-layer.md</c> asks for LINQ out
-/// of the fold and a flat array of cards. The flat array is already how
+/// of the engine and a flat array of cards. The flat array is already how
 /// <see cref="World"/> stores them; the LINQ here is in prompt construction,
 /// which runs once per decision rather than once per effect node, and it will be
 /// measured before it is optimised.
@@ -113,10 +114,10 @@ public sealed class Game
         Pending = MulliganPrompt();
     }
 
-    /// <summary>The verbs this fold derives from state alone.</summary>
+    /// <summary>The verbs this resolve derives from state alone.</summary>
     public static IReadOnlySet<string> DerivedVerbs => Derived;
 
-    /// <summary>The world. The fold's first argument.</summary>
+    /// <summary>The world. The engine's first argument.</summary>
     public World State => world;
 
     /// <summary>Where the game is in the round structure.</summary>
@@ -140,7 +141,7 @@ public sealed class Game
     /// threat and discards correctly and no card's own text ever fires.
     /// </param>
     /// <remarks>
-    /// Setup itself is not folded — <see cref="WorldSetup"/> runs it and hands
+    /// Setup is not resolved this way — <see cref="WorldSetup"/> runs it and hands
     /// back a world. So this produces no events, and a client attaching here
     /// gets a board to draw rather than a board being dealt. Emitting setup as
     /// events is worth doing and is not free: it is roughly eighty
@@ -161,7 +162,7 @@ public sealed class Game
     /// have. Thrown before the world is touched.
     /// </exception>
     /// <exception cref="InvalidOperationException">The game is already over.</exception>
-    public FoldResult Fold(Decision input)
+    public Resolution Resolve(Decision input)
     {
         ArgumentNullException.ThrowIfNull(input);
 
@@ -172,7 +173,7 @@ public sealed class Game
 
         if (!input.IsDecline)
         {
-            // Every affordance this fold offers is one that has to *do*
+            // Every affordance this resolve offers is one that has to *do*
             // something, and none of them are written. Naming the verb rather
             // than saying "not implemented" is the difference between a
             // one-line diagnosis and a debugging session.
@@ -180,7 +181,7 @@ public sealed class Game
                 .FirstOrDefault(affordance => affordance.Id == input.Affordance)?.Verb
                 ?? $"affordance {input.Affordance}";
             throw new RulesNotImplementedException(
-                $"taking '{verb}' is not implemented; this fold only declines");
+                $"taking '{verb}' is not implemented; this resolve only declines");
         }
 
         switch (Phase)
@@ -190,7 +191,7 @@ public sealed class Game
                 Round = 1;
                 Phase = GamePhase.PlayerTurn;
                 Pending = TurnPrompt();
-                return new FoldResult(world, Pending, []);
+                return new Resolution(world, Pending, []);
 
             case GamePhase.PlayerTurn:
                 // Declining the main turn ends it. Progress in the game's terms
@@ -198,7 +199,7 @@ public sealed class Game
                 // decision in the corpus at 187 of 320 declines.
                 Phase = GamePhase.EndPhase;
                 Pending = EndPhasePrompt();
-                return new FoldResult(world, Pending, []);
+                return new Resolution(world, Pending, []);
 
             case GamePhase.EndPhase:
                 // The end phase refills the hand to hand size, and this game
@@ -206,22 +207,19 @@ public sealed class Game
                 // step, so the trace is identical whether the refill happens
                 // before this prompt or after it. Left out rather than guessed.
                 Phase = GamePhase.VillainPhase;
-                var happened = VillainPhase.Run(world, facts, abilities);
 
-                if (world.IsOver)
-                {
-                    // The only thing that makes a prompt absent. Nothing is
-                    // asked of a player after a game is over.
-                    Phase = GamePhase.Over;
-                    Pending = null;
-                    return new FoldResult(world, null, happened);
-                }
+                // rr:end-of-player-phase.step.4 and .step.5. Steps 1 to 3 --
+                // discard down to hand size, draw up to it, ready every card --
+                // are not implemented; see PhaseEnd.EndPlayerPhase.
+                world.Agenda.Add(new PhaseStep(Steps.EndPlayerPhase, Round, 4));
+                VillainPhase.Schedule(world.Agenda, Round);
+                return Work([]);
 
-                Round++;
-                Phase = GamePhase.PlayerTurn;
-                Active = world.FirstPlayer;
-                Pending = TurnPrompt();
-                return new FoldResult(world, Pending, happened);
+            case GamePhase.VillainPhase:
+                // Answering a question the villain phase asked. The window
+                // absorbs the answer and the agenda carries on from where it
+                // stopped.
+                return Work(Answer(input));
 
             default:
                 throw new RulesNotImplementedException($"the {Phase} phase is not implemented");
@@ -233,7 +231,8 @@ public sealed class Game
         var seat = world.Seats[Active];
         return new Prompt(
             Player: seat.Index,
-            Kind: PromptKind.Normal,
+            Asking: Question.TurnOption,
+            When: Timing.TimingPriority.Untimed,
             Trigger: MulliganTrigger,
             Label: $"{seat.Name} resolves mulligans",
             // The engine asks this forced. There is no "keep my hand" option to
@@ -243,12 +242,48 @@ public sealed class Game
             Affordances: [HandChoice(seat, ResolveMulligans)]);
     }
 
+    private Resolution Work(List<GameEvent> happened)
+    {
+        if (Sequence.Work(world, facts, abilities, happened) is { } asked)
+        {
+            Pending = asked;
+            return new Resolution(world, Pending, happened);
+        }
+
+        if (world.IsOver)
+        {
+            // The only thing that makes a prompt absent. Nothing is asked of a
+            // player after a game is over.
+            Phase = GamePhase.Over;
+            Pending = null;
+            return new Resolution(world, null, happened);
+        }
+
+        Round++;
+        Phase = GamePhase.PlayerTurn;
+        Active = world.FirstPlayer;
+        Pending = TurnPrompt();
+        return new Resolution(world, Pending, happened);
+    }
+
+    private List<GameEvent> Answer(Decision input)
+    {
+        var happened = new List<GameEvent>();
+        if (Pending is { } asked)
+        {
+            Sequence.Answer(world, abilities, asked, input, happened);
+        }
+
+        return happened;
+    }
+
     private Prompt TurnPrompt()
     {
         var seat = world.Seats[Active];
         return new Prompt(
             Player: seat.Index,
-            Kind: PromptKind.Normal,
+            Asking: Question.TurnOption,
+            When: Timing.TimingPriority.Untimed,
             Trigger: TurnTrigger,
             // The engine's console line, newline and all. Normalising it is how
             // two implementations quietly stop agreeing about a string that is
@@ -263,7 +298,8 @@ public sealed class Game
         var seat = world.Seats[Active];
         return new Prompt(
             Player: seat.Index,
-            Kind: PromptKind.Normal,
+            Asking: Question.TurnOption,
+            When: Timing.TimingPriority.Untimed,
             Trigger: EndPhaseTrigger,
             Label: $"{seat.Name} End Phase",
             Cancellable: false,

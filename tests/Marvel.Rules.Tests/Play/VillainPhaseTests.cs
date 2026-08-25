@@ -1,9 +1,10 @@
+using Marvel.Tests;
 using Marvel.Rules.Events;
-using Marvel.Rules.Fold;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Xunit;
 
-namespace Marvel.Rules.Tests.Fold;
+namespace Marvel.Rules.Tests.Play;
 
 /// <summary>
 /// The villain phase on boards the recording cannot reach.
@@ -24,81 +25,90 @@ namespace Marvel.Rules.Tests.Fold;
 /// </remarks>
 public sealed class VillainPhaseTests
 {
+    [Rule("rr:scheme-enemy-activation.step.2.c")]
+    [Rule("rr:scheme-enemy-activation.step.3")]
     [Theory]
     // SCH 1, and a boost card worth nothing: the recorded round one, which is
-    // why a fold that ignored boost icons entirely passed every test.
+    // why a resolve that ignored boost icons entirely passed every test.
     [InlineData(0, 1)]
     // SCH 1 plus one boost icon: the recorded round two, at 2.
     [InlineData(1, 2)]
     [InlineData(3, 4)]
     public void BoostIconsAddToTheSchemeValue(int boost, int expected)
     {
-        // `rr:scheme-enemy-activation.2c`: "Increase the scheming enemy's SCH
-        // value by one for each boost icon on the card." Then step 3 places
-        // threat equal to the modified value.
+        // Threat placed is the *modified* SCH, so the two steps have to be
+        // read together: a resolve that placed printed SCH would be right
+        // whenever the boost card happened to be worth nothing.
         var printed = new Printed()
             .With("villain", ("SCH", "1"))
             .With("scheme", ("EscalationThreat", "0"))
             .With("boost", ("Boost", boost.ToString()));
         var world = Board(printed, players: 1);
 
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
 
         Assert.Equal(expected, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
     }
 
+    [Rule("rr:scheme-enemy-activation.step.2.d")]
+    [Rule("rr:boost-boost-icon.5")]
     [Fact]
     public void TheBoostCardIsDiscardedWhicheverWayItCounts()
     {
-        // `rr:boost-boost-icon.5`. A zero-icon card is still discarded, so the
-        // discard is not conditional on the count.
+        // A zero-icon card is still discarded, so the discard is not
+        // conditional on the count.
         var printed = new Printed()
             .With("villain", ("SCH", "1"))
             .With("scheme", ("EscalationThreat", "0"));
         var world = Board(printed, players: 1);
 
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
 
         var discard = world.AreaOf(DeckType.EncounterDiscardPile);
         Assert.Equal(["boost", "encounter"], discard.Cards.Select(card => card.FaceId));
     }
 
+    [Rule("rr:villain-phase.step.5")]
     [Fact]
     public void TheFirstPlayerTokenGoesToTheNextSeat()
     {
-        // `rr:villain-phase.5`, "to the next clockwise player". At one player it
-        // returns to the same seat, which is why the recorded game cannot tell
-        // a modulo from a no-op.
+        // At one player the token returns to the same seat, which is why the
+        // recorded game cannot tell a modulo from a no-op.
         var printed = new Printed()
             .With("villain", ("SCH", "0"))
             .With("scheme", ("EscalationThreat", "0"));
         var world = Board(printed, players: 3);
 
         Assert.Equal(0, world.FirstPlayer);
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
         Assert.Equal(1, world.FirstPlayer);
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
         Assert.Equal(2, world.FirstPlayer);
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
         Assert.Equal(0, world.FirstPlayer);
     }
 
+    [Rule("rr:villain-phase.step.2")]
+    [Rule("rr:activation.1")]
     [Fact]
     public void TheVillainActivatesOncePerPlayer()
     {
-        // `rr:villain-phase.2`, "in player order, each player resolves". Three
-        // players means three activations, three boost cards and three lots of
-        // threat -- not one.
+        // Three players means three activations, three boost cards and three
+        // lots of threat -- not one.
         var printed = new Printed()
             .With("villain", ("SCH", "1"))
             .With("scheme", ("EscalationThreat", "0"));
         var world = Board(printed, players: 3);
 
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
 
         Assert.Equal(3, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
     }
 
+    // Deliberately uncited: no published rule says a card acquires a token
+    // pool. It is an artefact of the Python engine's serialisation that the
+    // digest forces the port to reproduce, and `docs/rules-citations.md` uses
+    // it as the example of what an uncited test honestly is.
     [Fact]
     public void TokenPoolsSurviveLeavingPlay()
     {
@@ -116,7 +126,7 @@ public sealed class VillainPhaseTests
             .Single(c => c.FaceId == "encounter");
         Assert.False(card.HasRegisteredTokens);
 
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
 
         Assert.True(card.HasRegisteredTokens);
         Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
@@ -124,12 +134,13 @@ public sealed class VillainPhaseTests
         Assert.DoesNotContain("k_threat", StateFields.Keys(CardKind.Treachery, hasHeldPools: false));
     }
 
+    [Rule("rr:activation.1")]
     [Fact]
     public void AVillainThatWouldAttackSaysSoRatherThanScheming()
     {
-        // `rr:activation.1`. Hero form and the villain attacks. Producing a
-        // scheme anyway would place threat that the rules do not, and the board
-        // would look plausible.
+        // Hero form and the villain attacks. Producing a scheme anyway would
+        // place threat that the rules do not, and the board would look
+        // plausible.
         var printed = new Printed()
             .With("villain", ("SCH", "1"))
             .With("scheme", ("EscalationThreat", "0"));
@@ -137,15 +148,17 @@ public sealed class VillainPhaseTests
         var world = Board(printed, players: 1);
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => VillainPhase.Run(world, printed, new NoCardAbilities()));
+            () => Run(world, printed));
         Assert.Contains("hero form", thrown.Message, StringComparison.Ordinal);
     }
 
+    [Rule("rr:villain-phase.step.2.b")]
+    [Rule("rr:activation.2")]
     [Fact]
     public void AMinionEngagedWithAPlayerSaysSoRatherThanBeingSkipped()
     {
-        // `rr:villain-phase.2b`. Skipping it silently is the dangerous failure:
-        // the board is right about everything except the damage nobody took.
+        // Skipping it silently is the dangerous failure: the board is right
+        // about everything except the damage nobody took.
         var printed = new Printed()
             .With("villain", ("SCH", "0"))
             .With("scheme", ("EscalationThreat", "0"));
@@ -153,16 +166,16 @@ public sealed class VillainPhaseTests
         world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => VillainPhase.Run(world, printed, new NoCardAbilities()));
+            () => Run(world, printed));
         Assert.Contains("engaged", thrown.Message, StringComparison.Ordinal);
     }
 
+    [Rule("rr:main-scheme-main-scheme-deck.2")]
     [Theory]
-    // `rr:main-scheme-main-scheme-deck.2`: "equal to or greater than its target
-    // threat value". The recorded game reaches 8 against a target of 7, so
-    // *greater* and *at least* both fire there and the boundary is untested by
-    // it -- a fold that required strictly greater produces every recorded
-    // digest and ends the game one round late.
+    // The recorded game reaches 8 threat against a target of 7, so *greater*
+    // and *at least* both complete the scheme there and the boundary is
+    // untested by it: a resolve that required strictly greater produces every
+    // recorded digest and ends the game one round late.
     [InlineData(2, 2, true)]
     [InlineData(2, 3, false)]
     [InlineData(3, 2, true)]
@@ -175,17 +188,19 @@ public sealed class VillainPhaseTests
                             ("TargetThreat", target.ToString()));
         var world = Board(printed, players: 1);
 
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
 
         Assert.Equal(completes, world.IsOver);
     }
 
+    [Rule("rr:modifiers.6.1")]
+    [Rule("rr:ability.1")]
     [Fact]
     public void AnAttachmentModifiesItsHostOnlyWhileInPlay()
     {
         // The recorded game cannot tell: its one modifier is an attachment in
         // `UpgradesArea`, which is in play, and its one other hosted card is a
-        // Tough with no modifier printed on it. So a fold that counted
+        // Tough with no modifier printed on it. So a resolve that counted
         // modifiers from anywhere produces every recorded digest.
         //
         // A discarded attachment does not modify the card it used to be on.
@@ -213,6 +228,13 @@ public sealed class VillainPhaseTests
         var aside = world.AreaOf(DeckType.StatusArea, villain.Area.PlayArea, villain.ObjectId);
         World.MoveToTop(charge, aside);
         Assert.Equal(2, Attack());
+    }
+
+    /// <summary>Schedules the villain phase and walks it to the end.</summary>
+    private static void Run(World world, Printed printed)
+    {
+        VillainPhase.Schedule(world.Agenda, round: 1);
+        Sequence.Finish(world, printed, new NoCardAbilities(), []);
     }
 
     /// <summary>A villain, a main scheme, one identity per seat, two encounter cards each.</summary>
