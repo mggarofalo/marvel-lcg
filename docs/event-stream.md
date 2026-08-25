@@ -313,9 +313,22 @@ onto card data, which is the thing that makes data know how it is being used.
 
 **Where it belongs is state, not the event vocabulary.** A game area is a
 grouping over play areas, so the fold's state needs the grouping and an event
-would describe a *player* joining one. That is a design question for the engine
-core, filed as MARVEL-175, and it does not need answering before an engine
-exists.
+would describe a *player* joining one. That was filed as MARVEL-175 and is now
+answered in [places.md](places.md): `PlayArea`, `GameArea` and the rules that
+resolve by place live in `Marvel.Rules.State`, and `World.Join` moves a play area
+in one operation.
+
+Surveying every rules file that uses the phrase turned up a third published
+meaning and a second scenario. God of Lies' Epic Multiplayer Mode
+(`pack:mc55:game-areas`) puts *a group of one to four players* in a game area and
+Loki in a neutral one with nobody in it, which rules out the tempting "one game
+area per player" model that Kang alone would have suggested.
+
+**The event is still open, and it is now precise.** A player joining a game area
+is the first change that is emittable but not derivable — a reducer over digests
+can never discover it, because the digest cannot see it (MARVEL-174). So this
+vocabulary cannot grow the member the way every other member got here. Three
+options and the argument are in [places.md](places.md#the-event-question).
 
 ### The oracle is blind to all of it
 

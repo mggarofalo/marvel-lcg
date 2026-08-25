@@ -24,6 +24,7 @@ public sealed class World
     private readonly List<Card> cards = [];
     private readonly List<Area> areas = [];
     private readonly List<Seat> seats = [];
+    private readonly List<GameArea> gameAreas = [];
     private readonly ICardFacts facts;
 
     /// <summary>Creates an empty world.</summary>
@@ -35,6 +36,17 @@ public sealed class World
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(players);
         this.facts = facts;
         Players = players;
+
+        // An ordinary game has exactly one game area holding every play area,
+        // and nothing in the rules distinguishes that from having none. Making
+        // it here rather than lazily means every predicate about reach has the
+        // same shape whether or not a scenario ever splits.
+        var whole = CreateGameArea();
+        whole.Add(PlayArea.Villains);
+        for (int seat = 0; seat < players; seat++)
+        {
+            whole.Add(PlayArea.Of(seat));
+        }
     }
 
     /// <summary>The seat value meaning "the scenario", not a player.</summary>
@@ -52,8 +64,89 @@ public sealed class World
     /// <summary>The players, in seat order.</summary>
     public IReadOnlyList<Seat> Seats => seats;
 
+    /// <summary>Every game area, in the order they were made.</summary>
+    /// <remarks>
+    /// Never empty: the first is made with the world and holds every play area.
+    /// A scenario that splits adds more; see <see cref="GameArea"/>.
+    /// </remarks>
+    public IReadOnlyList<GameArea> GameAreas => gameAreas;
+
     /// <summary>The seat holding the first player token.</summary>
     public int FirstPlayer { get; internal set; }
+
+    /// <summary>Makes an empty game area.</summary>
+    /// <remarks>
+    /// Empty on purpose. Kang's stage 3A says "create your own game area and
+    /// place this scheme in it", so creating and populating are two steps, and
+    /// God of Lies keeps a game area with no players in it at all.
+    /// </remarks>
+    public GameArea CreateGameArea()
+    {
+        var area = new GameArea(gameAreas.Count);
+        gameAreas.Add(area);
+        return area;
+    }
+
+    /// <summary>Moves a play area into a game area, leaving whichever held it.</summary>
+    /// <remarks>
+    /// <para>
+    /// <c>pack:mc11:game-areas</c>: "choose a game area and reorient the cards
+    /// on the table to indicate that you have joined that game area."
+    /// </para>
+    /// <para>
+    /// <b>One operation, not one per card.</b> A play area moves and every card
+    /// in it comes along, because a card's game area is looked up through its
+    /// play area rather than stored on the card. PR #115 modelled a Kang split
+    /// as 47 cards changing a tag and was reverted for it.
+    /// </para>
+    /// <para>
+    /// <b>The fold cannot yet tell a client this happened.</b> The event
+    /// vocabulary is the set that explains every state change in the frozen
+    /// corpus, and a game area is invisible to the digest the corpus is made of
+    /// (MARVEL-174) — so this change is emittable but not derivable, and no
+    /// existing event kind covers it. Raised on MARVEL-175 rather than settled
+    /// here, because <c>tools/events/model.py</c> already records the opposite
+    /// decision in as many words.
+    /// </para>
+    /// </remarks>
+    /// <param name="area">The play area that is moving.</param>
+    /// <param name="destination">The game area it joins.</param>
+    public void Join(PlayArea area, GameArea destination)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        if (!gameAreas.Contains(destination))
+        {
+            throw new ArgumentException("that game area is not in this world", nameof(destination));
+        }
+
+        foreach (var existing in gameAreas)
+        {
+            existing.Remove(area);
+        }
+
+        destination.Add(area);
+    }
+
+    /// <summary>Takes a play area out of every game area.</summary>
+    /// <remarks>
+    /// Kang's stage 2B "remains in play in a central location […] though it is
+    /// not part of any other game area", and its text stays active for everyone.
+    /// Being in no game area is a real placement with a rules consequence, not
+    /// an error state — see <c>Places.CanAffect</c>.
+    /// </remarks>
+    /// <param name="area">The play area to detach.</param>
+    public void Detach(PlayArea area)
+    {
+        foreach (var existing in gameAreas)
+        {
+            existing.Remove(area);
+        }
+    }
+
+    /// <summary>Which game area a play area is in, or <c>null</c> when it is in none.</summary>
+    /// <param name="area">The play area.</param>
+    public GameArea? GameAreaOf(PlayArea area) =>
+        gameAreas.FirstOrDefault(candidate => candidate.Contains(area));
 
     /// <summary>Makes a seat and the areas that belong to it.</summary>
     /// <param name="name">The player's name, e.g. <c>Spider-Man</c>.</param>
@@ -69,27 +162,28 @@ public sealed class World
         var seat = new Seat(
             index,
             name,
-            identity: CreateArea(DeckType.AsideDeck, index, index),
+            identity: CreateArea(DeckType.AsideDeck, index, PlayArea.Of(index)),
             // The nemesis pile is the player's place and the scenario's
             // property, so a card made in it is owned by the scenario. The
             // recorded digest is unambiguous: an obligation sitting in a
             // seat's pile records owner -1.
-            nemesis: CreateArea(DeckType.AsideDeck, Scenario, index),
-            deck: CreateArea(DeckType.PlayerDeck, index, index),
-            hand: CreateArea(DeckType.HandsArea, index, index),
-            hero: CreateArea(DeckType.HeroArea, index, index));
+            nemesis: CreateArea(DeckType.AsideDeck, Scenario, PlayArea.Of(index)),
+            deck: CreateArea(DeckType.PlayerDeck, index, PlayArea.Of(index)),
+            hand: CreateArea(DeckType.HandsArea, index, PlayArea.Of(index)),
+            hero: CreateArea(DeckType.HeroArea, index, PlayArea.Of(index)));
         seats.Add(seat);
         return seat;
     }
 
     /// <summary>Makes an area.</summary>
     /// <param name="type">What kind of place it is.</param>
-    /// <param name="owner">Who owns it, or -1 for the scenario.</param>
-    /// <param name="relatedPlayer">Whose place it is, or -1.</param>
+    /// <param name="cardOwner">Who a card made here belongs to, or -1 for the scenario.</param>
+    /// <param name="playArea">Which play area it sits in. Defaults to the villain's.</param>
     /// <param name="host">The card it is bound to, or -1.</param>
-    public Area CreateArea(DeckType type, int owner = -1, int relatedPlayer = -1, int host = -1)
+    public Area CreateArea(
+        DeckType type, int cardOwner = -1, PlayArea? playArea = null, int host = -1)
     {
-        var area = new Area(areas.Count, type, owner, relatedPlayer, host);
+        var area = new Area(areas.Count, type, cardOwner, playArea ?? PlayArea.Villains, host);
         areas.Add(area);
         return area;
     }
@@ -109,7 +203,7 @@ public sealed class World
         // The engine's rule: a card belongs to whoever owns the place it was
         // made in, falling back to the scenario. Not to the seat that asked for
         // it -- an obligation is dealt for a player and owned by the scenario.
-        var card = new Card(cards.Count, spec.Split(','), into.Owner);
+        var card = new Card(cards.Count, spec.Split(','), into.CardOwner);
         cards.Add(card);
         into.Append(card);
         return card;

@@ -133,6 +133,7 @@ as important.
 | `datasets/cards/`, `tools/cards/extract` | [card-dataset.md](docs/card-dataset.md) |
 | `datasets/setup/`, scenario or starter-deck data, setup order | [setup-dataset.md](docs/setup-dataset.md) |
 | `datasets/digest/prompts.json`, `Marvel.Rules.Fold`, what a prompt offers | [prompt-dataset.md](docs/prompt-dataset.md) |
+| play areas, game areas, anything resolving by *where a card is* | [places.md](docs/places.md) |
 | the card ability DSL | [card-dsl.md](docs/card-dsl.md) |
 | the client, the fold's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#dependency-rules) |
