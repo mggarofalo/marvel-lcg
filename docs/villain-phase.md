@@ -2,9 +2,13 @@
 
 `src/Marvel.Rules/Fold/VillainPhase.cs`. MARVEL-173.
 
-The first thing in the C# engine that moves the board. Steps 0 to 4 of
-`rhino / spider_man / 12345` are now produced as the output of folding four
-declines — **five of the seven recorded digests**, up from three.
+The first thing in the C# engine that moves the board — and, with the modifier
+layer below, the last thing MARVEL-173 needed.
+
+**All seven recorded digests of `rhino / spider_man / 12345` are produced by
+folding, and the game ends after exactly seven prompts,** which is what the
+recording does. The fixture asks for twenty steps and holds seven because the
+villain wins in round three.
 
 ## Almost all of it is rules, not cards
 
@@ -74,6 +78,22 @@ the main scheme's own escalation (`1*`, so 1 at one player) plus Rhino scheming
 (`rr:scheme-enemy-activation.3`, SCH 1 plus a boost card worth nothing). Either
 rule alone gives 1 and looks half-right.
 
+## What the other two recorded boards say
+
+`vectors.json` carries two more games as per-step hashes. Both diverge at
+**step 0** — the deal, not the fold:
+
+| board | C# deals | the engine deals |
+|---|---:|---:|
+| `klaw / she_hulk / 2026` | 81 | 83 |
+| `ultron / black_panther / 4242` | 83 | 84 |
+
+Cards short at setup, which is the deal-order coverage gap MARVEL-176 already
+measured: scenarios whose setup fires a card ability, or allocates a status card
+mid-setup, deal more cards than the deal order describes. Nothing here is a fold
+gap, and the fold cannot be measured against either board until the deal is
+right.
+
 ## What one player and one lucky card cannot test
 
 The milestone game has **one player**, and its round-one boost card has **no
@@ -84,37 +104,80 @@ both survived a mutation that deleted them outright:
 - adding boost icons to the scheme value — at zero icons, adding and not adding
   agree.
 
-A third gap was the same shape: `01105` takes its "already Tough" branch on no
-recorded step, so the branch was unexecuted code that read as though it worked.
+And three more of exactly the same shape turned up with the modifier layer:
 
-`tests/Marvel.Rules.Tests/Fold/VillainPhaseTests.cs` holds all three on
-hand-built boards — three players, boost values of 0, 1 and 3 — because a
-recorded game is the strongest check available and is not the same thing as a
-complete one.
+- `01105` takes its "already Tough" branch on no recorded step, so the branch was
+  unexecuted code that read as though it worked;
+- the modifier's in-play guard — the recorded board has no out-of-play modifier
+  to exclude;
+- the *equal to* half of "equal to or greater than" the target threat.
 
-## What step 5 needs
+**Six blind spots, all found by deleting the code and watching the tests pass.**
+That is the argument for mutation-testing a suite whose strongest check is a
+single recorded game: the recording is the best evidence available and is not
+the same thing as complete coverage.
 
-Folding past step 4 throws, naming `01099` **Charge**. It is an attachment, and
-the transition it drives is a different subsystem rather than another card:
+`tests/Marvel.Rules.Tests/Fold/VillainPhaseTests.cs` holds all of them on
+hand-built boards — three players, boost values of 0, 1 and 3, thresholds above
+and below and exactly at the target.
+
+## Modifiers are printed data, not card text
+
+Step 5 takes Rhino's `attack` from 2 to 5 because Charge is attached to him. The
+tempting reading is that Charge's ability does it. It does not:
 
 ```
-48 01097b  k_threat 2 -> 5           escalation 1 + SCH 1 + boost 1
-49 01094   attack   2 -> 5           <- Charge modifies its host's printed stat
-53 01099   EncounterDeck -> UpgradesArea; host -1 -> 49; boost_const 0 -> 2
-56 01101   EncounterDeck -> EncounterDiscardPile; attack 0 -> 1; guard 0 -> 1
+01099 Charge   engine attributes: {"Boost": "2", "ATK+": "3"}
 ```
 
-Two things are new, and neither is a card ability:
+`ATK+` is the engine's own attribute name for a modifier, and the convention is
+closed and small: **116 cards carry `ATK+`, 50 carry `SCH+`, four carry `THW+`**,
+and every one of the 170 is an attachment or an upgrade. So a card that prints a
+modifier does not need an ability to apply it — `StateFields` reads it off
+whatever is hosted on the card being described.
 
-- **A card in play modifies another card's printed value.** Rhino's `attack`
-  goes from 2 to 5 because Charge is attached to him. That is a modifier layer
-  over printed stats, and nothing in the engine has one.
-- **Printed values are filled in on entering play, for every kind.** `01101`
-  Hydra Mercenary sits in the encounter deck with `attack: 0, guard: 0` and
-  reaches the discard pile with `attack: 1, guard: 1`. `StateFields.FillInPlay`
-  has branches for three kinds today; this needs them for the rest, and keyed on
-  *having entered* play rather than being in it — the same correction the token
-  pools already needed.
+The Python ability on Charge is the *other* half: a Forced Interrupt that fires
+when Rhino attacks. No recorded step reaches it, because the hero never leaves
+alter-ego form.
+
+**The modifier only counts while the attachment is in play.** The recorded game
+cannot tell — its one modifier sits in `UpgradesArea`, and its one other hosted
+card is a Tough with nothing printed on it — so a fold that counted modifiers
+from anywhere passes every recorded digest. A discarded attachment does not
+modify the card it used to be on, and that needs a hand-built board to state.
+
+## Printed values are filled at registration, not in play
+
+`01101` Hydra Mercenary leaves the encounter deck with `attack: 0, guard: 0` and
+reaches the **discard pile** with `attack: 1, guard: 1`. It was a boost card; it
+never entered play. So the printed constants are filled when the card registers
+— the same correction the token pools needed, for the same reason.
+
+`health` is the exception and stays gated on being in play: the same minion
+reaches the discard with `health: 0` against a printed `HP 3`. Whether that is
+"printed only while in play" or "a pool filled on entry" the recording cannot
+say, because nothing in it takes damage. It becomes a pool the moment damage
+exists.
+
+## The villain wins
+
+`rr:main-scheme-main-scheme-deck.2`: threat at or above the target completes the
+scheme, and completing the **final** stage wins the game for the villain. The
+Rhino deck holds one stage, so that is this case, and it is why the recording
+stops at seven steps of a twenty-step request.
+
+Checked after each threat placement rather than at the end of the phase, because
+the engine's own log completes the scheme in the middle of the villain's
+activation and never deals the encounter cards that would have followed.
+
+**"Equal to or greater" is untested by the recording**, which reaches 8 against
+a target of 7 — so *strictly greater* also fires there, and a fold that required
+it produces every recorded digest and ends the game a round late. The boundary
+needs a hand-built board.
+
+Advancing to a *next* stage is not implemented and throws rather than being
+skipped: a scheme that completed and did not advance would sit there
+accumulating threat for ever.
 
 ## Reproducing
 

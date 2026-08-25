@@ -71,6 +71,14 @@ public sealed class World
     /// </remarks>
     public IReadOnlyList<GameArea> GameAreas => gameAreas;
 
+    /// <summary>Whether the game has ended.</summary>
+    /// <remarks>
+    /// The fold answers a <c>null</c> prompt once this is set, which is the only
+    /// thing that makes a prompt absent. Nothing is asked of a player after a
+    /// game is over.
+    /// </remarks>
+    public bool IsOver { get; set; }
+
     /// <summary>The seat holding the first player token.</summary>
     /// <remarks>
     /// Passed clockwise at the end of every villain phase
@@ -320,7 +328,8 @@ public sealed class World
                 Fields: StateFields.For(
                     card, facts, Players, inPlay, card.HasRegisteredTokens,
                     hasFirstPlayerToken: card.Owner == FirstPlayer
-                                         && card.Area.Type == DeckType.HeroArea)));
+                                         && card.Area.Type == DeckType.HeroArea,
+                    world: this)));
         }
 
         return new StateDigest(records);

@@ -157,6 +157,64 @@ public sealed class VillainPhaseTests
         Assert.Contains("engaged", thrown.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    // `rr:main-scheme-main-scheme-deck.2`: "equal to or greater than its target
+    // threat value". The recorded game reaches 8 against a target of 7, so
+    // *greater* and *at least* both fire there and the boundary is untested by
+    // it -- a fold that required strictly greater produces every recorded
+    // digest and ends the game one round late.
+    [InlineData(2, 2, true)]
+    [InlineData(2, 3, false)]
+    [InlineData(3, 2, true)]
+    public void AMainSchemeCompletesAtItsTargetAndNotOnlyPastIt(
+        int escalation, int target, bool completes)
+    {
+        var printed = new Printed()
+            .With("villain", ("SCH", "0"))
+            .With("scheme", ("EscalationThreat", escalation.ToString()),
+                            ("TargetThreat", target.ToString()));
+        var world = Board(printed, players: 1);
+
+        VillainPhase.Run(world, printed, new NoCardAbilities());
+
+        Assert.Equal(completes, world.IsOver);
+    }
+
+    [Fact]
+    public void AnAttachmentModifiesItsHostOnlyWhileInPlay()
+    {
+        // The recorded game cannot tell: its one modifier is an attachment in
+        // `UpgradesArea`, which is in play, and its one other hosted card is a
+        // Tough with no modifier printed on it. So a fold that counted
+        // modifiers from anywhere produces every recorded digest.
+        //
+        // A discarded attachment does not modify the card it used to be on.
+        var printed = new Printed()
+            .With("villain", ("SCH", "1"), ("ATK", "2"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("charge", ("ATK+", "3"));
+        var world = Board(printed, players: 1);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+
+        long Attack() => StateFields
+            .For(villain, printed, 1, inPlay: true, hasHeldPools: true,
+                 hasFirstPlayerToken: false, world: world)["attack"];
+
+        Assert.Equal(2, Attack());
+
+        var upgrades = world.AreaOf(
+            DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId);
+        var charge = world.CreateCard("charge", upgrades);
+        Assert.Equal(5, Attack());
+
+        // Bound to the same host, and out of play. `StatusArea` is the case
+        // that exists on a real board: the recorded Tough hangs off Rhino from
+        // a zone that is not in play.
+        var aside = world.AreaOf(DeckType.StatusArea, villain.Area.PlayArea, villain.ObjectId);
+        World.MoveToTop(charge, aside);
+        Assert.Equal(2, Attack());
+    }
+
     /// <summary>A villain, a main scheme, one identity per seat, two encounter cards each.</summary>
     private static World Board(Printed printed, int players)
     {
@@ -196,6 +254,7 @@ public sealed class VillainPhaseTests
             ["boost"] = CardKind.Treachery,
             ["encounter"] = CardKind.Treachery,
             ["minion"] = CardKind.Minion,
+            ["charge"] = CardKind.Attachment,
         };
 
         public Printed With(string faceId, params (string Key, string Value)[] values)

@@ -104,6 +104,40 @@ public static class StateFields
         [CardKind.MainScheme] = ["k_threat"],
         [CardKind.EncounterVillain] = ["k_threat"],
         [CardKind.Treachery] = ["k_threat"],
+        [CardKind.Minion] = ["k_threat"],
+        [CardKind.Attachment] = ["k_threat"],
+    };
+
+    // A registered field whose value is printed on the card. Filled when the
+    // card registers -- which is not the same as being in play, and the
+    // recording forces them apart: `01101` Hydra Mercenary reaches the discard
+    // pile with `attack: 1` and `guard: 1` filled and `health: 0`, having only
+    // ever passed through the boosting area.
+    private static readonly Dictionary<string, string> PrintedFrom = new(StringComparer.Ordinal)
+    {
+        ["attack"] = "ATK",
+        ["scheme"] = "SCH",
+        ["thwart"] = "THW",
+        ["guard"] = "Guard",
+        ["boost_const"] = "Boost",
+        ["recover"] = "REC",
+        ["hand_size"] = "HS",
+        ["escalation_threat"] = "EscalationThreat",
+        ["target_threat"] = "TargetThreat",
+        ["printed_stage"] = "Stage",
+    };
+
+    // What a card attached to another adds to it. The engine's own attribute
+    // names, and a closed set: 116 cards carry `ATK+`, 50 carry `SCH+`, four
+    // carry `THW+`, and all but one of the 170 are attachments.
+    //
+    // Declarative, so no card ability is involved. Charge takes Rhino's attack
+    // from 2 to 5 because it is attached to him and prints `ATK+ 3`.
+    private static readonly Dictionary<string, string> ModifiedBy = new(StringComparer.Ordinal)
+    {
+        ["attack"] = "ATK+",
+        ["scheme"] = "SCH+",
+        ["thwart"] = "THW+",
     };
 
     /// <summary>The default ally limit an identity registers.</summary>
@@ -119,9 +153,14 @@ public static class StateFields
     /// <param name="inPlay">Whether the card is in play.</param>
     /// <param name="hasHeldPools">Whether it has ever registered its token pools.</param>
     /// <param name="hasFirstPlayerToken">Whether the first player token sits here.</param>
+    /// <param name="world">
+    /// The world, so an attached card can modify what this one prints. Null
+    /// answers the printed value unmodified, which is what a caller without a
+    /// board wants.
+    /// </param>
     public static IReadOnlyDictionary<string, long> For(
         Card card, ICardFacts facts, int players, bool inPlay, bool hasHeldPools,
-        bool hasFirstPlayerToken)
+        bool hasFirstPlayerToken, World? world = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
@@ -149,12 +188,25 @@ public static class StateFields
             Merge(fields, key, card.Tokens.TryGetValue(key, out long held) ? held : 0);
         }
 
-        // `printed_stage` is set when the card is built, not when it enters
-        // play: the milestone board records stage 2 on a villain still in the
-        // villain deck, with every other printed value on it still zero.
+        // `is_completed` is registered by a main scheme whether or not it has
+        // held pools, so it is filled from the card outside the loop above.
+        if (fields.ContainsKey("is_completed")
+            && card.Tokens.TryGetValue("is_completed", out long completed))
+        {
+            fields["is_completed"] = completed;
+        }
+
+        // `printed_stage` is set when the card is built, not when it registers:
+        // the milestone board records stage 2 on a villain still in the villain
+        // deck, with every other printed value on it still zero.
         if (fields.ContainsKey("printed_stage"))
         {
             fields["printed_stage"] = facts.PrintedValue(faceId, "Stage", players);
+        }
+
+        if (hasHeldPools)
+        {
+            FillPrinted(fields, card, faceId, facts, players, world);
         }
 
         if (inPlay)
@@ -179,6 +231,49 @@ public static class StateFields
         return registered.Concat(tokens);
     }
 
+    /// <summary>Printed values, filled once the card has registered.</summary>
+    private static void FillPrinted(
+        Dictionary<string, long> fields, Card card, string faceId,
+        ICardFacts facts, int players, World? world)
+    {
+        foreach (var (field, attribute) in PrintedFrom)
+        {
+            if (!fields.ContainsKey(field) || field == "printed_stage")
+            {
+                continue;
+            }
+
+            long value = facts.PrintedValue(faceId, attribute, players);
+            if (world is not null && ModifiedBy.TryGetValue(field, out string? plus))
+            {
+                value += Modifiers(world, card, plus, facts, players);
+            }
+
+            fields[field] = value;
+        }
+    }
+
+    /// <summary>What cards attached to this one add to a printed value.</summary>
+    private static long Modifiers(
+        World world, Card host, string attribute, ICardFacts facts, int players)
+    {
+        long total = 0;
+        foreach (var area in world.Areas)
+        {
+            if (area.Host != host.ObjectId || !DeckTypes.IsInPlay(area.Type))
+            {
+                continue;
+            }
+
+            foreach (var attached in area.Cards)
+            {
+                total += facts.PrintedValue(attached.FaceId, attribute, players);
+            }
+        }
+
+        return total;
+    }
+
     private static void FillInPlay(
         Dictionary<string, long> fields, CardKind kind, string faceId,
         ICardFacts facts, int players, bool hasFirstPlayerToken)
@@ -186,9 +281,13 @@ public static class StateFields
         switch (kind)
         {
             case CardKind.AlterEgo:
+                // `health` is the only one still gated on being in play. The
+                // recording cannot say whether it is a printed constant or a
+                // pool filled on entry, because nothing in it takes damage --
+                // but `01101` reaches the discard registered and at zero
+                // health, so it is not filled at registration either way. It
+                // becomes a pool the moment damage exists.
                 fields["health"] = facts.PrintedValue(faceId, "HP", players);
-                fields["recover"] = facts.PrintedValue(faceId, "REC", players);
-                fields["hand_size"] = facts.PrintedValue(faceId, "HS", players);
                 fields["ally_limit"] = AllyLimit;
                 fields["restricted_limit"] = RestrictedLimit;
                 if (hasFirstPlayerToken)
@@ -200,15 +299,9 @@ public static class StateFields
 
             case CardKind.EncounterVillain:
                 fields["health"] = facts.PrintedValue(faceId, "HP", players);
-                fields["attack"] = facts.PrintedValue(faceId, "ATK", players);
-                fields["scheme"] = facts.PrintedValue(faceId, "SCH", players);
                 break;
 
             case CardKind.MainScheme:
-                fields["target_threat"] = facts.PrintedValue(faceId, "TargetThreat", players);
-                fields["escalation_threat"] =
-                    facts.PrintedValue(faceId, "EscalationThreat", players);
-
                 // `k_threat` is *not* set from `StartingThreat` here. Starting
                 // threat is placed once, when the scheme enters play, and after
                 // that the tokens on the card are the truth -- a scheme that
