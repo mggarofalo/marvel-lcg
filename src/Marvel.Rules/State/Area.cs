@@ -11,9 +11,13 @@ namespace Marvel.Rules.State;
 /// out. MARVEL-175 and <c>docs/event-stream.md</c>.
 /// </para>
 /// <para>
-/// <see cref="Owner"/> is <b>whose place this is</b>, which is not the same
-/// question as who controls a card sitting in it. The two agree 98.1% of the
-/// time and the 1.9% is five named rules — see <c>docs/state-digest-v2.md</c>.
+/// <b>Two seat-shaped fields, and they are different questions.</b>
+/// <see cref="PlayArea"/> is where this area <i>sits</i>;
+/// <see cref="CardOwner"/> is who a card <i>made</i> here belongs to. They
+/// disagree on a player's nemesis pile, which is theirs and is the scenario's
+/// property. Neither is the card's controller, which the digest calls
+/// <c>owner</c> — that agrees with <see cref="PlayArea"/> 98.1% of the time and
+/// the 1.9% is five named rules. See <c>docs/state-digest-v2.md</c>.
 /// </para>
 /// </remarks>
 public sealed class Area
@@ -21,12 +25,12 @@ public sealed class Area
     private readonly List<Card> cards = [];
     private readonly List<Card> removed = [];
 
-    internal Area(int id, DeckType type, int owner, int relatedPlayer, int host)
+    internal Area(int id, DeckType type, int cardOwner, PlayArea playArea, int host)
     {
         Id = id;
         Type = type;
-        Owner = owner;
-        RelatedPlayer = relatedPlayer;
+        CardOwner = cardOwner;
+        PlayArea = playArea;
         Host = host;
     }
 
@@ -36,23 +40,32 @@ public sealed class Area
     /// <summary>What kind of place this is.</summary>
     public DeckType Type { get; }
 
-    /// <summary>Who owns this place, or -1 for the scenario.</summary>
+    /// <summary>Who a card created here belongs to, or -1 for the scenario.</summary>
     /// <remarks>
-    /// A card created here takes this as its owner, which is the engine's rule
-    /// in <c>CardFactory.GenerateCard</c>. It is <b>not</b> the same question as
-    /// <see cref="RelatedPlayer"/>: a player's nemesis pile is <i>theirs</i> and
-    /// is owned by the scenario, which is why the digest records an obligation
-    /// as owner -1 while it sits in a pile that plainly belongs to a seat.
+    /// The engine's rule in <c>CardFactory.GenerateCard</c>. It is <b>not</b>
+    /// the same question as <see cref="PlayArea"/>: a player's nemesis pile is
+    /// <i>theirs</i> and is owned by the scenario, which is why the digest
+    /// records an obligation as owner -1 while it sits in a pile that plainly
+    /// belongs to a seat.
     /// </remarks>
-    public int Owner { get; }
+    public int CardOwner { get; }
 
-    /// <summary>Whose place this is, or -1 when it belongs to no seat.</summary>
+    /// <summary>Which play area this area sits in.</summary>
     /// <remarks>
-    /// The Python engine's <c>related_player</c>. Measured earlier in MARVEL-163:
-    /// reading <c>GetOwner()</c> alone answers -1 for every player's engagement
-    /// area, which mislabelled 380 of 621 ambiguous steps.
+    /// <para>
+    /// The Python engine's <c>related_player</c>, and the thing
+    /// <c>AreaRef.Owner</c> carries on the wire. Measured in MARVEL-163: reading
+    /// <c>GetOwner()</c> alone answers the scenario for every player's
+    /// engagement area, which mislabelled 380 of 621 ambiguous steps — a minion
+    /// engaged with you is in <i>your</i> play area and controlled by the
+    /// scenario.
+    /// </para>
+    /// <para>
+    /// <c>rr:play-area.3</c>: "A card cannot be in more than one play area at a
+    /// time." An area sits in exactly one, so every card in it is in that one.
+    /// </para>
     /// </remarks>
-    public int RelatedPlayer { get; }
+    public PlayArea PlayArea { get; }
 
     /// <summary>The card this area is bound to, or -1.</summary>
     public int Host { get; }
