@@ -24,6 +24,7 @@ public enum CardKind
     Treachery,
     Minion,
     MainScheme,
+    Status,
     EncounterVillain,
     EncounterSideScheme,
 #pragma warning restore CS1591, SA1602

@@ -20,6 +20,7 @@
   <ItemGroup>
     <!-- One copy, linked. See tests/Shared/RepositoryPaths.cs. -->
     <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
+    <Compile Include="../Shared/DigestDiff.cs" Link="DigestDiff.cs" />
   </ItemGroup>
 
 </Project>

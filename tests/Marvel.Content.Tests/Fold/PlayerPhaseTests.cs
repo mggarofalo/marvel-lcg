@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Marvel.Content.Cards;
 using Marvel.Content.Setup;
+using Marvel.Rules.Events;
 using Marvel.Rules.Fold;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -56,11 +58,14 @@ public sealed class PlayerPhaseTests
     private static readonly CardCatalog Cards =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
-    private static Game Begin() => Game.Begin(WorldSetup.Deal(
+    private static Game Begin() => Game.Begin(
+        WorldSetup.Deal(
+            Cards,
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, Heroes)),
+            [.. Heroes.Select(hero => Setup.Hero(hero).Name)],
+            Seed),
         Cards,
-        Blueprints.From(Dealer.DealOrder(Setup, Campaign, Heroes)),
-        [.. Heroes.Select(hero => Setup.Hero(hero).Name)],
-        Seed));
+        new CoreSetAbilities());
 
     [Fact]
     public void TheFirstThreeRecordedBoardsAreProducedByFolding()
@@ -162,24 +167,159 @@ public sealed class PlayerPhaseTests
     }
 
     [Fact]
-    public void TheVillainPhaseIsTheBoundaryAndItSaysWhichRulesAreMissing()
+    public void FiveOfTheSevenRecordedBoardsAreProducedByFolding()
     {
+        // Steps 0-4. The two that remain need a subsystem this does not have:
+        // step 5 reveals `01099` Charge, an attachment that attaches to Rhino
+        // and takes his attack from 2 to 5. That is a modifier on another
+        // card's printed stats, and it is the next piece rather than this one.
+        var recorded = RecordedDigests();
+        var game = Begin();
+
+        for (int step = 0; step <= 4; step++)
+        {
+            if (step > 0)
+            {
+                game.Fold(Decision.Decline);
+            }
+
+            string produced = game.State.Digest().Canonical();
+            if (recorded[step] != produced)
+            {
+                Assert.Fail($"step {step}: {DigestDiff.Describe(recorded[step], produced)}");
+            }
+        }
+    }
+
+    [Fact]
+    public void TheVillainPhaseIsTheFirstThingToMoveTheBoard()
+    {
+        // Steps 0-2 are one board and 3-4 another, so the villain phase is
+        // where the game first changes anything -- and where four things that
+        // setup cannot exercise first happen at once.
         var game = Begin();
         game.Fold(Decision.Decline);
         game.Fold(Decision.Decline);
 
-        string before = game.State.Digest().Canonical();
+        int before = game.State.Cards.Count;
+        var result = game.Fold(Decision.Decline);
+
+        // A card made mid-game, which is the append-only id contract tested by
+        // something other than dealing. The Tough is id 81 on a board of 81.
+        Assert.Equal(before + 1, result.State.Cards.Count);
+        var tough = result.State.Cards[^1];
+        Assert.Equal(before, tough.ObjectId);
+        Assert.Equal(Statuses.Tough, tough.FaceId);
+
+        // The first card with a host. `host` is -1 on all 81 cards at setup, so
+        // checklist step 6 of the digest spec is untested until right here.
+        var villain = result.State.TheCardIn(DeckType.VillainArea)!;
+        Assert.Equal(villain.ObjectId, tough.Area.Host);
+        Assert.True(Statuses.Has(result.State, villain, Statuses.Tough));
+
+        // And a zone nothing reached before. `EncounterDiscardPile` is the case
+        // that shaped the face-down predicate: a deck that is nonetheless face
+        // up.
+        var discard = result.State.AreaOf(DeckType.EncounterDiscardPile);
+        Assert.Equal(2, discard.Cards.Count);
+        Assert.All(discard.Cards, card => Assert.True(card.FaceUp));
+    }
+
+    [Fact]
+    public void TheBoostCardIsDiscardedBeforeTheEncounterCard()
+    {
+        // The recorded discard pile holds the boost card at index 0 and the
+        // revealed encounter card at index 1, which is the whole order of the
+        // phase in one observable: the villain activates before cards are
+        // dealt. Drawing them the other way round shifts every card left in the
+        // encounter deck and every board after this one.
+        var game = Begin();
+        game.Fold(Decision.Decline);
+        game.Fold(Decision.Decline);
+        var result = game.Fold(Decision.Decline);
+
+        var discard = result.State.AreaOf(DeckType.EncounterDiscardPile);
+        Assert.Equal(["01186", "01105"], discard.Cards.Select(card => card.FaceId));
+    }
+
+    [Fact]
+    public void ThreatComesFromTwoPlacesAndBothAreCounted()
+    {
+        // `k_threat` 0 -> 2 is not one rule. One is the main scheme's own
+        // escalation (`rr:villain-phase.1`, `1*` at one player) and one is
+        // Rhino scheming (`rr:scheme-enemy-activation.3`, SCH 1 plus a boost
+        // card worth nothing). Either alone gives 1, which is why the total is
+        // checked against the parts.
+        var game = Begin();
+        game.Fold(Decision.Decline);
+        game.Fold(Decision.Decline);
+        var result = game.Fold(Decision.Decline);
+
+        var scheme = result.State.TheCardIn(DeckType.MainSchemesArea)!;
+        Assert.Equal(2, scheme.Tokens["k_threat"]);
+
+        var placements = result.Events.OfType<FieldSet>()
+            .Where(e => e.Field == "k_threat").ToList();
+        Assert.Equal(2, placements.Count);
+        Assert.Equal([(0L, 1L), (1L, 2L)],
+                     placements.Select(e => (e.From!.Value, e.To!.Value)));
+    }
+
+    [Fact]
+    public void ImToughSurgesWhenTheVillainIsAlreadyTough()
+    {
+        // The other branch of the only card written. The recorded game never
+        // takes it -- `01105` is revealed once, and Rhino is not Tough yet --
+        // so without this the branch is unexecuted code that reads as if it
+        // works. Surge is not implemented, so the honest outcome is a named
+        // refusal rather than a Tough that silently stacks.
+        var game = Begin();
+        game.Fold(Decision.Decline);
+        game.Fold(Decision.Decline);
+        game.Fold(Decision.Decline);
+
+        var villain = game.State.TheCardIn(DeckType.VillainArea)!;
+        Assert.True(Statuses.Has(game.State, villain, Statuses.Tough));
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => new CoreSetAbilities().WhenRevealed(
+                game.State,
+                game.State.Cards.First(card => card.FaceId == CoreSetAbilities.ImTough),
+                0));
+        Assert.Contains("surge", thrown.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ARevealedCardWithNoAbilityWrittenSaysWhichCard()
+    {
+        // The boundary, and it moved: it used to be the villain phase itself.
+        // Now it is one card. Step 5 reveals `01099` Charge, an attachment that
+        // modifies Rhino's printed attack -- a subsystem, not a card.
+        var game = Begin();
+        for (int step = 1; step <= 4; step++)
+        {
+            game.Fold(Decision.Decline);
+        }
+
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => game.Fold(Decision.Decline));
+        Assert.Contains("01099", thrown.Message, StringComparison.Ordinal);
+    }
 
-        Assert.Contains("villain phase", thrown.Message, StringComparison.Ordinal);
-        Assert.Contains("hand refill", thrown.Message, StringComparison.Ordinal);
+    [Fact]
+    public void TheFirstPlayerTokenIsPassedEvenWithOnePlayer()
+    {
+        // `rr:villain-phase.5`. At one player it comes back to the same seat,
+        // so the modulo is doing the work and an implementation that only
+        // incremented would put the token on a seat that does not exist -- and
+        // `k_first_player_token` would vanish from the digest.
+        var game = Begin();
+        game.Fold(Decision.Decline);
+        game.Fold(Decision.Decline);
+        var result = game.Fold(Decision.Decline);
 
-        // Thrown before anything was applied, so the caller still holds the
-        // board they had. A boundary that half-finishes is worse than one that
-        // stops.
-        Assert.Equal(before, game.State.Digest().Canonical());
-        Assert.Equal(GamePhase.EndPhase, game.Phase);
+        Assert.Equal(0, result.State.FirstPlayer);
+        Assert.Contains("\"k_first_player_token\":1", result.State.Digest().Canonical());
     }
 
     [Fact]

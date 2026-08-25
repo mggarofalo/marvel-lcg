@@ -34,6 +34,11 @@ public static class StateFields
     private static readonly Dictionary<CardKind, string[]> Registered = new()
     {
         [CardKind.Insert] = [],
+        // A status card registers nothing of its own: the recorded Tough on
+        // the milestone board carries `is_exhaust` and not one field more,
+        // and the villain it is attached to keeps `toughness` at zero. The
+        // status *is* the card.
+        [CardKind.Status] = [],
         [CardKind.Resource] = ["surge"],
         [CardKind.Event] = ["surge"],
         [CardKind.Support] = ["permanent", "surge"],
@@ -85,14 +90,20 @@ public static class StateFields
         ],
     };
 
-    // Token pools, which a card acquires when it enters play. This is why the
-    // two villain stages on the milestone board register different key sets:
-    // the one in play has `k_threat` and the one in the villain deck does not.
-    private static readonly Dictionary<CardKind, string[]> TokensInPlay = new()
+    // Token pools, acquired when a card enters play and never given back. This
+    // is why the two villain stages on the milestone board register different
+    // key sets -- the one in play has `k_threat` and the one still in the
+    // villain deck does not -- and why a revealed treachery keeps its
+    // `k_threat` from the discard pile two steps later.
+    //
+    // Measured, kind by kind, on the recorded board. A status card enters play
+    // and registers nothing, so this is not "everything in play".
+    private static readonly Dictionary<CardKind, string[]> TokensOnceInPlay = new()
     {
         [CardKind.AlterEgo] = ["k_threat"],
         [CardKind.MainScheme] = ["k_threat"],
         [CardKind.EncounterVillain] = ["k_threat"],
+        [CardKind.Treachery] = ["k_threat"],
     };
 
     /// <summary>The default ally limit an identity registers.</summary>
@@ -106,9 +117,11 @@ public static class StateFields
     /// <param name="facts">The printed card data.</param>
     /// <param name="players">How many players are in the game.</param>
     /// <param name="inPlay">Whether the card is in play.</param>
+    /// <param name="hasHeldPools">Whether it has ever registered its token pools.</param>
     /// <param name="hasFirstPlayerToken">Whether the first player token sits here.</param>
     public static IReadOnlyDictionary<string, long> For(
-        Card card, ICardFacts facts, int players, bool inPlay, bool hasFirstPlayerToken)
+        Card card, ICardFacts facts, int players, bool inPlay, bool hasHeldPools,
+        bool hasFirstPlayerToken)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
@@ -128,9 +141,12 @@ public static class StateFields
             Merge(fields, "t_" + trait, 1);
         }
 
-        foreach (string key in Keys(kind, inPlay))
+        foreach (string key in Keys(kind, hasHeldPools))
         {
-            Merge(fields, key, 0);
+            // A registered key exists at zero until something is put on it, so
+            // the card's own count is the value and the registration is what
+            // decides whether the key is on the wire at all.
+            Merge(fields, key, card.Tokens.TryGetValue(key, out long held) ? held : 0);
         }
 
         // `printed_stage` is set when the card is built, not when it enters
@@ -151,11 +167,11 @@ public static class StateFields
 
     /// <summary>The keys a kind registers, before any value is known.</summary>
     /// <param name="kind">The card kind.</param>
-    /// <param name="inPlay">Whether the card is in play.</param>
-    public static IEnumerable<string> Keys(CardKind kind, bool inPlay)
+    /// <param name="hasHeldPools">Whether the card has ever registered them.</param>
+    public static IEnumerable<string> Keys(CardKind kind, bool hasHeldPools)
     {
         var registered = Registered.TryGetValue(kind, out var keys) ? keys : [];
-        if (!inPlay || !TokensInPlay.TryGetValue(kind, out var tokens))
+        if (!hasHeldPools || !TokensOnceInPlay.TryGetValue(kind, out var tokens))
         {
             return registered;
         }
@@ -192,7 +208,12 @@ public static class StateFields
                 fields["target_threat"] = facts.PrintedValue(faceId, "TargetThreat", players);
                 fields["escalation_threat"] =
                     facts.PrintedValue(faceId, "EscalationThreat", players);
-                fields["k_threat"] = facts.PrintedValue(faceId, "StartingThreat", players);
+
+                // `k_threat` is *not* set from `StartingThreat` here. Starting
+                // threat is placed once, when the scheme enters play, and after
+                // that the tokens on the card are the truth -- a scheme that
+                // re-derived its threat from print would forget every villain
+                // phase.
                 break;
 
             default:

@@ -115,9 +115,8 @@ Three notes on that table, all of them things a port gets wrong quietly:
 ## What the C# fold covers, and what it does not
 
 `Marvel.Rules.Fold.Game` implements **the player phase for a player who
-declines**: the three prompt shapes above and the transitions between them.
-`Game.DerivedVerbs` is the set it builds from state alone —
-`Resolve Mulligans`, `Change_Form`, `End Phase`.
+declines, and the villain phase**. `Game.DerivedVerbs` is the set of affordances
+it builds from state alone — `Resolve Mulligans`, `Change_Form`, `End Phase`.
 
 `tests/Marvel.Content.Tests/Fold/PlayerPhaseTests.cs` holds it against both
 fixtures for steps 0, 1 and 2, and pins the gap as a set rather than a count:
@@ -139,8 +138,11 @@ identically dealt games hand out identical ones.
 
 The seven recorded steps are only **three distinct boards**: 0, 1 and 2 are one
 board, 3 and 4 another, 5 and 6 a third. A declining player moves nothing, and
-the board only changes in the villain phase. So the fold produces three of the
-seven recorded digests, and **two transitions remain**.
+the board only changes in the villain phase.
+
+The fold now produces **five of the seven** — steps 0 to 4, two of the three
+distinct boards. See [the villain phase](villain-phase.md) for what the second
+transition needed and what the third still does.
 
 `TheRecordingReallyDoesHoldOneBoardForThreeSteps` pins that premise. Without it,
 a C# board that never changes would keep passing against three recorded boards
@@ -148,15 +150,14 @@ that also happen to be equal, for the wrong reason.
 
 ### The boundary
 
-Folding past step 2 throws `RulesNotImplementedException`, **before touching the
-world**, naming two missing rules rather than one:
+Folding past step 4 throws `RulesNotImplementedException` naming the card it
+stopped on — `01099` Charge, an attachment that modifies Rhino's printed attack.
+See [villain-phase.md](villain-phase.md#what-step-5-needs).
 
-- the villain phase, which needs the abilities on `01105` and `01186` plus
-  whatever puts a Tough on Rhino;
-- the hand refill that precedes it. The recorded hand is already full at every
-  step, so the trace is identical whether the refill happens before the prompt
-  or after it. **This game cannot distinguish the two orders**, and implementing
-  it now would pin an order nothing has checked.
+The **hand refill** is still not implemented, and still for the reason it never
+was: the recorded hand is full at every step, so the trace is identical whether
+the refill happens before the end-phase prompt or after it. **This game cannot
+distinguish the two orders.**
 
 ## Regenerating
 

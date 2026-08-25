@@ -18,6 +18,8 @@ namespace Marvel.Rules.State;
 /// </remarks>
 public sealed class Card
 {
+    private readonly Dictionary<string, long> tokens = new(StringComparer.Ordinal);
+
     internal Card(int objectId, IReadOnlyList<string> faces, int owner)
     {
         ObjectId = objectId;
@@ -46,8 +48,61 @@ public sealed class Card
     /// <summary>Whether the card is face up.</summary>
     public bool FaceUp { get; private set; } = true;
 
+    /// <summary>
+    /// Whether this card has ever held its token pools.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Not the same as being in play, and the digest keeps the
+    /// difference.</b> A card acquires its token pools when it enters play and
+    /// <i>never gives them back</i>: the recorded milestone board shows
+    /// <c>01105</c> with no <c>k_threat</c> key while it sits in the encounter
+    /// deck, and with <c>k_threat: 0</c> once it has been revealed — still
+    /// there two steps later, from the discard pile.
+    /// </para>
+    /// <para>
+    /// Absent and zero are different in a digest, so this is the difference
+    /// between a card that never had a threat pool and one whose pool is empty.
+    /// </para>
+    /// </remarks>
+    public bool HasRegisteredTokens { get; private set; }
+
     /// <summary>Whether the card is ready. <c>is_exhaust</c> is its negation.</summary>
     public bool Ready { get; private set; } = true;
+
+    /// <summary>
+    /// Tokens sitting on this card, by the digest's own key.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Threat on a scheme, damage counters, and anything else the engine keys
+    /// with a <c>k_</c> prefix. Live state, unlike everything printed — the
+    /// main scheme's <c>k_threat</c> starts at its <c>StartingThreat</c> and
+    /// climbs every villain phase.
+    /// </para>
+    /// <para>
+    /// <b>Absent and zero are different, and the digest keeps the
+    /// distinction.</b> Which <c>k_</c> keys a card registers is decided by its
+    /// kind and whether it is in play (<c>StateFields.Keys</c>); this only says
+    /// how many are there. A card out of play registers none of them however
+    /// many this holds.
+    /// </para>
+    /// </remarks>
+    public IReadOnlyDictionary<string, long> Tokens => tokens;
+
+    /// <summary>Puts tokens on the card.</summary>
+    /// <param name="kind">The digest's key, e.g. <c>k_threat</c>.</param>
+    /// <param name="count">How many. Negative removes.</param>
+    public void PlaceTokens(string kind, long count)
+    {
+        ArgumentNullException.ThrowIfNull(kind);
+        long total = (tokens.TryGetValue(kind, out long held) ? held : 0) + count;
+
+        // Clamped rather than allowed negative: "remove 2 threat" from a scheme
+        // holding 1 removes 1, and a scheme holding -1 threat would complete on
+        // the wrong turn.
+        tokens[kind] = Math.Max(0, total);
+    }
 
     /// <summary>Turns the card to a named face.</summary>
     /// <param name="faceId">A printed id this card carries.</param>
@@ -60,9 +115,18 @@ public sealed class Card
             : throw new ArgumentException($"card {ObjectId} has no face '{faceId}'", nameof(faceId));
     }
 
+    /// <summary>Turns the card face up where it lies.</summary>
+    /// <remarks>
+    /// Revealing is not moving. An encounter card is revealed while it sits in
+    /// the pile it was dealt to and only then goes to the discard, and the two
+    /// are separate events because a client animates them separately.
+    /// </remarks>
+    public void TurnFaceUp() => FaceUp = true;
+
     internal void MovedTo(Area area)
     {
         Area = area;
         FaceUp = !DeckTypes.FaceDownOnEntry(area.Type);
+        HasRegisteredTokens |= DeckTypes.GrantsTokenPool(area.Type);
     }
 }
