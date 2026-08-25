@@ -57,14 +57,20 @@ public static class WorldSetup
     /// <summary>Deals a board.</summary>
     /// <param name="facts">The printed card data.</param>
     /// <param name="blueprints">The deal order. Position is the card's id.</param>
-    /// <param name="players">How many players are in the game.</param>
+    /// <param name="seats">
+    /// The players' names, in seat order. The count is the player count, which
+    /// decides every <c>*</c> in the printed data.
+    /// </param>
     /// <param name="seed">The game's seed. One stream, seeded once.</param>
     public static World Deal(
-        ICardFacts facts, IReadOnlyList<CardBlueprint> blueprints, int players, uint seed)
+        ICardFacts facts, IReadOnlyList<CardBlueprint> blueprints,
+        IReadOnlyList<string> seats, uint seed)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(blueprints);
+        ArgumentNullException.ThrowIfNull(seats);
 
+        int players = seats.Count;
         var world = new World(facts, players);
         var random = new EngineRandom(seed);
 
@@ -75,19 +81,9 @@ public static class WorldSetup
         var mainSchemeDeck = world.CreateArea(DeckType.MainSchemesDeck);
         var mainSchemeArea = world.CreateArea(DeckType.MainSchemesArea);
 
-        var seats = new Seat[players];
-        for (int seat = 0; seat < players; seat++)
+        foreach (string name in seats)
         {
-            seats[seat] = new Seat(
-                Identity: world.CreateArea(DeckType.AsideDeck, seat, seat),
-                // The nemesis pile is the player's place and the scenario's
-                // property, so a card made in it is owned by the scenario. The
-                // recorded digest is unambiguous: an obligation sitting in a
-                // seat's pile records owner -1.
-                Nemesis: world.CreateArea(DeckType.AsideDeck, World.Scenario, seat),
-                Deck: world.CreateArea(DeckType.PlayerDeck, seat, seat),
-                Hand: world.CreateArea(DeckType.HandsArea, seat, seat),
-                Hero: world.CreateArea(DeckType.HeroArea, seat, seat));
+            world.CreateSeat(name);
         }
 
         // 1. Make every card, in order. This is the id contract and nothing
@@ -100,9 +96,9 @@ public static class WorldSetup
             var destination = blueprint.Slot switch
             {
                 SetupSlot.Rules or SetupSlot.Challenge => insert,
-                SetupSlot.Identity => seats[seat].Identity,
-                SetupSlot.Obligation or SetupSlot.Nemesis => seats[seat].Nemesis,
-                SetupSlot.PlayerDeck => seats[seat].Deck,
+                SetupSlot.Identity => world.Seats[seat].Identity,
+                SetupSlot.Obligation or SetupSlot.Nemesis => world.Seats[seat].Nemesis,
+                SetupSlot.PlayerDeck => world.Seats[seat].Deck,
                 SetupSlot.MainScheme => mainSchemeDeck,
                 SetupSlot.Villain => villainDeck,
                 SetupSlot.Encounter => encounterDeck,
@@ -124,11 +120,12 @@ public static class WorldSetup
         //    the deal order put it there -- so nothing is flipped here.
         for (int seat = 0; seat < players; seat++)
         {
-            World.MoveToTop(identities[seat], seats[seat].Hero);
+            World.MoveToTop(identities[seat], world.Seats[seat].Hero);
+            world.Seats[seat].IdentityCard = identities[seat];
         }
 
         // 3. The player decks are shuffled, in seat order. First draw of the game.
-        foreach (var seat in seats)
+        foreach (var seat in world.Seats)
         {
             Shuffle(random, seat.Deck);
         }
@@ -164,13 +161,13 @@ public static class WorldSetup
             long handSize = facts.PrintedValue(identities[seat].FaceId, "HS", players);
             for (long drawn = 0; drawn < handSize; drawn++)
             {
-                var card = seats[seat].Deck.TakeTop();
+                var card = world.Seats[seat].Deck.TakeTop();
                 if (card is null)
                 {
                     break;
                 }
 
-                seats[seat].Hand.Append(card);
+                world.Seats[seat].Hand.Append(card);
             }
         }
 
@@ -191,6 +188,4 @@ public static class WorldSetup
         random.Shuffle(order);
         area.Replace(order);
     }
-
-    private sealed record Seat(Area Identity, Area Nemesis, Area Deck, Area Hand, Area Hero);
 }
