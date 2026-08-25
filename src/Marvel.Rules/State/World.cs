@@ -23,6 +23,7 @@ public sealed class World
 {
     private readonly List<Card> cards = [];
     private readonly List<Area> areas = [];
+    private readonly List<Seat> seats = [];
     private readonly ICardFacts facts;
 
     /// <summary>Creates an empty world.</summary>
@@ -48,8 +49,38 @@ public sealed class World
     /// <summary>Every area, in the order they were made.</summary>
     public IReadOnlyList<Area> Areas => areas;
 
+    /// <summary>The players, in seat order.</summary>
+    public IReadOnlyList<Seat> Seats => seats;
+
     /// <summary>The seat holding the first player token.</summary>
     public int FirstPlayer { get; internal set; }
+
+    /// <summary>Makes a seat and the areas that belong to it.</summary>
+    /// <param name="name">The player's name, e.g. <c>Spider-Man</c>.</param>
+    /// <remarks>
+    /// The five areas are made here in the order the Python engine makes them,
+    /// which is why this is one call rather than five. Area ids are not on the
+    /// wire, but keeping the order lets a divergence be read against the
+    /// engine's own log.
+    /// </remarks>
+    public Seat CreateSeat(string name)
+    {
+        int index = seats.Count;
+        var seat = new Seat(
+            index,
+            name,
+            identity: CreateArea(DeckType.AsideDeck, index, index),
+            // The nemesis pile is the player's place and the scenario's
+            // property, so a card made in it is owned by the scenario. The
+            // recorded digest is unambiguous: an obligation sitting in a
+            // seat's pile records owner -1.
+            nemesis: CreateArea(DeckType.AsideDeck, Scenario, index),
+            deck: CreateArea(DeckType.PlayerDeck, index, index),
+            hand: CreateArea(DeckType.HandsArea, index, index),
+            hero: CreateArea(DeckType.HeroArea, index, index));
+        seats.Add(seat);
+        return seat;
+    }
 
     /// <summary>Makes an area.</summary>
     /// <param name="type">What kind of place it is.</param>

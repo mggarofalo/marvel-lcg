@@ -132,6 +132,7 @@ as important.
 | refreshing a vendored snapshot, a new RR version, a new pack | [rules-provenance.md](docs/rules-provenance.md) |
 | `datasets/cards/`, `tools/cards/extract` | [card-dataset.md](docs/card-dataset.md) |
 | `datasets/setup/`, scenario or starter-deck data, setup order | [setup-dataset.md](docs/setup-dataset.md) |
+| `datasets/digest/prompts.json`, `Marvel.Rules.Fold`, what a prompt offers | [prompt-dataset.md](docs/prompt-dataset.md) |
 | the card ability DSL | [card-dsl.md](docs/card-dsl.md) |
 | the client, the fold's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#dependency-rules) |
@@ -175,6 +176,7 @@ python -m tools.rng.emit_vectors                 # after touching the RNG
 python -m tools.digest.emit_vectors              # after touching anything the digest reads
 python -m tools.cards.extract                    # after touching data/cards.json or datasets/marvelsdb/
 python -m tools.setup.emit_setup                 # after touching data/scenarios/, data/encounter_sets/, deck/starter/
+python -m tools.digest.emit_prompts              # after touching anything that changes what a prompt offers
 
 # --- the C# side (run from the repository root, not py_src/) ---------------
 dotnet build                                     # the wall gates every project

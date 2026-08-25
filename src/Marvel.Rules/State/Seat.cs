@@ -1,0 +1,67 @@
+namespace Marvel.Rules.State;
+
+/// <summary>
+/// One player: their name, their identity, and the places that are theirs.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Promoted out of <c>WorldSetup</c>, where it was a private record used to
+/// carry areas between the steps of a deal. The fold needs the same grouping for
+/// a different reason — a prompt is put to a seat, and answering it reads that
+/// seat's hand — so it belongs to the state rather than to the procedure that
+/// builds it.
+/// </para>
+/// <para>
+/// <b>This is not yet a play area.</b> A seat holds the areas a deal makes for
+/// one player; the Rules Reference's <i>play area</i> is a grouping a card can
+/// be in, which decides what "the main scheme" resolves to and what a game area
+/// contains. MARVEL-175 is that model, and this type is deliberately smaller
+/// than it: adding areas here that the fold does not use would be guessing at
+/// its shape.
+/// </para>
+/// </remarks>
+public sealed class Seat
+{
+    internal Seat(int index, string name, Area identity, Area nemesis, Area deck, Area hand, Area hero)
+    {
+        Index = index;
+        Name = name;
+        Identity = identity;
+        Nemesis = nemesis;
+        Deck = deck;
+        Hand = hand;
+        Hero = hero;
+    }
+
+    /// <summary>Which seat this is, from 0.</summary>
+    public int Index { get; }
+
+    /// <summary>
+    /// The player's name, e.g. <c>Spider-Man</c>.
+    /// </summary>
+    /// <remarks>
+    /// The <b>hero</b> side's name, and it does not change when the identity
+    /// flips: the engine says "Spider-Man's Turn" while Peter Parker is the face
+    /// showing. It names the player, not the card. Supplied by the content layer
+    /// from <c>datasets/setup/setup.json</c>, which records it per hero.
+    /// </remarks>
+    public string Name { get; }
+
+    /// <summary>Where the identity was made. Empty once it enters play.</summary>
+    public Area Identity { get; }
+
+    /// <summary>This player's nemesis pile. Theirs, and the scenario's property.</summary>
+    public Area Nemesis { get; }
+
+    /// <summary>This player's deck. The <b>last</b> element is the top.</summary>
+    public Area Deck { get; }
+
+    /// <summary>This player's hand.</summary>
+    public Area Hand { get; }
+
+    /// <summary>Where this player's identity sits once it is in play.</summary>
+    public Area Hero { get; }
+
+    /// <summary>The identity card, once the deal has made it.</summary>
+    public Card IdentityCard { get; internal set; } = null!;
+}
