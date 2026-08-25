@@ -45,7 +45,7 @@ public sealed class VillainPhaseTests
             .With("boost", ("Boost", boost.ToString()));
         var world = Board(printed, players: 1);
 
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
 
         Assert.Equal(expected, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
     }
@@ -62,7 +62,7 @@ public sealed class VillainPhaseTests
             .With("scheme", ("EscalationThreat", "0"));
         var world = Board(printed, players: 1);
 
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
 
         var discard = world.AreaOf(DeckType.EncounterDiscardPile);
         Assert.Equal(["boost", "encounter"], discard.Cards.Select(card => card.FaceId));
@@ -80,11 +80,11 @@ public sealed class VillainPhaseTests
         var world = Board(printed, players: 3);
 
         Assert.Equal(0, world.FirstPlayer);
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
         Assert.Equal(1, world.FirstPlayer);
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
         Assert.Equal(2, world.FirstPlayer);
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
         Assert.Equal(0, world.FirstPlayer);
     }
 
@@ -100,7 +100,7 @@ public sealed class VillainPhaseTests
             .With("scheme", ("EscalationThreat", "0"));
         var world = Board(printed, players: 3);
 
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
 
         Assert.Equal(3, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
     }
@@ -126,7 +126,7 @@ public sealed class VillainPhaseTests
             .Single(c => c.FaceId == "encounter");
         Assert.False(card.HasRegisteredTokens);
 
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
 
         Assert.True(card.HasRegisteredTokens);
         Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
@@ -148,7 +148,7 @@ public sealed class VillainPhaseTests
         var world = Board(printed, players: 1);
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => VillainPhase.Run(world, printed, new NoCardAbilities()));
+            () => Run(world, printed));
         Assert.Contains("hero form", thrown.Message, StringComparison.Ordinal);
     }
 
@@ -166,7 +166,7 @@ public sealed class VillainPhaseTests
         world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => VillainPhase.Run(world, printed, new NoCardAbilities()));
+            () => Run(world, printed));
         Assert.Contains("engaged", thrown.Message, StringComparison.Ordinal);
     }
 
@@ -188,7 +188,7 @@ public sealed class VillainPhaseTests
                             ("TargetThreat", target.ToString()));
         var world = Board(printed, players: 1);
 
-        VillainPhase.Run(world, printed, new NoCardAbilities());
+        Run(world, printed);
 
         Assert.Equal(completes, world.IsOver);
     }
@@ -228,6 +228,13 @@ public sealed class VillainPhaseTests
         var aside = world.AreaOf(DeckType.StatusArea, villain.Area.PlayArea, villain.ObjectId);
         World.MoveToTop(charge, aside);
         Assert.Equal(2, Attack());
+    }
+
+    /// <summary>Schedules the villain phase and walks it to the end.</summary>
+    private static void Run(World world, Printed printed)
+    {
+        VillainPhase.Schedule(world.Agenda, round: 1);
+        Sequence.Finish(world, printed, new NoCardAbilities(), []);
     }
 
     /// <summary>A villain, a main scheme, one identity per seat, two encounter cards each.</summary>

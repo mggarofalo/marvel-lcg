@@ -1,6 +1,7 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
@@ -206,29 +207,19 @@ public sealed class Game
                 // step, so the trace is identical whether the refill happens
                 // before this prompt or after it. Left out rather than guessed.
                 Phase = GamePhase.VillainPhase;
-                var happened = new List<GameEvent>();
 
                 // rr:end-of-player-phase.step.4 and .step.5. Steps 1 to 3 --
                 // discard down to hand size, draw up to it, ready every card --
                 // are not implemented; see PhaseEnd.EndPlayerPhase.
-                PhaseEnd.EndPlayerPhase(world, abilities, Round, happened);
+                world.Agenda.Add(new PhaseStep(Steps.EndPlayerPhase, Round, 4));
+                VillainPhase.Schedule(world.Agenda, Round);
+                return Work([]);
 
-                happened.AddRange(VillainPhase.Run(world, facts, abilities, Round));
-
-                if (world.IsOver)
-                {
-                    // The only thing that makes a prompt absent. Nothing is
-                    // asked of a player after a game is over.
-                    Phase = GamePhase.Over;
-                    Pending = null;
-                    return new Resolution(world, null, happened);
-                }
-
-                Round++;
-                Phase = GamePhase.PlayerTurn;
-                Active = world.FirstPlayer;
-                Pending = TurnPrompt();
-                return new Resolution(world, Pending, happened);
+            case GamePhase.VillainPhase:
+                // Answering a question the villain phase asked. The window
+                // absorbs the answer and the agenda carries on from where it
+                // stopped.
+                return Work(Answer(input));
 
             default:
                 throw new RulesNotImplementedException($"the {Phase} phase is not implemented");
@@ -249,6 +240,41 @@ public sealed class Game
             // the same thing twice.
             Cancellable: false,
             Affordances: [HandChoice(seat, ResolveMulligans)]);
+    }
+
+    private Resolution Work(List<GameEvent> happened)
+    {
+        if (Sequence.Work(world, facts, abilities, happened) is { } asked)
+        {
+            Pending = asked;
+            return new Resolution(world, Pending, happened);
+        }
+
+        if (world.IsOver)
+        {
+            // The only thing that makes a prompt absent. Nothing is asked of a
+            // player after a game is over.
+            Phase = GamePhase.Over;
+            Pending = null;
+            return new Resolution(world, null, happened);
+        }
+
+        Round++;
+        Phase = GamePhase.PlayerTurn;
+        Active = world.FirstPlayer;
+        Pending = TurnPrompt();
+        return new Resolution(world, Pending, happened);
+    }
+
+    private List<GameEvent> Answer(Decision input)
+    {
+        var happened = new List<GameEvent>();
+        if (Pending is { } asked)
+        {
+            Sequence.Answer(world, abilities, asked, input, happened);
+        }
+
+        return happened;
     }
 
     private Prompt TurnPrompt()

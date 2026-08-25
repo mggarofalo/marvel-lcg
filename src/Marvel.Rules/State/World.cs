@@ -38,6 +38,7 @@ public sealed class World
         Players = players;
         Effects = new Timing.ContinuousEffects(this);
         Windows = new Timing.Windows(this);
+        Agenda = new Play.Agenda();
 
         // An ordinary game has exactly one game area holding every play area,
         // and nothing in the rules distinguishes that from having none. Making
@@ -71,6 +72,15 @@ public sealed class World
     /// game. See <c>docs/timing.md</c>.
     /// </remarks>
     public Timing.Windows Windows { get; }
+
+    /// <summary>
+    /// What the game still has to do, and where in it the game is.
+    /// </summary>
+    /// <remarks>
+    /// A phase is a list of steps on the board rather than a call, so that the
+    /// game can stop in the middle of one. See <c>docs/timing.md</c>.
+    /// </remarks>
+    public Play.Agenda Agenda { get; }
 
     /// <summary>The seat value meaning "the scenario", not a player.</summary>
     public const int Scenario = -1;

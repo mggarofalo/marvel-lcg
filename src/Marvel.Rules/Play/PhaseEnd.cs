@@ -59,14 +59,10 @@ public static class PhaseEnd
     /// <c>rr:villain-phase.step.6</c>.
     /// </summary>
     /// <param name="world">The board.</param>
-    /// <param name="abilities">What the cards in play are waiting to do.</param>
-    /// <param name="occurrenceId">Distinguishes this ending from the next round's.</param>
     /// <param name="events">Where to record what happened.</param>
-    public static void EndVillainPhase(
-        World world, ICardAbilities abilities, int occurrenceId, List<GameEvent> events) =>
+    public static void EndVillainPhase(World world, List<GameEvent> events) =>
         End(world,
-            abilities,
-            new Occurrence(occurrenceId, [VillainPhaseEnds, RoundEnds]),
+            new Occurrence(0, [VillainPhaseEnds, RoundEnds]),
             [TimingPoints.EndOfVillainPhase, TimingPoints.EndOfRound, TimingPoints.EndOfTurn],
             events);
 
@@ -84,29 +80,21 @@ public static class PhaseEnd
     /// mistaken for this method's business.
     /// </remarks>
     /// <param name="world">The board.</param>
-    /// <param name="abilities">What the cards in play are waiting to do.</param>
-    /// <param name="occurrenceId">Distinguishes this ending from the next round's.</param>
     /// <param name="events">Where to record what happened.</param>
-    public static void EndPlayerPhase(
-        World world, ICardAbilities abilities, int occurrenceId, List<GameEvent> events) =>
+    public static void EndPlayerPhase(World world, List<GameEvent> events) =>
         End(world,
-            abilities,
-            new Occurrence(occurrenceId, [PlayerPhaseEnds]),
+            new Occurrence(0, [PlayerPhaseEnds]),
             [TimingPoints.EndOfPlayerPhase],
             events);
 
     private static void End(
         World world,
-        ICardAbilities abilities,
         Occurrence occurrence,
         IReadOnlyList<string> expiring,
         List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(events);
-
-        Moment.Resolve(world, abilities, occurrence, events, () =>
         {
             // Step 6a / step 4. The phase has now ended, so everything bounded
             // by its ending is gone -- rr:lasting-effects.5.
@@ -129,6 +117,6 @@ public static class PhaseEnd
                         + "resolving one is not implemented");
                 }
             }
-        });
+        }
     }
 }

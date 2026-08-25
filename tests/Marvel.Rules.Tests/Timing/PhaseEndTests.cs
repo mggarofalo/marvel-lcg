@@ -25,7 +25,7 @@ public sealed class PhaseEndTests
         world.Effects.Register(Lasting(TimingPoints.EndOfRound));
         world.Effects.Register(Lasting(TimingPoints.EndOfPlayerPhase));
 
-        PhaseEnd.EndVillainPhase(world, new NoCardAbilities(), occurrenceId: 1, []);
+        PhaseEnd.EndVillainPhase(world, []);
 
         var left = Assert.Single(world.Effects.Active());
         Assert.Equal(TimingPoints.EndOfPlayerPhase, left.Lasts!.Until);
@@ -42,7 +42,7 @@ public sealed class PhaseEndTests
         world.Effects.Register(Lasting(TimingPoints.EndOfPlayerPhase));
         world.Effects.Register(Lasting(TimingPoints.EndOfRound));
 
-        PhaseEnd.EndPlayerPhase(world, new NoCardAbilities(), occurrenceId: 1, []);
+        PhaseEnd.EndPlayerPhase(world, []);
 
         var left = Assert.Single(world.Effects.Active());
         Assert.Equal(TimingPoints.EndOfRound, left.Lasts!.Until);
@@ -62,7 +62,7 @@ public sealed class PhaseEndTests
         world.Effects.Register(Lasting(TimingPoints.EndOfRound));
         var watcher = new Watcher(world);
 
-        PhaseEnd.EndVillainPhase(world, watcher, occurrenceId: 1, []);
+        EndRound(world, watcher);
 
         Assert.Equal(1, watcher.ActiveAt(WindowKind.Interrupt));
         Assert.Equal(0, watcher.ActiveAt(WindowKind.Response));
@@ -78,7 +78,7 @@ public sealed class PhaseEndTests
         var world = Board();
         var watcher = new Watcher(world);
 
-        PhaseEnd.EndVillainPhase(world, watcher, occurrenceId: 1, []);
+        EndRound(world, watcher);
 
         Assert.Equal(2, watcher.Windows);
         Assert.All(watcher.Seen, occurrence => Assert.Equal(
@@ -96,8 +96,8 @@ public sealed class PhaseEndTests
         var waiting = new Waiting(new PendingAbility(0, AbilityType.Response, 0));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => PhaseEnd.EndVillainPhase(world, waiting, occurrenceId: 1, []));
-        Assert.Contains("MARVEL-179", thrown.Message, StringComparison.Ordinal);
+            () => EndRound(world, waiting));
+        Assert.Contains("nobody to ask", thrown.Message, StringComparison.Ordinal);
     }
 
     [Rule("rr:forced.5")]
@@ -114,7 +114,7 @@ public sealed class PhaseEndTests
             new PendingAbility(1, AbilityType.ForcedResponse, 0));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => PhaseEnd.EndVillainPhase(world, waiting, occurrenceId: 1, []));
+            () => EndRound(world, waiting));
         Assert.Contains("in what order", thrown.Message, StringComparison.Ordinal);
     }
 
@@ -131,8 +131,15 @@ public sealed class PhaseEndTests
             Lasts: Duration.NextTime(PhaseEnd.RoundEnds)));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => PhaseEnd.EndVillainPhase(world, new NoCardAbilities(), occurrenceId: 1, []));
+            () => PhaseEnd.EndVillainPhase(world, []));
         Assert.Contains("come due", thrown.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>Schedules step 6 and walks it, windows and all.</summary>
+    private static void EndRound(World world, ICardAbilities abilities)
+    {
+        world.Agenda.Add(new PhaseStep(Steps.EndVillainPhase, Round: 1, Number: 6));
+        Sequence.Finish(world, new Facts(), abilities, []);
     }
 
     private static ContinuousEffect Lasting(string timingPoint) => new(

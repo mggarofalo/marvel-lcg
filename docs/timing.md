@@ -296,19 +296,57 @@ list: `rr:forced.6`, "each forced ability must resolve as completely as possible
 before the next forced ability being triggered by the same triggering condition
 may initiate."
 
+## A phase is a list, not a call
+
+`rr:ability` puts a window before and after every occurrence, and any of those
+windows may hold an ability somebody has to be asked about. A phase that is a
+method call has nowhere to stop, so a phase is not a method call.
+
+`World.Agenda` is what the game still has to do: a list of steps, each part-way
+through three parts — `Interrupts`, `Apply`, `Responses`. `Sequence.Work` walks
+it until something needs an answer and returns; the next answer picks it up
+exactly where it was. Nothing is on a call stack, so all of it survives a save.
+
+It also makes `rr:villain-phase`'s six steps **visible**. They used to be the
+order of six method calls, which a reader has to reconstruct:
+
+```
+PlaceThreat            rr:villain-phase.step.1
+EnemiesActivate        rr:villain-phase.step.2   (a heading)
+  Activate × players   rr:activation.1
+DealEncounterCards     rr:villain-phase.step.3
+  RevealEncounterCard × dealt   rr:villain-phase.step.4
+PassFirstPlayerToken   rr:villain-phase.step.5
+EndVillainPhase        rr:villain-phase.step.6
+```
+
+Steps 2 and 3 **schedule** what happens under them rather than doing it, so the
+per-player activations and the per-card reveals are occurrences with windows of
+their own. A heading is not an occurrence and opens no windows.
+
+`Agenda.Then` puts a scheduled step after the current one's *response* window,
+not before it: a step that schedules another has not itself finished happening.
+`rr:villain-phase.step.3` deals the cards and `.step.4` reveals them, in that
+order and not interleaved — and the recorded discard pile is what catches it if
+they are.
+
+The villain winning abandons the rest — `rr:main-scheme-main-scheme-deck.2.1`,
+the villain wins the game, and the encounter cards are not dealt.
+
 ## What this does not do yet
 
-- **Nothing opens a window.** No ported card has an interrupt or a response the
-  engine can reach. "Charge" (01099) has a Forced Interrupt that fires when Rhino
-  attacks — a window this engine can open, on an occurrence it cannot reach,
-  because the recorded hero never leaves alter-ego form and a villain only
-  attacks a hero (`rr:activation.1`). So every claim in `AbilityWindowTests`
-  rests on its citation and nothing else, which is what the citations are for.
+- **No ported card waits in a window.** `CoreSetAbilities.Waiting` returns
+  nothing, in as many words. "Charge" (01099) has a Forced Interrupt that fires
+  when Rhino attacks — a window this engine opens, on an occurrence it cannot
+  reach, because the recorded hero never leaves alter-ego form and a villain
+  only attacks a hero (`rr:activation.1`). So every claim in `AbilityWindowTests`
+  and `SequenceTests` rests on its citation and on a board built by hand.
 - **Steps 1 to 3 of `rr:end-of-player-phase`** — discard down to hand size, draw
-  up to it, ready every card — are not implemented. `rr:player-phase.1` puts them
-  before the expiry point, and the recorded game cannot say when they happen: its
-  hand is full at every step and its one player readies nothing.
-- **The engine does not drive the stack yet.** `World.Windows` is built and
-  held against the rules, and windows open and close correctly around every
-  villain-phase occurrence, but `Game.Resolve` cannot yet return a prompt from
-  inside one. MARVEL-179.
+  up to it, ready every card — are not implemented. `rr:player-phase.1` puts
+  them before the expiry point, and the recorded game cannot say when they
+  happen: its hand is full at every step and its one player readies nothing.
+- **A delayed effect that comes due throws.** Resolving one needs the effect
+  vocabulary, which is `docs/card-dsl.md`'s business.
+- **Nothing registers a continuous effect yet.** The list is built and held
+  against the rules; no card puts anything in it, because no card ability is
+  data yet.
