@@ -66,6 +66,13 @@ public static class DeckTypes
     [
         DeckType.PlayerDeck, DeckType.DiscardPile, DeckType.AdditionalDeck,
         DeckType.AdditionalDiscardPile, DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
+
+        // The one entry here the recording cannot vouch for, because nothing in
+        // it ever sits in this place. `rr:attack-enemy-activation.step.1` is
+        // where it comes from instead: "give it one *facedown* boost card from
+        // the encounter deck", and `rr:boost-boost-icon.6` keeps it facedown
+        // until the enemy activates.
+        DeckType.BoostCardsDeck,
     ];
 
     private static readonly HashSet<DeckType> FaceUpFlagged =
@@ -82,8 +89,8 @@ public static class DeckTypes
     /// <summary>Whether a card entering this kind of place is turned face down.</summary>
     /// <remarks>
     /// <para>
-    /// True for exactly three places a card can sit hidden: a draw pile that is
-    /// not a discard pile, and a hand.
+    /// True for the places a card can sit hidden: a draw pile that is not a
+    /// discard pile, a hand, and an enemy's facedown boost cards.
     /// </para>
     /// <para>
     /// <b>Measured, not read off a flag.</b> The obvious candidate,

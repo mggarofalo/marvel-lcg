@@ -27,14 +27,22 @@ public enum Stage
 /// <param name="Round">Which round it belongs to.</param>
 /// <param name="Number">The Rules Reference's number for it within its phase.</param>
 /// <param name="Index">Which repetition — which player, or which dealt card.</param>
-/// <param name="Subject">The object id it acts on, where it has one.</param>
+/// <param name="Subject">The object id it acts on, or <c>-1</c>.</param>
+/// <param name="Seat">
+/// The player it concerns, or <c>-1</c> for a step that concerns nobody in
+/// particular. Separate from <paramref name="Index"/>, which only has to make
+/// repetitions of a step distinct: threat is placed once per round and concerns
+/// no player, and reading its index as a seat would tell every card that it
+/// happened to the first one.
+/// </param>
 /// <param name="Plan">
 /// Whether this only schedules other steps. A plan is not an occurrence, so it
 /// opens no windows: <c>rr:villain-phase.step.2</c> is a heading, and the
 /// activations under it are the things that happen.
 /// </param>
 public readonly record struct PhaseStep(
-    string What, int Round, int Number, int Index = 0, int Subject = 0, bool Plan = false)
+    string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
+    bool Plan = false)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -50,7 +58,8 @@ public readonly record struct PhaseStep(
     /// placements in the same game must not share an id — the second would find
     /// every interrupt already spent.
     /// </remarks>
-    public Occurrence Occurrence => new(Moment.Id(Round, Number, Index), Conditions);
+    public Occurrence Occurrence =>
+        new(Moment.Id(Round, Number, Index), Conditions, Subject, Seat);
 }
 
 /// <summary>
@@ -78,7 +87,7 @@ public readonly record struct PhaseStep(
 /// </remarks>
 public sealed class Agenda
 {
-    private readonly List<(PhaseStep Step, Stage Stage)> items = [];
+    private readonly List<(PhaseStep Step, Stage Stage, Occurrence Occurrence)> items = [];
     private int scheduled;
 
     /// <summary>Whether the game is part-way through anything.</summary>
@@ -93,12 +102,24 @@ public sealed class Agenda
     /// <summary>Which part of it.</summary>
     public Stage Stage => items.Count > 0 ? items[0].Stage : Stage.Apply;
 
+    /// <summary>
+    /// What is happening, as one occurrence that lasts the whole step.
+    /// </summary>
+    /// <remarks>
+    /// <b>Made once, when the step is scheduled, and not on every read.</b>
+    /// <c>rr:triggering-condition.1</c> lets each ability trigger once per
+    /// occurrence, and an occurrence is what remembers which have. A fresh one
+    /// per read would forget across the answer that suspended the step, and the
+    /// forced interrupt that had just resolved would resolve again — and again.
+    /// </remarks>
+    public Occurrence? Occurrence => items.Count > 0 ? items[0].Occurrence : null;
+
     /// <summary>Every outstanding step, in the order they will be taken.</summary>
     public IReadOnlyList<PhaseStep> Outstanding => [.. items.Select(item => item.Step)];
 
     /// <summary>Put a step at the end of the list.</summary>
     /// <param name="step">What to do.</param>
-    public void Add(PhaseStep step) => items.Add((step, Stage.Interrupts));
+    public void Add(PhaseStep step) => items.Add((step, Stage.Interrupts, step.Occurrence));
 
     /// <summary>
     /// Schedule a step to be taken as soon as the current one is finished with.
@@ -113,22 +134,22 @@ public sealed class Agenda
     public void Then(PhaseStep step)
     {
         scheduled += 1;
-        items.Insert(Math.Min(scheduled, items.Count), (step, Stage.Interrupts));
+        items.Insert(Math.Min(scheduled, items.Count), (step, Stage.Interrupts, step.Occurrence));
     }
 
     /// <summary>Move the current step on to its next part.</summary>
     /// <returns>False when the step is finished and has been taken off the list.</returns>
     public bool Advance()
     {
-        var (step, stage) = items[0];
+        var (step, stage, occurrence) = items[0];
         switch (stage)
         {
             case Stage.Interrupts:
-                items[0] = (step, Stage.Apply);
+                items[0] = (step, Stage.Apply, occurrence);
                 return true;
 
             case Stage.Apply:
-                items[0] = (step, Stage.Responses);
+                items[0] = (step, Stage.Responses, occurrence);
                 return true;
 
             default:
@@ -169,8 +190,45 @@ public static class Steps
     /// <summary>Step 2, a heading — <c>rr:villain-phase.step.2</c>.</summary>
     public const string EnemiesActivate = "EnemiesActivate";
 
-    /// <summary>One enemy activating against one player — <c>rr:activation.1</c>.</summary>
-    public const string Activate = "Activate";
+    /// <summary>
+    /// One enemy attacking one player — <c>rr:activation.1</c>,
+    /// <c>rr:attack-enemy-activation</c>.
+    /// </summary>
+    public const string Attack = "Attack";
+
+    /// <summary>
+    /// One enemy scheming — <c>rr:activation.1</c>,
+    /// <c>rr:scheme-enemy-activation</c>.
+    /// </summary>
+    public const string Scheme = "Scheme";
+
+    /// <summary>
+    /// Step 1 of an attack — <c>rr:attack-enemy-activation.step.1</c>.
+    /// </summary>
+    public const string GiveBoostCard = "GiveBoostCard";
+
+    /// <summary>
+    /// Step 2 of an attack — <c>rr:attack-enemy-activation.step.2</c>.
+    /// </summary>
+    public const string DeclareDefender = "DeclareDefender";
+
+    /// <summary>
+    /// Step 3 of an attack — <c>rr:attack-enemy-activation.step.3</c>.
+    /// </summary>
+    public const string FlipBoostCards = "FlipBoostCards";
+
+    /// <summary>
+    /// Steps 4 and 5 of an attack — <c>rr:attack-enemy-activation.step.4</c>
+    /// and <c>.step.5</c>. One step because <c>rr:triggering-condition.2</c>
+    /// makes calculating and dealing one occurrence: nothing can happen between
+    /// the amount being fixed and it being dealt.
+    /// </summary>
+    public const string DealAttackDamage = "DealAttackDamage";
+
+    /// <summary>
+    /// Step 6 of an attack — <c>rr:attack-enemy-activation.step.6</c>.
+    /// </summary>
+    public const string EndAttack = "EndAttack";
 
     /// <summary>Step 3 — <c>rr:villain-phase.step.3</c>.</summary>
     public const string DealEncounterCards = "DealEncounterCards";
@@ -187,12 +245,43 @@ public static class Steps
     /// <summary>The end of the player phase — <c>rr:end-of-player-phase</c>.</summary>
     public const string EndPlayerPhase = "EndPlayerPhase";
 
+    /// <summary>"Whenever an enemy attacks or schemes" — <c>rr:activation</c>.</summary>
+    public const string EnemyActivates = "WhenEnemyActivates";
+
+    /// <summary>
+    /// "When the villain initiates an attack" — <c>rr:attack-enemy-activation.5</c>,
+    /// which says an interrupt triggering "when [enemy name] attacks" has this
+    /// same timing.
+    /// </summary>
+    public const string EnemyAttacks = "WhenEnemyAttacks";
+
+    /// <summary>"When an enemy schemes" — <c>rr:scheme-enemy-activation</c>.</summary>
+    public const string EnemySchemes = "WhenEnemySchemes";
+
+    /// <summary>"When an attack ends" — <c>rr:attack-enemy-activation.step.6</c>.</summary>
+    public const string AttackEnds = "WhenAttackEnds";
+
+    /// <summary>"When a card is revealed" — <c>rr:reveal</c>.</summary>
+    public const string CardRevealed = "WhenCardRevealed";
+
     private static readonly Dictionary<string, string[]> Conditions = new(StringComparer.Ordinal)
     {
         [PlaceThreat] = ["WhenThreatPlaced"],
-        [Activate] = ["WhenEnemyActivates"],
+
+        // Two conditions at one moment again: an attack *is* an activation
+        // (`rr:activation`, "whenever an enemy attacks or schemes, it is
+        // considered to have activated"), so both are true of the same
+        // occurrence and `rr:triggering-condition.2` gives them one window
+        // pair between them.
+        [Attack] = [EnemyActivates, EnemyAttacks],
+        [Scheme] = [EnemyActivates, EnemySchemes],
+        [GiveBoostCard] = ["WhenBoostCardGiven"],
+        [DeclareDefender] = ["WhenDefenderDeclared"],
+        [FlipBoostCards] = ["WhenBoostCardsFlipped"],
+        [DealAttackDamage] = ["WhenDamageDealt"],
+        [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
-        [RevealEncounterCard] = ["WhenCardRevealed"],
+        [RevealEncounterCard] = [CardRevealed],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 
         // Two conditions at one moment, because `rr:villain-phase.step.6` is
@@ -207,4 +296,17 @@ public static class Steps
     /// <param name="what">One of the step names here.</param>
     public static IReadOnlyList<string> ConditionsOf(string what) =>
         Conditions.TryGetValue(what, out var conditions) ? conditions : [what];
+
+    /// <summary>
+    /// Every triggering condition any step in this engine produces.
+    /// </summary>
+    /// <remarks>
+    /// Derived from the table above rather than listed again, so that it cannot
+    /// fall behind it. What it is for: an authored card names the condition it
+    /// answers, and a card naming one nothing ever produces would sit in the
+    /// dataset looking implemented and never fire. Holding the two sets against
+    /// each other turns that into a failing test.
+    /// </remarks>
+    public static IReadOnlySet<string> EveryCondition { get; } =
+        new HashSet<string>(Conditions.Values.SelectMany(each => each), StringComparer.Ordinal);
 }

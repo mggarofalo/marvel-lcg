@@ -109,13 +109,7 @@ public static class PhaseEnd
             // windows rather than in the response one.
             foreach (var condition in occurrence.Conditions)
             {
-                var due = world.Effects.Occur(condition);
-                if (due.Count > 0)
-                {
-                    throw new RulesNotImplementedException(
-                        $"{due.Count} delayed effect(s) come due at '{condition}' and "
-                        + "resolving one is not implemented");
-                }
+                DelayedEffects.Occur(world, condition, events);
             }
         }
     }

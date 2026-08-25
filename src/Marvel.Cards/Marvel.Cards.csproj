@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The card DSL: the node types, the deserialiser, and the interpreter that
+       runs them (docs/card-dsl.md, MARVEL-92).
+
+       Separate from `Marvel.Rules` because the layout in
+       docs/presentation-layer.md says the engine holds "state, zones, phases,
+       timing, events. No cards." A card's text is not a rule of the game; it is
+       data the rules execute, and the arrow points from here into the engine.
+
+       Separate from `Marvel.Content` because content is *which* cards exist and
+       this is *what a card's text can say*. The two grow for different reasons.
+
+       No file or network I/O: `AbilityCatalog.Parse` takes a string, like
+       `CardCatalog.Parse` does. Where the bytes come from is a packaging
+       decision nobody has made yet.
+
+       docs/presentation-layer.md proposes two projects here, `Marvel.Cards.Dsl`
+       and `Marvel.Cards.Interp`. They are one until there is something to
+       separate: the split it describes is a text renderer and a validator that
+       do not exist. The namespaces are already `Dsl` and `Run`, so splitting
+       them later is moving files. -->
+  <PropertyGroup>
+    <RootNamespace>Marvel.Cards</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
+  </ItemGroup>
+
+</Project>

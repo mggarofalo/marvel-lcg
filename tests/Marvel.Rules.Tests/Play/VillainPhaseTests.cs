@@ -136,20 +136,29 @@ public sealed class VillainPhaseTests
 
     [Rule("rr:activation.1")]
     [Fact]
-    public void AVillainThatWouldAttackSaysSoRatherThanScheming()
+    public void AVillainFacingAHeroAttacksRatherThanSchemes()
     {
-        // Hero form and the villain attacks. Producing a scheme anyway would
-        // place threat that the rules do not, and the board would look
-        // plausible.
+        // "If the identity of the player resolving the activation is in hero
+        // form, the villain initiates an attack against that player's identity.
+        // If the identity [...] is in alter-ego form, the villain initiates a
+        // scheme." Which face is showing decides, and the two are exclusive:
+        // an engine that schemed anyway would place threat the rules do not.
         var printed = new Printed()
-            .With("villain", ("SCH", "1"))
-            .With("scheme", ("EscalationThreat", "0"));
+            .With("villain", ("SCH", "1"), ("ATK", "2"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("identity", ("HP", "10"), ("DEF", "3"));
         printed.Kinds["identity"] = CardKind.Hero;
         var world = Board(printed, players: 1);
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Run(world, printed));
-        Assert.Contains("hero form", thrown.Message, StringComparison.Ordinal);
+        // Exhausted, so there is nobody who could defend and the attack asks
+        // nothing -- `rr:defend-defense.2`, a hero must exhaust to defend.
+        world.Seats[0].IdentityCard.Exhaust();
+
+        Run(world, printed);
+
+        Assert.False(
+            world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.ContainsKey("k_threat"));
+        Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
     }
 
     [Rule("rr:villain-phase.step.2.b")]

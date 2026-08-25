@@ -171,12 +171,16 @@ public sealed class Game
             throw new InvalidOperationException("the game is over; there is nothing to answer");
         }
 
-        if (!input.IsDecline)
+        if (!input.IsDecline && Phase != GamePhase.VillainPhase)
         {
-            // Every affordance this resolve offers is one that has to *do*
-            // something, and none of them are written. Naming the verb rather
-            // than saying "not implemented" is the difference between a
-            // one-line diagnosis and a debugging session.
+            // The turn prompts offer things that have to *do* something and
+            // none of them are written. Naming the verb rather than saying "not
+            // implemented" is the difference between a one-line diagnosis and a
+            // debugging session.
+            //
+            // The villain phase is the exception, and the only one: what it
+            // offers is an ability waiting in a window or a character declared
+            // as a defender, and both are implemented.
             string verb = Pending.Affordances
                 .FirstOrDefault(affordance => affordance.Id == input.Affordance)?.Verb
                 ?? $"affordance {input.Affordance}";
@@ -271,7 +275,7 @@ public sealed class Game
         var happened = new List<GameEvent>();
         if (Pending is { } asked)
         {
-            Sequence.Answer(world, abilities, asked, input, happened);
+            Sequence.Answer(world, facts, abilities, asked, input, happened);
         }
 
         return happened;

@@ -1,0 +1,375 @@
+using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
+using Marvel.Content.Setup;
+using Marvel.Rules.Events;
+using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
+using Marvel.Rules.State;
+using Marvel.Rules.Timing;
+using Marvel.Tests;
+using Xunit;
+
+namespace Marvel.Content.Tests.Play;
+
+/// <summary>
+/// Ported cards waiting in a window, on the real Rhino board.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The timing spine was built and cited before anything used it, and until now
+/// nothing did: the engine had no card whose ability could wait in one. These
+/// are the tests that make it load-bearing — and every card in them is a row in
+/// <c>datasets/abilities/abilities.json</c> rather than a line of C#.
+/// </para>
+/// <para>
+/// <b>Two cards, one window, and that is the point.</b> Rhino attacking is a
+/// single occurrence with two abilities waiting in its interrupt window —
+/// Charge's <b>Forced Interrupt</b> at tier 2b and Spider-Man's <b>Interrupt</b>
+/// at 2c. <c>rr:attack-enemy-activation.5</c> is the rule that puts them
+/// together: an interrupt triggering "when [enemy name] attacks" has the same
+/// timing as one triggering "when the villain initiates an attack".
+/// </para>
+/// <para>
+/// <b>Why the recording cannot reach this.</b> The sampling policy declines
+/// every decision, so its hero never leaves alter-ego form, and
+/// <c>rr:activation.1</c> makes a villain facing an alter-ego scheme rather than
+/// attack. The board here is the real dealt one with two changes stated in the
+/// setup: the identity is turned to its hero face, and Charge is put into play
+/// by its own ported "Attach to Rhino".
+/// </para>
+/// </remarks>
+public sealed class CardsInWindowsTests
+{
+    private const string Campaign = "rhino";
+    private const uint Seed = 12345;
+    private static readonly string[] Heroes = ["spider_man"];
+
+    private static readonly SetupCatalog Setup =
+        SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
+
+    private static readonly CardCatalog Cards =
+        CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
+
+    [Rule("rr:attack-enemy-activation.5")]
+    [Rule("rr:forced.4")]
+    [Fact]
+    public void RhinoAttackingResolvesChargeAndThenOffersSpiderSense()
+    {
+        // "Forced interrupts take priority and initiate before non-forced
+        // interrupts." Charge is forced and resolves without anybody being
+        // asked; Spider-Sense is optional and reaches the player as a question.
+        var (world, abilities, _) = Attacking();
+        var events = new List<GameEvent>();
+
+        var asked = Sequence.Work(world, Cards, abilities, events);
+
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Opportunity, asked.Asking);
+        Assert.Equal(TimingPriority.Interrupt, asked.When);
+        Assert.Equal(0, asked.Player);
+        Assert.True(asked.Cancellable);
+        Assert.Equal(["Spider-Sense"], asked.Affordances.Select(a => a.Label));
+        Assert.Equal(["Spider-Sense"], asked.Affordances.Select(a => a.Verb));
+
+        // Charge fired on the way past, and what it did is a lasting effect
+        // rather than anything the board shows at this moment.
+        Assert.Contains(
+            world.Effects.Active(),
+            effect => effect.Kind == Keywords.Overkill);
+    }
+
+    [Rule("rr:triggering-condition.1")]
+    [Fact]
+    public void ChargeFiresOnceAndNotOncePerVisitToTheWindow()
+    {
+        // "Each interrupt can only be triggered once per occurrence of the
+        // triggering condition." Using an ability does not close the window --
+        // `rr:interrupt.5` is about *further* abilities -- so the window is
+        // re-entered with the board changed, and an occurrence that forgot what
+        // had fired would grant overkill a second time.
+        var (world, abilities, _) = Attacking();
+        var identity = world.Seats[0].IdentityCard;
+        var events = new List<GameEvent>();
+
+        var asked = Sequence.Work(world, Cards, abilities, events);
+        Sequence.Answer(
+            world, Cards, abilities, asked!, Decision.Take(identity.ObjectId), events);
+        Sequence.Work(world, Cards, abilities, events);
+
+        Assert.Single(world.Effects.Active(), effect => effect.Kind == Keywords.Overkill);
+    }
+
+    [Rule("rr:attack-enemy-activation.1.4")]
+    [Fact]
+    public void SpiderSenseAnswersAnAttackOnSpiderManAndNotOnSomebodyElse()
+    {
+        // "When the villain initiates an attack against *you*." Abilities that
+        // trigger this way "are resolved when/after a player is attacked", and
+        // the player is the one the attack was initiated against -- so the
+        // villain turning on the next seat is not Spider-Man's to interrupt.
+        //
+        // Two seats, because at one the question does not arise: every attack
+        // is against you when you are the only player there is.
+        var world = Deal("spider_man", "she_hulk");
+        var abilities = AuthoredCards.Runner();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        int rhino = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
+
+        var mine = new Occurrence(1, [Steps.EnemyAttacks], Subject: rhino, Player: 0);
+        var theirs = new Occurrence(2, [Steps.EnemyAttacks], Subject: rhino, Player: 1);
+
+        Assert.Contains(
+            abilities.Waiting(world, mine, WindowKind.Interrupt),
+            ability => ability.Type == AbilityType.Interrupt);
+        Assert.DoesNotContain(
+            abilities.Waiting(world, theirs, WindowKind.Interrupt),
+            ability => ability.Type == AbilityType.Interrupt);
+    }
+
+    [Rule("rr:star-icon.2")]
+    [Fact]
+    public void ChargeAnswersRhinoAttackingAndNotSomeOtherEnemy()
+    {
+        // "When *Rhino* attacks", and the star that says so is in Charge's own
+        // ATK field: `rr:star-icon.2` makes it a reminder "to check that
+        // attachment's text box whenever *the attached enemy* uses the value
+        // that field is modifying to attack". A minion attacking is not the
+        // attached enemy attacking, and Charge adds nothing to its ATK.
+        var (world, abilities, _) = Attacking();
+        int rhino = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
+        var minion = world.CreateCard(
+            "01101", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        var byRhino = new Occurrence(1, [Steps.EnemyAttacks], Subject: rhino, Player: 0);
+        var byMinion = new Occurrence(
+            2, [Steps.EnemyAttacks], Subject: minion.ObjectId, Player: 0);
+
+        Assert.Contains(
+            abilities.Waiting(world, byRhino, WindowKind.Interrupt),
+            ability => ability.Type == AbilityType.ForcedInterrupt);
+        Assert.DoesNotContain(
+            abilities.Waiting(world, byMinion, WindowKind.Interrupt),
+            ability => ability.Type == AbilityType.ForcedInterrupt);
+    }
+
+    [Rule("rr:ability.1")]
+    [Rule("rr:in-play-and-out-of-play")]
+    [Fact]
+    public void ChargeWaitsInTheWindowOnlyWhileItIsInPlay()
+    {
+        // A card's ability functions while the card is in play, and being
+        // attached to Rhino is not the same as being in play: the recorded
+        // Tough hangs off Rhino from a zone that is not. A second copy put
+        // there is still hosted and still does nothing.
+        var (world, abilities, _) = Attacking();
+        var rhino = world.TheCardIn(DeckType.VillainArea)!;
+        var spare = world.Cards.Last(card => card.FaceId == AuthoredCards.Charge);
+        World.MoveToTop(
+            spare,
+            world.AreaOf(DeckType.StatusArea, rhino.Area.PlayArea, rhino.ObjectId));
+
+        var attacking = new Occurrence(
+            1, [Steps.EnemyAttacks], Subject: rhino.ObjectId, Player: 0);
+
+        Assert.Single(
+            abilities.Waiting(world, attacking, WindowKind.Interrupt),
+            ability => ability.Type == AbilityType.ForcedInterrupt);
+    }
+
+    [Rule("rr:ability.11")]
+    [Fact]
+    public void TakingSpiderSenseDrawsACardAndDecliningDoesNot()
+    {
+        // "Unless prefaced by the word 'Forced', all interrupt and response
+        // abilities are optional", so both answers are real and they differ.
+        Assert.Equal(1, HandGrowth(Take: true));
+        Assert.Equal(0, HandGrowth(Take: false));
+    }
+
+    [Rule("rr:attack-enemy-activation.step.2")]
+    [Rule("rr:defend-defense.2")]
+    [Fact]
+    public void TheAttackThenAsksWhetherSpiderManDefends()
+    {
+        // Step 2 of the attack, and a question the rules give a step of its
+        // own. Declining is an answer -- `rr:attack-enemy-activation.4`, an
+        // attack nobody defends is undefended and still resolves.
+        var (world, abilities, _) = Attacking();
+        var asked = Answer(world, abilities, Decision.Decline);
+
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Defender, asked.Asking);
+        Assert.Equal(0, asked.Player);
+        Assert.True(asked.Cancellable);
+        Assert.Equal([Attack.DefenseVerb], asked.Affordances.Select(a => a.Verb));
+    }
+
+    [Rule("rr:attack-enemy-activation.step.2")]
+    [Fact]
+    public void AnsweringTheDefenceQuestionIsWhatMakesThatStepHappen()
+    {
+        // A step that asks is not finished until it is answered, and then it is
+        // finished: the agenda moves on to step 3 rather than putting the same
+        // question again.
+        var (world, abilities, _) = Attacking();
+
+        // The first question is Spider-Sense's window; the second is the
+        // defence.
+        Answer(world, abilities, Decision.Decline);
+        Answer(world, abilities, Decision.Decline);
+
+        Assert.DoesNotContain(
+            Steps.DeclareDefender,
+            world.Agenda.Outstanding.Select(step => step.What));
+    }
+
+    [Rule("rr:attack-enemy-activation.step.4")]
+    [Theory]
+    // Rhino stage 1 (01094) prints ATK 2, Charge attached adds its printed
+    // `ATK+ 3`, and round one's boost card is worth nothing -- the same
+    // zero-icon card the recorded game draws. Undefended, all five land.
+    [InlineData(false, 5)]
+    // "If a hero has been declared the defender of the attack, reduce the
+    // amount of damage dealt by that hero's DEF value." Spider-Man's DEF is 3.
+    [InlineData(true, 2)]
+    public void DefendingReducesTheDamageByTheHerosDefence(bool defend, int expected)
+    {
+        var (world, abilities, _) = Attacking();
+        var identity = world.Seats[0].IdentityCard;
+
+        var defender = Answer(world, abilities, Decision.Decline);
+        Assert.Equal(Question.Defender, defender!.Asking);
+
+        Answer(world, abilities,
+               defend ? Decision.Take(identity.ObjectId) : Decision.Decline);
+
+        Assert.Equal(expected, identity.Damage);
+        Assert.Equal(!defend, identity.Ready);
+    }
+
+    [Rule("rr:delayed-effect.1")]
+    [Rule("rr:lasting-effects.5")]
+    [Fact]
+    public void AtTheEndOfTheAttackChargeDiscardsItselfAndOverkillExpires()
+    {
+        // "At the end of this attack, discard Charge." Both halves of the card
+        // are bounded by the attack: the keyword it granted expires because its
+        // duration names that timing point, and the discard resolves because it
+        // was waiting on that condition.
+        var (world, abilities, charge) = Attacking();
+        var events = new List<GameEvent>();
+
+        var asked = Sequence.Work(world, Cards, abilities, events);
+        for (int answered = 0; asked is not null; answered++)
+        {
+            // Bounded: a step that asks the same question forever is the
+            // failure this is most likely to meet, and a hang says less than a
+            // failure does.
+            Assert.True(answered < 10, $"'{asked.Label}' is still being asked after 10 answers");
+            Sequence.Answer(world, Cards, abilities, asked, Decision.Decline, events);
+            asked = Sequence.Work(world, Cards, abilities, events);
+        }
+
+        Assert.False(world.Agenda.IsBusy);
+        Assert.Null(world.Attack);
+        Assert.Equal(DeckType.EncounterDiscardPile, charge.Area.Type);
+        Assert.Empty(world.Effects.Active());
+        Assert.Contains(events, e => e is CardDetached detached && detached.Card == charge.ObjectId);
+    }
+
+    [Rule("rr:ability.step.2.c")]
+    [Fact]
+    public void TheWholeGameStopsInTheVillainPhaseToAskAboutSpiderSense()
+    {
+        // The same thing again through the engine's own entry point rather than
+        // through `Sequence`, because that is what a client sees: three
+        // declines and the game is part-way through the villain phase, holding
+        // a question a card put there.
+        var game = Playing();
+
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        var result = game.Resolve(Decision.Decline);
+
+        Assert.Equal(GamePhase.VillainPhase, game.Phase);
+        Assert.NotNull(result.Prompt);
+        Assert.Equal(Question.Opportunity, result.Prompt.Asking);
+        Assert.Equal(["Spider-Sense"], result.Prompt.Affordances.Select(a => a.Label));
+        Assert.True(game.State.Windows.IsResolving);
+    }
+
+    /// <summary>How many cards the hand gains from answering the window.</summary>
+    private static int HandGrowth(bool Take)
+    {
+        var (world, abilities, _) = Attacking();
+        var identity = world.Seats[0].IdentityCard;
+        int before = world.Seats[0].Hand.Cards.Count;
+
+        Answer(world, abilities, Take ? Decision.Take(identity.ObjectId) : Decision.Decline);
+
+        return world.Seats[0].Hand.Cards.Count - before;
+    }
+
+    /// <summary>Walks to the next question, answers it, and walks on.</summary>
+    private static Prompt? Answer(World world, ICardAbilities abilities, Decision input)
+    {
+        var events = new List<GameEvent>();
+        var asked = Sequence.Work(world, Cards, abilities, events)
+                    ?? throw new InvalidOperationException("nothing was asked");
+        Sequence.Answer(world, Cards, abilities, asked, input, events);
+        return Sequence.Work(world, Cards, abilities, events);
+    }
+
+    /// <summary>A board part-way through being set up for an attack.</summary>
+    private sealed record Board(World World, AbilityRunner Abilities, Card Charge);
+
+    /// <summary>A dealt board with Rhino about to attack a hero-form Spider-Man.</summary>
+    private static Board Attacking()
+    {
+        var board = Prepare(Deal());
+        var rhino = board.World.TheCardIn(DeckType.VillainArea)!;
+
+        // Only the attack, so the encounter cards after it are not dealt: what
+        // this file is about is the window, and the rest of the phase is
+        // `PlayerPhaseTests`' business.
+        board.World.Agenda.Add(new PhaseStep(
+            Steps.Attack, Round: 1, Number: 2, Index: 0, Subject: rhino.ObjectId, Seat: 0));
+        return board;
+    }
+
+    /// <summary>The same board, driven through the engine from the mulligan.</summary>
+    private static Game Playing()
+    {
+        var board = Prepare(Deal());
+        return Game.Begin(board.World, Cards, board.Abilities);
+    }
+
+    private static World Deal(params string[] heroes)
+    {
+        var playing = heroes.Length > 0 ? heroes : Heroes;
+        return WorldSetup.Deal(
+            Cards,
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, playing)),
+            [.. playing.Select(hero => Setup.Hero(hero).Name)],
+            Seed);
+    }
+
+    /// <summary>Hero form, and Charge in play.</summary>
+    private static Board Prepare(World world)
+    {
+        var abilities = AuthoredCards.Runner();
+
+        // `rr:activation.1` -- the villain attacks an identity in hero form and
+        // schemes against one in alter-ego form. Turning the card is the whole
+        // of changing form; there is no separate flag.
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+
+        // Put into play by the card's own ported text, "Attach to Rhino",
+        // rather than by placing it on the table here. The Rhino set holds more
+        // than one copy, so this is the first of them and not the only one.
+        var charge = world.Cards.First(card => card.FaceId == AuthoredCards.Charge);
+        abilities.WhenRevealed(world, charge, 0);
+
+        return new Board(world, abilities, charge);
+    }
+}

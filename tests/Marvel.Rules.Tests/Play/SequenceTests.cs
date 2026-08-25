@@ -83,7 +83,7 @@ public sealed class SequenceTests
         var asked = Sequence.Work(world, new Facts(), cards, events);
         Assert.NotNull(asked);
 
-        Sequence.Answer(world, cards, asked, Decision.Decline, events);
+        Sequence.Answer(world, new Facts(), cards, asked, Decision.Decline, events);
 
         Assert.Null(Sequence.Work(world, new Facts(), cards, events));
         Assert.False(world.Agenda.IsBusy);
@@ -103,7 +103,7 @@ public sealed class SequenceTests
         var events = new List<GameEvent>();
 
         var asked = Sequence.Work(world, new Facts(), cards, events);
-        Sequence.Answer(world, cards, asked!, Decision.Take(Interrupter.Handle), events);
+        Sequence.Answer(world, new Facts(), cards, asked!, Decision.Take(Interrupter.Handle), events);
 
         Assert.Equal([Interrupter.Card], cards.Resolved);
         Assert.Null(Sequence.Work(world, new Facts(), cards, events));
@@ -125,7 +125,7 @@ public sealed class SequenceTests
                                "WhenAttacked", "in what order?", false, []);
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Sequence.Answer(world, cards, asked, Decision.Decline, []));
+            () => Sequence.Answer(world, new Facts(), cards, asked, Decision.Decline, []));
         Assert.Contains("cannot be declined", thrown.Message, StringComparison.Ordinal);
     }
 
@@ -139,7 +139,7 @@ public sealed class SequenceTests
                                "WhenAttacked", "interrupt?", true, []);
 
         Assert.Throws<RulesNotImplementedException>(
-            () => Sequence.Answer(world, cards, asked, Decision.Take(999), []));
+            () => Sequence.Answer(world, new Facts(), cards, asked, Decision.Take(999), []));
     }
 
     [Rule("rr:main-scheme-main-scheme-deck.2.1")]

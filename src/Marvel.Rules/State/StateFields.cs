@@ -1,3 +1,5 @@
+using Marvel.Rules.Timing;
+
 namespace Marvel.Rules.State;
 
 /// <summary>
@@ -211,7 +213,7 @@ public static class StateFields
 
         if (inPlay)
         {
-            FillInPlay(fields, kind, faceId, facts, players, hasFirstPlayerToken);
+            FillInPlay(fields, card, kind, faceId, facts, players, hasFirstPlayerToken);
         }
 
         return fields;
@@ -231,6 +233,45 @@ public static class StateFields
         return registered.Concat(tokens);
     }
 
+    /// <summary>
+    /// One variable quantity as the game currently counts it: what the card
+    /// prints, plus everything modifying it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:modifiers</c>: "The game constantly checks and (if necessary)
+    /// updates the count of any variable quantity that is being modified." So
+    /// this is derived on every read rather than stored — an attachment that
+    /// leaves play stops counting because it is no longer there to be found,
+    /// and a lasting effect stops counting because it has expired.
+    /// </para>
+    /// <para>
+    /// Two sources, and the rules do not rank them: a printed <c>ATK+</c> on an
+    /// attached card (<see cref="ModifiedBy"/>) and a continuous effect naming
+    /// this field (<see cref="ContinuousEffect.Kind"/>). Boost icons reach an
+    /// enemy's ATK the second way — <c>rr:attack-enemy-activation.step.3.c</c>
+    /// increases it for the duration of one attack, which is
+    /// <c>rr:lasting-effects</c>'s own example of a duration.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="card">Whose quantity.</param>
+    /// <param name="field">The digest's name for it, e.g. <c>attack</c>.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="players">How many players are in the game.</param>
+    public static long Modified(
+        World world, Card card, string field, ICardFacts facts, int players)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        long value = PrintedFrom.TryGetValue(field, out string? attribute)
+            ? facts.PrintedValue(card.FaceId, attribute, players)
+            : 0;
+        return value + Adjustments(world, card, field, facts, players);
+    }
+
     /// <summary>Printed values, filled once the card has registered.</summary>
     private static void FillPrinted(
         Dictionary<string, long> fields, Card card, string faceId,
@@ -244,13 +285,37 @@ public static class StateFields
             }
 
             long value = facts.PrintedValue(faceId, attribute, players);
-            if (world is not null && ModifiedBy.TryGetValue(field, out string? plus))
+            if (world is not null)
             {
-                value += Modifiers(world, card, plus, facts, players);
+                value += Adjustments(world, card, field, facts, players);
             }
 
             fields[field] = value;
         }
+    }
+
+    /// <summary>Remaining hit points: printed, less the damage on the card.</summary>
+    private static long Remaining(Card card, string faceId, ICardFacts facts, int players) =>
+        Math.Max(0, facts.PrintedValue(faceId, "HP", players) - card.Damage);
+
+    /// <summary>Everything modifying one of a card's printed values.</summary>
+    private static long Adjustments(
+        World world, Card card, string field, ICardFacts facts, int players)
+    {
+        long total = ModifiedBy.TryGetValue(field, out string? plus)
+            ? Modifiers(world, card, plus, facts, players)
+            : 0;
+
+        foreach (var effect in world.Effects.Active())
+        {
+            if (string.Equals(effect.Kind, field, StringComparison.Ordinal)
+                && effect.Affects == card.ObjectId)
+            {
+                total += effect.Amount;
+            }
+        }
+
+        return total;
     }
 
     /// <summary>What cards attached to this one add to a printed value.</summary>
@@ -275,7 +340,7 @@ public static class StateFields
     }
 
     private static void FillInPlay(
-        Dictionary<string, long> fields, CardKind kind, string faceId,
+        Dictionary<string, long> fields, Card card, CardKind kind, string faceId,
         ICardFacts facts, int players, bool hasFirstPlayerToken)
     {
         switch (kind)
@@ -285,9 +350,15 @@ public static class StateFields
                 // recording cannot say whether it is a printed constant or a
                 // pool filled on entry, because nothing in it takes damage --
                 // but `01101` reaches the discard registered and at zero
-                // health, so it is not filled at registration either way. It
-                // becomes a pool the moment damage exists.
-                fields["health"] = facts.PrintedValue(faceId, "HP", players);
+                // health, so it is not filled at registration either way.
+                //
+                // It is remaining hit points, not printed ones: `rr:damage.1`
+                // -- "when a character has damage on it equal to or in excess
+                // of its hit points, it is defeated" -- and the Python engine's
+                // `health` property is the same subtraction. On every recorded
+                // board the subtrahend is zero, so this is the printed value
+                // there and the recording cannot tell the two apart.
+                fields["health"] = Remaining(card, faceId, facts, players);
                 fields["ally_limit"] = AllyLimit;
                 fields["restricted_limit"] = RestrictedLimit;
                 if (hasFirstPlayerToken)
@@ -298,7 +369,7 @@ public static class StateFields
                 break;
 
             case CardKind.EncounterVillain:
-                fields["health"] = facts.PrintedValue(faceId, "HP", players);
+                fields["health"] = Remaining(card, faceId, facts, players);
                 break;
 
             case CardKind.MainScheme:

@@ -1,0 +1,62 @@
+{
+  "dataset_version": 1,
+  "authored_by": "the C# port, by hand, against the published Rules Reference",
+  "notes": "Card abilities as data -- docs/card-dsl.md. A card listed here has been read; one with an empty 'abilities' has been read and found to do nothing, which is a different thing from nobody having looked at it. Printed text is quoted from datasets/cards/cards.json, which is extracted rather than authored. The Python engine's own scripts under py_src/cards/pack/ are evidence of intent; where they and the Rules Reference disagree, the Rules Reference wins.",
+  "cards": [
+    {
+      "card": "01001a",
+      "name": "Spider-Man",
+      "note": "Spider-Sense -- Interrupt: When the villain initiates an attack against you, draw 1 card. 'You' is the attacked player and not the attacked character: rr:attack-enemy-activation.1.4. Printed on the hero face only, which is why the alter-ego face 01001b is a separate card id and carries nothing.",
+      "abilities": [
+        {
+          "name": "Spider-Sense",
+          "trigger": { "event": "WhenEnemyAttacks", "timing": "Interrupt", "subject": "you" },
+          "effect": { "draw": { "player": "trigger.player", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01099",
+      "name": "Charge",
+      "note": "Attach to Rhino. [star] Forced Interrupt: When Rhino attacks, the attack gains overkill. At the end of this attack, discard Charge. The star sits in this card's ATK field, which rr:star-icon.2 makes a reminder to check the text box whenever the attached enemy uses that value to attack -- so this is an attachment ability while in play, not a 'Boost' ability. The printed ATK+ 3 is not here: rr:attachment.1 makes a printed modifier declarative, and StateFields reads it off the attachment without an ability. 'Rhino' is written as the villain in play because the card belongs to Rhino's encounter set and no other villain can share a table with it; a name query would need a lookup the printed data spells differently.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "attachTo": { "query": "villain" } }
+        },
+        {
+          "name": "Charge",
+          "trigger": { "event": "WhenEnemyAttacks", "timing": "ForcedInterrupt", "subject": "attachedTo" },
+          "effect": {
+            "seq": [
+              { "grantUntil": { "keyword": "overkill", "card": "trigger.subject", "until": "EndOfAttack" } },
+              { "delayUntil": { "condition": "WhenAttackEnds", "effect": { "discard": "this" } } }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "01105",
+      "name": "\"I'm Tough\"",
+      "note": "When Revealed: Give Rhino a tough status card. If Rhino already has a tough status card, this card gains surge. The no-villain case is not printed; py_src/cards/pack/core/rhino/01105.py surges there, and that is the reading encoded. 'gainSurge' is not an implemented node, so the surge branch throws by name rather than silently dealing one card too few.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  { "exists": { "query": "villain" } },
+                  { "not": { "hasStatus": { "card": { "query": "villain" }, "status": "tough" } } }
+                ]
+              },
+              "then": { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } },
+              "else": { "gainSurge": 1 }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

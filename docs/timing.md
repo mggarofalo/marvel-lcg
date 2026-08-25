@@ -253,6 +253,7 @@ in two tiers, not two questions.
 | `Order` | `rr:first-player.3`, `rr:forced.5`, `rr:simultaneous-resolution`, `rr:each-player.1`, `rr:activation.8.1` |
 | `Payment` | `rr:initiating-abilities.step.5`, `rr:resource-ability.1` |
 | `Discard` | `rr:end-of-player-phase.step.1` |
+| `Defender` | `rr:attack-enemy-activation.step.2` |
 
 The four members this replaced were a census of what one sampled corpus happened
 to contain, which is a sample rather than a domain — and they flattened the two
@@ -268,9 +269,9 @@ vocabulary.
 
 `rr:ability` puts an interrupt window before every occurrence and a response
 window after it, so that is the shape of everything the engine does — placing
-threat, dealing damage, revealing a card, ending a phase. `Moment.Resolve`
-writes it once, because a step that forgot its windows would look exactly like a
-step that had none to open.
+threat, dealing damage, revealing a card, ending a phase. `Sequence.Work` writes
+it once, because a step that forgot its windows would look exactly like a step
+that had none to open.
 
 **Almost every one of those windows asks nobody anything**, and that is what
 makes wrapping every occurrence cheap enough to be the default. `Offering` keeps
@@ -313,16 +314,31 @@ order of six method calls, which a reader has to reconstruct:
 ```
 PlaceThreat            rr:villain-phase.step.1
 EnemiesActivate        rr:villain-phase.step.2   (a heading)
-  Activate × players   rr:activation.1
+  Attack | Scheme × players     rr:activation.1
+    ... the attack's own six    rr:attack-enemy-activation
 DealEncounterCards     rr:villain-phase.step.3
   RevealEncounterCard × dealt   rr:villain-phase.step.4
 PassFirstPlayerToken   rr:villain-phase.step.5
 EndVillainPhase        rr:villain-phase.step.6
 ```
 
-Steps 2 and 3 **schedule** what happens under them rather than doing it, so the
-per-player activations and the per-card reveals are occurrences with windows of
-their own. A heading is not an occurrence and opens no windows.
+Steps 2, 3 and the attack **schedule** what happens under them rather than doing
+it, so the per-player activations, the per-card reveals and the attack's own six
+steps are occurrences with windows of their own. A heading is not an occurrence
+and opens no windows.
+
+An occurrence carries a `Subject` and a `Player` as well as its conditions,
+because two rules make a card ask about them: `rr:attack-enemy-activation.1.4`
+turns "when the villain attacks **you**" into a question about the attacked
+player, and `rr:star-icon.2` turns Charge's ability into a question about which
+enemy is attacking. Without them a window can say *that* something happened and
+not *to whom*.
+
+The occurrence is made **once, when the step is scheduled**, and not on every
+read. `rr:triggering-condition.1` lets each ability trigger once per occurrence,
+and the occurrence is what remembers which have — a fresh one per read would
+forget across the answer that suspended the step, and the forced interrupt that
+had just resolved would resolve again, and again.
 
 `Agenda.Then` puts a scheduled step after the current one's *response* window,
 not before it: a step that schedules another has not itself finished happening.
@@ -333,20 +349,40 @@ they are.
 The villain winning abandons the rest — `rr:main-scheme-main-scheme-deck.2.1`,
 the villain wins the game, and the encounter cards are not dealt.
 
+## A step may ask, as well as a window
+
+Not every question in a phase comes from a window. Declaring a defender is a
+step of the attack with a name of its own — `rr:attack-enemy-activation.step.2` —
+and nobody is using an ability when it is asked. So `VillainPhase.Take` returns a
+`Prompt?`, the agenda stays on that step's `Apply`, and the answer is what makes
+the step happen.
+
+Which of the two answered a prompt is read off the board rather than off the
+prompt: a window open means the window absorbs the answer, no window open means
+the step does. A window that has finished polling has already closed itself, so
+the two never overlap.
+
+Being asked follows the same rule either way — **only where there is something
+to ask**. A player with no ready character cannot defend (`rr:defend-defense.2`
+and `.3` both require exhausting one), so the step passes in silence exactly as
+an empty window does.
+
 ## What this does not do yet
 
-- **No ported card waits in a window.** `CoreSetAbilities.Waiting` returns
-  nothing, in as many words. "Charge" (01099) has a Forced Interrupt that fires
-  when Rhino attacks — a window this engine opens, on an occurrence it cannot
-  reach, because the recorded hero never leaves alter-ego form and a villain
-  only attacks a hero (`rr:activation.1`). So every claim in `AbilityWindowTests`
-  and `SequenceTests` rests on its citation and on a board built by hand.
 - **Steps 1 to 3 of `rr:end-of-player-phase`** — discard down to hand size, draw
   up to it, ready every card — are not implemented. `rr:player-phase.1` puts
   them before the expiry point, and the recorded game cannot say when they
   happen: its hand is full at every step and its one player readies nothing.
-- **A delayed effect that comes due throws.** Resolving one needs the effect
-  vocabulary, which is `docs/card-dsl.md`'s business.
-- **Nothing registers a continuous effect yet.** The list is built and held
-  against the rules; no card puts anything in it, because no card ability is
-  data yet.
+- **One delayed effect kind resolves; the rest throw.** `DiscardFromPlay` is
+  written because Charge needs it. The vocabulary beyond that is
+  `docs/card-dsl.md`'s business.
+- **Three cards register continuous effects, and no more.** The list is real —
+  Charge grants overkill, boost icons raise an enemy's ATK — but three authored
+  cards is the whole card pool. Growing it is adding rows to
+  `datasets/abilities/abilities.json` and, where a row names a node nothing has,
+  one case in the interpreter.
+
+What this **does** do now is [enemy-attacks.md](enemy-attacks.md): two authored
+cards waiting in one window on the real Rhino board, one forced and one
+optional, and the lasting and delayed effects the forced one creates. Neither is
+code — see [card-dsl.md](card-dsl.md).

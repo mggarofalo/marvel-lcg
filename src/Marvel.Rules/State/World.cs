@@ -104,6 +104,16 @@ public sealed class World
     /// </remarks>
     public IReadOnlyList<GameArea> GameAreas => gameAreas;
 
+    /// <summary>
+    /// The enemy attack being resolved, or <c>null</c> when none is.
+    /// </summary>
+    /// <remarks>
+    /// On the board because an attack spans several steps of the agenda and a
+    /// player is asked a question in the middle of it. See
+    /// <see cref="EnemyAttack"/>.
+    /// </remarks>
+    public EnemyAttack? Attack { get; set; }
+
     /// <summary>Whether the game has ended.</summary>
     /// <remarks>
     /// The engine answers a <c>null</c> prompt once this is set, which is the only
