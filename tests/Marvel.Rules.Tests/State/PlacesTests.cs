@@ -1,3 +1,4 @@
+using Marvel.Tests;
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
 using Xunit;
@@ -25,6 +26,8 @@ public sealed class PlacesTests
 {
     // ---------------------------------------------------------------- rr:play-area
 
+    [Rule("rr:play-area")]
+    [Rule("rr:play-area.2")]
     [Fact]
     public void TheVillainsPlayAreaIsAPlaceAndNotTheAbsenceOfOne()
     {
@@ -39,6 +42,7 @@ public sealed class PlacesTests
         Assert.False(PlayArea.Of(0).IsVillains);
     }
 
+    [Rule("rr:play-area.3")]
     [Fact]
     public void EveryCardIsInExactlyOnePlayArea()
     {
@@ -140,6 +144,7 @@ public sealed class PlacesTests
         Assert.Equal([mine, theirs], Places.MainSchemes(world, villain));
     }
 
+    [Rule("rr:play-area.1")]
     [Fact]
     public void AnEventAPlayerPlaysResolvesFromTheirPlayArea()
     {
@@ -208,6 +213,7 @@ public sealed class PlacesTests
         Assert.True(Places.CanAffect(world, myHero, central));
     }
 
+    [Rule("rr:each-player")]
     [Fact]
     public void EachPlayerMeansThePlayersInYourGameAreaIncludingYou()
     {

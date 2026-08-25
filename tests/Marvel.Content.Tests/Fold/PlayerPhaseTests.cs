@@ -238,12 +238,13 @@ public sealed class PlayerPhaseTests
         Assert.True(game.State.IsOver);
     }
 
+    [Rule("rr:main-scheme-main-scheme-deck.2")]
+    [Rule("rr:main-scheme-main-scheme-deck.2.1")]
     [Fact]
     public void TheVillainWinsByCompletingTheMainScheme()
     {
-        // `rr:main-scheme-main-scheme-deck.2`: threat at or above the target
-        // completes the scheme, and completing the final stage wins the game.
-        // The Rhino deck holds one stage, so this is that case -- and it is why
+        // The Rhino deck holds one stage, so completing it is completing the
+        // final stage, and the villain wins outright -- which is why
         // the recording stops at seven steps of a twenty-step request.
         var game = Begin();
         while (game.Pending is not null)
@@ -291,6 +292,7 @@ public sealed class PlayerPhaseTests
         Assert.All(discard.Cards, card => Assert.True(card.FaceUp));
     }
 
+    [Rule("rr:scheme-enemy-activation.step.2.d")]
     [Fact]
     public void TheBoostCardIsDiscardedBeforeTheEncounterCard()
     {
@@ -308,14 +310,16 @@ public sealed class PlayerPhaseTests
         Assert.Equal(["01186", "01105"], discard.Cards.Select(card => card.FaceId));
     }
 
+    [Rule("rr:villain-phase.step.1")]
+    [Rule("rr:scheme-enemy-activation.step.3")]
     [Fact]
     public void ThreatComesFromTwoPlacesAndBothAreCounted()
     {
         // `k_threat` 0 -> 2 is not one rule. One is the main scheme's own
-        // escalation (`rr:villain-phase.1`, `1*` at one player) and one is
-        // Rhino scheming (`rr:scheme-enemy-activation.3`, SCH 1 plus a boost
-        // card worth nothing). Either alone gives 1, which is why the total is
-        // checked against the parts.
+        // escalation (`rr:villain-phase.step.1`, `1*` at one player) and one
+        // is Rhino scheming (`rr:scheme-enemy-activation.step.3`, SCH 1 plus a
+        // boost card worth nothing). Either alone gives 1, which is why the
+        // total is checked against the parts.
         var game = Begin();
         game.Fold(Decision.Decline);
         game.Fold(Decision.Decline);
@@ -367,11 +371,12 @@ public sealed class PlayerPhaseTests
         Assert.Throws<InvalidOperationException>(() => game.Fold(Decision.Decline));
     }
 
+    [Rule("rr:villain-phase.step.5")]
     [Fact]
     public void TheFirstPlayerTokenIsPassedEvenWithOnePlayer()
     {
-        // `rr:villain-phase.5`. At one player it comes back to the same seat,
-        // so the modulo is doing the work and an implementation that only
+        // At one player the token comes back to the same seat, so the modulo
+        // is doing the work and an implementation that only
         // incremented would put the token on a seat that does not exist -- and
         // `k_first_player_token` would vanish from the digest.
         var game = Begin();

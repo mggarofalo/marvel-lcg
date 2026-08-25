@@ -130,6 +130,7 @@ as important.
 | authoring or running behavioral specs | [spec-harness.md](docs/spec-harness.md) |
 | the spec campaign, sharding, depth tiers | [spec-campaign.md](docs/spec-campaign.md) |
 | refreshing a vendored snapshot, a new RR version, a new pack | [rules-provenance.md](docs/rules-provenance.md) |
+| citing a rule from a C# test, `[Rule]`, what nothing is held to | [rules-citations.md](docs/rules-citations.md) |
 | `datasets/cards/`, `tools/cards/extract` | [card-dataset.md](docs/card-dataset.md) |
 | `datasets/setup/`, scenario or starter-deck data, setup order | [setup-dataset.md](docs/setup-dataset.md) |
 | `datasets/digest/prompts.json`, `Marvel.Rules.Fold`, what a prompt offers | [prompt-dataset.md](docs/prompt-dataset.md) |
