@@ -189,6 +189,81 @@ The player phase ends effects bound to `EndOfPlayerPhase` and **not** those boun
 to `EndOfRound`, which outlive it. Expiring both would end a lasting effect half
 a round early on a board that looks entirely normal.
 
+## The window stack
+
+Where the game is, when it is part-way through resolving something, is a value
+on `World` — `World.Resolution`, a stack of open windows.
+
+A stack because windows nest: an interrupt that plays a card is itself an
+occurrence with windows of its own, and the outer window is still open
+underneath. `rr:initiating-abilities.3` is why the inner sequence outlives its
+source — it "does not stop from completing if that card leaves play during this
+sequence".
+
+Data, and on the board, because the alternative is to suspend the engine
+mid-call and resume it. A suspended iterator or a blocked thread cannot be
+written to a save, cannot be diffed against a recorded step, and cannot tell a
+client that the game is two windows deep.
+
+### Offering a window round the table
+
+Three rules, and together they are the whole loop:
+
+- `rr:first-player.4` and `.5` — "the first player has the first opportunity to
+  use an interrupt / a response at each appropriate game moment". Not the active
+  player, and not whoever the occurrence is happening to.
+- `rr:in-player-order` and `.2` — then clockwise, and "next player" always means
+  the next clockwise player.
+- `rr:interrupt.5` and `rr:response.4` — the window closes once **all** players
+  decline any **further** abilities.
+
+Two consequences worth stating, because both are easy to get wrong and neither
+shows up in a one-player game:
+
+**A window is not one pass round the table.** `rr:in-player-order.1`: "If a
+sequence performed in player order does not conclude after each player has
+performed their part of the sequence once, the sequence of opportunities
+continues in a clockwise manner until it is complete." A window that closed
+after one lap would silently refuse the second interrupt of a player who had
+two.
+
+**Using an ability gives everyone another opportunity.** The word doing the work
+is "(further)" — a player who passed on an untouched board may have something to
+say now that it has changed. So the count of consecutive declines resets, while
+the opportunity itself carries on clockwise rather than restarting at the first
+player.
+
+`Close` exists for `rr:interrupt.4`: an interrupt that cancels or replaces the
+imminent triggering condition ends the window, because there is nothing left to
+interrupt.
+
+## What a player is asked
+
+`Question` has one member per kind of question the Rules Reference describes,
+and it is **not** a timing. When a question is asked is `TimingPriority`, which
+a prompt carries separately. An interrupt and a response are the same question
+in two tiers, not two questions.
+
+| | Cited |
+|---|---|
+| `TurnOption` | `rr:player-turn` |
+| `Opportunity` | `rr:first-player.4`, `.5` |
+| `Element` | `rr:choose-game-element` |
+| `Option` | `rr:choose-option` |
+| `Order` | `rr:first-player.3`, `rr:forced.5`, `rr:simultaneous-resolution`, `rr:each-player.1`, `rr:activation.8.1` |
+| `Payment` | `rr:initiating-abilities.step.5`, `rr:resource-ability.1` |
+| `Discard` | `rr:end-of-player-phase.step.1` |
+
+The four members this replaced were a census of what one sampled corpus happened
+to contain, which is a sample rather than a domain — and they flattened the two
+questions the rules keep apart.
+
+The recording spells a prompt's kind with the name of a member of the Python
+engine's `TimingPriority`, four of whose twelve members name nothing in the
+rulebook. That is a corpus spelling, so the translation lives at the corpus
+boundary — `PlayerPhaseTests.RecordedKind` — rather than in the engine's
+vocabulary.
+
 ## What this does not do yet
 
 - **Nothing opens a window.** No ported card has an interrupt or a response the
@@ -201,9 +276,8 @@ a round early on a board that looks entirely normal.
   up to it, ready every card — are not implemented. `rr:player-phase.1` puts them
   before the expiry point, and the recorded game cannot say when they happen: its
   hand is full at every step and its one player readies nothing.
-- **An optional ability in a window throws** rather than being declined on the
-  player's behalf, and so do two forced abilities at one moment (`rr:forced.5`
-  gives that order to the first player). Both need MARVEL-179.
-- **The decision function cannot express a window.** `Decision(Affordance,
-  Targets)` has no way to say "I am using an interrupt in the window before you
-  place that threat". MARVEL-179.
+- **The fold does not drive the stack yet.** `World.Resolution` is built and
+  held against the rules, and `Game.Fold` still resolves the villain phase in
+  one uninterruptible call. Until it drives the stack, `PhaseEnd` throws on an
+  optional ability waiting in a window, and on two forced abilities at one
+  moment (`rr:forced.5` gives that order to the first player). MARVEL-179.

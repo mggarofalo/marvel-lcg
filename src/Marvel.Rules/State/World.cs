@@ -37,6 +37,7 @@ public sealed class World
         this.facts = facts;
         Players = players;
         Effects = new Timing.ContinuousEffects(this);
+        Resolution = new Timing.Resolution(this);
 
         // An ordinary game has exactly one game area holding every play area,
         // and nothing in the rules distinguishes that from having none. Making
@@ -60,6 +61,16 @@ public sealed class World
     /// <c>docs/timing.md</c>.
     /// </remarks>
     public Timing.ContinuousEffects Effects { get; }
+
+    /// <summary>
+    /// Where the game is when it is part-way through resolving something: the
+    /// stack of open interrupt and response windows.
+    /// </summary>
+    /// <remarks>
+    /// On the board because a half-resolved occurrence has to be saved with the
+    /// game. See <c>docs/timing.md</c>.
+    /// </remarks>
+    public Timing.Resolution Resolution { get; }
 
     /// <summary>The seat value meaning "the scenario", not a player.</summary>
     public const int Scenario = -1;

@@ -5,6 +5,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Fold;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -132,7 +133,7 @@ public sealed class PlayerPhaseTests
 
             string where = $"step {step}";
             Assert.Equal(expected.GetProperty("player").GetInt32(), actual.Player);
-            Assert.Equal(expected.GetProperty("kind").GetString(), actual.Kind.ToString());
+            Assert.Equal(expected.GetProperty("kind").GetString(), RecordedKind(actual));
             Assert.Equal(expected.GetProperty("trigger").GetString(), actual.Trigger);
             Assert.Equal(expected.GetProperty("label").GetString(), actual.Label);
             Assert.Equal(expected.GetProperty("cancellable").GetBoolean(), actual.Cancellable);
@@ -504,4 +505,37 @@ public sealed class PlayerPhaseTests
         Assert.Equal((int)Seed, board.GetProperty("seed").GetInt32());
         return board;
     }
+
+    /// <summary>
+    /// How the recording spells this prompt's kind.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A translation, and it lives here rather than on <c>Prompt</c> on purpose.
+    /// The recorded <c>kind</c> is the name of a member of the Python engine's
+    /// <c>TimingPriority</c>, an enum with twelve members of which four —
+    /// <c>Rule</c>, <c>Statistics</c>, <c>Normal</c>, <c>End</c> — name nothing
+    /// in the Rules Reference. It also flattens two questions the rules keep
+    /// apart: <i>what</i> is being asked and <i>when</i>.
+    /// </para>
+    /// <para>
+    /// So the engine carries <see cref="Question"/> and
+    /// <see cref="TimingPriority"/>, both read off the rulebook, and this is
+    /// where they are bent into the corpus's spelling. Every other engine that
+    /// wants the recording to line up needs this function; none of them should
+    /// have to think in it.
+    /// </para>
+    /// </remarks>
+    private static string RecordedKind(Prompt prompt) => prompt switch
+    {
+        // "Normal" is the recording's word for a question that is not timed
+        // around an occurrence at all -- a turn option, a target, a payment.
+        { When: TimingPriority.Untimed } => "Normal",
+        { When: TimingPriority.StatusForcedInterrupt or TimingPriority.ForcedInterrupt }
+            => "ForcedInterrupt",
+        { When: TimingPriority.Interrupt } => "Interrupt",
+        { When: TimingPriority.ForcedResponse } => "ForcedResponse",
+        { When: TimingPriority.Response } => "Response",
+        _ => prompt.When.ToString(),
+    };
 }

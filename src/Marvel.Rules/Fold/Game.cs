@@ -240,7 +240,8 @@ public sealed class Game
         var seat = world.Seats[Active];
         return new Prompt(
             Player: seat.Index,
-            Kind: PromptKind.Normal,
+            Asking: Question.TurnOption,
+            When: Timing.TimingPriority.Untimed,
             Trigger: MulliganTrigger,
             Label: $"{seat.Name} resolves mulligans",
             // The engine asks this forced. There is no "keep my hand" option to
@@ -255,7 +256,8 @@ public sealed class Game
         var seat = world.Seats[Active];
         return new Prompt(
             Player: seat.Index,
-            Kind: PromptKind.Normal,
+            Asking: Question.TurnOption,
+            When: Timing.TimingPriority.Untimed,
             Trigger: TurnTrigger,
             // The engine's console line, newline and all. Normalising it is how
             // two implementations quietly stop agreeing about a string that is
@@ -270,7 +272,8 @@ public sealed class Game
         var seat = world.Seats[Active];
         return new Prompt(
             Player: seat.Index,
-            Kind: PromptKind.Normal,
+            Asking: Question.TurnOption,
+            When: Timing.TimingPriority.Untimed,
             Trigger: EndPhaseTrigger,
             Label: $"{seat.Name} End Phase",
             Cancellable: false,
