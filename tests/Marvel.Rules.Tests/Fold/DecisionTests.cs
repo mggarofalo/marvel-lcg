@@ -1,43 +1,43 @@
 using Marvel.Rules.Fold;
+using Marvel.Tests;
 using Xunit;
 
 namespace Marvel.Rules.Tests.Fold;
 
-/// <summary>
-/// The fold's input, and the one distinction it exists to carry.
-/// </summary>
-/// <remarks>
-/// Declining is not nothing: it is the only input the recorded fixtures
-/// exercise, and answering the main-turn prompt with one ends the turn. The
-/// Python engine spells it as the empty command <c>{}</c>; the risk in porting
-/// that is a decline arriving as "affordance 0", which is a real affordance id.
-/// </remarks>
+/// <summary>What one answer to one prompt can say.</summary>
 public sealed class DecisionTests
 {
+    [Rule("rr:initiating-abilities.step.3")]
+    [Rule("rr:initiating-abilities.step.5")]
     [Fact]
-    public void DecliningTakesNothing()
+    public void PayingIsASeparateAnswerFromTargeting()
     {
+        // `rr:initiating-abilities` makes them different steps -- 3 determines
+        // the cost, 5 pays it, and 2 checked the play restrictions before
+        // either. The Python engine's recorded input agrees: `CommandDescriptor`
+        // has `id`, `targets` and `resources`, three fields.
+        var decision = Decision.Take(affordance: 4, targets: [11], paying: [7, 9]);
+
+        Assert.Equal(4, decision.Affordance);
+        Assert.Equal([11], decision.Targets);
+        Assert.Equal([7, 9], decision.Spent);
+    }
+
+    [Fact]
+    public void AnAffordanceWithNoCostSpendsNothing()
+    {
+        Assert.Empty(Decision.Take(4).Spent);
+        Assert.Empty(Decision.Decline.Spent);
         Assert.True(Decision.Decline.IsDecline);
-        Assert.Empty(Decision.Decline.Targets);
     }
 
     [Fact]
-    public void AffordanceZeroIsNotADecline()
+    public void SpendingIsNeverNullEvenWhenResourcesIs()
     {
-        // The whole point of the type. Ids start at 0, so a decline modelled as
-        // a falsy id would silently take the first option on offer.
-        var first = Decision.Take(0);
-        Assert.False(first.IsDecline);
-        Assert.Equal(0, first.Affordance);
-    }
-
-    [Fact]
-    public void TargetsKeepTheOrderTheyWereChosenIn()
-    {
-        // Several rules care which was chosen first -- the order minions
-        // activate in, the order cards go back on top of a deck -- so this is
-        // a sequence and not a set.
-        var decision = new Decision(4, [9, 2, 7]);
-        Assert.Equal([9, 2, 7], decision.Targets);
+        // Every caller before this field existed constructs the two-argument
+        // form, so the property has to answer for them rather than making them
+        // check.
+        Assert.Empty(new Decision(1, [2]).Spent);
+        Assert.Null(new Decision(1, [2]).Resources);
     }
 }
