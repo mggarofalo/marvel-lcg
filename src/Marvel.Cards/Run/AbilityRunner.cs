@@ -604,6 +604,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static void DelayUntil(AbilityNode node, Cast cast)
     {
         var effect = Tree(node.Require("effect"));
+
+        // "If a character is damaged by this attack, that character is
+        // stunned." **The card it acts on does not exist yet** -- the attack
+        // has not happened, so there is nobody to name. `Affects` stays null
+        // and the occurrence names the card when the effect comes due.
+        if (effect.Kind == "giveStatus"
+            && Word(effect.Require("card")) == "damaged"
+            && Word(effect.Require("status")) == Statuses.Stunned)
+        {
+            // **Bounded by the attack as well as by the condition.** "If a
+            // character is damaged by **this attack**" is false once the attack
+            // is over, so an attack that damaged nobody -- `rr:tough.3`, a
+            // tough status card ate it -- must not leave the effect waiting for
+            // somebody else's. `Duration` carries both: the next time damage is
+            // dealt, and not past the end of this attack.
+            cast.World.Effects.Register(new ContinuousEffect(
+                EffectSource.DelayedEffect,
+                Kind: DelayedEffects.StunTheSubject,
+                Card: cast.Source.ObjectId,
+                Affects: null,
+                Lasts: new Duration(
+                    Until: node.Field("within") is { } bound ? Word(bound) : null,
+                    OnCondition: Word(node.Require("condition")),
+                    Uses: 1)));
+            return;
+        }
+
         if (effect.Kind != "discard")
         {
             // A delayed effect is data on the board, not a closure, so what it
