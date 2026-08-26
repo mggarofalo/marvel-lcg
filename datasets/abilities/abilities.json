@@ -699,6 +699,66 @@
           }
         }
       ]
+    },
+    {
+      "card": "24047",
+      "name": "White Rabbit",
+      "note": "[star] Forced Interrupt: When White Rabbit attacks you, discard 1 card at random from your hand. [star] Boost: Choose and discard 1 identity-specific card from your hand. The interrupt is timed to the attack initiating, which rr:attack-enemy-activation.5 puts with 'interrupts that trigger when [an enemy] initiates an attack' -- so the card goes before the boost card is even given, and a card the player might have wanted to pay with is gone before they are asked to defend. 'Your hand' is the attacked player's: rr:you-your.7 makes 'you' the attacked player for a trigger of this shape, and the interpreter takes it from the occurrence rather than from who owns the card. The boost half is guarded by exists because rr:choose-game-element has nothing to offer a hand with no identity-specific card in it, which is an ordinary hand rather than an edge case.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenEnemyAttacks",
+            "timing": "ForcedInterrupt",
+            "subject": "this"
+          },
+          "effect": { "discardAtRandom": { "player": "you", "count": 1 } }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": { "exists": { "query": "identitySpecificInYourHand" } },
+              "then": {
+                "chooseCard": {
+                  "from": { "query": "identitySpecificInYourHand" },
+                  "effect": { "discard": "chosen" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "24048",
+      "name": "Sinister Onslaught",
+      "note": "When Revealed (Alter-Ego): Each [[Criminal]] enemy in play schemes. If no enemy schemed this way, this card gains surge. When Revealed (Hero): Each [[Criminal]] enemy in play attacks you. If no enemy attacked this way, this card gains surge. Written as one ability with a form test rather than two, the way Assault is: the parenthesis is a condition on the ability and the forms are exclusive, so a card with both would fire twice. 'If no enemy attacked this way' is the same query asked before the fact rather than a count taken after: every enemy the query names does activate -- rr:activation.1 chooses between attacking and scheming by the player's form and the card has already chosen -- so an empty query and a count of zero are the same board. The trait is written as the engine spells it -- CRIMINAL, upper case, with spaces underscored -- which is the same rule the trigger vocabulary follows: a translation table between what a card prints and what the engine stores is a second vocabulary, and a second vocabulary drifts. Rhino himself carries the Criminal trait, so on the scenario this set is dealt into the surge branch is the rare one; it is reached when the villain is somehow not in play.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": { "exists": { "enemiesWithTrait": "CRIMINAL" } },
+              "then": {
+                "if": {
+                  "test": { "inForm": { "player": "you", "form": "hero" } },
+                  "then": { "enemyAttacks": { "enemies": { "enemiesWithTrait": "CRIMINAL" } } },
+                  "else": { "enemySchemes": { "enemies": { "enemiesWithTrait": "CRIMINAL" } } }
+                }
+              },
+              "else": { "gainSurge": 1 }
+            }
+          }
+        }
+      ]
     }
   ]
 }

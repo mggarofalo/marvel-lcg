@@ -44,6 +44,15 @@ public sealed class SinisterSyndicateTests
     /// <summary>Webbed Up, a four-cost upgrade — dearer, so "lowest" can be wrong.</summary>
     private const string WebbedUp = "01009";
 
+    /// <summary>Hulk, an Aggression ally — a card that is not identity-specific.</summary>
+    private const string Hulk = "01050";
+
+    /// <summary>Sandman, a Criminal minion of the Rhino set.</summary>
+    private const string Sandman = "01102";
+
+    /// <summary>Hydra Mercenary, a minion that is Hydra and not Criminal.</summary>
+    private const string HydraMercenary = "01101";
+
     private static readonly SetupCatalog Setup =
         SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
 
@@ -255,6 +264,181 @@ public sealed class SinisterSyndicateTests
     /// <c>Discard.Card</c> reads the second to pick which discard pile. An
     /// upgrade made without an owner is discarded to the encounter pile.
     /// </remarks>
+    [Rule("rr:attack-enemy-activation.5")]
+    [Rule("rr:you-your.7")]
+    [Fact]
+    public void WhiteRabbitTakesACardFromTheAttackedPlayersHandBeforeTheBoost()
+    {
+        // "★ **Forced Interrupt:** When White Rabbit attacks you, discard 1
+        // card at random from your hand."
+        //
+        // Two seats, and the hand that shrinks is the attacked player's.
+        // `rr:you-your.7` is why: "you" is the attacked player for a trigger of
+        // this shape, and the interpreter reads it off the occurrence rather
+        // than off who owns the card -- nobody owns White Rabbit.
+        var world = Deal("spider_man", "spider_man");
+        world.Seats[1].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        int mine = world.Seats[0].Hand.Cards.Count;
+        int theirs = world.Seats[1].Hand.Cards.Count;
+        var rabbit = world.CreateCard(
+            AuthoredCards.WhiteRabbit,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: rabbit.ObjectId, Seat: 1));
+        Run(world);
+
+        Assert.Equal(theirs - 1, world.Seats[1].Hand.Cards.Count);
+        Assert.Equal(mine, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:identity-specific-card")]
+    [Rule("rr:identity-specific-card.3")]
+    [Fact]
+    public void AsABoostCardWhiteRabbitTakesAnIdentitySpecificCardAndNoOther()
+    {
+        // "★ **Boost:** Choose and discard 1 identity-specific card from your
+        // hand." `rr:identity-specific-card` is a classification -- "cards that
+        // belong to an identity's set of accompanying cards", designated by the
+        // identity icon in the bottom-right corner -- so an aspect card in the
+        // same hand is not a candidate however much the player would rather
+        // lose it.
+        // Two seats, and the boost resolves for the second. "Your hand" is the
+        // hand of the player the activation is against, and the first player's
+        // identity-specific card must be left alone -- which is a thing to get
+        // wrong, because an encounter card has no owner to read it off.
+        var world = Deal("spider_man", "spider_man");
+        var hand = Emptied(world, 1);
+        var untouched = world.CreateCard(SpiderTracer, Emptied(world, 0));
+
+        var aspect = world.CreateCard(Hulk, hand);
+        var specific = world.CreateCard(SpiderTracer, hand);
+        var card = world.CreateCard(
+            AuthoredCards.WhiteRabbit, world.AreaOf(DeckType.BoostingArea));
+
+        AuthoredCards.Runner().Boost(world, card, 1);
+        Run(world);
+
+        Assert.Equal(DeckType.DiscardPile, specific.Area.Type);
+        Assert.Contains(aspect, hand.Cards);
+        Assert.Contains(untouched, world.Seats[0].Hand.Cards);
+    }
+
+    [Rule("rr:choose-game-element")]
+    [Fact]
+    public void AHandWithNothingIdentitySpecificIsAskedNothing()
+    {
+        // An ordinary hand rather than an edge case: a deck is mostly aspect
+        // and basic cards, and `rr:target.2` would not let the ability initiate
+        // against a hand with no candidate in it. The guard is on the card.
+        var world = Deal();
+        world.CreateCard(Hulk, Emptied(world, 0));
+        var card = world.CreateCard(
+            AuthoredCards.WhiteRabbit, world.AreaOf(DeckType.BoostingArea));
+
+        AuthoredCards.Runner().Boost(world, card, 0);
+
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
+    [Rule("rr:enemy")]
+    [Rule("rr:activation.1")]
+    [Fact]
+    public void SinisterOnslaughtSendsEveryCriminalAndNobodyElse()
+    {
+        // "**When Revealed (Hero):** Each [[Criminal]] enemy in play attacks
+        // you." Rhino is Criminal and so is Sandman; Hydra Mercenary is Hydra,
+        // and stays where it is. `rr:enemy` is why the villain is among them --
+        // "an enemy is a minion or villain" -- and the trait is the whole of
+        // the filter.
+        var world = Deal();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var criminal = world.CreateCard(
+            Sandman, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.CreateCard(
+            HydraMercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Reveal(world, AuthoredCards.SinisterOnslaught);
+
+        Assert.Equal(
+            [villain.ObjectId, criminal.ObjectId],
+            world.Agenda.Outstanding.Select(step => step.Subject));
+        Assert.All(world.Agenda.Outstanding, step => Assert.Equal(Steps.Attack, step.What));
+    }
+
+    [Rule("rr:activation.1")]
+    [Fact]
+    public void AnAlterEgoIsSchemedAtRatherThanAttacked()
+    {
+        // The other half of the same sentence. `rr:activation.1` reads the form
+        // to choose between attacking and scheming, and this card has printed
+        // the choice out rather than leaving it to the activation -- so the
+        // form is a test on the ability.
+        var world = Deal();
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var criminal = world.CreateCard(
+            Sandman, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Reveal(world, AuthoredCards.SinisterOnslaught);
+
+        // The subjects as well as the verb: `Assert.All` over an empty agenda
+        // passes, and an empty agenda is exactly what a broken query produces.
+        Assert.Equal(
+            [villain.ObjectId, criminal.ObjectId],
+            world.Agenda.Outstanding.Select(step => step.Subject));
+        Assert.All(world.Agenda.Outstanding, step => Assert.Equal(Steps.Scheme, step.What));
+    }
+
+    [Rule("rr:surge")]
+    [Fact]
+    public void WithNoCriminalInPlayTheCardSurgesInstead()
+    {
+        // "If no enemy attacked this way, this card gains surge." The same
+        // query asked before the fact rather than a count taken after: every
+        // enemy it names does activate, so an empty query and a count of zero
+        // are the same board.
+        //
+        // Rhino carries the Criminal trait, so reaching this on the scenario
+        // the set is dealt into means the villain is somehow not in play --
+        // which is why the villain is moved away here rather than the board
+        // being built from nothing.
+        var world = Deal();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        World.MoveToTop(
+            world.TheCardIn(DeckType.VillainArea)!, world.AreaOf(DeckType.RemovedArea));
+        int queued = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count;
+
+        Reveal(world, AuthoredCards.SinisterOnslaught);
+
+        Assert.Empty(world.Agenda.Outstanding);
+        Assert.Equal(
+            queued + 1,
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count);
+    }
+
+    private static void Reveal(World world, string faceId, int player = 0)
+    {
+        var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
+        AuthoredCards.Runner().WhenRevealed(world, card, player);
+    }
+
+    /// <summary>Empties a seat's opening hand, and answers with it.</summary>
+    /// <remarks>
+    /// A dealt hand is five cards nobody chose, so a test about which card an
+    /// ability takes has to start from a hand it put there.
+    /// </remarks>
+    private static Area Emptied(World world, int seat)
+    {
+        var hand = world.Seats[seat].Hand;
+        foreach (var held in hand.Cards.ToList())
+        {
+            Marvel.Rules.Play.Discard.Card(world, held, "test", []);
+        }
+
+        return hand;
+    }
+
     private static Card Upgrade(World world, string faceId, int seat) =>
         world.CreateCard(
             faceId,
