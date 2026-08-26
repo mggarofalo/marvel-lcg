@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and thirty-two cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
+`src/Marvel.Cards`, and thirty-four cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -592,7 +592,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
 | Amounts | a number, `{ "perPlayer": n }`, or `{ "result": "healed" }` |
 | Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
@@ -619,6 +619,35 @@ defeated character standing. Threat written straight to `k_threat` walks past
 threat reaches its target however the threat arrived. Both are one-line
 mutations that no state assertion in the card tests would catch, which is why
 the tests assert the tough card and the ending rather than the number.
+
+### Damage the player divides
+
+`rr:indirect-damage`, on **101 cards**. `.1` divides it "among characters under
+their control"; `.2` is the group form, "among friendly characters in play",
+which is what Explosion's *"assign X damage among heroes and allies"* means.
+
+**It only asks when there is something to ask.** A player with no ally has one
+character, so every point goes to their identity and there is no division to
+choose — which is most of those 101. The question is put only when the eligible
+characters can hold the damage more than one way.
+
+Three clauses shape the rest:
+
+- `.3` — "all indirect damage from a single source is **first assigned and then
+  resolved simultaneously**", so the whole assignment is worked out before any
+  of it is dealt. That is what stops the first point defeating a character and
+  making the rest illegal.
+- `.3.1` — no character is assigned "more than would cause it to be defeated",
+  assessed "without accounting for interactions with other abilities". A
+  character with nothing left is not eligible at all.
+- `.4` — "characters that cannot take damage cannot be assigned indirect
+  damage". A support has no hit points and is not among the heroes and allies
+  however close it sits.
+
+The prompt names a character **per point**, so the same character may appear
+more than once: three damage on one hero is three entries.
+`rr:choose-game-element.3.1`'s "the same target cannot be chosen multiple times"
+is about *targets*, and a division is not a target list.
 
 ### An ability can ask more than once
 

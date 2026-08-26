@@ -35,8 +35,12 @@ public sealed class WhenDefeatedTests
     /// </summary>
     private const string Mercenary = "01101";
 
-    /// <summary>Highway Robbery — a side scheme that prints one.</summary>
-    private const string HighwayRobbery = "01166";
+    /// <summary>
+    /// Fabian Cortez — a minion that prints one, from a set no scenario in
+    /// these tests reaches. It used to be Highway Robbery, which stopped being
+    /// an example of an unwritten ability the moment somebody wrote it.
+    /// </summary>
+    private const string Unwritten = "32159";
 
     private static readonly SetupCatalog Setup =
         SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
@@ -53,13 +57,13 @@ public sealed class WhenDefeatedTests
         // nothing, and the board would look right.
         var world = Deal();
         var scheme = world.CreateCard(
-            HighwayRobbery, world.AreaOf(DeckType.SideSchemesArea));
+            Unwritten, world.AreaOf(DeckType.SideSchemesArea));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => Defeat.Scheme(world, Cards, scheme, "test", []));
 
         Assert.Contains("'When Defeated'", thrown.Message, StringComparison.Ordinal);
-        Assert.Contains(HighwayRobbery, thrown.Message, StringComparison.Ordinal);
+        Assert.Contains(Unwritten, thrown.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -87,13 +91,13 @@ public sealed class WhenDefeatedTests
         // what the digest is built from.
         var world = Board(
             """
-            {"cards":[{"card":"01166","abilities":[{
+            {"cards":[{"card":"32159","abilities":[{
               "trigger":{"event":"WhenCardDefeated","timing":"WhenDefeated","subject":"this"},
               "effect":{"giveStatus":{"card":{"query":"villain"},"status":"tough"}}}]}]}
             """,
             out var runner);
         var scheme = world.CreateCard(
-            HighwayRobbery, world.AreaOf(DeckType.SideSchemesArea));
+            Unwritten, world.AreaOf(DeckType.SideSchemesArea));
 
         var events = new List<GameEvent>();
         Defeat.Scheme(world, Cards, scheme, "test", events);
@@ -118,7 +122,7 @@ public sealed class WhenDefeatedTests
         // things.
         var world = Board(
             """
-            {"cards":[{"card":"01166","abilities":[
+            {"cards":[{"card":"32159","abilities":[
               {"trigger":{"event":"WhenCardDefeated","timing":"WhenDefeated","subject":"this"},
                "effect":{"giveStatus":{"card":{"query":"villain"},"status":"tough"}}},
               {"trigger":{"event":"WhenCardDefeated","timing":"WhenDefeated","subject":"this"},
@@ -126,7 +130,7 @@ public sealed class WhenDefeatedTests
             """,
             out _);
         var scheme = world.CreateCard(
-            HighwayRobbery, world.AreaOf(DeckType.SideSchemesArea));
+            Unwritten, world.AreaOf(DeckType.SideSchemesArea));
 
         Defeat.Scheme(world, Cards, scheme, "test", []);
 

@@ -288,15 +288,17 @@ public sealed class AbilityDataTests
         // this file is under: a card is authored when something reaches it.
         string[] named =
         [
-            AuthoredCards.SpiderMan, AuthoredCards.PeterParker, AuthoredCards.AuntMay, AuthoredCards.Charge, AuthoredCards.IvoryHorn, AuthoredCards.Shocker,
+            AuthoredCards.SpiderMan, AuthoredCards.PeterParker, AuthoredCards.AuntMay,
+            AuthoredCards.Charge, AuthoredCards.IvoryHorn, AuthoredCards.Shocker,
             AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
             AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
-            AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,
+            AuthoredCards.Explosion, AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,
             AuthoredCards.CaughtOffGuard, AuthoredCards.RhinoTwo,
-            AuthoredCards.Stampede, AuthoredCards.EvictionNotice,
+            AuthoredCards.Stampede, AuthoredCards.EvictionNotice, AuthoredCards.HighwayRobbery,
             AuthoredCards.SweepingSwoop, AuthoredCards.VulturesPlans,
             AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
-            AuthoredCards.ShadowOfThePast, AuthoredCards.Exhaustion, AuthoredCards.Masterplan, AuthoredCards.UnderFire,
+            AuthoredCards.ShadowOfThePast, AuthoredCards.Exhaustion,
+            AuthoredCards.Masterplan, AuthoredCards.UnderFire,
             .. AuthoredCards.ReadAndSilent,
         ];
 

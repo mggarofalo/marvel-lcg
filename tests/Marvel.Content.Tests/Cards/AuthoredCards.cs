@@ -50,6 +50,9 @@ internal static class AuthoredCards
     /// <summary>The printed id of "Breakin' &amp; Takin'".</summary>
     public const string BreakinAndTakin = "01107";
 
+    /// <summary>The printed id of "Explosion".</summary>
+    public const string Explosion = "01111";
+
     /// <summary>The printed id of "Bomb Scare".</summary>
     public const string BombScare = "01109";
 
@@ -68,6 +71,9 @@ internal static class AuthoredCards
 
     /// <summary>The printed id of "Caught Off Guard".</summary>
     public const string CaughtOffGuard = "01188";
+
+    /// <summary>The printed id of "Highway Robbery".</summary>
+    public const string HighwayRobbery = "01166";
 
     /// <summary>The printed id of Rhino's second stage.</summary>
     public const string RhinoTwo = "01095";

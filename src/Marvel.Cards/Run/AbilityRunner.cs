@@ -546,6 +546,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(source);
 
         var choice = Choice(source, stoppedAt);
+
+        if (choice.Kind == "indirectDamage")
+        {
+            return Sharing(world, source, player, choice);
+        }
+
         bool cards = choice.Kind == "chooseCard";
 
         // `rr:choose-option` and `rr:choose-game-element` are two questions and
@@ -580,6 +586,50 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Affordances: [.. affordances]);
     }
 
+    /// <summary>
+    /// The question an assignment asks — <c>rr:indirect-damage.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// One answer naming a character per point, so the same character may
+    /// appear more than once: assigning three damage to one hero is three
+    /// entries. <c>rr:choose-game-element.3.1</c>'s "the same target cannot be
+    /// chosen multiple times" is about <i>targets</i>, and this is a division
+    /// rather than a target list.
+    /// </remarks>
+    private Prompt Sharing(World world, Card source, int player, AbilityNode choice)
+    {
+        var cast = Resolving(world, source, player);
+        long amount = Amount(choice.Require("amount"), cast);
+        var eligible = Assignable(choice.Require("among"), cast);
+
+        // `rr:indirect-damage.3.1` -- never more than would defeat a character,
+        // so an assignment can be short of the amount when the table has less
+        // room than the card has damage.
+        long share = Math.Min(amount, eligible.Sum(card => Room(cast, card)));
+
+        return new Prompt(
+            Player: player,
+            Asking: Question.Element,
+            When: TimingPriority.Untimed,
+            Trigger: Steps.CardRevealed,
+            Label: $"{source.FaceId}: assign {share} damage",
+            Cancellable: false,
+            Affordances:
+            [
+                new Affordance(
+                    Id: source.ObjectId,
+                    Verb: ChooseVerb,
+                    AnchorId: source.ObjectId,
+                    AnchorPlayer: World.Scenario,
+                    Label: choice.Kind,
+                    Targets: new TargetRequest(
+                        Legal: [.. eligible.Select(card => card.ObjectId)],
+                        Min: (int)share,
+                        Max: (int)share,
+                        Rule: "rr:indirect-damage.1")),
+            ]);
+    }
+
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Chose(
         World world, Card source, int player, int stoppedAt, Decision input)
@@ -590,6 +640,34 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var choice = Choice(source, stoppedAt);
         var cast = Resolving(world, source, player);
+
+        if (choice.Kind == "indirectDamage")
+        {
+            var eligible = Assignable(choice.Require("among"), cast);
+            var chosen = new List<Card>();
+            foreach (int id in input.Targets)
+            {
+                chosen.Add(
+                    eligible.FirstOrDefault(card => card.ObjectId == id)
+                    ?? throw new RulesNotImplementedException(
+                        $"card {id} cannot be assigned indirect damage from "
+                        + $"'{source.FaceId}'"));
+            }
+
+            // One point per entry, so a character named three times takes
+            // three. `rr:indirect-damage.3` resolves the whole assignment at
+            // once, which is why the counts are gathered before any of it is
+            // dealt.
+            var share = new Dictionary<int, long>();
+            foreach (var card in chosen)
+            {
+                share[card.ObjectId] = share.GetValueOrDefault(card.ObjectId) + 1;
+            }
+
+            Resolve(cast, share);
+            return Continue(source, cast, stoppedAt);
+        }
+
 
         if (choice.Kind == "chooseCard")
         {
@@ -676,7 +754,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var steps = Nodes(effect.Argument).ToList();
         return stoppedAt >= 1 && stoppedAt <= steps.Count
-            && steps[stoppedAt - 1] is { Kind: "choose" or "chooseCard" } waiting
+            && steps[stoppedAt - 1] is
+                { Kind: "choose" or "chooseCard" or "indirectDamage" } waiting
             ? waiting
             : throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has no choice at step {stoppedAt - 1} of its sequence");
@@ -685,7 +764,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Every <c>choose</c> node in one effect tree.</summary>
     private static IEnumerable<AbilityNode> Choices(AbilityNode node)
     {
-        if (node.Kind is "choose" or "chooseCard")
+        if (node.Kind is "choose" or "chooseCard" or "indirectDamage")
         {
             yield return node;
             yield break;
@@ -774,6 +853,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 RevealCard(Find(node.Argument, cast), cast);
                 break;
 
+            case "placeAtRandom":
+                PlaceAtRandom(node, cast);
+                break;
+
+            case "returnToHand":
+                ReturnToHand(node, cast);
+                break;
+
             case "discardAtRandom":
                 DiscardAtRandom(node, cast);
                 break;
@@ -844,6 +931,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "heal":
                 Heal(node, cast);
+                break;
+
+            case "indirectDamage":
+                Indirect(node, cast);
                 break;
 
             case "dealDamage":
@@ -1408,6 +1499,126 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         cast.Results["healed"] = healed;
     }
 
+    /// <summary>
+    /// "Assign N damage among …" — <c>rr:indirect-damage</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>.1</c>: "indirect damage dealt to a player can be divided as that
+    /// player chooses among characters under their control." <c>.2</c> is the
+    /// group form, "among friendly characters in play", which is what "assign X
+    /// damage among heroes and allies" means.
+    /// </para>
+    /// <para>
+    /// <b>Only asked when there is something to ask.</b> A player with no ally
+    /// has one character, so every point goes to their identity and there is no
+    /// division to choose — which is most of the 101 cards in the pool that
+    /// deal indirect damage. It suspends only when the eligible characters can
+    /// hold the damage more than one way.
+    /// </para>
+    /// <para>
+    /// <c>.3.1</c> caps each character at its remaining hit points: "a
+    /// character cannot be assigned more indirect damage than would cause it to
+    /// be defeated", assessed "without accounting for interactions with other
+    /// abilities". <c>.3.2</c> keeps a tough character eligible up to that same
+    /// cap even though the tough card will prevent all of it, and <c>.3</c>
+    /// assigns everything before resolving any of it.
+    /// </para>
+    /// </remarks>
+    private static void Indirect(AbilityNode node, Cast cast)
+    {
+        long amount = Amount(node.Require("amount"), cast);
+        var eligible = Assignable(node.Require("among"), cast);
+
+        if (amount <= 0 || eligible.Count == 0)
+        {
+            return;
+        }
+
+        if (eligible.Count == 1)
+        {
+            // No division to choose. `.3.1`'s cap still applies -- a character
+            // cannot be assigned more than would defeat it -- so what is over
+            // the cap is simply not assigned.
+            Assign(cast, [eligible[0]], amount);
+            return;
+        }
+
+        cast.World.Agenda.Then(new PhaseStep(
+            Steps.ChooseOption,
+            cast.World.Agenda.Current?.Round ?? 0,
+            2,
+            Index: cast.Position + 1,
+            Subject: cast.Source.ObjectId,
+            Seat: cast.Player));
+
+        cast.Suspend();
+    }
+
+    /// <summary>The characters indirect damage may be assigned to.</summary>
+    /// <remarks>
+    /// <c>rr:indirect-damage.4</c>: "characters that cannot take damage cannot
+    /// be assigned indirect damage", and <c>.3.1</c> makes a character with no
+    /// hit points left ineligible for the same reason — there is no amount that
+    /// would not defeat it.
+    /// </remarks>
+    private static List<Card> Assignable(AbilityValue among, Cast cast) =>
+    [
+        .. Every(among, cast).Where(card => Room(cast, card) > 0),
+    ];
+
+    /// <summary>How much indirect damage one character may be assigned.</summary>
+    private static long Room(Cast cast, Card card) =>
+        Damage.Health(cast.World, cast.World.Facts, card) - card.Damage;
+
+    /// <summary>Assigns the damage, then resolves it — <c>rr:indirect-damage.3</c>.</summary>
+    /// <remarks>
+    /// "All indirect damage from a single source is <b>first assigned and then
+    /// resolved simultaneously</b>." So the whole assignment is worked out
+    /// before any of it is dealt, which is what stops the first point defeating
+    /// a character and making the rest illegal.
+    /// </remarks>
+    private static void Assign(Cast cast, IReadOnlyList<Card> among, long amount)
+    {
+        var assigned = new Dictionary<int, long>();
+        long left = amount;
+
+        foreach (var card in among)
+        {
+            if (left <= 0)
+            {
+                break;
+            }
+
+            long take = Math.Min(Room(cast, card), left);
+            if (take <= 0)
+            {
+                continue;
+            }
+
+            assigned[card.ObjectId] = take;
+            left -= take;
+        }
+
+        Resolve(cast, assigned);
+    }
+
+    /// <summary>Deals an assignment that is already worked out.</summary>
+    /// <remarks>
+    /// In object-id order, because <c>rr:indirect-damage.3</c> resolves it
+    /// "simultaneously" and simultaneous still has to reach the event stream in
+    /// some order — one the board cannot see and the wire can.
+    /// </remarks>
+    private static void Resolve(Cast cast, Dictionary<int, long> assigned)
+    {
+        foreach (var (card, damage) in assigned.OrderBy(each => each.Key))
+        {
+            Damage.Deal(
+                cast.World, cast.World.Facts, cast.World.Cards[card], damage,
+                cast.Trigger, "Indirect_Damage", cast.Events);
+        }
+    }
+
     /// <summary>"Deal N damage to …" — <c>rr:damage</c>.</summary>
     /// <remarks>
     /// Through <see cref="Damage.Deal"/> and not at the token, because damage
@@ -1452,6 +1663,86 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Threat.Place(
                 cast.World, cast.World.Facts, cast.Abilities, scheme, amount,
                 cast.Trigger, cast.Events);
+        }
+    }
+
+    /// <summary>
+    /// "Each player places a random card from their hand facedown here."
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Placed, not discarded.</b> The card is still a card and comes back —
+    /// Highway Robbery's "When Defeated" returns each one to its owner's hand.
+    /// So it goes onto the host as an attachment, which is what
+    /// <c>rr:attachment</c> makes "here" mean, and it goes <b>facedown</b>:
+    /// nobody may look at it while it is there.
+    /// </para>
+    /// <para>
+    /// One draw from the game's single random stream per card taken, in player
+    /// order, for the same reason <c>discardAtRandom</c> takes them that way —
+    /// the order is what the stream sees.
+    /// </para>
+    /// </remarks>
+    private static void PlaceAtRandom(AbilityNode node, Cast cast)
+    {
+        var host = Find(node.Require("on"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' places cards on a card that is not there");
+
+        var onto = cast.World.AreaOf(
+            DeckType.UpgradesArea, host.Area.PlayArea, host.ObjectId, host.Area.CardOwner);
+        long count = Amount(node.Require("count"), cast);
+
+        foreach (int seat in Seats(node.Require("player"), cast))
+        {
+            var hand = cast.World.Seats[seat].Hand;
+            for (long placed = 0; placed < count && hand.Cards.Count > 0; placed++)
+            {
+                var card = cast.World.Random.Choice(hand.Cards);
+                var from = card.Area;
+                World.MoveToTop(card, onto);
+                card.TurnFaceDown();
+
+                cast.Events.Add(new CardsMoved(
+                    Places.Reference(from), Places.Reference(onto),
+                    [new Landing(card.ObjectId, onto.Cards.Count - 1)])
+                {
+                    Trigger = cast.Trigger, Verb = "Place",
+                });
+                cast.Events.Add(new CardAttached(card.ObjectId, host.ObjectId)
+                {
+                    Trigger = cast.Trigger, Verb = "Place",
+                });
+            }
+        }
+    }
+
+    /// <summary>"Return each … to its owner's hand."</summary>
+    /// <remarks>
+    /// To <b>its owner's</b> hand and not the resolving player's: a card placed
+    /// by each player comes back to each player. Ownership is the card's, which
+    /// is why <c>Card.Owner</c> decides rather than whoever defeated the
+    /// scheme.
+    /// </remarks>
+    private static void ReturnToHand(AbilityNode node, Cast cast)
+    {
+        foreach (var card in Every(node.Argument, cast))
+        {
+            var from = card.Area;
+            var hand = cast.World.Seats[card.Owner].Hand;
+            World.MoveToTop(card, hand);
+            card.TurnFaceUp();
+
+            cast.Events.Add(new CardsMoved(
+                Places.Reference(from), Places.Reference(hand),
+                [new Landing(card.ObjectId, hand.Cards.Count - 1)])
+            {
+                Trigger = cast.Trigger, Verb = "Return",
+            });
+            cast.Events.Add(new CardDetached(card.ObjectId, from.Host)
+            {
+                Trigger = cast.Trigger, Verb = "Return",
+            });
         }
     }
 
@@ -1642,6 +1933,42 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Cards];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } attached
+            && attached.Argument is AbilityValue.Word { Value: "attachedToThis" })
+        {
+            // What is sitting on this card. `rr:attachment` puts an attachment
+            // in an area hosted by the card it is attached to, so this is a
+            // read of the board.
+            return
+            [
+                .. cast.World.Areas
+                    .Where(area => area.Host == cast.Source.ObjectId)
+                    .SelectMany(area => area.Cards),
+            ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } friendly
+            && friendly.Argument is AbilityValue.Word { Value: "heroesAndAllies" })
+        {
+            // `rr:indirect-damage.2`'s "friendly characters in play", which
+            // `rr:friendly` makes every player's rather than one player's: "a
+            // blanket term that refers to cards **the players** control".
+            //
+            // **Every identity, not only those in hero form.** "Heroes and
+            // allies" is what the card says, but `rr:you-your.3` divides
+            // indirect damage "among characters in play under their control",
+            // and a player in alter-ego form is still a character with hit
+            // points. A reading that skipped them would leave damage
+            // unassignable at a table where everyone had flipped down.
+            return
+            [
+                .. cast.World.PlayerOrder.Select(seat => cast.World.Seats[seat].IdentityCard),
+                .. cast.World.Areas
+                    .Where(area => area.Type == DeckType.AlliesArea)
+                    .SelectMany(area => area.Cards),
+            ];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } schemes
             && schemes.Argument is AbilityValue.Word { Value: "sideSchemes" })
         {
@@ -1734,6 +2061,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static Card? Query(AbilityNode node, Cast cast)
     {
+        // "Bomb Scare", "Vulture" -- a card in play named by its title, which
+        // is a query with an argument rather than one of the bare words below.
+        // `rr:identity.2` makes a title name one card, so this compares titles
+        // and not printed ids.
+        if (node.Kind == "titled")
+        {
+            return cast.World.Areas
+                .Where(area => DeckTypes.IsInPlay(area.Type))
+                .SelectMany(area => area.Cards)
+                .FirstOrDefault(card => string.Equals(
+                    cast.World.Facts.Title(card.FaceId), Word(node.Argument),
+                    StringComparison.Ordinal));
+        }
+
         if (node.Kind != "query")
         {
             throw new AbilityException($"'{node.Kind}' does not name a card");
@@ -1823,6 +2164,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return node.Kind switch
         {
             "perPlayer" => Number(node.Argument) * cast.World.Players,
+
+            // "X is the amount of threat on Bomb Scare" -- a number read off
+            // the board rather than printed. `rr:threat` counts tokens, so this
+            // is the token pool and not a printed field.
+            "tokensOn" => Find(node.Argument, cast) is { } holder
+                ? holder.Tokens.GetValueOrDefault("k_threat")
+                : 0,
 
             // `result.*` -- what an action earlier in this ability actually
             // did, which is not what it was asked to do. Zero when nothing has
