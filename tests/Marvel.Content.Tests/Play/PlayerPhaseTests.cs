@@ -59,14 +59,23 @@ public sealed class PlayerPhaseTests
     private static readonly CardCatalog Cards =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
-    private static Game Begin() => Game.Begin(
-        WorldSetup.Deal(
+    private static Game Begin() => Begin(out _);
+
+    /// <summary>Begins a game, and hands back the board it is playing.</summary>
+    /// <remarks>
+    /// <c>Game</c> does not expose its world; a <c>Resolution</c> carries one,
+    /// and a test that wants to look at the board before answering anything
+    /// needs it earlier than that.
+    /// </remarks>
+    private static Game Begin(out World world)
+    {
+        world = WorldSetup.Deal(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, Campaign, Heroes), Cards),
             [.. Heroes.Select(hero => Setup.Hero(hero).Name)],
-            Seed),
-        Cards,
-        AuthoredCards.Runner());
+            Seed);
+        return Game.Begin(world, Cards, AuthoredCards.Runner());
+    }
 
     [Fact]
     public void TheFirstThreeRecordedBoardsAreProducedByFolding()
@@ -399,14 +408,75 @@ public sealed class PlayerPhaseTests
     }
 
     [Fact]
-    public void TakingAnAffordanceNamesTheVerbItCannotResolve()
+    public void TakingAnAffordanceNobodyOfferedNamesWhatWasTaken()
     {
+        // The message contract, which is the point: an answer the engine
+        // cannot resolve says *what was taken* rather than "not implemented".
+        // The difference is a one-line diagnosis and a debugging session.
+        //
+        // An affordance nobody offered is the reachable case now that every
+        // verb the prompts carry is implemented. It used to be the mulligan,
+        // which was offered and could not be taken -- MARVEL-229.
         var game = Begin();
-        var mulligan = game.Pending!.Affordances[0];
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => game.Resolve(Decision.Take(mulligan.Id)));
-        Assert.Contains(Game.ResolveMulligans, thrown.Message, StringComparison.Ordinal);
+            () => game.Resolve(Decision.Take(999)));
+        Assert.Contains("999", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Rule("rr:appendix-ii-setup.step.15")]
+    [Fact]
+    public void AMulliganDiscardsWhatWasNamedAndDrawsBackUpToHandSize()
+    {
+        // "Each player may discard any number of cards from hand, and then
+        // draw **up to their starting hand size**." Not draw that many: a
+        // player who discarded three draws back to their hand size.
+        var game = Begin(out var world);
+        var hand = world.Seats[0].Hand;
+        int size = hand.Cards.Count;
+        var thrownAway = hand.Cards.Take(3).Select(card => card.ObjectId).ToList();
+
+        game.Resolve(Decision.Take(game.Pending!.Affordances[0].Id, thrownAway, []));
+
+        Assert.Equal(size, hand.Cards.Count);
+        Assert.DoesNotContain(hand.Cards, card => thrownAway.Contains(card.ObjectId));
+    }
+
+    [Rule("rr:appendix-ii-setup.step.15")]
+    [Fact]
+    public void MulliganedCardsGoToTheDiscardPileAndNotBackIntoTheDeck()
+    {
+        // "*(Do not shuffle these discarded cards back into their decks at
+        // this time.)*" The parenthesis is the whole of the difference between
+        // this and a deck-bottom mulligan, and it is observable: the cards are
+        // in the discard pile, where `rr:player-deck.4` can shuffle them into a
+        // new deck later and where a card that reads a discard pile can see
+        // them.
+        var game = Begin(out var world);
+        var thrownAway = world.Seats[0].Hand.Cards.Take(2)
+            .Select(card => card.ObjectId).ToList();
+
+        game.Resolve(Decision.Take(game.Pending!.Affordances[0].Id, thrownAway, []));
+
+        foreach (int id in thrownAway)
+        {
+            Assert.Equal(DeckType.DiscardPile, world.Cards[id].Area.Type);
+        }
+    }
+
+    [Rule("rr:appendix-ii-setup.step.15")]
+    [Fact]
+    public void DecliningAMulliganKeepsTheHandExactlyAsItWas()
+    {
+        // "**May** discard." Declining and taking it with an empty list are
+        // the same answer, which is why the prompt is not cancellable and why
+        // this is the same code path.
+        var game = Begin(out var world);
+        var before = world.Seats[0].Hand.Cards.Select(card => card.ObjectId).ToList();
+
+        game.Resolve(Decision.Decline);
+
+        Assert.Equal(before, world.Seats[0].Hand.Cards.Select(card => card.ObjectId));
     }
 
     [Fact]

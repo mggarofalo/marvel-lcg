@@ -209,6 +209,12 @@ public sealed class Game
                 return ChangeFormNow();
             }
 
+            if (Phase == GamePhase.Mulligan
+                && string.Equals(verb, ResolveMulligans, StringComparison.Ordinal))
+            {
+                return Mulligan(input);
+            }
+
             if (Phase == GamePhase.PlayerTurn && BasicPower(verb, input) is { } used)
             {
                 return used;
@@ -242,7 +248,9 @@ public sealed class Game
         switch (Phase)
         {
             case GamePhase.Mulligan:
-                // Declining a mulligan keeps the opening hand, so nothing moves.
+                // Declining a mulligan keeps the opening hand, so nothing moves
+                // -- which is `Mulligan` with an empty list, the same way
+                // declining the end-of-phase discard is.
                 //
                 // `Active` is read from the board here and not left as it was
                 // set at `Begin`: the first player is whoever holds the token
@@ -525,6 +533,76 @@ public sealed class Game
         return Work(happened);
     }
 
+    /// <summary>
+    /// Resolves one player's mulligan —
+    /// <c>rr:appendix-ii-setup.step.15</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "Each player may discard any number of cards from hand, and then draw
+    /// up to their starting hand size. <i>(Do not shuffle these discarded
+    /// cards back into their decks at this time.)</i>"
+    /// </para>
+    /// <para>
+    /// <b>Discarded, not put back.</b> The parenthesis is the whole of the
+    /// difference between this and a deck-bottom mulligan, and it is
+    /// observable: the cards are in the discard pile, where
+    /// <c>rr:player-deck.4</c> can shuffle them into a new deck later and
+    /// where a card that reads a discard pile can see them.
+    /// </para>
+    /// <para>
+    /// <b>Draw up to, not draw that many.</b> A player who discarded three
+    /// draws back to their hand size rather than three cards, which is the
+    /// same distinction <see cref="PhaseEnd.DrawToHandSize"/> makes.
+    /// </para>
+    /// <para>
+    /// <b>The two readings cannot disagree here, and that is worth knowing
+    /// rather than hiding.</b> Step 14 has already drawn every player up to
+    /// their hand size, so the hand this is asked about is exactly that size
+    /// and "up to hand size" and "as many as went" fetch the same number. A
+    /// mutation that swaps one for the other survives every test, and will
+    /// until something modifies hand size during setup. The rule's number is
+    /// used anyway, because the rule is what this is implementing.
+    /// </para>
+    /// </remarks>
+    /// <param name="input">The answer, carrying the cards to discard.</param>
+    private Resolution Mulligan(Decision input)
+    {
+        var happened = new List<GameEvent>();
+        var seat = world.Seats[Active];
+
+        foreach (int id in input.Targets)
+        {
+            var card = world.Cards[id];
+            if (card.Area != seat.Hand)
+            {
+                throw new RulesNotImplementedException(
+                    $"card {id} is not in {seat.Name}'s hand, so it cannot be mulliganed");
+            }
+
+            Discard.Card(world, card, MulliganTrigger, happened);
+        }
+
+        long limit = PhaseEnd.HandSize(world, seat, facts);
+        while (seat.Hand.Cards.Count < limit)
+        {
+            int before = seat.Hand.Cards.Count;
+            Draw.Cards(world, Active, 1, MulliganTrigger, happened);
+            if (seat.Hand.Cards.Count == before)
+            {
+                // `rr:player-deck.4` -- a deck and a discard pile both empty.
+                // No card to draw is a legal board, not a stall.
+                break;
+            }
+        }
+
+        Round = 1;
+        Active = world.FirstPlayer;
+        Phase = GamePhase.PlayerTurn;
+        Pending = TurnPrompt();
+        return new Resolution(world, Pending, happened);
+    }
+
     private Prompt MulliganPrompt()
     {
         var seat = world.Seats[Active];
@@ -534,9 +612,11 @@ public sealed class Game
             When: Timing.TimingPriority.Untimed,
             Trigger: MulliganTrigger,
             Label: $"{seat.Name} resolves mulligans",
-            // The engine asks this forced. There is no "keep my hand" option to
-            // take -- declining is how you keep it -- so a cancel would mean
-            // the same thing twice.
+            // `rr:appendix-ii-setup.step.15` gives a player one thing to do
+            // and lets them do none of it: "each player **may** discard any
+            // number of cards from hand". Taking it with an empty list and
+            // declining are the same answer, so a cancel would mean the same
+            // thing twice.
             Cancellable: false,
             Affordances: [HandChoice(seat, ResolveMulligans)]);
     }
