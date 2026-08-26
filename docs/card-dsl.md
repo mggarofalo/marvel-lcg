@@ -591,11 +591,11 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 |---|---|
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
-| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
+| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `inExpertMode` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `dealEncounterCards`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
-| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
+| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player`; subjects `this`, `attachedTo`, `you`, `game` |
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
@@ -1028,6 +1028,34 @@ Two other things fell out of reading it as the rule:
 `Reveal.EnterPlay` never ran for one. Eleven attachments in the pool print
 `uses X`, a keyword that fires on entering play — each had been arriving with an
 empty counter pool and an ability that spends from it.
+
+### An ability can answer a moment that is about nobody
+
+`AbilitySubjects` narrows which occurrences an ability answers, and until now
+every member named a card: `this`, `attachedTo`, `you`. Hunting Gene Traitors
+answers **"after resolving step one of the villain phase"**, which names a
+moment and nothing in it — the step places threat on the main scheme without the
+occurrence naming any card.
+
+`game` is that: the condition alone decides. It is a fourth member rather than
+letting the card use `you`, which would have fitted *by accident* — an encounter
+card's owner and an unattributed occurrence's player are both the scenario, so
+`you` would have matched for the wrong reason and stopped matching the moment
+either changed.
+
+### The board carries which mode it was dealt for
+
+`rr:modes-of-play` names four — expert, heroic, skirmish, campaign — and lets
+them combine. What expert mode changes about the *deal* is already in the
+blueprints: `.2` is "the listed expert mode villain stages, and add the Expert
+encounter set", and the `_expert` campaigns say both. What was missing is that
+**86 cards in the pool read the mode**, 59 of them main schemes.
+
+`World.Expert` is one flag and deliberately not an enum or a set. Heroic mode is
+why: `.4` gives it a level number rather than a flag, so a set with `Heroic` in
+it would be wrong about it. The other three arrive when a card reads one, and
+until then `{ "inExpertMode": "heroic" }` throws naming the mode rather than
+quietly answering about expert.
 
 ### A "Setup" ability runs during the deal
 

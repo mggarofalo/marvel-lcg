@@ -1036,6 +1036,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         AbilitySubjects.This => occurrence.Subject == card.ObjectId,
         AbilitySubjects.AttachedTo => card.Area.Host >= 0 && occurrence.Subject == card.Area.Host,
         AbilitySubjects.You => occurrence.Player >= 0 && occurrence.Player == card.Owner,
+
+        // Nothing to match: the condition alone decides. `Waiting` has already
+        // checked that the card is in play and that the occurrence carries the
+        // condition, which is the whole of what such a card asks for.
+        AbilitySubjects.Game => true,
         _ => throw new AbilityException($"'{subject}' is not a subject anything matches"),
     };
 
@@ -1073,6 +1078,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "exhaust":
                 Exhaust(node, cast);
+                break;
+
+            case "dealEncounterCards":
+                DealEncounterCards(node, cast);
                 break;
 
             case "revealTop":
@@ -1260,12 +1269,58 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "attackDamaged" => cast.World.FinishedAttack is { Damaged: true } landed
             && landed.Enemy == cast.Source.ObjectId,
 
+        // `rr:modes-of-play` -- "in expert mode" on a card, which 86 cards in
+        // the pool print. Not a property of the card or of anything on the
+        // board: it is how the game was set up, so the board carries it.
+        //
+        // The argument is the mode's own name and is checked, so that a card
+        // reaching for one of the other three -- heroic, skirmish, campaign --
+        // is a card that says so rather than one that quietly reads "expert".
+        "inExpertMode" => Word(node.Argument) == "expert"
+            ? cast.World.Expert
+            : throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' asks about the '{Word(node.Argument)}' mode, and "
+                + "rr:modes-of-play names four of which only 'expert' is modelled"),
+
         "hasStatus" => Find(node.Require("card"), cast) is { } host
             && Statuses.Has(cast.World, host, Word(node.Require("status"))),
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses the test node '{node.Kind}', "
             + "which is not implemented"),
     };
+
+    /// <summary>
+    /// "Deal each player a facedown encounter card" — <c>rr:deal</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Dealt is not revealed.</b> <c>rr:deal</c> puts the card facedown in
+    /// front of the player and leaves it there; step 4 of the villain phase is
+    /// what turns it over, and it drains the whole queue however the cards got
+    /// into it. So a card dealt during setup waits for the first villain phase,
+    /// which is what it does at a table.
+    /// </para>
+    /// <para>
+    /// In player order, because <c>rr:in-player-order</c> is what "each player"
+    /// means whenever the order is observable — and it is here, since the deck
+    /// can empty part-way round.
+    /// </para>
+    /// </remarks>
+    private static void DealEncounterCards(AbilityNode node, Cast cast)
+    {
+        long each = node.Field("count") is { } count ? Number(count) : 1;
+        for (long dealt = 0; dealt < each; dealt++)
+        {
+            foreach (int seat in cast.World.PlayerOrder)
+            {
+                if (Rules.Play.Deal.EncounterCard(
+                        cast.World, seat, cast.Trigger, cast.Events) is null)
+                {
+                    return;
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// "Put it into play engaged with you" — <c>rr:play-put-into-play</c>.
