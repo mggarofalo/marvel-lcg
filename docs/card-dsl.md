@@ -54,14 +54,11 @@ Point 3 is the whole design. Points 1 and 2 are transcription.
 
 ## What is measured
 
-Re-runnable, from `py_src/`:
-
-    python -m tools.dsl.blockers            # the census
-    python -m tools.dsl.blockers --greedy   # what each node buys
-
-`tools/dsl/blockers.py` walks every card script's *handler bodies* — skipping
-the envelope — and flags constructs a tree of typed nodes cannot hold without a
-node designed for them.
+The numbers below were measured once, by walking every card script in the
+implementation this design replaced and flagging constructs a tree of typed
+nodes cannot hold without a node designed for them. They are not re-runnable:
+the scripts are gone, and what replaces them is this document plus
+`datasets/abilities/abilities.json`.
 
 | | |
 |---|---|

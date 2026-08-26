@@ -10,7 +10,7 @@ carries rulings, and neither carries a *rule*.
 | | |
 |---|---|
 | Upstream | Rules Reference **v1.8**, `mc_rulesreference_v18_compressed.pdf` (FFG/Asmodee) |
-| Harvested with | `python -m tools.rules.harvest` |
+| Harvested with | a PDF harvester, since removed — MARVEL-253 |
 | Harvested | 2026-08-24 |
 | Pinned by | the RR version printed on the document's cover |
 | Tier | `rr:` — the glossary, plus Appendix II. The `pack:` tier is not yet implemented. |
@@ -103,16 +103,14 @@ committed.
 That has a consequence worth stating plainly: **this dataset has no
 regenerate-or-fail CI gate**, unlike `../rng/`, `../digest/` and `../cards/`.
 CI has nothing to regenerate from. It is *vendored*, on the same footing as
-`../marvelcdb-faq/`, and `--check` exists for whoever holds the PDFs:
+`../marvelcdb-faq/`.
 
-```bash
-cd py_src
-uv pip install pdfplumber          # local-only; deliberately not in requirements.lock
-python -m tools.rules.harvest --check
-```
+**There is no harvester.** The one that produced this snapshot read a PDF held
+locally and has been removed, so a new Rules Reference version cannot currently
+be taken up — MARVEL-253. That is the live exposure here: this document assumes
+an authority can move and the repository can follow it.
 
-What CI does verify is this snapshot's internal consistency —
-`unit_test/test_rules_index.py`, 13 tests covering cross-reference resolution,
+What is verified is this snapshot's internal consistency —
 clause anchors, icon coverage, and front-matter agreement with the index. Every
 one of them is pinned to a defect the parser actually shipped during
 development.

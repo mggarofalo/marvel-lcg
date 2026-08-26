@@ -18,7 +18,8 @@ proofread by people who own the cards.
 now, by anyone with a bare Python. A pinned SHA that still has to be fetched
 gives reproducibility only while the network and the upstream repo cooperate.
 This mirrors the decision recorded in [../../docs/migration.md](../../docs/migration.md)
-for the replay corpus: pin the version, check the integrity data in *this* repo.
+the same way a pinned dependency is: record the version, check the integrity
+data in *this* repo.
 
 ## What is here
 
@@ -48,16 +49,19 @@ git clone --depth 1 https://github.com/zzorba/marvelsdb-json-data.git /tmp/msdb
 cp /tmp/msdb/pack/*.json  datasets/marvelsdb/pack/
 cp /tmp/msdb/{packs,sets,types,factions,subtypes,settypes,packtypes}.json datasets/marvelsdb/
 git -C /tmp/msdb rev-parse HEAD    # record above, with the commit date
-cd py_src && python -m tools.cards.extract
 ```
 
-Then read the diff on `datasets/cards/cards.json`. A changed `text` on a card
-that already has a spec means the spec needs re-reading, not just regenerating.
+**`datasets/cards/` cannot be rebuilt from this** — the join that produced it
+has no implementation here. MARVEL-252. Until it does, refreshing this snapshot
+moves the input without moving the output, which is worse than not refreshing
+it: read that issue before running the above.
+
+When it can be rebuilt, read the diff on `datasets/cards/cards.json`. A changed
+`text` on a card that already has a spec means the spec needs re-reading, not
+just regenerating.
 
 ## Provenance and licence
 
 Upstream ships no licence file. The card text is Fantasy Flight Games' and
-Marvel's; this repository already carried the same text in
-`py_src/data/cards.json` before this snapshot existed, so vendoring adds no
-exposure that was not already present. It is here to be read by the port, not
+Marvel's. It is here to be read by the engine, not
 redistributed as a product.

@@ -45,9 +45,9 @@ than the comment quietly going stale.
 
 ## The report
 
-```
-$ cd py_src && python -m tools.rules.citations
+There is no report tool; these were the counts when the practice started.
 
+```
 Rules Reference v1.8
 
   entries             9 / 215   cited (4.2%)
@@ -75,14 +75,6 @@ Two things this deliberately does not do:
 - **It does not validate ids.** A report that silently dropped a bad citation is
   how a mistyped citation survives. Validation belongs in the suite, where it
   fails a build.
-
-## Its Python sibling
-
-[`tools.rules.coverage`](../py_src/tools/rules/coverage.py) answers the same
-question for the Python engine, whose claims are Gherkin scenarios and whose
-trust is `specs/trusted.json`. Same rulebook, same arithmetic, two bodies of
-work. Reading them side by side is the point: the C# engine is being built from
-the rulebook, and the Python engine was not.
 
 ## Uncited is not untested
 

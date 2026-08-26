@@ -40,9 +40,9 @@ naming rather than quietly fixing.
 exactly `Forced Interrupt: When this card is defeated…` / `…this scheme is
 completed…`. That is tier 2b, and it is what makes
 `rr:when-defeated-abilities.2.1` work — the card leaves play *after* its ability
-resolves. `py_src/game/ability/ability_type.py` groups "When Defeated" with Boost
-and When Revealed at tier 3, one tier too late, so a villain's dying ability
-would resolve after it had already left play.
+resolves. Grouping them with Boost and When Revealed at tier 3 instead is one
+tier too late: a villain's dying ability would resolve after it had already left
+play.
 
 **A status card's forced interrupt is its own tier.** `rr:ability.step.2.a`, and
 it is what makes Stun, Confuse and Tough beat whatever else wants the same

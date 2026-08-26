@@ -8,7 +8,7 @@ is the first.
 | | |
 |---|---|
 | Upstream | 61 booklets published by FFG/Asmodee alongside each product |
-| Harvested with | `python -m tools.rules.packs` |
+| Harvested with | a PDF harvester, since removed — MARVEL-253 |
 | Harvested | 2026-08-24 |
 | Pinned by | the harvest date — these documents carry no version |
 | Tier | `pack:<code>:<section>[.<rule>]` |
@@ -91,14 +91,14 @@ clause of `rr:thwart` it overrides is a reading, not something visible on the
 page. Inferring it from a title match would manufacture exactly the
 plausible-but-wrong relationship this corpus exists to eliminate.
 
-`python -m tools.rules.refs <id>` walks the graph in both directions — the
+Reverse lookup is computed at query time and never stored — the
 reverse index is computed at query time and never stored, because a
 relationship written down twice can disagree with itself. `--cycles` gates
 against two rules each claiming priority over the other.
 
 ## Refreshing
 
-No `--check` gate in CI: the source is 353 MB of copyrighted PDFs that are not
-in this repository. `python -m tools.rules.packs --check` is for whoever holds
-them. `unit_test/test_rules_packs.py` verifies the committed snapshot's
-internal consistency instead.
+No gate in CI: the source is 353 MB of copyrighted PDFs that are not in this
+repository, and **there is no harvester** — the one that produced this snapshot
+has been removed, so a new or errata'd pack insert cannot currently be taken up.
+MARVEL-253. What is verified is the committed snapshot's internal consistency.

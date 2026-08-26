@@ -83,7 +83,7 @@ names the rulings that changed.
 `05005` is served as two entries with the same text and `updated` stamps five
 seconds apart — an upstream double-submit. Both are kept, because this file
 mirrors MarvelCDB rather than curating it.
-`py_src/tools/cards/rulings.py` resolves the repeat on read: it keeps the first
+The reader resolves the repeat: it keeps the first
 and records the code, the same way the MarvelSDB loader treats a repeated card
 code. A dict assignment would have dropped one without saying so.
 
@@ -95,7 +95,7 @@ faces. Site `01097` is `01097a` and `01097b` here. Measured 2026-08-22, 76 of th
 site's codes are shaped that way, almost all of them main schemes.
 
 Codes are stored as MarvelCDB served them. The mapping happens on read, in
-`py_src/tools/cards/rulings.py`, which fans a ruling out to every face: a ruling
+a reader that fans a ruling out to every face: a ruling
 is about the card, and which face prints the sentence in question is a printing
 detail.
 
@@ -106,13 +106,10 @@ authoring, not something a spec is regenerated from. It is still worth reading
 the diff, because a *changed* ruling means a spec written against the old one may
 now be wrong.
 
-```bash
-cd py_src
-python -m tools.cards.harvest_faq        # ~10 minutes
-python -m tools.cards.rulings --summary
-```
-
-Then update the harvest date and CLI version in the table above, and read the
+**There is no harvester.** The one that produced this snapshot has been
+removed, so a new ruling cannot currently be taken up — MARVEL-253. Whatever
+replaces it updates the harvest date and CLI version in the table above, and
+reads the
 diff on `faq.json`. Needs the CLI on `PATH`:
 
 ```bash

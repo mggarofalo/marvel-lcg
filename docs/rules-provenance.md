@@ -3,15 +3,16 @@
 How a rule gets into the engine, how it is proved, and how it is **patched** when
 the published rules move.
 
-This document exists because the migration plan had a hole. The oracle chain was:
+This document exists because a chain that ends in an implementation proves
+nothing. The chain is:
 
 ```
-printed card text → spec → validated against py_src → trusted.json → C# must match
+printed card text → the Rules Reference → a cited test → the engine
 ```
 
-and it has a blind spot AGENTS.md already names: a spec authored from ambiguous
-printed words is checked against a Python engine implementing *the same reading
-of the same words*, so it enters `trusted.json` having confirmed only that the
+and every link but the first can move. The blind spot it was written for: a
+claim authored from ambiguous printed words and checked against an
+implementation reading *the same words the same way* has confirmed only that the
 engine agrees with itself. MARVEL-143 patched that for cards, by harvesting
 official rulings. Nothing patched it for **rules** — the Rules Reference is the
 authority for phases, timing, keywords and damage, and it is not in this

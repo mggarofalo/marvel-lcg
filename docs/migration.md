@@ -1,8 +1,11 @@
 # Migration to C#
 
-Context for the planned rewrite. Tracked in the Plane project `MARVEL` — see [plane.md](plane.md).
+**The migration is done.** The Python engine has been removed; C# is the only
+engine. Tracked in the Plane project `MARVEL` — see [plane.md](plane.md).
 
-This document records **why** the migration is happening and **what was decided**, so agents do not re-litigate settled questions or re-derive measurements.
+This document is the decision record. It exists so that settled questions are
+not re-litigated and measurements are not re-derived — not as a description of
+how the repository is arranged today, which is [AGENTS.md](../AGENTS.md).
 
 ## Why migrate
 
@@ -99,7 +102,7 @@ That is the difference between a rewrite that converges and one that does not.
 
 ### State digest: replace it, before the corpus exists (MARVEL-9, MARVEL-44)
 
-**Decided, and landed.** `MARVEL-9` wrote the original digest down and found four structural problems that could not be fixed inside its shape. `MARVEL-44` replaced it. Both documents are kept: [state-digest-v2.md](state-digest-v2.md) is the contract a C# implementer reads, and [state-digest-contract.md](state-digest-contract.md) is v1, retained because it is the argument v2 answers and the only thing that reads a scene saved before `0.5.9.205`.
+**Decided, and landed.** `MARVEL-9` wrote the original digest down and found four structural problems that could not be fixed inside its shape. `MARVEL-44` replaced it. [state-digest-v2.md](state-digest-v2.md) is the result, and the v1 findings it settles are tabulated there by name.
 
 The v1 digest was a dictionary from card id to **one integer**, which was either a negative sentinel meaning "somewhere I only track coarsely" or the plain arithmetic sum of that card's state fields. Four consequences:
 
@@ -143,7 +146,7 @@ What the contract pins, each of which would reintroduce divergence if left open:
 - **Exact consumption** — including that a bound of 1 still consumes a word, and that selecting every element consumes none
 - **State save/restore** — 624 words plus an index. `Random.Undo()` is bounded and errors past the end, rather than the previous unbounded list that silently did nothing under one backend
 
-This is a genuine behavior change to the reference engine, not an additive one. That is fine — we no longer track upstream, so `py_src/` can be changed wherever a Plane issue justifies it. The divergences are listed in section 9 of the contract.
+These were genuine behaviour changes rather than additive ones, and there was no upstream to preserve a diff against. The choices are listed in section 9 of the contract.
 
 ### Other portability hazards
 
@@ -166,27 +169,15 @@ The decisive property is that **the corpus is immutable and write-once**. Git's 
 
 Re-measure once the heuristic policy exists; these games came from a random policy that loses in ~20 steps, so per-game size is a lower bound.
 
-### Repo layout: one repo, `src/` and `py_src/` (MARVEL-3)
+### Repo layout: one repo (MARVEL-3)
 
-**Decided.** A single repository holding both engines:
+**Decided.** A single repository, on the grounds that agents work poorly across
+two: cross-referencing while porting was constant, and every split introduces
+coordination the work does not need. The alternative considered was a separate
+repo to keep a fork cheap to pull from upstream, and that constraint never
+applied — upstream was not tracked.
 
-```
-py_src/     Python reference engine + preparation tooling
-src/        C# engine
-docs/       shared documentation, decisions, audits
-```
-
-The earlier recommendation was a separate repo, on the grounds that this was a fork needing to stay cheap to pull from upstream. **That constraint is gone — we no longer track upstream.** With it removed, the decisive factor is that agents work poorly across two repositories: cross-referencing the Python reference while porting is constant, and every split introduces coordination the work doesn't need.
-
-Consequences:
-
-- `py_src/` can be refactored freely where a Plane issue justifies it. There is no upstream diff to preserve.
-- **All Python commands run from `py_src/`.** Paths in `launch.json` and `engine/config.py` are relative to the working directory.
-- The corpus still lives in its own repo, pinned by SHA — that is about immutable bulk data, not about code organization, so the MARVEL-4 decision is unaffected.
-
-Planned C# layout, following the conventions already in use in the receipts repo:
-
-~~Planned layout, superseded by MARVEL-159.~~ The layout that replaces it,
+The layout,
 including the assembly wall that keeps Godot types out of the engine, is in
 [presentation-layer.md](presentation-layer.md#proposed-layout).
 
@@ -199,12 +190,12 @@ Two constraints from that decision reach every project in the solution:
   Both future targets that could matter — an iOS export and a Blazor WebAssembly
   client — forbid just-in-time compilation.
 
-The web client at `py_src/public/` is not carried forward. MARVEL-3 deferred the
-question of where it should live; the answer is that it does not move.
+The web client that shipped with the original implementation is not carried
+forward.
 
-### Deployment: `py_src` is never served
+### Deployment: what a served surface may do
 
-**Decided.** Settles MARVEL-145, -146, -152 and -153. The Python engine is a development tool and a behavioral oracle. It is never deployed, and its HTTP server is never bound beyond localhost. **Its network surface is therefore not a work item.**
+**Decided.** Settles MARVEL-145, -146, -152 and -153.
 
 If multiplayer is ever exposed, it is a separate C# server project — `src/Marvel.Server`, containerized, behind Nginx. TLS, authentication and rate limiting terminate at the reverse proxy; the engine server never faces the network directly.
 
@@ -212,7 +203,7 @@ If multiplayer is ever exposed, it is a separate C# server project — `src/Marv
 
 That settles the four filed issues, but **not** along a confidentiality line — this is a cooperative game. Hidden information is routinely shared at a real table, and with one scenario excepted there is no opponent among the players to keep secrets from. "One client must not read another seat's cards" is the wrong requirement, and designing toward it would be designing toward the wrong game.
 
-**MARVEL-153 — not a defect.** `/read_file` and the `/debug` console reach a saved scene, seed and all. That is a local development affordance on a process nobody else can reach. The forward-looking constraint is one line, recorded here rather than tracked as work: **do not port `/read_file` or the cheat console onto a served surface in `Marvel.Server`.** A fresh implementation does not inherit it unless someone adds it.
+**MARVEL-153.** The constraint is one line, recorded here rather than tracked as work: **a served surface must not expose an arbitrary file read or a cheat console.** A fresh implementation does not inherit one unless somebody adds it.
 
 **MARVEL-145, -146, -152 — one requirement, and it is about authority, not secrecy.** Today `p`, `hot_seat` and `watch` are asserted by the requesting client and nothing checks them; object ids and the descriptor's free text leak around the filter that does exist. The defect is not that a client can see too much. It is that **there is no policy** — visibility is whatever the client claims it should be.
 

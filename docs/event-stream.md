@@ -22,8 +22,7 @@ animation is about.
 
 Every recorded step in the frozen corpus carries its full v2 digest, so the set
 of state transitions the engine can produce is countable rather than a matter of
-opinion. `py_src/tools/events/census.py` diffs consecutive digests across the
-whole corpus.
+opinion. The census diffed consecutive digests across the whole of it.
 
 **1,773 scenes. 201,870 transitions. 1,365,439 individual changes.** They fall
 into twelve shapes and no more — *as far as a digest can see*, which is a real
@@ -299,12 +298,11 @@ Three things follow, and none of them is a card property:
 - Joining is a **player-level** operation. One player joins; their side schemes
   come with them; their engaged minions stay engaged.
 
-### What the legacy engine does, and why it is not the model
+### The shortcut this deliberately does not take
 
-`py_src` tags every card with `card.game_area` and keeps one deck per zone
-regardless — `world.area_schemes_main` is a single `Deck2`, and
-`Worlds.GetMainSchemes(game_area)` filters it by `card.GetGameArea()`. It works,
-and it is an implementation shortcut rather than the rule.
+Tagging every card with a game area and keeping one deck per zone regardless,
+then filtering by the tag, works. It is an implementation shortcut rather than
+the rule, and it is not the model here.
 
 It was briefly copied into this document as a tenth event, `CardsChangedBoard`,
 carrying the 47 cards a split retags at once. That was wrong on three counts and
@@ -353,9 +351,8 @@ MARVEL-174.
 - Kang: all 42 `the_once_and_future_kang` corpus scenes replayed in full,
   **0 of 3,462 steps** reached a second game area. The split is behind a main
   scheme at stage 3 and the bot never advances that far.
-- Protection Racket: `py_src` has no Fear No Evil cards at all, so it is a
-  forward requirement for the C# engine with published rules already in hand,
-  and not oracle behaviour to be reproduced.
+- Protection Racket: a forward requirement, with published rules already in
+  hand.
 
 ## The signature
 
@@ -390,13 +387,7 @@ already requires of the card DSL.
 
 ## Reproducing the numbers
 
-```bash
-cd py_src
-python -m tools.events.census ~/Source/marvel-lcg-corpus --json census.json
-python -m tools.events.verify ~/Source/marvel-lcg-corpus --per-shard 1
-python -m tools.events.emit_vocabulary --check
-python -m unittest unit_test.test_event_model unit_test.test_event_verify
-```
+The census and verification tools are gone; these numbers are not re-runnable.
 
 `verify` boots the engine once per scene, so one shard-wide pass is a couple of
 minutes. It exits non-zero on any shortfall.

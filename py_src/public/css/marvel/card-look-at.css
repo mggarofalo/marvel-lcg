@@ -1,7 +1,0 @@
-.card.looking-at {
-    --top: 450px;
-    --left: calc(200px + var(--look-at-index) * (var(--card-width) + 5px));
-    --t-z: 10px;
-    z-index: var(--z-index-look-at);
-}
-

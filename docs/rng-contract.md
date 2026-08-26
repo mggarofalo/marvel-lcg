@@ -1,14 +1,11 @@
 # The random number generator cross-engine contract
 
-Tracked as `MARVEL-38`. Written against commit `7a8232c`, engine build
-`0.5.9.201`, CPython 3.13. This document is the specification; the Python in
-`py_src/engine/lib/mt19937.py` and `py_src/engine/lib/random.py` implements it,
-and `MARVEL-8` implements it again in C#.
+Tracked as `MARVEL-38`. This document is the specification;
+`src/Marvel.Core/Random/` implements it.
 
-**It is written to be implementable without reading the Python.** Where a
-choice was arbitrary it says so and pins it anyway, because an arbitrary choice
-that both engines make identically is worth more than a principled choice only
-one of them makes.
+**It is written to be implementable from this document alone.** Where a choice
+was arbitrary it says so and pins it anyway: an arbitrary choice made the same
+way every time is what makes a seed name a game.
 
 ## Why this exists
 
@@ -325,34 +322,15 @@ Whatever replaces it should keep the fixture's one good idea: cover each
 function independently *and* a mixed sequence that interleaves them, so a
 per-function match cannot hide a stream-position error.
 
-Regenerate with:
+Whatever provides them should carry **no timestamp and no version stamp**. A
+fixture is compared whole, so anything in it that churns for an unrelated reason
+turns the staleness check into noise. Provenance belongs where it cannot go
+stale — this document and `git log`.
 
-```bash
-cd py_src
-python -m tools.rng.emit_vectors
-```
+## 9. Choices this specification makes
 
-It writes only if the content changed, so a no-op run leaves the file alone.
-
-The fixture carries **no timestamp and no version stamp**, deliberately. It is
-compared whole, so anything in it that churns for a reason unrelated to the
-generator turns the staleness check into noise — which is what happened when it
-recorded `engine_build`: bumping the package version was enough to fail the
-suite (`MARVEL-58`). A diff to this file therefore means the generator's output
-changed, and a C# implementation that reproduced the old vectors needs looking
-at. Provenance lives where it cannot go stale: the header of this document
-records the commit the spec was written against, and `git log` records the rest.
-
-## 9. Deliberate divergences from upstream
-
-Recorded here and in `docs/migration.md` because these change game outcomes,
-not just internals. `py_src/` no longer tracks upstream, so these are
-intentional.
-
-- **The production generator changed.** Anything seeded before this landed
-  produces different games now. There was no corpus and no tracked replays at
-  the time, so the cost was zero; after corpus generation begins it would be a
-  full regeneration.
+These change game outcomes rather than internals, and no rule decides any of
+them. They are **ours**, and they are pinned rather than derived.
 - **`disable_numpy_random` is gone**, along with the numpy dependency.
 - **`Shuffle` is a real Fisher-Yates**, not `10 * len` random swaps. The old
   one did not produce uniform permutations.

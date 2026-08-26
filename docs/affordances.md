@@ -28,8 +28,8 @@ Affordance { Id, Kind, AnchorId, Label, Legality }
 That sketch was written without looking at what the engine already renders. It
 renders fourteen fields per option, and the corpus cannot settle which of them
 matter because it records the input that was *chosen* and never the set it was
-chosen from. So `py_src/tools/affordances/census.py` plays games instead, through
-the same headless harness the determinism probes use, and counts.
+chosen from. So the census played games instead and counted the options
+rendered at every prompt.
 
 **30 games. 1,997 prompts. 6,351 options.**
 
@@ -171,14 +171,9 @@ event list is very often empty: 35.3% of recorded steps change no state at all.
 
 ## Reproducing the numbers
 
-```bash
-cd py_src
-python -m tools.affordances.census --games 30 --max-steps 700 --json census.json
-```
-
-Each game boots the engine, so this takes seconds per game. It is a tool, not a
-unit test — `tests/Marvel.Rules.Tests/Prompts/` states the shape rules that
-follow from it, on data small enough to read.
+The census tool is gone and these numbers are not re-runnable.
+`tests/Marvel.Rules.Tests/Prompts/` states the shape rules that follow from
+them, on data small enough to read, and those are what holds the design.
 
 ## Verified against the corpus
 
@@ -189,11 +184,10 @@ settles it, because it recorded every input a bot actually chose.
 > For every recorded step: the input the corpus holds must be expressible using
 > only the `Prompt` the affordance model would have carried.
 
-`py_src/tools/affordances/verify.py` replays corpus scenes through
-`tools/replay/observe.py` — the same in-process harness MARVEL-163 built — and
-at every decision projects the engine's rendered options down to the eight
-fields and nothing else. It never falls back to the `Effect` behind them, which
-would measure the engine's own resolution rather than the model's.
+The verification replayed recorded scenes and, at every decision, projected the
+rendered options down to the eight fields and nothing else — never falling back
+to the effect behind them, which would have measured resolution rather than the
+model.
 
 **58 scenes, one from each shard. 6,554 steps: 5,809 choices, 745 declines.**
 
@@ -263,13 +257,7 @@ required to produce a case rather than a count.
 
 ### Reproducing
 
-```bash
-cd py_src
-python -m tools.affordances.verify ~/Source/marvel-lcg-corpus --per-shard 1
-python -m unittest unit_test.test_affordance_verify
-```
-
-Exits non-zero on any shortfall. The unit tests need no corpus.
+That verification is not re-runnable; the scenes and the harness are both gone.
 
 ## What is not settled here
 

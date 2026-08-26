@@ -1,47 +1,54 @@
-The open-source of Marvel LCG digital version on [ITCH](https://irefrixs.itch.io/marvel-lcg)
+# marvel-lcg
 
-## Playing the game
+A rules engine for Marvel Champions: The Card Game, written in C#.
 
-| Guide                                                          | Description                     |
-| -------------------------------------------------------------- | ------------------------------- |
-| [Install Guide](docs/install_guide.md)                         | How to install and run the game |
-| [How to Play](https://itch.io/t/3763917/how-to-play-this-game) | Game rules and controls         |
-| [Debug Guide](docs/debug_guide.md)                             | How to debug the game           |
-| [Editor Guide](docs/editor_guide.md)                           | How to use the card editor      |
+The engine's job is to be **right about the rules**. Every behaviour it
+implements is held against the published Rules Reference, vendored in
+[`datasets/rules-reference/`](datasets/rules-reference/), and tests cite the
+clause they come from by id — `rr:attack-enemy-activation.step.3`. A rule the
+engine does not implement raises rather than guesses, because a board that is
+plausible and wrong is worse than a board that stops.
 
-## Security Warning
+## Layout
 
-This game runs Python card scripts, which is not safe.  
-Do not install or run any third-party card scripts unless you trust them.
+| Path | What |
+|---|---|
+| [`src/`](src/) | The engine. `Marvel.Core`, `Marvel.Rules`, `Marvel.Cards`, `Marvel.Content` |
+| [`tests/`](tests/) | The test suite, ~750 tests |
+| [`datasets/`](datasets/) | The rules, the cards, and what a scenario is dealt from |
+| [`specs/`](specs/) | Gherkin scenarios written from printed card text — drafts, see [specs/README.md](specs/README.md) |
+| [`docs/`](docs/) | Design documents and wire-format specifications |
 
-这个游戏会运行用 Python 编写的卡牌脚本，这不安全。  
-除非你完全信任，否则不要安装或运行任何第三方的卡牌脚本。
+## Running it
 
-## Snapshot
+```
+dotnet build Marvel.slnx -c Release
+dotnet test Marvel.slnx -c Release
+```
 
-![](/docs/assets/image-1.jpg)
-![](/docs/assets/image-2.jpg)
+Contributors should start with [AGENTS.md](AGENTS.md).
 
-## Development
+## Documents
 
-The game as it exists today is the Python engine in [`py_src/`](py_src/); it is being
-migrated to C# in [`src/`](src/). Contributors should start with
-[AGENTS.md](AGENTS.md) for how to run and work in this repo, and
-[Migration to C#](docs/migration.md) for why the migration is happening and what has
-already been decided.
+| Document | Description |
+|---|---|
+| [The Card DSL](docs/card-dsl.md) | How a card's printed text becomes data the engine runs |
+| [The Card Dataset](docs/card-dataset.md) | The joined card data behind the card port |
+| [The Setup Dataset](docs/setup-dataset.md) | What a scenario is dealt from |
+| [Rules Provenance](docs/rules-provenance.md) | Which published source decides what, and what happens when one moves |
+| [Rules Citations](docs/rules-citations.md) | How a test cites a rule, and what an uncited test honestly is |
+| [Timing](docs/timing.md) | Ability timing, interrupt and response windows, continuous effects |
+| [Places](docs/places.md) | Play areas, game areas, and anything resolving by where a card is |
+| [Event Stream](docs/event-stream.md) | What the engine tells a client changed |
+| [Affordances](docs/affordances.md) | What the engine tells a client the player can do |
+| [State Digest v2](docs/state-digest-v2.md) | The canonical serialisation of a board |
+| [RNG Contract](docs/rng-contract.md) | The random number generator specification |
+| [Presentation Layer](docs/presentation-layer.md) | The plan for a client |
+| [Plane](docs/plane.md) | How work is tracked |
 
-| Document                                                | Description                                                                |
-| ------------------------------------------------------- | -------------------------------------------------------------------------- |
-| [Migration to C#](docs/migration.md)                    | Why the migration is happening and what has been decided                   |
-| [Engine Architecture](docs/engine_architecture.md)      | Engine internals for developers                                            |
-| [Card Scripting Guide](docs/card_scripting_guide.md)    | How to write card ability scripts                                          |
-| [The Card DSL](docs/card-dsl.md)                        | The design that replaces those scripts with data, and what it cannot hold  |
-| [The Card Dataset](docs/card-dataset.md)                | The joined card data behind spec authoring and the card port               |
-| [Behavioral Spec Harness](docs/spec-harness.md)         | How a card's printed text becomes an executable claim about the engine     |
-| [Card Coverage](docs/card-coverage.md)                  | The metric that decides whether the replay corpus is worth anything        |
-| [Runtime Invariants](docs/invariants.md)                | What must be true of the world at every decision the engine takes          |
-| [Determinism Audit](docs/determinism-audit.md)          | Whether the Python engine is deterministic, which the corpus depends on    |
-| [RNG Contract](docs/rng-contract.md)                    | The cross-engine random number generator specification                     |
-| [State Digest v2](docs/state-digest-v2.md)              | The current state-digest (CRC) cross-engine contract                       |
-| [State Digest v1](docs/state-digest-contract.md)        | **Superseded.** The v1 digest, kept for scenes saved before `0.5.9.205`    |
-| [Plane](docs/plane.md)                                  | How work is tracked in the Plane workspace                                 |
+## Origin
+
+This repository began as a fork of
+[irefrixs/marvel-lcg](https://irefrixs.itch.io/marvel-lcg), a Python
+implementation of the same game. None of that code remains; the rulebook, not
+that engine, decides what this one does.

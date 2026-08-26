@@ -1,6 +1,0 @@
-from cards.pack import *
-from cards.pack.hood.streets_of_mayhem import WhenRevealedDiscardOtherSettingEnviroment
-from cards.pack.aoa.dark_beast import ResolveSpecialAbilityOnTheSETTINGEnvironment
-
-Unused(WhenRevealedDiscardOtherSettingEnviroment)
-Unused(ResolveSpecialAbilityOnTheSETTINGEnvironment)

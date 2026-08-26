@@ -1,6 +1,0 @@
-aiohttp
-colorama
-packaging
-Pillow
-requests
-typing_extensions

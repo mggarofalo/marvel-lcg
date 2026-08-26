@@ -1,17 +1,15 @@
 # The state digest, v2
 
-Tracked as `MARVEL-44`. Specified against engine build `0.5.9.205`, CPython 3.13
-on Windows 11. This supersedes [state-digest-contract.md](state-digest-contract.md),
-which remains the specification of v1 — the format this replaced, and the only
-thing that can read a scene saved before `0.5.9.205`.
+Tracked as `MARVEL-44`. The canonical serialisation of a board:
+`src/Marvel.Core/Digest/` implements it, and `World.Digest()` produces one.
 
-Every claim with a number in it was measured by
-`py_src/tools/determinism/probe_digest_v2.py`; re-run it rather than trusting
-this document against a moved tree. How is at the end.
+Every claim with a number in it was measured once, against the tree as it stood
+when this was written. Nothing re-measures them.
 
-## Why there is a v2
+## Why it is shaped this way
 
-The digest is the oracle. Every recorded replay step carries its value, and on
+The digest is how two runs of one seed are compared. Every step carries its
+value, and on
 replay `engine/controller/module/replay.py` recomputes and compares. When the C#
 engine diverges, this is the thing that says *which card, at which step*.
 
@@ -158,7 +156,7 @@ into it, main scheme included, left the digest **byte-identical**.
 So **a port that put every card in the right zone at the right index but in the
 wrong play area would pass every corpus digest check.** The corpus cannot catch
 it: 0 of 3,462 steps across all 42 Kang scenes reach a second game area, and
-`py_src` does not implement Fear No Evil at all.
+Nothing implements Fear No Evil yet.
 
 This is the same weakness `AreaRef.Id` exists to work around one level up — **the
 digest describes areas rather than identifying them** — and it is stated rather
@@ -593,43 +591,22 @@ For a C# port targeting byte-identical output, in dependency order:
 9. **Compare as strings**, and diff structurally only when they differ.
 10. **Reject by default.**
 
-**There is no acceptance fixture.** One existed, carrying every step's digest in
-full for `rhino / spider_man / 12345` plus per-step `sha256` values for two
-further boards, and it was the Python engine's account of those games. The
-format above is still what `StateDigest` emits and determinism tests still
-compare a game against a second run of itself, so the serialiser is exercised —
-but its canonical form is pinned to nothing. MARVEL-251.
+**There is no acceptance fixture.** `StateDigest` emits the format above and
+determinism tests compare a game against a second run of itself, so the
+serialiser is exercised — but its canonical form is pinned to nothing.
+MARVEL-251.
 
 ## How the measurements were taken
 
-Environment pinned per `docs/determinism-audit.md`
-(`PYTHONHASHSEED=0`, `PYTHONIOENCODING=utf-8`, `PYTHONDONTWRITEBYTECODE=1`).
+The numbers throughout came from one sampled run over five boards (`rhino`,
+`klaw` at one and two players, `ultron`) with a decline-only policy, 243 steps
+in total. Nothing re-measures them.
 
-```bash
-cd py_src
-uv venv --python 3.13
-uv pip install -r requirements.lock
-
-# coverage, payload, and the change table
-python -m tools.determinism.probe_digest_v2
-
-# the worked example and the acceptance fixture
-python -m tools.digest.emit_vectors
-
-# the scene-file and corpus figures
-python main.py -bot -bot_games 13 -bot_seed 1000
-```
-
-The probe reimplements v1 from its own specification — the engine no longer
-contains it — and runs both formats over the same live worlds. It samples five
-boards (`rhino`, `klaw` at one and two players, `ultron`) with the decline-only
-policy `run_headless` provides, 243 steps in total.
-
-Two of v1's findings did **not** fire in that sample and are reported as latent
-rather than measured: no card in play summed into the sentinel range (`D3`), and
-no face-down card in play contributed state (`D8`). Both are read from source in
-the v1 document; neither needs to fire for v2's structure to be the right answer,
-since v2 removes the possibility of either rather than reducing its likelihood.
+Two findings did **not** fire in that sample and are latent rather than
+measured: no card in play summed into the sentinel range (`D3`), and no
+face-down card in play contributed state (`D8`). Neither needs to fire for this
+structure to be the right answer, since it removes the possibility of either
+rather than reducing its likelihood.
 
 ## What this settles
 
