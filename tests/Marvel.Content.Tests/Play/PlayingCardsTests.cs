@@ -136,7 +136,7 @@ public sealed class PlayingCardsTests
     {
         var world = WorldSetup.Deal(
             Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"])),
+            Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
             [Setup.Hero("spider_man").Name],
             12345);
         var game = Game.Begin(world, Cards);

@@ -62,7 +62,7 @@ public sealed class PlayerPhaseTests
     private static Game Begin() => Game.Begin(
         WorldSetup.Deal(
             Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, Campaign, Heroes)),
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, Heroes), Cards),
             [.. Heroes.Select(hero => Setup.Hero(hero).Name)],
             Seed),
         Cards,
