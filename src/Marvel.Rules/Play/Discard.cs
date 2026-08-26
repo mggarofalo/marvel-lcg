@@ -48,6 +48,15 @@ public static class Discard
             Trigger = trigger, Verb = "Discard",
         });
 
+        // `rr:player-deck.4`: a deck that emptied beside an empty discard pile
+        // "does not reset until there is at least one card in the player's
+        // discard pile, **then** the player deals themself one facedown
+        // encounter card". This is *then* -- a card has just landed there.
+        if (card.Owner >= 0)
+        {
+            PlayerDeck.Reset(world, card.Owner, events);
+        }
+
         if (host >= 0)
         {
             // A card that leaves play stops being attached, and a client that

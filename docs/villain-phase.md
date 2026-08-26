@@ -21,9 +21,36 @@ be argued against the published text:
 | 2 | Enemies Activate | in player order; the villain, then engaged minions |
 | | ↳ Attack *or* Scheme | `rr:activation.1`; an attack has [six steps of its own](enemy-attacks.md) |
 | 3 | Deal Encounter Cards | one each, plus one per hazard icon |
-| 4 | Reveal Encounter Cards | in player order, in the order dealt |
+| 4 | Reveal Encounter Cards | in player order, in the order dealt — [a queue, not a list](#step-4-is-a-loop) |
 | 5 | Pass First Player Token | clockwise |
 | 6 | End of Villain Phase and Round | lasting effects end |
+
+### Step 4 is a loop
+
+*"Each player repeats this process in player order, **until no dealt encounter
+cards remain**."* And `rr:deal-deal-an-encounter-card.1`: *"If a player is dealt
+an encounter card during step three or four of the villain phase, the extra
+encounter card is added to the queue of cards that are being dealt and revealed
+in **those same steps**."*
+
+So step 4 does not hand out a list of reveals at the start. It finds the next
+card, schedules that one reveal, and puts itself back on the agenda. A card
+revealed here that deals another card has that one revealed here too — and a
+card dealt during the *player* phase, by an ability or by
+[a deck running out](player-phase.md#when-a-deck-runs-out), is revealed here
+without anything having scheduled it.
+
+**The order of the two `Agenda.Then` calls is the loop's termination.** `Then`
+appends in call order, so the reveal has to be scheduled before the heading;
+the other way round, the heading runs again with the card still in the queue,
+forever.
+
+### Step 3 counts hazard icons
+
+`rr:hazard-icon`: *"for each hazard icon on cards in play, deal **one player**
+one additional card (not one card per player). Additional cards are dealt in
+player order."* Three icons at two players is two extra cards for the first
+player and one for the second.
 
 **Two places need to know what a card says**, and both go through the same seam.
 Step 4 asks a revealed card what it does; the window around an activation asks

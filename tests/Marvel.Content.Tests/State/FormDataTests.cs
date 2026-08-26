@@ -241,10 +241,33 @@ public sealed class FormDataTests
         }
 
         game.Resolve(Decision.Decline);   // end the turn
-        game.Resolve(Decision.Decline);   // end the phase, into the villain phase
+        EndPhase(game, world);            // step 1, into the villain phase
 
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         return (scheme.Tokens.GetValueOrDefault("k_threat"), game.Pending?.Asking);
+    }
+
+    /// <summary>
+    /// Answers <c>rr:end-of-player-phase.step.1</c>, discarding the excess.
+    /// </summary>
+    /// <remarks>
+    /// <b>Not a decline, and that is the rule doing its job.</b> Peter Parker's
+    /// hand size is 6 and Spider-Man's is 5, so a player who changes form and
+    /// then ends the turn is holding one card too many — and step 1 says they
+    /// "must discard down to their hand size". Which card goes is theirs to
+    /// choose, so the engine refuses to choose for them.
+    /// </remarks>
+    private static void EndPhase(Game game, World world)
+    {
+        var seat = world.Seats[game.Pending!.Player];
+        long limit = PhaseEnd.HandSize(world, seat, Cards);
+        var excess = seat.Hand.Cards
+            .Take(Math.Max(0, seat.Hand.Cards.Count - (int)limit))
+            .Select(card => card.ObjectId)
+            .ToArray();
+
+        var affordance = game.Pending.Affordances.Single(a => a.Verb == Game.EndPhaseVerb);
+        game.Resolve(Decision.Take(affordance.Id, excess, []));
     }
 
     private static long Health(World world, Card identity) =>

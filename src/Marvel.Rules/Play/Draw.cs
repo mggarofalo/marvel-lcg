@@ -30,16 +30,17 @@ public static class Draw
         var seat = world.Seats[player];
         for (int drawn = 0; drawn < count; drawn++)
         {
+            // `rr:player-deck.4` -- a reset owed from earlier, because the
+            // discard pile was empty when the deck ran out and has since
+            // gained a card.
+            PlayerDeck.Reset(world, player, events);
+
             if (seat.Deck.Cards.Count == 0)
             {
-                // `rr:player-deck.3` -- a player who would draw from an empty
-                // deck shuffles their discard pile into a new one, and that
-                // shuffle consumes randomness. Doing it at the wrong moment
-                // changes every card drawn for the rest of the game, so it is
-                // named rather than approximated.
-                throw new RulesNotImplementedException(
-                    $"{seat.Name} would draw from an empty deck, which needs the discard "
-                    + "pile shuffled into a new one; that is not implemented");
+                // Deck and discard pile both empty. `rr:player-deck.4` makes
+                // that a legal board rather than a fault: there is no card to
+                // draw, so no card is drawn.
+                return;
             }
 
             var card = seat.Deck.Cards[^1];
@@ -51,6 +52,14 @@ public static class Draw
             {
                 Trigger = trigger, Verb = "Draw",
             });
+
+            // `rr:player-deck.1`'s trigger is the deck *emptying*, not the next
+            // attempt to draw from it, and `rr:player-deck.2` says the player
+            // "continues to draw cards up to the specified number" across the
+            // reshuffle. Both need this here rather than at the top of the
+            // loop: the shuffle draws from the game's one random stream, so
+            // moving it one draw later changes every card that follows.
+            PlayerDeck.Reset(world, player, events);
         }
     }
 }

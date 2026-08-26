@@ -137,6 +137,7 @@ as important.
 | `datasets/digest/prompts.json`, `Marvel.Rules.Play`, what a prompt offers | [prompt-dataset.md](docs/prompt-dataset.md) |
 | play areas, game areas, anything resolving by *where a card is* | [places.md](docs/places.md) |
 | `Marvel.Rules.Play`, the villain phase, what a revealed card does | [villain-phase.md](docs/villain-phase.md) |
+| the player phase, hand size, readying, a player deck running out | [player-phase.md](docs/player-phase.md) |
 | enemy attacks, defending, damage, a ported card acting in a window | [enemy-attacks.md](docs/enemy-attacks.md) |
 | hero and alter-ego form, changing form, `StateFields.Registered` | [forms.md](docs/forms.md) |
 | the card ability DSL, `src/Marvel.Cards`, adding a card to `datasets/abilities/` | [card-dsl.md](docs/card-dsl.md) |
