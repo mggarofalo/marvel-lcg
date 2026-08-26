@@ -82,8 +82,12 @@ public static class Defeat
             case CardKind.Ally:
             case CardKind.Minion:
                 // `rr:defeat.1` -- discarded, to its owner's pile, which for a
-                // minion is the encounter discard.
-                Discard.Card(world, character, trigger, events);
+                // minion is the encounter discard. Unless it is worth points.
+                if (!ToVictoryDisplay(world, facts, character, trigger, events))
+                {
+                    Discard.Card(world, character, trigger, events);
+                }
+
                 return true;
 
             case CardKind.EncounterVillain:
@@ -107,6 +111,48 @@ public static class Defeat
                     $"a {facts.Kind(character.FaceId)} was defeated, and rr:defeat does not "
                     + "say what happens to one");
         }
+    }
+
+    /// <summary>
+    /// A defeated card worth points goes to the victory display —
+    /// <c>rr:victory-x</c>.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:victory-x.2</c>: "a character or side scheme with the victory X
+    /// keyword is placed in the victory display <b>when it is defeated</b>",
+    /// which <c>.1.1</c> writes as "<b>When Defeated</b>: add this card to the
+    /// victory display". Instead of the discard pile, not as well as it.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="card">The defeated card.</param>
+    /// <param name="trigger">What caused it, for the event stream.</param>
+    /// <param name="events">Where to record what moved.</param>
+    /// <returns>Whether it went there.</returns>
+    public static bool ToVictoryDisplay(
+        World world, ICardFacts facts, Card card, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (facts.PrintedValue(card.FaceId, "Victory", world.Players) <= 0)
+        {
+            return false;
+        }
+
+        var display = world.AreaOf(DeckType.VictoryDisplay);
+        var from = card.Area;
+        World.MoveToTop(card, display);
+        events.Add(new CardsMoved(
+            Places.Reference(from), Places.Reference(display),
+            [new Landing(card.ObjectId, display.Cards.Count - 1)])
+        {
+            Trigger = trigger, Verb = "Victory",
+        });
+
+        return true;
     }
 
     /// <summary>

@@ -595,7 +595,7 @@ public sealed class Game
             Offer(options, ally, BasicPowers.AttackVerb,
                 BasicPowers.Attackable(world, facts, seat.Index));
             Offer(options, ally, BasicPowers.ThwartVerb,
-                BasicPowers.Thwartable(world, facts));
+                BasicPowers.Thwartable(world, facts, seat.Index));
         }
 
         // `rr:player-turn.3`: the hero's basic attack or thwart in hero form,
@@ -615,7 +615,7 @@ public sealed class Game
             Offer(options, seat.IdentityCard, BasicPowers.AttackVerb,
                 BasicPowers.Attackable(world, facts, seat.Index));
             Offer(options, seat.IdentityCard, BasicPowers.ThwartVerb,
-                BasicPowers.Thwartable(world, facts));
+                BasicPowers.Thwartable(world, facts, seat.Index));
         }
         else if (BasicPowers.CanRecover(world, facts, seat.Index))
         {

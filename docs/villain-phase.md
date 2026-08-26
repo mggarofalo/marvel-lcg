@@ -18,7 +18,7 @@ be argued against the published text:
 | | | |
 |---|---|---|
 | 1 | Place Threat | the acceleration field, plus [every icon and token](#acceleration) |
-| 2 | Enemies Activate | in player order; the villain, then engaged minions |
+| 2 | Enemies Activate | in player order; the villain, then [engaged minions](#minions) |
 | | ↳ Attack *or* Scheme | `rr:activation.1`; an attack has [six steps of its own](enemy-attacks.md) |
 | 3 | Deal Encounter Cards | one each, plus one per hazard icon |
 | 4 | Reveal Encounter Cards | in player order, in the order dealt — [a queue, not a list](#step-4-is-a-loop) |
@@ -98,6 +98,53 @@ the three endings in `World.Result`.
 advance: *"if the main scheme advances other than through having threat on it
 equal to or greater than its target threat value, that main scheme is **not**
 considered completed."*
+
+### What a revealed card does
+
+`rr:reveal.step.2` is a list by card type, and until MARVEL-188 none of it was
+implemented — every revealed card reached step 4 and was discarded, so the
+encounter deck was a pile of treacheries however it was built.
+
+| type | where it goes |
+|---|---|
+| **minion** | the revealing player's play area, **engaged** with them |
+| **side scheme** | the villain's play area |
+| **obligation** | the revealing player's play area |
+| **attachment** (no "attach to") | in front of the player — *not in play* |
+| **treachery**, **other** | in front of the player — *not in play*, and step 4 discards a treachery |
+
+Placement is step 2 and abilities are step 3, in that order: a minion is already
+engaged when its own **When Revealed** resolves.
+
+Step 3 resolves "each **When Revealed** ability on that card *(including those
+provided by keywords)*" — so `surge` and `incite X` run here beside the card's
+own text. **The order between them is the first player's choice
+(`rr:forced.5`) and the engine does not ask**; see MARVEL-187.
+
+### Minions
+
+`rr:engage`: engagement is not a flag beside the minion, it is *which play area
+the minion is in*. `rr:minion.3` then activates each engaged minion during step
+2, after the villain, and by the same rule as the villain — attack a player in
+hero form, scheme against one in alter-ego form.
+
+"In the order of that player's choice" is the other half of `rr:forced.5`'s
+problem: the engine takes them in play-area order rather than asking.
+
+### Keywords that fire on reveal or entering play
+
+| keyword | what it is equivalent to |
+|---|---|
+| `rr:surge` | *When Revealed: deal yourself 1 facedown encounter card* |
+| `rr:incite-x` | *When Revealed: place X threat on the main scheme* |
+| `rr:hinder-x` | enters play with X threat **on the card** |
+| `rr:toughness` | *Forced Response: after this character enters play, give it a tough status card* |
+
+`rr:tough` is what makes the last one matter: a tough status card **prevents all
+the damage** and is discarded, one card per instance, and the character *"is not
+considered to have taken damage"* — so it cannot be defeated by damage a tough
+card ate. `rr:tough.2.2` puts that check *after* a defending hero's DEF
+reduction: damage already reduced to zero costs no tough card.
 
 ### Step 3 counts hazard icons
 

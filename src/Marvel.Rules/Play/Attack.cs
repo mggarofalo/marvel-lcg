@@ -98,15 +98,29 @@ public static class Attack
     /// chosen without knowing what the boost card is.
     /// </remarks>
     /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
     /// <param name="events">Where to record what happened.</param>
-    public static void GiveBoostCard(World world, List<GameEvent> events)
+    public static void GiveBoostCard(World world, ICardFacts facts, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(events);
 
         var attack = Current(world);
+        var attacker = world.Cards[attack.Enemy];
+
+        // `rr:attack-enemy-activation.step.1`: only a villain, or a minion with
+        // `rr:villainous`, is given one. "If a minion without the villainous
+        // keyword is attacking, **skip this step**" -- and skipping matters
+        // beyond the icons, because taking a card off the encounter deck moves
+        // every later deal.
+        if (!Keywords.IsBoosted(attacker, facts, world.Players))
+        {
+            return;
+        }
+
         var deck = world.AreaOf(DeckType.EncounterDeck);
-        var boost = deck.TakeTop();
+        var boost = EncounterDeck.TakeTop(world, Steps.EnemyAttacks, events);
         if (boost is null)
         {
             return;
@@ -313,9 +327,14 @@ public static class Attack
         // one rule however the damage arrived, and so is `rr:defeat` -- an
         // enemy attack that defeated a character down a separate path would be
         // a second place for the defeat rules to be wrong.
-        Damage.Deal(
-            world, facts, world.Cards[attack.Target], amount,
-            Steps.EnemyAttacks, "Deal_Damage", events);
+        var target = world.Cards[attack.Target];
+        Damage.Deal(world, facts, target, amount, Steps.EnemyAttacks, "Deal_Damage", events);
+
+        // `rr:retaliate-x` -- "after this character is attacked, deal X damage
+        // to the attacker". After the damage, and only if the character is
+        // still in play (`.2`).
+        Damage.Retaliate(
+            world, facts, target, world.Cards[attack.Enemy], Steps.EnemyAttacks, events);
     }
 
     /// <summary>

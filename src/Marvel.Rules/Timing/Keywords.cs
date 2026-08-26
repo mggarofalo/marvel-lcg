@@ -25,4 +25,35 @@ public static class Keywords
     /// minion to the villain.
     /// </summary>
     public const string Overkill = "overkill";
+
+    /// <summary>
+    /// Whether this enemy is given a boost card when it activates —
+    /// <c>rr:villainous</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:attack-enemy-activation.step.1</c> and
+    /// <c>rr:scheme-enemy-activation.step.1</c> say the same thing: "if a
+    /// villain, <b>or a minion with the villainous keyword</b>, is attacking,
+    /// give it one facedown boost card from the encounter deck. <i>(If a minion
+    /// without the villainous keyword is attacking, skip this step.)</i>"
+    /// </para>
+    /// <para>
+    /// So the boost card is a villain's by default and a minion's only by
+    /// keyword — 49 minions in the pool carry it and the rest do not.
+    /// <b>Skipping matters beyond the icons</b>: taking a card off the encounter
+    /// deck moves every later deal.
+    /// </para>
+    /// </remarks>
+    /// <param name="card">The activating enemy.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="players">How many players are in the game.</param>
+    public static bool IsBoosted(State.Card card, State.ICardFacts facts, int players)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        return facts.Kind(card.FaceId) != State.CardKind.Minion
+            || facts.PrintedValue(card.FaceId, "Villainous", players) > 0;
+    }
 }

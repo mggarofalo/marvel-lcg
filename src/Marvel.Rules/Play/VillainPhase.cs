@@ -154,7 +154,7 @@ public static class VillainPhase
                 break;
 
             case Steps.GiveBoostCard:
-                Attack.GiveBoostCard(world, events);
+                Attack.GiveBoostCard(world, facts, events);
                 break;
 
             case Steps.DeclareDefender:
@@ -190,7 +190,7 @@ public static class VillainPhase
                 break;
 
             case Steps.EndVillainPhase:
-                PhaseEnd.EndVillainPhase(world, events);
+                PhaseEnd.EndVillainPhase(world, facts, events);
                 break;
 
             case Steps.DrawToHandSize:
@@ -319,7 +319,13 @@ public static class VillainPhase
         List<GameEvent> events)
     {
         long scheme = facts.PrintedValue(villain.FaceId, "SCH", world.Players);
-        scheme += ResolveBoostCard(world, facts, events);
+
+        // `rr:scheme-enemy-activation.step.1`, the same clause the attack has:
+        // a villain always, a minion only with `rr:villainous`.
+        if (Keywords.IsBoosted(villain, facts, world.Players))
+        {
+            scheme += ResolveBoostCard(world, facts, events);
+        }
 
         var target = world.TheCardIn(DeckType.MainSchemesArea);
         if (target is not null)

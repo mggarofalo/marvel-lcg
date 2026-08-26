@@ -59,12 +59,40 @@ public static class PhaseEnd
     /// <c>rr:villain-phase.step.6</c>.
     /// </summary>
     /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
     /// <param name="events">Where to record what happened.</param>
-    public static void EndVillainPhase(World world, List<GameEvent> events) =>
+    public static void EndVillainPhase(World world, ICardFacts facts, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(events);
+
+        // `rr:temporary.1` -- "**Forced Interrupt**: when the round ends,
+        // discard this card from play." A forced interrupt resolves *before*
+        // its triggering condition (`rr:interrupt.3`), so a temporary card goes
+        // before step 6a expires anything -- which is why this is here rather
+        // than after `End`.
+        foreach (var area in world.Areas.ToList())
+        {
+            if (!DeckTypes.IsInPlay(area.Type))
+            {
+                continue;
+            }
+
+            foreach (var card in area.Cards.ToList())
+            {
+                if (facts.PrintedValue(card.FaceId, "Temporary", world.Players) > 0)
+                {
+                    Discard.Card(world, card, "end of round", events);
+                }
+            }
+        }
+
         End(world,
             new Occurrence(0, [VillainPhaseEnds, RoundEnds]),
             [TimingPoints.EndOfVillainPhase, TimingPoints.EndOfRound, TimingPoints.EndOfTurn],
             events);
+    }
 
     /// <summary>
     /// End the player phase — <c>rr:end-of-player-phase.step.4</c> and

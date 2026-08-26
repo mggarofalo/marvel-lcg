@@ -88,15 +88,31 @@ public static class BasicPowers
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
-    public static IReadOnlyList<Card> Thwartable(World world, ICardFacts facts)
+    /// <param name="player">Who is thwarting — <c>rr:patrol</c> is theirs.</param>
+    public static IReadOnlyList<Card> Thwartable(World world, ICardFacts facts, int player)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+
+        // **Asked before the loop, not inside it.** `World.AreaOf` makes the
+        // area when there is none, so calling it while iterating `world.Areas`
+        // can add to the list being walked -- which it did, and the exception
+        // was the only warning.
+        //
+        // `rr:patrol.1`, as a constant ability: "the engaged player cannot
+        // thwart the main scheme." The main scheme only -- a side scheme is
+        // still fair game, which is the difference from `rr:guard`.
+        bool patrolled = Patrolled(world, facts, player);
 
         var schemes = new List<Card>();
         foreach (var area in world.Areas)
         {
             if (area.Type is not (DeckType.MainSchemesArea or DeckType.SideSchemesArea))
+            {
+                continue;
+            }
+
+            if (area.Type == DeckType.MainSchemesArea && patrolled)
             {
                 continue;
             }
@@ -169,6 +185,11 @@ public static class BasicPowers
             world, facts, enemy,
             StateFields.Modified(world, character, "attack", facts, world.Players),
             AttackVerb, AttackVerb, events);
+
+        // `rr:attack-player-ability-type.5.1`: "each attacked enemy with the
+        // retaliate X keyword that is still in play after the attack resolves
+        // deals its retaliate damage to the attacking character."
+        Damage.Retaliate(world, facts, enemy, character, AttackVerb, events);
     }
 
     /// <summary>
@@ -196,7 +217,7 @@ public static class BasicPowers
         var character = seat.IdentityCard;
         Require(world, facts, seat, Forms.Hero, ThwartVerb);
 
-        if (!Thwartable(world, facts).Any(target => target.ObjectId == scheme.ObjectId))
+        if (!Thwartable(world, facts, player).Any(target => target.ObjectId == scheme.ObjectId))
         {
             throw new RulesNotImplementedException(
                 $"card {scheme.ObjectId} is not a scheme {seat.Name} can thwart");
@@ -204,6 +225,21 @@ public static class BasicPowers
 
         Exhaust(character, ThwartVerb, events);
         RemoveThreat(world, facts, character, scheme, events);
+    }
+
+    /// <summary>Whether a basic thwart against this scheme uses ATK.</summary>
+    /// <remarks>
+    /// <c>rr:assault.1</c>, as a constant ability: "while a character is making
+    /// a basic thwart against this scheme, that character uses its ATK instead
+    /// of its THW."
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="scheme">The scheme being thwarted.</param>
+    public static bool UsesAttack(World world, ICardFacts facts, Card scheme)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        return Assaulted(world, facts, scheme);
     }
 
     /// <summary>
@@ -299,7 +335,7 @@ public static class BasicPowers
         bool attacking = string.Equals(verb, AttackVerb, StringComparison.Ordinal);
         var legal = attacking
             ? Attackable(world, facts, ally.Owner)
-            : Thwartable(world, facts);
+            : Thwartable(world, facts, ally.Owner);
 
         if (!legal.Any(option => option.ObjectId == target.ObjectId))
         {
@@ -309,12 +345,21 @@ public static class BasicPowers
 
         Exhaust(ally, verb, events);
 
+        // `rr:assault`: "while a character is making a basic thwart against this
+        // scheme, that character uses its **ATK instead of its THW**." So the
+        // field an ally used is not always the one the verb names, and `.2`
+        // sends the consequential damage after it: "it takes the consequential
+        // damage listed under its ATK instead of its THW".
+        bool byAttack = attacking || Assaulted(world, facts, target);
+
         if (attacking)
         {
             Damage.Deal(
                 world, facts, target,
                 StateFields.Modified(world, ally, "attack", facts, world.Players),
                 verb, verb, events);
+
+            Damage.Retaliate(world, facts, target, ally, verb, events);
         }
         else
         {
@@ -329,14 +374,26 @@ public static class BasicPowers
         // the printed half is read and the modified half is looked up -- the
         // same split as `Damage.Health`.
         long consequential =
-            facts.ConsequentialDamage(ally.FaceId, attacking ? "ATK" : "THW")
+            facts.ConsequentialDamage(ally.FaceId, byAttack ? "ATK" : "THW")
             + StateFields.Modified(
                 world, ally,
-                attacking ? "attack_consequential_damage" : "thwart_consequential_damage",
+                byAttack ? "attack_consequential_damage" : "thwart_consequential_damage",
                 facts, world.Players);
 
         Damage.Deal(world, facts, ally, consequential, verb, "Consequential_Damage", events);
     }
+
+    /// <summary>
+    /// Whether a minion with <c>rr:patrol</c> is engaged with this player.
+    /// </summary>
+    private static bool Patrolled(World world, ICardFacts facts, int player) =>
+        world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player)).Cards
+            .Any(minion => StateFields.Modified(
+                world, minion, "patrol", facts, world.Players) > 0);
+
+    /// <summary>Whether a scheme carries <c>rr:assault</c>.</summary>
+    private static bool Assaulted(World world, ICardFacts facts, Card scheme) =>
+        StateFields.Modified(world, scheme, "assault", facts, world.Players) > 0;
 
     /// <summary>The seat a minion is engaged with, or -1.</summary>
     private static int Engaged(World world, Card enemy) =>
@@ -395,8 +452,9 @@ public static class BasicPowers
         World world, ICardFacts facts, Card character, Card scheme, List<GameEvent> events)
     {
         long held = scheme.Tokens.GetValueOrDefault("k_threat");
+        string power = Assaulted(world, facts, scheme) ? "attack" : "thwart";
         long removed = Math.Min(
-            held, StateFields.Modified(world, character, "thwart", facts, world.Players));
+            held, StateFields.Modified(world, character, power, facts, world.Players));
 
         scheme.PlaceTokens("k_threat", -removed);
         events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
