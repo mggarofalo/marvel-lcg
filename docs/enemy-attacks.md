@@ -202,5 +202,4 @@ That is only visible once the threat is placed in between. Prelate Armor's
 "**Forced Response:** After Unus schemes, give him a tough status card" had been
 resolving at the *start* of the activation, and nothing showed it: a tough card
 is a tough card whichever side of the scheme it lands on. The event order is
-what shows it, which is what its test asserts. The Python engine reads the card
-the same way — its factory is `AfterUnitSchemeEnd`.
+what shows it, which is what its test asserts.

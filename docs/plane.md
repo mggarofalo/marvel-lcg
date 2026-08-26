@@ -24,7 +24,7 @@ plane module add-work-items --module-id "Corpus and Oracle" --issues "$ID" -p MA
 |---|---|
 | **Foundations** | Repo guidance, agent instructions, architecture decisions, dev tooling |
 | **Corpus and Oracle** | Headless bot, determinism audit, coverage-directed replay corpus. Produces the behavioral oracle everything else validates against. |
-| **Spec Extraction** | Behavioral specs authored from printed card text, validated against the Python engine before being trusted |
+| **Spec Extraction** | Behavioral specs authored from printed card text. Every one is a draft — see [specs/README.md](../specs/README.md) |
 | **Engine Core** | The C# rules engine |
 | **Card DSL and Port** | Data-only card ability DSL, then the card ports |
 | **Client and Integration** | Reconnecting the existing web client |
