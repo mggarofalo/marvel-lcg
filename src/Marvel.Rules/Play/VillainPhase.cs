@@ -722,27 +722,25 @@ public static class VillainPhase
         // above, because a cancelled activation is not one.
         world.Activation = new EnemyActivation(villain.ObjectId, seat, Attacking: false);
 
-        // `rr:scheme-enemy-activation.step.1`, the same clause the attack has:
-        // a villain always, a minion only with `rr:villainous`.
-        long icons = Keywords.IsBoosted(villain, facts, world.Players)
-            ? ResolveBoostCard(world, facts, abilities, seat, events)
-            : 0;
-
-        // `rr:scheme-enemy-activation.step.2.c` -- "increase the scheming
-        // enemy's SCH value by one for each boost icon on the card", which is a
-        // modifier and is registered as one. The attack's step has always done
-        // this; here the icons had been a local number added at the end, and a
-        // number cannot survive the step boundary below.
-        if (icons > 0)
-        {
-            world.Effects.Register(new Timing.ContinuousEffect(
-                Timing.EffectSource.LastingEffect,
-                Kind: "scheme",
-                Amount: icons,
-                Card: villain.ObjectId,
-                Affects: villain.ObjectId,
-                Lasts: Duration.UntilEndOf(TimingPoints.EndOfActivation)));
-        }
+        // **A scheming enemy holds boost cards, plural.**
+        // `rr:scheme-enemy-activation.step.1` gives the card to the enemy --
+        // "give **it** one facedown boost card" -- and step 2 resolves "each of
+        // the scheming enemy's boost cards, one at a time and in the order in
+        // which they were dealt", ending at `.step.2.e`: "if the enemy has any
+        // boost cards remaining, repeat these steps with the next boost card."
+        // That sentence cannot be true of a card drawn and discarded inside one
+        // call, which is what this was: exactly one, with nowhere to put a
+        // second. MARVEL-250.
+        //
+        // So the card goes where the rule puts it, on the enemy, and steps 1
+        // and 2 become the two steps `rr:attack-enemy-activation` writes the
+        // same way -- its step 1 word for word, and its step 3 sub-step for
+        // sub-step, differing only in naming SCH where the attack names ATK.
+        int round = world.Agenda.Current?.Round ?? 0;
+        world.Agenda.Then(new PhaseStep(
+            Steps.GiveBoostCard, round, 1, Index: seat, Subject: villain.ObjectId));
+        world.Agenda.Then(new PhaseStep(
+            Steps.FlipBoostCards, round, 2, Index: seat, Subject: villain.ObjectId));
 
         // **Step 3 is a step, because step 2 can stop and ask.** A `Boost`
         // ability that offers the player a choice suspends, and the threat used
@@ -752,7 +750,7 @@ public static class VillainPhase
         // `FlipBoostCards` is step 3 and `DealAttackDamage` is step 4.
         world.Agenda.Then(new PhaseStep(
             Steps.SchemeThreat,
-            world.Agenda.Current?.Round ?? 0,
+            round,
             3,
             Index: seat,
             Subject: villain.ObjectId,
@@ -799,64 +797,6 @@ public static class VillainPhase
         // activation, and `rr:activation.6` gives an activation an end.
         world.Effects.Expire(TimingPoints.EndOfActivation);
         world.Activation = null;
-    }
-
-    /// <summary>Gives the enemy a boost card, resolves it, and returns its icons.</summary>
-    /// <remarks>
-    /// <para>
-    /// <c>rr:boost-boost-icon.1</c>: a star icon is not a boost icon and adds
-    /// nothing. The printed <c>Boost</c> attribute is the icon count already —
-    /// <c>01186</c> Advance has none and <c>01101</c> Hydra Mercenary has one —
-    /// so a star card and a zero-boost card are the same number here and differ
-    /// only in having an ability, which the interpreter will run.
-    /// </para>
-    /// <para>
-    /// <c>rr:boost-boost-icon.5</c>: discard it after applying. The boost card
-    /// is drawn and discarded <b>before</b> the encounter cards are dealt, which
-    /// is why the recorded discard pile has it underneath.
-    /// </para>
-    /// </remarks>
-    private static long ResolveBoostCard(
-        World world, ICardFacts facts, ICardAbilities abilities, int seat,
-        List<GameEvent> events)
-    {
-        var deck = world.AreaOf(DeckType.EncounterDeck);
-        var boost = EncounterDeck.TakeTop(world, "boost", events);
-        if (boost is null)
-        {
-            return 0;
-        }
-
-        // Through the boosting area and not straight to the discard. No
-        // recorded step catches a card in transit -- the whole activation
-        // happens between two decisions -- but passing through is what
-        // registers the card's token pools, and the discarded card's
-        // `k_threat` key is on the wire. See `DeckTypes.GrantsTokenPool`.
-        var boosting = world.AreaOf(DeckType.BoostingArea);
-        boosting.Append(boost);
-
-        // `rr:scheme-enemy-activation.step.2.b` -- "resolve any **Boost**
-        // abilities, indicated by the star icon in the boost area", and it is
-        // step 2b: while the card is faceup in the boosting area, before 2d
-        // discards it.
-        events.AddRange(abilities.Boost(world, boost, seat));
-
-        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
-        World.MoveToTop(boost, discard);
-
-        events.Add(new CardsMoved(
-            Places.Reference(deck),
-            Places.Reference(discard),
-            [new Landing(boost.ObjectId, discard.Cards.Count - 1)])
-        {
-            Trigger = "villain phase", Verb = "Boost",
-        });
-
-        // `rr:amplify-icon`, the same clause on the scheming side: a boost card
-        // turned faceup during an enemy activation gains one icon per amplify
-        // icon in play.
-        return facts.PrintedValue(boost.FaceId, "Boost", world.Players)
-            + MainScheme.Amplify(world, facts);
     }
 
     /// <summary>Step 3. One encounter card to each player, in player order.</summary>
