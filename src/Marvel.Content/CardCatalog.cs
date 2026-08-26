@@ -81,13 +81,79 @@ public sealed class CardCatalog : ICardFacts
     public IReadOnlyDictionary<string, string> Attributes(string faceId) => Find(faceId).Attributes;
 
     /// <inheritdoc />
+    /// <remarks>
+    /// <para>
+    /// <b>The <c>*</c> means two different things and the card kind is what
+    /// tells them apart.</b> On a villain's <c>HP</c>, a scheme's threat values
+    /// and a handful of costs it is the per-player icon and
+    /// <see cref="Evaluate"/> multiplies. <b>On an ally's <c>ATK</c> or
+    /// <c>THW</c> it is a consequential damage icon</b>, and multiplying by the
+    /// player count is simply wrong: Black Cat's <c>THW</c> of <c>"1*"</c> is
+    /// thwart 1 with one consequential damage, not thwart 3 at three players.
+    /// </para>
+    /// <para>
+    /// Measured over the pool: 660 of the 664 ally <c>ATK</c>/<c>THW</c> values
+    /// have the number before the star equal to MarvelSDB's printed value and
+    /// the star count equal to its <c>attack_cost</c>/<c>thwart_cost</c>. The
+    /// four that do not are two cards MarvelSDB records with a base of
+    /// <c>-1</c>, where the star count still agrees.
+    /// </para>
+    /// <para>
+    /// <b>No recording could catch this.</b> Every recorded game has one
+    /// player, and <c>1*</c> at one player is 1 either way. 642 attribute
+    /// values on allies were being read wrong at every other table size.
+    /// </para>
+    /// </remarks>
     public long PrintedValue(string faceId, string attribute, int players, long fallback = 0)
     {
         ArgumentNullException.ThrowIfNull(attribute);
-        return Find(faceId).Attributes.TryGetValue(attribute, out var printed)
-            ? Evaluate(printed, players, fallback)
-            : fallback;
+        var entry = Find(faceId);
+        if (!entry.Attributes.TryGetValue(attribute, out var printed))
+        {
+            return fallback;
+        }
+
+        return IsConsequential(entry.Kind, attribute)
+            ? Evaluate(printed.Replace("*", string.Empty, StringComparison.Ordinal),
+                       players, fallback)
+            : Evaluate(printed, players, fallback);
     }
+
+    /// <summary>
+    /// How many consequential damage icons sit under one of an ally's powers —
+    /// <c>rr:consequential-damage</c>.
+    /// </summary>
+    /// <remarks>
+    /// "After an ally attacks, it takes consequential damage equal to the
+    /// number of consequential damage icons <b>beneath its ATK field</b>." The
+    /// icons are printed in the same attribute as the value, as stars after it.
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    /// <param name="attribute">The power, <c>ATK</c> or <c>THW</c>.</param>
+    public long ConsequentialDamage(string faceId, string attribute)
+    {
+        ArgumentNullException.ThrowIfNull(attribute);
+        var entry = Find(faceId);
+        return IsConsequential(entry.Kind, attribute)
+               && entry.Attributes.TryGetValue(attribute, out string? printed)
+            ? printed.Count(letter => letter == '*')
+            : 0;
+    }
+
+    // `rr:consequential-damage` is an ally rule -- "after an **ally** attacks"
+    // -- and only these two fields have icons beneath them. Everything else
+    // keeps the per-player reading.
+    //
+    // **The kind check cannot be observed on today's pool** and is kept anyway:
+    // no non-ally card prints a starred `ATK` or `THW`, so deleting it changes
+    // nothing a test could see. It is the difference between "allies have
+    // consequential damage" and "a star in ATK is consequential damage", and
+    // the first is what the rule says. A minion printing a starred ATK in some
+    // later pack would find the second reading already wrong.
+    private static bool IsConsequential(CardKind kind, string attribute) =>
+        kind == CardKind.Ally
+        && (string.Equals(attribute, "ATK", StringComparison.Ordinal)
+            || string.Equals(attribute, "THW", StringComparison.Ordinal));
 
     /// <summary>
     /// The digest's spelling of an engine trait, without the <c>t_</c> prefix.

@@ -98,18 +98,104 @@ public sealed class AttackTests
 
     [Rule("rr:defend-defense.3")]
     [Fact]
-    public void AReadyAllyThatCouldDefendSaysSoRatherThanBeingIgnored()
+    public void AReadyAllyIsOfferedAsADefenderBesideTheHero()
     {
-        // "An ally can exhaust to defend against an enemy attack. Damage from
-        // the attack is dealt to that ally." Not offering it would take the
-        // choice away and put the damage on the wrong character.
+        // "An ally can exhaust to defend against an enemy attack." Both
+        // characters can, so both are offered -- `rr:defend-defense.1` limits
+        // the *player*, not the number of candidates.
         var printed = Printed(atk: 2, boost: 0);
         var world = Board(printed);
-        world.CreateCard(
+        var ally = world.CreateCard(
             "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Finish(world, printed));
-        Assert.Contains("ally", thrown.Message, StringComparison.Ordinal);
+        var asked = Sequence.Work(world, printed, new NoCardAbilities(), []);
+
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Defender, asked.Asking);
+        Assert.Equal(
+            [world.Seats[0].IdentityCard.ObjectId, ally.ObjectId],
+            asked.Affordances.Select(option => option.AnchorId));
+    }
+
+    [Rule("rr:defend-defense.3")]
+    [Rule("rr:exhausted.2")]
+    [Fact]
+    public void AnExhaustedAllyIsNotOfferedAsADefender()
+    {
+        // "An ally can **exhaust** to defend", and `rr:exhausted.2`: a card
+        // that must exhaust to pay for an ability "cannot be used until the
+        // card is ready". Offering one would be an option that could not be
+        // taken.
+        var printed = Printed(atk: 2, boost: 0);
+        var world = Board(printed);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        ally.Exhaust();
+
+        var asked = Sequence.Work(world, printed, new NoCardAbilities(), []);
+
+        Assert.NotNull(asked);
+        Assert.Equal(
+            [world.Seats[0].IdentityCard.ObjectId],
+            asked.Affordances.Select(option => option.AnchorId));
+    }
+
+    [Rule("rr:defend-defense.3")]
+    [Rule("rr:defend-defense.3.1")]
+    [Fact]
+    public void AnAllyDefendingTakesTheDamageAndTheHeroTakesNone()
+    {
+        // "Damage from the attack is dealt to that ally", and `.3.1`: "that
+        // ally becomes the **target character** for that attack, and its
+        // controller becomes the target player."
+        //
+        // **And its DEF does not apply.** `rr:defend-defense.2`'s reduction is
+        // the hero's basic defense power; an ally exhausting to defend is a
+        // different clause with no reduction in it. Printed DEF 3 here against
+        // an attack of 2, so a hero defending would take nothing -- the ally
+        // takes all of it.
+        var printed = Printed(atk: 2, boost: 0, def: 3);
+        var world = Board(printed);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var events = new List<GameEvent>();
+
+        var asked = Sequence.Work(world, printed, new NoCardAbilities(), events);
+        Sequence.Answer(
+            world, printed, new NoCardAbilities(), asked!, Decision.Take(ally.ObjectId), events);
+        Sequence.Finish(world, printed, new NoCardAbilities(), events);
+
+        Assert.Equal(2, ally.Damage);
+        Assert.False(ally.Ready);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.True(world.Seats[0].IdentityCard.Ready);
+    }
+
+    [Rule("rr:ally.1")]
+    [Fact]
+    public void AnAllyDefeatedByTheAttackIsDiscarded()
+    {
+        // "If an ally's remaining hit points are reduced to zero, it is
+        // defeated and discarded from play." Three hit points against an attack
+        // of four, and no DEF to reduce it.
+        var printed = Printed(atk: 4, boost: 0);
+        var world = Board(printed);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+
+        // A deck with a card in it. An empty one beside an empty discard pile
+        // is `rr:player-deck.4`, and the defeated ally landing in the discard
+        // resets the deck and takes the ally straight back into it -- correct,
+        // and not what this is about.
+        world.CreateCard("ally", world.Seats[0].Deck);
+        var events = new List<GameEvent>();
+
+        var asked = Sequence.Work(world, printed, new NoCardAbilities(), events);
+        Sequence.Answer(
+            world, printed, new NoCardAbilities(), asked!, Decision.Take(ally.ObjectId), events);
+        Sequence.Finish(world, printed, new NoCardAbilities(), events);
+
+        Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
     }
 
     [Rule("rr:defend-defense.5")]
