@@ -60,6 +60,12 @@ internal static class AuthoredCards
     public static readonly string[] ReadAndSilent =
         ["01094", "01097b", "01101", "01102", "01108"];
 
+    /// <summary>The printed id of "Caught Off Guard".</summary>
+    public const string CaughtOffGuard = "01188";
+
+    /// <summary>The printed id of Rhino's second stage.</summary>
+    public const string RhinoTwo = "01095";
+
     /// <summary>The printed id of "Advance".</summary>
     public const string Advance = "01186";
 
