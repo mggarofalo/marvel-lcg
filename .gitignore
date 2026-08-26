@@ -1,5 +1,11 @@
 /.vscode/**
 
+# Compiled Python bytecode. No Python source remains, but a stale
+# `__pycache__` outlives the file it was compiled from -- and once the tree it
+# sat under stops being ignored, `git add -A` will commit every one of them.
+**/*.pyc
+__pycache__/
+
 # C# engine (src/)
 [Bb]in/
 [Oo]bj/
