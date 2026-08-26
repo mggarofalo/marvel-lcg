@@ -103,6 +103,85 @@ public sealed class PrelateArmorTests
             "the threat is placed before the status is given");
     }
 
+    [Rule("rr:scheme-enemy-activation.step.3")]
+    [Fact]
+    public void TheArmoursPrintedSchemeIconIsAddedToTheThreatUnusPlaces()
+    {
+        // "Place threat on the main scheme equal to the scheming enemy's
+        // **modified** SCH value." The armour prints `SCH+ 1` and Unus's first
+        // stage prints SCH 1, so an attachment nobody reads is the difference
+        // between one threat and two.
+        //
+        // The attack's own step has always read a modified ATK -- the same word
+        // in the same place, in `Attack.Amount` -- and this one had been reading
+        // a printed number, so every modifier to a scheming enemy was worth
+        // nothing at all.
+        long armoured = Placed(armour: true);
+        long bare = Placed(armour: false);
+
+        Assert.Equal(1, bare);
+        Assert.Equal(2, armoured);
+    }
+
+    [Rule("rr:scheme-enemy-activation.step.2")]
+    [Fact]
+    public void ABoostCardsOwnModifierIsInForceByTheTimeTheSchemeIsMeasured()
+    {
+        // Step 2 resolves the boost cards; step 3 reads the modified SCH. The
+        // order is the rule and it is observable: a value read before the boost
+        // card resolved would miss whatever the boost card did, which is the
+        // other half of the same line.
+        //
+        // Hand-written, because no printed card in this engine's pool yet
+        // changes SCH from a boost card — and the ordering is a property of the
+        // step rather than of any card.
+        var board = Bare();
+        var main = board.World.TheCardIn(DeckType.MainSchemesArea)!;
+        long before = main.Tokens.GetValueOrDefault("k_threat");
+
+        var top = board.World.AreaOf(DeckType.EncounterDeck).Cards[^1];
+        var abilities = new AbilityRunner(AbilityCatalog.Parse(
+            $$"""
+            { "cards": [ { "card": "{{top.FaceId}}", "abilities": [ {
+                "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+                "effect": { "grantUntil": { "card": { "query": "villain" },
+                                            "keyword": "scheme", "amount": 2,
+                                            "until": "EndOfActivation" } }
+            } ] } ] }
+            """));
+
+        board.World.Abilities = abilities;
+        Schemes(board with { Abilities = abilities });
+
+        // Unus stage one prints SCH 1, and the boost card is worth two more.
+        Assert.Equal(3, main.Tokens.GetValueOrDefault("k_threat") - before);
+    }
+
+    /// <summary>How much threat one scheme by Unus puts on the main scheme.</summary>
+    private static long Placed(bool armour)
+    {
+        var board = armour ? Attacking(hero: false) : Bare();
+        var main = board.World.TheCardIn(DeckType.MainSchemesArea)!;
+        long before = main.Tokens.GetValueOrDefault("k_threat");
+        Schemes(board);
+        return main.Tokens.GetValueOrDefault("k_threat") - before;
+    }
+
+    /// <summary>The same board with the armour left in the encounter deck.</summary>
+    private static Board Bare()
+    {
+        var abilities = AuthoredCards.Runner();
+        var world = WorldSetup.Deal(
+            Cards,
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, ["spider_man"]), Cards),
+            ["Spider-Man"],
+            Seed,
+            abilities);
+
+        var armor = world.Cards.First(card => card.FaceId == AuthoredCards.PrelateArmor);
+        return new Board(world, abilities, armor, world.TheCardIn(DeckType.VillainArea)!);
+    }
+
     [Rule("rr:initiating-abilities.step.3")]
     [Fact]
     public void AttackingUnusOffersTheDiscardAtItsPrintedPrice()

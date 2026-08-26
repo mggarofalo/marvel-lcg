@@ -702,14 +702,27 @@ public static class VillainPhase
             return;
         }
 
-        long scheme = facts.PrintedValue(villain.FaceId, "SCH", world.Players);
-
         // `rr:scheme-enemy-activation.step.1`, the same clause the attack has:
         // a villain always, a minion only with `rr:villainous`.
-        if (Keywords.IsBoosted(villain, facts, world.Players))
-        {
-            scheme += ResolveBoostCard(world, facts, abilities, seat, events);
-        }
+        long icons = Keywords.IsBoosted(villain, facts, world.Players)
+            ? ResolveBoostCard(world, facts, abilities, seat, events)
+            : 0;
+
+        // **Modified, and read after the boost cards.**
+        // `rr:scheme-enemy-activation.step.3`: "place threat on the main scheme
+        // equal to the scheming enemy's **modified** SCH value". Step 2 resolves
+        // the boost cards before it, so an ability on one that changes SCH is in
+        // force by the time this is asked.
+        //
+        // Two bugs in one line, and the attack's own step had neither.
+        // `Attack.Amount` reads its enemy's *modified* ATK -- the same word in
+        // the same place -- and this had been reading a printed number, so every
+        // modifier to a scheming enemy's SCH was worth nothing: Prelate Armor
+        // sits on Unus printing `SCH+ 1` and added not one threat to a single
+        // scheme. Reading it before the boost card resolved would have missed
+        // whatever the boost card did, which is the other half.
+        long scheme = StateFields.Modified(world, villain, "scheme", facts, world.Players)
+            + icons;
 
         var target = world.TheCardIn(DeckType.MainSchemesArea);
         if (target is not null)
