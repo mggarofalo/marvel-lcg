@@ -642,6 +642,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 RevealCard(Find(node.Argument, cast), cast);
                 break;
 
+            case "discardAtRandom":
+                DiscardAtRandom(node, cast);
+                break;
+
             case "discardUntil":
                 DiscardUntil(node, cast);
                 break;
@@ -1219,6 +1223,68 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.Trigger, cast.Events);
         }
     }
+
+    /// <summary>
+    /// "Discard N cards at random from … hand".
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The draw is a wire format.</b> One MT19937 stream runs the whole
+    /// game, so how many numbers this takes and in what order decides every
+    /// later shuffle and every later random card. <c>EngineRandom.Choice</c> is
+    /// the ported primitive and is pinned against recorded RNG vectors; this
+    /// takes one draw per card discarded, from the hand as it stands after the
+    /// previous one.
+    /// </para>
+    /// <para>
+    /// "From <b>each</b> player's hand" goes in player order —
+    /// <c>rr:in-player-order</c> — because the order is what the stream sees.
+    /// A player with an empty hand discards nothing and takes no draw.
+    /// </para>
+    /// <para>
+    /// What it records is <c>result.resourceTypes</c>: how many <i>different</i>
+    /// resource types went, which is what "for each different resource type
+    /// discarded this way" counts. A card printing two of one letter is one
+    /// type, and a card printing none is none.
+    /// </para>
+    /// </remarks>
+    private static void DiscardAtRandom(AbilityNode node, Cast cast)
+    {
+        long count = Amount(node.Require("count"), cast);
+        var types = new SortedSet<char>();
+        long discarded = 0;
+
+        foreach (int seat in Seats(node.Require("player"), cast))
+        {
+            var hand = cast.World.Seats[seat].Hand;
+            for (long gone = 0; gone < count && hand.Cards.Count > 0; gone++)
+            {
+                var card = cast.World.Random.Choice(hand.Cards);
+                types.UnionWith(Resources.GeneratedBy(card.FaceId, cast.World.Facts));
+                Marvel.Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
+                discarded += 1;
+            }
+        }
+
+        cast.Results["discarded"] = discarded;
+        cast.Results["resourceTypes"] = types.Count;
+    }
+
+    /// <summary>Which seats a word names.</summary>
+    /// <remarks>
+    /// <c>rr:each-player.1</c> resolves "each player" in player order when the
+    /// effect does not say otherwise, and <c>rr:player-elimination.6</c> is why
+    /// that is <c>PlayerOrder</c>: "effects that refer to the players in the
+    /// game ignore eliminated players".
+    /// </remarks>
+    private static IEnumerable<int> Seats(AbilityValue value, Cast cast) =>
+        Word(value) switch
+        {
+            "you" => [cast.Player],
+            "each" => cast.World.PlayerOrder,
+            _ => throw new AbilityException(
+                $"'{Word(value)}' does not name a set of players"),
+        };
 
     /// <summary>
     /// "Discard cards from the top of the encounter deck until a … is

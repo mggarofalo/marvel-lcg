@@ -445,6 +445,27 @@
           "effect": { "discard": "this" }
         }
       ]
+    },
+    {
+      "card": "01169",
+      "name": "The Vulture's Plans",
+      "note": "When Revealed: Discard 1 card at random from each player's hand. Place 1 threat on the main scheme for each different resource type discarded this way. 'Each player' goes in player order -- rr:each-player.1 -- and that order is what the random stream sees, so it is a wire fact rather than a tidiness. 'Each different resource type' counts distinct letters among what was discarded: a card printing two of one letter is one type and a card printing none is none, so the threat is between zero and four however many players there are.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "seq": [
+              { "discardAtRandom": { "player": "each", "count": 1 } },
+              {
+                "placeThreat": {
+                  "scheme": { "query": "mainScheme" },
+                  "amount": { "result": "resourceTypes" }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }
