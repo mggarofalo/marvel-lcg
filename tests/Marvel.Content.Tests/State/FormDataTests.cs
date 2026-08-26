@@ -52,11 +52,13 @@ public sealed class FormDataTests
         ("32031b", "mass"),    // Phased
         ("50035a", "suit"),    // Assault
         ("50035b", "suit"),    // Stealth
+        ("57046a", "mass"),    // Colossal
+        ("57046b", "mass"),    // Miniature
     ];
 
     [Rule("rr:form-change-form.6")]
     [Fact]
-    public void TheFormKeywordIsOnExactlyTheNineFacesThatPrintIt()
+    public void TheFormKeywordIsOnExactlyTheFacesThatPrintIt()
     {
         // Both directions. A test that only checked the nine would pass while
         // the reader marked half the pool, and that is the failure mode a text

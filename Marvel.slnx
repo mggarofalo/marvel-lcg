@@ -7,6 +7,7 @@
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Marvel.Rules.Index/Marvel.Rules.Index.csproj" />
+    <Project Path="tools/Marvel.Cards.Extract/Marvel.Cards.Extract.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Marvel.Core.Tests/Marvel.Core.Tests.csproj" />

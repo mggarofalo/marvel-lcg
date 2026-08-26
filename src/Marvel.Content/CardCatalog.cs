@@ -15,9 +15,10 @@ namespace Marvel.Content;
 /// this file exists.
 /// </para>
 /// <para>
-/// <b>Traits are read from the engine's list, not derived from the printed
-/// one.</b> They are two different lists and the digest is built from the
-/// engine's — see <see cref="TraitKey"/> and <c>docs/card-dataset.md</c>.
+/// The dataset is generated from the vendored MarvelSDB snapshot by
+/// <c>tools/Marvel.Cards.Extract</c>, so everything here is a reading of a
+/// printed card. <see cref="TraitKey"/> is the one place a printed word is
+/// reshaped, and it reshapes the spelling rather than the fact.
 /// </para>
 /// </remarks>
 public sealed class CardCatalog : ICardFacts
@@ -52,6 +53,20 @@ public sealed class CardCatalog : ICardFacts
         }
 
         return new CardCatalog(parsed);
+    }
+
+    /// <summary>Whether the dataset carries a face.</summary>
+    /// <remarks>
+    /// For a caller walking a <i>different</i> list — the vendored snapshot the
+    /// dataset is generated from carries one record for a double-sided upgrade
+    /// where this carries its two faces, so the two lists are not the same set
+    /// of ids.
+    /// </remarks>
+    /// <param name="faceId">A face id.</param>
+    public bool Has(string faceId)
+    {
+        ArgumentNullException.ThrowIfNull(faceId);
+        return cards.ContainsKey(faceId);
     }
 
     /// <inheritdoc />
@@ -181,41 +196,30 @@ public sealed class CardCatalog : ICardFacts
             || string.Equals(attribute, "THW", StringComparison.Ordinal));
 
     /// <summary>
-    /// The digest's spelling of an engine trait, without the <c>t_</c> prefix.
+    /// The digest's spelling of a trait, without the <c>t_</c> prefix.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <c>CardFace.GetInfoTraits</c> builds every key as
-    /// <c>f"t_{trait.replace(' ', '_').replace('!', '')}"</c> over the engine's
-    /// own trait list, so this is those two substitutions and nothing else. The
-    /// engine's traits are already upper-case and already carry no trailing
-    /// stop — <c>A.I.M</c> and <c>S.H.I.E.L.D</c> are stored that way.
+    /// A trait is a printed word and a digest key is a wire format, and the two
+    /// cannot be the same thing: "Hero for Hire" has spaces in it. So this is
+    /// two substitutions — a space becomes an underscore and a <c>!</c> goes —
+    /// and everything else is left as printed. <c>A.I.M</c> and
+    /// <c>S.H.I.E.L.D</c> keep their stops. <b>Which two substitutions is our
+    /// choice</b>; the only property they have to keep is holding still.
     /// </para>
     /// <para>
     /// <b>Two traits carry the <c>!</c>:</b> <c>CHASE!</c> and <c>TRAP!</c>, on
     /// five cards between them (<c>27102a</c>, <c>27102b</c>, <c>47031</c>,
     /// <c>47032</c>, <c>47033</c>). Dropping it is not cosmetic — the digest key
-    /// is <c>t_TRAP</c>, and a port that kept the <c>!</c> would emit
-    /// <c>t_TRAP!</c> and fail the byte comparison on every step those cards are
-    /// in play.
-    /// </para>
-    /// <para>
-    /// <b>This is not the printed spelling, and the difference is not only
-    /// spelling.</b> MARVEL-177 measured the two lists across 3,999 cards:
-    /// they disagree about the card itself on <b>twelve</b> — the engine gives
-    /// <c>01172</c> the <c>CRIMINAL</c> trait and the printed card has none;
-    /// <c>42016</c> is the other way round; <c>39029</c> is an engine typo,
-    /// <c>THESPYAN</c> for <c>THESPIAN</c>. They are reported as
-    /// <c>engine_traits_diverge</c> in <c>datasets/cards/anomalies.json</c>.
-    /// Reading the engine's list is what makes the twelve visible data rather
-    /// than a silent divergence.
+    /// is <c>t_TRAP</c>, and a reader that kept the <c>!</c> would emit
+    /// <c>t_TRAP!</c> for every step those cards are in play.
     /// </para>
     /// </remarks>
-    /// <param name="engineTrait">The trait as the engine's data stores it.</param>
-    public static string TraitKey(string engineTrait)
+    /// <param name="printedTrait">The trait as the printed card carries it.</param>
+    public static string TraitKey(string printedTrait)
     {
-        ArgumentNullException.ThrowIfNull(engineTrait);
-        return engineTrait.Replace(" ", "_", StringComparison.Ordinal)
+        ArgumentNullException.ThrowIfNull(printedTrait);
+        return printedTrait.Replace(" ", "_", StringComparison.Ordinal)
                           .Replace("!", string.Empty, StringComparison.Ordinal);
     }
 
@@ -262,46 +266,38 @@ public sealed class CardCatalog : ICardFacts
 
     private static Entry ReadEntry(JsonElement element)
     {
-        // Deliberately not the top-level `traits`, which is MarvelSDB's
-        // printed list. A card the engine does not have gets none, which is
-        // right: the engine cannot put a card it has never heard of into a
-        // digest.
         var traits = new List<string>();
         var attributes = new Dictionary<string, string>(StringComparer.Ordinal);
-        var kind = CardKind.Unknown;
-        if (element.TryGetProperty("engine", out var engine)
-            && engine.ValueKind == JsonValueKind.Object)
+
+        if (element.TryGetProperty("traits", out var printedTraits)
+            && printedTraits.ValueKind == JsonValueKind.Array)
         {
-            if (engine.TryGetProperty("traits", out var engineTraits)
-                && engineTraits.ValueKind == JsonValueKind.Array)
+            foreach (var trait in printedTraits.EnumerateArray())
             {
-                foreach (var trait in engineTraits.EnumerateArray())
+                if (trait.GetString() is { Length: > 0 } text)
                 {
-                    if (trait.GetString() is { Length: > 0 } text)
-                    {
-                        traits.Add(TraitKey(text));
-                    }
-                }
-            }
-
-            if (engine.TryGetProperty("type", out var type) && type.GetString() is string name)
-            {
-                kind = ToKind(name);
-            }
-
-            if (engine.TryGetProperty("attributes", out var printedAttributes)
-                && printedAttributes.ValueKind == JsonValueKind.Object)
-            {
-                foreach (var attribute in printedAttributes.EnumerateObject())
-                {
-                    attributes[attribute.Name] = attribute.Value.GetString() ?? string.Empty;
+                    traits.Add(TraitKey(text));
                 }
             }
         }
 
-        // MarvelSDB's `name`, not the engine's: the engine's card data carries
-        // no title at all, and `rr:villain-defeat.3` needs one. Rhino's three
-        // stages share it, which is the case the rule is written for.
+        var kind = element.TryGetProperty("type", out var type)
+            && type.GetString() is string name
+            ? ToKind(name)
+            : CardKind.Unknown;
+
+        if (element.TryGetProperty("attributes", out var printedAttributes)
+            && printedAttributes.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var attribute in printedAttributes.EnumerateObject())
+            {
+                attributes[attribute.Name] = attribute.Value.GetString() ?? string.Empty;
+            }
+        }
+
+        // `rr:identity.2` makes a title name one card, and `rr:villain-defeat.3`
+        // turns on whether two stages share one. Rhino's three do, which is the
+        // case that rule is written for.
         string title = element.TryGetProperty("name", out var printedName)
             ? printedName.GetString() ?? string.Empty
             : string.Empty;

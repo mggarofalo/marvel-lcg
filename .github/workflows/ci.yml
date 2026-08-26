@@ -65,6 +65,15 @@ jobs:
       - name: Test
         run: dotnet test --no-build --configuration Release
 
+      # `AGENTS.md` non-negotiable 8: a generated dataset is rebuildable
+      # offline and byte-identically. `datasets/cards/` is generated from the
+      # vendored MarvelSDB snapshot and `datasets/cards/supplement.json`, and
+      # nothing else -- so regenerating it here and comparing is the whole of
+      # what "generated" means. It also makes a hand edit a red build, which is
+      # the situation that non-negotiable exists to prevent.
+      - name: The card dataset is what the generator produces
+        run: dotnet run --project tools/Marvel.Cards.Extract --no-build --configuration Release -- check
+
       # The wall (MARVEL-162). `Directory.Build.targets` fails any build below
       # `Marvel.Godot` that can see `GodotSharp`, or that targets a framework
       # Godot cannot reference -- so the Build step above is already the
