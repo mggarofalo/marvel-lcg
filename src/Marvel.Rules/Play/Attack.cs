@@ -61,10 +61,25 @@ public static class Attack
     /// steps, which is why it is here and not a step of its own.
     /// </remarks>
     /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
     /// <param name="step">The attack step, whose subject is the attacker.</param>
-    public static void Initiate(World world, PhaseStep step)
+    /// <param name="events">Where to record what happened.</param>
+    public static void Initiate(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(events);
+
+        // `rr:stun-stunned.1`: "**Forced Interrupt**: when this character would
+        // attack, remove each stunned status card from it instead." *Instead*
+        // -- so the attack does not happen at all, and none of its six steps is
+        // scheduled. No boost card is given and no defender is asked for.
+        if (BasicPowers.Cancelled(
+            world, facts, world.Cards[step.Subject], Statuses.Stunned, events))
+        {
+            return;
+        }
 
         // rr:attack-enemy-activation.1 -- against both a player and a
         // character. The character is the player's identity unless an ability

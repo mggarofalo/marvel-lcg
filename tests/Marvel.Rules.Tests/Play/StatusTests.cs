@@ -1,0 +1,295 @@
+using Marvel.Rules.Events;
+using Marvel.Rules.Play;
+using Marvel.Rules.State;
+using Marvel.Tests;
+using Xunit;
+
+namespace Marvel.Rules.Tests.Play;
+
+/// <summary>
+/// Stunned and confused, and the two keywords that argue with them.
+/// </summary>
+/// <remarks>
+/// <c>rr:status-cards</c> names three, and Tough was the only one with any
+/// effect. These two are the other pair, and <c>rr:stalwart</c> and
+/// <c>rr:steady</c> are what make "carrying a status card" and "being that
+/// status" two different questions.
+/// </remarks>
+public sealed class StatusTests
+{
+    [Rule("rr:stun-stunned.1")]
+    [Rule("rr:stun-stunned.5")]
+    [Fact]
+    public void AStunnedHeroExhaustsAttacksNothingAndLosesTheStun()
+    {
+        // "**Forced Interrupt**: when this character would attack, remove each
+        // stunned status card from it instead", and `.5`: "costs associated
+        // with the attack attempt, **including exhausting the character**, must
+        // still be paid."
+        var printed = Cards();
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Statuses.Give(world, hero, Statuses.Stunned);
+
+        BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Assert.False(hero.Ready);
+        Assert.Equal(0, villain.Damage);
+        Assert.Equal(0, Statuses.Count(world, hero, Statuses.Stunned));
+    }
+
+    [Rule("rr:attack-player-ability-type.1.1")]
+    [Rule("rr:stun-stunned.5.1")]
+    [Fact]
+    public void AStunnedCharacterCanAttackWithNoLegalTarget()
+    {
+        // "A character can only initiate a basic attack if there is an enemy
+        // that can be attacked **or if that character is stunned**", and
+        // `.5.1` says the same from the other side. Attacking nothing is how
+        // the stun comes off.
+        var printed = Cards().With("minion", ("HP", "3"), ("Guard", "1"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+
+        // A guarding minion makes the villain an illegal target.
+        world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        Assert.DoesNotContain(
+            BasicPowers.Attackable(world, printed, 0), card => card.ObjectId == villain.ObjectId);
+
+        Statuses.Give(world, hero, Statuses.Stunned);
+        BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Assert.Equal(0, villain.Damage);
+        Assert.Equal(0, Statuses.Count(world, hero, Statuses.Stunned));
+    }
+
+    [Rule("rr:confuse-confused.1")]
+    [Fact]
+    public void AConfusedHeroThwartsNothingAndLosesTheConfusion()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 5);
+        Statuses.Give(world, hero, Statuses.Confused);
+
+        BasicPowers.BasicThwart(world, printed, 0, scheme, []);
+
+        Assert.False(hero.Ready);
+        Assert.Equal(5, scheme.Tokens["k_threat"]);
+        Assert.Equal(0, Statuses.Count(world, hero, Statuses.Confused));
+    }
+
+    [Rule("rr:stun-stunned.1")]
+    [Fact]
+    public void AStunnedEnemyDoesNotAttackAtAll()
+    {
+        // "Remove each stunned status card from it **instead**." Instead of
+        // attacking -- so none of the attack's six steps happens, and the boost
+        // card it would have been given stays on the encounter deck.
+        var printed = Cards();
+        var world = Board(printed);
+        world.Seats[0].IdentityCard.TurnTo("hero");
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
+        Statuses.Give(world, villain, Statuses.Stunned);
+
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Sequence.Finish(world, printed, new NoCardAbilities(), []);
+
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Single(world.AreaOf(DeckType.EncounterDeck).Cards);
+        Assert.Equal(0, Statuses.Count(world, villain, Statuses.Stunned));
+    }
+
+    [Rule("rr:confuse-confused.1")]
+    [Fact]
+    public void AConfusedEnemyPlacesNoThreat()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+
+        // Alter-ego form, because `rr:activation.1` is what decides whether the
+        // villain schemes at all.
+        world.Seats[0].IdentityCard.TurnTo("alterego");
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
+        Statuses.Give(world, villain, Statuses.Confused);
+
+        VillainPhase.Schedule(world.Agenda, round: 1);
+        Sequence.Finish(world, printed, new NoCardAbilities(), []);
+
+        // The main scheme's own acceleration only, and the villain's SCH of 2
+        // never lands.
+        Assert.Equal(1, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+        Assert.Equal(0, Statuses.Count(world, villain, Statuses.Confused));
+    }
+
+    [Rule("rr:stalwart")]
+    [Rule("rr:stalwart.1")]
+    [Fact]
+    public void AStalwartCharacterCannotBeStunnedOrConfused()
+    {
+        // "This character cannot have confused or stunned status cards." Tough
+        // is not one of the two and is unaffected.
+        var printed = Cards().With("minion", ("HP", "3"), ("Stalwart", "1"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Assert.Null(Statuses.Inflict(world, printed, minion, Statuses.Stunned));
+        Assert.Null(Statuses.Inflict(world, printed, minion, Statuses.Confused));
+        Assert.NotNull(Statuses.Inflict(world, printed, minion, Statuses.Tough));
+    }
+
+    [Rule("rr:status-cards.1")]
+    [Fact]
+    public void ACharacterCannotHoldTwoOfOneStatus()
+    {
+        // "A character cannot have more than one status card of each type at a
+        // time."
+        var printed = Cards().With("minion", ("HP", "3"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Assert.NotNull(Statuses.Inflict(world, printed, minion, Statuses.Stunned));
+        Assert.Null(Statuses.Inflict(world, printed, minion, Statuses.Stunned));
+    }
+
+    [Rule("rr:steady")]
+    [Rule("rr:stun-stunned.3.1")]
+    [Fact]
+    public void ASteadyCharacterNeedsTwoStatusCardsToBeAfflicted()
+    {
+        // "That character is not stunned unless they have two stunned status
+        // cards", and `rr:status-cards.1.1` lets it hold the second.
+        var printed = Cards().With("minion", ("HP", "3"), ("Steady", "1"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Assert.NotNull(Statuses.Inflict(world, printed, minion, Statuses.Stunned));
+        Assert.False(Statuses.Afflicted(world, printed, minion, Statuses.Stunned));
+
+        Assert.NotNull(Statuses.Inflict(world, printed, minion, Statuses.Stunned));
+        Assert.True(Statuses.Afflicted(world, printed, minion, Statuses.Stunned));
+
+        // And no third.
+        Assert.Null(Statuses.Inflict(world, printed, minion, Statuses.Stunned));
+    }
+
+    [Rule("rr:steady")]
+    [Fact]
+    public void ASteadyCharacterLosesBothCardsWhenItsAttackIsCancelled()
+    {
+        // "After that character's attack, scheme, or thwart is canceled by a
+        // status card effect, remove **all** status cards of the corresponding
+        // type" -- which is `rr:stun-stunned.1`'s "remove **each**", and the
+        // opposite of `rr:tough.2.1`'s one at a time.
+        var printed = Cards().With("hero", ("ATK", "2"), ("HP", "10"), ("Steady", "1"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Statuses.Give(world, hero, Statuses.Stunned);
+        Statuses.Give(world, hero, Statuses.Stunned);
+
+        BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Assert.Equal(0, villain.Damage);
+        Assert.Equal(0, Statuses.Count(world, hero, Statuses.Stunned));
+    }
+
+    [Rule("rr:ally.3")]
+    [Fact]
+    public void AStunnedAllyTakesNoConsequentialDamage()
+    {
+        // `rr:ally.3`'s parenthesis: "if an ally attempts to attack or thwart
+        // while stunned or confused, respectively, that ally will **not** take
+        // consequential damage."
+        var printed = Cards().With("ally", ("HP", "4"), ("ATK", "2"), ("AtkIcons", "1"));
+        var world = Board(printed);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        Statuses.Give(world, ally, Statuses.Stunned);
+
+        BasicPowers.AllyPower(
+            world, printed, ally, world.TheCardIn(DeckType.VillainArea)!,
+            BasicPowers.AttackVerb, []);
+
+        Assert.False(ally.Ready);
+        Assert.Equal(0, ally.Damage);
+        Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
+    private static World Board(Printed printed)
+    {
+        var world = new World(printed, players: 1);
+        world.CreateSeat("p0");
+        var identity = world.CreateCard("alterego,hero", world.Seats[0].Hero);
+        world.Seats[0].IdentityCard = identity;
+        identity.TurnTo("hero");
+        world.CreateCard("villain", world.AreaOf(DeckType.VillainArea));
+        world.CreateCard("scheme", world.AreaOf(DeckType.MainSchemesArea));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        return world;
+    }
+
+    private static Printed Cards() => new Printed()
+        .With("hero", ("ATK", "2"), ("THW", "2"), ("HP", "10"))
+        .With("villain", ("ATK", "3"), ("SCH", "2"), ("HP", "20"))
+        .With("scheme", ("EscalationThreat", "1"), ("TargetThreat", "99"))
+        .With("boost", ("Boost", "0"));
+
+    private sealed class Printed : ICardFacts
+    {
+        private readonly Dictionary<string, Dictionary<string, string>> attributes =
+            new(StringComparer.Ordinal);
+
+        public Printed With(string faceId, params (string Key, string Value)[] values)
+        {
+            var table = attributes.TryGetValue(faceId, out var found)
+                ? found
+                : attributes[faceId] = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var (key, value) in values)
+            {
+                table[key] = value;
+            }
+
+            return this;
+        }
+
+        public CardKind Kind(string faceId) => faceId switch
+        {
+            "alterego" => CardKind.AlterEgo,
+            "hero" => CardKind.Hero,
+            "villain" => CardKind.EncounterVillain,
+            "scheme" => CardKind.MainScheme,
+            "minion" => CardKind.Minion,
+            "ally" => CardKind.Ally,
+            "tough" or "stunned" or "confused" => CardKind.Status,
+            _ => CardKind.Treachery,
+        };
+
+        public IReadOnlyList<string> Traits(string faceId) => [];
+
+        public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
+            attributes.TryGetValue(faceId, out var found)
+                ? found
+                : new Dictionary<string, string>(StringComparer.Ordinal);
+
+        public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) =>
+            Attributes(faceId).TryGetValue(attribute, out string? value)
+            && long.TryParse(value, out long number)
+                ? number
+                : fallback;
+
+        public long ConsequentialDamage(string faceId, string attribute) =>
+            attribute == "ATK" ? PrintedValue(faceId, "AtkIcons", 1) : 0;
+    }
+}

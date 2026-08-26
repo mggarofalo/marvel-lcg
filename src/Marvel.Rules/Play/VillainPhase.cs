@@ -150,7 +150,7 @@ public static class VillainPhase
                 break;
 
             case Steps.Attack:
-                Attack.Initiate(world, step);
+                Attack.Initiate(world, facts, step, events);
                 break;
 
             case Steps.GiveBoostCard:
@@ -318,6 +318,14 @@ public static class VillainPhase
         World world, ICardFacts facts, ICardAbilities abilities, Card villain,
         List<GameEvent> events)
     {
+        // `rr:confuse-confused.1`: "when this character would scheme or thwart,
+        // remove each confused status card from it instead." The scheme does
+        // not happen, so no boost card is given and no threat is placed.
+        if (BasicPowers.Cancelled(world, facts, villain, Statuses.Confused, events))
+        {
+            return;
+        }
+
         long scheme = facts.PrintedValue(villain.FaceId, "SCH", world.Players);
 
         // `rr:scheme-enemy-activation.step.1`, the same clause the attack has:

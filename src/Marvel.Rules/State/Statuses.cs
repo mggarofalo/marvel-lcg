@@ -1,5 +1,6 @@
 namespace Marvel.Rules.State;
 
+
 /// <summary>
 /// Status cards: tough, stunned, confused.
 /// </summary>
@@ -21,6 +22,115 @@ public static class Statuses
 {
     /// <summary>The Tough status card's printed id.</summary>
     public const string Tough = "tough";
+
+    /// <summary>The Stunned status card's printed id. <c>rr:stun-stunned</c>.</summary>
+    public const string Stunned = "stunned";
+
+    /// <summary>The Confused status card's printed id. <c>rr:confuse-confused</c>.</summary>
+    public const string Confused = "confused";
+
+    /// <summary>How many of a status a card carries.</summary>
+    /// <remarks>
+    /// A count rather than a flag, because <c>rr:steady</c> turns on the
+    /// difference between one and two — "that character is not stunned unless
+    /// they have two stunned status cards".
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="host">The card that might carry them.</param>
+    /// <param name="status">The status's printed id.</param>
+    public static int Count(World world, Card host, string status)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(host);
+
+        int held = 0;
+        foreach (var area in world.Areas)
+        {
+            if (area.Type != DeckType.StatusArea || area.Host != host.ObjectId)
+            {
+                continue;
+            }
+
+            held += area.Cards.Count(card => card.FaceId == status);
+        }
+
+        return held;
+    }
+
+    /// <summary>Every status card of a kind on a card.</summary>
+    /// <param name="world">The world.</param>
+    /// <param name="host">The card carrying them.</param>
+    /// <param name="status">The status's printed id.</param>
+    public static IReadOnlyList<Card> On(World world, Card host, string status)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(host);
+
+        var found = new List<Card>();
+        foreach (var area in world.Areas)
+        {
+            if (area.Type == DeckType.StatusArea && area.Host == host.ObjectId)
+            {
+                found.AddRange(area.Cards.Where(card => card.FaceId == status));
+            }
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// How many of a status a card may carry — <c>rr:status-cards.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// "A character cannot have more than one status card of each type at a
+    /// time", and <c>.1.1</c>: "characters with the steady keyword can have one
+    /// additional confused status card and one additional stunned status card."
+    /// <para>
+    /// <c>rr:stalwart.1</c> is the other end: a stalwart character "cannot have
+    /// confused or stunned status cards" at all. Tough is not one of the two
+    /// and is unaffected by either keyword.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="host">The card.</param>
+    /// <param name="status">The status's printed id.</param>
+    public static int Limit(World world, ICardFacts facts, Card host, string status)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(host);
+
+        if (status is not (Stunned or Confused))
+        {
+            return int.MaxValue;
+        }
+
+        if (StateFields.Modified(world, host, "stalwart", facts, world.Players) > 0)
+        {
+            return 0;
+        }
+
+        return StateFields.Modified(world, host, "steady", facts, world.Players) > 0 ? 2 : 1;
+    }
+
+    /// <summary>
+    /// Whether a character actually <i>is</i> stunned or confused —
+    /// <c>rr:stun-stunned.3</c>, <c>rr:confuse-confused.3</c>.
+    /// </summary>
+    /// <remarks>
+    /// "A character is stunned if it has a stunned status card", and
+    /// <c>.3.1</c>: "a character with the steady keyword is stunned <b>only if
+    /// it has two</b>". So carrying one and being it are different questions
+    /// the moment steady is in play.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="host">The card.</param>
+    /// <param name="status">The status's printed id.</param>
+    public static bool Afflicted(World world, ICardFacts facts, Card host, string status) =>
+        Count(world, host, status) >= Limit(world, facts, host, status)
+        && Limit(world, facts, host, status) > 0;
 
     /// <summary>Whether a card already carries a status.</summary>
     /// <param name="world">The world.</param>
@@ -68,5 +178,24 @@ public static class Statuses
         var area = world.AreaOf(
             DeckType.StatusArea, host.Area.PlayArea, host.ObjectId, host.Area.CardOwner);
         return world.CreateCard(status, area);
+    }
+
+    /// <summary>
+    /// Gives a status if the character can take one — <c>rr:status-cards.1</c>.
+    /// </summary>
+    /// <param name="world">The world.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="host">The card gaining it.</param>
+    /// <param name="status">The status's printed id.</param>
+    /// <returns>The new card, or null when it could not take one.</returns>
+    public static Card? Inflict(World world, ICardFacts facts, Card host, string status)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(host);
+
+        return Count(world, host, status) < Limit(world, facts, host, status)
+            ? Give(world, host, status)
+            : null;
     }
 }

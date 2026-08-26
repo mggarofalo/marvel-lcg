@@ -171,7 +171,12 @@ public static class BasicPowers
         var character = seat.IdentityCard;
         Require(world, facts, seat, Forms.Hero, AttackVerb);
 
-        if (!Attackable(world, facts, player).Any(target => target.ObjectId == enemy.ObjectId))
+        // `rr:attack-player-ability-type.1.1`: "a character can only initiate a
+        // basic attack if there is an enemy that can be attacked by that
+        // character **or if that character is stunned**." A stunned character
+        // attacks nothing, on purpose -- it is how the stun comes off.
+        if (!Statuses.Afflicted(world, facts, character, Statuses.Stunned)
+            && !Attackable(world, facts, player).Any(t => t.ObjectId == enemy.ObjectId))
         {
             // `rr:guard.1` is the case this catches in an ordinary game: a
             // minion with guard engaged with this player makes every villain an
@@ -181,6 +186,14 @@ public static class BasicPowers
         }
 
         Exhaust(character, AttackVerb, events);
+
+        // `rr:stun-stunned.1` and `.5`: the attack is cancelled and the stun
+        // goes, but the cost was already paid.
+        if (Cancelled(world, facts, character, Statuses.Stunned, events))
+        {
+            return;
+        }
+
         Damage.Deal(
             world, facts, enemy,
             StateFields.Modified(world, character, "attack", facts, world.Players),
@@ -217,13 +230,22 @@ public static class BasicPowers
         var character = seat.IdentityCard;
         Require(world, facts, seat, Forms.Hero, ThwartVerb);
 
-        if (!Thwartable(world, facts, player).Any(target => target.ObjectId == scheme.ObjectId))
+        // `rr:thwart.1.1` and `rr:confuse-confused.5.1`, the same pair.
+        if (!Statuses.Afflicted(world, facts, character, Statuses.Confused)
+            && !Thwartable(world, facts, player).Any(t => t.ObjectId == scheme.ObjectId))
         {
             throw new RulesNotImplementedException(
                 $"card {scheme.ObjectId} is not a scheme {seat.Name} can thwart");
         }
 
         Exhaust(character, ThwartVerb, events);
+
+        // `rr:confuse-confused.1` and `.5`, the thwart's half of the same rule.
+        if (Cancelled(world, facts, character, Statuses.Confused, events))
+        {
+            return;
+        }
+
         RemoveThreat(world, facts, character, scheme, events);
     }
 
@@ -345,6 +367,16 @@ public static class BasicPowers
 
         Exhaust(ally, verb, events);
 
+        // `rr:stun-stunned.5` and `rr:confuse-confused.5` name the ally as well
+        // as the identity. **No consequential damage either** -- `rr:ally.3`'s
+        // parenthesis: "if an ally attempts to attack or thwart while stunned or
+        // confused, respectively, that ally will not take consequential damage".
+        if (Cancelled(
+            world, facts, ally, attacking ? Statuses.Stunned : Statuses.Confused, events))
+        {
+            return;
+        }
+
         // `rr:assault`: "while a character is making a basic thwart against this
         // scheme, that character uses its **ATK instead of its THW**." So the
         // field an ally used is not always the one the verb names, and `.2`
@@ -394,6 +426,50 @@ public static class BasicPowers
     /// <summary>Whether a scheme carries <c>rr:assault</c>.</summary>
     private static bool Assaulted(World world, ICardFacts facts, Card scheme) =>
         StateFields.Modified(world, scheme, "assault", facts, world.Players) > 0;
+
+    /// <summary>
+    /// A status card cancels the action it names — <c>rr:stun-stunned.1</c>,
+    /// <c>rr:confuse-confused.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "<b>Forced Interrupt</b>: when this character would attack, remove
+    /// <b>each</b> stunned status card from it instead." Each, not one — which
+    /// is the opposite of <c>rr:tough.2.1</c>, and <c>rr:steady</c> is what
+    /// makes the difference visible: a steady character carrying two loses both.
+    /// </para>
+    /// <para>
+    /// <c>rr:stun-stunned.5</c>: "costs associated with the attack attempt,
+    /// <b>including exhausting the character</b>, must still be paid." So the
+    /// caller exhausts first and asks this second.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="character">Who is acting.</param>
+    /// <param name="status">The status that would cancel it.</param>
+    /// <param name="events">Where to record what happened.</param>
+    /// <returns>Whether the action was cancelled.</returns>
+    public static bool Cancelled(
+        World world, ICardFacts facts, Card character, string status, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(character);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (!Statuses.Afflicted(world, facts, character, status))
+        {
+            return false;
+        }
+
+        foreach (var card in Statuses.On(world, character, status).ToList())
+        {
+            Discard.Card(world, card, status, events);
+        }
+
+        return true;
+    }
 
     /// <summary>The seat a minion is engaged with, or -1.</summary>
     private static int Engaged(World world, Card enemy) =>

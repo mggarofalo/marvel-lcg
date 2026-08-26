@@ -290,7 +290,7 @@ public sealed class KeywordTests
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
 
         Attack.Initiate(
-            world, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+            world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
         Undefended(world, printed);
 
         Assert.Equal(3, world.Seats[0].IdentityCard.Damage);
@@ -338,7 +338,7 @@ public sealed class KeywordTests
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
 
         Attack.Initiate(
-            world, new PhaseStep(Steps.Attack, 1, 2, Subject: minion.ObjectId, Seat: 0));
+            world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: minion.ObjectId, Seat: 0), []);
         Undefended(world, printed);
 
         Assert.Single(world.AreaOf(DeckType.EncounterDeck).Cards);
