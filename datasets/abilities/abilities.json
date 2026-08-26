@@ -1,7 +1,7 @@
 {
   "dataset_version": 1,
   "authored_by": "the C# port, by hand, against the published Rules Reference",
-  "notes": "Card abilities as data -- docs/card-dsl.md. A card listed here has been read; one with an empty 'abilities' has been read and found to do nothing, which is a different thing from nobody having looked at it. Printed text is quoted from datasets/cards/cards.json, which is extracted rather than authored. The Python engine's own scripts under py_src/cards/pack/ are evidence of intent; where they and the Rules Reference disagree, the Rules Reference wins.",
+  "notes": "Card abilities as data -- docs/card-dsl.md. A card listed here has been read; one with an empty 'abilities' has been read and found to do nothing, which is a different thing from nobody having looked at it. Printed text is quoted from datasets/cards/cards.json, which is extracted rather than authored. The Rules Reference decides every behaviour here; where a card's printed words do not settle a case, the note on that card says so and says what was chosen instead.",
   "cards": [
     {
       "card": "01001a",
@@ -49,7 +49,7 @@
     {
       "card": "01105",
       "name": "\"I'm Tough\"",
-      "note": "When Revealed: Give Rhino a tough status card. If Rhino already has a tough status card, this card gains surge. The no-villain case is not printed; py_src/cards/pack/core/rhino/01105.py surges there, and that is the reading encoded. Both branches run: `giveStatus` is capped by rr:status-cards.1 and `gainSurge` deals one encounter card, which is rr:surge.1's 'When Revealed: deal yourself 1 facedown encounter card'.",
+      "note": "When Revealed: Give Rhino a tough status card. If Rhino already has a tough status card, this card gains surge. The no-villain case is not printed and no rule covers it. **Our choice:** surge. A reveal that neither gives a status card nor surges is a card that does nothing at all, and rr:surge.1 is the branch the card already prints for 'the tough status card could not be given'. Both branches run: `giveStatus` is capped by rr:status-cards.1 and `gainSurge` deals one encounter card, which is rr:surge.1's 'When Revealed: deal yourself 1 facedown encounter card'.",
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },

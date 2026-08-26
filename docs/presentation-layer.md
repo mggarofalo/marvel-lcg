@@ -55,7 +55,7 @@ This document does not reopen any of the following. They are recorded in
 | The engine is a resolve: `(state, input) -> (state, prompt or gameOver)` | migration.md, "Architecture" |
 | Cards become data, not sandboxed scripts | migration.md, MARVEL-92 |
 | The DSL node set, and where compiled code begins | card-dsl.md |
-| One repo, `src/` and `py_src/` | MARVEL-3 |
+| One repo | MARVEL-3 |
 | Reqnroll for Gherkin, one set of `.feature` files | MARVEL-22, MARVEL-41 |
 | Digest v2 and the standard RNG as cross-engine contracts | MARVEL-44, MARVEL-38 |
 
@@ -546,8 +546,8 @@ rather than disrupting a planned one.
 
 | Issue | State | What changes |
 |---|---|---|
-| MARVEL-145 — The server does not decide what each seat sees | Backlog | The Python half is genuinely dead: `py_src` is never served. But the requirement is live again, because `Marvel.Server` runs as a container. Close this Python issue, and re-file the requirement against the C# server. |
-| MARVEL-153 — The web server serves arbitrary files and a cheat console | Backlog | Same. `migration.md` already states the carry-forward constraint: do not port `/read_file` or the cheat console onto a served surface. Close as recorded. |
+| MARVEL-145 — The server does not decide what each seat sees | Backlog | Live as a requirement against `Marvel.Server`: the server decides what each seat sees rather than trusting the client's assertion. This is a cooperative game, so a permissive policy is fine — but it has to be chosen. |
+| MARVEL-153 — The web server serves arbitrary files and a cheat console | Backlog | The carry-forward constraint: do not build a `/read_file` or a cheat console onto a served surface. |
 | MARVEL-146, MARVEL-152 | Cancelled | Already cancelled. No action. |
 
 ### New issues to create

@@ -8,38 +8,28 @@
 # and cheap. It is a plausible-looking resolution that silently breaks an
 # invariant nobody re-checks, in a file whose whole job is to be the invariant.
 
-# The closed step vocabulary, and the Python<->C# contract built on it.
-# A test asserts the parser implements exactly this file, so a merge that keeps
-# "both sides" of a concurrent edit produces a catalogue that still parses,
-# still passes locally, and no longer describes what the C# runner binds.
-# MARVEL-139 and MARVEL-141 both land here.
-py_src/specs/steps.catalogue.json
+# Every card the engine can run, in one document. Two agents authoring
+# different cards both append, and a merge that keeps "both sides" can produce
+# a file that still parses and no longer says what either of them meant. It is
+# also never re-serialised -- appended textually -- so a tool-assisted merge
+# reformats 45,000 lines and buries the change.
+datasets/abilities/abilities.json
 
-# Generated ledgers, written only by the validation runner, never by hand.
-# Two spec-authoring agents regenerate these from different partial worlds and
-# each one's output looks authoritative. Run one spec author at a time.
-py_src/specs/trusted.json
-py_src/specs/quarantine.json
-
-# One function, several open issues about different ends of the same ordering
-# problem: targets are chosen before payment exists. MARVEL-133 and MARVEL-140
-# both land here and will disagree about what the fix is.
-py_src/game/effect/effect_checker.py
-py_src/game/effect/effect_target_cost.py
-
-# Generated card data. Regenerating it moves counts that prose all over the repo
-# restates, so an agent that refreshes it invalidates the measurements another
-# agent is mid-way through correcting. MARVEL-142 and MARVEL-144 are exactly
-# this pair.
+# Card data and the vendored snapshot behind it. Refreshing either moves counts
+# that prose all over the repo restates, so an agent that refreshes invalidates
+# the measurements another agent is mid-way through correcting.
 datasets/cards/**
 datasets/marvelsdb/**
 
-# Carries its own checksum, verified by Json.LoadInternal. Any edit has to
-# regenerate it, and two independent regenerations do not merge.
-py_src/data/cards.json
+# The rules themselves. A re-harvest renumbers entry ids, and every `[Rule]`
+# attribute in the test suite is a reference into it.
+datasets/rules-reference/**
 
-# Coverage prose and the tool that produces the numbers it quotes. Anything
-# refreshing counts touches both, and so does anything changing what is counted.
-py_src/tools/spec/coverage.py
-py_src/tools/coverage/reach.py
-docs/spec-campaign.md
+# The step vocabulary and the ordering rules built on it. `Steps.Conditions` is
+# a table a card can name into: a step added by one agent and a condition added
+# by another merge cleanly and describe a window no card reaches.
+src/Marvel.Rules/Play/Agenda.cs
+
+# One interpreter, several open issues about different ends of the same
+# ordering problem: targets are chosen before payment exists.
+src/Marvel.Cards/Run/AbilityRunner.cs

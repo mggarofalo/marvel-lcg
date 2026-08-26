@@ -1,34 +1,5 @@
 /.vscode/**
 
-# Python reference engine (py_src/)
-**/*.pyc
-__pycache__/
-/py_src/.venv/
-/py_src/public/js/**/*.js
-/py_src/public/js/**/*.js.map
-/py_src/assets
-/py_src/save_*.json
-/py_src/crash.json
-/py_src/crash.log
-/py_src/statistics.json
-/py_src/deck/*.json
-/py_src/cards-*.zip
-/py_src/replays/
-/py_src/replays_*/
-/py_src/crashes/
-/py_src/invariants/
-# corpus generation output: the corpus itself lives in its own repo (MARVEL-4),
-# and only its hash manifest under datasets/corpus/ belongs here.
-/py_src/corpus/
-/py_src/corpus_*/
-/py_src/quarantine/
-/py_src/quarantine_*/
-/py_src/frozen/
-/py_src/frozen_*/
-/py_src/verify.json
-/py_src/verify_*.json
-/py_src/corpus_v*.log
-
 # C# engine (src/)
 [Bb]in/
 [Oo]bj/

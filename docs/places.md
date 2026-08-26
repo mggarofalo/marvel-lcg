@@ -164,7 +164,7 @@ wrong is invisible until a scenario needs both.
 **No oracle, and that is measured.** The v2 digest cannot see a play area: on the
 legacy engine, creating a game area and moving 47 cards into it left the digest
 **byte-identical** (MARVEL-174). Kang reaches a second game area in **0 of 3,462
-steps** across all 42 recorded scenes. `py_src` has no Fear No Evil cards at all.
+steps** across a large sample of recorded play.
 So these rules are held against the published text, and the tests name the rule
 each one comes from. Nine mutations were watched failing.
 

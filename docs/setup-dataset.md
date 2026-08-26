@@ -9,16 +9,9 @@ sat alongside three others describing how the engine *computes*: the RNG
 stream, the state digest and the prompts. Those three were emitted by the
 Python engine and were dropped with it; this one is content and stays.
 
-Until it existed, that data lived only in `py_src/data/` and `py_src/deck/`,
-which meant a C# engine could not deal a board without reading the oracle it is
-meant to replace. `py_src/` is the behavioural oracle
-([migration.md](migration.md)); it is not a runtime dependency of anything.
-
-```bash
-cd py_src
-python -m tools.setup.emit_setup           # regenerate
-python -m tools.setup.emit_setup --check   # the CI gate; byte for byte
-```
+**Its generator no longer exists — MARVEL-252.** The committed dataset is
+correct and the engine reads it; what is missing is the ability to rebuild it,
+and its inputs were hand-maintained data with no upstream to re-derive from.
 
 ## What is in it
 
@@ -53,9 +46,8 @@ A collision there would win in the engine and would not appear under
 `shadowed`, which only records the later hit. So the emitter's folder list is
 held against the order `FindJsonPath` really walks — read out of the function by
 spying on `FileManager.Exists`, not re-derived from the module constants — and
-against the claim that `py_src/` holds no name any group also holds. Add a
-folder to `SCENARIOS_FOLDERS` and that test fails; without it the dataset would
-have quietly stopped covering a scenario the engine can still load, with every
+against the claim that no name is held by two groups at once. Without that
+check the dataset could quietly stop covering a scenario, with every
 byte-comparison gate still green.
 
 ## It is a projection, not a translation
@@ -79,8 +71,8 @@ chosen modulars — inexpressible. `deal.EncounterSetNames` does the join.
 
 ## The order a board is dealt in
 
-`py_src/tools/setup/deal.py`. This is a separate contract from the dataset and a
-stricter one: **a card's `object_id` is its position in this sequence**, and
+`Marvel.Content.Setup.Dealer`. This is a separate contract from the dataset and
+a stricter one: **a card's `object_id` is its position in this sequence**, and
 `object_id` is on the wire in every state digest — checklist item 1 of
 [state-digest-v2.md](state-digest-v2.md), *"everything else depends on this"*.
 
@@ -195,11 +187,7 @@ are checklist item 7 and come from the card data plus the face class hierarchy.
 
 ## How the measurements were taken
 
-```bash
-cd py_src
-python -m tools.setup.emit_setup
-python -m unittest unit_test.test_setup_dataset
-```
+Not re-runnable; see MARVEL-252.
 
 The 38/48 figure comes from a throwaway probe that wraps
 `CardFactory.GenerateCard`, runs `tools.determinism.headless.run_headless` for

@@ -1,2 +1,0 @@
-from cards.pack import *
-
