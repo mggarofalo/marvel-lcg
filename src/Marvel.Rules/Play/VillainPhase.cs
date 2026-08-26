@@ -103,6 +103,7 @@ public static class VillainPhase
         agenda.Add(new PhaseStep(Steps.PlaceThreat, round, 1));
         agenda.Add(new PhaseStep(Steps.EnemiesActivate, round, 2, Plan: true));
         agenda.Add(new PhaseStep(Steps.DealEncounterCards, round, 3));
+        agenda.Add(new PhaseStep(Steps.RevealEncounterCards, round, 4, Plan: true));
         agenda.Add(new PhaseStep(Steps.PassFirstPlayerToken, round, 5));
         agenda.Add(new PhaseStep(Steps.EndVillainPhase, round, 6));
     }
@@ -172,7 +173,11 @@ public static class VillainPhase
                 break;
 
             case Steps.DealEncounterCards:
-                DealEncounterCards(world, step, events);
+                DealEncounterCards(world, facts, events);
+                break;
+
+            case Steps.RevealEncounterCards:
+                RevealNextEncounterCard(world, step);
                 break;
 
             case Steps.RevealEncounterCard:
@@ -232,7 +237,7 @@ public static class VillainPhase
             return;
         }
 
-        foreach (int seat in PlayerOrder(world))
+        foreach (int seat in world.PlayerOrder)
         {
             // `rr:villain-phase.step.2.b`. A minion engaged with a player
             // activates too, and nothing on the milestone board is ever engaged.
@@ -349,37 +354,66 @@ public static class VillainPhase
     /// Hazard icons deal additional cards. Nothing on the milestone board has
     /// one, and a board that did would deal too few here — so it throws.
     /// </remarks>
-    private static void DealEncounterCards(World world, PhaseStep step, List<GameEvent> events)
+    /// <summary>Step 3. One card each, plus one per hazard icon in play.</summary>
+    /// <remarks>
+    /// <c>rr:villain-phase.step.3</c>: "Deal one encounter card to each player.
+    /// Deal one additional card for each hazard icon on a card in play. These
+    /// additional cards are dealt in player order."
+    /// <para>
+    /// Nothing here schedules a reveal. Step 4 drains the queue instead, which
+    /// is what lets a card dealt at any other moment — by an ability, or by a
+    /// player's deck running out mid-turn — be revealed in the same step as the
+    /// rest.
+    /// </para>
+    /// </remarks>
+    private static void DealEncounterCards(
+        World world, ICardFacts facts, List<GameEvent> events)
     {
-        var deck = world.AreaOf(DeckType.EncounterDeck);
-        int order = 0;
-
-        foreach (int seat in PlayerOrder(world))
+        foreach (int seat in world.PlayerOrder)
         {
-            var card = deck.TakeTop();
-            if (card is null)
+            if (Deal.EncounterCard(world, seat, "villain phase", events) is null)
             {
-                break;
+                return;
             }
-
-            // Dealt facedown to the player, so it sits in their play area until
-            // it is revealed. The recorded digest never catches it here -- the
-            // whole deal-and-reveal happens between two decisions -- but the
-            // engine's own log shows the intermediate pile, and skipping it
-            // would make a two-player board deal in the wrong order.
-            var pending = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
-            pending.Append(card);
-
-            // rr:villain-phase.step.4. Each revealed card is an occurrence of
-            // its own with its own windows, in the order dealt.
-            world.Agenda.Then(new PhaseStep(
-                Steps.RevealEncounterCard, step.Round, 4,
-                Index: seat, Subject: card.ObjectId, Seat: seat));
-            order += 1;
         }
 
-        _ = order;
-        _ = events;
+        // `rr:hazard-icon`: "for each hazard icon on cards in play, deal one
+        // player one additional card *(not one card per player)*. Additional
+        // cards are dealt in player order" -- so these go round the table one
+        // at a time, wrapping, rather than one round per icon.
+        long icons = Deal.HazardIcons(world, facts);
+        for (long dealt = 0; dealt < icons; dealt++)
+        {
+            int seat = (world.FirstPlayer + (int)(dealt % world.Players)) % world.Players;
+            if (Deal.EncounterCard(world, seat, "hazard", events) is null)
+            {
+                return;
+            }
+        }
+    }
+
+    /// <summary>Step 4, one card at a time, until the queue is empty.</summary>
+    private static void RevealNextEncounterCard(World world, PhaseStep step)
+    {
+        if (Deal.NextToReveal(world) is not { } next)
+        {
+            return;
+        }
+
+        // The reveal is an occurrence with its own windows; this heading is
+        // not. Scheduling itself *after* the reveal is what makes step 4 a
+        // loop -- a card revealed here can deal another, and `rr:deal.1` puts
+        // that one in the same step.
+        //
+        // **The order of these two calls is the loop's termination.**
+        // `Agenda.Then` appends in call order, so the reveal has to be
+        // scheduled first; the other way round, this heading runs again with
+        // the card still in the queue and schedules itself forever.
+        world.Agenda.Then(new PhaseStep(
+            Steps.RevealEncounterCard, step.Round, 4,
+            Index: step.Index, Subject: next.Card.ObjectId, Seat: next.Player));
+        world.Agenda.Then(new PhaseStep(
+            Steps.RevealEncounterCards, step.Round, 4, Index: step.Index + 1, Plan: true));
     }
 
     /// <summary>Step 4. Each player reveals their cards, in the order dealt.</summary>
@@ -423,15 +457,6 @@ public static class VillainPhase
     /// <summary>Step 5. <c>rr:villain-phase.step.5</c>, to the next clockwise player.</summary>
     private static void PassFirstPlayerToken(World world) =>
         world.FirstPlayer = world.Players > 0 ? (world.FirstPlayer + 1) % world.Players : 0;
-
-    /// <summary>Seats in player order, starting from the first player.</summary>
-    private static IEnumerable<int> PlayerOrder(World world)
-    {
-        for (int offset = 0; offset < world.Players; offset++)
-        {
-            yield return (world.FirstPlayer + offset) % world.Players;
-        }
-    }
 
     /// <summary>Ends the game when the last main scheme completes.</summary>
     /// <remarks>
