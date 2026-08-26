@@ -152,6 +152,15 @@ public sealed class World
     /// </remarks>
     public CharacterAttack? CharacterAttack { get; set; }
 
+    /// <summary>
+    /// How the card being defeated came to be — <see cref="State.Defeated"/>.
+    /// </summary>
+    /// <remarks>
+    /// Set for the length of one defeat and null the rest of the time, so that
+    /// a card asking outside that moment reads nothing rather than the last one.
+    /// </remarks>
+    public Defeated? Defeated { get; set; }
+
     /// <summary>Whether the game has ended.</summary>
     /// <remarks>
     /// The engine answers a <c>null</c> prompt once this is set, which is the only

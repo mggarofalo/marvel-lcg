@@ -645,7 +645,11 @@ public static class BasicPowers
         if (scheme.Area.Type == DeckType.SideSchemesArea
             && scheme.Tokens.GetValueOrDefault("k_threat") == 0)
         {
-            Defeat.Scheme(world, facts, scheme, ThwartVerb, events);
+            // Who did it, for the cards that ask. `rr:ownership-and-control.2`
+            // puts a card under its owner's control, so an ally's thwart is
+            // still its owner's doing -- `rr:you-your.15` keeps it off that
+            // player's *identity*, which is a different question.
+            Defeat.Scheme(world, facts, scheme, ThwartVerb, events, by: character.Owner);
         }
     }
 

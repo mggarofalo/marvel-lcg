@@ -2821,6 +2821,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // the general form -- "if the word 'you' **can** be resolved as
         // referring to the player's identity, it **must** be resolved as such"
         // -- so "you" is a card here whenever a card is what is wanted.
+        // "The player who defeated this scheme confuses their identity."
+        // `rr:you-your.5` is why this answers an identity rather than a seat:
+        // a status card placed on a player goes on their identity.
+        "defeater" => cast.World.Defeated is { By: >= 0 } defeated
+            ? cast.World.Seats[defeated.By].IdentityCard
+            : throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' names the player who defeated a card, and no player "
+                + "did"),
+
         "you" => cast.World.Seats[Resolver(cast)].IdentityCard,
         "attachedTo" => cast.Source.Area.Host >= 0 ? cast.World.Cards[cast.Source.Area.Host] : null,
         "trigger.subject" => cast.Occurrence.Subject >= 0

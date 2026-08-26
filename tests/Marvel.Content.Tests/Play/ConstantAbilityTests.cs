@@ -193,7 +193,14 @@ public sealed class ConstantAbilityTests
             var occurrence = new Occurrence(0, [condition], Subject: unus.ObjectId);
             foreach (var window in Enum.GetValues<WindowKind>())
             {
-                Assert.Empty(runner.Waiting(world, occurrence, window));
+                // Unus, and not "nothing at all": Gene Pool is on this board
+                // too and its own ability is a "Forced Response" that answers
+                // a card being defeated. What is being asserted is that a
+                // *constant* ability is never offered, so the card whose only
+                // ability is constant is the one to look for.
+                Assert.DoesNotContain(
+                    runner.Waiting(world, occurrence, window),
+                    waiting => waiting.Card == unus.ObjectId);
             }
         }
     }

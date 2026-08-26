@@ -1208,6 +1208,17 @@
           }
         }
       ]
+    },
+    {
+      "card": "45074",
+      "name": "Targeted for Extermination",
+      "note": "When Defeated: The player who defeated this scheme confuses their identity. The crisis icon and the printed starting threat are fields rather than abilities. 'The player who defeated' is not the card's owner and not the first player: a side scheme is defeated by the character that removed its last threat, and rr:ownership-and-control.2 puts that character under its owner's control -- so an ally thwarting it is still that player's doing, which rr:you-your.15 keeps off their identity as a separate question. rr:you-your.5 is why the status lands on the identity: a status card placed on a player goes there.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "giveStatus": { "card": "defeater", "status": "confused" } }
+        }
+      ]
     }
   ]
 }
