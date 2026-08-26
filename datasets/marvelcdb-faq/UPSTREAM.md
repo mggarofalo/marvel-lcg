@@ -14,12 +14,11 @@ printed card text and errata, and neither carries a ruling.
 
 ## Why this exists
 
-A spec authored from printed card text alone encodes contested timing by guess.
-It is then validated against the Python engine, which implements the same guess,
-and passes into `specs/trusted.json` having confirmed only that the engine
-agrees with itself. Where an official ruling exists it is the only independent
-check available, and only while the Python engine is still the reference
-(MARVEL-143, feeding MARVEL-68).
+Printed card text alone leaves contested timing to a guess, and an engine
+written from the same words makes the same guess — so it confirms only that the
+reading agrees with itself. Where an official ruling exists it is the
+independent check, and it is the only one this repository has for a question the
+Rules Reference does not settle (MARVEL-143).
 
 The worked example is `01001a`. Spider-Man's printed Interrupt fires "when a
 villain **initiates an attack**"; Ultron's Forced Interrupt fires "when Ultron
@@ -40,7 +39,7 @@ because a ruling added after the harvest has no timestamp here at all.
 ## Why vendored rather than fetched
 
 The same reason as `../marvelsdb/`: everything under `datasets/` must be readable
-offline, years from now, by anyone with a bare Python. Fetching at read time
+offline, years from now, with nothing but this repository. Fetching at read time
 makes correctness depend on a community-run site staying up and unchanged.
 
 This one is **vendored, not generated**. `datasets/cards/` has a

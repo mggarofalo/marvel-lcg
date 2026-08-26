@@ -15,7 +15,7 @@ proofread by people who own the cards.
 ## Why vendored rather than fetched
 
 `datasets/cards/` must be regenerable offline and byte-identically, years from
-now, by anyone with a bare Python. A pinned SHA that still has to be fetched
+now, with nothing but this repository. A pinned SHA that still has to be fetched
 gives reproducibility only while the network and the upstream repo cooperate.
 This mirrors the decision recorded in [../../docs/migration.md](../../docs/migration.md)
 the same way a pinned dependency is: record the version, check the integrity
