@@ -90,9 +90,81 @@ The second sentence is the price of the first. Three details are load-bearing:
   That is why [villain-phase.md](villain-phase.md)'s step 4 had to become a
   queue before this could be written at all.
 
+## What a turn offers
+
+`rr:player-turn` lists six options, "in any order", and "each option, **except
+'change form'**, may be performed as many times as the player is able". So
+using one does not end the turn — the same prompt is put again, offering
+whatever is still possible.
+
+**Only what can actually be taken is offered.** An affordance that would throw
+when taken is worse than an absent one; MARVEL-130 was that same defect on the
+action menu. So a basic attack appears only when there is an enemy that can be
+attacked, a basic thwart only when a scheme holds at least one threat, and a
+basic recovery only when there is damage to heal.
+
+### The basic powers
+
+`rr:basic-power.1` lists five. Three are a player's to use on their turn:
+
+| power | form | `rr:player-turn.3` |
+|---|---|---|
+| **Attack** | hero | exhaust, deal ATK damage to an enemy |
+| **Thwart** | hero | exhaust, remove THW threat from a scheme |
+| **Recover** | alter-ego | exhaust, heal REC damage from yourself |
+
+Defence is the fourth and belongs to an enemy's attack rather than to a turn —
+see [enemy-attacks.md](enemy-attacks.md). Scheme is the fifth and is an
+enemy's, not a player's.
+
+The verb strings are on the wire. The oracle's `Effect.GetDisplayName` names
+the four `Attack`, `Defense`, `Thwart` and `Recover`, and
+`datasets/digest/prompts.json` checks the half of the return value they appear
+in.
+
+Two limits are easy to miss and both are cited on the tests: a thwart cannot
+take more threat than is on the scheme (`rr:threat` counts tokens, and a scheme
+cannot hold a negative number), and `rr:guard.1` is engagement-specific — a
+minion guarding *another* player does not stop you.
+
+## Damage, and defeat
+
+`rr:damage` is one rule however the damage arrived, so an enemy attacking a
+hero and a hero attacking a minion go through the same `Damage.Deal`. It
+returns whether the target was defeated, because `rr:defeat` is the other half
+of the same moment: *"if a character has zero or fewer remaining hit points [...]
+it is defeated"* — **zero or fewer**, not fewer than zero.
+
+`rr:defeat.1` and `.2` split what happens next by card type. An ally, minion or
+side scheme is **discarded**; an identity or stage of the villain is **removed
+from the game**.
+
+`rr:villain-defeat` then reveals the next stage, and *"if the final stage of the
+villain deck is defeated, the players win the game"*. That is why `World.IsOver`
+became `World.Result`: the rules name **two** endings — this one and the villain
+completing the final main scheme (`rr:main-scheme-main-scheme-deck.2.1`) — and a
+boolean can say a game is over without saying which happened, which is the one
+thing a player wants to know.
+
+`rr:villain-defeat.2`: excess damage does not carry over, so a new stage starts
+clean.
+
 ## What is not implemented
 
-A turn currently offers only "change form" and "end the turn". The rest of
-`rr:player-turn` — playing a card, the basic powers, ally actions, triggered
-actions, asking another player — is not written, and a player who declines
-everything loses in three rounds because nobody ever thwarts.
+- **Playing cards.** `rr:player-turn.2` and `.5` — an ally, upgrade, support or
+  event from hand — needs resources and costs, which is the largest piece left.
+- **Ally actions** (`.4`), **triggered actions** (`.5`) and **asking another
+  player** (`.6`).
+- **`rr:player-elimination`.** A defeated identity throws by name: their cards
+  leave play, their obligations are removed, and at one player the game ends.
+- **`rr:when-defeated-abilities`.** A forced interrupt, so it resolves *before*
+  the card leaves play — which makes it an agenda step with a window rather than
+  part of the defeat call. Nothing in the dataset has one yet.
+- **Carrying attachments across a villain stage.** `rr:villain-defeat.3` and
+  `.4` decide by whether the new stage shares a title; a villain defeated with
+  cards attached throws rather than carrying the wrong set.
+
+Playing the Rhino board with a crude "always attack" policy now reaches round 4
+with eight damage on Rhino, and "always thwart" reaches round 6, before the
+villain completes the scheme. Neither wins, and neither should: winning needs
+cards.

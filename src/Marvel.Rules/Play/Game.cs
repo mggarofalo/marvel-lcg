@@ -190,6 +190,11 @@ public sealed class Game
                 return ChangeFormNow();
             }
 
+            if (Phase == GamePhase.PlayerTurn && BasicPower(verb, input) is { } used)
+            {
+                return used;
+            }
+
             if (string.Equals(verb, EndPhaseVerb, StringComparison.Ordinal)
                 && Phase == GamePhase.EndPhase)
             {
@@ -297,6 +302,70 @@ public sealed class Game
         Pending = TurnPrompt();
         return new Resolution(world, Pending, happened);
     }
+
+    /// <summary>
+    /// Uses a basic power, or answers null if that verb is not one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:player-turn</c>: "each option, <b>except 'change form'</b>, may be
+    /// performed as many times as the player is able" — so the turn does not
+    /// end here. The same prompt is put again, and what it offers the second
+    /// time is whatever is still possible: after a basic attack the character
+    /// is exhausted, so nothing is.
+    /// </para>
+    /// <para>
+    /// The target comes off <see cref="Decision.Targets"/> rather than being
+    /// chosen here. <c>rr:initiating-abilities</c> separates choosing a target
+    /// from paying for it and from resolving, and the affordance already said
+    /// which targets were legal.
+    /// </para>
+    /// </remarks>
+    /// <param name="verb">The affordance's verb.</param>
+    /// <param name="input">The answer, carrying the target.</param>
+    private Resolution? BasicPower(string verb, Decision input)
+    {
+        var happened = new List<GameEvent>();
+        switch (verb)
+        {
+            case BasicPowers.AttackVerb:
+                BasicPowers.BasicAttack(
+                    world, facts, Active, world.Cards[Only(input, verb)], happened);
+                break;
+
+            case BasicPowers.ThwartVerb:
+                BasicPowers.BasicThwart(
+                    world, facts, Active, world.Cards[Only(input, verb)], happened);
+                break;
+
+            case BasicPowers.RecoverVerb:
+                BasicPowers.BasicRecovery(world, facts, Active, happened);
+                break;
+
+            default:
+                return null;
+        }
+
+        if (world.IsOver)
+        {
+            // `rr:villain-defeat` -- the players can win here, and nothing is
+            // asked of anybody after a game is over.
+            Phase = GamePhase.Over;
+            Pending = null;
+            return new Resolution(world, null, happened);
+        }
+
+        Pending = TurnPrompt();
+        return new Resolution(world, Pending, happened);
+    }
+
+    /// <summary>The one target a basic power takes.</summary>
+    private static int Only(Decision input, string verb) =>
+        input.Targets.Count == 1
+            ? input.Targets[0]
+            : throw new RulesNotImplementedException(
+                $"a basic {verb} takes exactly one target and was given "
+                + $"{input.Targets.Count}");
 
     /// <summary>
     /// The seat after this one in player order, or null at the end of the table.
@@ -419,13 +488,80 @@ public sealed class Game
             // on the wire.
             Label: $"\n--- {seat.Name}'s Turn ({Round}) ---",
             Cancellable: true,
-            // `rr:form-change-form.1` permits one voluntary change each round,
-            // so a player who has used theirs is not offered it again. An
-            // affordance that would throw when taken is worse than an absent
-            // one -- MARVEL-130 is that same defect on the action menu.
-            Affordances: seat.FormChangedInRound == Round
-                ? []
-                : [Anchored(ChangeForm, seat)]);
+            Affordances: TurnOptions(seat));
+    }
+
+    /// <summary>
+    /// What a player may do on their turn — <c>rr:player-turn</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Only what is offered <i>and</i> can be taken. An affordance that would
+    /// throw when taken is worse than an absent one — MARVEL-130 is that same
+    /// defect on the action menu.
+    /// </para>
+    /// <para>
+    /// <c>rr:player-turn</c> lists six options and three are here: change form,
+    /// and the basic powers under <c>rr:player-turn.3</c>. Playing a card, ally
+    /// actions, triggered actions and asking another player are not written.
+    /// </para>
+    /// </remarks>
+    /// <param name="seat">Whose turn.</param>
+    private List<Affordance> TurnOptions(Seat seat)
+    {
+        var options = new List<Affordance>();
+
+        // `rr:form-change-form.1` permits one voluntary change each round, so a
+        // player who has used theirs is not offered it again.
+        if (seat.FormChangedInRound != Round)
+        {
+            options.Add(Anchored(ChangeForm, seat));
+        }
+
+        // `rr:player-turn.3`: the hero's basic attack or thwart in hero form,
+        // the alter-ego's basic recovery in alter-ego form. A character that is
+        // exhausted cannot pay the cost of any of them (`rr:exhausted.2`).
+        if (!seat.IdentityCard.Ready)
+        {
+            return options;
+        }
+
+        if (Forms.In(world, seat, facts, Forms.Hero))
+        {
+            // `rr:attack-player-ability-type.1.1` and `rr:thwart.1.1`: a basic
+            // attack needs an enemy that can be attacked and a basic thwart
+            // needs a scheme with at least one threat on it. With neither, the
+            // power is not on offer at all.
+            Offer(options, seat, BasicPowers.AttackVerb,
+                BasicPowers.Attackable(world, facts, seat.Index));
+            Offer(options, seat, BasicPowers.ThwartVerb,
+                BasicPowers.Thwartable(world, facts));
+        }
+        else if (BasicPowers.CanRecover(world, facts, seat.Index))
+        {
+            options.Add(Anchored(BasicPowers.RecoverVerb, seat));
+        }
+
+        return options;
+    }
+
+    /// <summary>Offers a targeted basic power, if it has a legal target.</summary>
+    private void Offer(
+        List<Affordance> options, Seat seat, string verb, IReadOnlyList<Card> targets)
+    {
+        if (targets.Count == 0)
+        {
+            return;
+        }
+
+        options.Add(Anchored(verb, seat) with
+        {
+            // Exactly one target: `rr:attack-player-ability-type.1` and
+            // `rr:thwart.1` are each one enemy or one scheme. An ability that
+            // hits several is a different thing (`.5`) and is not a basic power.
+            Targets = new TargetRequest(
+                [.. targets.Select(target => target.ObjectId)], Min: 1, Max: 1),
+        });
     }
 
     private Prompt EndPhasePrompt()

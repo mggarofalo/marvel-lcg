@@ -286,38 +286,30 @@ public static class Attack
         ArgumentNullException.ThrowIfNull(events);
 
         var attack = Current(world);
-        long amount = Damage(world, facts, attack);
+        long amount = Amount(world, facts, attack);
         if (amount <= 0)
         {
             return;
         }
 
-        var target = world.Cards[attack.Target];
-        long printed = facts.PrintedValue(target.FaceId, "HP", world.Players);
-        long before = Math.Max(0, printed - target.Damage);
-        target.TakeDamage(amount);
-        long after = Math.Max(0, printed - target.Damage);
-
-        events.Add(new FieldSet(target.ObjectId, "health", before, after)
-        {
-            Trigger = Steps.EnemyAttacks, Verb = "Deal_Damage",
-        });
-
-        // rr:damage.1 -- "when a character has damage on it equal to or in
-        // excess of its hit points, it is defeated". A hero being defeated ends
-        // the game for that player (rr:defeated), and none of it is written.
-        if (target.Damage >= printed)
-        {
-            throw new RulesNotImplementedException(
-                $"card {target.ObjectId} has {target.Damage} damage against {printed} hit "
-                + "points and would be defeated; defeat is not implemented");
-        }
+        // Through the same primitive a hero's basic attack uses. `rr:damage` is
+        // one rule however the damage arrived, and so is `rr:defeat` -- an
+        // enemy attack that defeated a character down a separate path would be
+        // a second place for the defeat rules to be wrong.
+        Damage.Deal(
+            world, facts, world.Cards[attack.Target], amount,
+            Steps.EnemyAttacks, "Deal_Damage", events);
     }
 
     /// <summary>
     /// How much damage the attack deals —
     /// <c>rr:attack-enemy-activation.step.4</c>.
     /// </summary>
+    /// <remarks>
+    /// Named for the number rather than the noun so that it does not shadow
+    /// <see cref="Play.Damage"/>, which is the rule for dealing it. This step
+    /// works out an amount; that one applies it.
+    /// </remarks>
     /// <remarks>
     /// "The base damage is equal to the attacking enemy's ATK, including
     /// modifiers from abilities in play and boost icons resolved for the attack.
@@ -327,7 +319,7 @@ public static class Attack
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="attack">The attack.</param>
-    public static long Damage(World world, ICardFacts facts, EnemyAttack attack)
+    public static long Amount(World world, ICardFacts facts, EnemyAttack attack)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);

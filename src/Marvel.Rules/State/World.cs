@@ -123,7 +123,38 @@ public sealed class World
     /// thing that makes a prompt absent. Nothing is asked of a player after a
     /// game is over.
     /// </remarks>
-    public bool IsOver { get; set; }
+    public bool IsOver => Result is not Play.Outcome.Unfinished;
+
+    /// <summary>
+    /// How the game ended, or that it has not.
+    /// </summary>
+    /// <remarks>
+    /// The rules name two endings and they are not the same fact.
+    /// <c>rr:main-scheme-main-scheme-deck.2.1</c>: "if the villain completes the
+    /// final stage of the main scheme deck, <b>the villain wins the game</b>."
+    /// <c>rr:villain-defeat</c>: "if the final stage of the villain deck is
+    /// defeated, <b>the players win the game</b>." A boolean can say a game is
+    /// over and cannot say which of those happened — which is the one thing a
+    /// player wants to know.
+    /// </remarks>
+    public Play.Outcome Result { get; private set; }
+
+    /// <summary>Ends the game.</summary>
+    /// <remarks>
+    /// Once, and it cannot be un-ended. Two endings racing would mean a rule
+    /// resolved after the game stopped, which is a fault rather than a tie.
+    /// </remarks>
+    /// <param name="outcome">Who won.</param>
+    public void Finish(Play.Outcome outcome)
+    {
+        if (Result is not Play.Outcome.Unfinished)
+        {
+            throw new Play.RulesNotImplementedException(
+                $"the game already ended as {Result} and cannot also end as {outcome}");
+        }
+
+        Result = outcome;
+    }
 
     /// <summary>The seat holding the first player token.</summary>
     /// <remarks>

@@ -510,7 +510,10 @@ public static class VillainPhase
         }
 
         scheme.PlaceTokens("is_completed", 1);
-        world.IsOver = true;
+
+        // `rr:main-scheme-main-scheme-deck.2.1` -- "if the villain completes
+        // the final stage of the main scheme deck, the villain wins the game."
+        world.Finish(Outcome.VillainWins);
         events.Add(new FieldSet(scheme.ObjectId, "is_completed", 0, 1)
         {
             Trigger = "main scheme completed", Verb = "Complete",

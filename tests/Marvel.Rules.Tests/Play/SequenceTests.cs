@@ -157,13 +157,16 @@ public sealed class SequenceTests
         // the villain wins the game." The encounter cards are not dealt, the
         // token is not passed, and the round does not end.
         var world = Board(players: 1);
-        world.IsOver = false;
         VillainPhase.Schedule(world.Agenda, round: 1);
         var cards = new Silent();
 
         // Step 1 places threat; this board's scheme completes on it.
         Sequence.Work(world, new Facts(overThreshold: true), cards, []);
 
+        // And *which* ending it was, which a boolean could not say. The other
+        // one is `rr:villain-defeat`'s, and a game that reported only "over"
+        // could not tell a player whether they had won.
+        Assert.Equal(Outcome.VillainWins, world.Result);
         Assert.True(world.IsOver);
         Assert.False(world.Agenda.IsBusy);
     }
