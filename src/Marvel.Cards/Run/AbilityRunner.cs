@@ -94,12 +94,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // `datasets/digest/prompts.json` offers `Foresight` and `"I_Object!"`,
         // both card names. One string does for both fields because the engine
         // carries one -- see the remarks on `Affordance.Id`.
+        var price = Price(world, card, ability.Player, found.Cost);
         return new Affordance(
             Id: ability.Card,
             Verb: found.Name,
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
-            Label: found.Name);
+            Label: found.Name,
+            Costs: price is null ? null : [price]);
     }
 
     /// <inheritdoc/>
@@ -132,7 +134,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // before step 6 resolves. Nothing here can abort, because step 3 --
         // `Payable`, when the ability was offered -- already asked whether it
         // could be paid.
-        Pay(found[0].Cost, cast);
+        Pay(found[0].Cost, [], cast);
         Run(found[0].Effect, cast);
         return events;
     }
@@ -223,6 +225,35 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Act(
+        World world, PendingAbility ability, IReadOnlyList<int> paying)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(paying);
+
+        var card = world.Cards[ability.Card];
+        var found = book.On(card.FaceId)
+            .SingleOrDefault(candidate => candidate.Trigger.Timing == ability.Type)
+            ?? throw new AbilityException(
+                $"card '{card.FaceId}' has no single '{ability.Type}' ability to trigger");
+
+        var events = new List<GameEvent>();
+        var cast = new Cast(
+            world,
+            card,
+            new Occurrence(0, [Steps.TurnAction], Subject: card.ObjectId, Player: ability.Player),
+            ability.Player,
+            events,
+            this);
+
+        // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
+        // before step 6 resolves.
+        Pay(found.Cost, paying, cast);
+        Run(found.Effect, cast);
+        return events;
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<PendingAbility> Actions(World world, int player)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -234,7 +265,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 if (ability.Trigger.Timing == AbilityType.Action
                     && InForm(world, player, ability.Trigger.Form)
-                    && Payable(world, card, ability.Cost))
+                    && Payable(world, card, player, ability.Cost))
                 {
                     found.Add(new PendingAbility(card.ObjectId, AbilityType.Action, player));
                 }
@@ -311,19 +342,67 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// ability that would abort is not an offer, it is a trap. An exhausted card
     /// cannot pay a cost of exhausting itself: <c>rr:exhausted.2</c>.
     /// </remarks>
-    private static bool Payable(World world, Card card, AbilityNode? cost) => cost switch
+    private static bool Payable(World world, Card card, int player, AbilityNode? cost) =>
+        cost switch
+        {
+            null => true,
+            { Kind: "exhaust" } => card.Ready,
+
+            // Asked of the whole hand, which is the right question rather than
+            // an approximation: `rr:cost.4` permits generating beyond the cost,
+            // so if everything together cannot pay then no choice among them
+            // can, and if it can then spending it all is a payment.
+            { Kind: "spend" } => Resources.Pays(
+                string.Concat(CardPlay.Generators(world.Facts, world.Seats[player])
+                    .SelectMany(source => source.Generates)),
+                Word(cost.Argument).Length,
+                Word(cost.Argument)),
+
+            _ => throw new RulesNotImplementedException(
+                $"'{card.FaceId}' has a cost of '{cost.Kind}', which is not implemented"),
+        };
+
+    /// <summary>What an action's cost looks like on a prompt, or null.</summary>
+    /// <remarks>
+    /// Only a resource cost reaches the wire, because only a resource cost is a
+    /// <i>choice</i>. Exhausting the card the ability is on has one way to be
+    /// paid, so there is nothing to ask and nothing to carry.
+    /// </remarks>
+    private static CostOption? Price(World world, Card card, int player, AbilityNode? cost)
     {
-        null => true,
-        { Kind: "exhaust" } => card.Ready,
-        _ => throw new RulesNotImplementedException(
-            $"'{card.FaceId}' has a cost of '{cost.Kind}', which is not implemented"),
-    };
+        if (cost is not { Kind: "spend" })
+        {
+            return null;
+        }
+
+        string letters = Word(cost.Argument);
+        return new CostOption(
+            Target: card.ObjectId,
+            Cost: letters.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Rule: [letters],
+            Sources: CardPlay.Generators(world.Facts, world.Seats[player]));
+    }
 
     /// <summary>Pays an ability's cost — <c>rr:initiating-abilities.step.5</c>.</summary>
-    private static void Pay(AbilityNode? cost, Cast cast)
+    private static void Pay(AbilityNode? cost, IReadOnlyList<int> paying, Cast cast)
     {
         if (cost is null)
         {
+            return;
+        }
+
+        if (cost.Kind == "spend")
+        {
+            string letters = Word(cost.Argument);
+            CardPlay.Spend(
+                cast.World,
+                cast.World.Facts,
+                [cast.World.Seats[cast.Player].Hand],
+                paying,
+                letters.Length,
+                letters,
+                itself: -1,
+                cast.Events);
             return;
         }
 

@@ -3,6 +3,7 @@ using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -121,6 +122,133 @@ public sealed class ActionAbilityTests
 
         Assert.DoesNotContain(
             game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);
+    }
+
+    [Rule("rr:cost")]
+    [Rule("rr:player-turn.5")]
+    [Fact]
+    public void AnEncounterCardsActionIsAnybodysAndCostsResources()
+    {
+        // "Attach to Rhino. **Hero Action**: Spend [physical][physical][physical]
+        // resources → discard this card." An encounter card in play, so
+        // `rr:player-turn.5.b` is what lets a player trigger it -- it is
+        // nobody's card and everybody's action.
+        Card? horn = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                horn = board.CreateCard(
+                    AuthoredCards.IvoryHorn, board.AreaOf(DeckType.RevealingArea));
+                AuthoredCards.Runner().WhenRevealed(board, horn, 0);
+                Physical(board, 3);
+            },
+            hero: true);
+
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);
+
+        // The cost is on the wire, with what could pay it -- a resource cost is
+        // a choice of *which* cards, so the client has to be told.
+        var price = Assert.Single(action.CostOptions);
+        Assert.Equal("3", price.Cost);
+        Assert.Equal(3, price.Generators.Count(source => source.Generates == "R"));
+
+        int[] paying = [.. world.Seats[0].Hand.Cards
+            .Where(card => card.FaceId == Physicals)
+            .Take(3)
+            .Select(card => card.ObjectId)];
+
+        game.Resolve(Decision.Take(action.Id, [], paying));
+
+        Assert.Equal(DeckType.EncounterDiscardPile, horn!.Area.Type);
+        Assert.All(
+            paying, id => Assert.Equal(DeckType.DiscardPile, world.Cards[id].Area.Type));
+    }
+
+    [Rule("rr:initiating-abilities.step.3")]
+    [Fact]
+    public void AnActionIsNotOfferedToAHandThatCannotPayIt()
+    {
+        // The whole hand cannot make three physicals, so the action is not
+        // offered at all. `rr:cost.4` permits generating beyond the cost, so
+        // asking the whole hand is the right question rather than an
+        // approximation: if everything together cannot pay, no choice among it
+        // can.
+        var (game, _) = Playing(
+            board =>
+            {
+                var horn = board.CreateCard(
+                    AuthoredCards.IvoryHorn, board.AreaOf(DeckType.RevealingArea));
+                AuthoredCards.Runner().WhenRevealed(board, horn, 0);
+                Physical(board, 2);
+            },
+            hero: true);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);
+    }
+
+    /// <summary>`01003` Backflip — a Spider-Man card printing a physical.</summary>
+    private const string Physicals = "01003";
+
+    /// <summary>`01004` Enhanced Spider-Sense — the same count, a mental.</summary>
+    private const string Mentals = "01004";
+
+    /// <summary>Empties the hand and fills it with physical resources.</summary>
+    private static void Physical(World world, int count) =>
+        Hand(world, Physicals, count);
+
+    private static void Hand(World world, string faceId, int count)
+    {
+        foreach (var card in world.Seats[0].Hand.Cards.ToList())
+        {
+            World.MoveToTop(card, world.Seats[0].Deck);
+        }
+
+        for (int made = 0; made < count; made++)
+        {
+            world.CreateCard(faceId, world.Seats[0].Hand);
+        }
+    }
+
+    [Rule("rr:resource.4")]
+    [Fact]
+    public void ThreeOfTheWrongResourceIsNotThreePhysicals()
+    {
+        // Enough cards and the wrong kind. `rr:resource.4`: "many abilities
+        // require specific resource types, and the specified types in the
+        // specified quantities must be generated **in order to pay the cost**"
+        // -- so a cost of three physicals is not a cost of three.
+        //
+        // The board is the same as the paying one except for the letter on the
+        // cards, which is what makes this a test of the types rather than of
+        // the count.
+        Card? horn = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                horn = board.CreateCard(
+                    AuthoredCards.IvoryHorn, board.AreaOf(DeckType.RevealingArea));
+                AuthoredCards.Runner().WhenRevealed(board, horn, 0);
+                Hand(board, Mentals, 3);
+            },
+            hero: true);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);
+
+        // And paying with them anyway is refused by name rather than half-paid:
+        // `rr:initiating-abilities.step.5` aborts "without paying any costs".
+        var ability = Assert.Single(AuthoredCards.Runner().Actions(world, 0)
+            .Where(pending => pending.Card == horn!.ObjectId)
+            .DefaultIfEmpty(new PendingAbility(horn!.ObjectId, AbilityType.Action, 0)));
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => AuthoredCards.Runner().Act(
+                world, ability, [.. world.Seats[0].Hand.Cards.Select(card => card.ObjectId)]));
+
+        Assert.Contains("requiring 'RRR'", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(3, world.Seats[0].Hand.Cards.Count);
     }
 
     /// <summary>Puts a support into play under the first player.</summary>

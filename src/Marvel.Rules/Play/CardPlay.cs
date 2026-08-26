@@ -219,6 +219,53 @@ public static class CardPlay
         // and for every other card it is only this player's.
         var hands = Paying(world, facts, seat, card).Select(player => player.Hand).ToList();
 
+        Spend(
+            world, facts, hands, paying, cost, Resources.Required(card.FaceId, facts),
+            card.ObjectId, events);
+
+        // Steps 6 and 7. The card is played: it enters play, or it is an event
+        // and its ability resolves before it is discarded.
+        Enter(world, facts, abilities, seat, card, events);
+    }
+
+    /// <summary>
+    /// Spends resources to pay a cost — <c>rr:initiating-abilities.step.5</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "If this step is reached and the cost(s) cannot be paid, <b>abort this
+    /// process without paying any costs</b>", so the whole payment is checked
+    /// before a single card is discarded.
+    /// </para>
+    /// <para>
+    /// Shared by a card being played and an ability being triggered, because
+    /// <c>rr:cost</c> is one rule for both — "a cost is anything a player must
+    /// do or pay in order to initiate an ability", and playing a card is
+    /// initiating one.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="hands">Whose hands may pay — see <see cref="Paying"/>.</param>
+    /// <param name="paying">The cards discarded to pay, by object id.</param>
+    /// <param name="cost">How many resources are needed.</param>
+    /// <param name="required">Specific types that must be among them, or empty.</param>
+    /// <param name="itself">
+    /// A card that cannot pay for itself, or <c>-1</c>. <c>rr:cost.3</c> spends
+    /// resources "by discarding cards from their hand", and a card leaving the
+    /// hand to be played is not also in it.
+    /// </param>
+    /// <param name="events">Where to record what moved.</param>
+    public static void Spend(
+        World world, ICardFacts facts, IReadOnlyList<Area> hands, IReadOnlyList<int> paying,
+        long cost, string required, int itself, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(hands);
+        ArgumentNullException.ThrowIfNull(paying);
+        ArgumentNullException.ThrowIfNull(events);
+
         var spent = new List<Card>();
         var generated = new System.Text.StringBuilder();
         foreach (int id in paying)
@@ -226,13 +273,16 @@ public static class CardPlay
             var source = world.Cards[id];
             if (!hands.Contains(source.Area))
             {
+                // Named, because "not in a hand" and "not in *yours*" are
+                // different mistakes and only one of them is about alliance.
                 throw new RulesNotImplementedException(
-                    hands.Count == 1
-                        ? $"card {id} is not in {seat.Name}'s hand and cannot be spent from it"
+                    hands.Count == 1 && hands[0].CardOwner >= 0
+                        ? $"card {id} is not in {world.Seats[hands[0].CardOwner].Name}'s hand "
+                          + "and cannot be spent from it"
                         : $"card {id} is in no player's hand and cannot be spent from one");
             }
 
-            if (source.ObjectId == card.ObjectId)
+            if (source.ObjectId == itself)
             {
                 throw new RulesNotImplementedException(
                     $"card {id} is being played and cannot also pay for itself");
@@ -242,11 +292,10 @@ public static class CardPlay
             generated.Append(Resources.GeneratedBy(source.FaceId, facts));
         }
 
-        string required = Resources.Required(card.FaceId, facts);
         if (!Resources.Pays(generated.ToString(), cost, required))
         {
             throw new RulesNotImplementedException(
-                $"card {card.ObjectId} costs {cost}"
+                $"the cost is {cost}"
                 + (required.Length > 0 ? $" requiring '{required}'" : string.Empty)
                 + $" and the payment generates '{generated}'; "
                 + "rr:initiating-abilities.step.5 aborts without paying");
@@ -256,10 +305,6 @@ public static class CardPlay
         {
             Discard.Card(world, source, Verb, events);
         }
-
-        // Steps 6 and 7. The card is played: it enters play, or it is an event
-        // and its ability resolves before it is discarded.
-        Enter(world, facts, abilities, seat, card, events);
     }
 
     /// <summary>
