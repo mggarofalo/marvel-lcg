@@ -188,14 +188,24 @@ public static class StateFields
         ["vulnerable"] = "Vulnerable",
     };
 
-    /// <summary>Whether a name is a printed field the engine reads.</summary>
+    /// <summary>Whether a name is a field the engine reads modifiers into.</summary>
     /// <remarks>
+    /// <para>
     /// For the things that name a field rather than hold one — a card ability
     /// granting a keyword, which is a string in a dataset and so a typo away
     /// from granting nothing at all.
+    /// </para>
+    /// <para>
+    /// <c>health</c> is here and is not in <see cref="PrintedFrom"/>, because
+    /// remaining hit points are computed rather than printed — but
+    /// <c>Damage.Health</c> sums modifiers into the printed HP, which is what
+    /// "attached minion gets +2 hit points" needs. A field is modifiable if
+    /// something reads modifiers for it, not if it happens to be printed.
+    /// </para>
     /// </remarks>
     /// <param name="field">The field name, as this class spells it.</param>
-    public static bool IsPrinted(string field) => PrintedFrom.ContainsKey(field);
+    public static bool IsModifiable(string field) =>
+        PrintedFrom.ContainsKey(field) || string.Equals(field, "health", StringComparison.Ordinal);
 
     // What a card attached to another adds to it. The engine's own attribute
     // names, and a closed set: 116 cards carry `ATK+`, 50 carry `SCH+`, four

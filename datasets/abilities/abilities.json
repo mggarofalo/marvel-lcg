@@ -1108,6 +1108,106 @@
           }
         }
       ]
+    },
+    {
+      "card": "45070",
+      "name": "Culling the Weak",
+      "note": "When Revealed: Place 4 threat on Gene Pool. [star] Boost: Place 2 threat on Gene Pool. Two abilities on one card and the same effect twice, which rr:boost-boost-icon.2 keeps apart: the boost half resolves only when the card is turned faceup as a boost card, and the reveal half only when it is revealed. Gene Pool is named by title -- rr:identity.2 makes a title name one card -- rather than by printed id, because the side scheme belongs to the Infinites encounter set and more than one scenario uses it.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": { "titled": "Gene Pool" }, "amount": 4 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": { "titled": "Gene Pool" }, "amount": 2 } }
+        }
+      ]
+    },
+    {
+      "card": "45068",
+      "name": "Endless Ranks",
+      "note": "When Defeated: Place 3 threat on Gene Pool. rr:when-defeated-abilities.1 defines the timing as exactly 'Forced Interrupt: When this card is defeated', and .2.1 keeps the card in play while it resolves -- so the scheme is still on the table as the threat goes onto Gene Pool. The printed starting threat and the acceleration icon are fields rather than abilities.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": { "titled": "Gene Pool" }, "amount": 3 } }
+        }
+      ]
+    },
+    {
+      "card": "45073",
+      "name": "War-Weary",
+      "note": "When Revealed: You are stunned. If you were already stunned, take 2 damage instead. [star] Boost: the same. 'Instead' is why this is one if and not two sentences: rr:replacement-effect reads 'instead' as the damage taking the stun's place, so a player who is already stunned does not also gain a second status card. rr:you-your.5 -- 'if a card ability places a status card on you, the player resolving that card ability places that status card on their identity' -- so both halves name the identity, which is what 'you' resolves to.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "hasStatus": { "card": "you", "status": "stunned" } },
+              "then": { "dealDamage": { "cards": "you", "amount": 2 } },
+              "else": { "giveStatus": { "card": "you", "status": "stunned" } }
+            }
+          }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "hasStatus": { "card": "you", "status": "stunned" } },
+              "then": { "dealDamage": { "cards": "you", "amount": 2 } },
+              "else": { "giveStatus": { "card": "you", "status": "stunned" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "45069",
+      "name": "Infinite Soldier",
+      "note": "Guard. If the amount of threat on Gene Pool is at least: 3 -- this minion gains quickstrike. 6 -- also surge. 9 -- also +3 hit points. Guard is a printed field the engine already reads. The rest is Unus's own shape one card down: rr:ability.9, 'some constant abilities continuously seek a specific condition [...] the effects of such abilities are active anytime the specific condition is met', so the three clauses are re-read on every ask and 'also' makes them cumulative rather than a ladder. Hit points are granted as health, which is computed rather than printed -- remaining hit points are printed HP less damage -- but Damage.Health sums modifiers into it, which is what +3 hit points means.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 3
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "quickstrike" } }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 6
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "surge" } }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 9
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "health", "amount": 3 } }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }
