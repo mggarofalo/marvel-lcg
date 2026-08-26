@@ -357,7 +357,7 @@ public static class Reveal
             .Where(area => area.Type == DeckType.EngagedEnemiesArea)
             .SelectMany(area => area.Cards)
             .Any(other => other.ObjectId != card.ObjectId
-                && facts.Traits(other.FaceId).Contains(trait, StringComparer.Ordinal));
+                && State.Traits.Has(world, other, trait, facts));
 
         if (!company)
         {

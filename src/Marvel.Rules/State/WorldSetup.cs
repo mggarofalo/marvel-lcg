@@ -187,6 +187,21 @@ public static class WorldSetup
 
         world.Shuffle(encounterDeck);
 
+        // 11. `rr:appendix-ii-setup.step.11`, "Put Setup Cards Into Play":
+        //     "search each deck and the set aside area for any cards with the
+        //     setup keyword and put them into play."
+        //
+        //     **Every deck, and that is not the same as the set-aside pile.**
+        //     Nothing in the pool puts a setup card in a player deck today, so
+        //     searching one finds nothing — but the rule says to search, and a
+        //     loop that only looked where cards happen to be would have to be
+        //     found and changed by whoever adds the first such card.
+        //
+        //     `rr:setup-keyword.1` names this step and nothing else about it,
+        //     so where each card goes is the ordinary question of a card
+        //     entering play, which `Play.Reveal` already answers.
+        SetupCards(world, facts, happened);
+
         // 12. `rr:appendix-ii-setup.step.12`, "Resolve Scenario Setup and When
         //     Revealed Abilities", which is three sub-steps in a stated order.
         //     The order is the whole of the rule: 12a reads a face that 12b
@@ -262,4 +277,52 @@ public static class WorldSetup
         return world;
     }
 
+    /// <summary>
+    /// Step 11 — every card with the setup keyword, put into play.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Put into play, not revealed.</b>
+    /// <c>rr:when-revealed-abilities.2</c>: "if an encounter card with a 'When
+    /// Revealed' ability is put into play <b>without being revealed</b>, the
+    /// 'When Revealed' ability does not trigger." So this places the card and
+    /// runs its keywords — <c>rr:enters-play</c> — and nothing else, which is
+    /// exactly what <see cref="Play.Reveal.Resolve"/> does.
+    /// </para>
+    /// <para>
+    /// <b>A card it cannot place stops the deal.</b> Where a card goes comes
+    /// from its type for a side scheme or an environment, and from its own text
+    /// for an attachment (<c>rr:attach-to</c>) or for a scenario's ally or
+    /// support (<c>rr:ownership-and-control.2.2</c>, "when a player takes
+    /// control of a […] player card with a player card back"). A card whose
+    /// text nobody has read is placed nowhere, and leaving it in the pile it
+    /// was searched out of would deal a board that is quietly missing a card
+    /// the rules put on the table.
+    /// </para>
+    /// </remarks>
+    private static void SetupCards(
+        World world, ICardFacts facts, List<Events.GameEvent> happened)
+    {
+        // A copy, because putting a card into play moves it between areas and
+        // `World.Cards` is walked by object id rather than by place.
+        foreach (var card in world.Cards.ToList())
+        {
+            if (facts.PrintedValue(card.FaceId, "Setup", world.Players) <= 0
+                || DeckTypes.IsInPlay(card.Area.Type))
+            {
+                continue;
+            }
+
+            var from = card.Area;
+            Play.Reveal.Resolve(world, facts, card, world.FirstPlayer, happened);
+
+            if (card.Area == from)
+            {
+                throw new Play.RulesNotImplementedException(
+                    $"card '{card.FaceId}' has the setup keyword and "
+                    + "rr:appendix-ii-setup.step.11 puts it into play, and this engine has "
+                    + "nowhere to put it. MARVEL-247");
+            }
+        }
+    }
 }

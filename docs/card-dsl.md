@@ -963,6 +963,29 @@ encounter deck — so a reveal that only scheduled would shuffle away the two
 cards it had just chosen. Nothing else in the pool has yet needed the
 distinction, and it is one line apart.
 
+### A constant ability can grant a trait
+
+`rr:traits.1`: "traits have no inherent effects on the game. Instead, some card
+abilities reference cards that possess or lack specific traits." So a trait is a
+name other cards ask about, and a card that gives one is giving an attribute
+rather than copying text — `rr:traits.2` says traits "are not considered to be
+part of a card's printed text box for the purpose of card abilities".
+
+```json
+{ "grant": { "card": "attachedTo", "trait": "AERIAL" } }
+```
+
+It carries no amount, which is the difference from a keyword: `steady` is
+present or absent and `retaliate` states a number, but a card either has the
+**AERIAL** trait or it does not. `State.Traits.Of` is the one place that knows
+both sources, the same way `Keywords.Has` does for keywords, and it is what the
+trait queries, the reveal's trait check and the digest's `t_` keys all read.
+
+**The digest carries it.** A villain wearing Super Strength has the **BRUTE**
+trait, so `t_BRUTE` is on its record — a wire format that emitted only the
+printed list would describe a board nobody is playing, and two engines would
+agree about it.
+
 ### "Attach to" is a rule about a phrase, not an ability
 
 `rr:attach-to`: "if a card uses the phrase 'attach to', it must be attached to

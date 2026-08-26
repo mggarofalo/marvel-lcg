@@ -164,6 +164,16 @@ internal static class AuthoredCards
     /// <summary>The printed id of "Gene Pool", the side scheme Unus reads.</summary>
     public const string GenePool = "45071";
 
+    /// <summary>
+    /// The printed ids of the three Superpower attachments, in card order.
+    /// </summary>
+    /// <remarks>
+    /// Flight, Super Strength and Telepathy — one modular set each, and the
+    /// three whose whole text is a constant ability granting the attached
+    /// villain a trait and a keyword.
+    /// </remarks>
+    public static readonly string[] Superpowers = ["40151", "40155", "40159"];
+
     /// <summary>The printed id of "Masterplan".</summary>
     public const string Masterplan = "01192";
 
