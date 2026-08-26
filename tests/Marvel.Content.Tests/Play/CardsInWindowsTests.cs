@@ -389,7 +389,7 @@ public sealed class CardsInWindowsTests
         var playing = heroes.Length > 0 ? heroes : Heroes;
         return WorldSetup.Deal(
             Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, Campaign, playing)),
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, playing), Cards),
             [.. playing.Select(hero => Setup.Hero(hero).Name)],
             Seed);
     }

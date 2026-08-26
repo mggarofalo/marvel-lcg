@@ -121,7 +121,7 @@ public sealed class PlayerTurnTests
     {
         var world = WorldSetup.Deal(
             Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, Campaign, heroes)),
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, heroes), Cards),
             [.. heroes.Select(hero => Setup.Hero(hero).Name)],
             Seed);
         return (Game.Begin(world, Cards), world);

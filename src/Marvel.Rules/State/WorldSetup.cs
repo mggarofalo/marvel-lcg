@@ -14,6 +14,12 @@ public enum SetupSlot
     MainScheme,
     Villain,
     Encounter,
+
+    /// <summary>
+    /// Set aside before setup, rather than shuffled into a deck —
+    /// <c>rr:permanent.2</c> and <c>rr:setup-keyword.1</c>.
+    /// </summary>
+    SetAside,
 #pragma warning restore CS1591, SA1602
 }
 
@@ -104,6 +110,14 @@ public static class WorldSetup
                 SetupSlot.MainScheme => mainSchemeDeck,
                 SetupSlot.Villain => villainDeck,
                 SetupSlot.Encounter => encounterDeck,
+
+                // `rr:permanent.2` -- "permanent cards are set aside **before
+                // step 1 of setup**". A player's goes in their own aside pile,
+                // beside their nemesis set; the scenario's goes in the
+                // villain's, which is the split `rr:play-area` already makes.
+                SetupSlot.SetAside => seat >= 0
+                    ? world.Seats[seat].Nemesis
+                    : world.AreaOf(DeckType.AsideDeck),
                 _ => throw new ArgumentOutOfRangeException(nameof(blueprints)),
             };
 

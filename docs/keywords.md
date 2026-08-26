@@ -12,6 +12,7 @@ own "equivalent to the following constant ability" line.
 | keyword | the ability it is equivalent to | where |
 |---|---|---|
 | **Alliance** | any player may help pay this card's costs | `CardPlay.Paying` |
+| **Linked (title)** | set aside during setup | `Blueprints.SetAside` |
 | **Assault** | a basic thwart against this scheme uses ATK instead of THW | `BasicPowers` |
 | **Form** | grants an identity a unique form | [forms.md](forms.md) |
 | **Guard** | the engaged player cannot attack any villain | `BasicPowers.Attackable` |
@@ -20,6 +21,7 @@ own "equivalent to the following constant ability" line.
 | **Overkill** | excess damage from a defeated ally goes to its controller's identity; from a minion, to the villain | `Damage.Attack` |
 | **Patrol** | the engaged player cannot thwart the **main** scheme | `BasicPowers.Thwartable` |
 | **Peril** | while it resolves, only the resolving player may trigger anything | `Offering.Eligible` |
+| **Permanent** | set aside before setup, and put into play by another card | `Blueprints.SetAside` (half — see below) |
 | **Piercing** | discard **each** tough status card before dealing damage | `Damage.Attack` |
 | **Quickstrike** | *Forced Response (Hero): after this minion engages a player, it attacks that player* | `Reveal.Quickstrike` |
 | **Ranged** | this attack ignores retaliate | `Damage.Attack` |
@@ -57,9 +59,9 @@ zero.
 
 | keyword | cards | what it needs |
 |---|---|---|
-| **Permanent** | 86 | "except by card abilities **in the same set**" needs the effect's set, not just the card's |
-| **Setup** | 39 | a setup step that puts cards into play before step 1 |
-| **Linked** | 14 | set-aside cards brought in by the card that names them |
+| **Permanent** | 86 | set aside — "except by card abilities **in the same set**" needs the effect's set, not just the card's |
+| **Setup** | 39 | set aside — the "Put Setup Cards Into Play" step is not written |
+| **Linked** | 14 | set aside — the card that names them does not fetch them yet |
 
 ### Teamwork's two statements disagree
 
@@ -73,6 +75,38 @@ It also **activates** rather than attacking, which is the difference from
 quickstrike. Quickstrike says outright *"a player whose identity is in hero
 form"*; teamwork does not, so `rr:activation.1` reads the form and a teamwork
 minion engaging an alter-ego schemes rather than doing nothing.
+
+### Three keywords, one destination, and no id moves
+
+`rr:permanent.2` ("set aside **before step 1 of setup**"),
+`rr:setup-keyword.1` ("put into play during the *Put Setup Cards Into Play*
+step") and `rr:linked-card-title.1` ("set this card aside during setup") all put
+a card outside every deck at the deal. 139 cards carry one.
+
+**What the engine did instead was shuffle them in**, and the failure was worse
+than the cards never entering play: a permanent attachment in the encounter deck
+is dealt, revealed and discarded like a treachery, so the board looks plausible
+and the card is gone.
+
+**No object id moves.** A creation's position in the deal *is* the card's id and
+the id is on the wire, so this changes where a card goes and not when it is
+made. The recorded corpus reads the same way — in one game the modular set runs
+40147–40150 into the encounter deck at ids 202–205 and 40151–40158 into the
+aside pile at ids 206–215, unbroken. And no card in the fixture board's scenario
+or hero set carries any of the three, which is stated as its own test.
+
+**The aside pile's own order is not settled.** The corpus shows the villain's
+pile coming out differently between seeds of one board, so the engine that
+recorded it shuffles that pile — and a shuffle draws from the game's single
+random stream, so reproducing it needs the exact position in that stream rather
+than merely the right permutation. This deals in creation order, which is
+deterministic and which no recorded digest contradicts. MARVEL-210.
+
+**Half the job.** Permanent is now correct: set aside, and put into play later
+by another card's ability. Setup is not — `rr:setup-keyword.1` names a step this
+engine does not have, and putting a setup card into play needs its own text run
+(Flight says "attach to the villain"), which is the ability interpreter's
+business rather than the dealer's.
 
 ### Alliance widens the payment and nothing else
 

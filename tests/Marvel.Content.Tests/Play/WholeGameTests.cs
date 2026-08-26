@@ -202,7 +202,7 @@ public sealed class WholeGameTests
     {
         var world = WorldSetup.Deal(
             Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, Campaign, heroes)),
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, heroes), Cards),
             [.. heroes.Select(hero => Setup.Hero(hero).Name)],
             seed);
         return (Game.Begin(world, Cards), world);

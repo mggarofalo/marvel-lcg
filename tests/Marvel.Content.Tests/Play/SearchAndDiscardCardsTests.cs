@@ -190,7 +190,7 @@ public sealed class SearchAndDiscardCardsTests
         string[] playing = heroes.Length > 0 ? heroes : ["spider_man"];
         return WorldSetup.Deal(
             Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, Campaign, playing)),
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, playing), Cards),
             [.. playing.Select(hero => Setup.Hero(hero).Name)],
             Seed);
     }

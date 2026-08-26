@@ -281,7 +281,7 @@ public sealed class FormDataTests
     private static World Deal() =>
         WorldSetup.Deal(
             Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, Campaign, ["spider_man"])),
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, ["spider_man"]), Cards),
             [Setup.Hero("spider_man").Name],
             Seed);
 }

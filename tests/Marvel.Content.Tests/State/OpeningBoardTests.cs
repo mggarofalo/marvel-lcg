@@ -39,7 +39,7 @@ public sealed class OpeningBoardTests
 
     private static World Deal() => WorldSetup.Deal(
         Cards,
-        Blueprints.From(Dealer.DealOrder(Setup, Campaign, Heroes)),
+        Blueprints.From(Dealer.DealOrder(Setup, Campaign, Heroes), Cards),
         // The seat's name is the hero's printed name, which the setup dataset
         // records: `spider_man` seats "Spider-Man". It reaches nothing in the
         // digest and everything in a prompt label.
