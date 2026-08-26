@@ -479,6 +479,47 @@
           }
         }
       ]
+    },
+    {
+      "card": "01165",
+      "name": "Eviction Notice",
+      "note": "Give to the Peter Parker player. You may flip to alter-ego form. Choose: exhaust Peter Parker to remove Eviction Notice from the game, or discard 1 card at random from your hand, this card gains surge, discard this obligation. Two questions in a row, which is the shape the interpreter had to learn to resume for. rr:form-change-form.3 is why the flip does not use up the turn's: 'if a card ability causes a player to change forms, it does not count against the one voluntary form change'. rr:obligation.1 makes 'you' the player whose play area the obligation is in, which rr:obligation.4 makes the Peter Parker player -- the same seat as the revealing player at one player, and MARVEL-225 above two. The first option's exhaust is written as its effect rather than as a cost because rr:choose-option.1 bars an encounter card's option only for want of a target, not for want of a cost.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "options": [
+                    { "changeForm": { "player": "you", "to": "alter-ego" } },
+                    { "seq": [] }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "options": [
+                    {
+                      "seq": [
+                        { "exhaust": "you" },
+                        { "removeFromGame": "this" }
+                      ]
+                    },
+                    {
+                      "seq": [
+                        { "discardAtRandom": { "player": "you", "count": 1 } },
+                        { "gainSurge": 1 },
+                        { "discard": "this" }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

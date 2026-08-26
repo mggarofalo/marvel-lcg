@@ -138,16 +138,23 @@ public interface ICardAbilities : IWindowAbilities
     /// <param name="world">The world.</param>
     /// <param name="source">The card whose ability is waiting.</param>
     /// <param name="player">The seat resolving it.</param>
+    /// <param name="stoppedAt">
+    /// Where the ability stopped — the step of its top-level sequence to pick
+    /// up at. An ability can ask more than once, so <i>which</i> choice is
+    /// waiting is part of the question.
+    /// </param>
     /// <returns>The question, or null when there is nothing to ask.</returns>
-    Prompts.Prompt? Choosing(World world, Card source, int player);
+    Prompts.Prompt? Choosing(World world, Card source, int player, int stoppedAt);
 
     /// <summary>Resolves the option that answer names.</summary>
     /// <param name="world">The world.</param>
     /// <param name="source">The card whose ability is waiting.</param>
     /// <param name="player">The seat resolving it.</param>
+    /// <param name="stoppedAt">Where the ability stopped.</param>
     /// <param name="input">Which option they took.</param>
     /// <returns>What changed.</returns>
-    IReadOnlyList<GameEvent> Chose(World world, Card source, int player, Decision input);
+    IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input);
 
 
 }
@@ -190,11 +197,12 @@ public class NoCardAbilities : ICardAbilities
             "no card has an action, so none of them can be triggered");
 
     /// <inheritdoc/>
-    public virtual Prompts.Prompt? Choosing(World world, Card source, int player) => null;
+    public virtual Prompts.Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt) => null;
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Chose(
-        World world, Card source, int player, Decision input) =>
+        World world, Card source, int player, int stoppedAt, Decision input) =>
         throw new RulesNotImplementedException(
             "no card has an ability, so none of them is waiting on a choice");
 
@@ -342,7 +350,8 @@ public static class VillainPhase
                 break;
 
             case Steps.ChooseOption:
-                return abilities.Choosing(world, world.Cards[step.Subject], step.Seat);
+                return abilities.Choosing(
+                    world, world.Cards[step.Subject], step.Seat, step.Index);
 
             case Steps.PassFirstPlayerToken:
                 PassFirstPlayerToken(world);
@@ -394,8 +403,8 @@ public static class VillainPhase
                 break;
 
             case Steps.ChooseOption:
-                events.AddRange(
-                    abilities.Chose(world, world.Cards[step.Subject], step.Seat, input));
+                events.AddRange(abilities.Chose(
+                    world, world.Cards[step.Subject], step.Seat, step.Index, input));
                 break;
 
             default:

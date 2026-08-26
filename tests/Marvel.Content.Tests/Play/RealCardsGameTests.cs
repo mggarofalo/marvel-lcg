@@ -42,10 +42,14 @@ public sealed class RealCardsGameTests
     /// amount of damage would be dealt to Rhino, place it here instead" — and
     /// damage is not an occurrence with a window, so nothing can replace it
     /// yet. <c>01111</c> Explosion assigns damage among several characters,
-    /// which is a distribution the player chooses. <c>01165</c> Eviction Notice
-    /// is an obligation whose options carry their own costs.
+    /// which is a distribution the player chooses.
+    /// <para>
+    /// <c>01165</c> Eviction Notice used to be here. It asks twice — "you may
+    /// flip to alter-ego form" and then "choose:" — and a suspended ability had
+    /// nowhere to remember where it stopped.
+    /// </para>
     /// </remarks>
-    private static readonly string[] Unwritten = ["01098", "01111", "01165"];
+    private static readonly string[] Unwritten = ["01098", "01111"];
 
     private static readonly SetupCatalog Setup =
         SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));

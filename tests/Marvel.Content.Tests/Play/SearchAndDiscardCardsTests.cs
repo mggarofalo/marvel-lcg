@@ -64,13 +64,13 @@ public sealed class SearchAndDiscardCardsTests
             AuthoredCards.CaughtOffGuard, world.AreaOf(DeckType.RevealingArea));
         runner.WhenRevealed(world, card, 0);
 
-        var asked = runner.Choosing(world, card, 0)!;
+        var asked = runner.Choosing(world, card, 0, stoppedAt: 1)!;
         Assert.Equal(Question.Element, asked.Asking);
         Assert.Equal(
             [upgrade.ObjectId, support.ObjectId],
             asked.Affordances.Select(option => option.Id));
 
-        runner.Chose(world, card, 0, Decision.Take(support.ObjectId));
+        runner.Chose(world, card, 0, 1, Decision.Take(support.ObjectId));
 
         Assert.Equal(DeckType.DiscardPile, support.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
