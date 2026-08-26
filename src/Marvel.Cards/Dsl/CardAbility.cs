@@ -50,6 +50,22 @@ namespace Marvel.Cards.Dsl;
 /// must be in the specified form in order to trigger the ability" — and 728 of
 /// the 966 action abilities in the pool are preceded by one.
 /// </param>
+/// <param name="Also">
+/// A second triggering condition the same occurrence must carry, or null.
+/// <para>
+/// <c>rr:triggering-condition.2</c> — "if a single game occurrence creates
+/// multiple triggering conditions <i>(such as a single attack causing a
+/// character to both take damage and be defeated)</i>, those triggering
+/// conditions are handled with a single interrupt window and a single response
+/// window." Prelate Sidearm's "after Unus <b>attacks and</b> defeats an ally"
+/// is a sentence about that pair: the subject says <i>which</i> enemy and this
+/// says the enemy was attacking rather than being attacked, which
+/// <c>rr:retaliate</c> is the case that tells apart.
+/// </para>
+/// <para>
+/// The same vocabulary <see cref="Event"/> uses, and held against the same set.
+/// </para>
+/// </param>
 /// <param name="Player">
 /// Whose opportunity the ability is, or null for its card's controller.
 /// <para>
@@ -67,6 +83,7 @@ public sealed record AbilityTrigger(
     AbilityType Timing,
     string Subject,
     string? Form = null,
+    string? Also = null,
     string? Player = null);
 
 /// <summary>
