@@ -127,6 +127,59 @@ public sealed class UnusScenarioTests
         Assert.Equal(health, Damage.Health(world, Cards, soldier));
     }
 
+    [Rule("rr:you-your.5")]
+    [Rule("rr:ownership-and-control.2")]
+    [Fact]
+    public void TargetedForExterminationConfusesWhoeverThwartedIt()
+    {
+        // "**When Defeated:** The player who defeated this scheme confuses
+        // their identity." Not the card's owner and not the first player: a
+        // side scheme is defeated by the character that removed its last
+        // threat, and the status lands on that player's identity.
+        var (world, _) = Board();
+        var hero = world.Seats[0].IdentityCard;
+        hero.TurnTo(AuthoredCards.SpiderMan);
+        var scheme = world.CreateCard("45074", world.AreaOf(DeckType.SideSchemesArea));
+        scheme.PlaceTokens("k_threat", 1);
+
+        BasicPowers.BasicThwart(world, Cards, 0, scheme, []);
+
+        Assert.True(Statuses.Has(world, hero, Statuses.Confused));
+
+        // And the provenance is over. It is set for the length of one defeat,
+        // so a card reading it later would answer about the last one rather
+        // than about none.
+        Assert.Null(world.Defeated);
+    }
+
+    [Rule("rr:ownership-and-control.2")]
+    [Fact]
+    public void ItIsWhoeverThwartedItAndNotWhoeverGoesFirst()
+    {
+        // One seat cannot tell "the player who defeated it" apart from "the
+        // first player", or from "the card's owner", or from "everybody". Two
+        // can: the second player thwarts and the first is untouched.
+        var world = WorldSetup.Deal(
+            Cards,
+            Blueprints.From(
+                Dealer.DealOrder(Setup, Campaign, ["spider_man", "spider_man"]), Cards),
+            ["Spider-Man", "Spider-Woman"],
+            Seed,
+            AuthoredCards.Runner());
+        var scheme = world.CreateCard("45074", world.AreaOf(DeckType.SideSchemesArea));
+        scheme.PlaceTokens("k_threat", 1);
+
+        foreach (var seat in world.Seats)
+        {
+            seat.IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        }
+
+        BasicPowers.BasicThwart(world, Cards, 1, scheme, []);
+
+        Assert.True(Statuses.Has(world, world.Seats[1].IdentityCard, Statuses.Confused));
+        Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Confused));
+    }
+
     [Theory]
     [InlineData("unus")]
     [InlineData("unus_expert")]
@@ -141,7 +194,7 @@ public sealed class UnusScenarioTests
         // `RealCardsGameTests` carried the same list for the Rhino board while
         // there were any, and what is left of it there is one assertion. This
         // is that list at the stage before.
-        string[] unread = ["45063", "45064", "45065", "45066", "45067", "45072", "45074"];
+        string[] unread = ["45063", "45064", "45065", "45066", "45067", "45072"];
         int ended = 0;
 
         for (uint seed = 1; seed <= 40; seed++)

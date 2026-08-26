@@ -595,7 +595,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `dealEncounterCards`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
-| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player`; subjects `this`, `attachedTo`, `you`, `game` |
+| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game` |
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a

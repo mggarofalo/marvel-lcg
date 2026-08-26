@@ -136,18 +136,22 @@ public static class Defeat
     /// <param name="scheme">The side scheme.</param>
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="by">The seat whose character did it, or -1.</param>
     public static void Scheme(
-        World world, ICardFacts facts, Card scheme, string trigger, List<GameEvent> events)
+        World world, ICardFacts facts, Card scheme, string trigger, List<GameEvent> events,
+        int by = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(scheme);
         ArgumentNullException.ThrowIfNull(events);
+
+        world.Defeated = new Defeated(scheme.ObjectId, by);
 
         // `rr:when-defeated-abilities.2` lists a side scheme among the cards
         // this happens to, and `.2.1` puts it before the card goes.
         events.AddRange(world.Abilities.WhenDefeated(world, scheme));
+        world.Defeated = null;
         ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(scheme);
-        ArgumentNullException.ThrowIfNull(events);
 
         if (!ToVictoryDisplay(world, facts, scheme, trigger, events))
         {
