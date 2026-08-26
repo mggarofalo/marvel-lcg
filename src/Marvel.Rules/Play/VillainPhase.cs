@@ -536,6 +536,17 @@ public static class VillainPhase
         World world, ICardFacts facts, ICardAbilities abilities, Card villain, int seat,
         List<GameEvent> events)
     {
+        // `rr:activation.6`: "if an activating minion leaves play, that
+        // minion's activation ends immediately and no further steps of that
+        // activation resolve." A scheme is an activation -- `rr:activation`
+        // says so -- and a minion can be defeated between being scheduled to
+        // scheme and getting to. `rr:in-play-and-out-of-play.2` is what in play
+        // means for an encounter card.
+        if (!DeckTypes.IsInPlay(villain.Area.Type))
+        {
+            return;
+        }
+
         // `rr:confuse-confused.1`: "when this character would scheme or thwart,
         // remove each confused status card from it instead." The scheme does
         // not happen, so no boost card is given and no threat is placed.

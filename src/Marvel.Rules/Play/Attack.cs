@@ -129,6 +129,14 @@ public static class Attack
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(events);
 
+        // `rr:activation.6` -- "if an activating minion leaves play, that
+        // minion's activation ends immediately and no further steps of that
+        // activation resolve."
+        if (Over(world))
+        {
+            return;
+        }
+
         var attack = Current(world);
         var attacker = world.Cards[attack.Enemy];
 
@@ -177,6 +185,14 @@ public static class Attack
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+
+        // `rr:activation.6` -- "if an activating minion leaves play, that
+        // minion's activation ends immediately and no further steps of that
+        // activation resolve."
+        if (Over(world))
+        {
+            return null;
+        }
 
         var attack = Current(world);
         var candidates = Defenders(world, facts);
@@ -281,6 +297,14 @@ public static class Attack
         ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(events);
 
+        // `rr:activation.6` -- "if an activating minion leaves play, that
+        // minion's activation ends immediately and no further steps of that
+        // activation resolve."
+        if (Over(world))
+        {
+            return;
+        }
+
         var attack = Current(world);
         var waiting = BoostCards(world, attack.Enemy);
 
@@ -351,6 +375,14 @@ public static class Attack
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(events);
+
+        // `rr:activation.6` -- "if an activating minion leaves play, that
+        // minion's activation ends immediately and no further steps of that
+        // activation resolve."
+        if (Over(world))
+        {
+            return;
+        }
 
         var attack = Current(world);
         long amount = Amount(world, facts, attack);
@@ -463,6 +495,40 @@ public static class Attack
         // would leave them nothing to read.
         world.FinishedAttack = world.Attack;
         world.Attack = null;
+    }
+
+    /// <summary>
+    /// Whether the attacking enemy has left play — <c>rr:activation.6</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "If an activating minion <b>leaves play</b>, that minion's activation
+    /// ends immediately and <b>no further steps of that activation
+    /// resolve</b>." An attack is six steps on the agenda and any of them can
+    /// defeat the attacker — retaliate does it, and so does an interrupt that
+    /// answers the attack by killing the thing making it.
+    /// </para>
+    /// <para>
+    /// <c>rr:in-play-and-out-of-play.2</c> is what "in play" means for an
+    /// encounter card, and a defeated minion is in the encounter discard pile.
+    /// Without this a minion attacked from the discard pile just as hard as one
+    /// on the table.
+    /// </para>
+    /// <para>
+    /// <b>Checked at each step rather than once at the start.</b> An enemy that
+    /// was already gone when the activation was scheduled and one defeated
+    /// half-way through it are the same case, and one guard answers both --
+    /// which is why <see cref="Initiate"/> has none of its own.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <returns>True when the rest of the activation must not resolve.</returns>
+    public static bool Over(World world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        return world.Attack is not { } attack
+            || !DeckTypes.IsInPlay(world.Cards[attack.Enemy].Area.Type);
     }
 
     /// <summary>Where an enemy's facedown boost cards wait.</summary>

@@ -754,6 +754,59 @@ public sealed class SinisterSyndicateTests
         Assert.Equal([identity.ObjectId, demon.ObjectId], hurt);
     }
 
+    [Rule("rr:activation.6")]
+    [Fact]
+    public void AnEnemyDefeatedBeforeItsCounterAttackDealsNothing()
+    {
+        // "If an activating minion **leaves play**, that minion's activation
+        // ends immediately and **no further steps of that activation
+        // resolve**."
+        //
+        // Speed Demon's counter-attack is scheduled in front of the attack it
+        // answers, so this cannot happen through the card as printed -- the
+        // board is built to put the counter-attack behind, which is what an
+        // interrupt that forgot to say "first" would do. Without the guard the
+        // minion attacked from the encounter discard pile, which is how a test
+        // about the ordering came out green with the ordering wrong.
+        var world = Deal();
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        var demon = world.CreateCard(
+            AuthoredCards.SpeedDemon,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Marvel.Rules.Play.Discard.Card(world, demon, "test", []);
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: demon.ObjectId, Seat: 0));
+        Run(world);
+
+        Assert.Equal(0, identity.Damage);
+    }
+
+    [Rule("rr:activation.6")]
+    [Rule("rr:activation")]
+    [Fact]
+    public void AnEnemyDefeatedBeforeItSchemesPlacesNoThreat()
+    {
+        // The other kind of activation. `rr:activation`: "whenever an enemy
+        // attacks **or schemes**, it is considered to have activated", so
+        // `rr:activation.6`'s "no further steps of that activation resolve"
+        // reaches a scheme as well -- and a minion scheduled to scheme can be
+        // defeated before its turn comes round.
+        var world = Deal();
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long before = scheme.Tokens.GetValueOrDefault("k_threat");
+        var sandman = world.CreateCard(
+            Sandman, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Marvel.Rules.Play.Discard.Card(world, sandman, "test", []);
+        world.Agenda.Add(new PhaseStep(
+            Steps.Scheme, 1, 2, Subject: sandman.ObjectId, Seat: 0));
+        Run(world);
+
+        Assert.Equal(before, scheme.Tokens.GetValueOrDefault("k_threat"));
+    }
+
     [Rule("rr:attacks-against-allies")]
     [Rule("rr:attacks-against-allies.1")]
     [Fact]
