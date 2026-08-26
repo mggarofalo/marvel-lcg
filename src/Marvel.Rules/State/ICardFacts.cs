@@ -161,4 +161,25 @@ public interface ICardFacts
     /// </remarks>
     /// <param name="faceId">A printed card id.</param>
     string Subtitle(string faceId) => string.Empty;
+
+    /// <summary>
+    /// Whether this face prints a "<b>Boost</b>" ability —
+    /// <c>rr:boost-boost-icon.2</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Not derivable from the numbers.</b> The printed <c>Boost</c>
+    /// attribute counts icons, and <c>rr:boost-boost-icon.1</c> makes a star
+    /// icon "not a boost icon" that adds nothing — so a card with a boost
+    /// ability and a card with none carry the same number, and the only place
+    /// the star survives is the text box.
+    /// </para>
+    /// <para>
+    /// Which is why this is its own question rather than a value: without it
+    /// the engine cannot tell an unwritten boost ability from a card that has
+    /// none, and 419 cards in the pool have one.
+    /// </para>
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    bool HasBoostAbility(string faceId) => false;
 }

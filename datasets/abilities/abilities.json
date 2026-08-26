@@ -337,6 +337,12 @@
           }
         }
       ]
+    },
+    {
+      "card": "01167",
+      "name": "Vulture",
+      "note": "Quickstrike, and nothing else. Spider-Man's nemesis minion, brought in by Shadow of the Past. rr:quickstrike is a keyword the engine reads off the printed field, so there is no ability here to author.",
+      "abilities": []
     }
   ]
 }

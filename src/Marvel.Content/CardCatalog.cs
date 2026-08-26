@@ -80,6 +80,16 @@ public sealed class CardCatalog : ICardFacts
     /// <inheritdoc/>
     public string Subtitle(string faceId) => Find(faceId).Subtitle;
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Read out of the text box, because the star icon survives nowhere else:
+    /// 418 of the 419 cards that have one print "[star] Boost:" and `39029`
+    /// Supporting Actor prints "Boost:" with the marker missing from the
+    /// extraction. Both are the same ability, so both count.
+    /// </remarks>
+    public bool HasBoostAbility(string faceId) =>
+        Find(faceId).Text.Contains("Boost:", StringComparison.Ordinal);
+
     /// <inheritdoc />
     public IReadOnlyList<string> Traits(string faceId) => Find(faceId).Traits;
 
@@ -293,7 +303,14 @@ public sealed class CardCatalog : ICardFacts
             ? printedSub.GetString() ?? string.Empty
             : string.Empty;
 
-        return new Entry(kind, traits, attributes, title, subtitle);
+        // `rr:boost-boost-icon.2`'s "Boost" abilities are indicated by a star
+        // icon, and the star is in the text box and nowhere else -- the printed
+        // `Boost` attribute counts icons and `.1` says a star is not one.
+        string printed = element.TryGetProperty("text_plain", out var textBox)
+            ? textBox.GetString() ?? string.Empty
+            : string.Empty;
+
+        return new Entry(kind, traits, attributes, title, subtitle, printed);
     }
 
     /// <summary>
@@ -399,5 +416,6 @@ public sealed class CardCatalog : ICardFacts
         IReadOnlyList<string> Traits,
         IReadOnlyDictionary<string, string> Attributes,
         string Title,
-        string Subtitle);
+        string Subtitle,
+        string Text);
 }

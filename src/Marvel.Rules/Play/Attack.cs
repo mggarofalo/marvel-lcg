@@ -263,11 +263,14 @@ public static class Attack
     /// </summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">What cards do, for a boost card that has one.</param>
     /// <param name="events">Where to record what happened.</param>
-    public static void FlipBoostCards(World world, ICardFacts facts, List<GameEvent> events)
+    public static void FlipBoostCards(
+        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(events);
 
         var attack = Current(world);
@@ -310,10 +313,12 @@ public static class Attack
             }
 
             // rr:attack-enemy-activation.step.3.b and rr:boost-boost-icon.2 --
-            // a "Boost" ability under the divider line resolves here. The
-            // printed `Boost` attribute counts icons and does not say whether
-            // there is a star, so this engine cannot tell a boost ability apart
-            // from its absence; when it can, this is where it goes.
+            // a "Boost" ability under the divider line resolves here, while the
+            // card is faceup in the boosting area and before step 3.d discards
+            // it. The printed `Boost` attribute counts icons and cannot say
+            // whether there is a star, so `ICardFacts.HasBoostAbility` reads the
+            // text box, which is the only place the star survives.
+            events.AddRange(abilities.Boost(world, boost, attack.Player));
             var discard = world.AreaOf(DeckType.EncounterDiscardPile);
             var from = boost.Area;
             World.MoveToTop(boost, discard);
