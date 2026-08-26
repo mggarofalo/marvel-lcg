@@ -440,13 +440,21 @@ public sealed class PlayerPhaseTests
     {
         var recorded = expected.GetProperty("affordances").EnumerateArray()
             .Where(affordance => Game.DerivedVerbs.Contains(
-                affordance.GetProperty("verb").GetString()!))
+                affordance.GetProperty("verb").GetString()!)
+                || affordance.GetProperty("verb").GetString() == CardPlay.Verb)
             .ToList();
 
-        // The engine offers every derived verb the recording offers, and nothing
-        // it does not. `Play` is filtered out of the recording rather than
-        // tolerated in the engine: an extra affordance is as wrong as a missing
-        // one, and only this direction catches it.
+        // **Including `Play`, which this used to filter out of the recording.**
+        // The engine offers every one of these the recording offers, in the
+        // same order, and nothing it does not -- an extra affordance is as
+        // wrong as a missing one, and only this direction catches it.
+        //
+        // Getting the `Play` list right is a sharper check than it looks. The
+        // opening hand holds six cards and the recording offers four: `01088`
+        // Energy is a resource card and cannot be played at all
+        // (`rr:player-turn.2` does not list one), and `01003` Backflip is an
+        // event whose ability is an Interrupt rather than an Action, so
+        // `rr:player-turn.5.d` does not reach it either.
         Assert.Equal(recorded.Count, actual.Affordances.Count);
 
         for (int index = 0; index < recorded.Count; index++)
@@ -459,7 +467,24 @@ public sealed class PlayerPhaseTests
             Assert.Equal(want.GetProperty("anchor_id").GetInt32(), got.AnchorId);
             Assert.Equal(want.GetProperty("anchor_player").GetInt32(), got.AnchorPlayer);
             Assert.Null(got.Illegal);
-            Assert.Empty(got.CostOptions);
+
+            // The cost as printed, against the cost the recording carries.
+            //
+            // **The cost and not its `sources`.** The recording lists six
+            // generators for a hand of six cards, one of which is being played
+            // -- so one generator is not a card in hand at all. That is
+            // `rr:resource-ability`, the "**Resource**" timing trigger, and it
+            // is not implemented; a list built from hand cards alone is short
+            // by exactly that one. Asserting it would pin a number this engine
+            // cannot yet produce for a reason that has nothing to do with cost.
+            var costs = want.GetProperty("costs");
+            Assert.Equal(costs.GetArrayLength(), got.CostOptions.Count);
+            for (int price = 0; price < got.CostOptions.Count; price++)
+            {
+                Assert.Equal(
+                    costs[price].GetProperty("cost").GetString(),
+                    got.CostOptions[price].Cost);
+            }
 
             var targets = want.GetProperty("targets");
             if (targets.ValueKind == JsonValueKind.Null)
