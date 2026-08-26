@@ -37,6 +37,7 @@ own "equivalent to the following constant ability" line.
 | **Toughness** | *Forced Response: after this character enters play, give it a tough status card* | `Reveal.EnterPlay` |
 | **Uses (X "type")** | enters play with X counters of that type | `Reveal.EnterPlay` |
 | **Victory X** | *When Defeated: add this card to the victory display* | `Defeat` |
+| **When Defeated** | the card's own ability, resolved before it leaves play | `Defeat`, through `ICardAbilities.WhenDefeated` |
 | **Villainous** | *Forced Interrupt: when this character uses a basic power, give it a boost card* | `Keywords.IsBoosted` |
 | **Vulnerable** | *Forced Interrupt: when this character becomes confused or stunned, discard it* | `Statuses.Vulnerable` |
 

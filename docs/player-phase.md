@@ -239,9 +239,15 @@ icon**". A villain's `14*` hit points do not shrink when somebody dies.
   played, so one generator is not a card in hand at all. That one is this.
 - Cost modifiers, `X` costs and the per-player icon on a cost — all refused by
   name rather than read as a number.
-- **`rr:when-defeated-abilities`.** A forced interrupt, so it resolves *before*
-  the card leaves play — which makes it an agenda step with a window rather than
-  part of the defeat call. Nothing in the dataset has one yet.
+- **The interrupt window around a defeat.**
+  `rr:when-defeated-abilities` itself is written — the ability resolves before
+  the card leaves play, which is `.2.1` — but a defeat opens no window, so
+  nothing *else* can interrupt one. No card in the pool does except by its own
+  "When Defeated".
+- **Who defeated a card.** 58 minions say "the player who defeated [this]", and
+  `Defeat` does not carry it: a defeat happens inside `Damage.Deal`, which does
+  not know who dealt the damage. A card that asks for a resolving player it has
+  not got is refused by name rather than given the first player.
 - **Carrying attachments across a villain stage.** `rr:villain-defeat.3` and
   `.4` decide by whether the new stage shares a title; a villain defeated with
   cards attached throws rather than carrying the wrong set.

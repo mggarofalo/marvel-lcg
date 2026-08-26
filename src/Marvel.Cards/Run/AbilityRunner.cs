@@ -183,30 +183,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
 
-        // **The star is the only place a boost ability shows.** The printed
-        // `Boost` attribute counts icons and `rr:boost-boost-icon.1` says a
-        // star is not one, so a card with an ability and a card without carry
-        // the same number -- which is why this asks the card whether it has one
-        // rather than inferring it. 419 in the pool do.
-        if (!world.Facts.HasBoostAbility(card.FaceId))
-        {
-            return [];
-        }
-
         // **Not "is the card authored" but "is this half of it".** A card with
         // two abilities at two tiers -- `01168` Sweeping Swoop has a "When
-        // Revealed" and a "Boost" -- would otherwise pass this guard on the
-        // strength of the half somebody had written, and the other half would
-        // go back to being silent.
+        // Revealed" and a "Boost" -- would otherwise pass on the strength of
+        // the half somebody had written, and the other half would go back to
+        // being silent.
         var boosts = book.On(card.FaceId)
             .Where(ability => ability.Trigger.Timing == AbilityType.Boost)
             .ToList();
 
         if (boosts.Count == 0)
         {
-            throw new RulesNotImplementedException(
-                $"card '{card.FaceId}' was turned faceup as a boost card and prints a "
-                + "'Boost' ability that no ability data is written for");
+            // **The star gates the complaint, not the run.** The printed
+            // `Boost` attribute counts icons and `rr:boost-boost-icon.1` says a
+            // star is not one, so a card with an ability and a card without
+            // carry the same number and only the text box can tell them apart.
+            // Asked here rather than first, so that the text box cannot veto
+            // authored data.
+            return world.Facts.HasBoostAbility(card.FaceId)
+                ? throw new RulesNotImplementedException(
+                    $"card '{card.FaceId}' was turned faceup as a boost card and prints a "
+                    + "'Boost' ability that no ability data is written for")
+                : [];
         }
 
         var events = new List<GameEvent>();
@@ -219,6 +217,47 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // "When Revealed": it is the thing happening rather than a window
             // around it, so there is nothing to offer and nothing to decline.
             Run(ability.Effect, new Cast(world, card, occurrence, player, events, this));
+        }
+
+        return events;
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> WhenDefeated(World world, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+
+        var defeated = book.On(card.FaceId)
+            .Where(ability => ability.Trigger.Timing == AbilityType.WhenDefeated)
+            .ToList();
+
+        if (defeated.Count == 0)
+        {
+            // **The printed check gates the complaint, not the run.** Nothing
+            // in the printed attributes records a "When Defeated", so an
+            // unwritten one and a card that has none look identical from here
+            // -- but that is only a question when there is nothing written.
+            // Asking it first would let the text box veto authored data, which
+            // is the wrong way round: the data is what the engine runs.
+            return world.Facts.HasWhenDefeated(card.FaceId)
+                ? throw new RulesNotImplementedException(
+                    $"card '{card.FaceId}' was defeated and prints a 'When Defeated' "
+                    + "ability that no ability data is written for")
+                : [];
+        }
+
+        var events = new List<GameEvent>();
+
+        // `rr:when-defeated-abilities.2` -- "**all** When Defeated abilities on
+        // the card resolve", so this is every one of them rather than the
+        // single one a window would take.
+        var occurrence = new Occurrence(
+            0, [Steps.CardDefeated], Subject: card.ObjectId, Player: card.Owner);
+
+        foreach (var ability in defeated)
+        {
+            Run(ability.Effect, new Cast(world, card, occurrence, card.Owner, events, this));
         }
 
         return events;
@@ -1378,8 +1417,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // when the player has flipped down, and a card that has something to
         // say about that says it with `exists`.
         "yourHero" => Forms.In(
-            cast.World, cast.World.Seats[cast.Player], cast.World.Facts, Forms.Hero)
-            ? cast.World.Seats[cast.Player].IdentityCard
+            cast.World, cast.World.Seats[Resolver(cast)], cast.World.Facts, Forms.Hero)
+            ? cast.World.Seats[Resolver(cast)].IdentityCard
             : null,
 
         // `rr:you-your.5`: "if a card ability places a status card on 'you'
@@ -1388,7 +1427,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // the general form -- "if the word 'you' **can** be resolved as
         // referring to the player's identity, it **must** be resolved as such"
         // -- so "you" is a card here whenever a card is what is wanted.
-        "you" => cast.World.Seats[cast.Player].IdentityCard,
+        "you" => cast.World.Seats[Resolver(cast)].IdentityCard,
         "attachedTo" => cast.Source.Area.Host >= 0 ? cast.World.Cards[cast.Source.Area.Host] : null,
         "trigger.subject" => cast.Occurrence.Subject >= 0
             ? cast.World.Cards[cast.Occurrence.Subject]
@@ -1426,12 +1465,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         cast.World.Seats[cast.Player].Nemesis.Cards
             .FirstOrDefault(card => cast.World.Facts.Kind(card.FaceId) == kind);
 
+    /// <summary>
+    /// Which player is resolving this ability, or a refusal.
+    /// </summary>
+    /// <remarks>
+    /// <b>An encounter card's ability does not always have one.</b> A "When
+    /// Defeated" on a minion belongs to nobody until somebody defeats it, and
+    /// the cards say whose it is themselves — "the player who defeated Fabian
+    /// Cortez". Until <c>Defeat</c> carries that, a card that asks for a player
+    /// it has not got is refused by name rather than reaching for the first
+    /// one.
+    /// </remarks>
+    private static int Resolver(Cast cast) => cast.Player >= 0
+        ? cast.Player
+        : throw new RulesNotImplementedException(
+            $"'{cast.Source.FaceId}' asks who is resolving it, and an encounter card's "
+            + "ability has no player unless the card says which");
+
     private static int Seat(AbilityValue value, Cast cast) =>
         value is AbilityValue.Word word
             ? word.Value switch
             {
                 "trigger.player" => cast.Occurrence.Player,
-                "you" => cast.Player,
+                "you" => Resolver(cast),
                 "controller" => cast.Source.Owner,
                 _ => throw new AbilityException($"'{word.Value}' does not name a player"),
             }
