@@ -132,6 +132,57 @@ public static class Reveal
         }
     }
 
+    /// <summary>
+    /// The seat a card names, when it names one — <c>rr:obligation.4</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "If an obligation card is revealed from the encounter deck and that
+    /// obligation instructs that it must be given to a specific player
+    /// <i>(such as "Give to the Peter Parker player")</i>, place that
+    /// obligation into the play area of the player who controls the associated
+    /// identity."
+    /// </para>
+    /// <para>
+    /// <b>Matched against every face, not only the one showing.</b> The card
+    /// names an alter-ego and the player may be in hero form;
+    /// <c>rr:identity.2</c> makes a title name one identity — "if a card refers
+    /// to a hero or alter-ego by title, it refers only to the identity with
+    /// that title" — so either face answering is the same identity either way.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="card">The card being revealed.</param>
+    /// <returns>
+    /// The seat, <c>-1</c> when the card names a player who is not in this
+    /// game, and <c>null</c> when it names nobody.
+    /// </returns>
+    public static int? Names(World world, ICardFacts facts, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(card);
+
+        string wanted = facts.Attributes(card.FaceId).GetValueOrDefault("GiveTo", string.Empty);
+        if (wanted.Length == 0)
+        {
+            return null;
+        }
+
+        foreach (int seat in world.PlayerOrder)
+        {
+            var identity = world.Seats[seat].IdentityCard;
+            if (identity.Faces.Any(face => string.Equals(
+                facts.Title(face), wanted, StringComparison.Ordinal)))
+            {
+                return seat;
+            }
+        }
+
+        return -1;
+    }
+
     /// <summary>Puts a revealed card where its type says it goes.</summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>

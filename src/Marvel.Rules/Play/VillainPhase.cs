@@ -707,6 +707,46 @@ public static class VillainPhase
         World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
         int round, List<GameEvent> events)
     {
+        // `rr:reveal.4.1` -- "if the card specifies a player to give it to,
+        // **that player is considered to be revealing it**." One reassignment
+        // and not a special case at the placement, because being the revealing
+        // player is the whole of what the rule says: `rr:obligation.1` makes
+        // every "you" on the card point at the player whose area it is in, and
+        // `rr:obligation.4` puts it in the named player's.
+        //
+        // At one player the named player and the revealing player are the same
+        // seat, which is why this went unnoticed. Above one they are not.
+        switch (Reveal.Names(world, facts, card))
+        {
+            case null:
+                break;
+
+            case >= 0 and var named:
+                player = named;
+                break;
+
+            default:
+                // `rr:obligation.5` -- "if an obligation cannot be given to the
+                // specified player for any reason, **ignore the card's
+                // ability, remove it from the game, and reveal an additional
+                // encounter card**." Dealt rather than revealed directly: step
+                // 4 is a loop over what a player has been dealt, so a card put
+                // in that queue is revealed by the same step -- which is how
+                // `rr:surge` already works.
+                var gone = world.AreaOf(DeckType.RemovedArea);
+                var was = card.Area;
+                World.MoveToTop(card, gone);
+                events.Add(new CardsMoved(
+                    Places.Reference(was), Places.Reference(gone),
+                    [new Landing(card.ObjectId, gone.Cards.Count - 1)])
+                {
+                    Trigger = "villain phase", Verb = "Remove",
+                });
+
+                Deal.EncounterCard(world, player, "obligation", events);
+                return;
+        }
+
         // Same reason as the boost card: the revealing area is where an
         // encounter card registers its pools.
         World.MoveToTop(card, world.AreaOf(DeckType.RevealingArea));
