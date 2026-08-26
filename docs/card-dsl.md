@@ -1426,3 +1426,25 @@ picks. A payment that is not the cost — none chosen, or two — is refused rat
 than trimmed: `rr:initiating-abilities.step.5` aborts "without paying any
 costs", and an engine that trimmed would be making a decision the player was
 asked to make.
+
+### A suspended choice has to say which ability it came from
+
+`choose` and `chooseCard` stop the ability and put a `ChooseOption` step on the
+agenda; the answer picks it up again. A step is a small value on the board and
+cannot hold an effect tree, so what it carries is the **card**, and the node is
+found again from the card.
+
+That works until a card has a choice in two of its abilities. Infinite Hunter is
+the first: a "When Revealed" that chooses an ally and a "Boost" that chooses
+between two effects. `rr:boost-boost-icon.2` keeps the two halves apart, and
+neither the card nor the position in the effect says which one stopped — the
+lookup had been taking the first ability on the card with a choice in it, so
+resuming the boost would have asked the reveal's question. Silent, and
+legal-looking: two real options about the wrong thing.
+
+So the step carries the **tier** as well, and the ability is found by both.
+
+What is still ambiguous, and refused by name: two abilities at the *same* tier
+each holding a choice. The tier is as fine as the step gets, so that is the next
+thing it would have to carry rather than something to guess at. No printed card
+needs it.

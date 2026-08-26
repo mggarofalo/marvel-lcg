@@ -1,8 +1,11 @@
+using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -25,7 +28,7 @@ namespace Marvel.Content.Tests.Play;
 /// that is running; the step asks; the answer runs the option. What the step
 /// carries is the <i>card</i>, not the effect tree — a step is a small value
 /// on the board — so the node is found again from the card, and a card holding
-/// two choices is refused by name rather than guessed at.
+/// two choices is found again by the tier the step carries.
 /// </para>
 /// </remarks>
 public sealed class ChoosingCardsTests
@@ -59,6 +62,77 @@ public sealed class ChoosingCardsTests
         var waiting = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.ChooseOption, waiting.What);
         Assert.Equal(card.ObjectId, waiting.Subject);
+    }
+
+    [Rule("rr:boost-boost-icon.2")]
+    [Fact]
+    public void ACardWithAChoiceInTwoAbilitiesResumesTheOneThatStopped()
+    {
+        // `rr:boost-boost-icon.2` keeps a card's "Boost" and its "When Revealed"
+        // apart, and a card can put a choice in each. The step carries the card
+        // and where the ability stopped, and neither says *which* ability -- so
+        // the runner had been taking the first one on the card with a choice in
+        // it, and resuming a boost would have asked the reveal's question.
+        //
+        // Silent, and legal-looking: two real options about the wrong thing.
+        var world = Deal();
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01110", "abilities": [
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "choose": { "options": [
+                    { "gainSurge": 1 }, { "discard": "this" } ] } } },
+              { "trigger": { "event": "WhenCardRevealed", "timing": "Boost",
+                             "subject": "this" },
+                "effect": { "choose": { "options": [
+                    { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } },
+                    { "dealDamage": { "cards": "you", "amount": 1 } } ] } } }
+            ] } ] }
+            """));
+
+        var card = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
+        runner.Boost(world, card, 0);
+
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        Assert.Equal(AbilityType.Boost, waiting.Tier);
+
+        var asked = runner.Choosing(world, card, 0, waiting.Index, waiting.Tier)!;
+        Assert.Equal(
+            ["placeThreat", "dealDamage"], asked.Affordances.Select(option => option.Label));
+    }
+
+    [Rule("rr:choose-option")]
+    [Fact]
+    public void TwoAbilitiesAtOneTierWithAChoiceInEachAreRefused()
+    {
+        // The tier is as fine as the step gets, so this is the next thing it
+        // would have to carry rather than something to guess at. No printed card
+        // needs it; the refusal names what is missing.
+        var world = Deal();
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01110", "abilities": [
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "choose": { "options": [
+                    { "gainSurge": 1 }, { "discard": "this" } ] } } },
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "choose": { "options": [
+                    { "gainSurge": 2 }, { "discard": "this" } ] } } }
+            ] } ] }
+            """));
+
+        var card = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
+
+        var refused = Assert.Throws<RulesNotImplementedException>(() => runner.Choosing(
+            world, card, 0, 1, AbilityType.WhenRevealed));
+
+        Assert.Contains(
+            "choice in more than one 'WhenRevealed' ability",
+            refused.Message,
+            StringComparison.Ordinal);
     }
 
     [Rule("rr:choose-game-element.1")]
