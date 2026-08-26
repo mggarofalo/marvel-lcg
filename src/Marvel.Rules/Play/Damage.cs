@@ -283,7 +283,19 @@ public static class Damage
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="verb">What kind of thing caused it.</param>
     /// <param name="events">Where to record what happened.</param>
-    public static void Heal(
+    /// <returns>
+    /// How much damage was <b>actually</b> healed, which is not the amount
+    /// asked for.
+    /// </returns>
+    /// <remarks>
+    /// The return value is not bookkeeping. Cards are written against it —
+    /// "Rhino heals 4 damage. <b>If no damage was healed this way</b>, this
+    /// card gains surge" — and a character at full health, or damaged by less
+    /// than the amount, heals less than it was told to. Asking first is
+    /// silently wrong for the same reason: a pre-check reads a number that the
+    /// heal may not reach.
+    /// </remarks>
+    public static long Heal(
         World world, ICardFacts facts, Card target, long amount,
         string trigger, string verb, List<GameEvent> events)
     {
@@ -294,17 +306,24 @@ public static class Damage
 
         if (amount <= 0 || target.Damage == 0)
         {
-            return;
+            return 0;
         }
 
         long printed = Health(world, facts, target);
         long before = Math.Max(0, printed - target.Damage);
-        target.TakeDamage(-amount);
+
+        // Bounded by the damage there is: healing 4 from a character with 1
+        // damage heals 1. `Card.Damage` cannot go below zero and neither can
+        // the answer.
+        long healed = Math.Min(amount, target.Damage);
+        target.TakeDamage(-healed);
         long after = Math.Max(0, printed - target.Damage);
 
         events.Add(new FieldSet(target.ObjectId, "health", before, after)
         {
             Trigger = trigger, Verb = verb,
         });
+
+        return healed;
     }
 }

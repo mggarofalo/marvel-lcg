@@ -268,7 +268,8 @@ public sealed class AbilityDataTests
         Assert.Equal(
             [
                 AuthoredCards.SpiderMan, AuthoredCards.Charge, AuthoredCards.Shocker,
-                AuthoredCards.ImTough, AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
+                AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
+                AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare, AuthoredCards.FalseAlarm,
                 AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
             ],
             AuthoredCards.Book.Authored.Order(StringComparer.Ordinal));

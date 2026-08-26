@@ -249,6 +249,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
                 break;
 
+            case "heal":
+                Heal(node, cast);
+                break;
+
             case "dealDamage":
                 DealDamage(node, cast);
                 break;
@@ -285,6 +289,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "or" => Nodes(node.Argument).Any(each => Test(each, cast)),
         "not" => !Test(Tree(node.Argument), cast),
         "exists" => Find(node.Argument, cast) is not null,
+
+        // "If no damage was healed this way" and its family: a comparison
+        // against what an earlier action in this ability actually did.
+        "atLeast" => Amount(node.Require("value"), cast) >= Amount(node.Require("count"), cast),
 
         // `rr:form` -- "(Hero)" and "(Alter-Ego)" on a card gate the ability by
         // which form the player is in. Not a boolean: `Forms.Of` answers with a
@@ -406,6 +414,34 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     // ---- reading a value ---------------------------------------------------
+
+    /// <summary>"… heals N damage" — <c>rr:heal</c>.</summary>
+    /// <remarks>
+    /// <para>
+    /// What it records is the point. <c>rr:heal</c> heals up to the amount, and
+    /// a character at full health or damaged by less heals less than it was
+    /// told to — so <c>result.healed</c> is what actually moved, and a card
+    /// reading "if no damage was healed this way" reads that rather than
+    /// checking the character's health first. The check <i>before</i> is
+    /// silently wrong: it reads a number the heal may never reach.
+    /// </para>
+    /// <para>
+    /// A target that is not on the board heals nothing rather than throwing.
+    /// "Rhino heals 4 damage. If no damage was healed this way, this card gains
+    /// surge" is a sentence with an answer for the absent villain, and it is
+    /// the surge.
+    /// </para>
+    /// </remarks>
+    private static void Heal(AbilityNode node, Cast cast)
+    {
+        long healed = Find(node.Require("card"), cast) is { } target
+            ? Damage.Heal(
+                cast.World, cast.World.Facts, target, Amount(node.Require("amount"), cast),
+                cast.Trigger, "Heal", cast.Events)
+            : 0;
+
+        cast.Results["healed"] = healed;
+    }
 
     /// <summary>"Deal N damage to …" — <c>rr:damage</c>.</summary>
     /// <remarks>
@@ -542,6 +578,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static Card? Named(string name, Cast cast) => name switch
     {
         "this" => cast.Source,
+
+        // `rr:you-your.5`: "if a card ability places a status card on 'you'
+        // (such as 'you are stunned'), the player resolving that card ability
+        // places that status card on their identity." `rr:you-your` opens with
+        // the general form -- "if the word 'you' **can** be resolved as
+        // referring to the player's identity, it **must** be resolved as such"
+        // -- so "you" is a card here whenever a card is what is wanted.
+        "you" => cast.World.Seats[cast.Player].IdentityCard,
         "attachedTo" => cast.Source.Area.Host >= 0 ? cast.World.Cards[cast.Source.Area.Host] : null,
         "trigger.subject" => cast.Occurrence.Subject >= 0
             ? cast.World.Cards[cast.Occurrence.Subject]
@@ -600,10 +644,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// refer to the players in the game ignore eliminated players, <b>except
     /// for the per player icon</b>."
     /// </remarks>
-    private static long Amount(AbilityValue value, Cast cast) =>
-        value is AbilityValue.Map && Tree(value) is { Kind: "perPlayer" } per
-            ? Number(per.Argument) * cast.World.Players
-            : Number(value);
+    private static long Amount(AbilityValue value, Cast cast)
+    {
+        if (value is not AbilityValue.Map)
+        {
+            return Number(value);
+        }
+
+        var node = Tree(value);
+        return node.Kind switch
+        {
+            "perPlayer" => Number(node.Argument) * cast.World.Players,
+
+            // `result.*` -- what an action earlier in this ability actually
+            // did, which is not what it was asked to do. Zero when nothing has
+            // written it, so a card reading a result it never produced reads a
+            // number rather than throwing: "no damage was healed" is exactly
+            // the case where nothing ran.
+            "result" => cast.Results.GetValueOrDefault(Word(node.Argument)),
+            _ => throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' asks for the amount '{node.Kind}', "
+                + "which is not implemented"),
+        };
+    }
 
     private static long Number(AbilityValue value) =>
         value is AbilityValue.Number number
@@ -628,5 +691,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         /// <summary>The trigger string this ability's events carry.</summary>
         public string Trigger => Occurrence.Conditions[0];
+
+        /// <summary>
+        /// What the actions in this ability actually did — the <c>result.*</c>
+        /// namespace.
+        /// </summary>
+        /// <remarks>
+        /// Scoped to one resolution of one ability, because that is the scope
+        /// the cards use: "if no damage was healed <b>this way</b>" is about
+        /// this sentence and not about the game.
+        /// </remarks>
+        public Dictionary<string, long> Results { get; } = new(StringComparer.Ordinal);
     }
 }

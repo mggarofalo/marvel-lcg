@@ -140,6 +140,44 @@
           "effect": { "placeThreat": { "scheme": "this", "amount": { "perPlayer": 1 } } }
         }
       ]
+    },
+    {
+      "card": "01104",
+      "name": "Hard to Keep Down",
+      "note": "When Revealed: Rhino heals 4 damage. If no damage was healed this way, this card gains surge. The condition reads result.healed and not the villain's health, because rr:heal heals up to the amount: a villain damaged by 1 heals 1 and one at full health heals nothing, and a check made before the heal reads a number the heal may never reach. A villain that is not on the board heals nothing, which is the surge branch and not an error.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "seq": [
+              { "heal": { "card": { "query": "villain" }, "amount": 4 } },
+              {
+                "if": {
+                  "test": { "atLeast": { "value": { "result": "healed" }, "count": 1 } },
+                  "else": { "gainSurge": 1 }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "01112",
+      "name": "False Alarm",
+      "note": "When Revealed: You are confused. If you are already confused, this card gains surge. 'You' is a card here and not a player: rr:you-your.5 says a status card placed on 'you' goes on the resolving player's identity. Written as if/else on the same shape as 01105 -- rr:status-cards.1 caps a character at one card of each type, so the two branches are exclusive in fact as well as in the sentence.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "hasStatus": { "card": "you", "status": "confused" } },
+              "then": { "gainSurge": 1 },
+              "else": { "giveStatus": { "card": "you", "status": "confused" } }
+            }
+          }
+        }
+      ]
     }
   ]
 }

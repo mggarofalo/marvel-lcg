@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and nine cards in `datasets/abilities/abilities.json`.
+`src/Marvel.Cards`, and eleven cards in `datasets/abilities/abilities.json`.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -591,11 +591,11 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 |---|---|
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if` |
-| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat` |
+| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes` |
-| Amounts | a number, or `{ "perPlayer": n }` |
-| Bindings | `this`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
+| Amounts | a number, `{ "perPlayer": n }`, or `{ "result": "healed" }` |
+| Bindings | `this`, `you`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
@@ -619,6 +619,27 @@ defeated character standing. Threat written straight to `k_threat` walks past
 threat reaches its target however the threat arrived. Both are one-line
 mutations that no state assertion in the card tests would catch, which is why
 the tests assert the tough card and the ending rather than the number.
+
+**`result.*` is the first thing the design called for that could not be faked.**
+"Rhino heals 4 damage. **If no damage was healed this way**, this card gains
+surge" cannot be answered by checking the villain's health first, because
+`rr:heal.1` caps a heal at full health: a villain damaged by one heals one
+however large the number on the card, and a villain at full health heals
+nothing. So `Damage.Heal` answers with what it actually moved, `heal` records it
+as `result.healed`, and the card compares with `atLeast`. The scope is one
+resolution of one ability, because that is the scope the cards use — "this way"
+is about this sentence and not about the game.
+
+A target that is not on the board heals nothing rather than throwing. The
+sentence has an answer for a table with no Rhino on it, and the answer is the
+surge — which is the opposite of what `giveStatus` does with a missing card,
+because the sentences are different.
+
+**`you` is a card as well as a player.** `rr:you-your` is emphatic: "if the word
+'you' **can** be resolved as referring to the player's identity, it **must** be
+resolved as such", and `.5` spells out this exact case — "if a card ability
+places a status card on 'you' *(such as 'you are stunned')*, the player
+resolving that card ability places that status card on their identity."
 
 **`query: heroes` is not every identity.** `rr:form-change-form.5`: "while a
 player is in alter-ego form, card abilities that interact with their hero do not
@@ -691,7 +712,9 @@ the engine is adding a case; growing the game is adding a row; they are
 different activities and they read differently.
 
 The gaps that have that shape today, all of them from the Rhino scenario's own
-twenty-four cards: `heal` and the `result` of it, a status on a *player* rather
-than a card, a `choose` between two effects, a query for a card the player
-controls, and a search of the encounter deck. Those are what stands between the
-engine and its first scenario in which every card does what it says.
+twenty-four cards: a `choose` between two effects (Hydra Bomber), a query for a
+card the player controls (Caught Off Guard), a search of the encounter deck
+(Rhino's second stage), an attachment that redirects damage (Armored Rhino
+Suit), a **Hero Action** with a resource cost (Enhanced Ivory Horn), the crisis
+icon (Crowd Control), and the nemesis set (Shadow of the Past). Eleven of the
+twenty-four are written; those seven are what is left.

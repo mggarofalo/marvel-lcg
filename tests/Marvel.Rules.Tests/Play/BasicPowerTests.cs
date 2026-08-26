@@ -240,6 +240,32 @@ public sealed class BasicPowerTests
         Assert.Single(events.OfType<FieldSet>(), set => set.Field == "health");
     }
 
+    [Rule("rr:heal.1")]
+    [Fact]
+    public void HealAnswersWithWhatItActuallyHealed()
+    {
+        // Not the amount asked for. `rr:heal.1` caps a heal at full health, so
+        // a character damaged by one heals one however large the number on the
+        // card -- and cards are written against the difference: "Rhino heals 4
+        // damage. **If no damage was healed this way**, this card gains surge."
+        //
+        // The board stays right either way, because `Card.TakeDamage` clamps.
+        // It is the answer that a card reads, and an unclamped answer would
+        // make a card that healed nothing believe it had.
+        var printed = new Printed().With("alterego", ("REC", "3"), ("HP", "10"));
+        var world = Board(printed, hero: false);
+        var identity = world.Seats[0].IdentityCard;
+
+        Assert.Equal(0, Damage.Heal(world, printed, identity, 4, "test", "test", []));
+
+        identity.TakeDamage(1);
+        Assert.Equal(1, Damage.Heal(world, printed, identity, 4, "test", "test", []));
+
+        identity.TakeDamage(6);
+        Assert.Equal(4, Damage.Heal(world, printed, identity, 4, "test", "test", []));
+        Assert.Equal(2, identity.Damage);
+    }
+
     [Rule("rr:defeat")]
     [Rule("rr:defeat.1")]
     [Fact]
