@@ -247,9 +247,45 @@ public static class Steps
 
     /// <summary>
     /// One enemy scheming — <c>rr:activation.1</c>,
-    /// <c>rr:scheme-enemy-activation</c>.
+    /// <c>rr:scheme-enemy-activation</c>. Steps 1 and 2: the boost card.
     /// </summary>
     public const string Scheme = "Scheme";
+
+    /// <summary>
+    /// Step 3 of a scheme activation —
+    /// <c>rr:scheme-enemy-activation.step.3</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>A step of its own because step 2 can stop and ask.</b> "Resolve each
+    /// of the scheming enemy's boost cards" is step 2 and "place threat on the
+    /// main scheme equal to the scheming enemy's modified SCH value" is step 3,
+    /// in that order — and a <b>Boost</b> ability that offers the player a
+    /// choice suspends. Resolved inline, the threat went on the scheme while
+    /// the question was still on the table, and whatever the player chose
+    /// arrived too late to count.
+    /// </para>
+    /// <para>
+    /// The attack activation has had this shape from the start:
+    /// <see cref="FlipBoostCards"/> is step 3 and <see cref="DealAttackDamage"/>
+    /// is step 4, so a boost card's question is answered between them. This is
+    /// the same split one activation over.
+    /// </para>
+    /// <para>
+    /// <b>It is also where a scheme activation ends</b>, so it carries
+    /// <see cref="SchemeEnds"/> — the parallel of <see cref="AttackEnds"/> on
+    /// <see cref="EndAttack"/>. "After [enemy] schemes" is a claim about the
+    /// activation being over, and <c>rr:activation.6</c> is where it is over.
+    /// </para>
+    /// <para>
+    /// It does not carry <c>WhenThreatPlaced</c>. That is
+    /// <see cref="PlaceThreat"/>'s, and <see cref="PlaceThreat"/> is villain
+    /// phase step 1 — a different moment. Hunting Gene Traitors answers "after
+    /// resolving step one of the villain phase" and must not fire again every
+    /// time the villain schemes.
+    /// </para>
+    /// </remarks>
+    public const string SchemeThreat = "SchemeThreat";
 
     /// <summary>
     /// Step 1 of an attack — <c>rr:attack-enemy-activation.step.1</c>.
@@ -400,8 +436,35 @@ public static class Steps
     /// </summary>
     public const string EnemyAttacks = "WhenEnemyAttacks";
 
-    /// <summary>"When an enemy schemes" — <c>rr:scheme-enemy-activation</c>.</summary>
+    /// <summary>
+    /// "When an enemy schemes" — <c>rr:scheme-enemy-activation</c>. The
+    /// <i>start</i> of the activation, which is what an interrupt to it means.
+    /// </summary>
     public const string EnemySchemes = "WhenEnemySchemes";
+
+    /// <summary>
+    /// "After [enemy] schemes" — the end of a scheme activation,
+    /// <c>rr:activation.6</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The parallel of <see cref="AttackEnds"/>, and separate from
+    /// <see cref="EnemySchemes"/> for the same reason the attack keeps its two
+    /// apart: <c>rr:attack-enemy-activation.5</c> puts "when [enemy name]
+    /// attacks" at the moment the attack is <i>initiated</i>, before any of its
+    /// steps, and <c>.step.6.a</c> is where the abilities that ask what the
+    /// attack <i>did</i> live. A scheme has the same two moments and had only
+    /// one name for them.
+    /// </para>
+    /// <para>
+    /// It matters because the threat is placed in between. Prelate Armor's
+    /// "<b>Forced Response</b>: After Unus schemes, give him a tough status
+    /// card" resolved at the start of the activation while the two steps were
+    /// one call, and nothing showed it — a tough card is a tough card whichever
+    /// side of the scheme it lands on. The event order is what shows it.
+    /// </para>
+    /// </remarks>
+    public const string SchemeEnds = "WhenSchemeEnds";
 
     /// <summary>"When an attack ends" — <c>rr:attack-enemy-activation.step.6</c>.</summary>
     public const string AttackEnds = "WhenAttackEnds";
@@ -503,6 +566,7 @@ public static class Steps
         // pair between them.
         [Attack] = [EnemyActivates, EnemyAttacks],
         [Scheme] = [EnemyActivates, EnemySchemes],
+        [SchemeThreat] = [SchemeEnds],
         [GiveBoostCard] = ["WhenBoostCardGiven"],
         [DeclareDefender] = ["WhenDefenderDeclared"],
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],

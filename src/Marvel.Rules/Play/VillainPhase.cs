@@ -468,6 +468,10 @@ public static class VillainPhase
                 Scheme(world, facts, abilities, world.Cards[step.Subject], step.Seat, events);
                 break;
 
+            case Steps.SchemeThreat:
+                SchemeThreat(world, facts, abilities, step, events);
+                break;
+
             case Steps.Attack:
                 Attack.Initiate(world, facts, step, events);
                 break;
@@ -719,26 +723,69 @@ public static class VillainPhase
             ? ResolveBoostCard(world, facts, abilities, seat, events)
             : 0;
 
-        // **Modified, and read after the boost cards.**
-        // `rr:scheme-enemy-activation.step.3`: "place threat on the main scheme
-        // equal to the scheming enemy's **modified** SCH value". Step 2 resolves
-        // the boost cards before it, so an ability on one that changes SCH is in
-        // force by the time this is asked.
-        //
-        // Two bugs in one line, and the attack's own step had neither.
-        // `Attack.Amount` reads its enemy's *modified* ATK -- the same word in
-        // the same place -- and this had been reading a printed number, so every
-        // modifier to a scheming enemy's SCH was worth nothing: Prelate Armor
-        // sits on Unus printing `SCH+ 1` and added not one threat to a single
-        // scheme. Reading it before the boost card resolved would have missed
-        // whatever the boost card did, which is the other half.
-        long scheme = StateFields.Modified(world, villain, "scheme", facts, world.Players)
-            + icons;
+        // `rr:scheme-enemy-activation.step.2.c` -- "increase the scheming
+        // enemy's SCH value by one for each boost icon on the card", which is a
+        // modifier and is registered as one. The attack's step has always done
+        // this; here the icons had been a local number added at the end, and a
+        // number cannot survive the step boundary below.
+        if (icons > 0)
+        {
+            world.Effects.Register(new Timing.ContinuousEffect(
+                Timing.EffectSource.LastingEffect,
+                Kind: "scheme",
+                Amount: icons,
+                Card: villain.ObjectId,
+                Affects: villain.ObjectId,
+                Lasts: Duration.UntilEndOf(TimingPoints.EndOfActivation)));
+        }
 
+        // **Step 3 is a step, because step 2 can stop and ask.** A `Boost`
+        // ability that offers the player a choice suspends, and the threat used
+        // to go onto the scheme while the question was still on the table --
+        // so whatever they chose arrived after the number it was meant to
+        // change. The attack activation has had this shape from the start:
+        // `FlipBoostCards` is step 3 and `DealAttackDamage` is step 4.
+        world.Agenda.Then(new PhaseStep(
+            Steps.SchemeThreat,
+            world.Agenda.Current?.Round ?? 0,
+            3,
+            Index: seat,
+            Subject: villain.ObjectId,
+            Seat: seat));
+    }
+
+    /// <summary>
+    /// Step 3 of a scheme activation —
+    /// <c>rr:scheme-enemy-activation.step.3</c>.
+    /// </summary>
+    /// <remarks>
+    /// "Place threat on the main scheme equal to the scheming enemy's
+    /// <b>modified</b> SCH value." Modified is the word: the attack's own step
+    /// reads a modified ATK, boost icons are registered as modifiers by step 2,
+    /// and an attachment printing <c>SCH+</c> is one too.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">What cards do.</param>
+    /// <param name="step">The step.</param>
+    /// <param name="events">Where to record what happened.</param>
+    private static void SchemeThreat(
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        List<GameEvent> events)
+    {
+        var villain = world.Cards[step.Subject];
         var target = world.TheCardIn(DeckType.MainSchemesArea);
+
         if (target is not null)
         {
-            Threat.Place(world, facts, abilities, target, scheme, "scheme", events);
+            Threat.Place(
+                world,
+                facts,
+                abilities,
+                target,
+                StateFields.Modified(world, villain, "scheme", facts, world.Players),
+                "scheme",
+                events);
         }
 
         // The other kind of activation ends here. A boost card's ability that

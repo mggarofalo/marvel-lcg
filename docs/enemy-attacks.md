@@ -171,3 +171,36 @@ Every claim here rests on a citation and a hand-built board, because the
 recording cannot reach any of it: its sampling policy declines every decision,
 so its hero never leaves alter-ego form, and `rr:activation.1` makes a villain
 facing an alter-ego scheme rather than attack.
+
+## The other activation is steps too
+
+`rr:activation` gives an enemy two ways to activate and the rules give each
+three or six numbered steps. The attack has been steps on the agenda from the
+start. The **scheme** was one call that did all three of
+`rr:scheme-enemy-activation` in a row, which is fine until step 2 stops to ask:
+
+> 2. Resolve each of the scheming enemy's boost cards … b. Resolve any
+>    "**Boost**" abilities.
+> 3. Place threat on the main scheme equal to the scheming enemy's **modified**
+>    SCH value.
+
+A boost ability that offers the player a choice suspends. Resolved inline, the
+threat went onto the scheme while the question was still on the table, and
+whatever the player chose arrived after the number it was meant to change. So
+step 3 is `Steps.SchemeThreat`, exactly as `DealAttackDamage` is step 4 of the
+attack — and the boost icons became a registered modifier rather than a local
+number, because a number cannot cross a step boundary.
+
+**And a scheme now has an ending.** `Steps.SchemeThreat` carries
+`WhenSchemeEnds`, the parallel of `AttackEnds`. The attack has always kept its
+two moments apart — `rr:attack-enemy-activation.5` puts "when [enemy name]
+attacks" at the *initiation*, before any step, and `.step.6.a` is where the
+abilities that ask what the attack **did** live. A scheme has the same two
+moments and had one name for both.
+
+That is only visible once the threat is placed in between. Prelate Armor's
+"**Forced Response:** After Unus schemes, give him a tough status card" had been
+resolving at the *start* of the activation, and nothing showed it: a tough card
+is a tough card whichever side of the scheme it lands on. The event order is
+what shows it, which is what its test asserts. The Python engine reads the card
+the same way — its factory is `AfterUnitSchemeEnd`.
