@@ -1,5 +1,5 @@
 {
-  "note": "Hand-authored. The one-way rule reference graph: an exception names the rule it overrides or extends; a base rule names nothing. Generated indexes under datasets/rules-reference/ and datasets/rules-packs/ are rebuilt from PDFs on every harvest and deliberately carry no reference field, so authored edges live here and only here. Each edge records why, because a plausible-but-wrong relationship is the failure mode this corpus exists to eliminate. Reverse lookup is computed at query time by tools/rules/refs.py and never stored. See docs/rules-provenance.md.",
+  "note": "Hand-authored. The one-way rule reference graph: an exception names the rule it overrides or extends; a base rule names nothing. Generated indexes under datasets/rules-reference/ and datasets/rules-packs/ are rebuilt from PDFs on every harvest and deliberately carry no reference field, so authored edges live here and only here. Each edge records why, because a plausible-but-wrong relationship is the failure mode this corpus exists to eliminate. Reverse lookup is computed at query time by tools/Marvel.Rules.Index and never stored. See docs/rules-provenance.md.",
   "version": 1,
   "edges": {
     "rr:acceleration-icon": {

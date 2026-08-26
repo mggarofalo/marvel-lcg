@@ -45,21 +45,25 @@ than the comment quietly going stale.
 
 ## The report
 
-There is no report tool; these were the counts when the practice started.
-
 ```
+$ dotnet run --project tools/Marvel.Rules.Index -- citations
+
 Rules Reference v1.8
 
-  entries             9 / 215   cited (4.2%)
-  citable records    19 / 1152  cited (1.6%)
+  entries             124 / 262   cited (47.3%)
+  citable records     345 / 1218  cited (28.3%)
 
-  citations made     24
+  citations made  682
 ```
 
 ```
-$ python -m tools.rules.citations --uncited --sort   # the work list
-$ python -m tools.rules.citations --cited            # who cites what
+$ dotnet run --project tools/Marvel.Rules.Index -- citations --uncited --sort
+$ dotnet run --project tools/Marvel.Rules.Index -- citations --cited
 ```
+
+It reads the `[Rule("...")]` attributes off the source under `tests/` rather
+than reflecting over the built assemblies, so a report of what has been written
+does not depend on whether the suite currently compiles.
 
 `--uncited --sort` orders by clause count, a rough proxy for how much engine
 surface an entry touches. It is a reading order, not a backlog: a good deal of
@@ -68,26 +72,66 @@ expected to assert. Triage is a person's job.
 
 Two things this deliberately does not do:
 
-- **It does not gate.** There is no `--check` and no checked-in fixture. The
-  seven byte-gated fixtures exist because the C# port is *accepted against*
-  them; a coverage number is a measurement, and gating it would make every
-  added test touch a generated file for no oracle value.
+- **It does not gate.** There is no `--check` and no checked-in fixture. A
+  coverage number is a measurement, and gating one would make every added test
+  touch a generated file for no gain. What gates is whether a citation
+  *resolves*, and that is the suite's job.
 - **It does not validate ids.** A report that silently dropped a bad citation is
   how a mistyped citation survives. Validation belongs in the suite, where it
-  fails a build.
+  fails a build. An id the index does not know is counted and marked
+  `(no such rule)` under `--cited`, so the report is not silent about it either.
+
+## The graph
+
+`datasets/rules-graph.json` is the other half, and the one the index cannot
+carry: which rule qualifies which. It is hand-authored, one-way — "an exception
+names the rule it overrides or extends; a base rule names nothing" — and every
+edge records why, because a plausible-but-wrong relationship is the failure mode
+it exists to eliminate.
+
+```
+$ dotnet run --project tools/Marvel.Rules.Index -- refs rr:tough
+
+rr:tough  TOUGH
+  Tough is a status that prevents a character from taking damage.
+
+names:
+  -> rr:damage  DAMAGE
+     A tough status card cancels the damage a character would take, which is an
+     exception to base damage application.
+
+named by:
+  <- rr:piercing  PIERCING
+     Tough prevents damage. Piercing discards tough status cards from the
+     attacked character before damage is dealt, so it removes the prevention
+     rather than the damage.
+  <- rr:toughness  TOUGHNESS
+     Tough is a status a character can be given. Toughness gives it automatically
+     on entering play.
+```
+
+**"Named by" is the query the graph is for**, and it is computed rather than
+stored: a stored reverse edge is a second place for the same fact to be wrong.
+An id is matched by its entry as well as itself, so asking about `rr:thwart`
+finds the three edges that name `rr:thwart.1`.
+
+`RulesGraphTests` gates the file the way `RuleCitationTests` gates the
+attributes — every id resolves, every edge says why, and no rule names itself.
+`refs --orphans` lists the same failures on one screen for whoever is fixing
+them.
 
 ## Uncited is not untested
 
 A test with no `[Rule]` is not a lesser test — it is a test whose authority is
 something other than the Rules Reference:
 
-- **the corpus**, for tests that hold the engine against a recorded game. Most of
-  `PlayerPhaseTests` is this, and it is the strongest evidence available.
-- **printed card text**, pinned through `datasets/cards/`.
+- **printed card text**, pinned through `datasets/cards/`. Most of the card
+  tests are this, and for an authored card it is the strongest evidence there
+  is.
 - **a rules pack**, for expansion and scenario rules that amend the base game.
   `datasets/rules-packs/` is a separate dataset with no index, so `[Rule]`
   refuses anything but the `rr:` scheme rather than pretending to cover it.
-- **nothing published at all.** `TokenPoolsSurviveLeavingPlay` is the honest
-  example: no rule says a card acquires a token pool. It is an artefact of the
-  Python engine's serialisation that the digest forces the port to reproduce.
-  Leaving it uncited is the accurate statement.
+- **a wire format the engine chose.** The state digest's spelling and the
+  MT19937 stream are pinned by `StateDigestTests` and `MersenneTwisterTests`,
+  and no rule decides either — one is our choice and the other is ISO/IEC
+  14882 §rand.predef. Leaving them uncited is the accurate statement.
