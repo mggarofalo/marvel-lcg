@@ -502,6 +502,84 @@ public sealed class PlayerPhaseTests
         Assert.Equal(3, new HashSet<int> { mulligan, changeForm, endPhase }.Count);
     }
 
+    [Rule("rr:end-of-player-phase.step.1")]
+    [Fact]
+    public void AnOverFullHandIsToldHowManyCardsItMustDiscard()
+    {
+        // "Each player **may** discard any number of cards from their hand, and
+        // **must** discard down to their hand size if they have more cards than
+        // their hand size." Two clauses, and the second is a floor the offer
+        // has to carry: `PhaseEnd.DiscardToHandSize` refuses an answer that
+        // leaves the hand over its size, so an affordance saying `min: 0` is
+        // the engine offering a move it will then reject. MARVEL-245.
+        //
+        // Spider-Man holds five and Peter Parker six, so a player who mulligans
+        // nothing, flips down, and ends their turn is holding one too many
+        // without anything unusual having happened.
+        var game = Begin(out var world);
+        game.Resolve(Decision.Decline);
+        int size = (int)PhaseEnd.HandSize(world, world.Seats[0], Cards);
+
+        Draw.Cards(world, 0, 2, "test", []);
+        game.Resolve(Decision.Decline);
+
+        var offered = Assert.Single(game.Pending!.Affordances);
+        int over = world.Seats[0].Hand.Cards.Count - size;
+
+        Assert.Equal(2, over);
+        Assert.Equal(over, offered.Targets!.Min);
+        Assert.Equal(world.Seats[0].Hand.Cards.Count, offered.Targets!.Max);
+    }
+
+    [Rule("rr:end-of-player-phase.step.1")]
+    [Fact]
+    public void AHandAtItsSizeMayStillDiscardNothing()
+    {
+        // The first clause, and the reason the floor is a floor rather than a
+        // requirement: "**may** discard any number" makes an empty answer legal
+        // whenever the hand is not over its size, so a minimum that was always
+        // the hand's length would forbid what the rule permits.
+        var game = Begin(out var world);
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
+
+        var offered = Assert.Single(game.Pending!.Affordances);
+
+        Assert.Equal(0, offered.Targets!.Min);
+        Assert.Equal(
+            world.Seats[0].Hand.Cards.Count,
+            (int)PhaseEnd.HandSize(world, world.Seats[0], Cards));
+    }
+
+    [Fact]
+    public void AnAbilitysOptionCannotCollideWithOneTheGameNumbered()
+    {
+        // Two number spaces met in one prompt. `ICardAbilities.Describe` has no
+        // handle allocator to ask, so it answers with the card's object id;
+        // everything `Game` builds is numbered from a counter starting at zero.
+        // Sooner or later a card play and an action carry the same id, and
+        // `Resolve` finds the answer with `First` -- so the player asks for the
+        // ability and the engine plays a card, with nothing anywhere saying so.
+        // MARVEL-244.
+        //
+        // The stub does the worst case on purpose: it claims the id `Change_Form`
+        // already holds. Whatever the real interpreter numbers its options with
+        // is not this test's business, and a board where the collision happens
+        // to arise is a board one extra card would fix.
+        var world = WorldSetup.Deal(
+            Cards,
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, Heroes), Cards),
+            [.. Heroes.Select(hero => Setup.Hero(hero).Name)],
+            Seed);
+        var game = Game.Begin(world, Cards, new Colliding(world));
+        game.Resolve(Decision.Decline);
+
+        var offered = game.Pending!.Affordances;
+
+        Assert.Contains(offered, option => option.Verb == Game.ActionVerb);
+        Assert.Equal(offered.Count, offered.Select(option => option.Id).Distinct().Count());
+    }
+
     [Fact]
     public void HandlesDoNotDependOnAnythingOutsideTheGame()
     {
@@ -667,4 +745,19 @@ public sealed class PlayerPhaseTests
         { When: TimingPriority.Response } => "Response",
         _ => prompt.When.ToString(),
     };
+
+    /// <summary>An interpreter whose one action claims an id the game uses.</summary>
+    private sealed class Colliding(World world) : NoCardAbilities
+    {
+        public override IReadOnlyList<PendingAbility> Actions(World board, int player) =>
+            [new PendingAbility(world.Seats[player].Hand.Cards[0].ObjectId, AbilityType.Action, player)];
+
+        public override Affordance Describe(World board, PendingAbility ability) =>
+            new(
+                Id: 1,
+                Verb: "Test",
+                AnchorId: ability.Card,
+                AnchorPlayer: ability.Player,
+                Label: "Test");
+    }
 }

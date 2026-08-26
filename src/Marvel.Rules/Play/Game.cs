@@ -777,7 +777,19 @@ public sealed class Game
         // form", and 728 of the 966 in the pool are.
         foreach (var action in abilities.Actions(world, seat.Index))
         {
-            options.Add(abilities.Describe(world, action) with { Verb = ActionVerb });
+            // **Re-stamped, not taken as given.** `Describe` answers with the
+            // card's object id, because a card interpreter has no handle
+            // allocator to ask; the rest of this prompt is numbered from a
+            // counter. Both are valid handles and they are different number
+            // spaces, so an unstamped one collides with a card play sooner or
+            // later -- and `Resolve` would then take the play instead of the
+            // ability, with nothing anywhere saying so. MARVEL-244.
+            var described = abilities.Describe(world, action);
+            options.Add(described with
+            {
+                Verb = ActionVerb,
+                Id = Handle(ActionVerb, described.AnchorId),
+            });
         }
 
         // `rr:player-turn.3`: the hero's basic attack or thwart in hero form,
@@ -817,14 +829,9 @@ public sealed class Game
     private Affordance Priced(Seat seat, Card card, CostOption price)
     {
         int anchor = card.ObjectId;
-        if (!handles.TryGetValue((CardPlay.Verb, anchor), out int id))
-        {
-            id = nextHandle++;
-            handles[(CardPlay.Verb, anchor)] = id;
-        }
 
         return new Affordance(
-            Id: id,
+            Id: Handle(CardPlay.Verb, anchor),
             Verb: CardPlay.Verb,
             AnchorId: anchor,
             AnchorPlayer: seat.Index,
@@ -873,18 +880,39 @@ public sealed class Game
             Trigger: EndPhaseTrigger,
             Label: $"{seat.Name} End Phase",
             Cancellable: false,
-            Affordances: [HandChoice(seat, EndPhaseVerb)]);
+            Affordances:
+            [
+                // `rr:end-of-player-phase.step.1` is two clauses, and the
+                // second is a floor: a player "**must** discard down to their
+                // hand size if they have more cards than their hand size". So
+                // an over-full hand cannot answer with nothing, and the
+                // affordance has to say so — `PhaseEnd.DiscardToHandSize`
+                // refuses an answer that leaves too many, and an engine that
+                // offers what it will refuse has told the client a lie.
+                HandChoice(
+                    seat,
+                    EndPhaseVerb,
+                    Math.Max(
+                        0,
+                        seat.Hand.Cards.Count - (int)PhaseEnd.HandSize(world, seat, facts))),
+            ]);
     }
 
-    /// <summary>An affordance offering any number of the player's hand.</summary>
+    /// <summary>An affordance offering some number of the player's hand.</summary>
     /// <remarks>
-    /// The mulligan and the end phase are the same shape: choose between none
-    /// and all of your hand. The candidate list is the hand in its own order,
-    /// not sorted — the recorded offer is <c>[42, 45, 37, 9, 47, 46]</c>, which
-    /// is the hand read bottom to top, and sorting it would change which card a
-    /// client highlights first.
+    /// The mulligan and the end phase are nearly the same shape: choose between
+    /// <paramref name="least"/> and all of your hand. They differ only in the
+    /// floor — <c>rr:appendix-ii-setup.step.15</c> lets a player mulligan "any
+    /// number of cards", including none, while the end of the player phase has
+    /// a hand size to come down to.
+    /// <para>
+    /// The candidate list is the hand in its own order, not sorted — the
+    /// recorded offer is <c>[42, 45, 37, 9, 47, 46]</c>, which is the hand read
+    /// bottom to top, and sorting it would change which card a client
+    /// highlights first.
+    /// </para>
     /// </remarks>
-    private Affordance HandChoice(Seat seat, string verb)
+    private Affordance HandChoice(Seat seat, string verb, int least = 0)
     {
         var hand = new int[seat.Hand.Cards.Count];
         for (int index = 0; index < hand.Length; index++)
@@ -896,7 +924,7 @@ public sealed class Game
         {
             Targets = new TargetRequest(
                 Legal: hand,
-                Min: 0,
+                Min: least,
                 Max: hand.Length,
                 // Looking through your own hand is a search: the cards are
                 // hidden from everyone else, so a client presents this as
@@ -908,18 +936,39 @@ public sealed class Game
     private Affordance Anchored(string verb, Seat seat) =>
         Anchored(verb, seat.IdentityCard, seat);
 
-    /// <summary>An affordance anchored to a particular card.</summary>
-    private Affordance Anchored(string verb, Card on, Seat seat)
+    /// <summary>
+    /// The stable handle for one option, allocating it the first time.
+    /// </summary>
+    /// <remarks>
+    /// <b>Every affordance in a prompt this class builds comes through here</b>,
+    /// and that is the point rather than tidiness. <c>Affordance.Id</c> is what
+    /// <see cref="Resolve"/> looks the answer up by, and it looks it up with
+    /// <c>First</c> — so two options sharing an id in one prompt do not fail,
+    /// they silently resolve the wrong one. An ability's own affordance arrives
+    /// carrying the card's object id (<c>ICardAbilities.Describe</c> has no
+    /// allocator to ask), and a card play carries a counter, and the two number
+    /// spaces overlap. MARVEL-244.
+    /// </remarks>
+    /// <param name="verb">What kind of option it is.</param>
+    /// <param name="anchor">The board object it hangs on.</param>
+    private int Handle(string verb, int anchor)
     {
-        int anchor = on.ObjectId;
         if (!handles.TryGetValue((verb, anchor), out int id))
         {
             id = nextHandle++;
             handles[(verb, anchor)] = id;
         }
 
+        return id;
+    }
+
+    /// <summary>An affordance anchored to a particular card.</summary>
+    private Affordance Anchored(string verb, Card on, Seat seat)
+    {
+        int anchor = on.ObjectId;
+
         return new Affordance(
-            Id: id,
+            Id: Handle(verb, anchor),
             Verb: verb,
             AnchorId: anchor,
             AnchorPlayer: seat.Index,
