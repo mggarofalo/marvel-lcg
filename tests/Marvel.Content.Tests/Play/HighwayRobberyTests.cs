@@ -54,6 +54,7 @@ public sealed class HighwayRobberyTests
         var scheme = Reveal(world);
         var taken = Attached(world, scheme);
 
+        Agendas.Happening(world);
         Defeat.Scheme(world, Cards, scheme, "test", []);
 
         Assert.Equal(mine, world.Seats[0].Hand.Cards.Count);

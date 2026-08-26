@@ -1219,6 +1219,31 @@
           "effect": { "giveStatus": { "card": "defeater", "status": "confused" } }
         }
       ]
+    },
+    {
+      "card": "45071",
+      "name": "Gene Pool",
+      "note": "Permanent. Setup. Forced Response: After an ally is defeated by anything other than consequential damage, place 3 threat here. The two keywords are not written: rr:setup-keyword puts the card into play during setup and rr:permanent keeps it there, and both are printed keywords the engine already reads. What is written is the response. 'An ally' is any ally and not this card's, so the trigger's subject is the game rather than a card -- rr:triggering-condition makes the occurrence the thing that happened, and what happened is that somebody's ally died. 'By anything other than consequential damage' is the only negative condition in this dataset, and it reads exactly as printed: not a list of the causes that do count, which would go stale the moment a set added another one, but the one cause that does not. rr:consequential-damage is the rule it names; the interpreter is what knows which verb the engine records that under. rr:ability.7 makes a Forced Response mandatory, so there is nothing to offer and no cost.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "ForcedResponse",
+            "subject": "game"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  { "isKind": { "card": "defeated", "kind": "ally" } },
+                  { "not": { "defeatedBy": "consequentialDamage" } }
+                ]
+              },
+              "then": { "placeThreat": { "scheme": "this", "amount": 3 } }
+            }
+          }
+        }
+      ]
     }
   ]
 }

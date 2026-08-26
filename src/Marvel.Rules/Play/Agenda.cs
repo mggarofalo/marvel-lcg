@@ -437,10 +437,22 @@ public static class Steps
 
     /// <summary>A card being defeated — <c>rr:defeat</c>.</summary>
     /// <remarks>
-    /// A condition rather than a step: a defeat happens inside dealing damage
-    /// or removing threat, wherever the rules put it, and not on the agenda.
-    /// It is here so that <c>rr:when-defeated-abilities</c> has a condition to
-    /// name.
+    /// <para>
+    /// A condition rather than a step, and <c>rr:triggering-condition.2</c> is
+    /// why: "a single attack causing a character to both take damage and be
+    /// defeated" gets "a single interrupt window and a single response window",
+    /// so the defeat joins the occurrence that caused it instead of being
+    /// scheduled beside it. <c>Occurrence.Also</c> is where it joins.
+    /// </para>
+    /// <para>
+    /// <b>Reachable in a response window and not in an interrupt one.</b> The
+    /// interrupt window is opened and closed before the damage is dealt, so
+    /// when it was open the defeat had not happened and there was nothing to
+    /// add. Telling in advance that damage will be lethal is
+    /// <c>rr:would</c> reasoning this engine has not got — MARVEL-249. A card's
+    /// <i>own</i> "When Defeated" is unaffected: it is a forced interrupt with
+    /// nothing to offer, and <see cref="Defeat.Character"/> resolves it inline.
+    /// </para>
     /// </remarks>
     public const string CardDefeated = "WhenCardDefeated";
 

@@ -90,6 +90,8 @@ public sealed class RhinoThreeTests
             AuthoredCards.RhinoThree, world.AreaOf(DeckType.VillainDeck));
         world.Abilities = AuthoredCards.Runner();
 
+        Agendas.Happening(world);
+
         Damage.Deal(
             world, Cards, villain, Cards.PrintedValue(villain.FaceId, "HP", world.Players),
             "test", "Attack", []);

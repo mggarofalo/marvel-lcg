@@ -1,7 +1,7 @@
 namespace Marvel.Rules.State;
 
 /// <summary>
-/// How a card came to be defeated, while its "When Defeated" is resolving.
+/// How a card came to be defeated — <c>rr:defeat</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -13,10 +13,12 @@ namespace Marvel.Rules.State;
 /// status card to "<b>the player who defeated</b> this scheme".
 /// </para>
 /// <para>
-/// So this is provenance and not state: it is set for the length of one defeat
-/// and cleared afterwards, the same shape and for the same reason as
-/// <see cref="EnemyAttack"/>. A card reading it outside that moment would be
-/// reading the last defeat rather than none, which is why it goes back to null.
+/// <b>It lives on the occurrence, not on the board.</b> A response to a defeat
+/// is offered after the defeat and after everything else that occurrence did,
+/// so provenance has to outlast the call that made it — and a field on
+/// <see cref="World"/> would have to be set before and cleared after, which is
+/// the half nobody remembers. <c>Timing.Occurrence.Defeats</c> lasts exactly as
+/// long as the two windows do, which is exactly as long as anything can ask.
 /// </para>
 /// </remarks>
 /// <param name="Card">The card that was defeated.</param>
@@ -26,11 +28,16 @@ namespace Marvel.Rules.State;
 /// control, so an ally's thwart is its owner's doing even though
 /// <c>rr:you-your.15</c> keeps it off that player's identity.
 /// </param>
-/// <remarks>
-/// <b>Who, and not yet how.</b> Gene Pool asks the other half — "after an ally
-/// is defeated <i>by anything other than consequential damage</i>" — and it
-/// cannot be authored until a defeat opens a response window for a forced
-/// response to answer, so the field it would read is not here either.
-/// MARVEL-248.
-/// </remarks>
-public sealed record Defeated(int Card, int By);
+/// <param name="How">
+/// What kind of thing did it, in the verb the event stream records: an attack,
+/// consequential damage, indirect damage, a card dealing damage outright, or a
+/// thwart that took a side scheme's last threat.
+/// <para>
+/// One string rather than an enum because it <b>is</b> the event stream's verb
+/// and not a second spelling of it. A card asking about it — Gene Pool's "by
+/// anything other than consequential damage" — names the rule it means, and the
+/// interpreter maps that name to the verb; so the vocabulary a card may use is
+/// closed and checked without this having to be.
+/// </para>
+/// </param>
+public sealed record Defeated(int Card, int By, string How);

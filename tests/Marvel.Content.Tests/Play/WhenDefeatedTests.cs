@@ -59,6 +59,8 @@ public sealed class WhenDefeatedTests
         var scheme = world.CreateCard(
             Unwritten, world.AreaOf(DeckType.SideSchemesArea));
 
+        Agendas.Happening(world);
+
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => Defeat.Scheme(world, Cards, scheme, "test", []));
 
@@ -76,6 +78,7 @@ public sealed class WhenDefeatedTests
             Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
         var events = new List<GameEvent>();
+        Agendas.Happening(world);
         Defeat.Character(world, Cards, minion, "test", events);
 
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
@@ -100,6 +103,7 @@ public sealed class WhenDefeatedTests
             Unwritten, world.AreaOf(DeckType.SideSchemesArea));
 
         var events = new List<GameEvent>();
+        Agendas.Happening(world);
         Defeat.Scheme(world, Cards, scheme, "test", events);
 
         int gave = events.FindIndex(happened => happened.Verb == "Give_Status");
@@ -132,6 +136,7 @@ public sealed class WhenDefeatedTests
         var scheme = world.CreateCard(
             Unwritten, world.AreaOf(DeckType.SideSchemesArea));
 
+        Agendas.Happening(world);
         Defeat.Scheme(world, Cards, scheme, "test", []);
 
         var villain = world.TheCardIn(DeckType.VillainArea)!;
@@ -159,6 +164,7 @@ public sealed class WhenDefeatedTests
         var minion = world.CreateCard(
             Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
+        Agendas.Happening(world);
         Defeat.Character(world, Cards, minion, "test", []);
 
 
@@ -184,7 +190,7 @@ public sealed class WhenDefeatedTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
 
-        world.Abilities.WhenDefeated(world, villain);
+        world.Abilities.WhenDefeated(world, villain, Killed(villain));
 
         Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
@@ -211,7 +217,7 @@ public sealed class WhenDefeatedTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => world.Abilities.WhenDefeated(world, villain));
+            () => world.Abilities.WhenDefeated(world, villain, Killed(villain)));
 
         Assert.Contains("asks who is resolving it", thrown.Message, StringComparison.Ordinal);
         Assert.False(
@@ -219,6 +225,14 @@ public sealed class WhenDefeatedTests
     }
 
     /// <summary>The Rhino board, with an inline book behind it.</summary>
+    /// <summary>A defeat with no provenance, for a card that asks for none.</summary>
+    /// <remarks>
+    /// The shape <c>Defeat</c> builds when nobody's character did it — an
+    /// encounter card's own doing. A test that wants "the player who defeated
+    /// this" to answer says which seat instead.
+    /// </remarks>
+    private static Defeated Killed(Card card) => new(card.ObjectId, -1, "test");
+
     private static World Board(string json, out AbilityRunner runner)
     {
         var world = Deal();

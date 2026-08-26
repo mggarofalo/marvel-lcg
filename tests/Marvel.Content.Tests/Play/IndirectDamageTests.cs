@@ -116,6 +116,7 @@ public sealed class IndirectDamageTests
         // piling onto him.
         var world = Deal();
         BombScare(world, threat: 40);
+        Agendas.Happening(world);
 
         Reveal(world, AuthoredCards.Explosion);
 
