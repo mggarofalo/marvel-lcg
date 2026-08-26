@@ -1,3 +1,5 @@
+using Marvel.Rules.Events;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.Tests;
@@ -261,6 +263,36 @@ public sealed class ContinuousEffectTests
         Assert.False(Duration.UntilEndOf(TimingPoints.EndOfRound).IsWhileInPlay);
         Assert.False(Duration.NextUses(1).IsWhileInPlay);
         Assert.False(Duration.NextTime("WhenAttacked").IsWhileInPlay);
+    }
+
+    [Rule("rr:delayed-effect")]
+    [Fact]
+    public void ADelayedEffectOnWhoeverWasNamedDoesNothingWhenNobodyWas()
+    {
+        // "If a character is damaged by this attack, that character is stunned"
+        // is written before there is a character to name, so the effect carries
+        // no target and the occurrence supplies one when it comes due.
+        //
+        // Not every condition names a card. A round ending names nobody, and an
+        // effect of this kind that came due there would have no character to
+        // stun -- so it stuns none, rather than falling back on whichever card
+        // happens to be first.
+        var world = Board();
+        world.CreateSeat("p1");
+        var somebody = world.CreateCard("ally", world.AreaOf(DeckType.AlliesArea));
+
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.DelayedEffect,
+            Kind: DelayedEffects.StunTheSubject,
+            Card: somebody.ObjectId,
+            Affects: null,
+            Lasts: Duration.NextTime("WhenRoundEnds")));
+
+        var events = new List<GameEvent>();
+        DelayedEffects.Occur(world, "WhenRoundEnds", events);
+
+        Assert.False(Statuses.Has(world, somebody, Statuses.Stunned));
+        Assert.Empty(events);
     }
 
     private static World Board()

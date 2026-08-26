@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and twenty-three cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
+`src/Marvel.Cards`, and twenty-five cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -764,11 +764,10 @@ the engine is adding a case; growing the game is adding a row; they are
 different activities and they read differently.
 
 The gaps that have that shape today, from the Rhino scenario's own twenty-four
-cards: an attachment that redirects damage (Armored Rhino Suit), a
-**Hero Action** with a resource cost (Enhanced Ivory Horn), a delayed effect on
-an attack's damage (Stampede), damage assigned among several characters
-(Explosion), and the nemesis set (Shadow of the Past). Nineteen of the
-twenty-four are written; those five are what is left.
+cards: an attachment that redirects damage (Armored Rhino Suit), a **Hero
+Action** with a resource cost (Enhanced Ivory Horn), and damage assigned among
+several characters (Explosion). Twenty-one of the twenty-four are written; those
+three are what is left, and beside them the nemesis set's own five.
 
 ### How big the job actually is
 
@@ -786,6 +785,35 @@ to nine scenarios and fewer.
 Gang-Up, Shadow of the Past, Exhaustion, Masterplan and Under Fire, and the two
 that are read and empty. So the set every scenario is built on resolves, and
 what is left is each scenario's own cards.
+
+### An effect can be written before the card it acts on exists
+
+"Rhino attacks you. **If a character is damaged by this attack, that character
+is stunned.**" The second sentence cannot name anybody when it is written: the
+attack has not happened, and who defends is a question nobody has been asked. So
+the effect is registered with `Affects: null`, and the occurrence names a card
+when the effect comes due.
+
+It is a **delayed effect** and not a response. `rr:delayed-effect.1` resolves it
+"immediately after [its] future condition occurs or becomes true, and **before
+responses to that point or condition may be used**", and `.2` says it "is not
+treated as a new triggered ability" — so it opens no window and nobody is asked.
+
+**Damaged, not attacked**, and the difference is reachable: `rr:tough.3` says a
+character whose tough status card ate the damage "is not considered to have
+taken damage". `Damage.Attack` therefore answers with who it *actually* damaged,
+measured off the dial rather than assumed from the aim.
+
+**Bounded by the attack as well as by the condition.** "By **this** attack" is
+false once the attack is over, so an attack that damaged nobody must not leave
+the effect waiting to stun the wrong character two rounds later. `Duration`
+already carried both halves — a condition and a timing point — so the effect is
+"the next time damage is dealt, and not past the end of this attack".
+
+The status lives in the effect's `Kind` because `ContinuousEffect` has nowhere
+else to put it: it carries a number, two card ids and a duration, and it has to
+survive a save, so it cannot carry a closure either. Confusing or toughening the
+damaged character is another constant beside `StunTheSubject`.
 
 ### A search of a deck is bounded, and the bound is a rule
 

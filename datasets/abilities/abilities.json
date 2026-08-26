@@ -343,6 +343,34 @@
       "name": "Vulture",
       "note": "Quickstrike, and nothing else. Spider-Man's nemesis minion, brought in by Shadow of the Past. rr:quickstrike is a keyword the engine reads off the printed field, so there is no ability here to author.",
       "abilities": []
+    },
+    {
+      "card": "01106",
+      "name": "Stampede",
+      "note": "When Revealed (Alter-Ego): This card gains surge. When Revealed (Hero): Rhino attacks you. If a character is damaged by this attack, that character is stunned. The second sentence is a delayed effect and not a response: rr:delayed-effect.1 resolves it immediately after the condition becomes true and before responses to it may be used, and rr:delayed-effect.2 says it is not a new triggered ability. The character it stuns does not exist when the effect is made -- the attack has not happened -- so the occurrence names it when it comes due. rr:tough.3 is why 'damaged' is not 'attacked': a character whose tough status card ate the damage is not considered to have taken damage, and is not stunned.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": {
+                "seq": [
+                  { "enemyAttacks": { "enemies": { "query": "villain" } } },
+                  {
+                    "delayUntil": {
+                      "condition": "WhenDamageDealt",
+                      "within": "EndOfAttack",
+                      "effect": { "giveStatus": { "card": "damaged", "status": "stunned" } }
+                    }
+                  }
+                ]
+              },
+              "else": { "gainSurge": 1 }
+            }
+          }
+        }
+      ]
     }
   ]
 }

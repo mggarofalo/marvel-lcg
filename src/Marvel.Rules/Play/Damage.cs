@@ -149,7 +149,14 @@ public static class Damage
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="verb">What kind of thing caused it.</param>
     /// <param name="events">Where to record what happened.</param>
-    public static void Attack(
+    /// <returns>
+    /// Every character this attack <b>actually damaged</b>, which is not every
+    /// character it was aimed at. <c>rr:tough.3</c>: a character whose tough
+    /// status card ate the damage "is not considered to have taken damage", and
+    /// cards are written against that — "if a character is damaged by this
+    /// attack, that character is stunned".
+    /// </returns>
+    public static IReadOnlyList<Card> Attack(
         World world, ICardFacts facts, Card attacker, Card target, long amount,
         string trigger, string verb, List<GameEvent> events)
     {
@@ -182,6 +189,8 @@ public static class Damage
         // whose tough card ate the damage "is not considered to have taken
         // damage". A separate check here would be a second statement of the
         // same rule, and only one of them could be right after an edit.
+        var damaged = new List<Card>();
+        long before = target.Damage;
         if (Deal(world, facts, target, amount, trigger, verb, events)
             && beyond > 0
             && Keywords.Has(world, attacker, Keywords.Overkill, facts))
@@ -189,11 +198,21 @@ public static class Damage
             Spill(world, facts, target, beyond, trigger, events);
         }
 
+        // Measured rather than assumed. A tough status card prevents all of the
+        // damage, so the number on the dial is the only honest answer to
+        // whether the character took any.
+        if (target.Damage != before)
+        {
+            damaged.Add(target);
+        }
+
         // `rr:ranged.1` -- "this attack ignores the retaliate keyword".
         if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
         {
             Retaliate(world, facts, target, attacker, trigger, events);
         }
+
+        return damaged;
     }
 
     /// <summary>
