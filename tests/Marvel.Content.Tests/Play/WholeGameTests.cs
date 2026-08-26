@@ -79,6 +79,24 @@ public sealed class WholeGameTests
         Assert.True(played > 0, "no card was ever played");
     }
 
+    [Theory]
+    [InlineData(12345u)]
+    [InlineData(2026u)]
+    public void AThreePlayerGameRunsToo(uint seed)
+    {
+        // Three is where "the next clockwise player" stops being "the other
+        // one": the first player token wraps, `rr:in-player-order.1`'s
+        // "continues in a clockwise manner" has somewhere to continue to, and
+        // `rr:hazard-icon`'s extra cards go round the table rather than to a
+        // pair.
+        var (game, world) = Deal(seed, "spider_man", "she_hulk", "captain_marvel");
+        var played = Run(game, world);
+
+        Assert.Null(game.Pending);
+        Assert.NotEqual(Outcome.Unfinished, world.Result);
+        Assert.True(played > 0, "no card was ever played");
+    }
+
     [Fact]
     public void TheSameSeedPlaysTheSameGame()
     {
