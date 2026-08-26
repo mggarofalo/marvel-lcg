@@ -151,6 +151,9 @@ internal static class AuthoredCards
     /// </summary>
     public const string SyndicateShocker = "24045";
 
+    /// <summary>The printed id of "Speed Demon", of the Sinister Syndicate.</summary>
+    public const string SpeedDemon = "24046";
+
     /// <summary>The printed id of "Masterplan".</summary>
     public const string Masterplan = "01192";
 

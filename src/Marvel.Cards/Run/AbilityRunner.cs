@@ -2129,10 +2129,38 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // revealed in. Nothing else on the agenda can tell it.
         int round = cast.World.Agenda.Current?.Round ?? 0;
 
+        // "Speed Demon attacks **that character**." Absent on every card that
+        // simply says "the villain attacks you", which is the case
+        // `rr:attack-enemy-activation.1.1` calls normal: "the attacked
+        // character is the player's hero". An ability naming one instead is
+        // the exception the same clause allows.
+        int against = node.Field("against") is { } named
+            ? Find(named, cast)?.ObjectId ?? -1
+            : -1;
+
+        // "**(Resolve Speed Demon's attack first.)**" -- the card prints the
+        // instruction, so the data records it. Absent, an activation a card
+        // causes goes after whatever is happening, which is `rr:activation.8`:
+        // "an activation initiated during another resolves after the current
+        // activation has finished resolving." An interrupt that means to get
+        // in front of the thing it answers has to say so, and Speed Demon's
+        // parenthesis is the card saying it.
+        bool first = node.Field("first") is AbilityValue.Word { Value: "true" };
+
         foreach (var enemy in Every(node.Require("enemies"), cast))
         {
-            cast.World.Agenda.Then(new PhaseStep(
-                what, round, 2, Index: seat, Subject: enemy.ObjectId, Seat: seat));
+            var activation = new PhaseStep(
+                what, round, 2, Index: seat, Subject: enemy.ObjectId, Seat: seat,
+                Character: against);
+
+            if (first)
+            {
+                cast.World.Agenda.Now(activation);
+            }
+            else
+            {
+                cast.World.Agenda.Then(activation);
+            }
         }
     }
 
@@ -2290,6 +2318,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         .Split(';')
                         .Contains("Hero", StringComparer.Ordinal)),
             ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } supports
+            && supports.Argument is AbilityValue.Word { Value: "supportsYouControl" })
+        {
+            // The support half of `upgradesAndSupportsYouControl`, on its own,
+            // because Speed Demon's boost says "support" and an upgrade is not
+            // one. `rr:play-area.1` again for what "you control" reads as.
+            return [.. cast.World.AreaOf(DeckType.SupportsArea, PlayArea.Of(cast.Player)).Cards];
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } characters
