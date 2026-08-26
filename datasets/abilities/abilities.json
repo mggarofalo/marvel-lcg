@@ -839,6 +839,47 @@
           }
         }
       ]
+    },
+    {
+      "card": "24046",
+      "name": "Speed Demon",
+      "note": "Forced Interrupt: When a character attacks Speed Demon, Speed Demon attacks that character. (Resolve Speed Demon's attack first.) [star] Boost: Discard the lowest-cost support you control. The parenthesis is a real instruction and not a reminder, which is why it is recorded. rr:interrupt.1 resolves an interrupt before the occurrence it answers, and the ability does resolve there -- but its effect is itself an activation, and rr:activation.8 sends one of those to the back: 'an activation initiated during another resolves after the current activation has finished resolving.' So without 'first' the counter-attack would land after the attack it is answering, which is the reading the card prints the parenthesis to rule out. 'That character' is the attacker rather than the player, and Speed Demon attacking an ally is rr:attack-enemy-activation.1.1's exception: 'abilities can instead cause an enemy to attack a player's alter-ego or an ally that player controls.' rr:attacks-against-allies.1 keeps the player attacked either way, so the seat does not move. The boost half says support and not upgrade, and the two are separate queries for that reason; rr:permanent.4.1 names 'discard the lowest-cost support you control' as its own worked example, and Ranked drops permanents before comparing.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCharacterAttacks",
+            "timing": "ForcedInterrupt",
+            "subject": "this"
+          },
+          "effect": {
+            "enemyAttacks": {
+              "enemies": "this",
+              "against": "attacker",
+              "first": "true"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": { "exists": { "query": "supportsYouControl" } },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "minBy": { "of": { "query": "supportsYouControl" }, "by": "cost" }
+                  },
+                  "effect": { "discard": "chosen" }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

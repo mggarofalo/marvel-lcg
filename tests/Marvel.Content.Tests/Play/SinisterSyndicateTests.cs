@@ -45,6 +45,9 @@ public sealed class SinisterSyndicateTests
     /// <summary>Webbed Up, a four-cost upgrade — dearer, so "lowest" can be wrong.</summary>
     private const string WebbedUp = "01009";
 
+    /// <summary>Aunt May, a one-cost Spider-Man support.</summary>
+    private const string AuntMaySupport = "01006";
+
     /// <summary>Hulk, an Aggression ally — a card that is not identity-specific.</summary>
     private const string Hulk = "01050";
 
@@ -710,6 +713,96 @@ public sealed class SinisterSyndicateTests
         // every option but changing form "be performed as many times as the
         // player is able".
         Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+    }
+
+    [Rule("rr:interrupt.1")]
+    [Rule("rr:attack-enemy-activation.1.1")]
+    [Fact]
+    public void SpeedDemonHitsBackBeforeTheAttackItAnswersLands()
+    {
+        // "**Forced Interrupt:** When a character attacks Speed Demon, Speed
+        // Demon attacks that character. *(Resolve Speed Demon's attack first.)*"
+        //
+        // The parenthesis is what an interrupt already is -- `rr:interrupt.1`
+        // resolves one before the occurrence it answers -- so the reminder
+        // needs no vocabulary of its own. The order is the assertion: the hero
+        // takes Speed Demon's damage before Speed Demon takes the hero's.
+        var world = Deal();
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        var demon = world.CreateCard(
+            AuthoredCards.SpeedDemon,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        BasicPowers.BasicAttack(world, Cards, 0, demon, []);
+        var happened = Run(world);
+
+        Assert.Equal(2, identity.Damage);
+        Assert.True(demon.Damage > 0, "and the hero's attack still landed");
+
+        // The order, read off the health each attack moved. Damage is a
+        // `FieldSet` on `health`, so the two attacks are two entries and which
+        // came first is a fact about the list rather than about the board --
+        // the board looks the same either way, which is exactly why asserting
+        // on it would prove nothing.
+        var hurt = happened
+            .OfType<FieldSet>()
+            .Where(what => string.Equals(what.Field, "health", StringComparison.Ordinal))
+            .Select(what => what.Card)
+            .ToList();
+
+        Assert.Equal([identity.ObjectId, demon.ObjectId], hurt);
+    }
+
+    [Rule("rr:attacks-against-allies")]
+    [Rule("rr:attacks-against-allies.1")]
+    [Fact]
+    public void SpeedDemonHitsTheAllyThatSwungAndNotItsController()
+    {
+        // "That character", and `rr:attack-enemy-activation.1.1` is the clause
+        // that lets an enemy attack one: "abilities can instead cause an enemy
+        // to attack a player's alter-ego or **an ally that player controls**."
+        // `rr:attacks-against-allies` puts the undefended damage "on the ally
+        // that was attacked", and `.1` keeps the player attacked all the same
+        // -- so the seat does not move even though the character did.
+        var world = Deal();
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        var woman = Ally(world, SpiderWoman, 0);
+        var demon = world.CreateCard(
+            AuthoredCards.SpeedDemon,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        BasicPowers.AllyPower(world, Cards, woman, demon, BasicPowers.AttackVerb, []);
+        Run(world);
+
+        // Spider-Woman took Speed Demon's two, plus one consequential for
+        // attacking -- and her controller took none of it.
+        Assert.True(woman.Damage >= 2, $"the ally was hit; damage was {woman.Damage}");
+        Assert.Equal(0, identity.Damage);
+    }
+
+    [Rule("rr:permanent.4.1")]
+    [Fact]
+    public void AsABoostCardSpeedDemonTakesTheCheapestSupportAndNoUpgrade()
+    {
+        // "★ **Boost:** Discard the lowest-cost **support** you control."
+        // `rr:permanent.4.1` uses this very sentence as its worked example. An
+        // upgrade is not a support, however cheap, which is why the two are
+        // separate queries rather than one.
+        var world = Deal();
+        var cheapUpgrade = Upgrade(world, SpiderTracer, 0);
+        var support = world.CreateCard(
+            AuntMaySupport,
+            world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var card = world.CreateCard(
+            AuthoredCards.SpeedDemon, world.AreaOf(DeckType.BoostingArea));
+
+        AuthoredCards.Runner().Boost(world, card, 0);
+        Run(world);
+
+        Assert.Equal(DeckType.DiscardPile, support.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, cheapUpgrade.Area.Type);
     }
 
     /// <summary>Empties a deck to the removed area, and answers with it.</summary>

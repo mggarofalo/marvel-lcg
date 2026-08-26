@@ -40,9 +40,17 @@ public enum Stage
 /// opens no windows: <c>rr:villain-phase.step.2</c> is a heading, and the
 /// activations under it are the things that happen.
 /// </param>
+/// <param name="Character">
+/// The character an attack is against, or <c>-1</c> for the attacked player's
+/// identity. <c>rr:attack-enemy-activation.1.1</c>: "normally the attacked
+/// character is the player's hero, but abilities can instead cause an enemy to
+/// attack a player's alter-ego or <b>an ally that player controls</b>", and
+/// <c>rr:attacks-against-allies.1</c> keeps the player attacked either way. So
+/// this names a character and not a second seat.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
-    bool Plan = false)
+    bool Plan = false, int Character = -1)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -135,6 +143,36 @@ public sealed class Agenda
     {
         scheduled += 1;
         items.Insert(Math.Min(scheduled, items.Count), (step, Stage.Interrupts, step.Occurrence));
+    }
+
+    /// <summary>
+    /// Schedule a step to be taken <i>before</i> the current one happens.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:interrupt.1</c>: an interrupt "resolves <b>before</b> the
+    /// triggering condition". For an interrupt whose effect is itself an
+    /// activation that is not enough on its own, because
+    /// <c>rr:activation.8</c> would otherwise put the new activation after —
+    /// "an activation initiated during another resolves after the current
+    /// activation has finished resolving". Speed Demon prints the exception
+    /// as a reminder: "<i>(Resolve Speed Demon's attack first.)</i>"
+    /// </para>
+    /// <para>
+    /// The step it goes in front of keeps the stage it had reached, so the
+    /// interrupt window that was open re-opens when the agenda comes back to
+    /// it. That is <c>rr:interrupt.5</c> and not an accident: using an
+    /// interrupt "gives each player another opportunity" to use one.
+    /// </para>
+    /// </remarks>
+    /// <param name="step">What to do first.</param>
+    public void Now(PhaseStep step)
+    {
+        items.Insert(0, (step, Stage.Interrupts, step.Occurrence));
+
+        // The inserted step is where `Then` now counts from, and it has
+        // scheduled nothing of its own yet.
+        scheduled = 0;
     }
 
     /// <summary>Move the current step on to its next part.</summary>

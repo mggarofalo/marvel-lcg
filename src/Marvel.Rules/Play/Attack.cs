@@ -81,10 +81,15 @@ public static class Attack
             return;
         }
 
-        // rr:attack-enemy-activation.1 -- against both a player and a
-        // character. The character is the player's identity unless an ability
-        // says otherwise, and none does here.
-        var target = world.Seats[step.Seat].IdentityCard;
+        // `rr:attack-enemy-activation.1` -- against both a player and a
+        // character, and `.1.1` -- "normally the attacked character
+        // is the player's hero, but abilities can instead cause an enemy to
+        // attack a player's alter-ego or an ally that player controls", and
+        // `rr:attacks-against-allies.1` keeps the player attacked either way,
+        // so the seat is unchanged and only the character moves.
+        var target = step.Character >= 0
+            ? world.Cards[step.Character]
+            : world.Seats[step.Seat].IdentityCard;
         world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId);
 
         // One attack's facts do not outlive the start of the next.
