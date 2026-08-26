@@ -85,6 +85,23 @@ public sealed class RealCardsGameTests
         }
     }
 
+    [Fact]
+    public void EverySeedPlaysNeedForSpeedToAnEnding()
+    {
+        // The Rhino board with the **Sinister Syndicate** instead of Bomb
+        // Scare, and the first scenario the engine can play that is not the
+        // one it was built on. Its thirty cards are all read, and the seven
+        // that were not are what MARVEL-232 through MARVEL-238 were about.
+        //
+        // Same caveat as the expert deal above: the policy declines what it
+        // can, so this walks the encounter deck rather than the endgame.
+        for (uint seed = 1; seed <= 40; seed++)
+        {
+            string? stopped = Play("2410_need_for_speed", seed);
+            Assert.True(stopped is null, $"seed {seed} stopped: {stopped}");
+        }
+    }
+
     /// <summary>Plays one seed out; answers with the message it stopped on.</summary>
     private static string? Play(string campaign, uint seed)
     {
@@ -115,13 +132,34 @@ public sealed class RealCardsGameTests
     /// Declines everything that can be declined, and answers what cannot.
     /// </summary>
     /// <remarks>
-    /// <c>rr:choose-option</c> offers a choice between things that happen, so
-    /// a decline is not an answer to it — <c>Question.Option</c> is the only
-    /// question here that must be answered. Everything else takes the decline,
-    /// including the mulligan, where declining is how a hand is kept.
+    /// <para>
+    /// <c>Prompt.Cancellable</c> is the whole rule, rather than a list of
+    /// question kinds. A card resolving a <c>chooseCard</c> is not cancellable
+    /// -- <c>rr:choose-game-element</c> gives no way out, the ability is
+    /// resolving and one of the things it offers is going to happen -- and an
+    /// earlier version of this policy declined it because <c>Question.Element</c>
+    /// was not on its list. Crime Pays found that on seed 6.
+    /// </para>
+    /// <para>
+    /// The mulligan is the exception, and it is one because the engine has a
+    /// hole rather than because the rules do: the prompt is offered
+    /// non-cancellable and taking it is unimplemented, so declining is the
+    /// only answer it accepts. MARVEL-229.
+    /// </para>
     /// </remarks>
-    private static Decision Answer(Prompt asked) =>
-        asked.Asking == Question.Option
-            ? Decision.Take(asked.Affordances[0].Id)
-            : Decision.Decline;
+    private static Decision Answer(Prompt asked)
+    {
+        if (asked.Cancellable
+            || string.Equals(
+                asked.Affordances[0].Verb, Game.ResolveMulligans, StringComparison.Ordinal))
+        {
+            return Decision.Decline;
+        }
+
+        var taken = asked.Affordances[0];
+        return Decision.Take(
+            taken.Id,
+            taken.Targets is { } wanted ? [.. wanted.Legal.Take(Math.Max(wanted.Min, 1))] : [],
+            []);
+    }
 }
