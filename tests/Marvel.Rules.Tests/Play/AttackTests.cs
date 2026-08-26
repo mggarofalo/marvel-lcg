@@ -214,17 +214,32 @@ public sealed class AttackTests
     }
 
     [Rule("rr:damage.1")]
+    [Rule("rr:hit-points.2.1")]
+    [Rule("rr:player-elimination")]
     [Fact]
-    public void ATargetThatWouldBeDefeatedSaysSoRatherThanSurviving()
+    public void AHeroReducedToZeroIsDefeatedAndTheirPlayerEliminated()
     {
         // "When a character has damage on it equal to or in excess of its hit
-        // points, it is defeated." A hero left standing on 0 hit points is the
-        // dangerous board: everything else about it is right.
+        // points, it is defeated", and `rr:hit-points.2.1`: "if a player's hit
+        // point dial is reduced to zero, that player is defeated and eliminated
+        // from the game."
+        //
+        // A hero left standing on 0 hit points is the dangerous board:
+        // everything else about it is right.
         var printed = Printed(atk: 20, boost: 0);
         var world = Board(printed);
+        var identity = world.Seats[0].IdentityCard;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Finish(world, printed));
-        Assert.Contains("defeated", thrown.Message, StringComparison.Ordinal);
+        Finish(world, printed);
+
+        Assert.True(world.Seats[0].Eliminated);
+
+        // `rr:defeat.2` -- an identity is removed from the game, not discarded.
+        Assert.Equal(DeckType.RemovedArea, identity.Area.Type);
+
+        // `rr:player-elimination.4` -- "if all players are eliminated, the game
+        // ends and the players lose." One player, so this is that.
+        Assert.Equal(Outcome.PlayersLose, world.Result);
     }
 
     [Rule("rr:damage.1")]

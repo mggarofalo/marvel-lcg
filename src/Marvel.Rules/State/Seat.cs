@@ -99,4 +99,19 @@ public sealed class Seat
     /// </para>
     /// </remarks>
     public int FormChangedInRound { get; set; }
+
+    /// <summary>
+    /// Whether this player has been eliminated — <c>rr:player-elimination</c>.
+    /// </summary>
+    /// <remarks>
+    /// "A player is eliminated from the game if their identity is defeated."
+    /// The seat stays in <c>World.Seats</c> rather than being removed, because
+    /// <c>rr:player-elimination.6</c> keeps one thing about them alive:
+    /// "effects that refer to the players in the game ignore eliminated
+    /// players, <b>except for the per player icon</b>." A villain's <c>14*</c>
+    /// hit points do not shrink when somebody dies, so the starting count has
+    /// to survive — which it does as <c>World.Players</c>, while
+    /// <c>World.PlayerOrder</c> skips the eliminated.
+    /// </remarks>
+    public bool Eliminated { get; set; }
 }
