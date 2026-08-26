@@ -23,6 +23,43 @@ namespace Marvel.Content.Tests.Cards;
 /// </remarks>
 internal static class AuthoredCards
 {
+    /// <summary>
+    /// Every trait any printed card carries, in the engine's spelling.
+    /// </summary>
+    /// <remarks>
+    /// Read out of the card dataset rather than listed, so a set that gains a
+    /// trait does not need this touched. The engine's spelling is the one
+    /// <c>ICardFacts.Traits</c> answers in — upper-case, spaces underscored.
+    /// </remarks>
+    public static IEnumerable<string> EveryPrintedTrait()
+    {
+        using var cards = System.Text.Json.JsonDocument.Parse(
+            File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
+
+        foreach (var card in cards.RootElement.GetProperty("cards").EnumerateArray())
+        {
+            // `engine` is null on a card the extract could not match, which
+            // is not an absent property -- `TryGetProperty` finds it and hands
+            // back a null element.
+            if (!card.TryGetProperty("engine", out var engine)
+                || engine.ValueKind != System.Text.Json.JsonValueKind.Object
+                || !engine.TryGetProperty("traits", out var traits)
+                || traits.ValueKind != System.Text.Json.JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var trait in traits.EnumerateArray())
+            {
+                if (trait.GetString() is { Length: > 0 } text)
+                {
+                    yield return text.Replace(" ", "_", StringComparison.Ordinal)
+                        .Replace("!", string.Empty, StringComparison.Ordinal);
+                }
+            }
+        }
+    }
+
     /// <summary>The printed id of Spider-Man's hero side.</summary>
     public const string SpiderMan = "01001a";
 
@@ -98,6 +135,12 @@ internal static class AuthoredCards
 
     /// <summary>The printed id of "Beetle", of the Sinister Syndicate.</summary>
     public const string Beetle = "24043";
+
+    /// <summary>The printed id of "White Rabbit", of the Sinister Syndicate.</summary>
+    public const string WhiteRabbit = "24047";
+
+    /// <summary>The printed id of "Sinister Onslaught", of the Sinister Syndicate.</summary>
+    public const string SinisterOnslaught = "24048";
 
     /// <summary>The printed id of "Masterplan".</summary>
     public const string Masterplan = "01192";

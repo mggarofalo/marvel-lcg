@@ -281,6 +281,71 @@ public sealed class AbilityDataTests
     }
 
     [Fact]
+    public void EveryTraitACardNamesIsATraitSomePrintedCardCarries()
+    {
+        // The same failure as a misspelled trigger, one field along. A card
+        // asking for `Criminal` when the engine stores `CRIMINAL` parses,
+        // validates, and quietly matches nothing -- and "the query found no
+        // enemies" is a board a real game reaches, so nothing downstream can
+        // tell the typo from the empty table.
+        //
+        // The dataset names traits as the engine spells them, which is the rule
+        // `AbilityTrigger.Event` states for conditions: a translation table
+        // between the printed word and the stored one is a second vocabulary,
+        // and a second vocabulary drifts.
+        var real = new HashSet<string>(
+            AuthoredCards.EveryPrintedTrait(), StringComparer.Ordinal);
+
+        foreach (var ability in AuthoredCards.Book.Abilities)
+        {
+            foreach (string named in Traits(ability.Effect))
+            {
+                Assert.True(
+                    real.Contains(named),
+                    $"'{ability.Card}' names the trait '{named}', which no printed card "
+                    + "carries. Traits are stored upper-case with spaces underscored -- "
+                    + "`MASTERS_OF_EVIL`, not `Masters of Evil`.");
+            }
+        }
+    }
+
+    /// <summary>Every trait one effect tree names, however deep.</summary>
+    private static IEnumerable<string> Traits(AbilityNode node) => Traits(node.Argument, node.Kind);
+
+    private static IEnumerable<string> Traits(AbilityValue value, string kind)
+    {
+        switch (value)
+        {
+            case AbilityValue.Word word when string.Equals(
+                kind, "enemiesWithTrait", StringComparison.Ordinal):
+                yield return word.Value;
+                break;
+
+            case AbilityValue.List list:
+                foreach (string found in list.Values.SelectMany(each => Traits(each, kind)))
+                {
+                    yield return found;
+                }
+
+                break;
+
+            case AbilityValue.Map map:
+                foreach (var (name, entry) in map.Entries)
+                {
+                    foreach (string found in Traits(entry, name))
+                    {
+                        yield return found;
+                    }
+                }
+
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    [Fact]
     public void TheAuthoredCardsAreTheOnesTheTestsName()
     {
         // Stated as a set so that a card added to the dataset is a deliberate
@@ -300,7 +365,7 @@ public sealed class AbilityDataTests
             AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
             AuthoredCards.ShadowOfThePast, AuthoredCards.Exhaustion,
             AuthoredCards.Masterplan, AuthoredCards.UnderFire, AuthoredCards.RhinoThree,
-            AuthoredCards.Boomerang, AuthoredCards.Beetle,
+            AuthoredCards.Boomerang, AuthoredCards.Beetle, AuthoredCards.WhiteRabbit, AuthoredCards.SinisterOnslaught,
             .. AuthoredCards.ReadAndSilent,
         ];
 

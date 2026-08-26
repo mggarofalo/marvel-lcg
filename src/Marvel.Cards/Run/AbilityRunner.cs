@@ -2165,6 +2165,61 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return Ranked(ranked, cast);
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "enemiesWithTrait" } trait)
+        {
+            // "Each **[[Criminal]]** enemy in play." A query with an argument
+            // rather than one of the bare words, the way `titled` is -- the
+            // trait is the whole of what varies, and dozens of cards in the
+            // pool print this shape with a different one.
+            //
+            // **Spelled as the engine spells it** -- `CRIMINAL`, upper case,
+            // spaces underscored -- for the reason `AbilityTrigger.Event` gives
+            // for conditions: a translation table between the printed trait and
+            // the stored one is a second vocabulary, and a second vocabulary
+            // drifts. `ICardFacts.Traits` answers in that spelling.
+            //
+            // `rr:enemy`: "an enemy is a minion or villain", so this is the
+            // villain's own area and every player's engaged minions --
+            // `rr:minion.3` is why engagement is which play area a minion sits
+            // in. Every player's, not the resolving one's: the card says "in
+            // play" and says nothing about whose.
+            string wanted = Word(trait.Argument);
+            return
+            [
+                .. cast.World.Areas
+                    .Where(area => area.Type is DeckType.VillainArea
+                        or DeckType.EngagedEnemiesArea)
+                    .SelectMany(area => area.Cards)
+                    .Where(card => cast.World.Facts.Traits(card.FaceId)
+                        .Contains(wanted, StringComparer.Ordinal)),
+            ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } hand
+            && hand.Argument is AbilityValue.Word { Value: "identitySpecificInYourHand" })
+        {
+            // "1 identity-specific card from your hand."
+            // `rr:identity-specific-card` calls it a classification -- "cards
+            // that belong to an identity's set of accompanying cards" -- and
+            // `.3` says it is "designated by the identity icon printed in the
+            // bottom right corner of the card". The extract records that corner
+            // as the `Class` attribute, where an aspect card carries its aspect
+            // and an identity-specific one carries `Hero`.
+            //
+            // A contains rather than an equals: `rr:classifications` lets a
+            // card hold more than one, and three cards in the pool are printed
+            // both identity-specific and aspect.
+            return
+            [
+                .. cast.World.Seats[cast.Player].Hand.Cards
+                    .Where(card => cast.World.Facts
+                        .Attributes(card.FaceId)
+                        .GetValueOrDefault("Class", string.Empty)
+                        .Split(';')
+                        .Contains("Hero", StringComparer.Ordinal)),
+            ];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } upgrades
             && upgrades.Argument is AbilityValue.Word { Value: "upgradesYouControl" })
         {
