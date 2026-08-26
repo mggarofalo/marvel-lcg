@@ -2,8 +2,8 @@
   "document": "Marvel Champions: The Card Game -- Rules Reference",
   "version": "1.8",
   "tier": "rr",
-  "entry_count": 261,
-  "record_count": 1198,
+  "entry_count": 262,
+  "record_count": 1218,
   "icons": {
     "": "acceleration",
     "": "amplify",
@@ -11692,11 +11692,10 @@
       "hash": "sha256:2d82bb87671430992f8eb194d021978b0ac55bf031cf53becb4a680f31d66a8c",
       "see_also": [
         "rr:ability",
-        "rr:in-play-and-out-of-play"
+        "rr:in-play-and-out-of-play",
+        "rr:appendix-ii-setup"
       ],
-      "see_also_unresolved": [
-        "Appendix II: Setup"
-      ]
+      "see_also_unresolved": []
     },
     {
       "id": "rr:set-icon",
@@ -11723,11 +11722,10 @@
       "hash": "sha256:89602baf10785ccb337b0405d31a53f3557e28dca3e8013dd75b26722d0cff57",
       "see_also": [
         "rr:keywords",
-        "rr:reminder-text"
+        "rr:reminder-text",
+        "rr:appendix-ii-setup"
       ],
-      "see_also_unresolved": [
-        "Appendix II: Setup"
-      ]
+      "see_also_unresolved": []
     },
     {
       "id": "rr:setup-keyword.1",
@@ -11750,11 +11748,10 @@
       "fragment": "“Setup” is a type of triggered ability that is resolved during setup.",
       "hash": "sha256:43e65d9330d5b991b4ff2749dfdefae6f954a95cdcf4dad7cc4190d4df7d8db6",
       "see_also": [
-        "rr:triggered-ability"
+        "rr:triggered-ability",
+        "rr:appendix-ii-setup"
       ],
-      "see_also_unresolved": [
-        "Appendix II: Setup"
-      ]
+      "see_also_unresolved": []
     },
     {
       "id": "rr:setup-triggered-ability.1",
@@ -14417,11 +14414,10 @@
         "rr:encounter-card",
         "rr:main-scheme-main-scheme-deck",
         "rr:triggered-ability",
-        "rr:villain-villain-deck"
+        "rr:villain-villain-deck",
+        "rr:appendix-ii-setup"
       ],
-      "see_also_unresolved": [
-        "Appendix II: Setup"
-      ]
+      "see_also_unresolved": []
     },
     {
       "id": "rr:when-revealed-abilities.1",
@@ -14813,6 +14809,230 @@
       "page": 49,
       "fragment": "Supports — Attacks, thwarts, defenses, action abilities, and triggered abilities that resolve from supports in play under a player’s control are not considered to be performed by that player’s identity.",
       "hash": "sha256:6d4f8089242e850256289534a6527fd0448bea396249662f0fbfd7724591df7e"
+    },
+    {
+      "id": "rr:appendix-ii-setup",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP"
+      ],
+      "page": 51,
+      "fragment": "To set up a game, perform the following steps in order: The game is now ready to begin.",
+      "hash": "sha256:855554e6f874b9107df5446ead8d30599ec804b74c5b0c5ff2dae3b9a7f5a849",
+      "see_also": [],
+      "see_also_unresolved": []
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.1",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 1"
+      ],
+      "page": 51,
+      "fragment": "Select Identities.",
+      "hash": "sha256:41eb1c8df0f97bd9769aa00b2c6ba70b271ffefcfdff9cfb0f632c8e5e9a733d"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.2",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 2"
+      ],
+      "page": 51,
+      "fragment": "Set Hit Points.",
+      "hash": "sha256:e712f6da33d5063a384ded50d51674d389e239818cb53f1e944f40d8f8274e67"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.3",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 3"
+      ],
+      "page": 51,
+      "fragment": "Select First Player.",
+      "hash": "sha256:9b1e34319561e93e04fdeb92f513ef0e326cdca2fcbe6eebcb750aefe2b54a60"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.4",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 4"
+      ],
+      "page": 51,
+      "fragment": "Set Aside Obligations.",
+      "hash": "sha256:d758566334ee7b7346e3b23358550c6e5af3caa46522431c49923ec8dec518b5"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.5",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 5"
+      ],
+      "page": 51,
+      "fragment": "Set Aside Nemesis Sets.",
+      "hash": "sha256:7ccc522812f3f3342697ea81cc10b87886b53b9349f77fe1c8b9c3bf052c80b1"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.6",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 6"
+      ],
+      "page": 51,
+      "fragment": "Shuffle Player Decks.",
+      "hash": "sha256:c9c930b17e8e486eb23f3b040eb5953b785c824d61e82414c77a6dc75de3823c"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.7",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 7"
+      ],
+      "page": 51,
+      "fragment": "Collect Tokens and Status Cards.",
+      "hash": "sha256:3862f158ecef61274bdf9c1d70fa8f5794582af4305827f92fd4b98512d68a33"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.8",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 8"
+      ],
+      "page": 51,
+      "fragment": "Select Scenario.",
+      "hash": "sha256:f1dd647cf38fe0afe25118f165481d10192f4b29ce7e576fccfae5733fdca639"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.9",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 9"
+      ],
+      "page": 51,
+      "fragment": "Set the Villain’s Hit Points.",
+      "hash": "sha256:062ed51de8610d0add6024bc825dcc8797bea7c06c0b658a29f973bf77cd108c"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.10",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 10"
+      ],
+      "page": 51,
+      "fragment": "Create the Encounter Deck.",
+      "hash": "sha256:4c885e897ad0af977cc4238539d2b67246fa7fd6779460b000681b4663be4a58"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.11",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 11"
+      ],
+      "page": 51,
+      "fragment": "Put Setup Cards Into Play.",
+      "hash": "sha256:07b5721aac819eeb38c19a40d6bd28af609e662e5288946cb84bc53c2eda0bb7"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.12",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 12"
+      ],
+      "page": 51,
+      "fragment": "Resolve Scenario Setup and When Revealed Abilities.",
+      "hash": "sha256:a8af67e38154b1d687827a8be948b048d0a3b2ae178f6f9eb2d7111a15e1330b"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.12.a",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 12",
+        "step 12a"
+      ],
+      "page": 51,
+      "fragment": "Resolve any “Setup” abilities on main scheme card 1A.",
+      "hash": "sha256:aae0c2a1666c3055af320043c8e8275709119f63d61b9c20ae9aa0f022c53714"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.12.b",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 12",
+        "step 12b"
+      ],
+      "page": 51,
+      "fragment": "Flip the main scheme card to side 1B and resolve any “When Revealed” abilities on that side.",
+      "hash": "sha256:931cd2ffda24334975c14764fa69928ece0c206971cedc74bc6beb7a5577d20f"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.12.c",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 12",
+        "step 12c"
+      ],
+      "page": 51,
+      "fragment": "Resolve any “Setup” and “When Revealed” abilities on the villain.",
+      "hash": "sha256:0722b30cf91906ea68b3ce6e6f456d0eccfa4e9fd0b9e90dd366600de6cfac62"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.13",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 13"
+      ],
+      "page": 51,
+      "fragment": "Campaign Setup.",
+      "hash": "sha256:271eed4761a3872a5da83bd9e95400c645a7e1131c445cd375cb667fa1c291bf"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.14",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 14"
+      ],
+      "page": 51,
+      "fragment": "Draw Cards.",
+      "hash": "sha256:b20f2dee2465166a2e0ae6d3c0b2a946051ce71012ce546cb707bbc2d30cfb1c"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.15",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 15"
+      ],
+      "page": 51,
+      "fragment": "Resolve Mulligans.",
+      "hash": "sha256:6ff770473b9ef1142f6097d86424070b77d2a4a433cef45eb53ef28ea6c9b518"
+    },
+    {
+      "id": "rr:appendix-ii-setup.step.16",
+      "title": "APPENDIX II: SETUP",
+      "path": [
+        "APPENDIX II: SETUP",
+        "step 16"
+      ],
+      "page": 51,
+      "fragment": "Resolve Player Setup Abilities.",
+      "hash": "sha256:a1ee26d5f22738a1afc0c496e39905417b6a67226085c03d5f6707d4cfa7774a"
     }
   ]
 }

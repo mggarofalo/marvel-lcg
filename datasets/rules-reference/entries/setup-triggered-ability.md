@@ -5,7 +5,7 @@ document: "Rules Reference"
 version: "1.8"
 page: 40
 hash: "sha256:43e65d9330d5b991b4ff2749dfdefae6f954a95cdcf4dad7cc4190d4df7d8db6"
-see_also: ["rr:triggered-ability"]
+see_also: ["rr:triggered-ability", "rr:appendix-ii-setup"]
 ---
 
 # SETUP (TRIGGERED ABILITY)
@@ -21,4 +21,4 @@ see_also: ["rr:triggered-ability"]
 <a id="setup-triggered-ability-3"></a>
 3. Setup abilities on player cards are resolved during the “Resolve Character Setup Abilities” step of setup.
 
-**See also:** [Triggered Ability](triggered-ability.md), Appendix II: Setup
+**See also:** [Triggered Ability](triggered-ability.md), [Appendix II: Setup](appendix-ii-setup.md)
