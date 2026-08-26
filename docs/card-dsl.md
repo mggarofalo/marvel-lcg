@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and thirty-four cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
+`src/Marvel.Cards`, and thirty-five cards in `datasets/abilities/abilities.json` — every card the Rhino scenario reaches — the whole of the Standard sets among them.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -592,7 +592,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
 | Amounts | a number, `{ "perPlayer": n }`, or `{ "result": "healed" }` |
 | Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
@@ -619,6 +619,33 @@ defeated character standing. Threat written straight to `k_threat` walks past
 threat reaches its target however the threat arrived. Both are one-line
 mutations that no state assertion in the card tests would catch, which is why
 the tests assert the tough card and the ending rather than the number.
+
+### Damage that happens to something else
+
+`rr:damage` lists **nine steps**, and the engine now does five of them: step 1
+(abilities that trigger when damage *would be* dealt), step 2 (tough cards),
+step 5 (placing), step 7 (When Defeated) and step 8 (discarding). Steps 3, 4, 6
+and 9 are ability windows nothing opens yet.
+
+Step 1 is where a replacement effect sits — `rr:replacement-effect`'s "when
+[triggering condition] would happen, do [replacement effect] instead", on 64
+cards. Armored Rhino Suit is one: "when any amount of damage would be dealt to
+Rhino, place it here instead".
+
+**Being step 1 rather than anywhere else is the whole of it.** The tough card is
+step 2, so a replacement leaves nothing for it to prevent — and a tough card
+spent on damage that never arrived would be a tough card gone for nothing.
+`rr:replacement-effect.1` then holds for free: the damage is no longer imminent,
+so nothing later in the order can respond to it.
+
+**Placed, not dealt.** The damage goes onto the attachment as tokens rather than
+through `Damage.Deal`, which would start the nine steps again on a card that is
+not a character.
+
+**Forced only.** `rr:ability.11` makes everything optional unless prefaced by
+"Forced", and an optional interrupt is a question — which needs a window, which
+dealing damage has not got. A card that would ask here is refused by name rather
+than resolved without asking.
 
 ### Damage the player divides
 

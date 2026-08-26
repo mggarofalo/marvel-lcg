@@ -67,6 +67,31 @@ public interface ICardAbilities : IWindowAbilities
     IReadOnlyList<GameEvent> WhenDefeated(World world, Card card);
 
     /// <summary>
+    /// Step 1 of dealing damage — <c>rr:damage.step.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "Abilities that trigger <i>when [character] would be dealt any amount of
+    /// damage</i>", which is where a replacement effect sits:
+    /// <c>rr:replacement-effect</c> — "when [triggering condition] would happen,
+    /// do [replacement effect] instead".
+    /// </para>
+    /// <para>
+    /// It answers with how much damage is <b>left</b>, because that is what the
+    /// rest of the steps act on. A card that replaces all of it answers zero,
+    /// and <c>rr:replacement-effect.1</c> is then satisfied for free: the
+    /// damage is no longer imminent, so nothing later in the order can respond
+    /// to it.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="target">Who the damage is aimed at.</param>
+    /// <param name="amount">How much is about to be dealt.</param>
+    /// <param name="events">Where to record what any replacement did.</param>
+    /// <returns>How much damage is still to be dealt.</returns>
+    long WouldBeDealt(World world, Card target, long amount, List<GameEvent> events);
+
+    /// <summary>
     /// The "<b>Resource</b>" abilities a player could generate from —
     /// <c>rr:resource-ability</c>.
     /// </summary>
@@ -177,6 +202,10 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> WhenDefeated(World world, Card card) => [];
+
+    /// <inheritdoc/>
+    public virtual long WouldBeDealt(
+        World world, Card target, long amount, List<GameEvent> events) => amount;
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<Prompts.ResourceSource> ResourceAbilities(

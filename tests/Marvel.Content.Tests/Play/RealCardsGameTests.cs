@@ -9,7 +9,7 @@ using Xunit;
 namespace Marvel.Content.Tests.Play;
 
 /// <summary>
-/// The Rhino scenario, played with the cards actually doing what they say.
+/// The Rhino scenario, played with every card doing what it says.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -19,10 +19,16 @@ namespace Marvel.Content.Tests.Play;
 /// nothing a card says happens is not the game.
 /// </para>
 /// <para>
-/// This plays the same board with the real interpreter, and states the gap as a
-/// <b>list</b> rather than a number. Forty seeds either run to an ending or stop
-/// on a card nobody has written — and which cards those are is asserted, so
-/// authoring one is a visible change here and a <i>new</i> blocker is a failure.
+/// This plays the same board with the real interpreter, and <b>all forty seeds
+/// reach an ending</b>. Every one of the scenario's twenty-four cards is
+/// written, and so is every card of the nemesis set that Shadow of the Past
+/// brings in.
+/// </para>
+/// <para>
+/// It carried a list of the cards that blocked it while there were any, which
+/// is how it earned its keep: authoring Eviction Notice let the seeds get
+/// further, they reached Shadow of the Past, and Highway Robbery appeared as a
+/// blocker nobody had a reason to look for.
 /// </para>
 /// <para>
 /// The policy declines what it can, which is what makes the coverage broad
@@ -34,23 +40,6 @@ namespace Marvel.Content.Tests.Play;
 /// </remarks>
 public sealed class RealCardsGameTests
 {
-    /// <summary>
-    /// The Rhino cards nobody has written yet, and why each is hard.
-    /// </summary>
-    /// <remarks>
-    /// <c>01098</c> Armored Rhino Suit is a replacement effect — "when any
-    /// amount of damage would be dealt to Rhino, place it here instead" — and
-    /// damage is not an occurrence with a window, so nothing can replace it
-    /// yet.
-    /// <para>
-    /// Two used to be here. <c>01165</c> Eviction Notice asks twice — "you may
-    /// flip to alter-ego form" and then "choose:" — and a suspended ability had
-    /// nowhere to remember where it stopped. <c>01111</c> Explosion assigns
-    /// damage among several characters, which is <c>rr:indirect-damage</c>.
-    /// </para>
-    /// </remarks>
-    private static readonly string[] Unwritten = ["01098"];
-
     private static readonly SetupCatalog Setup =
         SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
 
@@ -58,36 +47,20 @@ public sealed class RealCardsGameTests
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
     [Fact]
-    public void EverySeedEitherFinishesOrStopsOnACardNobodyHasWritten()
+    public void EverySeedPlaysToAnEnding()
     {
-        var blocked = new SortedSet<string>(StringComparer.Ordinal);
-        int finished = 0;
-
+        // **Every card in this scenario now does what it says.** Forty seeds,
+        // the real interpreter, and not one of them meets a card nobody has
+        // written.
+        //
+        // This test used to carry a list of the cards that blocked it, so that
+        // authoring one was a visible change here. The list is empty, and what
+        // is left of it is this assertion.
         for (uint seed = 1; seed <= 40; seed++)
         {
             string? stopped = Play(seed);
-            if (stopped is null)
-            {
-                finished++;
-                continue;
-            }
-
-            Assert.True(
-                Unwritten.Any(card => stopped.Contains(card, StringComparison.Ordinal)),
-                $"seed {seed} stopped on something that is not an unwritten card: {stopped}");
-            blocked.UnionWith(Unwritten.Where(
-                card => stopped.Contains(card, StringComparison.Ordinal)));
+            Assert.True(stopped is null, $"seed {seed} stopped: {stopped}");
         }
-
-        // Most of them get all the way, which is the claim worth making: the
-        // engine plays this scenario, and what is left is three cards rather
-        // than a rule.
-        Assert.True(finished >= 25, $"only {finished} of 40 seeds reached an ending");
-
-        // And every card in the list is still blocking something. One that has
-        // been written should come out of the list rather than sit in it
-        // claiming a gap that is closed.
-        Assert.Equal(Unwritten.Order(StringComparer.Ordinal), blocked);
     }
 
     /// <summary>Plays one seed out; answers with the message it stopped on.</summary>

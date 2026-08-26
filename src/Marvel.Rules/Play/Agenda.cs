@@ -317,6 +317,18 @@ public static class Steps
     /// </remarks>
     public const string TurnAction = "WhenActionTriggered";
 
+    /// <summary>
+    /// Damage about to be dealt to a character —
+    /// <c>rr:damage.step.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// The first of the nine steps <c>rr:damage</c> lists: "abilities that
+    /// trigger <i>when [character] would deal/be dealt any amount of
+    /// damage</i>". This is the "be dealt" half; the dealer's half is the same
+    /// step and nothing in the pool that the engine reaches uses it yet.
+    /// </remarks>
+    public const string DamageWouldBeDealt = "WhenDamageWouldBeDealt";
+
     /// <summary>A card being defeated — <c>rr:defeat</c>.</summary>
     /// <remarks>
     /// A condition rather than a step: a defeat happens inside dealing damage
@@ -346,6 +358,7 @@ public static class Steps
         [RevealEncounterCard] = [CardRevealed],
         [TurnAction] = [TurnAction],
         [CardDefeated] = [CardDefeated],
+        [DamageWouldBeDealt] = [DamageWouldBeDealt],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 

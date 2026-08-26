@@ -313,6 +313,83 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public long WouldBeDealt(World world, Card target, long amount, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (amount <= 0)
+        {
+            return amount;
+        }
+
+        var occurrence = new Occurrence(
+            0, [Steps.DamageWouldBeDealt], Subject: target.ObjectId, Player: target.Owner);
+
+        long left = amount;
+        foreach (var (card, ability) in Waiting(world, occurrence))
+        {
+            // **Forced only.** `rr:ability.11` makes everything optional unless
+            // prefaced by "Forced", and an optional interrupt is a question --
+            // which needs a window, which dealing damage has not got. A card
+            // that would ask here is refused by name rather than resolved
+            // without asking.
+            if (ability.Trigger.Timing != AbilityType.ForcedInterrupt)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{card.FaceId}' asks to interrupt damage, and dealing damage opens "
+                    + "no window for an optional ability");
+            }
+
+            var cast = new Cast(world, card, occurrence, target.Owner, events, this)
+            {
+                Incoming = left,
+            };
+
+            Run(ability.Effect, cast);
+
+            // An ability that touched the damage says so; one that did nothing
+            // to it leaves it alone. `rr:damage.step.1` holds abilities that
+            // *may* replace the damage, not ones that must.
+            left = cast.Remaining < 0 ? left : cast.Remaining;
+            if (left <= 0)
+            {
+                // `rr:replacement-effect.1` -- "when an effect is replaced, it
+                // is no longer considered imminent and no further interrupts or
+                // responses to that effect can be triggered."
+                return 0;
+            }
+        }
+
+        return left;
+    }
+
+    /// <summary>Every authored ability answering one occurrence, with its card.</summary>
+    /// <remarks>
+    /// <b>Gathered before any of it runs.</b> An ability can make an area —
+    /// giving a status card creates one to hold it — and walking
+    /// <c>World.Areas</c> lazily while resolving would be modifying the
+    /// collection being read.
+    /// </remarks>
+    private List<(Card Card, CardAbility Ability)> Waiting(World world, Occurrence what) =>
+    [
+        .. world.Areas
+            .Where(area => DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .ToList()
+            .SelectMany(card => book.On(card.FaceId)
+                .Where(ability => Answers(ability, card, what))
+                .Select(ability => (Card: card, Ability: ability)))
+            .ToList(),
+    ];
+
+    /// <summary>Whether one ability answers this occurrence at all.</summary>
+    private static bool Answers(CardAbility ability, Card card, Occurrence what) =>
+        what.Conditions.Contains(ability.Trigger.Event, StringComparer.Ordinal)
+        && Subject(ability.Trigger.Subject, card, what);
+
+    /// <inheritdoc/>
     public IReadOnlyList<GameEvent> WhenDefeated(World world, Card card)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -841,6 +918,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 RemoveFromGame(node, cast);
                 break;
 
+            case "soakDamage":
+                Soak(node, cast);
+                break;
+
             case "exhaust":
                 Exhaust(node, cast);
                 break;
@@ -1203,6 +1284,39 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             Trigger = cast.Trigger, Verb = "Remove_From_Game",
         });
+    }
+
+    /// <summary>
+    /// "Place it here instead" — <c>rr:replacement-effect</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The damage does not happen to the character at all: it is <i>placed</i>
+    /// on this card as damage tokens, which is why it goes on with
+    /// <c>Card.TakeDamage</c> rather than through <c>Damage.Deal</c>. Dealing it
+    /// would start the nine steps of <c>rr:damage</c> again, on a card that is
+    /// not a character.
+    /// </para>
+    /// <para>
+    /// What is left afterwards is zero, and <c>rr:replacement-effect.1</c> then
+    /// holds for free: the damage is no longer imminent, so nothing later in
+    /// the order can respond to it.
+    /// </para>
+    /// </remarks>
+    private static void Soak(AbilityNode node, Cast cast)
+    {
+        var onto = Find(node.Require("onto"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would soak damage onto a card that is not there");
+
+        long before = onto.Damage;
+        onto.TakeDamage(cast.Incoming);
+        cast.Events.Add(new FieldSet(onto.ObjectId, "k_damage", before, onto.Damage)
+        {
+            Trigger = cast.Trigger, Verb = "Place_Damage",
+        });
+
+        cast.Replace(0);
     }
 
     /// <summary>"Exhaust …" — <c>rr:exhausted</c>.</summary>
@@ -2178,6 +2292,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // number rather than throwing: "no damage was healed" is exactly
             // the case where nothing ran.
             "result" => cast.Results.GetValueOrDefault(Word(node.Argument)),
+
+            // "If there is at least 5 damage here" -- damage tokens on a card,
+            // which `rr:damage.2` puts on an ally or minion and which an
+            // attachment can hold when a card puts them there.
+            "damageOn" => Find(node.Argument, cast)?.Damage ?? 0,
             _ => throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' asks for the amount '{node.Kind}', "
                 + "which is not implemented"),
@@ -2238,5 +2357,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <summary>Records the card a <c>chooseCard</c> was answered with.</summary>
         /// <param name="card">What they picked.</param>
         public void Choose(Card card) => Chosen = card;
+
+        /// <summary>How much damage is about to be dealt — <c>rr:damage.step.1</c>.</summary>
+        public long Incoming { get; init; }
+
+        /// <summary>How much is left after this ability, defaulting to all of it.</summary>
+        public long Remaining { get; private set; } = -1;
+
+        /// <summary>Replaces the damage with this much.</summary>
+        /// <param name="amount">What is left.</param>
+        public void Replace(long amount) => Remaining = amount;
     }
 }

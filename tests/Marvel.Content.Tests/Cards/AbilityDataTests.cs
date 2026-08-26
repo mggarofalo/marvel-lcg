@@ -289,7 +289,8 @@ public sealed class AbilityDataTests
         string[] named =
         [
             AuthoredCards.SpiderMan, AuthoredCards.PeterParker, AuthoredCards.AuntMay,
-            AuthoredCards.Charge, AuthoredCards.IvoryHorn, AuthoredCards.Shocker,
+            AuthoredCards.ArmoredSuit, AuthoredCards.Charge, AuthoredCards.IvoryHorn,
+            AuthoredCards.Shocker,
             AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
             AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
             AuthoredCards.Explosion, AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,

@@ -48,6 +48,17 @@ public static class Damage
             return false;
         }
 
+        // `rr:damage.step.1` -- "abilities that trigger when [character] would
+        // be dealt any amount of damage", which is where a replacement effect
+        // sits. It comes before the tough card, which is step 2, and a card
+        // that replaces all of the damage leaves nothing for the rest of the
+        // nine steps to do.
+        amount = world.Abilities.WouldBeDealt(world, target, amount, events);
+        if (amount <= 0)
+        {
+            return false;
+        }
+
         // `rr:tough.2`: "if a character with a tough status card would take any
         // amount of damage, **prevent all of that damage** and discard a tough
         // status card from that character instead." All of it, however much --
