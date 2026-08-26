@@ -101,27 +101,27 @@ public static class Reveal
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">What cards do, for a scheme this completes.</param>
     /// <param name="card">The card being revealed.</param>
     /// <param name="player">The seat revealing it.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void Keywords(
-        World world, ICardFacts facts, Card card, int player, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
+        List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        // `rr:incite-x`: "place X threat on the main scheme."
+        // `rr:incite-x`: "place X threat on the main scheme." Through
+        // `Threat.Place` and not inline, because threat that reaches the
+        // scheme's target completes it whatever put it there -- and this used
+        // to place it and not look.
         long incite = facts.PrintedValue(card.FaceId, "Incite", world.Players);
         if (incite > 0 && world.TheCardIn(DeckType.MainSchemesArea) is { } scheme)
         {
-            long before = scheme.Tokens.GetValueOrDefault("k_threat");
-            scheme.PlaceTokens("k_threat", incite);
-            events.Add(new FieldSet(scheme.ObjectId, "k_threat", before, before + incite)
-            {
-                Trigger = "incite", Verb = "Reveal",
-            });
+            Threat.Place(world, facts, abilities, scheme, incite, "incite", events);
         }
 
         // `rr:surge`: "the player resolving the card deals themself a facedown

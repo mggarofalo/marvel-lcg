@@ -92,10 +92,77 @@ public sealed class KeywordTests
         var world = Board(printed);
         var card = world.CreateCard("treachery", world.AreaOf(DeckType.RevealingArea));
 
-        Reveal.Keywords(world, printed, card, 0, []);
+        Reveal.Keywords(world, printed, new NoCardAbilities(), card, 0, []);
 
         Assert.Equal(
             expected, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:incite-x")]
+    [Rule("rr:main-scheme-main-scheme-deck.2.1")]
+    [Fact]
+    public void InciteThatCompletesTheMainSchemeEndsTheGame()
+    {
+        // **Threat placed is threat placed, however it arrived.**
+        // `rr:main-scheme-main-scheme-deck.2` completes a scheme the moment its
+        // threat reaches its target, and says nothing about what put the threat
+        // there -- so an incite card that pushes the scheme over the top ends
+        // the game exactly as the villain's own scheming does.
+        //
+        // The engine placed this threat inline and never looked. A game whose
+        // main scheme was one short would carry on past its own ending, and
+        // every later round would be a round that should not have been played.
+        var printed = new Printed()
+            .With("treachery", ("Incite", "1"))
+            .With("scheme", ("TargetThreat", "3"));
+        var world = Board(printed);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 2);
+
+        Reveal.Keywords(world, printed, new NoCardAbilities(), Treachery(world), 0, []);
+
+        Assert.Equal(Outcome.VillainWins, world.Result);
+    }
+
+    [Rule("rr:incite-x")]
+    [Fact]
+    public void InciteThatDoesNotReachTheTargetLeavesTheGameRunning()
+    {
+        // The converse, and the reason the check is a comparison rather than
+        // "somebody placed threat": one short is not completed.
+        var printed = new Printed()
+            .With("treachery", ("Incite", "1"))
+            .With("scheme", ("TargetThreat", "4"));
+        var world = Board(printed);
+        world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 2);
+
+        Reveal.Keywords(world, printed, new NoCardAbilities(), Treachery(world), 0, []);
+
+        Assert.Equal(Outcome.Unfinished, world.Result);
+    }
+
+    [Rule("rr:side-scheme.2")]
+    [Fact]
+    public void ASideSchemeReachingItsTargetThreatIsNotCompleted()
+    {
+        // A side scheme prints a target threat value like the main scheme does,
+        // and reaching it does **nothing**. `rr:side-scheme.2` runs the other
+        // way: a side scheme "remains in play until there is no threat on it",
+        // so threat piling up on one is threat piling up, and only taking it
+        // all off defeats the card.
+        //
+        // Worth stating because the two cards look alike to `Threat.Place` and
+        // the wrong reading ends the game: a Bomb Scare gathering threat would
+        // hand the villain the win.
+        var printed = new Printed().With("side", ("TargetThreat", "2"));
+        var world = Board(printed);
+        var side = world.CreateCard("side", world.AreaOf(DeckType.SideSchemesArea));
+
+        Threat.Place(world, printed, new NoCardAbilities(), side, 3, "test", []);
+
+        Assert.Equal(Outcome.Unfinished, world.Result);
+        Assert.Equal(0, side.Tokens.GetValueOrDefault("is_completed"));
+        Assert.Equal(3, side.Tokens.GetValueOrDefault("k_threat"));
     }
 
     [Rule("rr:surge")]
@@ -114,7 +181,7 @@ public sealed class KeywordTests
         world.CreateCard("after", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("next", world.AreaOf(DeckType.EncounterDeck));
 
-        Reveal.Keywords(world, printed, card, 0, []);
+        Reveal.Keywords(world, printed, new NoCardAbilities(), card, 0, []);
 
         var queue = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0));
         Assert.Equal(["next"], queue.Cards.Select(dealt => dealt.FaceId));
@@ -724,6 +791,10 @@ public sealed class KeywordTests
             asked = Sequence.Work(world, printed, abilities, events);
         }
     }
+
+    /// <summary>A treachery in the revealing area, ready for its keywords.</summary>
+    private static Card Treachery(World world) =>
+        world.CreateCard("treachery", world.AreaOf(DeckType.RevealingArea));
 
     private static World Board(Printed printed, int players = 1)
     {
