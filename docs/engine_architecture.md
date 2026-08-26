@@ -534,7 +534,7 @@ Five of the twelve are reached by no card script in any pack — `Rule`,
 *effects* are still specifiable (consequential damage to an attacking ally is a
 rule a behavioral spec pins, and does), but no printed card text can name the
 level, so the ordering between them is not observable from a scenario. See
-`py_src/specs/rules/timing-priority.feature` for which adjacent pairs are proven
+`specs/rules/timing-priority.feature` for which adjacent pairs are proven
 and which are not.
 
 **Ability** contains:

@@ -17,8 +17,9 @@ official rulings. Nothing patched it for **rules** — the Rules Reference is th
 authority for phases, timing, keywords and damage, and it is not in this
 repository at all.
 
-The consequence is not hypothetical. Every rules spec under `py_src/specs/rules/`
-currently asserts what the Python engine does, cross-checked against nothing.
+The consequence is not hypothetical. Every rules spec under `specs/rules/` was
+written asserting what the Python engine did, cross-checked against nothing.
+That is why none of them is trusted any more.
 
 ## Three authorities
 
@@ -93,9 +94,10 @@ version and harvest date, on exactly the same footing as
 
 **This is the mechanism the whole document exists for.**
 
-Today `specs/trusted.json` pins each trusted scenario to the hash of its own
-source — edit the scenario and it drops out on the next validation run. That is
-the right idea applied to one input out of four.
+The retired `specs/trusted.json` pinned each trusted scenario to the hash of its
+own source — edit the scenario and it dropped out on the next validation run.
+That was the right idea applied to one input out of four, and whatever replaces
+it should keep the idea and widen it.
 
 Extend the pin to **every authority the scenario derives from**:
 

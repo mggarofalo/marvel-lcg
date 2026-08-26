@@ -201,7 +201,7 @@ src/
 tests/
   Marvel.Vectors.Tests RNG and digest fixtures. The first C# code written.
   Marvel.Rules.Tests   xUnit
-  Marvel.Specs         Reqnroll, running py_src/specs/ in place
+  Marvel.Specs         Reqnroll, running specs/ in place
   Marvel.Corpus.Tests  sharded corpus replay gate
 ```
 
@@ -263,7 +263,7 @@ Three oracles already exist. Two more come with this proposal.
    at every step. Digest v2 prints a card-by-card, field-by-field diff on
    mismatch. This is the mechanism that makes the port converge.
 
-3. Reqnroll against the same `.feature` files, run in place from `py_src/specs/`.
+3. Reqnroll against the same `.feature` files, run in place from `specs/`.
    MARVEL-41 already forbids forking them, and requires a step catalogue
    conformance test on the C# side. Nothing here changes that.
 

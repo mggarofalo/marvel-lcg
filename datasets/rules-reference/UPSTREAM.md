@@ -17,7 +17,7 @@ carries rulings, and neither carries a *rule*.
 
 ## Why this exists
 
-`py_src/specs/rules/` holds ten rules specifications, and before this dataset
+`specs/rules/` holds ten rules specifications, and before this dataset
 every one of them asserted what the Python engine does, cross-checked against
 nothing. AGENTS.md names the hazard: a spec authored from ambiguous printed
 words, validated against an engine implementing the same reading of the same

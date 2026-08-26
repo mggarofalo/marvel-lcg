@@ -16,7 +16,7 @@ printed card text and errata, and neither carries a ruling.
 
 A spec authored from printed card text alone encodes contested timing by guess.
 It is then validated against the Python engine, which implements the same guess,
-and passes into `py_src/specs/trusted.json` having confirmed only that the engine
+and passes into `specs/trusted.json` having confirmed only that the engine
 agrees with itself. Where an official ruling exists it is the only independent
 check available, and only while the Python engine is still the reference
 (MARVEL-143, feeding MARVEL-68).

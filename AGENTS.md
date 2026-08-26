@@ -212,13 +212,11 @@ assertion-free tests, coverage is an observed outcome and never a target.
 The replay corpus answers "did this game reproduce". It cannot answer "does
 Swinging Web Kick deal 8 damage". Specs do, and they are what the C# engine is
 held to. **A scenario is a transcript** — one `When` per engine decision, `Then`s
-interleaved, Gherkin under `py_src/specs/`. The harness **never answers a
-decision the transcript omits**; an unanswered mid-resolution choice is
-`FAIL-spec-wrong`, not a silent pick. **A scenario is not trusted until it
-passes**: `specs/trusted.json` is written only by the validation runner, only
-from `PASS`, each entry pinned to the hash of its source. There is no way to add
-one by hand. `specs/self-test/quarantine.feature` is wrong on purpose and must
-stay that way.
+interleaved, Gherkin under `specs/`. **Every scenario there is a draft.** They
+were validated against the Python engine and that validation is retired, so
+none of them is trusted and there is no file that says otherwise: see
+[specs/README.md](specs/README.md). `specs/self-test/quarantine.feature` is
+wrong on purpose and must stay that way.
 
 **Check for a ruling before asserting timing.** A spec authored from ambiguous
 printed words is checked against a Python engine implementing the same reading of
@@ -264,16 +262,13 @@ says nothing.
 
 | Workflow | Runs | What |
 |---|---|---|
-| [`ci.yml`](.github/workflows/ci.yml) | every push to `master`, every PR | both unit tiers, five fixture staleness checks, trusted specs, one generated-and-verified game, `git status` clean, the C# build and test suite, and the Godot wall |
-| [`determinism.yml`](.github/workflows/determinism.yml) | nightly 06:00 UTC, or manually | `check_runs` across fresh processes, cross-OS digest comparison, replay and invariant probes |
+| [`ci.yml`](.github/workflows/ci.yml) | every push to `master`, every PR | the C# build and test suite, and the Godot wall |
 
-Both pin Python from `py_src/.python-version`, install from `requirements.lock`,
-and set `PYTHONIOENCODING=utf-8`.
+There is one workflow and no Python in it. `determinism.yml` was six jobs of
+cross-OS digest comparison, replay probes and corpus verification, all of them
+Python and all of them measuring the Python engine against itself; it went with
+the engine.
 
 **Everything in `ci.yml` is verified green on Windows and Linux.** Keep it that
-way: a gate that has never passed on one OS belongs in `determinism.yml` behind
-an explicit `runs-on`. A red `master` must mean something broke.
-
-`replays/` is empty and untracked, so **there is no regression suite yet**.
-Building it is the entire point of the `Corpus and Oracle` phase — weigh changes
-accordingly.
+way: a gate that has never passed on one OS does not belong here. A red
+`master` must mean something broke.
