@@ -227,6 +227,44 @@
       "note": "Stage 1B. 'If this stage is completed, the players lose the game' is rr:main-scheme-main-scheme-deck.2.1 restated on the card, and the engine answers it in Threat.Completed: an empty main scheme deck under a completed scheme is the villain winning. Nothing here to trigger."
       ,
       "abilities": []
+    },
+    {
+      "card": "01188",
+      "name": "Caught Off Guard",
+      "note": "When Revealed: Discard an upgrade or support you control. If no cards were discarded this way, this card gains surge. Written as if/else on whether there is one, rather than as a discard followed by a check: the instruction is mandatory, so 'no cards were discarded this way' happens exactly when there was nothing to discard. That also keeps the choice last in its branch, which is what the interpreter can resume. rr:choose-game-element.1 asks the player resolving the card, which is the player it was dealt to.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "exists": { "query": "upgradesAndSupportsYouControl" } },
+              "then": {
+                "chooseCard": {
+                  "from": { "query": "upgradesAndSupportsYouControl" },
+                  "effect": { "discard": "chosen" }
+                }
+              },
+              "else": { "gainSurge": 1 }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "01095",
+      "name": "Rhino",
+      "note": "Stage II. When Revealed: Search the encounter deck and discard pile for the Breakin' & Takin' side scheme and reveal it. Shuffle the encounter deck. The final sentence is rr:search.3 restated -- 'if any portion of a deck is searched, upon completion of that card ability, shuffle that entire deck' -- so it is the node's own doing rather than a second instruction. The discard pile is searched and not shuffled, because it is not a deck. Named by printed id because the card names a specific card and rr:identity.2 makes a title refer to one card.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "search": {
+              "in": [{ "encounterDeck": 1 }, { "encounterDiscardPile": 1 }],
+              "for": "01107"
+            }
+          }
+        }
+      ]
     }
   ]
 }

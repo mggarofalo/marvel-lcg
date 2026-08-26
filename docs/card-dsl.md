@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and seventeen cards in `datasets/abilities/abilities.json` — seventeen of the Rhino scenario's twenty-four.
+`src/Marvel.Cards`, and nineteen cards in `datasets/abilities/abilities.json` — nineteen of the Rhino scenario's twenty-four.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -590,12 +590,12 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | | |
 |---|---|
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
-| Control | `seq`, `if`, `choose` |
+| Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal` |
-| Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search` |
+| Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl` |
 | Amounts | a number, `{ "perPlayer": n }`, or `{ "result": "healed" }` |
-| Bindings | `this`, `you`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
+| Bindings | `this`, `you`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
@@ -643,6 +643,34 @@ Two bounds are charged by name rather than guessed at:
 ability. For a revealed encounter card that is the player it was dealt to — not
 the first player, and not the card's owner, which an encounter card has not got.
 `rr:choose-option` gives no way out, so the prompt is not cancellable.
+
+**`chooseCard` is the other question, and the rules already knew.**
+`rr:choose-option` picks a branch the card lists; `rr:choose-game-element` picks
+a card on the table. `Question.Option` and `Question.Element` were written with
+those two citations long before anything asked either, so the second shape cost
+a branch rather than a design.
+
+The bound is the same one `choose` has, and it is what decided how Caught Off
+Guard is written. "Discard an upgrade or support you control. If no cards were
+discarded this way, this card gains surge" *looks* like a choice followed by a
+check — which the interpreter cannot resume. But the instruction is mandatory,
+so "no cards were discarded this way" happens exactly when there was nothing to
+discard, and the card becomes an `if` on whether there is one. The choice ends
+its branch, and nothing has to resume.
+
+**`search` schedules the reveal it found.** Revealing an encounter card is a
+step with an interrupt window and a response window around it, and a reveal
+called inline would have neither — so the card found goes on the agenda as the
+same `RevealEncounterCard` step the villain phase uses, and takes
+`rr:reveal`'s four steps exactly as a dealt card does.
+
+`rr:search.2` makes looking free: "cards being searched are not considered to
+leave the searched area", so only the card found moves. `rr:search.3` shuffles
+the deck afterwards — the *deck*; the discard pile is searched too and is not
+one, and shuffling it would draw from the game's single random stream, which is
+a wire format. `rr:search.1` gives the player the choice when several cards
+match, which would be a second suspension inside an ability that may already
+have one, so it is refused by name until a card needs it.
 
 **`result.*` is the first thing the design called for that could not be faked.**
 "Rhino heals 4 damage. **If no damage was healed this way**, this card gains
@@ -736,13 +764,11 @@ the engine is adding a case; growing the game is adding a row; they are
 different activities and they read differently.
 
 The gaps that have that shape today, all from the Rhino scenario's own
-twenty-four cards: a query for a card the player controls (Caught Off Guard),
-a search of the encounter deck (Rhino's second stage), an attachment that
-redirects damage (Armored Rhino Suit), a **Hero Action** with a resource cost
-(Enhanced Ivory Horn), a delayed effect on an attack's damage (Stampede), damage
-assigned among several characters (Explosion), and the nemesis set (Shadow of
-the Past). Seventeen of the twenty-four are written; those seven are what is
-left.
+twenty-four cards: an attachment that redirects damage (Armored Rhino Suit), a
+**Hero Action** with a resource cost (Enhanced Ivory Horn), a delayed effect on
+an attack's damage (Stampede), damage assigned among several characters
+(Explosion), and the nemesis set (Shadow of the Past). Nineteen of the
+twenty-four are written; those five are what is left.
 
 ### Read and empty is not unread
 

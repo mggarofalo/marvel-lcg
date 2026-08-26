@@ -271,6 +271,7 @@ public sealed class AbilityDataTests
             AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
             AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
             AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,
+            AuthoredCards.CaughtOffGuard, AuthoredCards.RhinoTwo,
             AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
             .. AuthoredCards.ReadAndSilent,
         ];
