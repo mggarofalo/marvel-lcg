@@ -417,10 +417,145 @@ public sealed class SinisterSyndicateTests
             world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count);
     }
 
+    [Rule("rr:search.1")]
+    [Rule("rr:when-revealed-abilities.2")]
+    [Fact]
+    public void CrimePaysPutsAMinionIntoPlayWithoutRevealingIt()
+    {
+        // "**When Revealed:** Search the encounter deck for a [[Criminal]]
+        // minion and put it into play engaged with you."
+        //
+        // Put into play, not revealed, and `rr:when-revealed-abilities.2` is
+        // the difference: "if an encounter card with a '**When Revealed**'
+        // ability is put into play without being revealed, the '**When
+        // Revealed**' ability does not trigger." Sandman is a Criminal minion
+        // with no "When Revealed", so what this pins is that the card lands
+        // engaged rather than being routed through the reveal step -- which
+        // would run whatever text it had.
+        var world = Deal();
+        var deck = Emptied(world, DeckType.EncounterDeck);
+
+        var sandman = world.CreateCard(Sandman, deck);
+
+        Reveal(world, AuthoredCards.CrimePays);
+        Run(world);
+
+        Assert.Equal(DeckType.EngagedEnemiesArea, sandman.Area.Type);
+        Assert.Equal(PlayArea.Of(0), sandman.Area.PlayArea);
+        Assert.True(sandman.FaceUp);
+    }
+
+    [Rule("rr:search")]
+    [Fact]
+    public void CrimePaysPassesOverAMinionWithoutTheTrait()
+    {
+        // "A **[[Criminal]]** minion." Hydra Mercenary is a minion and is
+        // Hydra, so the search does not find it -- and the card's own sentence
+        // for that case is the surge.
+        var world = Deal();
+        var deck = Emptied(world, DeckType.EncounterDeck);
+
+        var hydra = world.CreateCard(HydraMercenary, deck);
+        int queued = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count;
+
+        Reveal(world, AuthoredCards.CrimePays);
+        Run(world);
+
+        // Not engaged: the search passed over it, so nothing was put into
+        // play. It did move -- `rr:surge.1` deals the player one facedown
+        // encounter card and the Hydra Mercenary was the only card in the deck
+        // to deal -- and being dealt facedown is not being put into play.
+        Assert.NotEqual(DeckType.EngagedEnemiesArea, hydra.Area.Type);
+        Assert.Equal(
+            queued + 1,
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count);
+    }
+
+    [Rule("rr:search")]
+    [Fact]
+    public void CrimePaysPassesOverACriminalThatIsNotAMinion()
+    {
+        // "A [[Criminal]] **minion**." The trait is half the criteria and the
+        // card type is the other half -- Rhino's own card carries Criminal, and
+        // a search that read only the trait would put the villain into a
+        // player's play area as a minion.
+        //
+        // An artificial board: a villain card does not sit in the encounter
+        // deck in a real game. What is under test is the interpreter's filter,
+        // and the filter has to be shown both halves or one of them is
+        // decoration.
+        var world = Deal();
+        var deck = Emptied(world, DeckType.EncounterDeck);
+        var rhino = world.CreateCard("01094", deck);
+
+        Reveal(world, AuthoredCards.CrimePays);
+        Run(world);
+
+        Assert.NotEqual(DeckType.EngagedEnemiesArea, rhino.Area.Type);
+    }
+
+    [Rule("rr:search.3")]
+    [Fact]
+    public void TheEncounterDeckIsShuffledWhetherOrNotTheSearchFoundAnything()
+    {
+        // "If **any portion** of a deck is searched, upon completion of that
+        // game step, game function, or card ability, shuffle that entire deck."
+        // Any portion, and upon completion -- so it happens on the branch that
+        // found nothing too, and the card carries it in both.
+        var world = Deal();
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var before = deck.Cards.Select(card => card.ObjectId).ToList();
+
+        Reveal(world, AuthoredCards.CrimePays);
+        Run(world);
+
+        // One card left the deck: `rr:surge.1` deals the player one, and the
+        // Rhino encounter deck holds no Criminal minion for the search to find.
+        Assert.NotEqual(
+            before.Where(id => deck.Cards.Any(card => card.ObjectId == id)),
+            deck.Cards.Select(card => card.ObjectId));
+    }
+
+    [Rule("rr:search.1")]
+    [Fact]
+    public void WithTwoCriminalMinionsThePlayerChoosesWhichOne()
+    {
+        // "If a player finds multiple cards that satisfy the criteria of a
+        // search, **the player chooses** among those options." Not the
+        // interpreter, and not the first one in the deck -- so the ability
+        // stops and asks, and the question carries both.
+        var world = Deal();
+        var deck = Emptied(world, DeckType.EncounterDeck);
+
+        var first = world.CreateCard(Sandman, deck);
+        var second = world.CreateCard(Sandman, deck);
+
+        Reveal(world, AuthoredCards.CrimePays);
+        var asked = Sequence.Work(world, Cards, AuthoredCards.Runner(), []);
+
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Element, asked!.Asking);
+        Assert.Equal(
+            [first.ObjectId, second.ObjectId],
+            asked.Affordances.Select(offered => offered.Id));
+    }
+
     private static void Reveal(World world, string faceId, int player = 0)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
         AuthoredCards.Runner().WhenRevealed(world, card, player);
+    }
+
+    /// <summary>Empties a deck to the removed area, and answers with it.</summary>
+    private static Area Emptied(World world, DeckType type)
+    {
+        var deck = world.AreaOf(type);
+        foreach (var card in deck.Cards.ToList())
+        {
+            World.MoveToTop(card, world.AreaOf(DeckType.RemovedArea));
+        }
+
+        return deck;
     }
 
     /// <summary>Empties a seat's opening hand, and answers with it.</summary>

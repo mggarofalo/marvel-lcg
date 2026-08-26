@@ -142,6 +142,9 @@ internal static class AuthoredCards
     /// <summary>The printed id of "Sinister Onslaught", of the Sinister Syndicate.</summary>
     public const string SinisterOnslaught = "24048";
 
+    /// <summary>The printed id of "Crime Pays", of the Sinister Syndicate.</summary>
+    public const string CrimePays = "24042";
+
     /// <summary>The printed id of "Masterplan".</summary>
     public const string Masterplan = "01192";
 
