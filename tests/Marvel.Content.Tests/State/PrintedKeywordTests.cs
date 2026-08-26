@@ -246,6 +246,26 @@ public sealed class PrintedKeywordTests
         Assert.Equal(4, differ);
     }
 
+    [Rule("rr:villain-defeat.3")]
+    [Rule("rr:identity.2")]
+    [Theory]
+    // `rr:villain-defeat.3` decides whether a defeated stage's attachments and
+    // tokens carry over by whether "the new stage of the villain has the **same
+    // title**", so a title is rules data and not decoration. Rhino's three
+    // stages share one.
+    [InlineData("01094", "Rhino")]
+    [InlineData("01095", "Rhino")]
+    [InlineData("01096", "Rhino")]
+    // And `rr:identity.2`: "if a card refers to a hero or alter-ego by title,
+    // it refers only to the identity with that title." Angel's third face is a
+    // different character by name.
+    [InlineData("42001a", "Angel")]
+    [InlineData("42001c", "Archangel")]
+    public void APrintedTitleIsRulesDataAndNotDecoration(string faceId, string title)
+    {
+        Assert.Equal(title, Cards.Title(faceId));
+    }
+
     /// <summary><c>acceleration_icon</c> becomes <c>AccelerationIcon</c>.</summary>
     private static string Pascal(string field) =>
         string.Concat(field.Split('_').Select(

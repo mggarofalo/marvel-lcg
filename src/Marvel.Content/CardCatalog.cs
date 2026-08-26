@@ -75,6 +75,9 @@ public sealed class CardCatalog : ICardFacts
     }
 
     /// <inheritdoc />
+    public string Title(string faceId) => Find(faceId).Title;
+
+    /// <inheritdoc />
     public IReadOnlyList<string> Traits(string faceId) => Find(faceId).Traits;
 
     /// <inheritdoc />
@@ -274,7 +277,14 @@ public sealed class CardCatalog : ICardFacts
             }
         }
 
-        return new Entry(kind, traits, attributes);
+        // MarvelSDB's `name`, not the engine's: the engine's card data carries
+        // no title at all, and `rr:villain-defeat.3` needs one. Rhino's three
+        // stages share it, which is the case the rule is written for.
+        string title = element.TryGetProperty("name", out var printedName)
+            ? printedName.GetString() ?? string.Empty
+            : string.Empty;
+
+        return new Entry(kind, traits, attributes, title);
     }
 
     /// <summary>
@@ -378,5 +388,6 @@ public sealed class CardCatalog : ICardFacts
     private sealed record Entry(
         CardKind Kind,
         IReadOnlyList<string> Traits,
-        IReadOnlyDictionary<string, string> Attributes);
+        IReadOnlyDictionary<string, string> Attributes,
+        string Title);
 }
