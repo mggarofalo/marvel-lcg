@@ -154,6 +154,16 @@ internal static class AuthoredCards
     /// <summary>The printed id of "Speed Demon", of the Sinister Syndicate.</summary>
     public const string SpeedDemon = "24046";
 
+    /// <summary>The printed ids of Unus's three villain stages, in order.</summary>
+    /// <remarks>
+    /// One card each, and each prints the same constant ability. A stage is a
+    /// card — <c>rr:villain-villain-deck</c> — so three rows rather than one.
+    /// </remarks>
+    public static readonly string[] Unus = ["45059", "45060", "45061"];
+
+    /// <summary>The printed id of "Gene Pool", the side scheme Unus reads.</summary>
+    public const string GenePool = "45071";
+
     /// <summary>The printed id of "Masterplan".</summary>
     public const string Masterplan = "01192";
 

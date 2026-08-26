@@ -104,8 +104,6 @@ public static class AbilityCatalog
 
         Refuse(trigger, TriggerKeys, $"a trigger on '{card}'");
 
-        string when = Text(trigger, "event")
-            ?? throw new AbilityException($"a trigger on '{card}' has no 'event'");
         string subject = Text(trigger, "subject") ?? AbilitySubjects.This;
 
         if (!AbilitySubjects.All.Contains(subject))
@@ -123,6 +121,8 @@ public static class AbilityCatalog
                 $"'{card}' has timing '{timing}', which is not an ability type");
         }
 
+        string? when = Event(trigger, card, type);
+
         if (!element.TryGetProperty("effect", out var effect))
         {
             throw new AbilityException($"an ability on '{card}' has no 'effect'");
@@ -135,6 +135,42 @@ public static class AbilityCatalog
             Node(effect, card),
             element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
             element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null);
+    }
+
+    /// <summary>
+    /// The triggering condition, which a constant ability does not have —
+    /// <c>rr:ability.5</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "An ability prefaced by a bold timing trigger followed by a colon is
+    /// referred to as a triggered ability. An ability without a bold timing
+    /// trigger is referred to as a constant ability." The two halves of that
+    /// sentence are the two branches here, and each refuses the other's field:
+    /// a triggered ability with no condition would never fire, and a constant
+    /// with one claims a timing it does not have.
+    /// </para>
+    /// <para>
+    /// <b>Refused rather than ignored</b>, for the reason the class remarks
+    /// give. An <c>event</c> on a constant is not a harmless extra key — it is
+    /// the author having believed the card triggers on something, and the whole
+    /// point of reading it back is to say so.
+    /// </para>
+    /// </remarks>
+    private static string? Event(JsonElement trigger, string card, AbilityType type)
+    {
+        string? when = Text(trigger, "event");
+
+        if (type == AbilityType.Constant)
+        {
+            return when is null
+                ? null
+                : throw new AbilityException(
+                    $"'{card}' is constant and triggers on '{when}'. A constant ability has "
+                    + "no bold timing trigger and so no triggering condition");
+        }
+
+        return when ?? throw new AbilityException($"a trigger on '{card}' has no 'event'");
     }
 
     /// <summary>

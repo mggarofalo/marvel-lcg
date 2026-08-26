@@ -38,6 +38,15 @@ public static class Keywords
     /// </summary>
     public const string Ranged = "ranged";
 
+    /// <summary>Every keyword this engine grants by name.</summary>
+    /// <remarks>
+    /// The three above, and no more. A keyword the engine reads off a printed
+    /// field — steady, stalwart, retaliate — is not here, because granting one
+    /// is adding to that field rather than naming the keyword.
+    /// </remarks>
+    public static IReadOnlySet<string> Granted { get; } =
+        new HashSet<string>(StringComparer.Ordinal) { Overkill, Piercing, Ranged };
+
     /// <summary>
     /// Whether a card has a keyword, printed on it or granted to it.
     /// </summary>

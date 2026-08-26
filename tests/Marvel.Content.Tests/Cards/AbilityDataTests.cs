@@ -28,6 +28,7 @@ public sealed class AbilityDataTests
     private static readonly CardCatalog Printed =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:ability.5")]
     [Fact]
     public void EveryTriggerNamesAConditionTheEngineActuallyProduces()
     {
@@ -37,6 +38,17 @@ public sealed class AbilityDataTests
         // does nothing" and "a card that was never reached" look identical.
         foreach (var ability in AuthoredCards.Book.Abilities)
         {
+            // `rr:ability.5` splits abilities in two by whether they are
+            // "prefaced by a bold timing trigger", and a constant ability is the
+            // half that is not -- so it names no condition, and a condition on
+            // one would be an author having believed it triggers on something.
+            if (ability.Trigger.Timing == AbilityType.Constant)
+            {
+                Assert.Null(ability.Trigger.Event);
+                continue;
+            }
+
+            Assert.NotNull(ability.Trigger.Event);
             Assert.True(
                 Steps.EveryCondition.Contains(ability.Trigger.Event),
                 $"'{ability.Card}' triggers on '{ability.Trigger.Event}', which no step "
@@ -135,7 +147,14 @@ public sealed class AbilityDataTests
                 // ability is generating resources to pay a cost" -- so it is
                 // neither timed around an occurrence nor a turn option, it is
                 // reached while a cost is being paid.
-                || timing == AbilityType.Resource,
+                || timing == AbilityType.Resource
+
+                // The fifth, and the one that is not an offer at all.
+                // `rr:ability` makes a constant ability active "as soon as its
+                // card enters play"; nothing triggers it, so it reaches the
+                // board by being read off it -- `ICardAbilities.Constant`,
+                // asked whenever anything looks at the continuous effects.
+                || timing == AbilityType.Constant,
                 $"'{ability.Card}' has timing '{timing}', which nothing would offer");
         }
     }
@@ -366,6 +385,7 @@ public sealed class AbilityDataTests
             AuthoredCards.ShadowOfThePast, AuthoredCards.Exhaustion,
             AuthoredCards.Masterplan, AuthoredCards.UnderFire, AuthoredCards.RhinoThree,
             AuthoredCards.Boomerang, AuthoredCards.Beetle, AuthoredCards.WhiteRabbit, AuthoredCards.SinisterOnslaught, AuthoredCards.CrimePays, AuthoredCards.SyndicateShocker, AuthoredCards.SpeedDemon,
+            .. AuthoredCards.Unus,
             .. AuthoredCards.ReadAndSilent,
         ];
 

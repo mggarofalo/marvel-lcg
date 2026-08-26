@@ -24,6 +24,16 @@ namespace Marvel.Cards.Dsl;
 /// The triggering condition, e.g. <c>WhenEnemyAttacks</c>. Held against the
 /// conditions the engine's steps actually produce, so an event nothing fires is
 /// a failing test rather than a card that never triggers.
+/// <para>
+/// <b>Null for a constant ability, and only for one.</b> <c>rr:ability.5</c>
+/// splits abilities in two by exactly this: one "prefaced by a bold timing
+/// trigger followed by a colon" is triggered, and "an ability without a bold
+/// timing trigger is referred to as a constant ability". A constant is not
+/// timed to an occurrence at all — it "becomes active as soon as its card
+/// enters play and remains active while the card is in play" — so there is no
+/// condition to name, and naming one anyway would be a triggering condition
+/// nothing produces sitting in the data looking implemented.
+/// </para>
 /// </param>
 /// <param name="Timing">
 /// The bold trigger the card prints — "Forced Interrupt", "When Revealed".
@@ -41,7 +51,7 @@ namespace Marvel.Cards.Dsl;
 /// the 966 action abilities in the pool are preceded by one.
 /// </param>
 public sealed record AbilityTrigger(
-    string Event, AbilityType Timing, string Subject, string? Form = null);
+    string? Event, AbilityType Timing, string Subject, string? Form = null);
 
 /// <summary>
 /// Which occurrences an ability answers, out of all those with its condition.

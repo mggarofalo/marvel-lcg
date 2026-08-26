@@ -171,6 +171,39 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>The question, or null when there is nothing to ask.</returns>
     Prompts.Prompt? Choosing(World world, Card source, int player, int stoppedAt);
 
+    /// <summary>
+    /// The effects this card's constant abilities have in force right now —
+    /// <c>rr:ability.5</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Asked, never told.</b> A constant ability "becomes active as soon as
+    /// its card enters play and remains active while the card is in play", and
+    /// <c>rr:ability.9</c> adds that one seeking a condition is "active anytime
+    /// the specific condition is met" — so what it is doing is a function of
+    /// the board and not an event anybody has to remember to fire. Unus gains
+    /// retaliate the moment the ninth threat lands on Gene Pool and loses it
+    /// the moment the scheme is thwarted, with nothing in between to notice.
+    /// </para>
+    /// <para>
+    /// Which is why this returns rather than registers. Registration would need
+    /// an enter-play hook on every path a card can take into play, and a missed
+    /// path is an ability that is silently never in force — the failure this
+    /// engine throws rather than allow. <see cref="Timing.ContinuousEffects"/>
+    /// calls this while answering what is in force, so there is one path and it
+    /// is the board itself.
+    /// </para>
+    /// <para>
+    /// <b>Pure.</b> It is asked many times per game state and may be asked
+    /// while other rules are mid-flight, so it must not deal damage, move
+    /// cards, or record events.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="card">A card in play.</param>
+    /// <returns>What its constant abilities are doing, which may be nothing.</returns>
+    IReadOnlyList<Timing.ContinuousEffect> Constant(World world, Card card);
+
     /// <summary>Resolves the option that answer names.</summary>
     /// <param name="world">The world.</param>
     /// <param name="source">The card whose ability is waiting.</param>
@@ -224,6 +257,9 @@ public class NoCardAbilities : ICardAbilities
         World world, PendingAbility ability, IReadOnlyList<int> paying) =>
         throw new RulesNotImplementedException(
             "no card has an action, so none of them can be triggered");
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<Timing.ContinuousEffect> Constant(World world, Card card) => [];
 
     /// <inheritdoc/>
     public virtual Prompts.Prompt? Choosing(

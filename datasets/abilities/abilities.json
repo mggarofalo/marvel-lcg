@@ -880,6 +880,156 @@
           }
         }
       ]
+    },
+    {
+      "card": "45059",
+      "name": "Unus",
+      "note": "Toughness. If the amount of threat on Gene Pool is at least: 3 -- Unus gains retaliate 1. 6 -- Unus also gains stalwart. 9 -- Unus also gains a [amplify] icon. Toughness is a printed keyword the engine already reads, so nothing is written for it. The rest is one constant ability: rr:ability.5 -- no bold timing trigger -- and specifically rr:ability.9, 'some constant abilities continuously seek a specific condition (denoted by words such as during, if, or while). The effects of such abilities are active anytime the specific condition is met.' So the three clauses are re-read every time anything asks what is in force, and Unus loses retaliate the moment Gene Pool is thwarted below three threat. 'Also' makes them cumulative rather than a ladder: at nine threat all three are in force, which is why they are three independent tests and not an if/else chain. Gene Pool is named by title and rr:identity.2 makes a title name one card. The three stages print the same ability and each is authored separately, because a stage is a card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 3
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "retaliate", "amount": 1 } }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 6
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "stalwart" } }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 9
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "amplify" } }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "45060",
+      "name": "Unus",
+      "note": "Toughness. If the amount of threat on Gene Pool is at least: 3 -- Unus gains retaliate 1. 6 -- Unus also gains stalwart. 9 -- Unus also gains a [amplify] icon. Toughness is a printed keyword the engine already reads, so nothing is written for it. The rest is one constant ability: rr:ability.5 -- no bold timing trigger -- and specifically rr:ability.9, 'some constant abilities continuously seek a specific condition (denoted by words such as during, if, or while). The effects of such abilities are active anytime the specific condition is met.' So the three clauses are re-read every time anything asks what is in force, and Unus loses retaliate the moment Gene Pool is thwarted below three threat. 'Also' makes them cumulative rather than a ladder: at nine threat all three are in force, which is why they are three independent tests and not an if/else chain. Gene Pool is named by title and rr:identity.2 makes a title name one card. The three stages print the same ability and each is authored separately, because a stage is a card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 3
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "retaliate", "amount": 1 } }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 6
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "stalwart" } }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 9
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "amplify" } }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "45061",
+      "name": "Unus",
+      "note": "Toughness. If the amount of threat on Gene Pool is at least: 3 -- Unus gains retaliate 1. 6 -- Unus also gains stalwart. 9 -- Unus also gains a [amplify] icon. Toughness is a printed keyword the engine already reads, so nothing is written for it. The rest is one constant ability: rr:ability.5 -- no bold timing trigger -- and specifically rr:ability.9, 'some constant abilities continuously seek a specific condition (denoted by words such as during, if, or while). The effects of such abilities are active anytime the specific condition is met.' So the three clauses are re-read every time anything asks what is in force, and Unus loses retaliate the moment Gene Pool is thwarted below three threat. 'Also' makes them cumulative rather than a ladder: at nine threat all three are in force, which is why they are three independent tests and not an if/else chain. Gene Pool is named by title and rr:identity.2 makes a title name one card. The three stages print the same ability and each is authored separately, because a stage is a card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 3
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "retaliate", "amount": 1 } }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 6
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "stalwart" } }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": { "tokensOn": { "titled": "Gene Pool" } },
+                      "count": 9
+                    }
+                  },
+                  "then": { "grant": { "card": "this", "keyword": "amplify" } }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

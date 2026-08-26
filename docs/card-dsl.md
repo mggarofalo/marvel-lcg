@@ -589,12 +589,12 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 
 | | |
 |---|---|
-| Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
+| Envelope | `trigger { event, timing, subject }`, `name`, `effect`. `event` is absent on a constant ability and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
-| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
+| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
-| Amounts | a number, `{ "perPlayer": n }`, or `{ "result": "healed" }` |
+| Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
 | Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
@@ -962,6 +962,69 @@ player's set-aside pile and then shuffles **the rest** of that pile into the
 encounter deck — so a reveal that only scheduled would shuffle away the two
 cards it had just chosen. Nothing else in the pool has yet needed the
 distinction, and it is one line apart.
+
+### A constant ability is read, not run
+
+`rr:ability.5` splits abilities in two: "an ability prefaced by a bold timing
+trigger followed by a colon is referred to as a triggered ability. An ability
+without a bold timing trigger is referred to as a constant ability." Everything
+above this line is the first kind. A constant ability has no trigger, and
+therefore no moment at which anything could run it.
+
+So it is not run. `ICardAbilities.Constant` is asked what a card in play is
+doing, and `ContinuousEffects.Active` asks it of every card in play every time
+anything reads the effect list — which is what `rr:modifiers` describes the game
+as doing: "the game constantly checks and (if necessary) updates the count of
+any variable quantity that is being modified."
+
+Unus is the card that makes the difference visible rather than theoretical:
+
+> Toughness. If the amount of threat on Gene Pool is at least: 3 — Unus gains
+> retaliate 1. 6 — Unus also gains stalwart. 9 — Unus also gains a [amplify]
+> icon.
+
+```json
+{ "trigger": { "timing": "Constant", "subject": "this" },
+  "effect": { "seq": [
+    { "if": { "test": { "atLeast": { "value": { "tokensOn": { "titled": "Gene Pool" } },
+                                     "count": 3 } },
+              "then": { "grant": { "card": "this", "keyword": "retaliate", "amount": 1 } } } },
+    { "if": { "test": { "atLeast": { "value": { "tokensOn": { "titled": "Gene Pool" } },
+                                     "count": 6 } },
+              "then": { "grant": { "card": "this", "keyword": "stalwart" } } } },
+    { "if": { "test": { "atLeast": { "value": { "tokensOn": { "titled": "Gene Pool" } },
+                                     "count": 9 } },
+              "then": { "grant": { "card": "this", "keyword": "amplify" } } } } ] } }
+```
+
+This is `rr:ability.9` word for word — "some constant abilities continuously
+seek a specific condition *(denoted by words such as "during", "if", or
+"while")*. The effects of such abilities are active anytime the specific
+condition is met." Unus retaliates on one turn and not the next with nothing
+happening to him in between; what changed was a scheme on the other side of the
+table. An engine that registered his keywords when the stage entered play would
+have him retaliating for the rest of the game.
+
+Three things follow from reading rather than running, and each is a refusal:
+
+- **A constant carries no `event`.** The parser refuses one, because an `event`
+  on a constant is not a stray key — it is an author having believed the card
+  fires on something.
+- **`grant` is the only verb.** `Grants` walks `seq` and `if` and stops at
+  `grant`; every other node throws by name. A constant ability that dealt damage
+  would need an answer to *when*, and there isn't one.
+- **A constant may not read the effect list.** Working out what is in force is
+  what called the card. `ContinuousEffects` throws rather than answer with the
+  half of the list it happens to have.
+
+**Where this leaves the `static` sketch.** Laser Swords above proposes `static`
+as a Layer 0 field with a computed value and a declared `dependsOn` mask. Two of
+its three parts turned out to be unnecessary: the timing is `Constant`, which
+the rules already name, and nothing declares dependencies because nothing is
+cached — the condition is re-read on every ask, so there is no stale value for a
+mask to invalidate. What `static` still buys is the third part, a *computed*
+scalar: `grant` takes a fixed amount, and "+1 ATK for each [crisis] in play"
+does not have one. That is the next thing this node needs, and it is additive.
 
 ### Read and empty is not unread
 

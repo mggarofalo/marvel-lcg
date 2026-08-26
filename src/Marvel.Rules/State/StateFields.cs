@@ -188,6 +188,15 @@ public static class StateFields
         ["vulnerable"] = "Vulnerable",
     };
 
+    /// <summary>Whether a name is a printed field the engine reads.</summary>
+    /// <remarks>
+    /// For the things that name a field rather than hold one — a card ability
+    /// granting a keyword, which is a string in a dataset and so a typo away
+    /// from granting nothing at all.
+    /// </remarks>
+    /// <param name="field">The field name, as this class spells it.</param>
+    public static bool IsPrinted(string field) => PrintedFrom.ContainsKey(field);
+
     // What a card attached to another adds to it. The engine's own attribute
     // names, and a closed set: 116 cards carry `ATK+`, 50 carry `SCH+`, four
     // carry `THW+`, and all but one of the 170 are attachments.
