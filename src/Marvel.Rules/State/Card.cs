@@ -158,6 +158,17 @@ public sealed class Card
     /// </remarks>
     public void TurnFaceUp() => FaceUp = true;
 
+    /// <summary>Turns the card face down where it lies.</summary>
+    /// <remarks>
+    /// The other half of <see cref="TurnFaceUp"/>, and a card in play can need
+    /// it: Spectrum's <c>21001a</c> reads "choose a <b>facedown</b> energy form
+    /// upgrade → flip that card faceup to change to that energy form", so all
+    /// three of her permanents are in play at once with at most one showing.
+    /// <c>rr:identity.4</c> is the same idea on the identity card — a facedown
+    /// side is out of play.
+    /// </remarks>
+    public void TurnFaceDown() => FaceUp = false;
+
     internal void MovedTo(Area area)
     {
         Area = area;

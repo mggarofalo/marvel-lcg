@@ -81,4 +81,25 @@ public interface ICardFacts
     /// <param name="players">How many players are in the game.</param>
     /// <param name="fallback">What to answer when there is no such number.</param>
     long PrintedValue(string faceId, string attribute, int players, long fallback = 0);
+
+    /// <summary>
+    /// The additional form this face grants its controller, or null.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:form-change-form.6</c>: cards with the "[type] form" keyword grant
+    /// an identity unique forms. The keyword is printed, so this is printed
+    /// data and belongs here — the name it returns is the <c>[type]</c>, lower
+    /// cased: <c>energy</c>, <c>mass</c>, <c>suit</c>.
+    /// </para>
+    /// <para>
+    /// <b>Defaulted, because nine faces out of 4,344 carry one.</b> A board
+    /// assembled by hand that never sets up an additional form should not have
+    /// to say so. The real catalog implements it, and
+    /// <c>CardCatalogTests</c> pins the exact nine so that forgetting is a
+    /// failing test rather than a silent absence.
+    /// </para>
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    string? FormKeyword(string faceId) => null;
 }
