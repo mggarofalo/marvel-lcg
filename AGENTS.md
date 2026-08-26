@@ -212,13 +212,11 @@ assertion-free tests, coverage is an observed outcome and never a target.
 The replay corpus answers "did this game reproduce". It cannot answer "does
 Swinging Web Kick deal 8 damage". Specs do, and they are what the C# engine is
 held to. **A scenario is a transcript** — one `When` per engine decision, `Then`s
-interleaved, Gherkin under `py_src/specs/`. The harness **never answers a
-decision the transcript omits**; an unanswered mid-resolution choice is
-`FAIL-spec-wrong`, not a silent pick. **A scenario is not trusted until it
-passes**: `specs/trusted.json` is written only by the validation runner, only
-from `PASS`, each entry pinned to the hash of its source. There is no way to add
-one by hand. `specs/self-test/quarantine.feature` is wrong on purpose and must
-stay that way.
+interleaved, Gherkin under `specs/`. **Every scenario there is a draft.** They
+were validated against the Python engine and that validation is retired, so
+none of them is trusted and there is no file that says otherwise: see
+[specs/README.md](specs/README.md). `specs/self-test/quarantine.feature` is
+wrong on purpose and must stay that way.
 
 **Check for a ruling before asserting timing.** A spec authored from ambiguous
 printed words is checked against a Python engine implementing the same reading of

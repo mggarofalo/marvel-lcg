@@ -9,12 +9,18 @@ namespace Marvel.Core.Tests.Specs;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The 112 <c>.feature</c> files under <c>py_src/specs/</c> were written against
-/// <c>tools/spec/gherkin.py</c>, a hand-rolled parser. That parser accepts what
-/// it accepts; nothing has ever checked the files against the *standard*
+/// The 112 <c>.feature</c> files under <c>specs/</c> were written against a
+/// hand-rolled parser that no longer exists. That parser accepted what it
+/// accepted; nothing had ever checked the files against the *standard*
 /// grammar. If they have drifted, every scenario has to be rewritten — and the
 /// cheapest moment to find that out is before the suite grows further, not
 /// after the C# runner exists.
+/// </para>
+/// <para>
+/// <b>This checks the format and says nothing about the behaviour.</b> Every
+/// scenario in there is a draft: they were validated against the Python engine
+/// and that validation is retired, because the Rules Reference decides what the
+/// game does. See <c>specs/README.md</c>.
 /// </para>
 /// <para>
 /// This uses the <c>Gherkin</c> package directly, which is the parser Reqnroll
@@ -28,7 +34,7 @@ public sealed class GherkinFormatTests
 {
     private static IReadOnlyList<string> FeatureFiles { get; } =
         [.. Directory.EnumerateFiles(
-                Path.Combine(RepositoryPaths.Root, "py_src", "specs"),
+                Path.Combine(RepositoryPaths.Root, "specs"),
                 "*.feature", SearchOption.AllDirectories)
             .OrderBy(path => path, StringComparer.Ordinal)];
 
