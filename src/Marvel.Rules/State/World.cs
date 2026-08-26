@@ -244,6 +244,32 @@ public sealed class World
     public Play.ICardAbilities Abilities { get; set; } = new Play.NoCardAbilities();
 
     /// <summary>
+    /// Whether this game is being played in expert mode —
+    /// <c>rr:modes-of-play</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "Expert Mode is a modification of standard mode for advanced players who
+    /// seek a greater challenge", and <c>.2</c> says what it changes: the
+    /// listed expert villain stages, and the Expert encounter set added to the
+    /// deck. Both of those are the dealer's business and it already does them —
+    /// the <c>_expert</c> campaigns list different stages and sets. What was
+    /// missing is that <b>86 cards in the pool read the mode</b>, and a board
+    /// that did not carry it could not answer them.
+    /// </para>
+    /// <para>
+    /// <b>One flag and not the four modes.</b> <c>rr:modes-of-play</c> names
+    /// expert, heroic, skirmish and campaign, and <c>.3</c> lets them combine —
+    /// so this is deliberately not an enum. It is also not a set: heroic mode
+    /// carries a level number rather than a flag (<c>.4</c>, "deal X additional
+    /// encounter cards [...] where X is equal to the chosen heroic level"), and
+    /// modelling it as a member of a set would get it wrong. The other three
+    /// arrive when a card reads them.
+    /// </para>
+    /// </remarks>
+    public bool Expert { get; set; }
+
+    /// <summary>
     /// The game's one random stream.
     /// </summary>
     /// <remarks>

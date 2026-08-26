@@ -161,6 +161,9 @@ internal static class AuthoredCards
     /// </remarks>
     public static readonly string[] Unus = ["45059", "45060", "45061"];
 
+    /// <summary>The printed ids of the Unus scenario's main scheme, both sides.</summary>
+    public static readonly string[] HuntingGeneTraitors = ["45062a", "45062b"];
+
     /// <summary>The printed id of "Gene Pool", the side scheme Unus reads.</summary>
     public const string GenePool = "45071";
 

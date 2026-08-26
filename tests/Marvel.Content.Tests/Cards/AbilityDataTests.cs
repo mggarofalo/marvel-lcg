@@ -42,7 +42,12 @@ public sealed class AbilityDataTests
             // "prefaced by a bold timing trigger", and a constant ability is the
             // half that is not -- so it names no condition, and a condition on
             // one would be an author having believed it triggers on something.
-            if (ability.Trigger.Timing == AbilityType.Constant)
+            // `rr:ability.5` splits abilities by whether they are prefaced by
+            // a bold timing trigger, and a constant is the half that is not.
+            // `rr:setup-triggered-ability.2` is the other eventless case and a
+            // different reason: it *is* triggered, but to a step of setup
+            // rather than to something happening in the game.
+            if (ability.Trigger.Timing is AbilityType.Constant or AbilityType.Setup)
             {
                 Assert.Null(ability.Trigger.Event);
                 continue;
@@ -148,6 +153,11 @@ public sealed class AbilityDataTests
                 // neither timed around an occurrence nor a turn option, it is
                 // reached while a cost is being paid.
                 || timing == AbilityType.Resource
+
+                // `rr:setup-triggered-ability` -- resolved during setup, so it
+                // is neither offered nor timed to an occurrence. The deal asks
+                // for it by name at `rr:appendix-ii-setup.step.12`.
+                || timing == AbilityType.Setup
 
                 // The fifth, and the one that is not an offer at all.
                 // `rr:ability` makes a constant ability active "as soon as its
@@ -387,6 +397,7 @@ public sealed class AbilityDataTests
             AuthoredCards.Boomerang, AuthoredCards.Beetle, AuthoredCards.WhiteRabbit, AuthoredCards.SinisterOnslaught, AuthoredCards.CrimePays, AuthoredCards.SyndicateShocker, AuthoredCards.SpeedDemon,
             .. AuthoredCards.Unus,
             .. AuthoredCards.Superpowers,
+            .. AuthoredCards.HuntingGeneTraitors,
             .. AuthoredCards.ReadAndSilent,
         ];
 

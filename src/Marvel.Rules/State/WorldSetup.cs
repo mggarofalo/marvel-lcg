@@ -80,10 +80,16 @@ public static class WorldSetup
     /// is safe rather than lossy for the same reason the parameter above
     /// defaults: with no interpreter there is nothing to lose.
     /// </param>
+    /// <param name="expert">
+    /// Whether this is expert mode — <c>rr:modes-of-play.2</c>. What it changes
+    /// about the <i>deal</i> is already in the blueprints (different villain
+    /// stages, the Expert encounter set); this is the flag the cards read.
+    /// </param>
     public static World Deal(
         ICardFacts facts, IReadOnlyList<CardBlueprint> blueprints,
         IReadOnlyList<string> seats, uint seed,
-        Play.ICardAbilities? abilities = null, List<Events.GameEvent>? events = null)
+        Play.ICardAbilities? abilities = null, List<Events.GameEvent>? events = null,
+        bool expert = false)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(blueprints);
@@ -97,6 +103,7 @@ public static class WorldSetup
         // later, and a second generator would restart it.
         var world = new World(facts, players, seed);
         world.Abilities = abilities ?? new Play.NoCardAbilities();
+        world.Expert = expert;
 
         var insert = world.CreateArea(DeckType.RemovedArea);
         var encounterDeck = world.CreateArea(DeckType.EncounterDeck);

@@ -82,9 +82,24 @@ public static class AbilitySubjects
     /// </summary>
     public const string You = "you";
 
+    /// <summary>
+    /// The occurrence is not about a card at all.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:triggering-condition</c> makes a condition "a specific occurrence
+    /// that takes place in the game", and some of those happen to nobody:
+    /// Hunting Gene Traitors answers "after resolving step one of the villain
+    /// phase", which names a moment and nothing in it. There is nothing to
+    /// match, so a card that answers such a moment says <b>so</b> rather than
+    /// being handed a subject it does not have — <c>you</c> would fit by
+    /// accident here, because an encounter card's owner and an unattributed
+    /// occurrence's player are both the scenario.
+    /// </remarks>
+    public const string Game = "game";
+
     /// <summary>Every subject this vocabulary has.</summary>
     public static IReadOnlySet<string> All { get; } =
-        new HashSet<string>(StringComparer.Ordinal) { This, AttachedTo, You };
+        new HashSet<string>(StringComparer.Ordinal) { This, AttachedTo, You, Game };
 }
 
 /// <summary>

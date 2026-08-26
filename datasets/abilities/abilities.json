@@ -1075,6 +1075,39 @@
           }
         }
       ]
+    },
+    {
+      "card": "45062a",
+      "name": "Hunting Gene Traitors",
+      "note": "Contents line, then 'Setup: Reveal the Gene Pool side scheme. In expert mode, deal each player a facedown encounter card.' The contents line is what to put in the box before the game and not an ability. The Gene Pool clause is not written, and deliberately: 45071 Gene Pool prints the setup keyword itself, so rr:setup-keyword.1 has already put it into play by the time rr:appendix-ii-setup.step.12.a runs -- the two printings are one card entering play once, and revealing it here would put it in twice. Same category as 'Advance to stage 1B' on 01097a: a rule the engine already keeps, restated on the card. The expert clause is real and is what is written. rr:deal leaves a dealt card facedown for step 4 of the villain phase to turn over, so these wait for the first villain phase rather than resolving during setup.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Setup", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "inExpertMode": "expert" },
+              "then": { "dealEncounterCards": { "count": 1 } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "45062b",
+      "name": "Hunting Gene Traitors",
+      "note": "[star] Forced Response: After resolving step one of the villain phase, place 1 threat on Gene Pool. If this scheme is completed, the players lose the game. The second line is rr:main-scheme-main-scheme-deck.2.1 restated and Threat.Completed answers it, the same as 01097b. Step one of the villain phase is rr:villain-phase.step.1, which places threat on the main scheme -- the engine's PlaceThreat step, and the only thing that produces WhenThreatPlaced. The star sits on the main scheme, so this is its ability -- but the subject is 'game' and not 'this': the step places threat on the main scheme without the occurrence naming it, because 'after resolving step one of the villain phase' names a moment and nothing in it. Gene Pool is named by title and rr:identity.2 makes a title name one card.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenThreatPlaced",
+            "timing": "ForcedResponse",
+            "subject": "game"
+          },
+          "effect": {
+            "placeThreat": { "scheme": { "titled": "Gene Pool" }, "amount": 1 }
+          }
+        }
+      ]
     }
   ]
 }
