@@ -194,15 +194,10 @@ public static class BasicPowers
             return;
         }
 
-        Damage.Deal(
-            world, facts, enemy,
+        Damage.Attack(
+            world, facts, character, enemy,
             StateFields.Modified(world, character, "attack", facts, world.Players),
             AttackVerb, AttackVerb, events);
-
-        // `rr:attack-player-ability-type.5.1`: "each attacked enemy with the
-        // retaliate X keyword that is still in play after the attack resolves
-        // deals its retaliate damage to the attacking character."
-        Damage.Retaliate(world, facts, enemy, character, AttackVerb, events);
     }
 
     /// <summary>
@@ -386,12 +381,10 @@ public static class BasicPowers
 
         if (attacking)
         {
-            Damage.Deal(
-                world, facts, target,
+            Damage.Attack(
+                world, facts, ally, target,
                 StateFields.Modified(world, ally, "attack", facts, world.Players),
                 verb, verb, events);
-
-            Damage.Retaliate(world, facts, target, ally, verb, events);
         }
         else
         {

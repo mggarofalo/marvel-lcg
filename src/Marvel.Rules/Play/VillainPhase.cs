@@ -182,7 +182,8 @@ public static class VillainPhase
 
             case Steps.RevealEncounterCard:
                 RevealEncounterCard(
-                    world, facts, abilities, world.Cards[step.Subject], step.Index, events);
+                    world, facts, abilities, world.Cards[step.Subject], step.Seat,
+                    step.Round, events);
                 break;
 
             case Steps.PassFirstPlayerToken:
@@ -459,7 +460,7 @@ public static class VillainPhase
     /// <summary>Step 4. Each player reveals their cards, in the order dealt.</summary>
     private static void RevealEncounterCard(
         World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
-        List<GameEvent> events)
+        int round, List<GameEvent> events)
     {
         // Same reason as the boost card: the revealing area is where an
         // encounter card registers its pools.
@@ -487,6 +488,11 @@ public static class VillainPhase
         // MARVEL-187.
         Reveal.Keywords(world, facts, card, player, events);
         events.AddRange(abilities.WhenRevealed(world, card, player));
+
+        // `rr:quickstrike.2` puts this after the card's own abilities, and it
+        // is the one keyword that does something *after* them rather than
+        // beside them.
+        Reveal.Quickstrike(world, facts, card, player, round);
 
         // Step 4. "If the card is a treachery, discard it." Asked as "is it
         // still where step 2 left something not in play", so that an ability

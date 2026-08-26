@@ -126,6 +126,49 @@ public static class Reveal
     }
 
     /// <summary>
+    /// A minion that attacks the moment it engages — <c>rr:quickstrike</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "<b>Forced Response (Hero)</b>: after this minion engages a player, it
+    /// attacks that player." The <i>(Hero)</i> is the gate: <c>rr:quickstrike</c>
+    /// says "a player <b>whose identity is in hero form</b>", so a minion
+    /// engaging an alter-ego does nothing.
+    /// </para>
+    /// <para>
+    /// <c>rr:quickstrike.2</c>: "if a minion with the quickstrike keyword is
+    /// being revealed, the quickstrike keyword resolves <b>after</b> any 'When
+    /// Revealed' abilities on that minion are resolved" — which is why this is
+    /// called from step 3's tail rather than from <see cref="Resolve"/>.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="card">The card that was revealed.</param>
+    /// <param name="player">The seat it engaged.</param>
+    /// <param name="round">Which round this is.</param>
+    public static void Quickstrike(
+        World world, ICardFacts facts, Card card, int player, int round)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(card);
+
+        if (card.Area.Type != DeckType.EngagedEnemiesArea
+            || StateFields.Modified(world, card, "quickstrike", facts, world.Players) <= 0
+            || !Forms.In(world, world.Seats[player], facts, Forms.Hero))
+        {
+            return;
+        }
+
+        // Scheduled rather than resolved, because an attack is six steps and
+        // one of them asks a player something. The reveal that caused it is
+        // finished by the time this runs.
+        world.Agenda.Then(new PhaseStep(
+            Steps.Attack, round, 2, Index: player, Subject: card.ObjectId, Seat: player));
+    }
+
+    /// <summary>
     /// The keywords that fire when a card enters play.
     /// </summary>
     /// <remarks>

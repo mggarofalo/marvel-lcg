@@ -342,14 +342,11 @@ public static class Attack
         // one rule however the damage arrived, and so is `rr:defeat` -- an
         // enemy attack that defeated a character down a separate path would be
         // a second place for the defeat rules to be wrong.
-        var target = world.Cards[attack.Target];
-        Damage.Deal(world, facts, target, amount, Steps.EnemyAttacks, "Deal_Damage", events);
-
-        // `rr:retaliate-x` -- "after this character is attacked, deal X damage
-        // to the attacker". After the damage, and only if the character is
-        // still in play (`.2`).
-        Damage.Retaliate(
-            world, facts, target, world.Cards[attack.Enemy], Steps.EnemyAttacks, events);
+        // One call, because `rr:piercing`, `rr:overkill` and `rr:ranged` are all
+        // properties of the attack rather than of either character.
+        Damage.Attack(
+            world, facts, world.Cards[attack.Enemy], world.Cards[attack.Target], amount,
+            Steps.EnemyAttacks, "Deal_Damage", events);
     }
 
     /// <summary>

@@ -295,5 +295,61 @@ public static class CardPlay
                 Trigger = Verb, Verb = Verb,
             });
         }
+
+        Restricted(world, facts, seat, card, events);
+    }
+
+    /// <summary>
+    /// A third restricted card forces one out — <c>rr:restricted</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "A player <b>can</b> play or put into play a restricted card even if they
+    /// already control two restricted cards. However, if a player ever controls
+    /// more than two restricted cards in play, they must <b>immediately</b>
+    /// choose and discard from play restricted cards they control until they
+    /// have only two."
+    /// </para>
+    /// <para>
+    /// So the limit is not a play restriction — the card goes into play first
+    /// and something has to leave afterwards. <c>rr:restricted.1</c> writes it
+    /// as a <b>Forced Response</b> for exactly that reason.
+    /// </para>
+    /// <para>
+    /// <b>Which card leaves is the player's choice and this does not ask.</b>
+    /// The card just played is kept and the oldest of the others goes, which is
+    /// deterministic and stated rather than silently arbitrary. See MARVEL-187,
+    /// the same shape of gap.
+    /// </para>
+    /// </remarks>
+    private static void Restricted(
+        World world, ICardFacts facts, Seat seat, Card played, List<GameEvent> events)
+    {
+        if (StateFields.Modified(world, played, "restricted", facts, world.Players) <= 0)
+        {
+            return;
+        }
+
+        var held = new List<Card>();
+        foreach (var area in world.Areas.ToList())
+        {
+            if (!DeckTypes.IsInPlay(area.Type))
+            {
+                continue;
+            }
+
+            held.AddRange(area.Cards.Where(card =>
+                card.Owner == seat.Index
+                && StateFields.Modified(world, card, "restricted", facts, world.Players) > 0));
+        }
+
+        // `StateFields.RestrictedLimit` is the two the rule names.
+        foreach (var card in held
+            .Where(card => card.ObjectId != played.ObjectId)
+            .OrderBy(card => card.ObjectId)
+            .Take(Math.Max(0, held.Count - (int)StateFields.RestrictedLimit)))
+        {
+            Discard.Card(world, card, "restricted", events);
+        }
     }
 }
