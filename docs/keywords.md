@@ -21,6 +21,7 @@ own "equivalent to the following constant ability" line.
 | **Piercing** | discard **each** tough status card before dealing damage | `Damage.Attack` |
 | **Quickstrike** | *Forced Response (Hero): after this minion engages a player, it attacks that player* | `Reveal.Quickstrike` |
 | **Ranged** | this attack ignores retaliate | `Damage.Attack` |
+| **Requirement (resources)** | those resource types must be among what pays the cost | `Resources.Required`, `CardPlay.Price` |
 | **Restricted** | a third one forces a choice, after it is in play | `CardPlay` |
 | **Retaliate X** | *Forced Response: after this character is attacked, deal X damage to the attacker* | `Damage.Retaliate` |
 | **Stalwart** | cannot have confused or stunned status cards | `Statuses.Limit` |
@@ -58,7 +59,6 @@ zero.
 | **Team-Up** | 28 | a play restriction naming two characters in play |
 | **Linked** | 14 | set-aside cards brought in by the card that names them |
 | **Alliance** | 13 | other players helping pay a cost |
-| **Requirement** | 13 | specific resources that must be *spent*, not merely generated |
 | **Peril** | 12 | table talk, and other players not acting |
 
 ### Teamwork's two statements disagree
@@ -74,6 +74,23 @@ quickstrike. Quickstrike says outright *"a player whose identity is in hero
 form"*; teamwork does not, so `rr:activation.1` reads the form and a teamwork
 minion engaging an alter-ego schemes rather than doing nothing.
 
+### The requirement is part of the cost, not additional to it
+
+The same reading `rr:resource.4` gets: a cost of 1 requiring a physical is
+**one** card that generates a physical, not one plus a physical. `Resources.Pays`
+has taken the requirement since it was written; what was missing was anybody
+passing one, so all thirteen cards that print a `Requirement` were payable with
+any cards in hand.
+
+It is checked when the play is **offered** as well as when it is taken, and the
+check asks the whole pool rather than a subset. That is exactly the right
+question: `rr:cost.4` permits generating beyond the cost, so if every generator
+together cannot pay then no choice among them can, and if they can then spending
+all of them is a payment.
+
+`rr:requirement-resources.2` — "cannot be played 'ignoring its resource cost'" —
+needs nothing yet, because nothing plays a card ignoring its cost.
+
 ### The keyword's argument is a word, not a number
 
 `Teamwork ([[ACOLYTE]])` prints as the attribute `Teamwork = "ACOLYTE"`, so it
@@ -85,8 +102,8 @@ presence is not on the wire, and the behaviour has to come from the printed
 data.
 
 Five other keywords print a word rather than a number: **Uses** (69 cards),
-**Team-Up** (28), **Requirement** (13), **Form** (9) and **Linked** (9). Uses
-and Form are read; the other three are in the table below.
+**Team-Up** (28), **Requirement** (13), **Form** (9) and **Linked** (9). Uses,
+Form and Requirement are read; Team-Up and Linked are in the table below.
 
 **Uses is half done and says so**: the counters are placed, and "when the last
 all-purpose counter is removed, discard that card" waits for an ability that can

@@ -114,8 +114,14 @@ public static class CardPlay
             .Where(source => source.Effect != card.ObjectId)
             .ToList();
 
-        long available = sources.Sum(source => (long)source.Generates.Length);
-        return available < cost
+        // **Asked of the whole pool, and that is exactly the right question.**
+        // `rr:cost.4` permits generating beyond the cost, so if every generator
+        // together cannot pay then no choice among them can; and if they can,
+        // spending all of them is a payment. The types matter as well as the
+        // count -- `rr:requirement-resources` makes a card with a requirement
+        // unplayable without those resources, however many cards are in hand.
+        string pool = string.Concat(sources.SelectMany(source => source.Generates));
+        return !Resources.Pays(pool, cost, Resources.Required(card.FaceId, facts))
             ? null
             : new CostOption(
                 Target: card.ObjectId,
@@ -189,11 +195,14 @@ public static class CardPlay
             generated.Append(Resources.GeneratedBy(source.FaceId, facts));
         }
 
-        if (!Resources.Pays(generated.ToString(), cost))
+        string required = Resources.Required(card.FaceId, facts);
+        if (!Resources.Pays(generated.ToString(), cost, required))
         {
             throw new RulesNotImplementedException(
-                $"card {card.ObjectId} costs {cost} and the payment generates "
-                + $"{generated.Length}; rr:initiating-abilities.step.5 aborts without paying");
+                $"card {card.ObjectId} costs {cost}"
+                + (required.Length > 0 ? $" requiring '{required}'" : string.Empty)
+                + $" and the payment generates '{generated}'; "
+                + "rr:initiating-abilities.step.5 aborts without paying");
         }
 
         foreach (var source in spent)

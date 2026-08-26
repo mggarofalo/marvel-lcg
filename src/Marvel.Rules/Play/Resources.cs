@@ -81,6 +81,41 @@ public static class Resources
     }
 
     /// <summary>
+    /// The resource types a card's cost <b>must</b> include —
+    /// <c>rr:requirement-resources</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "A card with the requirement keyword cannot be played unless each
+    /// resource of the specified type is spent while paying for that card's
+    /// cost", which <c>.1</c> writes as the constant ability "when paying this
+    /// card's resource cost, you must spend the following resources:
+    /// [resources]".
+    /// </para>
+    /// <para>
+    /// <b>Part of the cost, not additional to it</b> — the same reading
+    /// <c>rr:resource.4</c> gets, and <see cref="Pays"/> already had the
+    /// parameter for it. What was missing was anybody passing one: thirteen
+    /// cards print a <c>Requirement</c> and every one of them was payable with
+    /// any three cards in hand.
+    /// </para>
+    /// <para>
+    /// The letters are the same vocabulary <c>RES</c> uses — <c>27049</c>
+    /// prints <c>YBR</c>, one of each of energy, mental and physical.
+    /// </para>
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <returns>The required letters, or an empty string.</returns>
+    public static string Required(string faceId, ICardFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        return facts.Attributes(faceId).TryGetValue("Requirement", out string? printed)
+            ? printed
+            : string.Empty;
+    }
+
+    /// <summary>
     /// Whether these resources pay a cost.
     /// </summary>
     /// <remarks>

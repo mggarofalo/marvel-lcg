@@ -153,6 +153,53 @@ public sealed class CardPlayTests
         Assert.Same(seat.Hand, expensive.Area);
     }
 
+    [Rule("rr:requirement-resources")]
+    [Fact]
+    public void ACardWithARequirementIsNotOfferedWithoutTheResource()
+    {
+        // "A card with the requirement keyword cannot be played unless each
+        // resource of the specified type is spent while paying for that card's
+        // cost." A hand of the wrong type pays the *number* and not the card,
+        // so this is not offered at all -- an affordance that would throw when
+        // taken is worse than an absent one.
+        var printed = Cards();
+        var world = Board(printed);
+        Empty(world);
+        InHand(world, "mental");
+        InHand(world, "mental");
+        var card = InHand(world, "demanding");
+
+        Assert.Null(CardPlay.Price(world, printed, world.Seats[0], card));
+
+        // And taking it anyway is refused by name rather than half-paid.
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => CardPlay.Play(
+                world, printed, new Silent(), world.Seats[0], card,
+                [world.Seats[0].Hand.Cards[0].ObjectId], []));
+        Assert.Contains("requiring 'R'", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Rule("rr:requirement-resources.1")]
+    [Fact]
+    public void TheRequiredResourceIsPartOfTheCostRatherThanExtra()
+    {
+        // A cost of 1 requiring a physical is **one** card that generates a
+        // physical, not one plus a physical -- the same reading `rr:resource.4`
+        // gets, and the reason `Pays` takes the requirement rather than adding
+        // to the number.
+        var printed = Cards();
+        var world = Board(printed);
+        Empty(world);
+        var paying = InHand(world, "physical");
+        var card = InHand(world, "demanding");
+
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
+        CardPlay.Play(
+            world, printed, new Silent(), world.Seats[0], card, [paying.ObjectId], []);
+
+        Assert.Equal(DeckType.DiscardPile, paying.Area.Type);
+    }
+
     [Rule("rr:cost.3")]
     [Fact]
     public void ACardCannotPayForItself()
@@ -339,6 +386,15 @@ public sealed class CardPlayTests
     private static Card InHand(World world, string faceId) =>
         world.CreateCard(faceId, world.Seats[0].Hand);
 
+    /// <summary>Clears the hand, so that a test can say what is in it.</summary>
+    private static void Empty(World world)
+    {
+        foreach (var card in world.Seats[0].Hand.Cards.ToList())
+        {
+            World.MoveToTop(card, world.Seats[0].Deck);
+        }
+    }
+
     private static World Board(Printed printed)
     {
         var world = new World(printed, players: 1);
@@ -369,7 +425,14 @@ public sealed class CardPlayTests
         .With("event", ("Cost", "0"), ("RES", "Y"))
         .With("free", ("Cost", "0"), ("RES", "Y"))
         .With("expensive", ("Cost", "9"), ("RES", "B"))
-        .With("suited2", ("Form", "Suit"));
+        .With("suited2", ("Form", "Suit"))
+
+        // `rr:requirement-resources` -- thirteen cards in the pool print one.
+        // `27006` requires a mental, `27016` a physical, `27049` one of each of
+        // energy, mental and physical.
+        .With("physical", ("RES", "R"))
+        .With("mental", ("RES", "B"))
+        .With("demanding", ("Cost", "1"), ("RES", "R"), ("Requirement", "R"));
 
     private sealed class Silent : NoCardAbilities
     {
