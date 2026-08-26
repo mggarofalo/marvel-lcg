@@ -477,15 +477,18 @@ public sealed class PlayerPhaseTests
             Assert.Equal(want.GetProperty("anchor_player").GetInt32(), got.AnchorPlayer);
             Assert.Null(got.Illegal);
 
-            // The cost as printed, against the cost the recording carries.
+            // The cost as printed, **and its generators**, against what the
+            // recording carries.
             //
-            // **The cost and not its `sources`.** The recording lists six
-            // generators for a hand of six cards, one of which is being played
-            // -- so one generator is not a card in hand at all. That is
-            // `rr:resource-ability`, the "**Resource**" timing trigger, and it
-            // is not implemented; a list built from hand cards alone is short
-            // by exactly that one. Asserting it would pin a number this engine
-            // cannot yet produce for a reason that has nothing to do with cost.
+            // The generators used to be skipped. The recording lists six for a
+            // hand of six cards, one of which is being played -- so one
+            // generator is not a card in hand at all, and a list built from
+            // hand cards alone was short by exactly that one. It is
+            // `rr:resource-ability`: Peter Parker's "Scientist -- **Resource**:
+            // generate a [mental] resource", printed on the alter-ego face the
+            // recorded board is showing. Now that it is written, this is the
+            // sharpest check in the file: the order and the letters, on the
+            // wire.
             var costs = want.GetProperty("costs");
             Assert.Equal(costs.GetArrayLength(), got.CostOptions.Count);
             for (int price = 0; price < got.CostOptions.Count; price++)
@@ -493,6 +496,28 @@ public sealed class PlayerPhaseTests
                 Assert.Equal(
                     costs[price].GetProperty("cost").GetString(),
                     got.CostOptions[price].Cost);
+
+                // **The generators, by what they make rather than by id.**
+                //
+                // The recording's `effect` is the Python engine's own effect
+                // id, not an object id: the four plays above list sources
+                // `{3, 33, 38, 41, 42, 43}` for a hand whose object ids are
+                // `{42, 45, 37, 9, 47, 46}`, and each play omits exactly the
+                // one belonging to the card being played. So the ids cannot be
+                // compared and the *letters* can. MARVEL-223.
+                //
+                // The count is the sharp half. It was five before
+                // `rr:resource-ability` was written and the recording says six:
+                // Peter Parker's "Scientist — **Resource**: generate a [mental]
+                // resource" is a generator that is not a card in hand at all.
+                var recordedLetters = costs[price].GetProperty("sources").EnumerateArray()
+                    .Select(source => source.GetProperty("generates").GetString())
+                    .Order(StringComparer.Ordinal);
+                var madeLetters = (got.CostOptions[price].Sources ?? [])
+                    .Select(source => source.Generates)
+                    .Order(StringComparer.Ordinal);
+
+                Assert.Equal(recordedLetters, madeLetters);
             }
 
             var targets = want.GetProperty("targets");

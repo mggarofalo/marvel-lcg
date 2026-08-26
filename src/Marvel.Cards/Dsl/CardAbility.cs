@@ -104,9 +104,15 @@ public static class AbilitySubjects
 /// abilities in the pool print one, and by far the commonest is exhausting the
 /// card the ability is on.
 /// </param>
+/// <param name="Limit">
+/// How many times per round this ability may be used, or null for no limit.
+/// <c>rr:limit</c> — "each copy of an ability with such a limit may be used X
+/// times per the specified period, <b>per instance of that ability</b>", so the
+/// count is per card in play rather than per printed id.
+/// </param>
 public sealed record CardAbility(
     string Card, string Name, AbilityTrigger Trigger, AbilityNode Effect,
-    AbilityNode? Cost = null);
+    AbilityNode? Cost = null, long? Limit = null);
 
 /// <summary>
 /// Every authored card, and every ability on them.
