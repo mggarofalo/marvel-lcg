@@ -267,7 +267,8 @@ public sealed class AbilityDataTests
         // this file is under: a card is authored when something reaches it.
         Assert.Equal(
             [
-                AuthoredCards.SpiderMan, AuthoredCards.Charge, AuthoredCards.ImTough,
+                AuthoredCards.SpiderMan, AuthoredCards.Charge, AuthoredCards.Shocker,
+                AuthoredCards.ImTough, AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
                 AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
             ],
             AuthoredCards.Book.Authored.Order(StringComparer.Ordinal));

@@ -119,7 +119,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var events = new List<GameEvent>();
-        Run(found[0].Effect, new Cast(world, card, occurrence, ability.Player, events));
+        Run(found[0].Effect, new Cast(world, card, occurrence, ability.Player, events, this));
         return events;
     }
 
@@ -154,7 +154,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             if (ability.Trigger.Timing == AbilityType.WhenRevealed
                 && string.Equals(ability.Trigger.Event, Steps.CardRevealed, StringComparison.Ordinal))
             {
-                Run(ability.Effect, new Cast(world, card, occurrence, player, events));
+                Run(ability.Effect, new Cast(world, card, occurrence, player, events, this));
             }
         }
 
@@ -247,6 +247,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         cast.World, cast.Player, cast.Occurrence.Conditions[0], cast.Events);
                 }
 
+                break;
+
+            case "dealDamage":
+                DealDamage(node, cast);
+                break;
+
+            case "placeThreat":
+                PlaceThreat(node, cast);
                 break;
 
             case "enemyAttacks":
@@ -399,6 +407,43 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     // ---- reading a value ---------------------------------------------------
 
+    /// <summary>"Deal N damage to …" — <c>rr:damage</c>.</summary>
+    /// <remarks>
+    /// Through <see cref="Damage.Deal"/> and not at the token, because damage
+    /// is one rule however it arrived: <c>rr:tough.2</c> prevents all of it and
+    /// discards a status card instead, and <c>rr:defeat</c> is the other half
+    /// of the same moment. A card that wrote to <c>k_damage</c> would skip
+    /// both and leave a defeated character standing.
+    /// </remarks>
+    private static void DealDamage(AbilityNode node, Cast cast)
+    {
+        long amount = Amount(node.Require("amount"), cast);
+        foreach (var target in Every(node.Require("cards"), cast))
+        {
+            Damage.Deal(
+                cast.World, cast.World.Facts, target, amount, cast.Trigger, "Deal_Damage",
+                cast.Events);
+        }
+    }
+
+    /// <summary>"Place N threat on …" — <c>rr:threat</c>.</summary>
+    /// <remarks>
+    /// Through <see cref="Threat.Place"/>, which checks
+    /// <c>rr:main-scheme-main-scheme-deck.2</c> afterwards: threat that reaches
+    /// a main scheme's target completes it whatever put it there, and a card
+    /// placing threat is one of the things that can.
+    /// </remarks>
+    private static void PlaceThreat(AbilityNode node, Cast cast)
+    {
+        var scheme = Find(node.Require("scheme"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would place threat on a scheme that is not there");
+
+        Threat.Place(
+            cast.World, cast.World.Facts, cast.Abilities, scheme,
+            Amount(node.Require("amount"), cast), cast.Trigger, cast.Events);
+    }
+
     /// <summary>
     /// "The villain attacks you", "the villain schemes" — an enemy activation
     /// a card asked for.
@@ -469,6 +514,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Cards];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } heroes
+            && heroes.Argument is AbilityValue.Word { Value: "heroes" })
+        {
+            // **Not every identity.** `rr:form-change-form.5`: "while a player
+            // is in alter-ego form, card abilities that interact with their
+            // hero do not interact with their identity." So "each hero" passes
+            // over a player who has flipped down, and Shocker's one damage is
+            // one damage to whoever is standing up.
+            return [.. cast.World.PlayerOrder
+                .Select(seat => cast.World.Seats[seat])
+                .Where(seat => Forms.In(cast.World, seat, cast.World.Facts, Forms.Hero))
+                .Select(seat => seat.IdentityCard)];
+        }
+
         return Find(value, cast) is { } one ? [one] : [];
     }
 
@@ -533,6 +592,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ? word.Value
             : throw new AbilityException($"{AbilityNode.Describe(value)} is not a word");
 
+    /// <summary>How much, which may be printed per player.</summary>
+    /// <remarks>
+    /// <c>rr:per-player-icon</c> multiplies by the number of players, and
+    /// <c>rr:player-elimination.6</c> is the exception that keeps this
+    /// <c>World.Players</c> rather than the number still playing: "effects that
+    /// refer to the players in the game ignore eliminated players, <b>except
+    /// for the per player icon</b>."
+    /// </remarks>
+    private static long Amount(AbilityValue value, Cast cast) =>
+        value is AbilityValue.Map && Tree(value) is { Kind: "perPlayer" } per
+            ? Number(per.Argument) * cast.World.Players
+            : Number(value);
+
     private static long Number(AbilityValue value) =>
         value is AbilityValue.Number number
             ? number.Value
@@ -544,8 +616,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <param name="Occurrence">What it is timed to.</param>
     /// <param name="Player">The seat resolving it.</param>
     /// <param name="Events">Where to record what it did.</param>
+    /// <param name="Abilities">
+    /// The runner itself, for the rules that run more cards. A main scheme this
+    /// ability completes advances, and <c>rr:villain-defeat</c> resolves the
+    /// new stage's own "When Revealed" — so an ability can reach back into the
+    /// interpreter that is running it.
+    /// </param>
     private sealed record Cast(
-        World World, Card Source, Occurrence Occurrence, int Player, List<GameEvent> Events)
+        World World, Card Source, Occurrence Occurrence, int Player, List<GameEvent> Events,
+        ICardAbilities Abilities)
     {
         /// <summary>The trigger string this ability's events carry.</summary>
         public string Trigger => Occurrence.Conditions[0];
