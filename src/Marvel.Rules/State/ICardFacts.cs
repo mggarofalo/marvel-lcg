@@ -102,4 +102,24 @@ public interface ICardFacts
     /// </remarks>
     /// <param name="faceId">A printed card id.</param>
     string? FormKeyword(string faceId) => null;
+
+    /// <summary>
+    /// How many consequential damage icons sit beneath one of an ally's
+    /// powers — <c>rr:consequential-damage</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "After an ally attacks, it takes consequential damage equal to the
+    /// number of consequential damage icons <b>beneath its ATK field</b>."
+    /// Printed data, so it belongs here — the icons are stars printed in the
+    /// same attribute as the value.
+    /// </para>
+    /// <para>
+    /// Defaulted, like <see cref="FormKeyword"/>: only allies have them, and a
+    /// board assembled by hand with no ally should not have to say so.
+    /// </para>
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    /// <param name="attribute">The power, <c>ATK</c> or <c>THW</c>.</param>
+    long ConsequentialDamage(string faceId, string attribute) => 0;
 }

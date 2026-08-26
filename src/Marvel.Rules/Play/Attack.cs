@@ -196,12 +196,29 @@ public static class Attack
             ?? throw new RulesNotImplementedException(
                 $"card {input.Affordance} was not offered as a defender");
 
-        // rr:defend-defense.2 -- "a hero must exhaust to use this power".
+        // rr:defend-defense.2 and .3 -- both require exhausting the defender.
         defender.Exhaust();
         events.Add(new FieldSet(defender.ObjectId, "is_exhaust", 0, 1)
         {
             Trigger = Steps.EnemyAttacks, Verb = DefenseVerb,
         });
+
+        if (facts.Kind(defender.FaceId) == CardKind.Ally)
+        {
+            // rr:defend-defense.3.1 -- "when an ally defends an attack, **that
+            // ally becomes the target character for that attack**, and its
+            // controller becomes the target player." So the target moves, and
+            // `BasicDefense` stays false: an ally has no DEF to reduce the
+            // damage by, and `rr:defend-defense.2`'s reduction is the hero's
+            // alone.
+            world.Attack = attack with
+            {
+                Defender = defender.ObjectId,
+                Target = defender.ObjectId,
+                Player = defender.Owner,
+            };
+            return;
+        }
 
         // rr:attack-enemy-activation.2 -- a defending hero takes the damage and
         // its DEF reduces it, so the target character does not change.
@@ -366,29 +383,27 @@ public static class Attack
         world.AreaOf(DeckType.BoostCardsDeck, world.Cards[enemy].Area.PlayArea, host: enemy);
 
     /// <summary>The characters one player could exhaust to defend.</summary>
-    private static IReadOnlyList<Card> Defenders(World world, ICardFacts facts, int player)
+    private static List<Card> Defenders(World world, ICardFacts facts, int player)
     {
         var seat = world.Seats[player];
 
-        // rr:defend-defense.3 -- an ally can exhaust to defend, and becomes the
-        // target character for the attack. Nothing here moves the target, so an
-        // ally on the board is refused rather than quietly not offered.
-        var allies = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player), cardOwner: player);
-        if (allies.Cards.Any(ally => ally.Ready))
-        {
-            throw new RulesNotImplementedException(
-                $"{seat.Name} controls a ready ally, which could defend; an ally defending "
-                + "is not implemented");
-        }
-
+        var candidates = new List<Card>();
         var identity = seat.IdentityCard;
 
         // rr:defend-defense.2 -- the basic defense power belongs to a hero. An
         // alter-ego has no DEF and cannot make one, and an exhausted hero has
         // nothing left to exhaust.
-        return identity.Ready && facts.Kind(identity.FaceId) == CardKind.Hero
-            ? [identity]
-            : [];
+        if (identity.Ready && facts.Kind(identity.FaceId) == CardKind.Hero)
+        {
+            candidates.Add(identity);
+        }
+
+        // rr:defend-defense.3 -- "an ally can exhaust to defend against an
+        // enemy attack. Damage from the attack is dealt to that ally."
+        var allies = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player), cardOwner: player);
+        candidates.AddRange(allies.Cards.Where(ally => ally.Ready));
+
+        return candidates;
     }
 
     /// <summary>Refuses the case where somebody other than the target could defend.</summary>

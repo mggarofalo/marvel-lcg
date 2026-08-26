@@ -139,6 +139,113 @@ public sealed class PrintedKeywordTests
         Assert.Equal(9, byAttribute.Count);
     }
 
+    [Rule("rr:consequential-damage")]
+    [Theory]
+    // **The star means two different things and the card kind tells them
+    // apart.** On an ally's ATK or THW it is a consequential damage icon; the
+    // number before it is the value, whatever the table size.
+    [InlineData("01002", "THW", 1, 1)]    // Black Cat, THW "1*"
+    [InlineData("01011", "ATK", 2, 1)]    // Spider-Woman, ATK "2*"
+    [InlineData("01011", "THW", 2, 1)]
+    public void AnAllysStarIsConsequentialDamageAndNotPerPlayer(
+        string faceId, string power, long value, long icons)
+    {
+        // At four players, because at one the two readings agree -- `1*` is 1
+        // either way, and every recorded game has one player. That is exactly
+        // why no fixture could catch this.
+        Assert.Equal(value, Cards.PrintedValue(faceId, power, players: 4));
+        Assert.Equal(icons, Cards.ConsequentialDamage(faceId, power));
+    }
+
+    [Rule("rr:hit-points")]
+    [Theory]
+    // And everywhere else it still is the per-player icon.
+    [InlineData("01094", "HP", 56)]           // Rhino, HP "14*", four players
+    [InlineData("01097b", "TargetThreat", 28)] // The Break-In!, "7*"
+    public void EverywhereElseTheStarIsStillPerPlayer(
+        string faceId, string attribute, long expected)
+    {
+        Assert.Equal(expected, Cards.PrintedValue(faceId, attribute, players: 4));
+        Assert.Equal(0, Cards.ConsequentialDamage(faceId, attribute));
+    }
+
+    [Rule("rr:consequential-damage")]
+    [Fact]
+    public void AnAllyInPlayReportsItsConsequentialDamageOnTheWire()
+    {
+        // `attack_consequential_damage` and `thwart_consequential_damage` are
+        // registered fields on every ally and read zero until now, because they
+        // are not an attribute of their own to map from -- the icons are stars
+        // printed inside `ATK` and `THW`.
+        //
+        // `01011` Spider-Woman prints ATK 2 and THW 2, each with one icon.
+        var world = new World(Cards, players: 1);
+        world.CreateSeat("p0");
+        var ally = world.CreateCard(
+            "01011", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+
+        var fields = StateFields.For(
+            ally, Cards, players: 1, inPlay: true, hasHeldPools: true,
+            hasFirstPlayerToken: false, world);
+
+        Assert.Equal(2, fields["attack"]);
+        Assert.Equal(2, fields["thwart"]);
+        Assert.Equal(1, fields["attack_consequential_damage"]);
+        Assert.Equal(1, fields["thwart_consequential_damage"]);
+    }
+
+    [Rule("rr:consequential-damage")]
+    [Fact]
+    public void TheWholePoolAgreesAboutWhatAnAllysStarMeans()
+    {
+        // The reading, held against the whole pool rather than three cards:
+        // for every ally ATK/THW value, the number before the star is
+        // MarvelSDB's printed value and the star count is its consequential
+        // damage. 660 of 664 agree; the four that do not are two cards
+        // MarvelSDB records with a base of -1, where the star count still does.
+        int agree = 0, differ = 0;
+        using var document = JsonDocument.Parse(CardText);
+        foreach (var element in document.RootElement.GetProperty("cards").EnumerateArray())
+        {
+            string id = element.GetProperty("card_id").GetString()!;
+            if (Cards.Kind(id) != CardKind.Ally
+                || !element.TryGetProperty("stats", out var stats))
+            {
+                continue;
+            }
+
+            foreach (var (power, printed, icons) in new[]
+            {
+                ("ATK", "attack", "attack_cost"), ("THW", "thwart", "thwart_cost"),
+            })
+            {
+                if (!Cards.Attributes(id).ContainsKey(power)
+                    || !stats.TryGetProperty(printed, out var value))
+                {
+                    continue;
+                }
+
+                long want = value.GetInt64();
+                long cost = stats.TryGetProperty(icons, out var found) ? found.GetInt64() : 0;
+                bool ok = Cards.PrintedValue(id, power, players: 3) == want
+                    && Cards.ConsequentialDamage(id, power) == cost;
+                if (ok)
+                {
+                    agree++;
+                }
+                else
+                {
+                    // The star count agrees even where the base does not.
+                    Assert.Equal(cost, Cards.ConsequentialDamage(id, power));
+                    differ++;
+                }
+            }
+        }
+
+        Assert.Equal(660, agree);
+        Assert.Equal(4, differ);
+    }
+
     /// <summary><c>acceleration_icon</c> becomes <c>AccelerationIcon</c>.</summary>
     private static string Pascal(string field) =>
         string.Concat(field.Split('_').Select(

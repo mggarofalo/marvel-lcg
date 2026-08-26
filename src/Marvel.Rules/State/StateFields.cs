@@ -212,6 +212,14 @@ public static class StateFields
     /// </remarks>
     public static IReadOnlyDictionary<string, string> FilledFrom => PrintedFrom;
 
+    // The two fields whose value is a count of icons printed *inside* another
+    // attribute rather than an attribute of its own.
+    private static readonly (string Field, string Power)[] ConsequentialFrom =
+    [
+        ("attack_consequential_damage", "ATK"),
+        ("thwart_consequential_damage", "THW"),
+    ];
+
     /// <summary>The default ally limit an identity registers.</summary>
     public const long AllyLimit = 3;
 
@@ -279,6 +287,18 @@ public static class StateFields
         if (hasHeldPools)
         {
             FillPrinted(fields, card, faceId, facts, players, world);
+
+            // `rr:consequential-damage`. Not in `PrintedFrom` because it is not
+            // an attribute of its own: the icons are stars printed inside the
+            // `ATK` and `THW` values, which is why they are read rather than
+            // looked up. See `CardCatalog.ConsequentialDamage`.
+            foreach (var (field, power) in ConsequentialFrom)
+            {
+                if (fields.ContainsKey(field))
+                {
+                    fields[field] = facts.ConsequentialDamage(faceId, power);
+                }
+            }
         }
 
         if (inPlay)

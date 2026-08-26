@@ -203,18 +203,7 @@ public static class BasicPowers
         }
 
         Exhaust(character, ThwartVerb, events);
-
-        // Threat removed is capped by the threat there is: `rr:threat` counts
-        // tokens, and a scheme cannot hold a negative number of them.
-        long held = scheme.Tokens.GetValueOrDefault("k_threat");
-        long removed = Math.Min(
-            held, StateFields.Modified(world, character, "thwart", facts, world.Players));
-
-        scheme.PlaceTokens("k_threat", -removed);
-        events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
-        {
-            Trigger = ThwartVerb, Verb = ThwartVerb,
-        });
+        RemoveThreat(world, facts, character, scheme, events);
     }
 
     /// <summary>
@@ -246,6 +235,107 @@ public static class BasicPowers
             world, facts, seat.IdentityCard,
             StateFields.Modified(world, seat.IdentityCard, "recover", facts, world.Players),
             RecoverVerb, RecoverVerb, events);
+    }
+
+    /// <summary>
+    /// The allies a player may use to attack or thwart — <c>rr:ally.2</c>.
+    /// </summary>
+    /// <remarks>
+    /// "During a player's turn, they may use <b>any number</b> of allies they
+    /// control to attack or thwart. An ally <b>must exhaust</b> to attack or
+    /// thwart." Any number, so this is every ready one and not a choice of one.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="player">Whose allies.</param>
+    public static IReadOnlyList<Card> Allies(World world, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        return [.. world
+            .AreaOf(DeckType.AlliesArea, PlayArea.Of(player), cardOwner: player)
+            .Cards
+            .Where(ally => ally.Ready)];
+    }
+
+    /// <summary>
+    /// An ally attacks or thwarts — <c>rr:ally.2</c> and <c>rr:ally.3</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The same two powers a hero has, with two differences the rules state
+    /// outright. <c>rr:ally.5</c>: an ally's attack "is <b>not</b> considered to
+    /// be performed by that player's identity", so the form gate in
+    /// <c>rr:player-turn.3</c> does not apply — an ally can attack while its
+    /// controller is in alter-ego form.
+    /// </para>
+    /// <para>
+    /// <c>rr:ally.3</c> is the other: "after an ally is used to attack or
+    /// thwart, deal consequential damage to that ally equal to the number of
+    /// consequential damage icons beneath the ally's ATK or THW field". A hero
+    /// takes none — <c>rr:consequential-damage</c> is an ally rule.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="ally">Which ally.</param>
+    /// <param name="target">The enemy or scheme.</param>
+    /// <param name="verb">Whether this is an attack or a thwart.</param>
+    /// <param name="events">Where to record what happened.</param>
+    public static void AllyPower(
+        World world, ICardFacts facts, Card ally, Card target, string verb,
+        List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(ally);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (!ally.Ready)
+        {
+            throw new RulesNotImplementedException(
+                $"card {ally.ObjectId} is exhausted and must exhaust to {verb}");
+        }
+
+        bool attacking = string.Equals(verb, AttackVerb, StringComparison.Ordinal);
+        var legal = attacking
+            ? Attackable(world, facts, ally.Owner)
+            : Thwartable(world, facts);
+
+        if (!legal.Any(option => option.ObjectId == target.ObjectId))
+        {
+            throw new RulesNotImplementedException(
+                $"card {target.ObjectId} is not something card {ally.ObjectId} can {verb}");
+        }
+
+        Exhaust(ally, verb, events);
+
+        if (attacking)
+        {
+            Damage.Deal(
+                world, facts, target,
+                StateFields.Modified(world, ally, "attack", facts, world.Players),
+                verb, verb, events);
+        }
+        else
+        {
+            RemoveThreat(world, facts, ally, target, events);
+        }
+
+        // `rr:consequential-damage.1`: dealt "after resolving abilities that are
+        // triggered by the ally attacking or thwarting", so after the attack and
+        // not as part of it. The icons sit under the field that was used.
+        // The printed icons, plus anything modifying the field. The icons are
+        // stars inside `ATK`/`THW` rather than an attribute of their own, so
+        // the printed half is read and the modified half is looked up -- the
+        // same split as `Damage.Health`.
+        long consequential =
+            facts.ConsequentialDamage(ally.FaceId, attacking ? "ATK" : "THW")
+            + StateFields.Modified(
+                world, ally,
+                attacking ? "attack_consequential_damage" : "thwart_consequential_damage",
+                facts, world.Players);
+
+        Damage.Deal(world, facts, ally, consequential, verb, "Consequential_Damage", events);
     }
 
     /// <summary>The seat a minion is engaged with, or -1.</summary>
@@ -290,6 +380,29 @@ public static class BasicPowers
             throw new RulesNotImplementedException(
                 $"{seat.Name} is exhausted and a basic {verb} must exhaust to use");
         }
+    }
+
+    /// <summary>
+    /// A character's THW comes off a scheme — <c>rr:thwart.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// Capped by the threat that is there: <c>rr:threat</c> counts tokens, and
+    /// a scheme cannot hold a negative number of them. <c>Card.PlaceTokens</c>
+    /// clamps too, so without this the board would be right and the event would
+    /// report a scheme going below zero.
+    /// </remarks>
+    private static void RemoveThreat(
+        World world, ICardFacts facts, Card character, Card scheme, List<GameEvent> events)
+    {
+        long held = scheme.Tokens.GetValueOrDefault("k_threat");
+        long removed = Math.Min(
+            held, StateFields.Modified(world, character, "thwart", facts, world.Players));
+
+        scheme.PlaceTokens("k_threat", -removed);
+        events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
+        {
+            Trigger = ThwartVerb, Verb = ThwartVerb,
+        });
     }
 
     private static void Exhaust(Card character, string verb, List<GameEvent> events)

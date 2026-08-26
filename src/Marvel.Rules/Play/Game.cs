@@ -332,8 +332,26 @@ public sealed class Game
     private Resolution? BasicPower(string verb, Decision input)
     {
         var happened = new List<GameEvent>();
+
+        // Which character is using the power is the affordance's anchor: the
+        // identity for a hero's own, the ally for `rr:player-turn.4`. Reading
+        // it here rather than switching on the verb is what keeps the two from
+        // needing separate verbs -- the recording spells an ally's attack
+        // `Attack`, the same as a hero's.
+        var user = Pending!.Affordances
+            .FirstOrDefault(option => option.Id == input.Affordance) is { } taken
+            ? world.Cards[taken.AnchorId]
+            : world.Seats[Active].IdentityCard;
+
+        bool byAlly = facts.Kind(user.FaceId) == CardKind.Ally;
         switch (verb)
         {
+            case BasicPowers.AttackVerb when byAlly:
+            case BasicPowers.ThwartVerb when byAlly:
+                BasicPowers.AllyPower(
+                    world, facts, user, world.Cards[Only(input, verb)], verb, happened);
+                break;
+
             case BasicPowers.AttackVerb:
                 BasicPowers.BasicAttack(
                     world, facts, Active, world.Cards[Only(input, verb)], happened);
@@ -566,6 +584,20 @@ public sealed class Game
             }
         }
 
+        // `rr:player-turn.4`: "use an ally card they control in play to attack
+        // an enemy or thwart a scheme". `rr:ally.5` puts these outside the
+        // identity -- "attacks [...] that resolve from allies in play under a
+        // player's control are **not** considered to be performed by that
+        // player's identity" -- so they are offered whatever form the player is
+        // in, and whether the identity is exhausted does not matter.
+        foreach (var ally in BasicPowers.Allies(world, seat.Index))
+        {
+            Offer(options, ally, BasicPowers.AttackVerb,
+                BasicPowers.Attackable(world, facts, seat.Index));
+            Offer(options, ally, BasicPowers.ThwartVerb,
+                BasicPowers.Thwartable(world, facts));
+        }
+
         // `rr:player-turn.3`: the hero's basic attack or thwart in hero form,
         // the alter-ego's basic recovery in alter-ego form. A character that is
         // exhausted cannot pay the cost of any of them (`rr:exhausted.2`).
@@ -580,9 +612,9 @@ public sealed class Game
             // attack needs an enemy that can be attacked and a basic thwart
             // needs a scheme with at least one threat on it. With neither, the
             // power is not on offer at all.
-            Offer(options, seat, BasicPowers.AttackVerb,
+            Offer(options, seat.IdentityCard, BasicPowers.AttackVerb,
                 BasicPowers.Attackable(world, facts, seat.Index));
-            Offer(options, seat, BasicPowers.ThwartVerb,
+            Offer(options, seat.IdentityCard, BasicPowers.ThwartVerb,
                 BasicPowers.Thwartable(world, facts));
         }
         else if (BasicPowers.CanRecover(world, facts, seat.Index))
@@ -626,15 +658,20 @@ public sealed class Game
     }
 
     /// <summary>Offers a targeted basic power, if it has a legal target.</summary>
+    /// <remarks>
+    /// Anchored to the character using it, which is the identity for a hero's
+    /// own power and the ally for <c>rr:player-turn.4</c>. Two allies attacking
+    /// are two options, because <c>rr:ally.2</c> permits "any number".
+    /// </remarks>
     private void Offer(
-        List<Affordance> options, Seat seat, string verb, IReadOnlyList<Card> targets)
+        List<Affordance> options, Card character, string verb, IReadOnlyList<Card> targets)
     {
         if (targets.Count == 0)
         {
             return;
         }
 
-        options.Add(Anchored(verb, seat) with
+        options.Add(Anchored(verb, character, world.Seats[Active]) with
         {
             // Exactly one target: `rr:attack-player-ability-type.1` and
             // `rr:thwart.1` are each one enemy or one scheme. An ability that
@@ -686,9 +723,13 @@ public sealed class Game
         };
     }
 
-    private Affordance Anchored(string verb, Seat seat)
+    private Affordance Anchored(string verb, Seat seat) =>
+        Anchored(verb, seat.IdentityCard, seat);
+
+    /// <summary>An affordance anchored to a particular card.</summary>
+    private Affordance Anchored(string verb, Card on, Seat seat)
     {
-        int anchor = seat.IdentityCard.ObjectId;
+        int anchor = on.ObjectId;
         if (!handles.TryGetValue((verb, anchor), out int id))
         {
             id = nextHandle++;

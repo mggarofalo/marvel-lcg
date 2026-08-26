@@ -57,8 +57,16 @@ public sealed class PlayingCardsTests
 
         Assert.Equal(GamePhase.PlayerTurn, game.Phase);
         Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+
+        // No longer offered as a *play* -- she is in play. Her object id is
+        // still an anchor, now for `rr:player-turn.4`'s "use an ally card they
+        // control in play to attack an enemy or thwart a scheme".
         Assert.DoesNotContain(
-            game.Pending.Affordances, a => a.AnchorId == play.AnchorId);
+            game.Pending.Affordances,
+            a => a.Verb == CardPlay.Verb && a.AnchorId == play.AnchorId);
+        Assert.Contains(
+            game.Pending.Affordances,
+            a => a.Verb == BasicPowers.AttackVerb && a.AnchorId == play.AnchorId);
     }
 
     [Rule("rr:initiating-abilities.step.3")]
