@@ -172,6 +172,96 @@ public sealed class OfferingTests
 
     
 
+    [Rule("rr:peril")]
+    [Fact]
+    public void OnlyTheResolvingPlayerActsWhileAPerilCardIsResolving()
+    {
+        // "While a player is resolving this card, that player cannot consult
+        // other players, and **other players cannot trigger abilities**." Not
+        // "abilities on this card" -- *any* ability. A peril card is resolved
+        // alone.
+        //
+        // The window here holds one ability apiece for two of the three
+        // players. Without the keyword the first player is asked first; with
+        // it, the player resolving the card is the only one asked at all.
+        var world = Board(players: 3);
+        var card = world.CreateCard("peril", world.AreaOf(DeckType.RevealingArea));
+        var resolving = new Occurrence(
+            1, ["WhenCardRevealed"], Subject: card.ObjectId, Player: 2);
+        var cards = new Cards(
+            new PendingAbility(5, AbilityType.Interrupt, 0),
+            new PendingAbility(6, AbilityType.Interrupt, 2));
+
+        var prompt = Offering.Work(world, cards, resolving, WindowKind.Interrupt, []);
+
+        Assert.NotNull(prompt);
+        Assert.Equal(2, prompt.Player);
+        Assert.Single(prompt.Affordances);
+    }
+
+    [Rule("rr:peril")]
+    [Fact]
+    public void WithoutPerilTheFirstPlayerIsAskedFirst()
+    {
+        // The same board and the same two abilities, on a card that is not
+        // perilous. `rr:first-player.4` gives the first player the first
+        // opportunity, so this is what the keyword is taking away.
+        var world = Board(players: 3);
+        var card = world.CreateCard("ordinary", world.AreaOf(DeckType.RevealingArea));
+        var resolving = new Occurrence(
+            1, ["WhenCardRevealed"], Subject: card.ObjectId, Player: 2);
+        var cards = new Cards(
+            new PendingAbility(5, AbilityType.Interrupt, 0),
+            new PendingAbility(6, AbilityType.Interrupt, 2));
+
+        var prompt = Offering.Work(world, cards, resolving, WindowKind.Interrupt, []);
+
+        Assert.NotNull(prompt);
+        Assert.Equal(0, prompt.Player);
+    }
+
+    [Rule("rr:peril.1")]
+    [Fact]
+    public void AbilitiesOnAPerilCardInYourAreaAreYoursAlone()
+    {
+        // The second clause, and a different rule from the first: "while this
+        // card is **in a player's play area**, other players cannot trigger
+        // abilities on this card." It is narrower -- only abilities on that
+        // card -- and it lasts as long as the card sits there rather than only
+        // while it resolves.
+        //
+        // The ability below has no controller, which `rr:ability.8` would
+        // otherwise let any player use.
+        var world = Board(players: 2);
+        var card = world.CreateCard(
+            "peril", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(1)));
+        var cards = new Cards(new PendingAbility(card.ObjectId, AbilityType.Interrupt, -1));
+
+        var prompt = Offering.Work(world, cards, Moment(), WindowKind.Interrupt, []);
+
+        Assert.NotNull(prompt);
+        Assert.Equal(1, prompt.Player);
+    }
+
+    [Rule("rr:ability.8")]
+    [Fact]
+    public void AnEncounterCardWithoutPerilIsAnybodysToTrigger()
+    {
+        // The converse, and the reason the clause above is a restriction rather
+        // than how the engine already worked: "players can only trigger
+        // interrupt abilities on cards they control **or on encounter cards**",
+        // and any player may use the latter.
+        var world = Board(players: 2);
+        var card = world.CreateCard(
+            "ordinary", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(1)));
+        var cards = new Cards(new PendingAbility(card.ObjectId, AbilityType.Interrupt, -1));
+
+        var prompt = Offering.Work(world, cards, Moment(), WindowKind.Interrupt, []);
+
+        Assert.NotNull(prompt);
+        Assert.Equal(0, prompt.Player);
+    }
+
     private static Occurrence Moment() => new(1, "WhenAttacked");
 
     private static World Board(int players)
@@ -224,6 +314,9 @@ public sealed class OfferingTests
             new Dictionary<string, string>(StringComparer.Ordinal);
 
         public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) =>
-            fallback;
+            string.Equals(faceId, "peril", StringComparison.Ordinal)
+            && string.Equals(attribute, "Peril", StringComparison.Ordinal)
+                ? 1
+                : fallback;
     }
 }

@@ -148,19 +148,63 @@ public static class Offering
     /// cards." An ability with no controller is on an encounter card, and
     /// <c>rr:ability.8</c> lets any player use it.
     /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="occurrence">What is happening.</param>
     /// <param name="tiers">The window's tiers.</param>
     /// <param name="seat">Whose opportunity it is.</param>
     public static IReadOnlyList<PendingAbility> Eligible(
-        IReadOnlyList<AbilityTier> tiers, int seat)
+        World world, Occurrence occurrence, IReadOnlyList<AbilityTier> tiers, int seat)
     {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(occurrence);
         ArgumentNullException.ThrowIfNull(tiers);
+
+        // `rr:peril`, first clause: "while a player is resolving this card,
+        // that player cannot consult other players, and **other players cannot
+        // trigger abilities**." Not "cannot trigger abilities on this card" --
+        // *any* ability. A peril card is resolved alone.
+        if (seat != occurrence.Player && occurrence.Player >= 0 && Perilous(world, occurrence))
+        {
+            return [];
+        }
+
         return
         [
             .. tiers
                 .SelectMany(tier => AbilityWindow.Split(tier).Optional)
-                .Where(ability => ability.Player == seat || ability.Player < 0),
+                .Where(ability => ability.Player == seat || ability.Player < 0)
+
+                // `rr:peril`, second clause: "while this card is in a player's
+                // play area, other players cannot trigger abilities **on this
+                // card**." A narrower rule than the first and a longer-lived
+                // one: the first lasts while the card resolves, this one for as
+                // long as the card sits there.
+                .Where(ability => !SomebodyElsesPeril(world, ability.Card, seat)),
         ];
     }
+
+    /// <summary>Whether the card being resolved has the peril keyword.</summary>
+    private static bool Perilous(World world, Occurrence occurrence) =>
+        occurrence.Subject >= 0
+        && occurrence.Subject < world.Cards.Count
+        && Peril(world, world.Cards[occurrence.Subject]);
+
+    /// <summary>Whether this ability is on a peril card in another player's area.</summary>
+    private static bool SomebodyElsesPeril(World world, int card, int seat)
+    {
+        if (card < 0 || card >= world.Cards.Count)
+        {
+            return false;
+        }
+
+        var area = world.Cards[card].Area;
+        return area.PlayArea.IsPlayers
+            && area.PlayArea.Player != seat
+            && Peril(world, world.Cards[card]);
+    }
+
+    private static bool Peril(World world, Card card) =>
+        StateFields.Modified(world, card, "peril", world.Facts, world.Players) > 0;
 
     private static IReadOnlyList<PendingAbility> Forced(IReadOnlyList<AbilityTier> tiers)
     {
@@ -197,7 +241,7 @@ public static class Offering
                 return null;
             }
 
-            var eligible = Eligible(tiers, window.Asking);
+            var eligible = Eligible(world, occurrence, tiers, window.Asking);
             if (eligible.Count > 0)
             {
                 return new Prompt(
