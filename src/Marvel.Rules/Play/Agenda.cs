@@ -519,13 +519,20 @@ public static class Steps
     /// scheduled beside it. <c>Occurrence.Also</c> is where it joins.
     /// </para>
     /// <para>
-    /// <b>Reachable in a response window and not in an interrupt one.</b> The
-    /// interrupt window is opened and closed before the damage is dealt, so
-    /// when it was open the defeat had not happened and there was nothing to
-    /// add. Telling in advance that damage will be lethal is
-    /// <c>rr:would</c> reasoning this engine has not got — MARVEL-249. A card's
-    /// <i>own</i> "When Defeated" is unaffected: it is a forced interrupt with
-    /// nothing to offer, and <see cref="Defeat.Character"/> resolves it inline.
+    /// <b>Reachable in a response window, and not in an interrupt one.</b> Not
+    /// a gap: <c>rr:damage.step.7</c> puts "abilities that trigger <i>when
+    /// [character] is defeated…</i>" after <c>.step.5</c> has placed the
+    /// damage, which is past the window. So the interrupt tier is reached from
+    /// inside the damage — <c>ICardAbilities.WhenCardDefeated</c> — and every
+    /// ability there is forced, with nothing to offer and nothing to decline.
+    /// The response tier is <c>.step.9</c>, which is the window.
+    /// </para>
+    /// <para>
+    /// <c>rr:damage.step.6</c> is the one this engine has not got: "abilities
+    /// that trigger <i>when [character] <b>would</b> be defeated…</i>", which
+    /// needs telling in advance that damage will be lethal —
+    /// <c>rr:would</c> reasoning, a tier earlier than step 7 and a different
+    /// trigger. No card the engine reaches prints one.
     /// </para>
     /// </remarks>
     public const string CardDefeated = "WhenCardDefeated";

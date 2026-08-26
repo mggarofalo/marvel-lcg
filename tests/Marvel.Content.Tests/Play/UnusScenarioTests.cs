@@ -77,7 +77,7 @@ public sealed class UnusScenarioTests
         var ranks = world.CreateCard("45068", world.AreaOf(DeckType.SideSchemesArea));
         long before = pool.Tokens.GetValueOrDefault("k_threat");
 
-        AuthoredCards.Runner().WhenDefeated(
+        AuthoredCards.Runner().WhenCardDefeated(
             world, ranks, new Defeated(ranks.ObjectId, -1, BasicPowers.ThwartVerb));
 
         Assert.Equal(before + 3, pool.Tokens.GetValueOrDefault("k_threat"));

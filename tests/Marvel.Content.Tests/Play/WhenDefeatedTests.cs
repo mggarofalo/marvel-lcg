@@ -190,7 +190,7 @@ public sealed class WhenDefeatedTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
 
-        world.Abilities.WhenDefeated(world, villain, Killed(villain));
+        world.Abilities.WhenCardDefeated(world, villain, Killed(villain));
 
         Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
@@ -217,7 +217,7 @@ public sealed class WhenDefeatedTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => world.Abilities.WhenDefeated(world, villain, Killed(villain)));
+            () => world.Abilities.WhenCardDefeated(world, villain, Killed(villain)));
 
         Assert.Contains("asks who is resolving it", thrown.Message, StringComparison.Ordinal);
         Assert.False(

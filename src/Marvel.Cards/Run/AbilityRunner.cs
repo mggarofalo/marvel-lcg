@@ -595,7 +595,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public IReadOnlyList<GameEvent> WhenDefeated(World world, Card card, Defeated defeated)
+    public IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
@@ -605,35 +605,48 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             .Where(ability => ability.Trigger.Timing == AbilityType.WhenDefeated)
             .ToList();
 
-        if (written.Count == 0)
+        // **The printed check gates the complaint, not the run.** Nothing in
+        // the printed attributes records a "When Defeated", so an unwritten one
+        // and a card that has none look identical from here -- but that is only
+        // a question when there is nothing written. Asking it first would let
+        // the text box veto authored data, which is the wrong way round: the
+        // data is what the engine runs.
+        if (written.Count == 0 && world.Facts.HasWhenDefeated(card.FaceId))
         {
-            // **The printed check gates the complaint, not the run.** Nothing
-            // in the printed attributes records a "When Defeated", so an
-            // unwritten one and a card that has none look identical from here
-            // -- but that is only a question when there is nothing written.
-            // Asking it first would let the text box veto authored data, which
-            // is the wrong way round: the data is what the engine runs.
-            return world.Facts.HasWhenDefeated(card.FaceId)
-                ? throw new RulesNotImplementedException(
-                    $"card '{card.FaceId}' was defeated and prints a 'When Defeated' "
-                    + "ability that no ability data is written for")
-                : [];
+            throw new RulesNotImplementedException(
+                $"card '{card.FaceId}' was defeated and prints a 'When Defeated' "
+                + "ability that no ability data is written for");
         }
+
+        // **Two occurrences, and each is asked what only it can answer.**
+        //
+        // This one is built here because the matching needs a *subject*: "when
+        // **attached minion** is defeated" is a claim about which card died,
+        // and the occurrence the defeat joined is about whatever caused it --
+        // an attack's subject is the enemy attacked. It carries the provenance
+        // for the same reason, because "the player who defeated this scheme" is
+        // on the card and not on the board.
+        //
+        // What it cannot answer is `rr:triggering-condition.1`, "each
+        // **Interrupt** ability can only be triggered once per occurrence of
+        // its triggering condition". The occurrence there is the one on the
+        // agenda: it is what lasts, it is what a still-open interrupt window is
+        // polling, and it is where a second defeat in the same moment would
+        // find an ability already spent. This one is made fresh on every call
+        // and would forget all of that.
+        var occurrence = new Occurrence(
+            0, [Steps.CardDefeated], Subject: card.ObjectId, Player: card.Owner);
+        occurrence.Also(defeated);
+
+        var spent = world.Agenda.Occurrence;
+        var elsewhere = Answering(world, card, occurrence, spent);
+        Alone(card, written.Count, elsewhere);
 
         var events = new List<GameEvent>();
 
         // `rr:when-defeated-abilities.2` -- "**all** When Defeated abilities on
         // the card resolve", so this is every one of them rather than the
         // single one a window would take.
-        // Its own occurrence rather than the one the defeat joined, and the
-        // difference does not show: this tier is forced, so nothing is offered
-        // and nothing is spent, and `rr:triggering-condition.1`'s once-per-card
-        // bookkeeping has nothing to keep. What it does need is the provenance,
-        // because "the player who defeated this scheme" is on the card.
-        var occurrence = new Occurrence(
-            0, [Steps.CardDefeated], Subject: card.ObjectId, Player: card.Owner);
-        occurrence.Also(defeated);
-
         foreach (var ability in written)
         {
             Run(
@@ -644,7 +657,113 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 });
         }
 
+        // `rr:forced.6` -- "each forced ability must resolve as completely as
+        // possible before the next forced ability being triggered by the same
+        // triggering condition may initiate", so the board is re-read between
+        // them rather than this walking a list gathered once. The occurrence
+        // remembers what has fired, which is `rr:triggering-condition.1`, and
+        // is what stops the re-read offering the same card twice.
+        while (Answering(world, card, occurrence, spent) is { Count: > 0 } waiting)
+        {
+            Alone(card, own: 0, waiting);
+            occurrence.Trigger(WindowKind.Interrupt, waiting[0].Card);
+            spent?.Trigger(WindowKind.Interrupt, waiting[0].Card);
+            events.AddRange(Resolve(world, occurrence, waiting[0], [], []));
+        }
+
         return events;
+    }
+
+    /// <summary>
+    /// The forced interrupts on <i>other</i> cards that answer this defeat —
+    /// <c>rr:damage.step.7</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The earliest tier with anything in it, because <c>rr:forced.4</c> orders
+    /// the tiers and a later one does not initiate while an earlier one is
+    /// still waiting. A status card's forced interrupt is its own tier ahead of
+    /// the rest — <c>rr:ability.step.2.a</c>.
+    /// </para>
+    /// <para>
+    /// <b>A non-forced interrupt is refused rather than dropped.</b> Step 7 is
+    /// reached from inside the damage, after <c>.step.5</c> has placed it, and
+    /// an optional ability there has nobody to offer it to. A card carrying one
+    /// would otherwise sit in the dataset looking implemented and never fire,
+    /// which is the failure the whole of this file is arranged to avoid.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="card">The card that was defeated.</param>
+    /// <param name="occurrence">The defeat, which is what an ability matches against.</param>
+    /// <param name="spent">
+    /// The occurrence on the agenda, which is what remembers what has already
+    /// fired — <c>rr:triggering-condition.1</c>. Null when a caller reached
+    /// this without anything happening on the agenda.
+    /// </param>
+    private IReadOnlyList<PendingAbility> Answering(
+        World world, Card card, Occurrence occurrence, Occurrence? spent)
+    {
+        var tiers = AbilityWindow.Tiers(
+            Waiting(world, occurrence, WindowKind.Interrupt)
+                .Where(pending => pending.Card != card.ObjectId)
+                .Where(pending => spent?.MayTrigger(WindowKind.Interrupt, pending.Card) ?? true),
+            WindowKind.Interrupt,
+            occurrence);
+
+        foreach (var tier in tiers)
+        {
+            var (mandatory, optional) = AbilityWindow.Split(tier);
+            if (optional.Count > 0)
+            {
+                throw new RulesNotImplementedException(
+                    $"card '{world.Cards[optional[0].Card].FaceId}' offers a non-forced "
+                    + $"interrupt when card {card.ObjectId} is defeated. rr:damage.step.7 "
+                    + "puts it after the damage has been placed, where the occurrence's "
+                    + "interrupt window has long closed and there is nobody left to ask");
+            }
+
+            if (mandatory.Count > 0)
+            {
+                return mandatory;
+            }
+        }
+
+        return [];
+    }
+
+    /// <summary>
+    /// Refuses a defeat that two cards answer at once — <c>rr:forced.5</c>.
+    /// </summary>
+    /// <remarks>
+    /// "If two or more forced abilities would initiate at the same moment, the
+    /// <b>first player determines the order</b> in which the abilities
+    /// initiate, regardless of who controls the cards bearing those abilities."
+    /// A question, and <c>rr:damage.step.7</c> is reached from inside the damage
+    /// with nobody to put it to — <see cref="Offering"/> asks it in a window and
+    /// this is not one.
+    /// <para>
+    /// So it refuses rather than picks. Two effects at one moment in an order
+    /// the engine chose is a board that is plausible and wrong, and the
+    /// alternative costs nothing today: <c>rr:when-defeated-abilities.2</c>
+    /// decides the one-card case outright — "all When Defeated abilities
+    /// <b>on the card</b> resolve" — and it is only across cards that nothing
+    /// does. Nothing in the pool the engine reaches puts two there: MARVEL-254.
+    /// </para>
+    /// </remarks>
+    /// <param name="card">The card that was defeated.</param>
+    /// <param name="own">How many of its own abilities are waiting.</param>
+    /// <param name="elsewhere">What other cards have waiting.</param>
+    private static void Alone(Card card, int own, IReadOnlyList<PendingAbility> elsewhere)
+    {
+        int cards = (own > 0 ? 1 : 0) + elsewhere.Select(pending => pending.Card).Distinct().Count();
+        if (cards > 1)
+        {
+            throw new RulesNotImplementedException(
+                $"{cards} cards have a forced interrupt when card {card.ObjectId} is defeated. "
+                + "rr:forced.5 gives the order to the first player, and rr:damage.step.7 is "
+                + "reached from inside the damage with nobody to ask");
+        }
     }
 
     /// <inheritdoc/>
