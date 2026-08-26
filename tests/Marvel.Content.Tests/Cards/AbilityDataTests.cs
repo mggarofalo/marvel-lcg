@@ -45,6 +45,55 @@ public sealed class AbilityDataTests
         }
     }
 
+    [Rule("rr:stalwart.1")]
+    [Fact]
+    public void ACardGivingAStatusCannotRouteRoundTheStatusRules()
+    {
+        // A card's ability is data, and the interpreter runs it -- but it runs
+        // it *through* the rules. `rr:stalwart.1` says a stalwart character
+        // "cannot have confused or stunned status cards", and an ability
+        // reaching straight at `Statuses.Give` would put one there anyway.
+        //
+        // `01094` Rhino is not stalwart in the printed data, so the target here
+        // is given the keyword on the board rather than in the dataset -- what
+        // is being tested is the interpreter's route, not a card.
+        var book = AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01105", "name": "test", "abilities": [ {
+                "name": "test",
+                "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "giveStatus": { "card": { "query": "villain" },
+                                        "status": "stunned" } }
+            } ] } ] }
+            """);
+
+        var world = new World(Printed, players: 1);
+        world.CreateSeat("p0");
+        var rhino = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
+        var card = world.CreateCard(AuthoredCards.ImTough, world.AreaOf(DeckType.RevealingArea));
+        var runner = new Marvel.Cards.Run.AbilityRunner(book);
+
+        runner.WhenRevealed(world, card, 0);
+        Assert.Equal(1, Statuses.Count(world, rhino, Statuses.Stunned));
+
+        // Stalwart, granted the way a card ability grants a keyword. The stun
+        // already there stays -- `rr:stalwart.2` removes existing cards and is
+        // a separate clause -- but no second one lands.
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, Kind: "stalwart", Amount: 1,
+            Card: rhino.ObjectId, Affects: rhino.ObjectId));
+
+        foreach (var existing in Statuses.On(world, rhino, Statuses.Stunned).ToList())
+        {
+            Discard.Card(world, existing, "test", []);
+        }
+
+        runner.WhenRevealed(world, card, 0);
+
+        Assert.Equal(0, Statuses.Count(world, rhino, Statuses.Stunned));
+    }
+
     [Fact]
     public void EveryAuthoredCardIsAPrintedCard()
     {

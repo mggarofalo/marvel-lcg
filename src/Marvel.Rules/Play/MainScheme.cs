@@ -64,6 +64,56 @@ public static class MainScheme
     }
 
     /// <summary>
+    /// Whether a crisis icon is in play — <c>rr:crisis-icon</c>.
+    /// </summary>
+    /// <remarks>
+    /// "While <b>at least one</b> crisis icon is in play, threat cannot be
+    /// removed from the main scheme by player cards." One is as good as five,
+    /// so this is a question and not a count.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    public static bool Crisis(World world, ICardFacts facts) =>
+        IconsInPlay(world, facts, "crisis") > 0;
+
+    /// <summary>
+    /// How many boost icons every boost card gains — <c>rr:amplify-icon</c>.
+    /// </summary>
+    /// <remarks>
+    /// "When a boost card is turned faceup <b>during an enemy activation</b>,
+    /// add one additional boost icon to that card for each amplify icon in
+    /// play", written in <c>.1</c> as the constant ability "each boost card
+    /// gains [boost]".
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    public static long Amplify(World world, ICardFacts facts) =>
+        IconsInPlay(world, facts, "amplify");
+
+    /// <summary>One printed icon, totalled over everything in play.</summary>
+    private static long IconsInPlay(World world, ICardFacts facts, string field)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        long total = 0;
+        foreach (var area in world.Areas)
+        {
+            if (!DeckTypes.IsInPlay(area.Type))
+            {
+                continue;
+            }
+
+            foreach (var card in area.Cards)
+            {
+                total += StateFields.Modified(world, card, field, facts, world.Players);
+            }
+        }
+
+        return total;
+    }
+
+    /// <summary>
     /// Advances the main scheme deck — <c>rr:main-scheme-main-scheme-deck.3</c>.
     /// </summary>
     /// <remarks>

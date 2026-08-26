@@ -23,6 +23,65 @@ namespace Marvel.Rules.Play;
 public static class Reveal
 {
     /// <summary>
+    /// Gives a character a status, and resolves what follows —
+    /// <c>rr:status-cards</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The one door into <see cref="Statuses"/> for anything that <i>inflicts</i>
+    /// a status, because three rules meet here and only one of them is about
+    /// the card appearing. <c>rr:status-cards.1</c> caps how many a character
+    /// can hold, <c>rr:stalwart</c> makes that cap zero, and
+    /// <c>rr:vulnerable</c> discards the character outright.
+    /// </para>
+    /// <para>
+    /// <c>rr:vulnerable.2</c>: "it is <b>discarded</b> before the damage is
+    /// applied and is <b>not considered defeated</b>" — so no "When Defeated"
+    /// ability fires and nothing reaches the victory display, which is what
+    /// separates this from <see cref="Defeat"/>.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="host">The character.</param>
+    /// <param name="status">The status's printed id.</param>
+    /// <param name="trigger">What caused it, for the event stream.</param>
+    /// <param name="events">Where to record what happened.</param>
+    /// <returns>The status card, or null when the character could not take one.</returns>
+    public static Card? Afflict(
+        World world, ICardFacts facts, Card host, string status,
+        string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(events);
+
+        var given = Statuses.Inflict(world, facts, host, status);
+        if (given is null)
+        {
+            return null;
+        }
+
+        events.Add(new CardsCreated(
+            Places.Reference(given.Area), [new CreatedCard(given.ObjectId, given.FaceId)])
+        {
+            Trigger = trigger, Verb = "Give_Status",
+        });
+        events.Add(new CardAttached(given.ObjectId, host.ObjectId)
+        {
+            Trigger = trigger, Verb = "Give_Status",
+        });
+
+        if (Statuses.Vulnerable(world, facts, host))
+        {
+            Discard.Card(world, host, trigger, events);
+        }
+
+        return given;
+    }
+
+    /// <summary>
     /// The keywords that fire when a card is revealed —
     /// <c>rr:surge</c> and <c>rr:incite-x</c>.
     /// </summary>

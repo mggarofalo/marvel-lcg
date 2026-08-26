@@ -387,7 +387,11 @@ public static class VillainPhase
             Trigger = "villain phase", Verb = "Boost",
         });
 
-        return facts.PrintedValue(boost.FaceId, "Boost", world.Players);
+        // `rr:amplify-icon`, the same clause on the scheming side: a boost card
+        // turned faceup during an enemy activation gains one icon per amplify
+        // icon in play.
+        return facts.PrintedValue(boost.FaceId, "Boost", world.Players)
+            + MainScheme.Amplify(world, facts);
     }
 
     /// <summary>Step 3. One encounter card to each player, in player order.</summary>

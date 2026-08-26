@@ -166,6 +166,23 @@ public sealed class World
     public int FirstPlayer { get; set; }
 
     /// <summary>
+    /// The printed card data this game is played with.
+    /// </summary>
+    /// <remarks>
+    /// The same object the constructor was given, and the one the digest is
+    /// already built from. Exposed because a caller holding a <see cref="World"/>
+    /// is by definition in that game: threading a second <c>ICardFacts</c>
+    /// alongside it is how two of them get to disagree.
+    /// <para>
+    /// The rules still take it as a parameter where they can — that keeps a
+    /// function's inputs visible in its signature. This is for the callers that
+    /// have a world and nothing else, which is what <c>ICardAbilities</c> hands
+    /// a card.
+    /// </para>
+    /// </remarks>
+    public ICardFacts Facts => facts;
+
+    /// <summary>
     /// The game's one random stream.
     /// </summary>
     /// <remarks>

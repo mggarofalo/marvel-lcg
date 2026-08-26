@@ -289,7 +289,12 @@ public static class Attack
             // by one per boost icon, for this attack. A bounded modifier is a
             // lasting effect (`rr:lasting-effects`), and "until the end of this
             // attack" is the rulebook's own example of a duration.
-            long icons = facts.PrintedValue(boost.FaceId, "Boost", world.Players);
+            // `rr:amplify-icon`: "when a boost card is turned faceup **during
+            // an enemy activation**, add one additional boost icon to that card
+            // for each amplify icon in play." Per card, so two boost cards with
+            // one amplify icon in play gain one each.
+            long icons = facts.PrintedValue(boost.FaceId, "Boost", world.Players)
+                + MainScheme.Amplify(world, facts);
             if (icons > 0)
             {
                 world.Effects.Register(new ContinuousEffect(
