@@ -495,6 +495,35 @@ public sealed class KeywordTests
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:uses-x-type")]
+    [Fact]
+    public void ACardWithUsesEntersPlayWithItsCounters()
+    {
+        // "When a card with this keyword enters play, place X all-purpose
+        // counters from the token pool on the card. The word following the
+        // value establishes and identifies the type." Printed as one field
+        // holding both -- `"3,web"` -- so the type travels with the count.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var card = world.CreateCard("sideScheme", world.AreaOf(DeckType.RevealingArea));
+
+        Reveal.Resolve(world, printed, card, 0, []);
+
+        Assert.Equal(3, card.Tokens["c_web"]);
+    }
+
+    [Rule("rr:uses-x-type")]
+    [Fact]
+    public void AUsesKeywordThatIsNotACountAndATypeSaysSo()
+    {
+        var printed = new Printed().With("sideScheme", ("Uses", "3"));
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => Reveal.Uses(printed.Attributes("sideScheme")));
+
+        Assert.Contains("not a count and a type", thrown.Message, StringComparison.Ordinal);
+    }
+
     [Rule("rr:crisis-icon")]
     [Rule("rr:crisis-icon.1")]
     [Fact]

@@ -185,6 +185,38 @@ public static class Reveal
     }
 
     /// <summary>
+    /// The counters a card enters play with, and what they are called —
+    /// <c>rr:uses-x-type</c>.
+    /// </summary>
+    /// <remarks>
+    /// Printed as one field holding both, <c>"3,web"</c>. Sixty-nine cards in
+    /// the pool carry one, and the type is a word the card's own ability spends
+    /// by name — which is why the count alone would not do.
+    /// <para>
+    /// <b>What removes them is not here.</b> "When the last all-purpose counter
+    /// is removed from a card with uses, discard that card" needs an ability
+    /// that can remove one, and no node in the card DSL does yet. The counters
+    /// are placed and read; spending them waits for a card that spends.
+    /// </para>
+    /// </remarks>
+    /// <param name="printed">The card's printed attributes.</param>
+    public static (long Count, string Type) Uses(
+        IReadOnlyDictionary<string, string> printed)
+    {
+        ArgumentNullException.ThrowIfNull(printed);
+        if (!printed.TryGetValue("Uses", out string? uses))
+        {
+            return (0, string.Empty);
+        }
+
+        string[] parts = uses.Split(',');
+        return parts.Length == 2 && long.TryParse(parts[0], out long count)
+            ? (count, parts[1])
+            : throw new RulesNotImplementedException(
+                $"the uses keyword '{uses}' is not a count and a type");
+    }
+
+    /// <summary>
     /// A minion that attacks the moment it engages — <c>rr:quickstrike</c>.
     /// </summary>
     /// <remarks>
@@ -255,6 +287,24 @@ public static class Reveal
                 [new CreatedCard(status.ObjectId, status.FaceId)])
             {
                 Trigger = "toughness", Verb = "Enter_Play",
+            });
+        }
+
+        // `rr:uses-x-type`: "when a card with this keyword enters play, place X
+        // all-purpose counters from the token pool on the card. The word
+        // following the value establishes and identifies the type."
+        //
+        // Printed as `"3,web"`, so the count and the type arrive together and
+        // neither is a number `PrintedValue` could read. The counter's key is
+        // the digest's `c_<name>` namespace, which
+        // `docs/state-digest-v2.md` reserves for exactly this: "token, counter
+        // and form keys come from game data, so the key set is open-ended".
+        if (Uses(facts.Attributes(card.FaceId)) is var (count, type) && count > 0)
+        {
+            card.PlaceTokens("c_" + type, count);
+            events.Add(new FieldSet(card.ObjectId, "c_" + type, 0, count)
+            {
+                Trigger = "uses", Verb = "Enter_Play",
             });
         }
 
