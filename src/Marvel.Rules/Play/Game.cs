@@ -421,13 +421,10 @@ public sealed class Game
                 $"card {taken.AnchorId} has no action this player can trigger");
         }
 
-        // `rr:action` is not a window, so there is no occurrence around it --
-        // the ability *is* what is happening, and the card it is on is its
-        // subject.
-        var happened = new List<GameEvent>(abilities.Resolve(
-            world,
-            new Occurrence(0, [Steps.TurnAction], Subject: taken.AnchorId, Player: Active),
-            ability));
+        // `rr:initiating-abilities.step.5` -- the answer carries which cards
+        // were spent, because a cost of resources is a choice of *which* and
+        // the affordance already said what could pay.
+        var happened = new List<GameEvent>(abilities.Act(world, ability, input.Spent));
 
         if (world.IsOver)
         {

@@ -66,6 +66,22 @@ public interface ICardAbilities : IWindowAbilities
     IReadOnlyList<PendingAbility> Actions(World world, int player);
 
     /// <summary>
+    /// Triggers an "Action", paying its cost —
+    /// <c>rr:initiating-abilities.step.5</c> and <c>.step.6</c>.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="IWindowAbilities.Resolve"/> because an action
+    /// is answered rather than merely taken: a cost of spending resources is a
+    /// choice of <i>which</i> cards, and the answer carries it.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="ability">Which action, from <see cref="Actions"/>.</param>
+    /// <param name="paying">Cards discarded to pay, by object id.</param>
+    /// <returns>What changed.</returns>
+    IReadOnlyList<GameEvent> Act(
+        World world, PendingAbility ability, IReadOnlyList<int> paying);
+
+    /// <summary>
     /// The question a suspended ability is waiting on —
     /// <c>rr:choose-option</c>.
     /// </summary>
@@ -110,6 +126,12 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<PendingAbility> Actions(World world, int player) => [];
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Act(
+        World world, PendingAbility ability, IReadOnlyList<int> paying) =>
+        throw new RulesNotImplementedException(
+            "no card has an action, so none of them can be triggered");
 
     /// <inheritdoc/>
     public virtual Prompts.Prompt? Choosing(World world, Card source, int player) => null;

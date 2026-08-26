@@ -140,7 +140,11 @@ public sealed class AbilityDataTests
         // card produces a board that is plausible and wrong.
         var world = new World(Printed, players: 1);
         world.CreateSeat("p0");
-        var card = world.CreateCard("01100", world.AreaOf(DeckType.RevealingArea));
+        // `01130` Whirlwind, a Masters of Evil minion: no scenario these tests
+        // build reaches it, so it stays unauthored. It used to be `01100`
+        // Enhanced Ivory Horn, which stopped being an example of an unread card
+        // the moment somebody read it.
+        var card = world.CreateCard("01130", world.AreaOf(DeckType.RevealingArea));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => AuthoredCards.Runner().WhenRevealed(world, card, 0));
@@ -276,7 +280,7 @@ public sealed class AbilityDataTests
         // this file is under: a card is authored when something reaches it.
         string[] named =
         [
-            AuthoredCards.SpiderMan, AuthoredCards.AuntMay, AuthoredCards.Charge, AuthoredCards.Shocker,
+            AuthoredCards.SpiderMan, AuthoredCards.AuntMay, AuthoredCards.Charge, AuthoredCards.IvoryHorn, AuthoredCards.Shocker,
             AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
             AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
             AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,

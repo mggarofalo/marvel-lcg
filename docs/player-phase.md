@@ -131,10 +131,18 @@ form and not a timing.
 
 **Costs are the ability's, not the card's.** `rr:cost` — "a cost is anything a
 player must do or pay in order to initiate an ability" — and 560 of the 966
-print one. The commonest by far is exhausting the card the ability is on, which
-is the only form written; `rr:initiating-abilities.step.3` asks whether it can
-be paid *before the ability is offered*, because step 5 aborts "without paying
-any costs" and an affordance that would abort is a trap rather than an offer.
+print one. Two forms are written, and they are the two commonest: **exhausting**
+the card the ability is on (280 cards) and **spending resources** (142).
+`rr:initiating-abilities.step.3` asks whether the cost can be paid *before the
+ability is offered*, because step 5 aborts "without paying any costs" and an
+affordance that would abort is a trap rather than an offer.
+
+Only a resource cost reaches the wire, because only a resource cost is a
+*choice*: exhausting the card has one way to be paid, so there is nothing to ask
+and nothing to carry. `rr:resource.4` applies as it does to a card — a cost of
+three physicals is not a cost of three — and the payment itself is
+`CardPlay.Spend`, shared with playing a card, because `rr:cost` is one rule for
+both and playing a card is initiating an ability.
 
 ### The basic powers
 

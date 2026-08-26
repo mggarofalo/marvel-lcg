@@ -424,6 +424,27 @@
           "effect": { "heal": { "card": "you", "amount": 4 } }
         }
       ]
+    },
+    {
+      "card": "01100",
+      "name": "Enhanced Ivory Horn",
+      "note": "Attach to Rhino. Hero Action: Spend [physical] [physical] [physical] resources -> discard this card. An encounter card in play, so rr:player-turn.5.b is what lets a player trigger it -- it is nobody's card and everybody's action. The printed ATK+ 1 is not here: rr:attachment.1 makes a printed modifier declarative and StateFields reads it off the attachment without an ability. The spend is the ability's cost rather than the first thing its effect does, which is why rr:initiating-abilities.step.3 can refuse to offer it to a hand that cannot pay.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "attachTo": { "query": "villain" } }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": { "spend": "RRR" },
+          "effect": { "discard": "this" }
+        }
+      ]
     }
   ]
 }
