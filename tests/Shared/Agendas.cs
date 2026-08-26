@@ -24,6 +24,30 @@ namespace Marvel.Tests;
 /// </remarks>
 public static class Agendas
 {
+    /// <summary>
+    /// Puts a bare occurrence on the agenda, so that something is happening.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A defeat is not an occurrence of its own — <c>rr:triggering-condition.2</c>
+    /// joins it to whatever caused it, so that "a single attack causing a
+    /// character to both take damage and be defeated" gets one window pair and
+    /// not two. <c>Defeat</c> therefore refuses a defeat with nothing on the
+    /// agenda to join, because in a game there always is something.
+    /// </para>
+    /// <para>
+    /// In a unit test that calls <c>Damage.Deal</c> straight there is not, and
+    /// this is that difference and nothing more. The step is the damage step
+    /// because that is the rule's own example; nothing here takes it.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    public static void Happening(World world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        world.Agenda.Add(new PhaseStep(Steps.DealAttackDamage, 1, 4));
+    }
+
     /// <summary>Takes every outstanding step, declining every question.</summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>

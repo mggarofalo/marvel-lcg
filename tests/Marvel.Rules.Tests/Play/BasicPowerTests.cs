@@ -305,6 +305,8 @@ public sealed class BasicPowerTests
         var minion = world.CreateCard(
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
+        Agendas.Happening(world);
+
         Assert.True(Damage.Deal(world, printed, minion, 3, "test", "test", []));
     }
 

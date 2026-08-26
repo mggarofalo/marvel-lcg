@@ -51,11 +51,13 @@ public enum Outcome
 /// <b>removed from the game</b>.
 /// </para>
 /// <para>
-/// <b>Not implemented here, and it throws by name:</b> the "When Defeated"
-/// window. <c>rr:when-defeated-abilities.1</c> makes it a forced interrupt, so
-/// it resolves <i>before</i> the card leaves play — which means it belongs on
-/// the agenda as a step with a window, not inside this call. Nothing in the
-/// dataset has one yet.
+/// <b>A defeat is not an occurrence of its own.</b>
+/// <c>rr:triggering-condition.2</c> uses this very case as its example — "a
+/// single attack causing a character to both take damage and be defeated" is
+/// handled "with a single interrupt window and a single response window" — so
+/// the defeat joins the occurrence that caused it rather than getting windows
+/// of its own. <see cref="Record"/> is where that happens, and it is why a
+/// card can answer "after an ally is defeated" at all.
 /// </para>
 /// </remarks>
 public static class Defeat
@@ -68,14 +70,23 @@ public static class Defeat
     /// <param name="character">Who was defeated.</param>
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="how">
+    /// What kind of thing did it, in the event stream's verb — an attack,
+    /// consequential damage, and so on. Cards ask: Gene Pool answers "after an
+    /// ally is defeated <b>by anything other than consequential damage</b>".
+    /// </param>
+    /// <param name="by">The seat whose character did it, or <c>-1</c>.</param>
     /// <returns>True, so that a caller can report it in one expression.</returns>
     public static bool Character(
-        World world, ICardFacts facts, Card character, string trigger, List<GameEvent> events)
+        World world, ICardFacts facts, Card character, string trigger, List<GameEvent> events,
+        string how = "", int by = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(character);
         ArgumentNullException.ThrowIfNull(events);
+
+        var defeated = Record(world, character, by, how);
 
         // `rr:when-defeated-abilities.2.1` -- "a defeated card leaves play
         // **after** its When Defeated ability is resolved, if any." So this
@@ -84,10 +95,10 @@ public static class Defeat
         //
         // `.1` makes it "**Forced Interrupt**: when this card is defeated",
         // and a forced interrupt has no choice in it -- there is nothing to
-        // offer and nothing to decline, so it resolves here rather than in a
-        // window. The window *around* a defeat is a separate thing and is not
-        // opened; no card in the pool interrupts one except by this.
-        events.AddRange(world.Abilities.WhenDefeated(world, character));
+        // offer and nothing to decline, so it resolves here rather than in the
+        // occurrence's interrupt window, which closed before the damage that
+        // caused this was dealt.
+        events.AddRange(world.Abilities.WhenDefeated(world, character, defeated));
 
         switch (facts.Kind(character.FaceId))
         {
@@ -145,18 +156,61 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(scheme);
         ArgumentNullException.ThrowIfNull(events);
 
-        world.Defeated = new Defeated(scheme.ObjectId, by);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        var defeated = Record(world, scheme, by, BasicPowers.ThwartVerb);
 
         // `rr:when-defeated-abilities.2` lists a side scheme among the cards
         // this happens to, and `.2.1` puts it before the card goes.
-        events.AddRange(world.Abilities.WhenDefeated(world, scheme));
-        world.Defeated = null;
-        ArgumentNullException.ThrowIfNull(facts);
+        events.AddRange(world.Abilities.WhenDefeated(world, scheme, defeated));
 
         if (!ToVictoryDisplay(world, facts, scheme, trigger, events))
         {
             Discard.Card(world, scheme, trigger, events);
         }
+    }
+
+    /// <summary>
+    /// Hangs the defeat on the occurrence that caused it —
+    /// <c>rr:triggering-condition.2</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "If a single game occurrence creates multiple triggering conditions
+    /// <i>(such as a single attack causing a character to both take damage and
+    /// be defeated)</i>, those triggering conditions are handled with a single
+    /// interrupt window and a single response window." The parenthesis is this
+    /// method's whole job: the defeat is a second condition of the occurrence
+    /// that caused it, and joining it there is what opens a window for a card
+    /// answering "after an ally is defeated" — while <b>not</b> opening a
+    /// second one that would let an ability fire twice against one moment.
+    /// </para>
+    /// <para>
+    /// <b>A defeat outside any occurrence is refused.</b> Not defensiveness:
+    /// every way a card can be defeated is something happening in the game, and
+    /// something happening in the game is a step on the agenda. If this throws,
+    /// the missing piece is the <i>cause</i> — some way of doing damage or
+    /// removing threat that this engine still performs as a call rather than as
+    /// a step, and whose own windows are therefore missing too. Silence here
+    /// would hide that, and hide it precisely in the cards that were written to
+    /// notice.
+    /// </para>
+    /// </remarks>
+    private static Defeated Record(World world, Card card, int by, string how)
+    {
+        var defeated = new Defeated(card.ObjectId, by, how);
+
+        if (world.Agenda.Occurrence is not { } happening)
+        {
+            throw new RulesNotImplementedException(
+                $"card {card.ObjectId} was defeated by '{how}' and nothing is happening on the "
+                + "agenda for rr:triggering-condition.2 to join the defeat to, so no window "
+                + "opens around it. Whatever caused the defeat is a call in this engine and "
+                + "the rules make it an occurrence");
+        }
+
+        happening.Also(defeated);
+        return defeated;
     }
 
     /// <summary>

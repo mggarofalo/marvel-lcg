@@ -591,11 +591,11 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 |---|---|
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
-| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `inExpertMode` |
+| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `inExpertMode`, `isKind`, `defeatedBy` |
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `dealEncounterCards`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
-| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game` |
+| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`, `defeated`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game` |
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
@@ -1161,3 +1161,110 @@ That is the distinction the file exists to be able to make. Revealing one of
 them resolves to silence, which is correct. Revealing a card nobody has read
 throws, which is also correct. A dataset that could not tell them apart would
 have to pick one behaviour, and either choice is wrong for half the pool.
+
+### A defeat is a triggering condition of whatever caused it
+
+`Steps.CardDefeated` was a name with nothing behind it. It labelled the
+occurrence `WhenDefeated` built for the defeated card's *own* ability, and no
+other card could ever see it — so "**Forced Response:** after an ally is
+defeated…" was a sentence the dataset could hold and the engine could not run.
+Gene Pool was authored, resolved to silence, and was pulled back out again.
+
+The fix is **not** to schedule a defeat. `rr:triggering-condition.2` covers this
+exact case and uses it as its own example:
+
+> If a single game occurrence creates multiple triggering conditions *(such as a
+> single attack causing a character to both take damage and be defeated)*, those
+> triggering conditions are handled with **a single interrupt window and a
+> single response window**.
+
+So the defeat joins the occurrence that caused it, and the window that was
+already going to open covers both. `Occurrence.Conditions` therefore grows while
+the occurrence is happening: which conditions an attack creates is not knowable
+when it is scheduled, because whether the damage defeats anybody is not knowable
+until it is dealt.
+
+An engine that gave the defeat windows of its own would let an ability that
+answers both conditions fire twice against what the rules call one moment, and
+would put the damage responses and the defeat responses in a fixed order that
+the rules leave to the player.
+
+#### Provenance lives on the occurrence
+
+Who defeated the card and how travels in `Occurrence.Defeats`, not on the board.
+The reason is lifetime: a response is asked *after* the defeat and after
+everything else the occurrence did, so a field on `World` would have to be set
+before and cleared after — and the clearing is the half nobody remembers. The
+occurrence lasts exactly as long as its two windows do, which is exactly as long
+as anything can ask.
+
+Two bindings and one test read it:
+
+| | |
+|---|---|
+| `defeated` | the card that was defeated — not `trigger.subject`, which for an attack is the *enemy attacked* |
+| `defeater` | the identity of the player whose character did it, for "the player who defeated this scheme" |
+| `defeatedBy` | what kind of thing did it |
+
+`defeatedBy` names **the rule**, not the engine's spelling of it. Gene Pool's
+data says `"consequentialDamage"` because `rr:consequential-damage` is what the
+card means; the interpreter maps that to the verb the event stream records
+damage under. One word, because one card asks — anything else is refused by
+name rather than guessed at.
+
+#### The only negative condition in the dataset
+
+> **Forced Response:** After an ally is defeated **by anything other than
+> consequential damage**, place 3 threat here.
+
+It is written as printed — `{"not": {"defeatedBy": "consequentialDamage"}}` —
+and not as a list of the causes that *do* count. A list would be wrong the
+moment a set added another way to die, and it would be wrong silently: the card
+would simply stop firing for the new one. The card names the single cause that
+does not count, so every cause that has not been invented yet is already
+handled.
+
+`not` was in the vocabulary already. What was missing was something for it to
+negate.
+
+#### Two defeats at once are refused where the ambiguity is
+
+`Occurrence.Defeats` is a list, because one effect can defeat two characters.
+`Occurrence.Defeat` — "*the* defeated card", which is how cards are written —
+refuses when there is more than one. `rr:triggering-condition.1` lets an
+answering ability trigger once per occurrence, and once is the wrong number for
+two dead allies; nothing in the rules says which of them the response is about.
+That is a real unanswered question, so it is refused at the point a card asks it
+rather than at every multiple defeat.
+
+#### A defeat with nothing happening is refused
+
+`Defeat` throws when the agenda holds no occurrence for the defeat to join. Not
+defensiveness: every way a card can be defeated is something happening in the
+game, and something happening in the game is a step. If it fires, the missing
+piece is the **cause** — some way of doing damage or removing threat that the
+engine still performs as a call rather than as a step, and whose own windows are
+therefore missing too. Silence would hide that, and hide it inside the cards
+written to notice.
+
+Making the thwart a step is what this turned up; see
+[player-phase.md](player-phase.md).
+
+#### The interrupt tier is still missing, and knowingly
+
+A defeat can be **responded** to and not **interrupted**. The interrupt window
+is opened and closed before the damage is dealt, so while it was open the defeat
+had not happened and there was nothing to add to the occurrence. At a table both
+conditions are known in advance — the players can see the damage will be lethal
+— and telling that in advance is `rr:would` reasoning this engine has not got.
+
+It has to be worked out in `Damage.Deal` and nowhere earlier, because
+`rr:tough.2`, `rr:damage.step.1` and `rr:hit-points.2.3` can all change the
+answer between a prediction and the deal. **MARVEL-249.**
+
+The card waiting on it is `45066` Genetic Experiments — "**Forced Interrupt:**
+When attached minion is defeated, place 2 threat on Gene Pool" — an interrupt on
+a card *other* than the one carrying it. A card's own "When Defeated" is
+unaffected and already works: `rr:when-defeated-abilities.1` makes it a forced
+interrupt, so there is nothing to offer and `Defeat` resolves it inline before
+the card leaves play.

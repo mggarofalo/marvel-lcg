@@ -500,6 +500,8 @@ public sealed class KeywordTests
         var minion = world.CreateCard(
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
+        Agendas.Happening(world);
+
         Damage.Deal(world, printed, minion, 1, "test", "test", []);
 
         Assert.Equal(DeckType.VictoryDisplay, minion.Area.Type);

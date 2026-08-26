@@ -536,16 +536,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public IReadOnlyList<GameEvent> WhenDefeated(World world, Card card)
+    public IReadOnlyList<GameEvent> WhenDefeated(World world, Card card, Defeated defeated)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(defeated);
 
-        var defeated = book.On(card.FaceId)
+        var written = book.On(card.FaceId)
             .Where(ability => ability.Trigger.Timing == AbilityType.WhenDefeated)
             .ToList();
 
-        if (defeated.Count == 0)
+        if (written.Count == 0)
         {
             // **The printed check gates the complaint, not the run.** Nothing
             // in the printed attributes records a "When Defeated", so an
@@ -565,10 +566,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // `rr:when-defeated-abilities.2` -- "**all** When Defeated abilities on
         // the card resolve", so this is every one of them rather than the
         // single one a window would take.
+        // Its own occurrence rather than the one the defeat joined, and the
+        // difference does not show: this tier is forced, so nothing is offered
+        // and nothing is spent, and `rr:triggering-condition.1`'s once-per-card
+        // bookkeeping has nothing to keep. What it does need is the provenance,
+        // because "the player who defeated this scheme" is on the card.
         var occurrence = new Occurrence(
             0, [Steps.CardDefeated], Subject: card.ObjectId, Player: card.Owner);
+        occurrence.Also(defeated);
 
-        foreach (var ability in defeated)
+        foreach (var ability in written)
         {
             Run(ability.Effect, new Cast(world, card, occurrence, card.Owner, events, this));
         }
@@ -1284,6 +1291,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         "hasStatus" => Find(node.Require("card"), cast) is { } host
             && Statuses.Has(cast.World, host, Word(node.Require("status"))),
+
+        // "After **an ally** is defeated". A card type, asked of a card the
+        // ability has already named -- `rr:defeat` is one rule for every kind
+        // of card and the cards are the ones that narrow it.
+        "isKind" => Find(node.Require("card"), cast) is { } subject
+            && cast.World.Facts.Kind(subject.FaceId) == Kind(Word(node.Require("kind"))),
+
+        // "Defeated **by anything other than consequential damage**." What did
+        // it is carried on the occurrence's record of the defeat, and the word
+        // here names the rule rather than the engine's spelling of it -- see
+        // `Cause`.
+        "defeatedBy" => cast.Occurrence.Defeat is { } defeat
+            && string.Equals(defeat.How, Cause(Word(node.Argument), cast), StringComparison.Ordinal),
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses the test node '{node.Kind}', "
             + "which is not implemented"),
@@ -2378,8 +2398,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         "sideScheme" => CardKind.EncounterSideScheme,
         "minion" => CardKind.Minion,
+        "ally" => CardKind.Ally,
         _ => throw new RulesNotImplementedException(
-            $"'{named}' is not a card type this engine can search for"),
+            $"'{named}' is not a card type this engine can name"),
+    };
+
+    /// <summary>
+    /// Which kind of thing a card means by how something was defeated.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The word in the data names <b>the rule</b>; what comes back is the verb
+    /// the event stream records damage under, which is what
+    /// <c>Defeated.How</c> holds. Keeping the two apart is the point: a card
+    /// says "consequential damage" because <c>rr:consequential-damage</c> is
+    /// what it means, and the day the stream spells that verb differently the
+    /// card does not have to change.
+    /// </para>
+    /// <para>
+    /// <b>One word, because one card asks.</b> Gene Pool's "by anything other
+    /// than consequential damage" is the whole of it. Anything else is refused
+    /// by name rather than guessed at, so a card reaching for a cause this
+    /// engine cannot tell apart says so instead of quietly answering false.
+    /// </para>
+    /// </remarks>
+    private static string Cause(string named, Cast cast) => named switch
+    {
+        "consequentialDamage" => "Consequential_Damage",
+        _ => throw new RulesNotImplementedException(
+            $"'{cast.Source.FaceId}' asks whether a card was defeated by '{named}', and this "
+            + "engine can only tell consequential damage from everything else"),
     };
 
     /// <summary>
@@ -2824,11 +2872,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // "The player who defeated this scheme confuses their identity."
         // `rr:you-your.5` is why this answers an identity rather than a seat:
         // a status card placed on a player goes on their identity.
-        "defeater" => cast.World.Defeated is { By: >= 0 } defeated
+        "defeater" => cast.Occurrence.Defeat is { By: >= 0 } defeated
             ? cast.World.Seats[defeated.By].IdentityCard
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the player who defeated a card, and no player "
                 + "did"),
+
+        // "After **an ally** is defeated by anything other than consequential
+        // damage." The card the occurrence defeated, which is not its subject:
+        // an attack's occurrence is about the enemy attacked, and the ally that
+        // died is a second thing the same moment did.
+        "defeated" => cast.Occurrence.Defeat is { } killed
+            ? cast.World.Cards[killed.Card]
+            : throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' names the defeated card, and nothing was defeated"),
 
         "you" => cast.World.Seats[Resolver(cast)].IdentityCard,
         "attachedTo" => cast.Source.Area.Host >= 0 ? cast.World.Cards[cast.Source.Area.Host] : null,

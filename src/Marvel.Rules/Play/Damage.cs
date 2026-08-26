@@ -33,10 +33,22 @@ public static class Damage
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="verb">What kind of thing caused it.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="by">
+    /// The seat whose character is dealing it, or <c>-1</c>.
+    /// <para>
+    /// <b>Filled in only where it is unambiguous</b>, which today is an attack:
+    /// <c>rr:ownership-and-control.2</c> puts the attacking character under its
+    /// owner's control, so the attacker's seat is who did it, and an enemy's
+    /// attacker has no seat. Damage from a card ability is left at <c>-1</c> on
+    /// purpose — the player resolving an encounter card is the seat it was
+    /// dealt to, and calling that "the player who defeated your ally" would be
+    /// a plausible answer to a question nobody asked.
+    /// </para>
+    /// </param>
     /// <returns>Whether the target was defeated.</returns>
     public static bool Deal(
         World world, ICardFacts facts, Card target, long amount,
-        string trigger, string verb, List<GameEvent> events)
+        string trigger, string verb, List<GameEvent> events, int by = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -98,7 +110,12 @@ public static class Damage
         // [...] it is defeated". Not "less than zero" -- exactly zero is a
         // defeat, which is why this compares remaining against zero rather
         // than damage against printed.
-        return after <= 0 && Defeat.Character(world, facts, target, trigger, events);
+        // The verb travels into the defeat, because `rr:defeat` says nothing
+        // about what caused one and cards ask: Gene Pool answers "after an ally
+        // is defeated **by anything other than consequential damage**", and
+        // consequential damage is one of the verbs this is called with.
+        return after <= 0
+            && Defeat.Character(world, facts, target, trigger, events, how: verb, by: by);
     }
 
     /// <summary>
@@ -202,7 +219,7 @@ public static class Damage
         // same rule, and only one of them could be right after an edit.
         var damaged = new List<Card>();
         long before = target.Damage;
-        if (Deal(world, facts, target, amount, trigger, verb, events)
+        if (Deal(world, facts, target, amount, trigger, verb, events, by: attacker.Owner)
             && beyond > 0
             && Keywords.Has(world, attacker, Keywords.Overkill, facts))
         {

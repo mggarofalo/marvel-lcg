@@ -37,8 +37,10 @@ public enum WindowKind
 /// </remarks>
 /// <param name="Id">Distinguishes this occurrence from another of the same shape.</param>
 /// <param name="Conditions">
-/// Every triggering condition this occurrence creates. More than one is the
-/// <c>rr:triggering-condition.2</c> case, and they still share these windows.
+/// The triggering conditions this occurrence is known to create when it is
+/// scheduled. More than one is the <c>rr:triggering-condition.2</c> case, and
+/// they still share these windows. <b>More can be added while it happens</b> —
+/// see the property of the same name.
 /// </param>
 /// <param name="Subject">
 /// The card this is happening to or because of, or <c>-1</c>. An enemy for an
@@ -55,6 +57,14 @@ public sealed record Occurrence(
 {
     private readonly HashSet<(WindowKind Window, int Card)> spent = [];
 
+    // The positional parameter of the same name, copied. Inside this body
+    // `Conditions` is the constructor's argument; outside it is the property
+    // below, which is this list. The two are the same set until something adds
+    // to it -- see `Also`.
+    private readonly List<string> conditions = [.. Conditions];
+
+    private readonly List<State.Defeated> defeats = [];
+
     /// <summary>An occurrence creating a single triggering condition.</summary>
     /// <param name="id">Distinguishes this occurrence from another of the same shape.</param>
     /// <param name="condition">What happened.</param>
@@ -63,10 +73,97 @@ public sealed record Occurrence(
     {
     }
 
+    /// <summary>
+    /// Every triggering condition this occurrence has created so far.
+    /// </summary>
+    /// <remarks>
+    /// <b>Not fixed when the occurrence is made.</b> Some triggering conditions
+    /// are only known once the occurrence is part-way through happening, and
+    /// <c>rr:triggering-condition.2</c> names the example: "a single attack
+    /// causing a character to both take damage <b>and be defeated</b>". Whether
+    /// the damage defeats the character is not knowable until it is dealt, and
+    /// the rule says the two conditions share one window pair rather than
+    /// getting one each — so the list grows and the windows do not.
+    /// </remarks>
+    public IReadOnlyList<string> Conditions => conditions;
+
+    /// <summary>
+    /// The cards this occurrence defeated, in the order it defeated them.
+    /// </summary>
+    /// <remarks>
+    /// Provenance lives here rather than on the board because <b>this is the
+    /// thing that lasts exactly as long as the question does</b>. A card
+    /// answering "after an ally is defeated" is asked in the response window,
+    /// which is after the defeat and after whatever else the occurrence did; a
+    /// field on <see cref="State.World"/> would have to be set before that and
+    /// cleared after it, and the clearing is what nobody remembers.
+    /// </remarks>
+    public IReadOnlyList<State.Defeated> Defeats => defeats;
+
+    /// <summary>
+    /// The one card this occurrence defeated, or null.
+    /// </summary>
+    /// <remarks>
+    /// <b>Refuses rather than picks</b> when there is more than one. A card
+    /// says "the defeated card" in the singular, and one effect that defeats
+    /// two characters at once leaves nothing in the rules to say which of them
+    /// a response is about — <c>rr:triggering-condition.1</c> would let the
+    /// ability trigger once, and once is the wrong number for two allies. That
+    /// is a real question and this engine has not answered it, so it says so
+    /// where the ambiguity actually bites rather than in every multiple defeat.
+    /// </remarks>
+    public State.Defeated? Defeat => defeats.Count switch
+    {
+        0 => null,
+        1 => defeats[0],
+        _ => throw new Play.RulesNotImplementedException(
+            $"{defeats.Count} cards were defeated by one occurrence, and a card asking for "
+            + "'the defeated card' names one. rr:triggering-condition.2 gives them a single "
+            + "response window between them and nothing says which defeat it is about"),
+    };
+
     /// <summary>Whether this occurrence creates a named triggering condition.</summary>
     /// <param name="condition">One of <c>rr:triggering-condition</c>'s occurrences.</param>
     public bool Is(string condition) =>
         Conditions.Contains(condition, StringComparer.Ordinal);
+
+    /// <summary>
+    /// Adds a triggering condition this occurrence turned out to create —
+    /// <c>rr:triggering-condition.2</c>.
+    /// </summary>
+    /// <remarks>
+    /// Idempotent, because the rule is about which conditions the occurrence
+    /// creates and not how many times it created them. Two allies defeated by
+    /// one blast is one <c>WhenCardDefeated</c> in the list, and
+    /// <c>rr:triggering-condition.1</c> then lets each answering ability
+    /// trigger once.
+    /// </remarks>
+    /// <param name="condition">What else happened.</param>
+    public void Also(string condition)
+    {
+        if (!conditions.Contains(condition, StringComparer.Ordinal))
+        {
+            conditions.Add(condition);
+        }
+    }
+
+    /// <summary>
+    /// Records that this occurrence defeated a card — <c>rr:defeat</c>.
+    /// </summary>
+    /// <remarks>
+    /// The defeat is not an occurrence of its own. <c>rr:triggering-condition.2</c>
+    /// is explicit about the case and uses it as its own example: "a single
+    /// attack causing a character to both take damage and be defeated" gets
+    /// "<b>a single interrupt window and a single response window</b>". So the
+    /// attack that killed the ally and the ally's death are one moment, and
+    /// this is how the second half joins the first.
+    /// </remarks>
+    /// <param name="what">The card, who did it, and how.</param>
+    public void Also(State.Defeated what)
+    {
+        defeats.Add(what);
+        Also(Play.Steps.CardDefeated);
+    }
 
     /// <summary>Whether a card's ability may still be triggered in this window.</summary>
     /// <param name="window">Which window.</param>

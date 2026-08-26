@@ -63,8 +63,14 @@ public interface ICardAbilities : IWindowAbilities
     /// </remarks>
     /// <param name="world">The world.</param>
     /// <param name="card">The card that was defeated.</param>
+    /// <param name="defeated">
+    /// Who did it and how. The card's own ability may need it —
+    /// "<b>When Defeated</b>: the player who defeated this scheme confuses
+    /// their identity" — and it is not readable from the board, because the
+    /// board records what a card <i>is</i> and not what happened to it.
+    /// </param>
     /// <returns>What changed.</returns>
-    IReadOnlyList<GameEvent> WhenDefeated(World world, Card card);
+    IReadOnlyList<GameEvent> WhenDefeated(World world, Card card, Defeated defeated);
 
     /// <summary>
     /// Step 1 of dealing damage — <c>rr:damage.step.1</c>.
@@ -290,7 +296,8 @@ public class NoCardAbilities : ICardAbilities
     public virtual IReadOnlyList<GameEvent> Boost(World world, Card card, int player) => [];
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> WhenDefeated(World world, Card card) => [];
+    public virtual IReadOnlyList<GameEvent> WhenDefeated(
+        World world, Card card, Defeated defeated) => [];
 
     /// <inheritdoc/>
     public virtual long WouldBeDealt(

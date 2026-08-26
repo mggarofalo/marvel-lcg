@@ -30,6 +30,9 @@ public sealed class UnusScenarioTests
     private const string Campaign = "unus";
     private const uint Seed = 12345;
 
+    /// <summary>Spider-Man's ally, and the only one his deck has.</summary>
+    private const string BlackCat = "01002";
+
     private static readonly SetupCatalog Setup =
         SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
 
@@ -74,7 +77,8 @@ public sealed class UnusScenarioTests
         var ranks = world.CreateCard("45068", world.AreaOf(DeckType.SideSchemesArea));
         long before = pool.Tokens.GetValueOrDefault("k_threat");
 
-        AuthoredCards.Runner().WhenDefeated(world, ranks);
+        AuthoredCards.Runner().WhenDefeated(
+            world, ranks, new Defeated(ranks.ObjectId, -1, BasicPowers.ThwartVerb));
 
         Assert.Equal(before + 3, pool.Tokens.GetValueOrDefault("k_threat"));
     }
@@ -146,11 +150,6 @@ public sealed class UnusScenarioTests
         Agendas.Finish(world, Cards, AuthoredCards.Runner());
 
         Assert.True(Statuses.Has(world, hero, Statuses.Confused));
-
-        // And the provenance is over. It is set for the length of one defeat,
-        // so a card reading it later would answer about the last one rather
-        // than about none.
-        Assert.Null(world.Defeated);
     }
 
     [Rule("rr:ownership-and-control.2")]
@@ -180,6 +179,91 @@ public sealed class UnusScenarioTests
 
         Assert.True(Statuses.Has(world, world.Seats[1].IdentityCard, Statuses.Confused));
         Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Confused));
+    }
+
+    [Rule("rr:triggering-condition.2")]
+    [Rule("rr:consequential-damage")]
+    [Fact]
+    public void GenePoolIsFedByAnAllyKilledByRetaliateAndNotByOneKilledByItsOwnIcons()
+    {
+        // "**Forced Response:** After an ally is defeated by anything other
+        // than consequential damage, place 3 threat here." One card, two
+        // deaths, and only the negative condition tells them apart — so the
+        // test is both halves or it is nothing. An assertion about the first
+        // alone passes with the whole clause deleted.
+        //
+        // Both deaths are real paths. Gene Pool deals with 4 threat on it,
+        // which is already enough for Unus's constant ability to grant him
+        // retaliate 1, so an ally on its last hit point dies attacking him.
+        // Black Cat prints one consequential damage icon under THW and none
+        // under ATK, so the same ally on its last hit point dies thwarting.
+        long killed = Fed(BasicPowers.AttackVerb);
+        long ownIcons = Fed(BasicPowers.ThwartVerb);
+
+        Assert.Equal(3, killed);
+        Assert.Equal(0, ownIcons);
+    }
+
+    [Rule("rr:defeat")]
+    [Fact]
+    public void GenePoolIsNotFedByAMinionDyingTheSameWay()
+    {
+        // "After **an ally** is defeated". The word narrowing it has to be
+        // doing something, and only a card that is not an ally, dying by
+        // something that is not consequential damage, can show that it is: with
+        // the clause deleted this card reads "after a card is defeated" and the
+        // two ally tests above pass either way.
+        var (world, pool) = Board();
+        long before = pool.Tokens.GetValueOrDefault("k_threat");
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var soldier = world.CreateCard(
+            AuthoredCards.UnusEncounters[1],
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        soldier.TakeDamage(Damage.Health(world, Cards, soldier) - 1);
+
+        BasicPowers.BasicAttack(world, Cards, 0, soldier, []);
+        Agendas.Finish(world, Cards, AuthoredCards.Runner());
+
+        Assert.Equal(DeckType.EncounterDiscardPile, soldier.Area.Type);
+        Assert.Equal(before, pool.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    /// <summary>
+    /// How much threat Gene Pool gains from one ally dying one way.
+    /// </summary>
+    /// <remarks>
+    /// Black Cat has two hit points and is put on her last one, so the single
+    /// point she takes either way is what defeats her: retaliate from Unus when
+    /// she attacks him, her own icon when she thwarts.
+    /// </remarks>
+    private static long Fed(string verb)
+    {
+        var (world, pool) = Board();
+        long before = pool.Tokens.GetValueOrDefault("k_threat");
+        var cat = world.CreateCard(
+            BlackCat, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        cat.TakeDamage(1);
+
+        Card target;
+        if (verb == BasicPowers.AttackVerb)
+        {
+            target = world.TheCardIn(DeckType.VillainArea)!;
+        }
+        else
+        {
+            target = world.TheCardIn(DeckType.MainSchemesArea)!;
+
+            // `rr:thwart.1.1` -- a character can only thwart a scheme that has
+            // at least one threat to remove, and the main scheme is dealt at
+            // zero. Not Gene Pool, whose threat is what is being measured.
+            target.PlaceTokens("k_threat", 5);
+        }
+
+        BasicPowers.AllyPower(world, Cards, cat, target, verb, []);
+        Agendas.Finish(world, Cards, AuthoredCards.Runner());
+
+        Assert.Equal(DeckType.DiscardPile, cat.Area.Type);
+        return pool.Tokens.GetValueOrDefault("k_threat") - before;
     }
 
     [Theory]
