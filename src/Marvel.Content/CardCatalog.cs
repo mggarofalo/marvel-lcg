@@ -417,6 +417,13 @@ public sealed class CardCatalog : ICardFacts
         "Status" => CardKind.Status,
         "Villain" => CardKind.EncounterVillain,
         "SideScheme" => CardKind.EncounterSideScheme,
+
+        // `rr:environment` is a card type of its own -- "an environment card
+        // enters play in the villain's play area, and is active so long as it
+        // remains in play" -- and `rr:reveal.2` gives it that destination. It
+        // was missing here, so all eighty environments in the pool answered
+        // `Unknown` and `Reveal.Resolve` discarded them like a treachery.
+        "Environment" => CardKind.Environment,
         _ => CardKind.Unknown,
     };
 

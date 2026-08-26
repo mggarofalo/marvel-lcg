@@ -27,6 +27,7 @@ public enum CardKind
     Status,
     EncounterVillain,
     EncounterSideScheme,
+    Environment,
 #pragma warning restore CS1591, SA1602
 }
 
