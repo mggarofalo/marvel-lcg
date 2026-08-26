@@ -432,6 +432,10 @@ public static class Attack
         ArgumentNullException.ThrowIfNull(events);
 
         world.Effects.Expire(TimingPoints.EndOfAttack);
+
+        // An attack is one of the two kinds of activation -- `rr:activation` --
+        // so anything bounded by "this activation" ends here too.
+        world.Effects.Expire(TimingPoints.EndOfActivation);
         DelayedEffects.Occur(world, Steps.AttackEnds, events);
         world.Attack = null;
     }

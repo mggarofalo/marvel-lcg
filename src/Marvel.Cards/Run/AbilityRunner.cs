@@ -184,7 +184,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [];
         }
 
-        if (!book.Authored.Contains(card.FaceId))
+        // **Not "is the card authored" but "is this half of it".** A card with
+        // two abilities at two tiers -- `01168` Sweeping Swoop has a "When
+        // Revealed" and a "Boost" -- would otherwise pass this guard on the
+        // strength of the half somebody had written, and the other half would
+        // go back to being silent.
+        var boosts = book.On(card.FaceId)
+            .Where(ability => ability.Trigger.Timing == AbilityType.Boost)
+            .ToList();
+
+        if (boosts.Count == 0)
         {
             throw new RulesNotImplementedException(
                 $"card '{card.FaceId}' was turned faceup as a boost card and prints a "
@@ -195,15 +204,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var occurrence = new Occurrence(
             0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player);
 
-        foreach (var ability in book.On(card.FaceId))
+        foreach (var ability in boosts)
         {
             // `rr:ability` puts a "Boost" ability at the occurrence tier, like
             // "When Revealed": it is the thing happening rather than a window
             // around it, so there is nothing to offer and nothing to decline.
-            if (ability.Trigger.Timing == AbilityType.Boost)
-            {
-                Run(ability.Effect, new Cast(world, card, occurrence, player, events, this));
-            }
+            Run(ability.Effect, new Cast(world, card, occurrence, player, events, this));
         }
 
         return events;
@@ -511,6 +517,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // control" -- has to be answerable by it. `Every` falls back to `Find`
         // for the queries that name one, so both shapes go through here.
         "exists" => Every(node.Argument, cast).Count > 0,
+
+        // "If Vulture is in play". `rr:identity.2` makes a title name one
+        // card -- "if a card refers to a hero or alter-ego by title, it refers
+        // only to the identity with that title" -- so this compares titles and
+        // not printed ids, and asks only of the places `rr:in-play-and-out-of-play`
+        // calls in play.
+        "titleInPlay" => cast.World.Areas
+            .Where(area => DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Any(card => string.Equals(
+                cast.World.Facts.Title(card.FaceId), Word(node.Argument),
+                StringComparison.Ordinal)),
 
         // "If no damage was healed this way" and its family: a comparison
         // against what an earlier action in this ability actually did.
@@ -1159,6 +1177,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // The card a `chooseCard` was answered with. Null while the ability is
         // still asking, which is why nothing before the answer can read it.
         "chosen" => cast.Chosen,
+
+        // "Your hero" and not "you". `rr:form-change-form.5`: "while a player
+        // is in alter-ego form, card abilities that interact with their hero do
+        // not interact with their identity" -- so this names nothing at all
+        // when the player has flipped down, and a card that has something to
+        // say about that says it with `exists`.
+        "yourHero" => Forms.In(
+            cast.World, cast.World.Seats[cast.Player], cast.World.Facts, Forms.Hero)
+            ? cast.World.Seats[cast.Player].IdentityCard
+            : null,
 
         // `rr:you-your.5`: "if a card ability places a status card on 'you'
         // (such as 'you are stunned'), the player resolving that card ability

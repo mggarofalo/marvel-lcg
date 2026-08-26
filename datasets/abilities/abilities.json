@@ -371,6 +371,42 @@
           }
         }
       ]
+    },
+    {
+      "card": "01168",
+      "name": "Sweeping Swoop",
+      "note": "When Revealed: Stun your hero. If Vulture is in play, this card gains surge. [star] Boost: If this activation deals damage to a friendly character, stun that character. Two abilities at two tiers on one card, which is why the boost guard asks whether *this half* is written rather than whether the card is. 'Your hero' is not 'you': rr:form-change-form.5 says abilities that interact with a player's hero do not interact with the identity of a player in alter-ego form, so an alter-ego is not stunned -- and the surge branch is a separate sentence that still applies. The boost half is bounded by the end of the activation rather than the end of the attack, because a scheme is an activation too and an effect that outlived one would fire during somebody else's attack. Every character an enemy activation damages is friendly, so the boost's 'friendly' needs no filter of its own; a card that damages an enemy this way would.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": { "exists": "yourHero" },
+                  "then": { "giveStatus": { "card": "yourHero", "status": "stunned" } }
+                }
+              },
+              {
+                "if": {
+                  "test": { "titleInPlay": "Vulture" },
+                  "then": { "gainSurge": 1 }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": {
+            "delayUntil": {
+              "condition": "WhenDamageDealt",
+              "within": "EndOfActivation",
+              "effect": { "giveStatus": { "card": "damaged", "status": "stunned" } }
+            }
+          }
+        }
+      ]
     }
   ]
 }

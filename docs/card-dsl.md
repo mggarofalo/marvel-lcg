@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and twenty-five cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
+`src/Marvel.Cards`, and twenty-six cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -591,11 +591,11 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 |---|---|
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
-| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast` |
+| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay` |
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
 | Amounts | a number, `{ "perPlayer": n }`, or `{ "result": "healed" }` |
-| Bindings | `this`, `you`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
+| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
@@ -785,6 +785,32 @@ to nine scenarios and fewer.
 Gang-Up, Shadow of the Past, Exhaustion, Masterplan and Under Fire, and the two
 that are read and empty. So the set every scenario is built on resolves, and
 what is left is each scenario's own cards.
+
+### One card, two tiers
+
+Sweeping Swoop is a treachery when it is revealed and a boost card when it is
+turned faceup during an activation, and it says different things in the two
+places. That is what the boost guard was tightened for: *"is this card
+authored"* passes on the strength of the half somebody wrote, and the other half
+goes back to being silent. It asks whether **this half** is written.
+
+Two readings the card forces:
+
+- **"Your hero" is not "you".** `rr:form-change-form.5` — "while a player is in
+  alter-ego form, card abilities that interact with their hero do not interact
+  with their identity" — so the binding names nothing at all for a flipped-down
+  player, and a card with something to say about that says it with `exists`.
+- **"In play" is a place.** Vulture sits in the player's set-aside pile from the
+  deal, so a game that has not revealed Shadow of the Past has him on the table
+  and out of play. `titleInPlay` asks only of the areas
+  `rr:in-play-and-out-of-play` counts, and compares titles rather than printed
+  ids because `rr:identity.2` makes a title name one card.
+
+**A scheme is an activation and is not an attack.** The boost half is bounded by
+`EndOfActivation`, which `rr:activation.6` names outright — "that minion's
+activation ends immediately". Bounded by the end of an *attack* it would survive
+a scheme activation entirely and then fire during the next attack, against
+somebody it was never about.
 
 ### An effect can be written before the card it acts on exists
 

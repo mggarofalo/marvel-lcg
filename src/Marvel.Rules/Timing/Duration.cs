@@ -122,4 +122,25 @@ public static class TimingPoints
 
     /// <summary>The end of one attack — the example <c>rr:lasting-effects</c> gives.</summary>
     public const string EndOfAttack = "EndOfAttack";
+
+    /// <summary>
+    /// The end of an enemy activation, of either kind —
+    /// <c>rr:activation</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "There are two types of enemy activations: an attack activation and a
+    /// scheme activation", and <c>rr:activation.6</c> gives them an ending
+    /// outright — "that minion's activation <b>ends immediately</b> and no
+    /// further steps of that activation resolve".
+    /// </para>
+    /// <para>
+    /// Distinct from <see cref="EndOfAttack"/> because a scheme is an
+    /// activation and is not an attack. A card that says "this activation" and
+    /// was bounded by the end of an <i>attack</i> would survive a scheme
+    /// activation entirely and go off during the next attack, against somebody
+    /// it was never about.
+    /// </para>
+    /// </remarks>
+    public const string EndOfActivation = "EndOfActivation";
 }
