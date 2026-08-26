@@ -26,11 +26,10 @@ namespace Marvel.Rules.Events;
 /// meant to say what moved.
 /// </para>
 /// <para>
-/// The subtype set is closed and measured. It is the set that explains every
-/// state change in the frozen corpus — 1,773 scenes, 201,870 transitions — with
-/// nothing left over and no member that never fires. See
-/// <c>py_src/tools/events/census.py</c> for the measurement and
-/// <c>tools/events/model.py</c> for the reducer that checks it.
+/// The subtype set is closed, and was chosen by measurement rather than by
+/// taste: it is the smallest set that explained every state change across a
+/// 201,870-transition sample of recorded play, with nothing left over and no
+/// member that never fired. Adding a tenth kind needs the same argument.
 /// </para>
 /// </remarks>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
@@ -97,9 +96,9 @@ public readonly record struct CreatedCard(int Id, string Card);
 /// <param name="Cards">Each card and the slot it took, in destination order.</param>
 /// <remarks>
 /// One event per <c>(from, to)</c> pair, not one per card, because drawing five
-/// cards is one thing that happened and should be one visual beat. The most
-/// common pair in the corpus is <c>PlayerDeck -> HandsArea</c> at 24% of all
-/// moves.
+/// cards is one thing that happened and should be one visual beat. It is also
+/// the commonest move there is: <c>PlayerDeck -> HandsArea</c> was 24% of all
+/// moves in the sample this was designed against.
 /// </remarks>
 public sealed record CardsMoved(AreaRef From, AreaRef To, IReadOnlyList<Landing> Cards)
     : GameEvent;

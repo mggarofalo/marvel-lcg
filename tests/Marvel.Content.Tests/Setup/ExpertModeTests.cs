@@ -18,11 +18,11 @@ namespace Marvel.Content.Tests.Setup;
 /// "Expert Mode is a modification of standard mode for advanced players who
 /// seek a greater challenge", and <c>.2</c> says what it changes: the listed
 /// expert villain stages, and the Expert encounter set added to the deck. Both
-/// are the dealer's business and it has always done them — the <c>_expert</c>
-/// campaigns list different stages and sets.
+/// are the dealer's business — the <c>_expert</c> campaigns list different
+/// stages and sets.
 /// </para>
 /// <para>
-/// What was missing is that <b>86 cards in the pool read the mode</b>, 59 of
+/// Beyond the deal, <b>86 cards in the pool read the mode</b>, 59 of
 /// them main schemes, and a board that did not carry it could not answer them.
 /// The Unus scenario's own main scheme is one: "<b>Setup:</b> Reveal the Gene
 /// Pool side scheme. <i>In expert mode, deal each player a facedown encounter

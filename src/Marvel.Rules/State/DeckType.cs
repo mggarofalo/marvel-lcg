@@ -5,10 +5,9 @@ namespace Marvel.Rules.State;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The state digest records <c>zone</c> as this enum's member name, so these
-/// spellings and the numeric values are taken from
-/// <c>py_src/game/deck/deck_type.py</c> unchanged. The numbers are not on the
-/// wire and are kept only so the two enums can be compared side by side.
+/// The state digest records <c>zone</c> as this enum's member name, so the
+/// spellings are a wire format: renaming a member changes every digest. The
+/// numeric values are not on the wire and carry no meaning.
 /// </para>
 /// <para>
 /// <b>A zone name is not an area.</b> One name can belong to several distinct
@@ -59,9 +58,9 @@ public enum DeckType
 /// <summary>What each <see cref="DeckType"/> means for the cards in it.</summary>
 public static class DeckTypes
 {
-    // `is_deck`, `is_in_hand` and `is_face_up` from `DeckTypeFlags` in the
-    // Python engine. Only the three that decide `face_up` are carried; the rest
-    // of the flag set is not needed until the engine is.
+    // Only the three flags that decide `face_up` are carried. A zone is a
+    // deck, a hand, or neither, and that is all the digest needs to know to
+    // say whether a card in it is visible.
     private static readonly HashSet<DeckType> Decks =
     [
         DeckType.PlayerDeck, DeckType.DiscardPile, DeckType.AdditionalDeck,

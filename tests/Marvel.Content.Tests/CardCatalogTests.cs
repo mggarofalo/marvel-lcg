@@ -9,10 +9,10 @@ namespace Marvel.Content.Tests;
 /// <remarks>
 /// <para>
 /// <c>datasets/cards/cards.json</c> carries two: <c>traits</c> is MarvelSDB's
-/// printed spelling, <c>engine.traits</c> is the Python engine's own list.
-/// <c>CardFace.GetInfoTraits</c> keys every <c>t_</c> field in the state digest
-/// from the second, so that is the one to read — and reading the first passes
-/// almost every test, because they agree on all but twelve of 3,999 cards.
+/// printed spelling and <c>engine.traits</c> is a normalised list. Every
+/// <c>t_</c> field in the state digest is keyed from the second, so that is the
+/// one to read — and reading the first passes almost every test, because they
+/// agree on all but twelve of 3,999 cards.
 /// </para>
 /// <para>
 /// These pin the twelve, and the five cards where the two lists agree about the

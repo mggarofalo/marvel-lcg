@@ -17,20 +17,17 @@ public static class Blueprints
     /// <b>The order is untouched and only the destination changes.</b> A
     /// creation's position in this list <i>is</i> the card's object id, which
     /// is on the wire in every digest, so nothing here may reorder anything —
-    /// and nothing does. The recorded corpus reads the same way: in one game
-    /// the modular set's cards run 40147-40150 into the encounter deck at ids
+    /// and nothing does. A set's cards land contiguously: in one measured game
+    /// the modular set's ran 40147-40150 into the encounter deck at ids
     /// 202-205 and 40151-40158 into the aside pile at ids 206-215, unbroken.
     /// </para>
     /// <para>
-    /// <b>The aside pile's own order is not settled.</b> The corpus shows the
-    /// villain's varying between seeds of one board, so the engine that
-    /// recorded it shuffles that pile — and a shuffle draws from the game's
-    /// single random stream, which means reproducing it needs the exact
-    /// position in that stream rather than merely the right permutation. This
-    /// deals in creation order, which is deterministic and which no recorded
-    /// digest contradicts: the fixture board is <c>rhino / spider_man</c>, and
-    /// no card in that scenario or in Spider-Man's set carries any of these
-    /// three keywords. See MARVEL-210.
+    /// <b>The aside pile's own order is not settled.</b> Measurement showed it
+    /// varying between seeds of one board, which means it is shuffled — and a
+    /// shuffle draws from the game's single random stream, so reproducing one
+    /// needs the exact position in that stream rather than merely the right
+    /// permutation. This deals in creation order, which is deterministic and
+    /// which nothing so far contradicts. See MARVEL-210.
     /// </para>
     /// </remarks>
     /// <param name="dealt">The creations, in allocation order.</param>

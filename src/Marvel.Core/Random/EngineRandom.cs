@@ -35,11 +35,6 @@ public sealed class EngineRandom(uint seed)
     /// right and the consumption does not, which desynchronises every draw
     /// after it.
     /// </para>
-    /// <para>
-    /// It was inherited from the Python engine and pinned by a fixture that
-    /// recorded <c>words_consumed: 0</c> for exactly this shape. Both are gone.
-    /// The behaviour stays because it is correct, not because it was recorded.
-    /// </para>
     /// </remarks>
     public List<T> Choice2<T>(IReadOnlyList<T> items, int x)
     {

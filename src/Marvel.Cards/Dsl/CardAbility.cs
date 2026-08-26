@@ -8,8 +8,8 @@ namespace Marvel.Cards.Dsl;
 /// <remarks>
 /// <para>
 /// <c>docs/card-dsl.md</c>'s Layer 0 — the envelope, which "is already data;
-/// this only writes down its shape". The 303 <c>AbilityFactory</c> methods in
-/// the Python engine factor into these three fields.
+/// this only writes down its shape". Every way a card can be triggered factors
+/// into these three fields: what happened, in which tier, and to whom.
 /// </para>
 /// <para>
 /// <b><see cref="Event"/> is a triggering condition, spelled as the engine

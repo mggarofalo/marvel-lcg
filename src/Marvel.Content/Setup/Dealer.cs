@@ -11,14 +11,8 @@ namespace Marvel.Content.Setup;
 /// this is a wire format and not a convenience.
 /// </para>
 /// <para>
-/// The order was read out of the Python engine rather than derived from
-/// <c>rr:appendix-ii-setup</c>, and held against a recorded game that named the
-/// card at every one of 81 ids. Both the engine and the recording are gone.
-/// </para>
-/// <para>
-/// <b>So nothing checks this today.</b> The allocation still has to be right —
-/// an id is a wire format and everything else depends on it — but the thing
-/// that proved it was a fixture, and the thing that should prove it is
+/// <b>Nothing checks this order.</b> It has to be right — an id is a wire
+/// format and everything else depends on it — and what should check it is
 /// <c>rr:appendix-ii-setup</c> read against <c>datasets/setup/setup.json</c>.
 /// MARVEL-251.
 /// </para>
@@ -96,10 +90,10 @@ public static class Dealer
 
     /// <summary>The named sets that go into the encounter deck, in order.</summary>
     /// <remarks>
-    /// The Python scene loader appends <c>modular_sets</c> to
-    /// <c>encounter_sets</c> <b>only when the caller names no sets of its own</b>.
-    /// The dataset keeps the two apart so that the other case — a scenario played
-    /// with chosen modulars — stays expressible; this joins them for the default.
+    /// <c>modular_sets</c> is appended to <c>encounter_sets</c> <b>only when the
+    /// caller names no sets of its own</b>. The dataset keeps the two apart so
+    /// that the other case — a scenario played with chosen modulars — stays
+    /// expressible; this joins them for the default.
     /// </remarks>
     /// <param name="campaign">The scenario.</param>
     public static IReadOnlyList<string> EncounterSetNames(CampaignSetup campaign)
@@ -131,9 +125,8 @@ public static class Dealer
     /// the card at the first player-owned id is <c>31002a</c>.
     /// </para>
     /// <para>
-    /// Reproduced here rather than left to the card DSL because this one is
-    /// decidable from the dataset: the branch reads the hero spec and nothing
-    /// else. <c>py_src/tools/setup/deal.py:IdentitySpecs</c> is the mirror.
+    /// Here rather than in the card DSL because this one is decidable from the
+    /// dataset: the branch reads the hero spec and nothing else.
     /// </para>
     /// </remarks>
     /// <param name="hero">The hero's starter deck.</param>

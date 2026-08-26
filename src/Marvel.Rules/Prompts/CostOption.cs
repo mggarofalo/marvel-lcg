@@ -42,8 +42,8 @@ namespace Marvel.Rules.Prompts;
 /// <paramref name="Rule"/> keep describing the primary reading, so a reader that
 /// ignores the alternative is merely conservative rather than wrong. A reader
 /// planning a payment needs both — flattening an alternative cost to a bare
-/// number is what corrupted a corpus during MARVEL-158, because the payer met
-/// the number with resources of the wrong type and the ability failed
+/// number is what MARVEL-158 found breaking games, because the payer met the
+/// number with resources of the wrong type and the ability failed
 /// mid-resolution.
 /// </para>
 /// </remarks>

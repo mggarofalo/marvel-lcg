@@ -488,9 +488,9 @@ public sealed class CardPlayTests
     public void APlayedCardRunsItsEntersPlayKeywords()
     {
         // The keywords that fire when a card enters play do not care how it got
-        // there. Eighteen allies in the pool print `rr:toughness`, and a played
-        // one used to get no tough status card at all -- only a *revealed* card
-        // ran them.
+        // there -- `rr:enters-play` is about entering, not about revealing.
+        // Eighteen allies in the pool print `rr:toughness`, so a played one that
+        // skipped them would arrive without its tough status card.
         var printed = Cards()
             .With("bruiser", ("Cost", "0"), ("RES", "R"), ("HP", "3"), ("Toughness", "1"))
             .With("gadget", ("Cost", "0"), ("RES", "R"), ("Uses", "3,web"));

@@ -9,18 +9,15 @@ namespace Marvel.Core.Tests.Specs;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The 112 <c>.feature</c> files under <c>specs/</c> were written against a
-/// hand-rolled parser that no longer exists. That parser accepted what it
-/// accepted; nothing had ever checked the files against the *standard*
-/// grammar. If they have drifted, every scenario has to be rewritten — and the
-/// cheapest moment to find that out is before the suite grows further, not
-/// after the C# runner exists.
+/// The 112 <c>.feature</c> files under <c>specs/</c> have to stay loadable by
+/// whatever runs them, so this parses every one under the standard grammar. If
+/// they drift from it, every scenario has to be rewritten, and the cheapest
+/// moment to learn that is before the suite grows further.
 /// </para>
 /// <para>
 /// <b>This checks the format and says nothing about the behaviour.</b> Every
-/// scenario in there is a draft: they were validated against the Python engine
-/// and that validation is retired, because the Rules Reference decides what the
-/// game does. See <c>specs/README.md</c>.
+/// scenario in there is a draft, and the Rules Reference decides what the game
+/// does. See <c>specs/README.md</c>.
 /// </para>
 /// <para>
 /// This uses the <c>Gherkin</c> package directly, which is the parser Reqnroll
@@ -103,7 +100,7 @@ public sealed class GherkinFormatTests
     public void TagsSurviveTheParse()
     {
         // The `@card:` and `@rr:` tags are how a scenario is joined to the card
-        // dataset and to the rules corpus. A parser that dropped or mangled
+        // dataset and to the Rules Reference. A parser that dropped or mangled
         // them would take the whole citation graph with it (MARVEL-154).
         var parser = new Parser();
         var tags = new HashSet<string>(StringComparer.Ordinal);

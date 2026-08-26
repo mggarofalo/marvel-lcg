@@ -11,10 +11,8 @@ namespace Marvel.Core.Random;
 /// contract and not an implementation detail.
 /// </para>
 /// <para>
-/// <b>Nothing currently checks that this is really MT19937.</b> The fixture
-/// that did was emitted by the Python engine and went with it. The standard
-/// published test vector would restore the check without borrowing anyone's
-/// opinion — MARVEL-251.
+/// <b>Nothing checks that this is really MT19937</b>, and something should:
+/// the standard published test vector. MARVEL-251.
 /// </para>
 /// <para>
 /// <b>There are no floating point numbers anywhere in this contract.</b>

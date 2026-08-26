@@ -23,11 +23,10 @@ namespace Marvel.Rules.Play;
 /// carry incite.
 /// </para>
 /// <para>
-/// <b>Checked after each placement rather than at the end of a step.</b> The
-/// Python engine's own log completes the scheme in the middle of the villain's
-/// activation and never deals the encounter cards that would have followed,
-/// which is why the recorded fixture holds seven steps of a twenty-step
-/// request.
+/// <b>Checked after each placement rather than at the end of a step.</b> A
+/// scheme completed halfway through the villain's activation ends the game
+/// there, and the encounter cards that would have followed are never dealt.
+/// Checking at the end of the step instead would deal them first.
 /// </para>
 /// </remarks>
 public static class Threat

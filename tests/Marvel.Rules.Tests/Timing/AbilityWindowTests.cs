@@ -233,9 +233,9 @@ public sealed class AbilityWindowTests
         // what makes `rr:when-defeated-abilities.2.1` work -- the card leaves
         // play *after* the ability resolves.
         //
-        // `py_src/game/ability/ability_type.py` groups "When Defeated" with
-        // Boost and When Revealed instead, one tier too late. A villain's dying
-        // ability would resolve after it had already left play.
+        // Grouped with Boost and When Revealed instead -- one tier too late --
+        // a villain's dying ability would resolve after it had already left
+        // play. That is the mistake this pins against.
         Assert.Equal(TimingPriority.ForcedInterrupt, AbilityTypes.PriorityOf(AbilityType.WhenDefeated));
         Assert.Equal(TimingPriority.ForcedInterrupt, AbilityTypes.PriorityOf(AbilityType.WhenCompleted));
 

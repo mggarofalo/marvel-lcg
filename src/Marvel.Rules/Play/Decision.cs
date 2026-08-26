@@ -17,11 +17,9 @@ namespace Marvel.Rules.Play;
 /// </param>
 /// <remarks>
 /// <para>
-/// The Python engine's answer is a JSON <c>CommandDescriptor</c> and its decline
-/// is the empty object <c>{}</c> — which is what
-/// <c>tools/determinism/headless.py</c> returns for every prompt, and therefore
-/// the only input the recorded fixtures exercise. This type is the same thing
-/// without the string: <c>id</c>, <c>targets</c> and <c>resources</c>.
+/// Three fields and no more: <c>id</c>, <c>targets</c> and <c>resources</c>.
+/// A decline is the absence of an id rather than a fourth field, because
+/// declining is choosing nothing and not a choice of its own kind.
 /// </para>
 /// <para>
 /// <b>Paying is a decision, and it is not the targeting decision.</b>

@@ -87,17 +87,17 @@ public static class AbilityTypes
     /// <remarks>
     /// <para>
     /// Straight off the list at the head of <c>rr:ability</c>. Two of these are
-    /// worth stating out loud because the Python engine gets them wrong, and
-    /// they are the kind of wrong that produces a plausible board:
+    /// worth stating out loud, because they are easy to place a tier late and
+    /// that is the kind of wrong that produces a plausible board:
     /// </para>
     /// <para>
     /// <b>"When Defeated" and "When Completed" are forced interrupts.</b>
     /// <c>rr:when-defeated-abilities.1</c> and
     /// <c>rr:when-completed-abilities.1</c> define both as exactly that, so they
     /// resolve <i>before</i> the defeat or the completion, alongside every other
-    /// forced interrupt. <c>py_src/game/ability/ability_type.py</c> puts "When
-    /// Defeated" with Boost and When Revealed, a tier too late — which means a
-    /// villain's dying ability would resolve after it had already left play.
+    /// forced interrupt. Grouped with Boost and When Revealed instead — a tier
+    /// too late — a villain's dying ability would resolve after it had already
+    /// left play.
     /// </para>
     /// <para>
     /// <b>A status card's forced interrupt is its own tier</b>

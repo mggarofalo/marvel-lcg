@@ -113,9 +113,9 @@ public sealed class SchemeActivationTests
     public void TheBoostIconsSurviveTheStepBoundaryAsAModifier()
     {
         // ".c: increase the scheming enemy's SCH value by one for each boost
-        // icon on the card" — a modifier, and registered as one. It had been a
-        // local number added at the end of the same call, and a number cannot
-        // cross the step boundary the choice needs.
+        // icon on the card" — a modifier, and registered as one. A local number
+        // added at the end of the call would not survive the step boundary that
+        // a suspending choice needs.
         var (world, runner, unus) = Board();
         var main = world.TheCardIn(DeckType.MainSchemesArea)!;
         long before = main.Tokens.GetValueOrDefault("k_threat");

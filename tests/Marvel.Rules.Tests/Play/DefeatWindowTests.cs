@@ -13,13 +13,12 @@ namespace Marvel.Rules.Tests.Play;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A defeat used to reach nothing. <c>Steps.CardDefeated</c> was a label on the
-/// occurrence <c>WhenDefeated</c> built for the defeated card's own ability, and
-/// no other card could see it: a defeat opened no window, so "after an ally is
-/// defeated" was a sentence this engine could read and not run.
+/// A defeat has to be reachable by cards other than the one being defeated:
+/// "after an ally is defeated" is a trigger a great many cards print, and the
+/// defeated card's own <c>WhenDefeated</c> ability does not serve it.
 /// </para>
 /// <para>
-/// It is fixed by <b>not</b> giving a defeat windows of its own.
+/// It is served by <b>not</b> giving a defeat windows of its own.
 /// <c>rr:triggering-condition.2</c> uses this exact case as its example — "a
 /// single attack causing a character to both take damage and be defeated" is
 /// handled "with a single interrupt window and a single response window" — so

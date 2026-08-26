@@ -13,11 +13,11 @@ namespace Marvel.Rules.State;
 /// means the card registers nothing, never that the zone was skipped.
 /// </para>
 /// <para>
-/// In the Python engine the key set falls out of a class hierarchy: nine
-/// <c>GetInfoDict</c> overrides and about forty attribute mixins, merged with
-/// the more derived class winning and a <b>collision refused rather than
-/// resolved</b>. C# has no multiple inheritance, so the sets are declared per
-/// kind here and the collision guard is kept — see <see cref="Merge"/>.
+/// The key set is declared per kind here rather than falling out of a class
+/// hierarchy. What the hierarchy bought was a <b>collision refused rather than
+/// resolved</b> — two mixins claiming one key was an error, not a silent
+/// last-writer-wins — and that guard is kept explicitly; see
+/// <see cref="Merge"/>.
 /// </para>
 /// <para>
 /// <b>What is measured and what is assumed.</b> The key sets below were read off
@@ -474,10 +474,9 @@ public static class StateFields
                 //
                 // It is remaining hit points, not printed ones: `rr:damage.1`
                 // -- "when a character has damage on it equal to or in excess
-                // of its hit points, it is defeated" -- and the Python engine's
-                // `health` property is the same subtraction. On every recorded
-                // board the subtrahend is zero, so this is the printed value
-                // there and the recording cannot tell the two apart.
+                // of its hit points, it is defeated" -- so what the field means
+                // is what is left. On an undamaged board the two are equal,
+                // which is why the distinction is easy to lose.
                 fields["health"] = Remaining(card, faceId, facts, players);
                 fields["ally_limit"] = AllyLimit;
                 fields["restricted_limit"] = RestrictedLimit;

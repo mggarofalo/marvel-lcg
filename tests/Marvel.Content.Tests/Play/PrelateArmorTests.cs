@@ -24,12 +24,11 @@ namespace Marvel.Content.Tests.Play;
 /// </para>
 /// <para>
 /// The second half is <c>01100</c> Enhanced Ivory Horn one tier over — the same
-/// attachment on the villain, the same arrow cost, the same discard — and an
-/// action had been able to do it since the first ported card. A window could
-/// not, because <c>Sequence.Answer</c> threw the payment away and
-/// <c>AbilityRunner.Resolve</c> paid an empty list. Everything else the payment
-/// needs already existed: <c>CostOption.Sources</c> has modelled the menu since
-/// MARVEL-169 and <c>Decision.Resources</c> has carried the answer.
+/// attachment on the villain, the same arrow cost, the same discard, offered in
+/// a window rather than as an action. <c>rr:initiating-abilities.step.5</c> pays
+/// before step 6 resolves and says nothing about which tier the ability sits
+/// in, so a response with a cost is priced, paid and resolved exactly as an
+/// action is.
 /// </para>
 /// <para>
 /// <b>Two questions an action never had to ask.</b> Whose form to read, and
@@ -112,10 +111,9 @@ public sealed class PrelateArmorTests
         // stage prints SCH 1, so an attachment nobody reads is the difference
         // between one threat and two.
         //
-        // The attack's own step has always read a modified ATK -- the same word
-        // in the same place, in `Attack.Amount` -- and this one had been reading
-        // a printed number, so every modifier to a scheming enemy was worth
-        // nothing at all.
+        // `rr:scheme-enemy-activation.step.3` says **modified** SCH, the same
+        // word the attack's step 4 uses for ATK. Reading a printed number here
+        // instead would make every modifier to a scheming enemy worth nothing.
         long armoured = Placed(armour: true);
         long bare = Placed(armour: false);
 

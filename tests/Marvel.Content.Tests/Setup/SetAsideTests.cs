@@ -25,8 +25,8 @@ namespace Marvel.Content.Tests.Setup;
 /// <para>
 /// <b>No object id moves.</b> A creation's position in the deal <i>is</i> the
 /// card's id and the id is on the wire, so this changes where a card goes and
-/// not when it is made. The recorded corpus reads the same way — in one game
-/// the modular set runs 40147-40150 into the encounter deck at ids 202-205 and
+/// not when it is made. A set's cards land contiguously — in one measured game
+/// the modular set ran 40147-40150 into the encounter deck at ids 202-205 and
 /// 40151-40158 into the aside pile at ids 206-215, unbroken.
 /// </para>
 /// </remarks>

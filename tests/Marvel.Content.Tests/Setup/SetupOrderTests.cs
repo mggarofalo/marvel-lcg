@@ -137,16 +137,14 @@ public sealed class SetupOrderTests
     [Fact]
     public void TheMainSchemeIsFlippedByStep12bAndNotBefore()
     {
-        // The divergence the vendoring found, now closed. Appendix II flips the
-        // main scheme at step **12b**, and step **12a** -- "resolve any 'Setup'
-        // abilities on main scheme card 1A" -- comes first, while the A side is
-        // still showing. `WorldSetup` used to flip at its own step 4, before the
-        // villain entered play and long before anything could read the A side.
+        // Appendix II flips the main scheme at step **12b**, and step **12a**
+        // -- "resolve any 'Setup' abilities on main scheme card 1A" -- comes
+        // first, while the A side is still showing. A setup ability that reads
+        // its own side therefore has to run before the flip, or it reads the
+        // wrong face.
         //
-        // Nothing turned on it while no setup ability ran at all, which is why
-        // MARVEL-242 recorded it as a divergence rather than a bug. Running one
-        // is what makes it a bug, and `SetupAbilityTests` is where the order is
-        // held against a card that reads its own side. What is left here is the
+        // `SetupAbilityTests` holds the order against a card that does exactly
+        // that. What is left here is the
         // end state both orders agree on.
         var world = Deal("spider_man");
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
