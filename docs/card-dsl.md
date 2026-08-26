@@ -589,7 +589,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 
 | | |
 |---|---|
-| Envelope | `trigger { event, timing, subject }`, `name`, `effect`. `event` is absent on a constant ability and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
+| Envelope | `trigger { event, timing, subject }`, `name`, `effect`. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged` |
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
@@ -962,6 +962,36 @@ player's set-aside pile and then shuffles **the rest** of that pile into the
 encounter deck — so a reveal that only scheduled would shuffle away the two
 cards it had just chosen. Nothing else in the pool has yet needed the
 distinction, and it is one line apart.
+
+### A "Setup" ability runs during the deal
+
+`rr:setup-triggered-ability`: "'**Setup**' is a type of triggered ability that
+is resolved during setup", and `.1` makes it mandatory — so there is nothing to
+offer and nothing to decline. `.2` puts an encounter card's at
+`rr:appendix-ii-setup.step.12` and `.3` puts a player card's at a later step,
+with the opening hands drawn in between, so which step is the dealer's business
+rather than the card's.
+
+It carries no `event`, for a different reason from a constant's: it *is* a
+triggered ability, but it is timed to a step of setup rather than to anything
+happening in the game. Setup is not on the agenda, so no condition in
+`Steps.EveryCondition` names it, and inventing one would put a triggering
+condition nothing produces into the data.
+
+**Setup's abilities schedule as well as act, and the deal has to drain what they
+scheduled.** Rhino II searches the encounter deck for a side scheme and
+*reveals* it, and a reveal is a step with windows around it rather than a card
+moving — so it goes on the agenda. An agenda nobody drains is an ability that did
+half of what it said: the deck shuffled by the search, the scheme still in it.
+`rr:appendix-ii-setup` ends "the game is now ready to begin", so there is no
+later moment — it drains there or never. A question raised while draining throws
+rather than taking a default, because `rr:ability.6` says player card abilities
+cannot resolve during setup and there is nobody else to ask.
+
+**What this changed.** The expert Rhino deck opens on stage II, so the expert
+scenario is supposed to begin with Breakin' & Takin' already on the table. Until
+step 12 ran, it did not — every expert game in the suite had been played on a
+board that was materially the wrong board.
 
 ### A constant ability is read, not run
 

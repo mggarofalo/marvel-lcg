@@ -138,36 +138,42 @@ public static class AbilityCatalog
     }
 
     /// <summary>
-    /// The triggering condition, which a constant ability does not have —
-    /// <c>rr:ability.5</c>.
+    /// The triggering condition, which two ability types do not have.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// "An ability prefaced by a bold timing trigger followed by a colon is
-    /// referred to as a triggered ability. An ability without a bold timing
-    /// trigger is referred to as a constant ability." The two halves of that
-    /// sentence are the two branches here, and each refuses the other's field:
-    /// a triggered ability with no condition would never fire, and a constant
-    /// with one claims a timing it does not have.
+    /// <c>rr:ability.5</c>: "An ability prefaced by a bold timing trigger
+    /// followed by a colon is referred to as a triggered ability. An ability
+    /// without a bold timing trigger is referred to as a constant ability."
+    /// A constant is the half that is not, so there is no occurrence to name.
+    /// </para>
+    /// <para>
+    /// A "Setup" ability is the other, and for a different reason: it <i>is</i>
+    /// a triggered ability, but <c>rr:setup-triggered-ability.2</c> times it to
+    /// a step of setup rather than to something happening in the game. Setup is
+    /// not on the agenda, so no condition in <c>Steps.EveryCondition</c> names
+    /// it — and inventing one would put a triggering condition nothing produces
+    /// into the data, which is the failure the whole dataset is held against
+    /// the engine to avoid.
     /// </para>
     /// <para>
     /// <b>Refused rather than ignored</b>, for the reason the class remarks
-    /// give. An <c>event</c> on a constant is not a harmless extra key — it is
-    /// the author having believed the card triggers on something, and the whole
-    /// point of reading it back is to say so.
+    /// give. An <c>event</c> on one of these is not a harmless extra key — it
+    /// is the author having believed the card triggers on something, and the
+    /// whole point of reading it back is to say so.
     /// </para>
     /// </remarks>
     private static string? Event(JsonElement trigger, string card, AbilityType type)
     {
         string? when = Text(trigger, "event");
 
-        if (type == AbilityType.Constant)
+        if (type is AbilityType.Constant or AbilityType.Setup)
         {
             return when is null
                 ? null
                 : throw new AbilityException(
-                    $"'{card}' is constant and triggers on '{when}'. A constant ability has "
-                    + "no bold timing trigger and so no triggering condition");
+                    $"'{card}' is '{type}' and triggers on '{when}'. That ability type is "
+                    + "not timed to an occurrence and so names no triggering condition");
         }
 
         return when ?? throw new AbilityException($"a trigger on '{card}' has no 'event'");

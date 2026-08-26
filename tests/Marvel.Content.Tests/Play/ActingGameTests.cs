@@ -146,7 +146,8 @@ public sealed class ActingGameTests
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, campaign, ["spider_man"]), Cards),
             ["Spider-Man"],
-            seed);
+            seed,
+            AuthoredCards.Runner());
         var game = Game.Begin(world, Cards, AuthoredCards.Runner());
         var policy = new ActingPolicy((int)seed, declineOneIn);
         var verbs = new Dictionary<string, long>(StringComparer.Ordinal);

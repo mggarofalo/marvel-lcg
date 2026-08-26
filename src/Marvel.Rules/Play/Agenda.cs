@@ -371,6 +371,19 @@ public static class Steps
     public const string CardRevealed = "WhenCardRevealed";
 
     /// <summary>
+    /// Resolving setup's abilities — <c>rr:appendix-ii-setup.step.12</c>.
+    /// </summary>
+    /// <remarks>
+    /// <b>Not a triggering condition</b>, and deliberately absent from
+    /// <see cref="EveryCondition"/>: <c>rr:setup-triggered-ability.2</c> times a
+    /// "Setup" ability to a step of setup rather than to something happening,
+    /// and setup is not on the agenda. This is the label its events carry, so
+    /// that a board built during setup can be told apart in the stream from one
+    /// built during a round.
+    /// </remarks>
+    public const string Setup = "Setup";
+
+    /// <summary>
     /// A player triggering an "Action" ability on their turn —
     /// <c>rr:player-turn.5</c>.
     /// </summary>

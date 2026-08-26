@@ -17,10 +17,11 @@ namespace Marvel.Content.Tests.Setup;
 /// setup had never been held against the thing it implements.
 /// </para>
 /// <para>
-/// <b>What is unimplemented is asserted as unimplemented, by name.</b> Half of
-/// Appendix II is not written yet, and a test that only checked the half that
-/// is would let the other half be forgotten. Each of these fails when somebody
-/// implements the step, which is the point: the test tells them it is here.
+/// <b>What is unimplemented is asserted as unimplemented, by name.</b> Not all
+/// of Appendix II is written yet, and a test that only checked the part that is
+/// would let the rest be forgotten. Such a test fails when somebody implements
+/// the step, which is the point: it tells them it is here. Step 12 was one of
+/// these and is now <c>SetupAbilityTests</c>; step 11 still is.
 /// </para>
 /// </remarks>
 public sealed class SetupOrderTests
@@ -131,25 +132,23 @@ public sealed class SetupOrderTests
 
     [Rule("rr:appendix-ii-setup.step.12.a")]
     [Fact]
-    public void TheMainSchemesASideIsFlippedBeforeItsSetupAbilityCouldRun()
+    public void TheMainSchemeIsFlippedByStep12bAndNotBefore()
     {
-        // The divergence the vendoring found, and the reason it is worth a test
-        // rather than a comment.
+        // The divergence the vendoring found, now closed. Appendix II flips the
+        // main scheme at step **12b**, and step **12a** -- "resolve any 'Setup'
+        // abilities on main scheme card 1A" -- comes first, while the A side is
+        // still showing. `WorldSetup` used to flip at its own step 4, before the
+        // villain entered play and long before anything could read the A side.
         //
-        // Appendix II flips the main scheme at step **12b**, and step **12a**
-        // -- "resolve any 'Setup' abilities on main scheme card 1A" -- comes
-        // first, while the A side is still showing. `WorldSetup` flips at its
-        // own step 4, before the villain enters play and long before anything
-        // could read the A side.
-        //
-        // Nothing observable turns on it today, because no Setup ability runs
-        // at all (MARVEL-211). It stops being invisible the moment one does:
-        // an ability on side 1A would be asked of a card showing 1B. This test
-        // fails when the flip moves, which is when somebody should be reading
-        // this comment.
+        // Nothing turned on it while no setup ability ran at all, which is why
+        // MARVEL-242 recorded it as a divergence rather than a bug. Running one
+        // is what makes it a bug, and `SetupAbilityTests` is where the order is
+        // held against a card that reads its own side. What is left here is the
+        // end state both orders agree on.
         var world = Deal("spider_man");
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
 
+        Assert.Equal(scheme.Faces[^1], scheme.FaceId);
         Assert.NotEqual(scheme.Faces[0], scheme.FaceId);
     }
 

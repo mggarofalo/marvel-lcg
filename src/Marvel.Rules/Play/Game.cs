@@ -99,12 +99,33 @@ public sealed class Game
     // option re-offered keeps its handle. The numbers themselves are not
     // reproduced and must not be compared, because effect ids are allocated per
     // session and drift -- see the remarks on `Affordance.Id`.
+    /// <summary>Who put the pending question, which decides who takes its answer.</summary>
+    /// <remarks>
+    /// Not derivable from the prompt. A turn option and a step's own question
+    /// can both be a <c>Question.TurnOption</c> asked of the same player in the
+    /// same phase, and only one of them is answered by
+    /// <see cref="Sequence.Answer"/>. Guessing from the agenda's state instead
+    /// was wrong in the other direction: a turn prompt is put while the agenda
+    /// still has steps left on it, so "the agenda has a current step" is not
+    /// "the agenda asked this".
+    /// </remarks>
+    private enum Asker
+    {
+        /// <summary>This class built the prompt — a turn option, a mulligan, an end phase.</summary>
+        Game,
+
+        /// <summary>A step or a window asked, through <see cref="Sequence.Work"/>.</summary>
+        Sequence,
+    }
+
     private readonly Dictionary<(string Verb, int Anchor), int> handles = [];
     private readonly World world;
     private readonly ICardFacts facts;
     private readonly ICardAbilities abilities;
 
     private int nextHandle;
+
+    private Asker asking = Asker.Game;
 
     private Game(World world, ICardFacts facts, ICardAbilities abilities)
     {
@@ -115,6 +136,7 @@ public sealed class Game
         Active = world.FirstPlayer;
         Round = 0;
         Pending = MulliganPrompt();
+        asking = Asker.Game;
     }
 
     /// <summary>The verbs this resolve derives from state alone.</summary>
@@ -178,12 +200,21 @@ public sealed class Game
             throw new InvalidOperationException("the game is over; there is nothing to answer");
         }
 
-        // A window opened during a player's own turn is answered the same way
-        // one in the villain phase is. `rr:attack-player-ability-type.step.7`
-        // and `.step.8` put abilities around a character's attack, and a turn
-        // that could offer the question and not take the answer would be a
-        // turn where no card can speak.
-        if (world.Windows.Current is not null && Phase == GamePhase.PlayerTurn)
+        // A question the sequence asked during a player's own turn is answered
+        // the same way one in the villain phase is.
+        // `rr:attack-player-ability-type.step.7` and `.step.8` put windows
+        // around a character's attack, and a turn that could offer the question
+        // and not take the answer would be a turn where no card can speak.
+        //
+        // **And not only windows.** An activation can begin in a player's own
+        // turn — Speed Demon's forced interrupt attacks back the moment it is
+        // attacked — and `rr:attack-enemy-activation.step.2` is a step that
+        // asks who defends rather than a window that offers an ability. That
+        // answer was reaching the verb table below and being told that taking
+        // 'Defense' is not implemented, which was true only in the sense that
+        // it had nowhere to go: `Sequence.Answer` has handled a step's own
+        // question since it was written. MARVEL-246.
+        if (Phase == GamePhase.PlayerTurn && asking == Asker.Sequence)
         {
             var during = new List<GameEvent>();
             Sequence.Answer(world, facts, abilities, Pending, input, during);
@@ -261,6 +292,7 @@ public sealed class Game
                 Active = world.FirstPlayer;
                 Phase = GamePhase.PlayerTurn;
                 Pending = TurnPrompt();
+        asking = Asker.Game;
                 return new Resolution(world, Pending, []);
 
             case GamePhase.PlayerTurn:
@@ -275,12 +307,14 @@ public sealed class Game
                 {
                     Active = player;
                     Pending = TurnPrompt();
+        asking = Asker.Game;
                     return new Resolution(world, Pending, []);
                 }
 
                 Active = world.FirstPlayer;
                 Phase = GamePhase.EndPhase;
                 Pending = EndPhasePrompt();
+        asking = Asker.Game;
                 return new Resolution(world, Pending, []);
 
             case GamePhase.EndPhase:
@@ -339,6 +373,7 @@ public sealed class Game
         };
 
         Pending = TurnPrompt();
+        asking = Asker.Game;
         return new Resolution(world, Pending, happened);
     }
 
@@ -522,6 +557,7 @@ public sealed class Game
         {
             Active = player;
             Pending = EndPhasePrompt();
+        asking = Asker.Game;
             return new Resolution(world, Pending, happened);
         }
 
@@ -600,6 +636,7 @@ public sealed class Game
         Active = world.FirstPlayer;
         Phase = GamePhase.PlayerTurn;
         Pending = TurnPrompt();
+        asking = Asker.Game;
         return new Resolution(world, Pending, happened);
     }
 
@@ -643,6 +680,7 @@ public sealed class Game
         if (Sequence.Work(world, facts, abilities, happened) is { } asked)
         {
             Pending = asked;
+            asking = Asker.Sequence;
             return new Resolution(world, Pending, happened);
         }
 
@@ -652,10 +690,12 @@ public sealed class Game
             // own turn, and nothing is asked of anybody after a game is over.
             Phase = GamePhase.Over;
             Pending = null;
+            asking = Asker.Game;
             return new Resolution(world, null, happened);
         }
 
         Pending = TurnPrompt();
+        asking = Asker.Game;
         return new Resolution(world, Pending, happened);
     }
 
@@ -664,6 +704,7 @@ public sealed class Game
         if (Sequence.Work(world, facts, abilities, happened) is { } asked)
         {
             Pending = asked;
+            asking = Asker.Sequence;
             return new Resolution(world, Pending, happened);
         }
 
@@ -673,6 +714,7 @@ public sealed class Game
             // player after a game is over.
             Phase = GamePhase.Over;
             Pending = null;
+            asking = Asker.Game;
             return new Resolution(world, null, happened);
         }
 
@@ -680,6 +722,7 @@ public sealed class Game
         Phase = GamePhase.PlayerTurn;
         Active = world.FirstPlayer;
         Pending = TurnPrompt();
+        asking = Asker.Game;
         return new Resolution(world, Pending, happened);
     }
 

@@ -52,9 +52,12 @@ public sealed record CardBlueprint(string Spec, SetupSlot Slot, int Seat);
 /// the top of an already-shuffled deck.
 /// </para>
 /// <para>
-/// No card abilities. A scenario whose setup fires an ability — Doctor Strange's
-/// Invocations, a challenge that places a status card — needs the engine, and the
-/// deal order documents which those are.
+/// <b>Card text runs here now.</b> <c>rr:appendix-ii-setup.step.12</c> resolves
+/// the scenario's "Setup" and "When Revealed" abilities as part of the deal, so
+/// a dealer that could not run a card could not deal a board that was correct —
+/// it could only deal one that looked correct on the scenarios whose first card
+/// happens to say nothing. The interpreter is a parameter and defaults to
+/// <c>NoCardAbilities</c>, which is what a test building a board by hand wants.
 /// </para>
 /// </remarks>
 public static class WorldSetup
@@ -67,20 +70,33 @@ public static class WorldSetup
     /// decides every <c>*</c> in the printed data.
     /// </param>
     /// <param name="seed">The game's seed. One stream, seeded once.</param>
+    /// <param name="abilities">
+    /// What cards do — <c>rr:appendix-ii-setup.step.12</c>. Defaults to
+    /// <see cref="Play.NoCardAbilities"/>, which deals the board and runs no
+    /// text.
+    /// </param>
+    /// <param name="events">
+    /// Where to record what setup's abilities did, or null to discard it. Null
+    /// is safe rather than lossy for the same reason the parameter above
+    /// defaults: with no interpreter there is nothing to lose.
+    /// </param>
     public static World Deal(
         ICardFacts facts, IReadOnlyList<CardBlueprint> blueprints,
-        IReadOnlyList<string> seats, uint seed)
+        IReadOnlyList<string> seats, uint seed,
+        Play.ICardAbilities? abilities = null, List<Events.GameEvent>? events = null)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(blueprints);
         ArgumentNullException.ThrowIfNull(seats);
 
         int players = seats.Count;
+        var happened = events ?? [];
 
         // The seed goes to the world, not to a local generator: the reshuffle
         // in `rr:player-deck.1` draws from this same stream years of turns
         // later, and a second generator would restart it.
         var world = new World(facts, players, seed);
+        world.Abilities = abilities ?? new Play.NoCardAbilities();
 
         var insert = world.CreateArea(DeckType.RemovedArea);
         var encounterDeck = world.CreateArea(DeckType.EncounterDeck);
@@ -146,21 +162,14 @@ public static class WorldSetup
             world.Shuffle(seat.Deck);
         }
 
-        // 4. The first main scheme enters play, turned to its `B` side. This is
-        //    the one card on an opening board whose showing face is not the
-        //    first face of its spec.
-        if (mainSchemeDeck.Cards.Count > 0)
+        // 4. `rr:appendix-ii-setup.step.8` -- the main scheme deck goes into
+        //    play, **showing its A side**, which is simply the first face of
+        //    its spec. Step 12b is what turns it over, and 12a reads the A side
+        //    before that happens.
+        var scheme = mainSchemeDeck.Cards.Count > 0 ? mainSchemeDeck.Cards[0] : null;
+        if (scheme is not null)
         {
-            var scheme = mainSchemeDeck.Cards[0];
             World.MoveToTop(scheme, mainSchemeArea);
-            scheme.TurnTo(scheme.Faces[^1]);
-
-            // Starting threat is placed once, on entry. Every scheme on a
-            // recorded opening board starts at zero, so this is invisible until
-            // a scenario that does not appears -- which is the reason to place
-            // it rather than to leave the field derived from print.
-            scheme.PlaceTokens("k_threat",
-                facts.PrintedValue(scheme.FaceId, "StartingThreat", players));
         }
 
         // 5. The first villain stage enters play; the later stages wait.
@@ -178,7 +187,63 @@ public static class WorldSetup
 
         world.Shuffle(encounterDeck);
 
-        // 7. Opening hands, off the top of an already-shuffled deck. No draw.
+        // 12. `rr:appendix-ii-setup.step.12`, "Resolve Scenario Setup and When
+        //     Revealed Abilities", which is three sub-steps in a stated order.
+        //     The order is the whole of the rule: 12a reads a face that 12b
+        //     then turns over.
+        if (scheme is not null)
+        {
+            // 12a. "Resolve any 'Setup' abilities on main scheme card 1A."
+            happened.AddRange(world.Abilities.Setup(world, scheme));
+
+            // 12b. "Flip the main scheme card to side 1B and resolve any 'When
+            //      Revealed' abilities on that side."
+            scheme.TurnTo(scheme.Faces[^1]);
+
+            // Starting threat is placed once, on entry, and it is the B side's
+            // number -- no A side in the pool prints one. Every scheme on a
+            // recorded opening board starts at zero, so this is invisible until
+            // a scenario that does not appears, which is the reason to place it
+            // rather than to leave the field derived from print.
+            scheme.PlaceTokens("k_threat",
+                facts.PrintedValue(scheme.FaceId, "StartingThreat", players));
+
+            happened.AddRange(world.Abilities.WhenRevealed(world, scheme, world.FirstPlayer));
+        }
+
+        // 12c. "Resolve any 'Setup' and 'When Revealed' abilities on the
+        //      villain." After the scheme, and the appendix says so by
+        //      numbering it after -- a villain whose text reads the main scheme
+        //      reads the side the players will be playing against.
+        if (world.TheCardIn(DeckType.VillainArea) is { } villain)
+        {
+            happened.AddRange(world.Abilities.Setup(world, villain));
+            happened.AddRange(world.Abilities.WhenRevealed(world, villain, world.FirstPlayer));
+        }
+
+        // Setup's abilities schedule as well as act. Rhino II searches for a
+        // side scheme and **reveals** it, and a reveal is a step with windows
+        // around it rather than a card moving -- so it goes on the agenda, and
+        // an agenda nobody drains is an ability that did half of what it said.
+        // The encounter deck would have been shuffled by the search and the
+        // scheme left in it, which is worse than not running the card at all.
+        //
+        // `rr:appendix-ii-setup` ends "the game is now ready to begin", so
+        // there is no later moment for this: it drains here or never.
+        if (Play.Sequence.Work(world, facts, world.Abilities, happened) is { } asked)
+        {
+            // `rr:ability.6` -- "player card abilities cannot resolve during
+            // game setup, unless prefaced by a 'Setup' timing trigger" -- and
+            // `rr:setup-triggered-ability.1` makes the setup abilities
+            // themselves mandatory. So nothing should have a question, and a
+            // scenario that does needs somebody to ask rather than a default.
+            throw new Play.RulesNotImplementedException(
+                $"setup asked '{asked.Label}', and rr:appendix-ii-setup has nobody to ask");
+        }
+
+        // 14. "Draw Cards." Opening hands, off the top of an already-shuffled
+        //     deck. No draw, and after step 12 -- which is what lets a setup
+        //     ability that searches or shuffles the player decks matter.
         for (int seat = 0; seat < players; seat++)
         {
             long handSize = facts.PrintedValue(identities[seat].FaceId, "HS", players);
