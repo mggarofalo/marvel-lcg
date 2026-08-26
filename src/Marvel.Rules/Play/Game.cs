@@ -195,6 +195,12 @@ public sealed class Game
                 return used;
             }
 
+            if (Phase == GamePhase.PlayerTurn
+                && string.Equals(verb, CardPlay.Verb, StringComparison.Ordinal))
+            {
+                return PlayCard(input);
+            }
+
             if (string.Equals(verb, EndPhaseVerb, StringComparison.Ordinal)
                 && Phase == GamePhase.EndPhase)
             {
@@ -359,6 +365,32 @@ public sealed class Game
         return new Resolution(world, Pending, happened);
     }
 
+    /// <summary>
+    /// Plays the card an affordance is anchored to.
+    /// </summary>
+    /// <remarks>
+    /// The card is the affordance's anchor and the payment is
+    /// <see cref="Decision.Spent"/> — <c>rr:initiating-abilities</c> keeps
+    /// choosing a card, determining its cost and paying that cost in separate
+    /// steps, and the answer carries the last of them. Like a basic power, the
+    /// turn does not end.
+    /// </remarks>
+    /// <param name="input">The answer, carrying the resources spent.</param>
+    private Resolution PlayCard(Decision input)
+    {
+        var seat = world.Seats[Active];
+        var affordance = Pending!.Affordances.First(
+            option => option.Id == input.Affordance);
+
+        var happened = new List<GameEvent>();
+        CardPlay.Play(
+            world, facts, abilities, seat, world.Cards[affordance.AnchorId],
+            input.Spent, happened);
+
+        Pending = TurnPrompt();
+        return new Resolution(world, Pending, happened);
+    }
+
     /// <summary>The one target a basic power takes.</summary>
     private static int Only(Decision input, string verb) =>
         input.Targets.Count == 1
@@ -518,6 +550,22 @@ public sealed class Game
             options.Add(Anchored(ChangeForm, seat));
         }
 
+        // `rr:player-turn.2`: "play an ally, upgrade, support, or player side
+        // scheme card from hand". Priced per card, and a card that cannot be
+        // paid for is not offered -- `rr:initiating-abilities.step.3` checks
+        // "the player's ability to pay them" before anything is spent.
+        // By object id, which is the order the recorded prompt lists them --
+        // `Play@37, 45, 46, 47` against a hand held in the order
+        // `42, 45, 37, 9, 47, 46`. Measured on one board, so it is the simplest
+        // reading that fits rather than a rule anything states.
+        foreach (var card in seat.Hand.Cards.OrderBy(card => card.ObjectId))
+        {
+            if (CardPlay.Price(world, facts, seat, card) is { } price)
+            {
+                options.Add(Priced(seat, card, price));
+            }
+        }
+
         // `rr:player-turn.3`: the hero's basic attack or thwart in hero form,
         // the alter-ego's basic recovery in alter-ego form. A character that is
         // exhausted cannot pay the cost of any of them (`rr:exhausted.2`).
@@ -543,6 +591,38 @@ public sealed class Game
         }
 
         return options;
+    }
+
+    /// <summary>Offers one card in hand, anchored to the card rather than the seat.</summary>
+    /// <remarks>
+    /// A play is clicked on the card, not on the identity, so this is the one
+    /// affordance whose anchor is not <see cref="Seat.IdentityCard"/>. The
+    /// handle is cached on <c>(verb, anchor)</c> like any other, which gives a
+    /// card in hand a stable id across the re-offers of one turn.
+    /// </remarks>
+    private Affordance Priced(Seat seat, Card card, CostOption price)
+    {
+        int anchor = card.ObjectId;
+        if (!handles.TryGetValue((CardPlay.Verb, anchor), out int id))
+        {
+            id = nextHandle++;
+            handles[(CardPlay.Verb, anchor)] = id;
+        }
+
+        return new Affordance(
+            Id: id,
+            Verb: CardPlay.Verb,
+            AnchorId: anchor,
+            AnchorPlayer: seat.Index,
+            Label: CardPlay.Verb,
+
+            // The identity, exactly one, and that is measured rather than
+            // reasoned: every recorded `Play` affordance carries
+            // `targets: {legal: [1], min: 1, max: 1}` where 1 is the identity
+            // card. It reads as "into whose play area", which is a real choice
+            // at more than one player even though the card is the anchor.
+            Targets: new TargetRequest([seat.IdentityCard.ObjectId], Min: 1, Max: 1),
+            Costs: [price]);
     }
 
     /// <summary>Offers a targeted basic power, if it has a legal target.</summary>
