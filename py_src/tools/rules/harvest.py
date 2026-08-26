@@ -76,7 +76,7 @@ import sys
 from typing import Dict, List, Sequence
 
 from tools.rules.geometry import column_split, page_lines, straddling
-from tools.rules.parse import Clause, Entry, is_banner, parse_entries
+from tools.rules.parse import Clause, Entry, Step, is_banner, parse_entries, undouble
 
 DEFAULT_PDF = os.path.expanduser(
     "~/Documents/Marvel Champions LCG/mc_rulesreference_v18_compressed.pdf")
@@ -90,6 +90,15 @@ RR_VERSION = "1.8"
 # stray heading in the appendices cannot silently extend it.
 GLOSSARY_FIRST_PAGE = 4
 GLOSSARY_LAST_PAGE = 49
+
+# Appendix II: Setup, which is one page and is a numbered procedure rather than
+# a glossary entry -- so it is read on its own rather than by widening the
+# glossary bound. It is here because the glossary cites it and does not contain
+# it: seven entries name "Appendix II: Setup" in their see-also, and three
+# rules that the engine has to implement (the setup keyword's step, the
+# mulligan, and where a "Setup" ability resolves) are defined nowhere else.
+APPENDIX_SETUP_PAGE = 51
+APPENDIX_SETUP_TITLE = "APPENDIX II: SETUP"
 
 # Page furniture: a bare folio, and the running header, which extracts with
 # stray spaces because it is letter-spaced.
@@ -343,6 +352,66 @@ def render_markdown(entry: Entry, known: Dict[str, str]) -> str:
     return "\n".join(out)
 
 
+STEP = re.compile(r'^(\d{1,2})\.\s+(.*)$')
+SUBSTEP = re.compile(r'^([a-z])\.\s+(.*)$')
+
+
+def _finished(text: str) -> bool:
+    """Whether a line of the appendix has closed its sentence."""
+    return text.endswith((".", ")"))
+
+
+def appendix_setup(pdf) -> Entry:
+    """Appendix II, as one entry whose clauses are its sixteen steps.
+
+    The document cites this procedure the way it cites every other one it
+    writes -- "the obligation cards set aside during **setup step four**", in
+    step 10 of the appendix itself -- so the `step` grain is the document's own
+    and `rr:appendix-ii-setup.step.4` is what that sentence points at.
+
+    Read line by line rather than with `parse_entries`, which is tuned to the
+    glossary's banner-and-clause shape and finds no headings here at all.
+    """
+    lines = [line.text.strip() for line in page_lines(pdf.pages[APPENDIX_SETUP_PAGE - 1],
+                                                      _is_furniture)]
+    lines = [text for text in lines if text]
+
+    title = re.sub(r"\s+", " ", undouble(lines[0])).strip()
+    if title != APPENDIX_SETUP_TITLE:
+        raise SystemExit(
+            f"page {APPENDIX_SETUP_PAGE} is headed {title!r}, not {APPENDIX_SETUP_TITLE!r}; "
+            "the appendix has moved and the page number is stale")
+
+    definition = ""
+    steps: List[Step] = []
+    current: Step | None = None
+    sub: Step | None = None
+
+    for text in lines[1:]:
+        if match := STEP.match(text):
+            current = Step(marker=match.group(1), text=match.group(2).strip())
+            sub = None
+            steps.append(current)
+        elif (match := SUBSTEP.match(text)) and current is not None:
+            sub = Step(marker=match.group(1), text=match.group(2).strip())
+            current.children.append(sub)
+        elif (target := sub or current) is not None and not _finished(target.text):
+            target.text = f"{target.text} {text}".strip()
+        else:
+            # Prose rather than a continuation. The page is justified into two
+            # columns and a wrapped line never ends a sentence, so a line
+            # whose predecessor already closed one is starting something new --
+            # here, "The game is now ready to begin." after step 16.
+            definition = f"{definition} {text}".strip()
+
+    if len(steps) != 16:
+        raise SystemExit(
+            f"Appendix II parsed as {len(steps)} steps, not 16; "
+            "the page layout has changed")
+
+    return Entry(title=title, page=APPENDIX_SETUP_PAGE, definition=definition, steps=steps)
+
+
 def _check_gutter(page, number: int) -> None:
     """Refuse to parse a page whose column split lands inside a word."""
     from tools.rules.geometry import FURNITURE_FONTS, _font, _is_content
@@ -378,6 +447,7 @@ def harvest(pdf_path: str) -> Dict[str, str]:
                 pages.append(index + 1)
 
         entries = parse_entries(lines, pages, legend)
+        entries.append(appendix_setup(pdf))
 
     unresolved = set()
     for entry in entries:

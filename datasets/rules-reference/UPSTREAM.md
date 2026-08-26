@@ -13,7 +13,7 @@ carries rulings, and neither carries a *rule*.
 | Harvested with | `python -m tools.rules.harvest` |
 | Harvested | 2026-08-24 |
 | Pinned by | the RR version printed on the document's cover |
-| Tier | `rr:` — the glossary. The `pack:` tier is not yet implemented. |
+| Tier | `rr:` — the glossary, plus Appendix II. The `pack:` tier is not yet implemented. |
 
 ## Why this exists
 
@@ -42,7 +42,27 @@ repository could say. `rr:cost.3` says it:
 | `entries/*.md` | agents and humans | one linked document per entry |
 | `icons.json` | both | glyph legend, derived from the document |
 
-**261 entries, 1,198 citable records, 1,034 resolved cross-references.**
+**262 entries, 1,218 citable records, 1,038 resolved cross-references.**
+
+One of the 262 is not a glossary entry. **Appendix II: Setup** is a numbered
+procedure on page 51, and it is here because the glossary *cites* it and does
+not *contain* it — seven entries name it in their see-also, and three rules the
+engine has to implement are defined nowhere else:
+
+| | |
+|---|---|
+| `rr:appendix-ii-setup.step.11` | "Put Setup Cards Into Play. Search **each deck and the set aside area** for any cards with the setup keyword and put them into play." |
+| `rr:appendix-ii-setup.step.15` | "Resolve Mulligans. Each player may **discard** any number of cards from hand, and then draw up to their starting hand size." |
+| `rr:appendix-ii-setup.step.12` | Where a "Setup" ability resolves, and which of the three sub-steps it belongs to |
+
+Its position among the steps is not a detail: step 11 comes **before** step 14's
+draw, so a setup card is in play before anybody has a hand. MARVEL-211 had
+inferred the opposite from the step's name.
+
+Adding it resolved four dangling cross-references, which is the second reason
+it belongs here: `see_also_unresolved` is meant to name what the snapshot does
+not carry, and "Appendix II: Setup" was in four entries' lists while being a
+page of the same document.
 
 Citations name the grain a spec actually argues from, which is not the entry:
 
@@ -108,7 +128,7 @@ layout and lands *inside the left column's text* on the second.
 The effect was not a crash and not a loss. The final character of any
 left-column line that ran long was filed under the other column and reappeared
 elsewhere in the page — so "a hero does not exhaust" entered the corpus as
-"a hero does not exhaus". **33 of 261 entries were affected**, each by a
+"a hero does not exhaus". **33 of the glossary's 261 entries were affected**, each by a
 dropped trailing character, in a dataset whose entire purpose is to be
 quotable.
 
