@@ -171,9 +171,7 @@ public static class Attack
         ArgumentNullException.ThrowIfNull(facts);
 
         var attack = Current(world);
-        RefuseOtherDefenders(world, facts, attack);
-
-        var candidates = Defenders(world, facts, attack.Player);
+        var candidates = Defenders(world, facts);
         if (candidates.Count == 0)
         {
             return null;
@@ -192,11 +190,15 @@ public static class Attack
             Cancellable: true,
             Affordances:
             [
+                // `AnchorPlayer` is whose character it is, which is not
+                // always the player being asked: `rr:defend-defense.5` lets
+                // somebody else's hero or ally defend, and taking over makes
+                // them the attack's new target.
                 .. candidates.Select(card => new Affordance(
                     Id: card.ObjectId,
                     Verb: DefenseVerb,
                     AnchorId: card.ObjectId,
-                    AnchorPlayer: attack.Player,
+                    AnchorPlayer: card.Owner,
                     Label: DefenseVerb)),
             ]);
     }
@@ -220,7 +222,7 @@ public static class Attack
             return;
         }
 
-        var defender = Defenders(world, facts, attack.Player)
+        var defender = Defenders(world, facts)
             .FirstOrDefault(card => card.ObjectId == input.Affordance)
             ?? throw new RulesNotImplementedException(
                 $"card {input.Affordance} was not offered as a defender");
@@ -232,26 +234,27 @@ public static class Attack
             Trigger = Steps.EnemyAttacks, Verb = DefenseVerb,
         });
 
-        if (facts.Kind(defender.FaceId) == CardKind.Ally)
+        // **The defender becomes the target, whoever they are.**
+        // `rr:defend-defense.3.1` for an ally: "that ally becomes the target
+        // character for that attack, and its controller becomes the target
+        // player". `rr:defend-defense.2` for a hero: "any remaining damage is
+        // dealt to that hero". And `.5`: "if a player defends against an enemy
+        // attack that targets a different player [...] the defending player
+        // becomes the new target of that attack."
+        //
+        // Three clauses, one move. When the target player defends with their
+        // own hero it changes nothing, which is why it read as "the target does
+        // not change" while one player was all the engine had.
+        //
+        // `BasicDefense` is the hero's alone: `rr:defend-defense.2`'s reduction
+        // belongs to the basic defense power, and `.3` gives an ally none.
+        world.Attack = attack with
         {
-            // rr:defend-defense.3.1 -- "when an ally defends an attack, **that
-            // ally becomes the target character for that attack**, and its
-            // controller becomes the target player." So the target moves, and
-            // `BasicDefense` stays false: an ally has no DEF to reduce the
-            // damage by, and `rr:defend-defense.2`'s reduction is the hero's
-            // alone.
-            world.Attack = attack with
-            {
-                Defender = defender.ObjectId,
-                Target = defender.ObjectId,
-                Player = defender.Owner,
-            };
-            return;
-        }
-
-        // rr:attack-enemy-activation.2 -- a defending hero takes the damage and
-        // its DEF reduces it, so the target character does not change.
-        world.Attack = attack with { Defender = defender.ObjectId, BasicDefense = true };
+            Defender = defender.ObjectId,
+            Target = defender.ObjectId,
+            Player = defender.Owner,
+            BasicDefense = facts.Kind(defender.FaceId) != CardKind.Ally,
+        };
     }
 
     /// <summary>
@@ -419,7 +422,24 @@ public static class Attack
         world.AreaOf(DeckType.BoostCardsDeck, world.Cards[enemy].Area.PlayArea, host: enemy);
 
     /// <summary>The characters one player could exhaust to defend.</summary>
-    private static List<Card> Defenders(World world, ICardFacts facts, int player)
+    private static List<Card> Defenders(World world, ICardFacts facts)
+    {
+        var candidates = new List<Card>();
+
+        // `rr:defend-defense.5` -- **every** player's characters, not just the
+        // attacked one's. "Only one player at a time can defend" (`.1`) is a
+        // limit on the answer, not on the offer, and the choice is one prompt
+        // whose affordances carry whose character each is.
+        foreach (int player in world.PlayerOrder)
+        {
+            candidates.AddRange(For(world, facts, player));
+        }
+
+        return candidates;
+    }
+
+    /// <summary>One player's characters that could defend.</summary>
+    private static List<Card> For(World world, ICardFacts facts, int player)
     {
         var seat = world.Seats[player];
 
@@ -440,29 +460,6 @@ public static class Attack
         candidates.AddRange(allies.Cards.Where(ally => ally.Ready));
 
         return candidates;
-    }
-
-    /// <summary>Refuses the case where somebody other than the target could defend.</summary>
-    private static void RefuseOtherDefenders(World world, ICardFacts facts, EnemyAttack attack)
-    {
-        for (int seat = 0; seat < world.Players; seat++)
-        {
-            if (seat == attack.Player)
-            {
-                continue;
-            }
-
-            var identity = world.Seats[seat].IdentityCard;
-            if (identity.Ready && facts.Kind(identity.FaceId) == CardKind.Hero)
-            {
-                // rr:defend-defense.5 -- a player who defends an attack aimed
-                // at somebody else becomes its new target, player and all.
-                throw new RulesNotImplementedException(
-                    $"{world.Seats[seat].Name} could defend an attack against "
-                    + $"{world.Seats[attack.Player].Name}; defending for another player is "
-                    + "not implemented");
-            }
-        }
     }
 
     private static EnemyAttack Current(World world) =>

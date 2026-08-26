@@ -198,19 +198,65 @@ public sealed class AttackTests
         Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
     }
 
-    [Rule("rr:defend-defense.5")]
+    [Rule("rr:defend-defense.1")]
     [Fact]
-    public void APlayerWhoCouldDefendForAnotherSaysSoRatherThanBeingSkipped()
+    public void EveryPlayersCharactersAreOfferedAsDefenders()
     {
-        // "If a player defends against an enemy attack that targets a different
-        // player, the defending player becomes the new target of that attack."
-        // Both the target character and the target player move, and neither
-        // does here.
+        // `rr:defend-defense.5` lets somebody else's hero defend, so the offer
+        // is every player's. "Only one player at a time can defend" (`.1`) is a
+        // limit on the answer rather than on the offer -- one prompt, and each
+        // affordance says whose character it is.
         var printed = Printed(atk: 2, boost: 0);
         var world = Board(printed, players: 2);
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Finish(world, printed));
-        Assert.Contains("another player", thrown.Message, StringComparison.Ordinal);
+        var asked = Sequence.Work(world, printed, new NoCardAbilities(), []);
+
+        Assert.NotNull(asked);
+        Assert.Equal(0, asked.Player);
+        Assert.Equal(
+            [world.Seats[0].IdentityCard.ObjectId, world.Seats[1].IdentityCard.ObjectId],
+            asked.Affordances.Select(option => option.AnchorId));
+        Assert.Equal([0, 1], asked.Affordances.Select(option => option.AnchorPlayer));
+    }
+
+    [Rule("rr:defend-defense.5")]
+    [Fact]
+    public void DefendingForAnotherPlayerMakesYouTheTarget()
+    {
+        // "If a player defends against an enemy attack that targets a different
+        // player [...] the defending player becomes the new target of that
+        // attack." **Both** the target character and the target player move --
+        // the damage lands on the defender, and the attack is now against them.
+        var printed = Printed(atk: 5, boost: 0, def: 2);
+        var world = Board(printed, players: 2);
+        var rescuer = world.Seats[1].IdentityCard;
+        var events = new List<GameEvent>();
+
+        var asked = Sequence.Work(world, printed, new NoCardAbilities(), events);
+        Sequence.Answer(
+            world, printed, new NoCardAbilities(), asked!,
+            Decision.Take(rescuer.ObjectId), events);
+
+        // **The target *player* moved, not just the character.** The attack is
+        // now against seat 1, which is what `rr:defend-defense.5` says outright
+        // and what `.5.2` needs -- "any constant or boost abilities that refer
+        // to 'you' refer to the defending player".
+        //
+        // Asserted on the state because nothing reads it yet: `.5.1` splits
+        // "when [enemy] attacks you" from "after [enemy] attacks you", and the
+        // first is the window that already opened. No ability triggers on the
+        // second.
+        Assert.Equal(1, world.Attack!.Player);
+        Assert.Equal(rescuer.ObjectId, world.Attack.Target);
+
+        Sequence.Finish(world, printed, new NoCardAbilities(), events);
+
+        // ATK 5 less the rescuer's own DEF 2. The player it was aimed at takes
+        // nothing at all.
+        Assert.Equal(3, rescuer.Damage);
+        Assert.False(rescuer.Ready);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.True(world.Seats[0].IdentityCard.Ready);
     }
 
     [Rule("rr:damage.1")]
