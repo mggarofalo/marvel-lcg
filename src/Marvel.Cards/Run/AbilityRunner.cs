@@ -169,6 +169,47 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Boost(World world, Card card, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+
+        // **The star is the only place a boost ability shows.** The printed
+        // `Boost` attribute counts icons and `rr:boost-boost-icon.1` says a
+        // star is not one, so a card with an ability and a card without carry
+        // the same number -- which is why this asks the card whether it has one
+        // rather than inferring it. 419 in the pool do.
+        if (!world.Facts.HasBoostAbility(card.FaceId))
+        {
+            return [];
+        }
+
+        if (!book.Authored.Contains(card.FaceId))
+        {
+            throw new RulesNotImplementedException(
+                $"card '{card.FaceId}' was turned faceup as a boost card and prints a "
+                + "'Boost' ability that no ability data is written for");
+        }
+
+        var events = new List<GameEvent>();
+        var occurrence = new Occurrence(
+            0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player);
+
+        foreach (var ability in book.On(card.FaceId))
+        {
+            // `rr:ability` puts a "Boost" ability at the occurrence tier, like
+            // "When Revealed": it is the thing happening rather than a window
+            // around it, so there is nothing to offer and nothing to decline.
+            if (ability.Trigger.Timing == AbilityType.Boost)
+            {
+                Run(ability.Effect, new Cast(world, card, occurrence, player, events, this));
+            }
+        }
+
+        return events;
+    }
+
+    /// <inheritdoc/>
     public Prompt? Choosing(World world, Card source, int player)
     {
         ArgumentNullException.ThrowIfNull(world);

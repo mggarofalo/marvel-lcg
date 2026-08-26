@@ -117,6 +117,30 @@ A *side* scheme prints a target threat value too and reaching it does nothing:
 is the opposite direction. So the check is bounded to the main scheme area, and
 a Bomb Scare gathering threat does not hand the villain the win.
 
+### Boost abilities
+
+`rr:boost-boost-icon.2` is step 2b of both activations: *"resolve any
+**Boost** abilities, indicated by the star icon in the boost area."* The engine
+went straight from turning the card faceup to counting its icons, so **419 cards
+in the pool had an ability that was never run**.
+
+It stayed hidden because the numbers cannot see it. The printed `Boost`
+attribute counts icons and `rr:boost-boost-icon.1` makes a star *"not a boost
+icon"* that adds nothing — so `01123` Sonic Boom, which has an ability, and
+`01186` Advance, which has none, both print 2. The star survives only in the
+text box, which is where `ICardFacts.HasBoostAbility` reads it: 418 cards print
+`[star] Boost:` and one, `39029` Supporting Actor, prints `Boost:` with the
+marker missing from the extraction.
+
+A card that prints one and has no ability data now **throws naming the card**,
+which is the same bargain a revealed card gets. Silence would be a villain who
+schemed for two instead of two and an exhausted hero, with nothing anywhere
+saying so.
+
+`AbilityType.Boost` already existed with the right citation and the right tier —
+`rr:ability` puts it at the occurrence, so there is nothing to offer and nothing
+to decline. Only the runner and the two call sites were missing.
+
 ### What a revealed card does
 
 `rr:reveal.step.2` is a list by card type, and until MARVEL-188 none of it was

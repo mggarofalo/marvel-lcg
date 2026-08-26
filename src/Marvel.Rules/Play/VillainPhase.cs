@@ -35,6 +35,23 @@ public interface ICardAbilities : IWindowAbilities
     IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player);
 
     /// <summary>
+    /// Resolves a faceup boost card's "Boost" ability —
+    /// <c>rr:boost-boost-icon.2</c>.
+    /// </summary>
+    /// <remarks>
+    /// Step 2b of both activations, and its own ability type
+    /// (<c>AbilityType.Boost</c>) rather than a window: <c>rr:ability</c> puts
+    /// it at the occurrence tier, so there is nothing to offer and nothing to
+    /// decline. The card is in the boosting area while this runs and is
+    /// discarded by step 2d afterwards.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="card">The boost card, faceup.</param>
+    /// <param name="player">The seat the activation is against.</param>
+    /// <returns>What changed.</returns>
+    IReadOnlyList<GameEvent> Boost(World world, Card card, int player);
+
+    /// <summary>
     /// The question a suspended ability is waiting on —
     /// <c>rr:choose-option</c>.
     /// </summary>
@@ -73,6 +90,9 @@ public class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Boost(World world, Card card, int player) => [];
 
     /// <inheritdoc/>
     public virtual Prompts.Prompt? Choosing(World world, Card source, int player) => null;
@@ -186,7 +206,7 @@ public static class VillainPhase
                 break;
 
             case Steps.Scheme:
-                Scheme(world, facts, abilities, world.Cards[step.Subject], events);
+                Scheme(world, facts, abilities, world.Cards[step.Subject], step.Seat, events);
                 break;
 
             case Steps.Attack:
@@ -201,7 +221,7 @@ public static class VillainPhase
                 return Attack.DeclareDefender(world, facts);
 
             case Steps.FlipBoostCards:
-                Attack.FlipBoostCards(world, facts, events);
+                Attack.FlipBoostCards(world, facts, abilities, events);
                 break;
 
             case Steps.DealAttackDamage:
@@ -370,7 +390,7 @@ public static class VillainPhase
     /// threat equal to the modified SCH on the main scheme.
     /// </remarks>
     private static void Scheme(
-        World world, ICardFacts facts, ICardAbilities abilities, Card villain,
+        World world, ICardFacts facts, ICardAbilities abilities, Card villain, int seat,
         List<GameEvent> events)
     {
         // `rr:confuse-confused.1`: "when this character would scheme or thwart,
@@ -387,7 +407,7 @@ public static class VillainPhase
         // a villain always, a minion only with `rr:villainous`.
         if (Keywords.IsBoosted(villain, facts, world.Players))
         {
-            scheme += ResolveBoostCard(world, facts, events);
+            scheme += ResolveBoostCard(world, facts, abilities, seat, events);
         }
 
         var target = world.TheCardIn(DeckType.MainSchemesArea);
@@ -412,7 +432,9 @@ public static class VillainPhase
     /// is why the recorded discard pile has it underneath.
     /// </para>
     /// </remarks>
-    private static long ResolveBoostCard(World world, ICardFacts facts, List<GameEvent> events)
+    private static long ResolveBoostCard(
+        World world, ICardFacts facts, ICardAbilities abilities, int seat,
+        List<GameEvent> events)
     {
         var deck = world.AreaOf(DeckType.EncounterDeck);
         var boost = EncounterDeck.TakeTop(world, "boost", events);
@@ -428,6 +450,12 @@ public static class VillainPhase
         // `k_threat` key is on the wire. See `DeckTypes.GrantsTokenPool`.
         var boosting = world.AreaOf(DeckType.BoostingArea);
         boosting.Append(boost);
+
+        // `rr:scheme-enemy-activation.step.2.b` -- "resolve any **Boost**
+        // abilities, indicated by the star icon in the boost area", and it is
+        // step 2b: while the card is faceup in the boosting area, before 2d
+        // discards it.
+        events.AddRange(abilities.Boost(world, boost, seat));
 
         var discard = world.AreaOf(DeckType.EncounterDiscardPile);
         World.MoveToTop(boost, discard);

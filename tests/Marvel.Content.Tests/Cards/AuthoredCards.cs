@@ -58,7 +58,7 @@ internal static class AuthoredCards
     /// being absent, and only one of the two is safe to resolve to silence.
     /// </remarks>
     public static readonly string[] ReadAndSilent =
-        ["01094", "01097b", "01101", "01102", "01108"];
+        ["01094", "01097b", "01101", "01102", "01108", "01167"];
 
     /// <summary>The printed id of "Caught Off Guard".</summary>
     public const string CaughtOffGuard = "01188";
