@@ -299,7 +299,7 @@ public sealed class AbilityDataTests
             AuthoredCards.SweepingSwoop, AuthoredCards.VulturesPlans,
             AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
             AuthoredCards.ShadowOfThePast, AuthoredCards.Exhaustion,
-            AuthoredCards.Masterplan, AuthoredCards.UnderFire,
+            AuthoredCards.Masterplan, AuthoredCards.UnderFire, AuthoredCards.RhinoThree,
             .. AuthoredCards.ReadAndSilent,
         ];
 
@@ -311,8 +311,8 @@ public sealed class AbilityDataTests
     [Fact]
     public void ACardReadAndFoundEmptyIsNotACardNobodyRead()
     {
-        // The distinction the dataset exists to be able to make. Five of the
-        // Rhino scenario's cards carry no ability at all -- a keyword the
+        // The distinction the dataset exists to be able to make. Several of
+        // the Rhino scenario's cards carry no ability at all -- a keyword the
         // engine already reads, a printed icon, or a rule restated on the card
         // -- and each is a row saying so.
         //

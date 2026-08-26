@@ -325,6 +325,26 @@ public static class Defeat
             Trigger = trigger, Verb = "Reveal",
         });
 
+        // `rr:villain-defeat.3.2` before either of the two below, so that a
+        // tough status card carried over from the old stage is already on the
+        // new one when toughness looks for it.
         Inherit(world, facts, villain, next, trigger, events);
+
+        // The stage came out of the villain deck and into the villain's play
+        // area, and `rr:enters-play` is "any time when a card transitions from
+        // an out-of-play area into play" -- so the keywords that fire on
+        // entering play fire here. `rr:villain-defeat.3.1` makes the new stage
+        // "the same character" for card abilities, which is a claim about who
+        // the character is rather than about the card having been in play: the
+        // card itself is a different card, and it was in the deck a moment ago.
+        Reveal.EnterPlay(world, facts, next, events);
+
+        // `rr:when-revealed-abilities`: "when a player reveals a card from the
+        // encounter deck, a new scheme stage, **or a new villain stage**, all
+        // 'When Revealed' abilities on the card resolve." Last, because
+        // `rr:reveal.step.3` puts the card's own text after the placement and
+        // the keywords -- and `.3` there, with `rr:villain-defeat.1`, is why
+        // nothing between here and the deck gets to cancel it.
+        events.AddRange(world.Abilities.WhenRevealed(world, next, world.FirstPlayer));
     }
 }

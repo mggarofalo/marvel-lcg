@@ -70,7 +70,7 @@ internal static class AuthoredCards
     /// being absent, and only one of the two is safe to resolve to silence.
     /// </remarks>
     public static readonly string[] ReadAndSilent =
-        ["01094", "01097b", "01101", "01102", "01108", "01167"];
+        ["01094", "01097a", "01097b", "01101", "01102", "01108", "01167"];
 
     /// <summary>The printed id of "Caught Off Guard".</summary>
     public const string CaughtOffGuard = "01188";
@@ -80,6 +80,9 @@ internal static class AuthoredCards
 
     /// <summary>The printed id of Rhino's second stage.</summary>
     public const string RhinoTwo = "01095";
+
+    /// <summary>The printed id of Rhino's third stage, which only expert mode uses.</summary>
+    public const string RhinoThree = "01096";
 
     /// <summary>The printed id of "Aunt May".</summary>
     public const string AuntMay = "01006";
