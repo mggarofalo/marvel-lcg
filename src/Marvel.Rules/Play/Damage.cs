@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
@@ -111,6 +112,118 @@ public static class Damage
         // alone, which is exactly the second half of this sum.
         return facts.PrintedValue(character.FaceId, "HP", world.Players)
             + StateFields.Modified(world, character, "health", facts, world.Players);
+    }
+
+    /// <summary>
+    /// One attack, with the keywords that change how it lands.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Three keywords sit between an attack and its damage and all three are
+    /// about the <i>attack</i> rather than either character, which is why they
+    /// are one call rather than three checks scattered across two attack paths.
+    /// </para>
+    /// <list type="bullet">
+    ///   <item><description>
+    ///     <c>rr:piercing.1</c> — "before this attack deals damage to a
+    ///     character, discard each tough status card from that character", and
+    ///     <c>.2</c>: an attack dealing no damage discards none.
+    ///   </description></item>
+    ///   <item><description>
+    ///     <c>rr:overkill.1</c> — the damage beyond a defeated ally's hit points
+    ///     goes to its controller's identity, and beyond a defeated minion's to
+    ///     the villain. <c>.2</c>: it is "damage from an attack, but does not
+    ///     constitute an attack against that character", so it retaliates
+    ///     against nothing.
+    ///   </description></item>
+    ///   <item><description>
+    ///     <c>rr:ranged.1</c> — "this attack ignores the retaliate keyword".
+    ///   </description></item>
+    /// </list>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="attacker">Who is attacking.</param>
+    /// <param name="target">Who is being attacked.</param>
+    /// <param name="amount">How much damage.</param>
+    /// <param name="trigger">What caused it, for the event stream.</param>
+    /// <param name="verb">What kind of thing caused it.</param>
+    /// <param name="events">Where to record what happened.</param>
+    public static void Attack(
+        World world, ICardFacts facts, Card attacker, Card target, long amount,
+        string trigger, string verb, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(attacker);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(events);
+
+        // `rr:piercing.2` -- "if an attack with the piercing keyword would deal
+        // no damage to the attacked character, it does not discard tough status
+        // cards from that character", which is why this is inside the guard.
+        if (amount > 0 && Keywords.Has(world, attacker, Keywords.Piercing, facts))
+        {
+            foreach (var tough in Statuses.On(world, target, Statuses.Tough).ToList())
+            {
+                Discard.Card(world, tough, trigger, events);
+            }
+        }
+
+        // Worked out before the damage, because `rr:overkill.1` is "the damage
+        // beyond its hit points" and after the defeat the character is gone.
+        long beyond = Math.Max(0, amount - Math.Max(0, Health(world, facts, target) - target.Damage));
+        // `rr:overkill.4`: "if excess damage from an attack with overkill is
+        // prevented, that damage is **not** dealt to the identity or villain."
+        //
+        // **Nothing extra is needed for that.** A tough status card prevents all
+        // the damage and `Deal` answers false, so the character was not
+        // defeated and nothing spills -- `rr:tough.3` again, that a character
+        // whose tough card ate the damage "is not considered to have taken
+        // damage". A separate check here would be a second statement of the
+        // same rule, and only one of them could be right after an edit.
+        if (Deal(world, facts, target, amount, trigger, verb, events)
+            && beyond > 0
+            && Keywords.Has(world, attacker, Keywords.Overkill, facts))
+        {
+            Spill(world, facts, target, beyond, trigger, events);
+        }
+
+        // `rr:ranged.1` -- "this attack ignores the retaliate keyword".
+        if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
+        {
+            Retaliate(world, facts, target, attacker, trigger, events);
+        }
+    }
+
+    /// <summary>
+    /// Excess damage from an attack with overkill — <c>rr:overkill</c>.
+    /// </summary>
+    /// <remarks>
+    /// "If an ally is defeated [...] deal any damage on that ally beyond its hit
+    /// points to <b>the identity of the player who controls the ally</b>. If a
+    /// minion is defeated [...] to <b>the villain</b>." Two different
+    /// destinations, decided by what was defeated rather than by who attacked.
+    /// </remarks>
+    private static void Spill(
+        World world, ICardFacts facts, Card defeated, long beyond,
+        string trigger, List<GameEvent> events)
+    {
+        var onto = facts.Kind(defeated.FaceId) switch
+        {
+            CardKind.Ally when defeated.Owner >= 0 => world.Seats[defeated.Owner].IdentityCard,
+            CardKind.Minion => world.TheCardIn(DeckType.VillainArea),
+            _ => null,
+        };
+
+        if (onto is not null)
+        {
+            // `rr:overkill.2`: "damage dealt by overkill to an identity or
+            // villain is considered damage from an attack, but **does not
+            // constitute an attack against that character**" -- so this deals
+            // damage and does not retaliate.
+            Deal(world, facts, onto, beyond, trigger, Keywords.Overkill, events);
+        }
     }
 
     /// <summary>

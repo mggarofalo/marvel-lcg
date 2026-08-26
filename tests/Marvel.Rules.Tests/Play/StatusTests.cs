@@ -227,6 +227,186 @@ public sealed class StatusTests
         Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
+    [Rule("rr:piercing")]
+    [Rule("rr:piercing.1")]
+    [Fact]
+    public void PiercingDiscardsToughBeforeTheDamageLands()
+    {
+        // "Before this attack deals damage to a character, discard each tough
+        // status card from that character." So the damage lands rather than
+        // being eaten -- which is the whole point, and the opposite of what
+        // `rr:tough.2` does on its own.
+        var printed = Cards().With("minion", ("HP", "9"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        Statuses.Give(world, minion, Statuses.Tough);
+
+        Grant(world, hero, Marvel.Rules.Timing.Keywords.Piercing);
+        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+
+        Assert.False(Statuses.Has(world, minion, Statuses.Tough));
+        Assert.Equal(2, minion.Damage);
+    }
+
+    [Rule("rr:piercing.2")]
+    [Fact]
+    public void PiercingDiscardsNothingWhenTheAttackDealsNoDamage()
+    {
+        // "If an attack with the piercing keyword would deal no damage to the
+        // attacked character, it does not discard tough status cards."
+        var printed = Cards().With("hero", ("ATK", "0"), ("HP", "10"))
+            .With("minion", ("HP", "9"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        Statuses.Give(world, minion, Statuses.Tough);
+
+        Grant(world, hero, Marvel.Rules.Timing.Keywords.Piercing);
+        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+
+        Assert.True(Statuses.Has(world, minion, Statuses.Tough));
+    }
+
+    [Rule("rr:piercing.1")]
+    [Fact]
+    public void PiercingDiscardsEveryToughCard()
+    {
+        // "Discard **each** tough status card from that character" -- all of
+        // them, which is the opposite of `rr:tough.2.1`'s one at a time. Two
+        // cards would otherwise eat two attacks.
+        var printed = Cards().With("minion", ("HP", "9"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        Statuses.Give(world, minion, Statuses.Tough);
+        Statuses.Give(world, minion, Statuses.Tough);
+
+        Grant(world, hero, Marvel.Rules.Timing.Keywords.Piercing);
+        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+
+        Assert.Equal(0, Statuses.Count(world, minion, Statuses.Tough));
+        Assert.Equal(2, minion.Damage);
+    }
+
+    [Rule("rr:overkill")]
+    [Fact]
+    public void AnAttackWithoutOverkillSpillsNothing()
+    {
+        // The excess simply goes away. Six damage against two hit points and
+        // the villain is untouched.
+        var printed = Cards().With("hero", ("ATK", "6"), ("HP", "10"))
+            .With("minion", ("HP", "2"));
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Equal(0, villain.Damage);
+    }
+
+    [Rule("rr:ranged")]
+    [Fact]
+    public void RangedIgnoresRetaliate()
+    {
+        var printed = Cards().With("minion", ("HP", "9"), ("Retaliate", "3"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Grant(world, hero, Marvel.Rules.Timing.Keywords.Ranged);
+        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+
+        Assert.Equal(2, minion.Damage);
+        Assert.Equal(0, hero.Damage);
+    }
+
+    [Rule("rr:overkill")]
+    [Rule("rr:overkill.1")]
+    [Fact]
+    public void OverkillCarriesTheExcessFromADefeatedMinionToTheVillain()
+    {
+        // "If a minion is defeated by an attack with the overkill keyword, deal
+        // any damage on that minion beyond its hit points **to the villain**."
+        // Six damage against two hit points is four beyond.
+        var printed = Cards().With("hero", ("ATK", "6"), ("HP", "10"))
+            .With("minion", ("HP", "2"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Grant(world, hero, Marvel.Rules.Timing.Keywords.Overkill);
+        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Equal(4, villain.Damage);
+    }
+
+    [Rule("rr:overkill.1")]
+    [Fact]
+    public void OverkillCarriesTheExcessFromADefeatedAllyToItsController()
+    {
+        // The other destination: "deal any damage on that ally beyond its hit
+        // points to **the identity of the player who controls the ally**".
+        var printed = Cards().With("villain", ("ATK", "7"), ("SCH", "2"), ("HP", "20"))
+            .With("ally", ("HP", "3"));
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
+
+        Grant(world, villain, Marvel.Rules.Timing.Keywords.Overkill);
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        var asked = Sequence.Work(world, printed, new NoCardAbilities(), []);
+        Sequence.Answer(
+            world, printed, new NoCardAbilities(), asked!, Decision.Take(ally.ObjectId), []);
+        Sequence.Finish(world, printed, new NoCardAbilities(), []);
+
+        Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
+        Assert.Equal(4, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:overkill.4")]
+    [Fact]
+    public void OverkillCarriesNothingWhenAToughCardAteTheDamage()
+    {
+        // "If excess damage from an attack with overkill is prevented, that
+        // damage is **not** dealt to the identity or villain." A tough status
+        // card prevents all of it (`rr:tough.2`), so nothing spills.
+        var printed = Cards().With("hero", ("ATK", "6"), ("HP", "10"))
+            .With("minion", ("HP", "2"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        Statuses.Give(world, minion, Statuses.Tough);
+
+        Grant(world, hero, Marvel.Rules.Timing.Keywords.Overkill);
+        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+
+        Assert.Equal(0, minion.Damage);
+        Assert.Equal(0, villain.Damage);
+    }
+
+    /// <summary>Grants a keyword the way a card ability does.</summary>
+    private static void Grant(World world, Card card, string keyword) =>
+        world.Effects.Register(new Marvel.Rules.Timing.ContinuousEffect(
+            Marvel.Rules.Timing.EffectSource.LastingEffect,
+            Kind: keyword, Card: card.ObjectId, Affects: card.ObjectId));
+
     private static World Board(Printed printed)
     {
         var world = new World(printed, players: 1);

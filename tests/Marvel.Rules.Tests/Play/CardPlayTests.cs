@@ -256,6 +256,58 @@ public sealed class CardPlayTests
         Assert.NotNull(CardPlay.Price(world, printed, seat, expensive));
     }
 
+    [Rule("rr:restricted")]
+    [Rule("rr:restricted.1")]
+    [Fact]
+    public void AThirdRestrictedCardForcesTheOldestOut()
+    {
+        // "A player **can** play or put into play a restricted card even if
+        // they already control two restricted cards. However, if a player ever
+        // controls more than two [...] they must **immediately** choose and
+        // discard from play restricted cards they control until they have only
+        // two."
+        //
+        // So it is not a play restriction: the third card goes into play and
+        // then one leaves. `rr:restricted.1` is a **Forced Response** for that
+        // reason.
+        var printed = Cards().With("locked", ("Cost", "0"), ("RES", "R"), ("Restricted", "1"));
+        var world = Board(printed);
+        var seat = world.Seats[0];
+
+        var first = InHand(world, "locked");
+        CardPlay.Play(world, printed, new Silent(), seat, first, [], []);
+        var second = InHand(world, "locked");
+        CardPlay.Play(world, printed, new Silent(), seat, second, [], []);
+
+        Assert.Equal(DeckType.UpgradesArea, first.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, second.Area.Type);
+
+        var third = InHand(world, "locked");
+        CardPlay.Play(world, printed, new Silent(), seat, third, [], []);
+
+        // The one just played stays, and the oldest of the others goes.
+        Assert.Equal(DeckType.DiscardPile, first.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, second.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, third.Area.Type);
+    }
+
+    [Rule("rr:restricted")]
+    [Fact]
+    public void TwoRestrictedCardsAreFine()
+    {
+        var printed = Cards().With("locked", ("Cost", "0"), ("RES", "R"), ("Restricted", "1"));
+        var world = Board(printed);
+        var seat = world.Seats[0];
+
+        var first = InHand(world, "locked");
+        CardPlay.Play(world, printed, new Silent(), seat, first, [], []);
+        var second = InHand(world, "locked");
+        CardPlay.Play(world, printed, new Silent(), seat, second, [], []);
+
+        Assert.Equal(DeckType.UpgradesArea, first.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, second.Area.Type);
+    }
+
     /// <summary>One object id of a card in hand with the given face.</summary>
     private static int Pay(World world, string faceId) =>
         world.Seats[0].Hand.Cards.First(card => card.FaceId == faceId).ObjectId;

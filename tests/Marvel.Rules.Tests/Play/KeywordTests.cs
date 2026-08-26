@@ -433,6 +433,68 @@ public sealed class KeywordTests
         Assert.Empty(world.AreaOf(DeckType.EncounterDiscardPile).Cards);
     }
 
+    [Rule("rr:quickstrike")]
+    [Rule("rr:quickstrike.1")]
+    [Fact]
+    public void AQuickstrikeMinionAttacksTheHeroItEngages()
+    {
+        // "**Forced Response (Hero)**: after this minion engages a player, it
+        // attacks that player." A minion that would otherwise wait for the next
+        // villain phase hits at once.
+        var printed = new Printed()
+            .With("hero", ("HP", "10"))
+            .With("minion", ("Quickstrike", "1"), ("ATK", "3"), ("HP", "3"));
+        var world = Board(printed);
+        world.Seats[0].IdentityCard.TurnTo("hero");
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
+
+        Reveal.Quickstrike(world, printed, minion, 0, round: 1);
+        Undefended(world, printed);
+
+        Assert.Equal(3, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:quickstrike")]
+    [Fact]
+    public void AQuickstrikeMinionDoesNothingToAnAlterEgo()
+    {
+        // "After a minion with the quickstrike keyword engages a player **whose
+        // identity is in hero form**." The *(Hero)* on the forced response is
+        // the gate.
+        var printed = new Printed()
+            .With("minion", ("Quickstrike", "1"), ("ATK", "3"), ("HP", "3"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Reveal.Quickstrike(world, printed, minion, 0, round: 1);
+
+        Assert.False(world.Agenda.IsBusy);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:quickstrike")]
+    [Fact]
+    public void AMinionWithoutQuickstrikeWaitsForTheVillainPhase()
+    {
+        // The keyword is the whole of it: an ordinary minion engaging a hero
+        // does nothing until step 2 of the next villain phase.
+        var printed = new Printed()
+            .With("hero", ("HP", "10"))
+            .With("minion", ("ATK", "3"), ("HP", "3"));
+        var world = Board(printed);
+        world.Seats[0].IdentityCard.TurnTo("hero");
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Reveal.Quickstrike(world, printed, minion, 0, round: 1);
+
+        Assert.False(world.Agenda.IsBusy);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+    }
+
     /// <summary>Runs the attack, declining the defender prompt.</summary>
     private static void Undefended(World world, Printed printed)
     {
