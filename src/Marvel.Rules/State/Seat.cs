@@ -5,11 +5,9 @@ namespace Marvel.Rules.State;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Promoted out of <c>WorldSetup</c>, where it was a private record used to
-/// carry areas between the steps of a deal. The engine needs the same grouping for
-/// a different reason — a prompt is put to a seat, and answering it reads that
-/// seat's hand — so it belongs to the state rather than to the procedure that
-/// builds it.
+/// A seat is state rather than a step of the deal: a prompt is put to a seat,
+/// and answering one reads that seat's hand. Grouping the areas here is what
+/// lets both the deal and the game name the same thing.
 /// </para>
 /// <para>
 /// <b>This is not yet a play area.</b> A seat holds the areas a deal makes for

@@ -25,12 +25,11 @@ namespace Marvel.Content.Tests.Play;
 /// into play without being revealed, which is what blocked MARVEL-211.
 /// </para>
 /// <para>
-/// Reading it as the rule it is also fixed something quieter.
-/// <c>Reveal.Resolve</c> sent every attachment to nowhere, so
-/// <c>Reveal.EnterPlay</c> never ran for one — and eleven attachments in the
-/// pool print <c>uses X</c>, which is a keyword that fires on entering play.
-/// Each of them had been arriving with an empty counter pool and an ability
-/// that spends from it.
+/// An attachment therefore enters play like anything else, through
+/// <c>Reveal.EnterPlay</c>. That matters beyond tidiness: eleven attachments in
+/// the pool print <c>uses X</c>, a keyword that fires on entering play, and one
+/// that arrived without it would have an empty counter pool and an ability that
+/// spends from it.
 /// </para>
 /// </remarks>
 public sealed class AttachToTests

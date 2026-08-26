@@ -5,15 +5,14 @@ namespace Marvel.Rules.Events;
 /// <summary>How the event stream is spelled on the wire.</summary>
 /// <remarks>
 /// <para>
-/// Snake case, spelling its keys <c>face_up</c>, <c>from</c>, <c>to</c>. The
-/// vocabulary contract that fixed this spelling is gone; the spelling stays,
-/// because a wire format is worth having only if it holds still and there is no
-/// reason to prefer a different one now.
+/// Snake case, spelling its keys <c>face_up</c>, <c>from</c>, <c>to</c>. <b>Our
+/// choice, not a rule</b> — no published rule says anything about a wire
+/// format. What matters is that it holds still, so treat it as fixed.
 /// </para>
 /// <para>
-/// Byte equality is <b>not</b> required here: events are consumed by a client,
-/// not compared between engines. What matters is that the names hold, and at
-/// the moment nothing checks that they do — MARVEL-251.
+/// Byte equality is <b>not</b> required here: events are consumed by a client
+/// rather than compared. What matters is that the names hold, and nothing
+/// checks that they do — MARVEL-251.
 /// </para>
 /// </remarks>
 public static class EventJson

@@ -9,18 +9,15 @@ namespace Marvel.Core.Tests.Specs;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The 112 <c>.feature</c> files under <c>specs/</c> were written against a
-/// hand-rolled parser that no longer exists. That parser accepted what it
-/// accepted; nothing had ever checked the files against the *standard*
-/// grammar. If they have drifted, every scenario has to be rewritten — and the
-/// cheapest moment to find that out is before the suite grows further, not
-/// after the C# runner exists.
+/// The 112 <c>.feature</c> files under <c>specs/</c> have to stay loadable by
+/// whatever runs them, so this parses every one under the standard grammar. If
+/// they drift from it, every scenario has to be rewritten, and the cheapest
+/// moment to learn that is before the suite grows further.
 /// </para>
 /// <para>
 /// <b>This checks the format and says nothing about the behaviour.</b> Every
-/// scenario in there is a draft: the validation they once passed is retired,
-/// because the Rules Reference decides what the game does. See
-/// <c>specs/README.md</c>.
+/// scenario in there is a draft, and the Rules Reference decides what the game
+/// does. See <c>specs/README.md</c>.
 /// </para>
 /// <para>
 /// This uses the <c>Gherkin</c> package directly, which is the parser Reqnroll

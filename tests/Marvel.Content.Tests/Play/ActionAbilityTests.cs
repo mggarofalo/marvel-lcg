@@ -23,8 +23,8 @@ namespace Marvel.Content.Tests.Play;
 /// <para>
 /// <b>An action is not in a window.</b> It happens because a player says so on
 /// their turn, so it is offered beside the basic powers rather than in an
-/// interrupt or a response — which is why <c>AbilityTypes.PriorityOf</c> has
-/// always refused to give it a tier.
+/// interrupt or a response — which is why <c>AbilityTypes.PriorityOf</c>
+/// refuses to give it a tier.
 /// </para>
 /// </remarks>
 public sealed class ActionAbilityTests

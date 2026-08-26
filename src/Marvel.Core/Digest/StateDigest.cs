@@ -1,10 +1,8 @@
 using System.Buffers;
-using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace Marvel.Core.Digest;
 
@@ -28,12 +26,11 @@ namespace Marvel.Core.Digest;
 /// </para>
 /// <para>
 /// The writer is <see cref="Utf8JsonWriter"/> with
-/// <see cref="JavaScriptEncoder.UnsafeRelaxedJsonEscaping"/>, normalised
-/// afterwards — see <see cref="CanonicalOptions"/> for what a digest string can
-/// contain and why that is a constraint rather than an observation.
+/// <see cref="JavaScriptEncoder.UnsafeRelaxedJsonEscaping"/>, and its output is
+/// taken as written — see <see cref="CanonicalOptions"/>.
 /// </para>
 /// </remarks>
-public sealed partial class StateDigest
+public sealed class StateDigest
 {
     /// <summary>The digest format version.</summary>
     public const int Version = 2;
@@ -58,11 +55,20 @@ public sealed partial class StateDigest
 
     /// <summary>How the canonical text is written before normalisation.</summary>
     /// <remarks>
+    /// <para>
     /// The relaxed encoder rather than the default one, because it escapes only
-    /// what JSON requires. That leaves <see cref="Normalise"/> with two
-    /// mechanical differences to fix instead of a general re-encoding job — and
-    /// in particular it does not escape the apostrophe, which three traits
-    /// carry (<c>'POOL</c>, <c>BATROC'S BRIGADE</c>, <c>CROSSFIRE'S CREW</c>).
+    /// what JSON requires. The default escapes far more than that for HTML
+    /// safety — including the apostrophe, which three traits carry
+    /// (<c>'POOL</c>, <c>BATROC'S BRIGADE</c>, <c>CROSSFIRE'S CREW</c>) — and a
+    /// digest is not HTML.
+    /// </para>
+    /// <para>
+    /// <b>Whatever this writer emits is the canonical form.</b> No rule decides
+    /// how a digest is spelled, so the engine decides, and the decision is to
+    /// take the platform writer's answer rather than adjust it: hex case and
+    /// non-ASCII escaping are left exactly as .NET writes them. That is our
+    /// choice, and the only property it has to keep is holding still.
+    /// </para>
     /// </remarks>
     internal static readonly JsonWriterOptions CanonicalOptions = new()
     {
@@ -70,75 +76,6 @@ public sealed partial class StateDigest
         Indented = false,
     };
 
-    // Every non-ASCII UTF-16 code unit. Matching per code unit rather than per
-    // rune is deliberate: an astral character is two matches and becomes a
-    // surrogate pair, which is what `ensure_ascii=True` emits for it.
-    [GeneratedRegex(@"[^\x00-\x7f]")]
-    private static partial Regex NonAscii();
-
-    // An escape sequence, or a pair of backslashes. The pair comes first and
-    // that ordering is the whole correctness argument: a literal backslash in
-    // string content is spelled `\\`, so consuming pairs first means content
-    // that reads like `\u0041` can never be mistaken for an escape.
-    [GeneratedRegex(@"\\\\|\\u([0-9a-fA-F]{4})")]
-    private static partial Regex Escape();
-
-    /// <summary>
-    /// Normalises this writer's output to the canonical spelling.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The digest is compared byte for byte, so the spelling of the JSON is the
-    /// contract, and the contract picks two things .NET does not offer a switch
-    /// for:
-    /// </para>
-    /// <list type="bullet">
-    /// <item><description><b>Hex case is lower.</b> <c>\u001f</c>, where .NET
-    /// writes <c>\u001F</c>.</description></item>
-    /// <item><description><b>Non-ASCII is escaped.</b> Every character outside
-    /// ASCII, where the relaxed encoder leaves most of them
-    /// raw.</description></item>
-    /// </list>
-    /// <para>
-    /// <b>Both choices were inherited and neither is now load-bearing.</b> They
-    /// made the digest byte-identical to another implementation's; that
-    /// implementation is gone, so this is simply the canonical form, and its
-    /// only remaining virtue is that it holds still. Dropping the normaliser
-    /// would be legitimate and would change every digest ever produced, which
-    /// is why it is a decision rather than a cleanup.
-    /// </para>
-    /// <para>
-    /// Both are mechanical, so they are fixed here rather than by hand-writing
-    /// an encoder. The platform writer still decides everything structural —
-    /// which characters JSON requires escaped, surrogate validity, the short
-    /// forms — and this only adjusts the spelling afterwards.
-    /// </para>
-    /// <para>
-    /// Correctness rests on the ordering inside <see cref="Escape"/>; see the
-    /// comment there. It was checked against a 420-case fixture, 400 of them
-    /// fuzzed over an alphabet of backslashes, <c>u</c>, hex digits and
-    /// surrogate halves — because "obviously correct" is exactly the claim that
-    /// was wrong the first time. Those cases are gone; the ordering argument
-    /// stands on its own, and MARVEL-251 tracks replacing them.
-    /// </para>
-    /// <para>
-    /// On the strings a digest actually contains this does nothing at all: card
-    /// ids, zone names and field names are printable ASCII, so neither pass
-    /// matches. Measured at about 6 microseconds per digest, which is why there
-    /// is no fast path to get wrong.
-    /// </para>
-    /// </remarks>
-    internal static string Normalise(string text)
-    {
-        string escaped = NonAscii().Replace(
-            text, match => "\\u" + ((int)match.Value[0]).ToString("x4", CultureInfo.InvariantCulture));
-
-        return Escape().Replace(
-            escaped,
-            match => match.Groups[1].Success
-                ? "\\u" + match.Groups[1].Value.ToLowerInvariant()
-                : match.Value);
-    }
 
     /// <summary>The canonical text. This is what gets compared.</summary>
     public string Canonical()
@@ -158,7 +95,7 @@ public sealed partial class StateDigest
             writer.WriteEndObject();
         }
 
-        return Normalise(Encoding.UTF8.GetString(buffer.WrittenSpan));
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
     }
 
     /// <summary>SHA-256 of the canonical text.</summary>

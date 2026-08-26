@@ -49,13 +49,10 @@ public sealed class RealCardsGameTests
     [Fact]
     public void EverySeedPlaysToAnEnding()
     {
-        // **Every card in this scenario now does what it says.** Forty seeds,
-        // the real interpreter, and not one of them meets a card nobody has
-        // written.
-        //
-        // This test used to carry a list of the cards that blocked it, so that
-        // authoring one was a visible change here. The list is empty, and what
-        // is left of it is this assertion.
+        // **Every card in this scenario does what it says.** Forty seeds, the
+        // real interpreter, and not one of them meets a card nobody has
+        // written. `UnusScenarioTests` is the same assertion for a board where
+        // the list of unwritten cards is not yet empty.
         for (uint seed = 1; seed <= 40; seed++)
         {
             string? stopped = Play("rhino", seed);

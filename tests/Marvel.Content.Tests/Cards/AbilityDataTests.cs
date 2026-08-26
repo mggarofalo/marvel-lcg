@@ -272,12 +272,10 @@ public sealed class AbilityDataTests
         // ability nothing ever offers: `AbilityWindow` would drop it, no
         // occurrence would run it, and no turn would list it.
         //
-        // **The routes past the first two are newer.** `rr:player-turn.5`
-        // makes an "Action" one of the six things a turn offers rather than
-        // something timed around an occurrence, and `AbilityTypes.PriorityOf`
-        // has always refused to give it a tier for exactly that reason. Until
-        // an action could be triggered, this test read as "in a window or the
-        // occurrence", which was true because nothing else could be authored.
+        // **An action is not in a window.** `rr:player-turn.5` makes it one of
+        // the six things a turn offers rather than something timed around an
+        // occurrence, which is why `AbilityTypes.PriorityOf` refuses to give it
+        // a tier. So the reachable routes are three, not two.
         foreach (var ability in AuthoredCards.Book.Abilities)
         {
             var timing = ability.Trigger.Timing;
@@ -318,9 +316,8 @@ public sealed class AbilityDataTests
         var world = new World(Printed, players: 1);
         world.CreateSeat("p0");
         // `01130` Whirlwind, a Masters of Evil minion: no scenario these tests
-        // build reaches it, so it stays unauthored. It used to be `01100`
-        // Enhanced Ivory Horn, which stopped being an example of an unread card
-        // the moment somebody read it.
+        // build reaches it, so it stays unauthored. Authoring it means picking
+        // another unreached card here -- the test needs one to exist.
         var card = world.CreateCard("01130", world.AreaOf(DeckType.RevealingArea));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(

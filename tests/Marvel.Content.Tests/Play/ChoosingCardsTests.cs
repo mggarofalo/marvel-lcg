@@ -69,12 +69,13 @@ public sealed class ChoosingCardsTests
     public void ACardWithAChoiceInTwoAbilitiesResumesTheOneThatStopped()
     {
         // `rr:boost-boost-icon.2` keeps a card's "Boost" and its "When Revealed"
-        // apart, and a card can put a choice in each. The step carries the card
-        // and where the ability stopped, and neither says *which* ability -- so
-        // the runner had been taking the first one on the card with a choice in
-        // it, and resuming a boost would have asked the reveal's question.
+        // apart, and a card can put a choice in each. The card and the index the
+        // ability stopped at do not say *which* ability, so the suspended step
+        // carries the tier too -- without it, resuming a boost asks the
+        // reveal's question.
         //
-        // Silent, and legal-looking: two real options about the wrong thing.
+        // That failure is silent and legal-looking: two real options about the
+        // wrong thing.
         var world = Deal();
         var runner = new AbilityRunner(AbilityCatalog.Parse(
             """
@@ -252,13 +253,13 @@ public sealed class ChoosingCardsTests
     public void AnEffectAfterAChoiceWaitsForTheAnswer()
     {
         // **An ability can ask more than once, and what follows a question
-        // waits for it.** This used to be refused by name: a `choose` stopped
-        // the ability and nothing resumed it, so an effect after one would have
-        // run *before* the choice it was written to follow.
+        // waits for it.** An effect written after a `choose` has to run after
+        // the choice, which means the ability resumes where it stopped rather
+        // than restarting or abandoning.
         //
-        // A suspended ability now remembers where -- an index into its
-        // top-level sequence, one number, which is what a `PhaseStep` can carry
-        // and what survives a save.
+        // A suspended ability remembers where as an index into its top-level
+        // sequence -- one number, which is what a `PhaseStep` can carry and
+        // what survives a save.
         var book = Marvel.Cards.Dsl.AbilityCatalog.Parse(
             """
             {"cards":[{"card":"01110","abilities":[{

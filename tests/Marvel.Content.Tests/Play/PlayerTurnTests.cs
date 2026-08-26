@@ -13,10 +13,9 @@ namespace Marvel.Content.Tests.Play;
 /// <remarks>
 /// <para>
 /// <c>rr:player-phase</c>: "during the player phase, <b>each player</b>
-/// <i>(in player order)</i> takes one turn." The engine used to give exactly
-/// one turn per round however many players were at the table, so at two players
-/// the second never acted — and the recorded milestone game could not notice,
-/// because it has one player.
+/// <i>(in player order)</i> takes one turn." One turn <i>each</i>, so the phase
+/// is over when the last player has had theirs. A single-player board cannot
+/// tell that apart from one turn per round, which is why these deal two.
 /// </para>
 /// </remarks>
 public sealed class PlayerTurnTests

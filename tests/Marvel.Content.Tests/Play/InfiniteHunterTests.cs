@@ -228,10 +228,10 @@ public sealed class InfiniteHunterTests
     public void AGrantForADurationIsHeldAgainstTheFieldsTheEngineReads()
     {
         // "+2 SCH" is the same mechanism as "gains overkill" and reaches it
-        // through the same door. A constant ability's grant has always been
-        // held against the fields modifiers are read into; this one had not,
-        // so an unrecognised name would register happily, expire on time, and
-        // modify nothing in between.
+        // through the same door, so a grant is held against the fields
+        // modifiers are actually read into. Unchecked, a name nobody
+        // recognises registers happily, expires on time, and modifies nothing
+        // in between -- a typo that looks like a working card.
         var (world, _) = Board();
         var runner = new AbilityRunner(AbilityCatalog.Parse(
             """

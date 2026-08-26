@@ -37,8 +37,8 @@ public sealed class WhenDefeatedTests
 
     /// <summary>
     /// Fabian Cortez — a minion that prints one, from a set no scenario in
-    /// these tests reaches. It used to be Highway Robbery, which stopped being
-    /// an example of an unwritten ability the moment somebody wrote it.
+    /// these tests reaches. Authoring it means picking another unwritten
+    /// ability here; the test needs one to exist.
     /// </summary>
     private const string Unwritten = "32159";
 

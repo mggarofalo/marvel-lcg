@@ -22,14 +22,15 @@ public sealed class SequenceTests
     [Fact]
     public void TheVillainPhaseIsSixStepsAndTheyAreVisible()
     {
-        // The Rules Reference lists six. They used to be the order of six
-        // method calls, which is a thing a reader has to reconstruct.
+        // The Rules Reference lists six, and all six are on the agenda by
+        // name rather than being the order of six method calls -- an order a
+        // reader would otherwise have to reconstruct.
         //
-        // **All six, and for a while it was five.** Step 4 had no heading of
-        // its own: the deal step scheduled a reveal per card it dealt, so a
-        // card dealt at any other moment -- by an ability, or by a player's
-        // deck running out -- had nothing to reveal it. The rule's own wording
-        // is a loop, "until no dealt encounter cards remain", and a loop needs
+        // **Step 4 needs a heading of its own.** A deal step that scheduled a
+        // reveal per card it dealt would leave a card dealt at any other moment
+        // -- by an ability, or by a player's deck running out -- with nothing
+        // to reveal it. The rule's own wording is a loop, "until no dealt
+        // encounter cards remain", and a loop needs
         // a step to be.
         var world = Board(players: 1);
         VillainPhase.Schedule(world.Agenda, round: 1);

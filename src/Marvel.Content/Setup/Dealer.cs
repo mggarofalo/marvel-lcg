@@ -11,14 +11,8 @@ namespace Marvel.Content.Setup;
 /// this is a wire format and not a convenience.
 /// </para>
 /// <para>
-/// The order was transcribed rather than derived from
-/// <c>rr:appendix-ii-setup</c>, and held against a recording that named the
-/// card at every one of 81 ids. That recording is gone.
-/// </para>
-/// <para>
-/// <b>So nothing checks this today.</b> The allocation still has to be right —
-/// an id is a wire format and everything else depends on it — but the thing
-/// that proved it was a fixture, and the thing that should prove it is
+/// <b>Nothing checks this order.</b> It has to be right — an id is a wire
+/// format and everything else depends on it — and what should check it is
 /// <c>rr:appendix-ii-setup</c> read against <c>datasets/setup/setup.json</c>.
 /// MARVEL-251.
 /// </para>

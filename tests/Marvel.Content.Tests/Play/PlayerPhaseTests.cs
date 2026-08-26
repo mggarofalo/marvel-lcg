@@ -16,19 +16,15 @@ namespace Marvel.Content.Tests.Play;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>This file used to be a comparison and is now a set of claims.</b> Seven
-/// of its tests held the engine against a recording — three distinct boards,
-/// the prompts beside them, and a hash over the whole trace. A recording is
-/// another implementation's account of what the game does, and the rulebook is
-/// the authority, so they went. MARVEL-251 tracks re-expressing what they
-/// covered against <c>datasets/rules-reference/entries/*.md</c>.
+/// <b>Every test here is a claim about a rule or about the engine's own
+/// contract.</b> That declining changes nothing and says so; that the villain
+/// phase is the first thing to move the board; that a mulligan discards what
+/// was named; that two options never collide on a handle.
 /// </para>
 /// <para>
-/// What is left tests the loop on its own terms: that declining changes
-/// nothing and says so, that the villain phase is the first thing to move the
-/// board, that a mulligan discards what was named, that two options never
-/// collide on a handle. Each of those is a claim about a rule or about the
-/// engine's own contract rather than about another implementation.
+/// <b>The board after each decision is not checked, and should be.</b> Folding
+/// a sequence of answers and asserting the resulting board and prompts at each
+/// step is the coverage this file is missing — MARVEL-251.
 /// </para>
 /// <para>
 /// <b>Affordance ids are deliberately not asserted on.</b> They are session
@@ -251,9 +247,9 @@ public sealed class PlayerPhaseTests
         // cannot resolve says *what was taken* rather than "not implemented".
         // The difference is a one-line diagnosis and a debugging session.
         //
-        // An affordance nobody offered is the reachable case now that every
-        // verb the prompts carry is implemented. It used to be the mulligan,
-        // which was offered and could not be taken -- MARVEL-229.
+        // Taking an affordance nobody offered is refused by name rather than
+        // ignored: a decision the engine cannot place is a client bug, and
+        // swallowing it would produce a board that is plausible and wrong.
         var game = Begin();
 
         var thrown = Assert.Throws<RulesNotImplementedException>(

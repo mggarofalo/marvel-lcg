@@ -35,11 +35,6 @@ public sealed class EngineRandom(uint seed)
     /// right and the consumption does not, which desynchronises every draw
     /// after it.
     /// </para>
-    /// <para>
-    /// A fixture used to pin it, recording <c>words_consumed: 0</c> for exactly
-    /// this shape. It is gone, and the behaviour stays because it is correct
-    /// rather than because it was recorded — MARVEL-251.
-    /// </para>
     /// </remarks>
     public List<T> Choice2<T>(IReadOnlyList<T> items, int x)
     {

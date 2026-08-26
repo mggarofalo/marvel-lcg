@@ -18,11 +18,6 @@ namespace Marvel.Content.Tests.Play;
 /// written.</b>
 /// </para>
 /// <para>
-/// It earns its place by how recently it became possible. A player who declined
-/// everything used to reach round three and lose; a player who wanted to attack
-/// could not, and one who played an ally hit
-/// <i>"an ally defending is not implemented"</i> the next villain phase.
-/// </para>
 /// <para>
 /// The policy below is deliberately crude — it is not a bot and does not try to
 /// win. What it does is take a decision of every kind the engine offers, which
@@ -145,7 +140,7 @@ public sealed class WholeGameTests
             else if (game.Pending.Asking == Question.Defender)
             {
                 // The last candidate, which is an ally when there is one --
-                // `rr:defend-defense.3`, and the case that used to throw.
+                // `rr:defend-defense.3`.
                 game.Resolve(Decision.Take(options[^1].Id));
             }
             else if (play is { } card && Payment(card) is { } paying)

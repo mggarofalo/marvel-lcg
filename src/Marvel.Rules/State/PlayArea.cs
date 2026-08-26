@@ -15,8 +15,8 @@ namespace Marvel.Rules.State;
 /// So a game has <b>players + 1</b> of them, and this is a seat index with
 /// <see cref="Villains"/> as the extra. Not a new concept a scenario
 /// introduces — it is the ordinary structure of every game, which is why
-/// <c>Area.PlayArea</c> has always been an integer and why Fear No Evil's
-/// separate main schemes need no new container.
+/// <c>Area.PlayArea</c> is an integer and why Fear No Evil's separate main
+/// schemes need no new container.
 /// </para>
 /// <para>
 /// <b>A type rather than an <c>int</c>, because three different integers on

@@ -22,13 +22,11 @@ namespace Marvel.Content.Tests.Play;
 /// remaining, repeat these steps with the next boost card."
 /// </para>
 /// <para>
-/// None of that can be true of a card drawn and discarded inside one call,
-/// which is what the scheme used to do: exactly one boost card, with nowhere
-/// to put a second and no moment at which the enemy held it. The attack
-/// activation writes the same two steps — <c>rr:attack-enemy-activation</c>
-/// step 1 word for word, and its step 3 sub-step for sub-step, differing only
-/// in naming ATK where the scheme names SCH — so they are now the same two
-/// steps for both. MARVEL-250.
+/// So a scheming enemy holds a set of boost cards and the set is drained one at
+/// a time, which is what makes <c>.step.2.e</c> sayable at all. The attack
+/// writes the same two steps — <c>rr:attack-enemy-activation</c> step 1 word
+/// for word, and its step 3 sub-step for sub-step, differing only in naming ATK
+/// where the scheme names SCH — so they are the same two steps for both.
 /// </para>
 /// </remarks>
 public sealed class SchemeBoostCardTests
