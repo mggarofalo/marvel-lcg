@@ -589,7 +589,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 
 | | |
 |---|---|
-| Envelope | `trigger { event, timing, subject }`, `name`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
+| Envelope | `trigger { event, timing, subject, form, player }`, `name`, `cost`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `inExpertMode`, `isKind`, `defeatedBy` |
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `dealEncounterCards`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
@@ -1268,3 +1268,83 @@ a card *other* than the one carrying it. A card's own "When Defeated" is
 unaffected and already works: `rr:when-defeated-abilities.1` makes it a forced
 interrupt, so there is nothing to offer and `Defeat` resolves it inline before
 the card leaves play.
+
+### A response can cost something
+
+`rr:cost-arrow-icon` puts a payment before an effect — "pay cost → resolve
+effect" — and nothing in it is about which tier the ability sits in. An
+**action** with an arrow cost has worked since `01100` Enhanced Ivory Horn, the
+attachment on Rhino a player discards for three physical resources. A
+**response** with the same arrow could not be paid for at all:
+`Sequence.Answer` had the player's payment in its hand and did not pass it on,
+and `AbilityRunner.Resolve` paid `Pay(cost, [], cast)` — an empty list, against
+a cost of nothing, which was true of every card written until now.
+
+Prelate Armor (`45064`) is the same card one tier over. "**Hero Response:**
+After you make a basic attack against Unus, spend [mental] [physical] resources
+→ discard this card."
+
+```json
+{ "trigger": { "event": "WhenCharacterAttacks", "timing": "Response",
+               "subject": "attachedTo", "form": "hero",
+               "player": "trigger.player" },
+  "cost": { "spend": "BR" },
+  "effect": { "discard": "this" } }
+```
+
+Everything the payment needed was already built and unused. `CostOption.Sources`
+has modelled the menu of generators since MARVEL-169, `Decision.Resources` has
+carried which of them the player spent, and `CardPlay.Spend` has refused a
+payment that does not meet the cost. What was missing was ten characters of
+plumbing between the two.
+
+#### The two questions an action never had to ask
+
+An action is *taken by a seat*, so the request carries who is acting; both the
+form requirement and the hand to spend from arrive with it. A window is opened
+around an occurrence and offered down the table, and neither answer comes for
+free.
+
+- **Whose form.** `rr:initiating-abilities.step.2` — "if the card or ability has
+  a form requirement *(for example, 'Hero form only' or '**Hero** Action')*,
+  the form of the player playing that card or initiating that ability is checked
+  now." Step 2 is about any ability, and `Actions` had been asking it since the
+  first ported card. A window had never been asked, because until this card no
+  authored ability printed a **Hero Response**. It does now, and an alter-ego is
+  not offered it.
+- **Whose hand.** `rr:initiating-abilities.step.3` puts the cost and "the
+  player's ability to pay them" in one step, and only "if both conditions are
+  met" do the later steps happen. So an ability nobody can pay for is not an
+  offer that aborts at step 5 — it never reaches the window.
+
+`rr:you-your.7` answers both: "for abilities that trigger 'after [enemy] attacks
+you,' 'you' refers to the attacked player, even if that player defended with an
+ally." The seat is the occurrence's.
+
+#### Which is written on the card, not inferred from it
+
+The tempting shortcut is to say that an ability on a card the scenario owns
+belongs to whoever the occurrence happened to. It is right for this card and
+wrong as a rule: `rr:ability.8` lets **any** player trigger an optional ability
+on an encounter card, and "any player may" and "the player it happened to" are
+both things an encounter card can say. Only the card knows which it said, so the
+card says it — `"player": "trigger.player"`, a closed set of one, closed for the
+reason `AbilitySubjects` is.
+
+An encounter-card ability with a cost and *without* that field is refused rather
+than priced against the first player's hand, and so is one that names a form.
+Both refusals name the field that is missing.
+
+#### Two holes this leaves, named where they are
+
+- **A mandatory ability with a cost.** `rr:forced.1` makes a forced ability
+  resolve when its condition is met, so `Offering.Work` runs it without asking
+  anybody anything — and a payment is an answer to a question.
+  `rr:initiating-abilities.step.5` would still have to be paid, out of a hand
+  nobody chose from. No card in the pool prints one. The runner refuses it by
+  name; the day a card needs it, the window has to ask.
+- **Requirement resources are not the same shape.** `cost: { "spend": "BR" }`
+  reads as two resources of which one is mental and one physical, which is
+  `rr:resource.4`. A cost of a bare number with a `Requirement` printed beside
+  it goes through `Resources.Required` instead, and no *ability* prints one —
+  only cards being played do.

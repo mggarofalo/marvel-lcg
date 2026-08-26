@@ -35,7 +35,7 @@ public static class AbilityCatalog
         };
 
     private static readonly HashSet<string> TriggerKeys =
-        new(StringComparer.Ordinal) { "event", "timing", "subject", "form" };
+        new(StringComparer.Ordinal) { "event", "timing", "subject", "form", "player" };
 
     /// <summary>Parses the canonical ability dataset.</summary>
     /// <param name="json">The dataset text.</param>
@@ -144,7 +144,7 @@ public static class AbilityCatalog
         return new CardAbility(
             card,
             Text(element, "name") ?? cardName,
-            new AbilityTrigger(when, type, subject, Form(trigger, card)),
+            new AbilityTrigger(when, type, subject, Form(trigger, card), Whose(trigger, card)),
             Node(effect, card),
             element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
             element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null);
@@ -213,6 +213,30 @@ public static class AbilityCatalog
         throw new AbilityException(
             $"'{card}' requires the form '{form}', and an ability may require "
             + $"'{Forms.Hero}' or '{Forms.AlterEgo}'");
+    }
+
+    /// <summary>
+    /// Whose opportunity a triggered ability is, or null for its controller's.
+    /// </summary>
+    /// <remarks>
+    /// A closed set of one, and closed for the reason
+    /// <see cref="AbilitySubjects"/> is: "the seat this happened to" is a
+    /// relation between a card and an occurrence, and naming the relations is
+    /// what stops the field becoming a general predicate. The word is the one
+    /// the effect tree already binds a player with, so a card reads the same
+    /// phrase the same way in both halves.
+    /// </remarks>
+    private static string? Whose(JsonElement trigger, string card)
+    {
+        string? whose = Text(trigger, "player");
+        if (whose is null || whose == AbilityPlayers.TriggerPlayer)
+        {
+            return whose;
+        }
+
+        throw new AbilityException(
+            $"'{card}' offers its ability to '{whose}', and an ability may be offered to "
+            + $"'{AbilityPlayers.TriggerPlayer}' or to whoever controls its card");
     }
 
     /// <summary>One node: a value with exactly one named operation in it.</summary>

@@ -79,15 +79,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             foreach (var ability in book.On(card.FaceId))
             {
-                if (Answers(ability, card, occurrence, window))
+                if (!Answers(ability, card, occurrence, window))
                 {
-                    // The controller is the card's owner rather than anything
-                    // the data says: `rr:ability.8` lets any player use an
-                    // optional ability on an encounter card, and an encounter
-                    // card is one the scenario owns.
-                    waiting.Add(new PendingAbility(
-                        card.ObjectId, ability.Trigger.Timing, card.Owner));
+                    continue;
                 }
+
+                int controller = Controller(ability, card, occurrence);
+
+                // `rr:initiating-abilities.step.2` -- "if the card or ability
+                // has a form requirement (for example, 'Hero form only' or
+                // 'Hero Action'), the form of the player playing that card or
+                // initiating that ability is checked now." Step 2 is about any
+                // ability, not only an action: Prelate Armor prints a *Hero
+                // Response*, and an alter-ego cannot initiate one.
+                if (!InForm(world, controller, ability.Trigger.Form, card))
+                {
+                    continue;
+                }
+
+                // `rr:initiating-abilities.step.3` -- the cost and "the
+                // player's ability to pay them" are one step, and only "if both
+                // conditions are met" do the later steps happen. So an ability
+                // nobody can pay for is not an offer that fails at step 5; it
+                // never reaches the window at all.
+                if (ability.Cost is not null && !Payable(world, card, controller, ability.Cost))
+                {
+                    continue;
+                }
+
+                waiting.Add(new PendingAbility(
+                    card.ObjectId, ability.Trigger.Timing, controller));
             }
         }
 
@@ -121,10 +142,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Resolve(
-        World world, Occurrence occurrence, PendingAbility ability)
+        World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
+        ArgumentNullException.ThrowIfNull(paying);
 
         var card = world.Cards[ability.Card];
         var found = book.On(card.FaceId)
@@ -161,11 +183,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         int resolving = ability.Player >= 0 ? ability.Player : occurrence.Player;
         var cast = new Cast(world, card, occurrence, resolving, events, this);
 
+        // **A forced ability is resolved, never offered, and so never priced.**
+        // `rr:forced.1` makes it resolve when its condition is met, which is
+        // why `Offering.Work` runs it without asking anybody anything -- and a
+        // payment is an answer to a question. `rr:initiating-abilities.step.5`
+        // would still have to be paid, out of a hand nobody chose from. No card
+        // in the pool prints one; the day one does, the window has to ask.
+        if (AbilityTypes.IsMandatory(found[0].Trigger.Timing) && found[0].Cost is not null)
+        {
+            throw new RulesNotImplementedException(
+                $"'{card.FaceId}' has a mandatory ability with a cost, and a mandatory ability "
+                + "resolves without any player being asked to pay one");
+        }
+
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
-        // before step 6 resolves. Nothing here can abort, because step 3 --
-        // `Payable`, when the ability was offered -- already asked whether it
-        // could be paid.
-        Pay(found[0].Cost, [], cast);
+        // before step 6 resolves. Nothing here can abort for want of resources,
+        // because step 3 -- `Payable`, when the ability was offered -- already
+        // asked whether the cost could be paid at all. What it cannot check is
+        // that the player named a payment that works, and `CardPlay.Spend`
+        // refuses one that does not.
+        Pay(found[0].Cost, paying, cast);
         Run(found[0].Effect, cast);
         return events;
     }
@@ -693,6 +730,30 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         form is null || Forms.In(world, world.Seats[player], world.Facts, form);
 
     /// <summary>
+    /// The same question asked of an ability in a window, where the seat may be
+    /// nobody's.
+    /// </summary>
+    /// <remarks>
+    /// A form is a property of an identity, and an ability offered to every
+    /// player at once is not offered to an identity. A card that means one seat
+    /// says so on its trigger; one that names a form without naming a seat has
+    /// asked a question about nobody.
+    /// </remarks>
+    private static bool InForm(World world, int player, string? form, Card card)
+    {
+        if (form is null)
+        {
+            return true;
+        }
+
+        return player >= 0
+            ? InForm(world, player, form)
+            : throw new RulesNotImplementedException(
+                $"'{card.FaceId}' requires '{form}' form and is offered to every player, "
+                + "so there is no identity whose form to read");
+    }
+
+    /// <summary>
     /// Whether an ability's cost can be paid — <c>rr:initiating-abilities.step.3</c>.
     /// </summary>
     /// <remarks>
@@ -706,6 +767,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             null => true,
             { Kind: "exhaust" } => card.Ready,
+
+            // Every other cost is somebody's, and an ability offered to every
+            // seat at once has not said whose. `AbilityTrigger.Player` is where
+            // a card that means one seat says so.
+            _ when player < 0 => throw new RulesNotImplementedException(
+                $"'{card.FaceId}' has a cost of '{cost.Kind}' and is offered to every player, "
+                + "so there is no hand to price it against"),
 
             // Asked of the whole hand, which is the right question rather than
             // an approximation: `rr:cost.4` permits generating beyond the cost,
@@ -1037,6 +1105,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         return belongs && Subject(ability.Trigger.Subject, card, occurrence);
     }
+
+    /// <summary>
+    /// Whose opportunity an ability in a window is, or <c>-1</c> for every
+    /// seat's — <c>rr:ability.8</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The card's owner, unless the trigger names somebody. "Players can only
+    /// trigger interrupt / response abilities on cards they control or on
+    /// encounter cards", and an encounter card is one the scenario owns, so
+    /// <c>-1</c> here means <i>anyone</i> rather than nobody.
+    /// </para>
+    /// <para>
+    /// <b>A card that says "you" has named one seat, and it is not its
+    /// owner's.</b> <c>rr:you-your.7</c> — "for abilities that trigger
+    /// 'after [enemy] attacks you,' 'you' refers to the attacked player, even
+    /// if that player defended with an ally." Prelate Armor's "after
+    /// <i>you</i> make a basic attack against Unus" is no opportunity at all
+    /// for a player who did not attack, and it is that player's hand the cost
+    /// would otherwise be priced against.
+    /// </para>
+    /// <para>
+    /// Which is why this is written on the trigger rather than inferred from
+    /// the card having no owner: "any player may" and "the player it happened
+    /// to" are both things an encounter card can say, and only the card knows
+    /// which it said.
+    /// </para>
+    /// </remarks>
+    private static int Controller(CardAbility ability, Card card, Occurrence occurrence) =>
+        ability.Trigger.Player is null ? card.Owner : occurrence.Player;
 
     private static bool Subject(string subject, Card card, Occurrence occurrence) => subject switch
     {
@@ -2960,9 +3058,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         value is AbilityValue.Word word
             ? word.Value switch
             {
-                "trigger.player" => cast.Occurrence.Player,
-                "you" => Resolver(cast),
-                "controller" => cast.Source.Owner,
+                AbilityPlayers.TriggerPlayer => cast.Occurrence.Player,
+                AbilityPlayers.You => Resolver(cast),
+                AbilityPlayers.Controller => cast.Source.Owner,
                 _ => throw new AbilityException($"'{word.Value}' does not name a player"),
             }
             : throw new AbilityException(

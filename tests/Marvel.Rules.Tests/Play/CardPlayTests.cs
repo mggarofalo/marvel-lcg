@@ -656,7 +656,8 @@ public sealed class CardPlayTests
 
 
         public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability) => [];
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying) => [];
 
     }
 
@@ -672,7 +673,8 @@ public sealed class CardPlayTests
 
 
         public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability) => [];
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying) => [];
 
     }
 

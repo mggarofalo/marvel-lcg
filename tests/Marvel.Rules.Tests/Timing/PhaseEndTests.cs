@@ -174,7 +174,8 @@ public sealed class PhaseEndTests
         }
 
         public override IReadOnlyList<GameEvent> Resolve(
-            World asked, Occurrence occurrence, PendingAbility ability) => [];
+            World asked, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying) => [];
 
         public override Affordance Describe(World asked, PendingAbility ability) =>
             new(ability.Card, "Use", ability.Card, ability.Player, $"ability on {ability.Card}");
@@ -187,7 +188,8 @@ public sealed class PhaseEndTests
             World world, Occurrence occurrence, WindowKind window) => abilities;
 
         public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability) => [];
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying) => [];
 
         public override Affordance Describe(World world, PendingAbility ability) =>
             new(ability.Card, "Use", ability.Card, ability.Player, $"ability on {ability.Card}");

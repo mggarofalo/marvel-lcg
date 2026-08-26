@@ -1244,6 +1244,33 @@
           }
         }
       ]
+    },
+    {
+      "card": "45064",
+      "name": "Prelate Armor",
+      "note": "Attach to Unus. [star] Forced Response: After Unus schemes, give him a tough status card. Hero Response: After you make a basic attack against Unus, spend [mental] [physical] resources -> discard this card. The star is rr:star-icon.2 -- the ability is about the attached enemy -- so both triggers name attachedTo rather than this, the same as 01099 Charge. The second is 01100 Enhanced Ivory Horn one tier over: the same attachment, the same arrow cost, the same discard, timed to a response instead of an action. rr:cost-arrow-icon puts the payment before the effect, and rr:initiating-abilities.step.5 pays it. Two things the window had never been asked for and an action always had: whose form to read -- step 2, and a Hero Response is as much a form requirement as a Hero Action -- and whose hand to price it against. rr:you-your.7 answers both by pointing at the player the occurrence happened to, which is what the trigger's 'player' says. The [star] SCH+1 and Boost 3 are printed fields rather than abilities.",
+      "attachTo": { "query": "villain" },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenEnemySchemes",
+            "timing": "ForcedResponse",
+            "subject": "attachedTo"
+          },
+          "effect": { "giveStatus": { "card": "attachedTo", "status": "tough" } }
+        },
+        {
+          "trigger": {
+            "event": "WhenCharacterAttacks",
+            "timing": "Response",
+            "subject": "attachedTo",
+            "form": "hero",
+            "player": "trigger.player"
+          },
+          "cost": { "spend": "BR" },
+          "effect": { "discard": "this" }
+        }
+      ]
     }
   ]
 }
