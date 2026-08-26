@@ -559,6 +559,35 @@
           "effect": { "returnToHand": { "query": "attachedToThis" } }
         }
       ]
+    },
+    {
+      "card": "01098",
+      "name": "Armored Rhino Suit",
+      "note": "Attach to Rhino. Forced Interrupt: When any amount of damage would be dealt to Rhino, place it here instead. Then, if there is at least 5 damage here, discard Armored Rhino Suit. A replacement effect -- rr:replacement-effect's 'when [triggering condition] would happen, do [replacement effect] instead' -- sitting at rr:damage.step.1, which is before the tough card at step 2. 'Place it here' is placing and not dealing: the damage goes on as tokens rather than starting the nine steps again on a card that is not a character. The subject is the attached card rather than this one, because it is Rhino being dealt the damage.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "attachTo": { "query": "villain" } }
+        },
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "timing": "ForcedInterrupt",
+            "subject": "attachedTo"
+          },
+          "effect": {
+            "seq": [
+              { "soakDamage": { "onto": "this" } },
+              {
+                "if": {
+                  "test": { "atLeast": { "value": { "damageOn": "this" }, "count": 5 } },
+                  "then": { "discard": "this" }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

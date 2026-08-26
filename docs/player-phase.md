@@ -291,14 +291,14 @@ the gap as a **list** rather than a number. Forty seeds either run to an ending
 or stop on a card nobody has written, and *which cards* is asserted — so
 authoring one is a visible change there, and a new blocker is a failure.
 
-At the time of writing, **at least 25 of the 40 reach an ending** and three
-cards block the rest:
+**All forty reach an ending.** Every one of the scenario's twenty-four cards is
+written, and so is every card of the nemesis set that Shadow of the Past brings
+in.
 
-| card | why it is hard |
-|---|---|
-| `01098` Armored Rhino Suit | a replacement effect, and damage is not an occurrence with a window |
-| `01111` Explosion | damage assigned among several characters, which the player distributes |
-| `01165` Eviction Notice | an obligation whose options carry their own costs |
+It carried a list of the cards that blocked it while there were any, which is
+how it earned its keep: authoring Eviction Notice let the seeds get further,
+they reached Shadow of the Past, and Highway Robbery appeared as a blocker
+nobody had a reason to look for.
 
 The policy declines what it can, which is what keeps the coverage broad rather
 than lucky: a hero who never acts meets more of the encounter deck than one who

@@ -29,6 +29,9 @@ internal static class AuthoredCards
     /// <summary>The printed id of Peter Parker, his alter-ego side.</summary>
     public const string PeterParker = "01001b";
 
+    /// <summary>The printed id of "Armored Rhino Suit".</summary>
+    public const string ArmoredSuit = "01098";
+
     /// <summary>The printed id of "Charge".</summary>
     public const string Charge = "01099";
 
