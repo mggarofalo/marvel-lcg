@@ -233,6 +233,18 @@ public static class Steps
     /// <summary>Step 3 — <c>rr:villain-phase.step.3</c>.</summary>
     public const string DealEncounterCards = "DealEncounterCards";
 
+    /// <summary>
+    /// Step 4 — <c>rr:villain-phase.step.4</c>. A heading, and a loop.
+    /// </summary>
+    /// <remarks>
+    /// "Each player repeats this process in player order, <b>until no dealt
+    /// encounter cards remain</b>." So this step does not hand out a list of
+    /// reveals; it finds the next card, schedules that one reveal, and puts
+    /// itself back on the agenda. A card revealed here that deals another card
+    /// has that card revealed here too — <c>rr:deal-deal-an-encounter-card.1</c>.
+    /// </remarks>
+    public const string RevealEncounterCards = "RevealEncounterCards";
+
     /// <summary>One card being revealed — <c>rr:reveal</c>, <c>rr:villain-phase.step.4</c>.</summary>
     public const string RevealEncounterCard = "RevealEncounterCard";
 

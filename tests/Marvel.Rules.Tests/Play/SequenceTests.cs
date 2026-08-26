@@ -24,12 +24,19 @@ public sealed class SequenceTests
     {
         // The Rules Reference lists six. They used to be the order of six
         // method calls, which is a thing a reader has to reconstruct.
+        //
+        // **All six, and for a while it was five.** Step 4 had no heading of
+        // its own: the deal step scheduled a reveal per card it dealt, so a
+        // card dealt at any other moment -- by an ability, or by a player's
+        // deck running out -- had nothing to reveal it. The rule's own wording
+        // is a loop, "until no dealt encounter cards remain", and a loop needs
+        // a step to be.
         var world = Board(players: 1);
         VillainPhase.Schedule(world.Agenda, round: 1);
 
         Assert.Equal(
             [Steps.PlaceThreat, Steps.EnemiesActivate, Steps.DealEncounterCards,
-             Steps.PassFirstPlayerToken, Steps.EndVillainPhase],
+             Steps.RevealEncounterCards, Steps.PassFirstPlayerToken, Steps.EndVillainPhase],
             world.Agenda.Outstanding.Select(step => step.What));
     }
 
