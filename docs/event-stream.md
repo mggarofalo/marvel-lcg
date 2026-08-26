@@ -78,9 +78,10 @@ happened, so it is one event carrying five cards, not five events.
 
 ## The vocabulary
 
-Nine records. `py_src/tools/events/model.py` on the Python side,
-`src/Marvel.Rules/Events/GameEvent.cs` on the C#, and
-`datasets/events/vocabulary.json` holding the two to each other.
+Nine records, defined by `src/Marvel.Rules/Events/GameEvent.cs`. There was a
+`datasets/events/vocabulary.json` holding this list against a Python one; both
+are gone, and nothing currently checks that the names below match the code —
+MARVEL-251.
 
 | event | payload |
 |---|---|

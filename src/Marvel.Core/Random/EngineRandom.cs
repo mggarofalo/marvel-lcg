@@ -29,16 +29,16 @@ public sealed class EngineRandom(uint seed)
     /// <remarks>
     /// <para>
     /// When <paramref name="x"/> equals the sequence length there is exactly
-    /// one answer, so this returns the input order and draws nothing. That is
-    /// inherited behaviour from the Python engine and it is reproduced
-    /// deliberately: it is semantically right, and changing it would move the
-    /// stream for every game that contains such a call.
+    /// one answer, so this returns the input order and draws nothing. It is
+    /// semantically right — there is nothing to choose — and it is load-bearing
+    /// for reproducibility: without the short-circuit the values still come out
+    /// right and the consumption does not, which desynchronises every draw
+    /// after it.
     /// </para>
     /// <para>
-    /// <c>datasets/rng/vectors.json</c> pins it — the <c>engine_choice2</c>
-    /// cases record <c>words_consumed: 0</c> for exactly this shape. Without
-    /// the short-circuit the values still come out right and the consumption
-    /// does not, which desynchronises every draw after it.
+    /// It was inherited from the Python engine and pinned by a fixture that
+    /// recorded <c>words_consumed: 0</c> for exactly this shape. Both are gone.
+    /// The behaviour stays because it is correct, not because it was recorded.
     /// </para>
     /// </remarks>
     public List<T> Choice2<T>(IReadOnlyList<T> items, int x)

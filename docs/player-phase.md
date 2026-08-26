@@ -188,10 +188,9 @@ Defence is the fourth and belongs to an enemy's attack rather than to a turn —
 see [enemy-attacks.md](enemy-attacks.md). Scheme is the fifth and is an
 enemy's, not a player's.
 
-The verb strings are on the wire. The oracle's `Effect.GetDisplayName` names
-the four `Attack`, `Defense`, `Thwart` and `Recover`, and
-`datasets/digest/prompts.json` checks the half of the return value they appear
-in.
+The verb strings are on the wire: the four are spelled `Attack`, `Defense`,
+`Thwart` and `Recover`, the rulebook's own names capitalised. A client renders
+them, so they are a contract and not a label.
 
 Two limits are easy to miss and both are cited on the tests: a thwart cannot
 take more threat than is on the scheme (`rr:threat` counts tokens, and a scheme

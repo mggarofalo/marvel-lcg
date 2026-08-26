@@ -3,11 +3,11 @@
 Tracked as `MARVEL-176`. Written against engine build `0.5.9.x`, measured on
 2026-08-24.
 
-Three datasets already describe how the engine *computes*: the RNG stream
-(`datasets/rng/`), the state digest (`datasets/digest/`) and the cards
-(`datasets/cards/`). This is the fourth, and it describes what the engine is
-asked to compute *with* — which scenario holds which encounters, which hero
-opens with which forty cards.
+This dataset describes what the engine is asked to compute *with* — which
+scenario holds which encounters, which hero opens with which forty cards. It
+sat alongside three others describing how the engine *computes*: the RNG
+stream, the state digest and the prompts. Those three were emitted by the
+Python engine and were dropped with it; this one is content and stays.
 
 Until it existed, that data lived only in `py_src/data/` and `py_src/deck/`,
 which meant a C# engine could not deal a board without reading the oracle it is
@@ -106,11 +106,14 @@ step after. An obligation is *created* into its player's nemesis pile and
 *moved* onto the encounter deck before the shuffle; both are true and only the
 first one is an id.
 
-### Held against a real game
+### Held against a real game — no longer
 
-`datasets/digest/vectors.json` records the card at every `object_id` for
-`rhino / spider_man / 12345`. All **81** agree, in order —
-`unit_test/test_setup_dataset.py`.
+The deal order was checked against a recording that named the card at every
+`object_id` for `rhino / spider_man / 12345`, all **81** agreeing in order. The
+recording was the Python engine's, and it is gone.
+
+Nothing checks the allocation today. What should is `rr:appendix-ii-setup`
+read against this dataset — MARVEL-251.
 
 ### The one flip
 
@@ -213,7 +216,9 @@ holds the world and lays the board out. The acceptance test is the digest, byte
 for byte:
 
 > `rhino / spider_man / 12345`, step 0 — 81 cards, ids 0–80, every zone, index,
-> owner, host, face and field identical to `datasets/digest/vectors.json`.
+> owner, host, face and field identical to the recording.
+
+That acceptance test no longer runs; see above.
 
 That is the whole state model and none of the rules. Five things had to be right
 at once, and each was measured rather than guessed.

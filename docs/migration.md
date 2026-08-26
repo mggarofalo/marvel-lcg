@@ -121,7 +121,7 @@ Two calls worth recording because they went against the initial sketch:
 
 **It had to happen before corpus generation (MARVEL-15).** Changing the digest after generation invalidates the corpus, exactly as with the RNG. `replays/` was empty, so the cost was zero; afterwards it is a full regeneration. Everything downstream — MARVEL-16 coverage-directed generation, MARVEL-17 self-consistency verification, MARVEL-18 the freeze — sequences after this and needs no rework.
 
-`datasets/digest/vectors.json` is the cross-language acceptance fixture, on the same footing as `datasets/rng/vectors.json`: regenerate with `python -m tools.digest.emit_vectors`, and `--check` fails when the Python side has moved without it.
+`datasets/digest/vectors.json` was the cross-language acceptance fixture, on the same footing as `datasets/rng/vectors.json`. Both were dropped with the Python engine — see MARVEL-251.
 
 ### RNG: replace it on both sides with one standard (MARVEL-25, MARVEL-38)
 

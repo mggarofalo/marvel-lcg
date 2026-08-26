@@ -12,38 +12,28 @@ using Xunit;
 namespace Marvel.Content.Tests.Play;
 
 /// <summary>
-/// The engine, against the first three recorded steps of the milestone game.
+/// The player phase: what a turn offers, and what answering changes.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <c>OpeningBoardTests</c> proves the board <c>rhino / spider_man / 12345</c>
-/// is dealt from. This proves the loop runs on it: three recorded steps produced
-/// as the output of resolving two answers, rather than one board produced by
-/// dealing.
+/// <b>This file used to be a comparison and is now a set of claims.</b> Seven
+/// of its tests held the engine against recorded steps of a Python game —
+/// three distinct boards, the prompts beside them, and a hash over the whole
+/// trace. Those recordings were the Python engine's account of what the game
+/// does, and the rulebook is the authority, so they went with it. MARVEL-251
+/// tracks re-expressing what they covered against
+/// <c>datasets/rules-reference/entries/*.md</c>.
 /// </para>
 /// <para>
-/// <b>Why three steps is more than it sounds and less than it reads.</b> The
-/// fixture asks for twenty steps and the recording holds seven, because the
-/// sampling policy declines every decision and the game is lost in round three.
-/// Those seven are only three distinct boards — steps 0, 1 and 2 are one board,
-/// 3 and 4 another, 5 and 6 a third — because a declining player moves nothing
-/// and the board only changes in the villain phase. So this covers three of the
-/// seven recorded digests, and the two remaining transitions both need card
-/// abilities.
+/// What is left tests the loop on its own terms: that declining changes
+/// nothing and says so, that the villain phase is the first thing to move the
+/// board, that a mulligan discards what was named, that two options never
+/// collide on a handle. Each of those is a claim about a rule or about the
+/// engine's own contract rather than about another implementation.
 /// </para>
 /// <para>
-/// <b>Both halves of the return value are checked, from two fixtures.</b> A port
-/// can reproduce all three boards while asking entirely the wrong questions:
-/// declining a prompt that should never have been offered leaves exactly the
-/// same board as declining the right one. <c>datasets/digest/vectors.json</c>
-/// holds the boards, <c>datasets/digest/prompts.json</c> holds the questions,
-/// and step <i>n</i> of one is step <i>n</i> of the other.
-/// </para>
-/// <para>
-/// <b>What is deliberately not compared.</b> Affordance ids. They are session
-/// handles — the Python engine allocates effect object ids and MARVEL-164
-/// measured them drifting across sessions — so <c>(AnchorId, Verb)</c> is the
-/// durable key and is what these compare on. See the remarks on
+/// <b>Affordance ids are deliberately not asserted on.</b> They are session
+/// handles, so <c>(AnchorId, Verb)</c> is the durable key. See the remarks on
 /// <c>Affordance.Id</c>.
 /// </para>
 /// </remarks>
@@ -78,24 +68,6 @@ public sealed class PlayerPhaseTests
     }
 
     [Fact]
-    public void TheFirstThreeRecordedBoardsAreProducedByFolding()
-    {
-        var recorded = RecordedDigests();
-        var game = Begin();
-
-        // Step 0: dealt, nothing resolved yet.
-        Assert.Equal(recorded[0], game.State.Digest().Canonical());
-
-        // Steps 1 and 2: two declines.
-        for (int step = 1; step <= 2; step++)
-        {
-            var result = game.Resolve(Decision.Decline);
-            Assert.Same(game.State, result.State);
-            Assert.Equal(recorded[step], result.State.Digest().Canonical());
-        }
-    }
-
-    [Fact]
     public void DecliningChangesNothingAndSaysSo()
     {
         // The event list is the engine's account of what changed. A decline that
@@ -112,140 +84,6 @@ public sealed class PlayerPhaseTests
             Assert.Empty(result.Events);
             Assert.Equal(before, result.State.Digest().Canonical());
         }
-    }
-
-    [Fact]
-    public void TheRecordingReallyDoesHoldOneBoardForThreeSteps()
-    {
-        // The premise of the two tests above. If the fixture is ever
-        // regenerated against an engine where a decline moves the board, they
-        // would both keep passing for the wrong reason -- comparing an
-        // unchanged C# board against three recorded boards that also happen to
-        // be equal. This fails instead, and names the assumption.
-        var recorded = RecordedDigests();
-        Assert.Equal(recorded[0], recorded[1]);
-        Assert.Equal(recorded[1], recorded[2]);
-        Assert.NotEqual(recorded[2], recorded[3]);
-    }
-
-    [Fact]
-    public void EachStepAsksTheRecordedQuestion()
-    {
-        var recorded = RecordedPrompts();
-        var game = Begin();
-
-        for (int step = 0; step <= 2; step++)
-        {
-            var expected = recorded[step];
-            var actual = game.Pending;
-            Assert.NotNull(actual);
-
-            string where = $"step {step}";
-            Assert.Equal(expected.GetProperty("player").GetInt32(), actual.Player);
-            Assert.Equal(expected.GetProperty("kind").GetString(), RecordedKind(actual));
-            Assert.Equal(expected.GetProperty("trigger").GetString(), actual.Trigger);
-            Assert.Equal(expected.GetProperty("label").GetString(), actual.Label);
-            Assert.Equal(expected.GetProperty("cancellable").GetBoolean(), actual.Cancellable);
-            Assert.NotEmpty(actual.Affordances);
-
-            AssertAffordances(expected, actual, where);
-
-            if (step < 2)
-            {
-                game.Resolve(Decision.Decline);
-            }
-        }
-    }
-
-    [Fact]
-    public void TheOnlyVerbNotYetDerivedIsPlay()
-    {
-        // The coverage claim, stated as a set rather than as a count so that a
-        // verb appearing in the recording that nothing here builds fails the
-        // build instead of being silently skipped by the comparison above.
-        var offered = new SortedSet<string>(StringComparer.Ordinal);
-        foreach (var prompt in MilestoneCase().GetProperty("prompts").EnumerateArray())
-        {
-            foreach (var affordance in prompt.GetProperty("affordances").EnumerateArray())
-            {
-                offered.Add(affordance.GetProperty("verb").GetString()!);
-            }
-        }
-
-        Assert.Equal(["Change_Form", "End Phase", "Play", "Resolve Mulligans"], offered);
-        Assert.Equal(["Play"], offered.Except(Game.DerivedVerbs));
-    }
-
-    [Fact]
-    public void EveryRecordedBoardIsProducedByFolding()
-    {
-        // MARVEL-173's acceptance criterion, the other way round from the one
-        // MARVEL-176 met: produce the recorded `step_digests` as *output*
-        // rather than reproducing them as input.
-        var recorded = RecordedDigests();
-        var game = Begin();
-
-        for (int step = 0; step < recorded.Count; step++)
-        {
-            if (step > 0)
-            {
-                game.Resolve(Decision.Decline);
-            }
-
-            string produced = game.State.Digest().Canonical();
-            if (recorded[step] != produced)
-            {
-                Assert.Fail($"step {step}: {DigestDiff.Describe(recorded[step], produced)}");
-            }
-        }
-    }
-
-    [Fact]
-    public void TheWholeTraceHashesToTheRecordedValue()
-    {
-        // One value covering all seven steps in order, which is what the
-        // fixture carries it for: a port can fail fast before working out which
-        // step diverged. It is also the check that a per-step comparison cannot
-        // make -- that the steps came out in the recorded *order*.
-        var game = Begin();
-        var produced = new List<string> { game.State.Digest().Canonical() };
-        while (game.Pending is not null)
-        {
-            var result = game.Resolve(Decision.Decline);
-            if (result.Prompt is not null)
-            {
-                produced.Add(result.State.Digest().Canonical());
-            }
-        }
-
-        using var vectors = JsonDocument.Parse(
-            File.ReadAllText(RepositoryPaths.Dataset("digest", "vectors.json")));
-        var board = vectors.RootElement.GetProperty("cases")[0];
-
-        string expected = board.GetProperty("trace_sha256").GetString()!;
-        byte[] hashed = System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(string.Join("\n", produced)));
-        Assert.Equal(expected, Convert.ToHexString(hashed).ToLowerInvariant());
-    }
-
-    [Fact]
-    public void TheGameEndsAfterExactlyTheRecordedNumberOfDecisions()
-    {
-        // The fixture asks for twenty steps and holds seven, because the
-        // recorded game *ends* -- the headless run reports `game_over`. So the
-        // step count is a claim about the trace and not a budget that happened
-        // to be hit, and an engine that stopped early or ran on would produce
-        // every recorded digest and still be wrong.
-        var game = Begin();
-        int prompts = 1;
-        while (game.Resolve(Decision.Decline).Prompt is not null)
-        {
-            prompts++;
-        }
-
-        Assert.Equal(RecordedDigests().Count, prompts);
-        Assert.Equal(GamePhase.Over, game.Phase);
-        Assert.True(game.State.IsOver);
     }
 
     [Rule("rr:main-scheme-main-scheme-deck.2")]
@@ -686,67 +524,6 @@ public sealed class PlayerPhaseTests
         }
     }
 
-    private static IReadOnlyList<string> RecordedDigests()
-    {
-        using var vectors = JsonDocument.Parse(
-            File.ReadAllText(RepositoryPaths.Dataset("digest", "vectors.json")));
-        var board = vectors.RootElement.GetProperty("cases")[0];
-        Assert.Equal(Campaign, board.GetProperty("campaign").GetString());
-        Assert.Equal((int)Seed, board.GetProperty("seed").GetInt32());
-        return [.. board.GetProperty("step_digests").EnumerateArray()
-            .Select(digest => digest.GetString()!)];
-    }
-
-    private static IReadOnlyList<JsonElement> RecordedPrompts() =>
-        [.. MilestoneCase().GetProperty("prompts").EnumerateArray()];
-
-    // The document is not disposed on purpose: `JsonElement` is a view into it,
-    // and every caller here reads elements after the call returns. The file is
-    // read per call rather than cached so a test cannot see another's leftovers.
-    private static JsonElement MilestoneCase()
-    {
-        var prompts = JsonDocument.Parse(
-            File.ReadAllText(RepositoryPaths.Dataset("digest", "prompts.json")));
-        var board = prompts.RootElement.GetProperty("cases")[0];
-        Assert.Equal(Campaign, board.GetProperty("campaign").GetString());
-        Assert.Equal((int)Seed, board.GetProperty("seed").GetInt32());
-        return board;
-    }
-
-    /// <summary>
-    /// How the recording spells this prompt's kind.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// A translation, and it lives here rather than on <c>Prompt</c> on purpose.
-    /// The recorded <c>kind</c> is the name of a member of the Python engine's
-    /// <c>TimingPriority</c>, an enum with twelve members of which four —
-    /// <c>Rule</c>, <c>Statistics</c>, <c>Normal</c>, <c>End</c> — name nothing
-    /// in the Rules Reference. It also flattens two questions the rules keep
-    /// apart: <i>what</i> is being asked and <i>when</i>.
-    /// </para>
-    /// <para>
-    /// So the engine carries <see cref="Question"/> and
-    /// <see cref="TimingPriority"/>, both read off the rulebook, and this is
-    /// where they are bent into the corpus's spelling. Every other engine that
-    /// wants the recording to line up needs this function; none of them should
-    /// have to think in it.
-    /// </para>
-    /// </remarks>
-    private static string RecordedKind(Prompt prompt) => prompt switch
-    {
-        // "Normal" is the recording's word for a question that is not timed
-        // around an occurrence at all -- a turn option, a target, a payment.
-        { When: TimingPriority.Untimed } => "Normal",
-        { When: TimingPriority.StatusForcedInterrupt or TimingPriority.ForcedInterrupt }
-            => "ForcedInterrupt",
-        { When: TimingPriority.Interrupt } => "Interrupt",
-        { When: TimingPriority.ForcedResponse } => "ForcedResponse",
-        { When: TimingPriority.Response } => "Response",
-        _ => prompt.When.ToString(),
-    };
-
-    /// <summary>An interpreter whose one action claims an id the game uses.</summary>
     private sealed class Colliding(World world) : NoCardAbilities
     {
         public override IReadOnlyList<PendingAbility> Actions(World board, int player) =>

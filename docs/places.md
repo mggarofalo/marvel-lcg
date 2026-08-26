@@ -184,10 +184,9 @@ below.
 
 ## The event question
 
-`datasets/events/vocabulary.json` is a closed set of nine kinds, defined as *the
-set that explains every state change in the frozen corpus with nothing left over
-and no member that never fires*. `tools/events/model.py` says so in as many words,
-and adds:
+The event vocabulary is a closed set of nine kinds, chosen as *the set that
+explains every state change with nothing left over and no member that never
+fires*. The Python model that first drew the line added:
 
 > Scenarios that place cards outside the usual play areas […] are a question
 > about *state*, not about this list.
