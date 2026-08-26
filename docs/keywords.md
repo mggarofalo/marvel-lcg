@@ -11,6 +11,7 @@ own "equivalent to the following constant ability" line.
 
 | keyword | the ability it is equivalent to | where |
 |---|---|---|
+| **Alliance** | any player may help pay this card's costs | `CardPlay.Paying` |
 | **Assault** | a basic thwart against this scheme uses ATK instead of THW | `BasicPowers` |
 | **Form** | grants an identity a unique form | [forms.md](forms.md) |
 | **Guard** | the engaged player cannot attack any villain | `BasicPowers.Attackable` |
@@ -59,7 +60,6 @@ zero.
 | **Permanent** | 86 | "except by card abilities **in the same set**" needs the effect's set, not just the card's |
 | **Setup** | 39 | a setup step that puts cards into play before step 1 |
 | **Linked** | 14 | set-aside cards brought in by the card that names them |
-| **Alliance** | 13 | other players helping pay a cost |
 
 ### Teamwork's two statements disagree
 
@@ -73,6 +73,23 @@ It also **activates** rather than attacking, which is the difference from
 quickstrike. Quickstrike says outright *"a player whose identity is in hero
 form"*; teamwork does not, so `rr:activation.1` reads the form and a teamwork
 minion engaging an alter-ego schemes rather than doing nothing.
+
+### Alliance widens the payment and nothing else
+
+`rr:alliance.2` is the limit of it: *"only the player playing the card with the
+alliance keyword is considered to be resolving that card."* Helping to pay is
+not playing, so everything downstream of the payment still reads the seat that
+played the card.
+
+Each spent card goes to **its own owner's** discard pile, which `Discard.Card`
+already did by reading the card rather than the player who spent it — and which
+`rr:player-deck.1` makes matter, because the owner is who reshuffles.
+
+Ordinarily another player's hand is not a place a payment can come from at all:
+`rr:cost.3` spends resources *"by discarding cards from **their** hand"*. That
+is what the keyword suspends, and it is why alliance is checked when the play is
+offered as well as when it is taken — a card three of whose cost sits across the
+table is unplayable without it and playable with it.
 
 ### Peril is two rules with different reaches
 

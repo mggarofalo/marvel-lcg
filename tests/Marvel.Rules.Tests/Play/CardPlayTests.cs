@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.Tests;
@@ -318,6 +319,66 @@ public sealed class CardPlayTests
         Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
     }
 
+    [Rule("rr:alliance")]
+    [Fact]
+    public void AnAllianceCardCanBePaidForByTheWholeTable()
+    {
+        // "When a player declares their intention to play a card with the
+        // alliance keyword, **any player(s) may help pay the costs** for that
+        // card." Three of the cost sit in the other player's hand, so without
+        // the keyword there is no way to play it and with it there is.
+        var printed = Cards();
+        var world = Table(printed);
+        var mine = world.CreateCard("res", world.Seats[0].Hand);
+        var theirs = world.CreateCard("res", world.Seats[1].Hand);
+        var card = world.CreateCard("together", world.Seats[0].Hand);
+        var solo = world.CreateCard("alone", world.Seats[0].Hand);
+
+        // One card in hand generates two of a cost of three, so neither card
+        // is payable alone.
+        Assert.Null(CardPlay.Price(world, printed, world.Seats[0], solo));
+
+        var price = Assert.IsType<CostOption>(
+            CardPlay.Price(world, printed, world.Seats[0], card));
+        Assert.Equal(
+            [mine.ObjectId, theirs.ObjectId],
+            (price.Sources ?? []).Select(source => source.Effect));
+
+        CardPlay.Play(
+            world, printed, new Silent(), world.Seats[0], card,
+            [mine.ObjectId, theirs.ObjectId], []);
+
+        // **Each spent card goes to its own owner's discard pile.** Helping to
+        // pay does not make the card yours.
+        Assert.Equal(0, mine.Owner);
+        Assert.Equal(1, theirs.Owner);
+        Assert.Equal(DeckType.DiscardPile, mine.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, theirs.Area.Type);
+        Assert.NotSame(mine.Area, theirs.Area);
+    }
+
+    [Rule("rr:cost.3")]
+    [Fact]
+    public void ACardWithoutAllianceCannotReachAcrossTheTable()
+    {
+        // The converse, and the reason alliance is a keyword: `rr:cost.3`
+        // spends resources "by discarding cards from **their** hand", so
+        // ordinarily another player's hand is not a place a payment can come
+        // from at all.
+        var printed = Cards();
+        var world = Table(printed);
+        world.CreateCard("res", world.Seats[0].Hand);
+        var theirs = world.CreateCard("res", world.Seats[1].Hand);
+        var card = world.CreateCard("alone", world.Seats[0].Hand);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => CardPlay.Play(
+                world, printed, new Silent(), world.Seats[0], card, [theirs.ObjectId], []));
+
+        Assert.Contains("is not in p0's hand", thrown.Message, StringComparison.Ordinal);
+        Assert.Same(world.Seats[1].Hand, theirs.Area);
+    }
+
     [Rule("rr:cost.3")]
     [Fact]
     public void ACardCannotPayForItself()
@@ -513,6 +574,28 @@ public sealed class CardPlayTests
         }
     }
 
+    /// <summary>Two players, each with an empty hand to fill.</summary>
+    private static World Table(Printed printed)
+    {
+        var world = new World(printed, players: 2);
+        for (int seat = 0; seat < 2; seat++)
+        {
+            world.CreateSeat($"p{seat}");
+            world.Seats[seat].IdentityCard =
+                world.CreateCard("alterego,hero", world.Seats[seat].Hero);
+
+            // A deck with cards in it, for the same reason `Board` has one:
+            // `rr:player-deck.4` would otherwise reset an empty deck the moment
+            // a payment reached the discard pile.
+            for (int card = 0; card < 5; card++)
+            {
+                world.CreateCard("filler", world.Seats[seat].Deck);
+            }
+        }
+
+        return world;
+    }
+
     private static World Board(Printed printed)
     {
         var world = new World(printed, players: 1);
@@ -561,7 +644,12 @@ public sealed class CardPlayTests
         .With("panther", ("Cost", "0"), ("TeamUp", "Black Panther/T'Challa;Black Panther/Shuri"))
         .With("Black Panther", ("HP", "9"))
         .With("T'Challa", ("HP", "9"))
-        .With("Shuri", ("HP", "9"));
+        .With("Shuri", ("HP", "9"))
+
+        // `rr:alliance` -- 13 cards print one, and every one of them is a card
+        // about a table.
+        .With("together", ("Cost", "3"), ("Alliance", "1"))
+        .With("alone", ("Cost", "3"));
 
     private sealed class Silent : NoCardAbilities
     {

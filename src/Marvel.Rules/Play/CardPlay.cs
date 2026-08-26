@@ -65,6 +65,46 @@ public static class CardPlay
     }
 
     /// <summary>
+    /// Whose hands may pay for one card — <c>rr:alliance</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "When a player declares their intention to play a card with the alliance
+    /// keyword, <b>any player(s) may help pay the costs</b> for that card",
+    /// which <c>.1</c> writes as the constant ability "while paying costs for
+    /// this card, any player may contribute to paying those costs".
+    /// </para>
+    /// <para>
+    /// <c>rr:alliance.2</c> is the limit of it: "only the player playing the
+    /// card with the alliance keyword is considered to be resolving that
+    /// card". Helping to pay is not playing — the card is still the one
+    /// player's, and everything downstream of the payment reads the seat that
+    /// played it.
+    /// </para>
+    /// <para>
+    /// Every spent card goes to <b>its own owner's</b> discard pile, which
+    /// <see cref="Discard.Card"/> already does by reading the card rather than
+    /// the player who spent it.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="seat">Who is playing the card.</param>
+    /// <param name="card">The card being paid for.</param>
+    public static IReadOnlyList<Seat> Paying(
+        World world, ICardFacts facts, Seat seat, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(seat);
+        ArgumentNullException.ThrowIfNull(card);
+
+        return facts.PrintedValue(card.FaceId, "Alliance", world.Players) > 0
+            ? [.. world.PlayerOrder.Select(index => world.Seats[index])]
+            : [seat];
+    }
+
+    /// <summary>
     /// What a card in hand costs, and what could pay for it — or null when it
     /// cannot be played at all.
     /// </summary>
@@ -110,7 +150,8 @@ public static class CardPlay
         // The card being played cannot also pay for itself: `rr:cost.3` spends
         // resources "by discarding cards from their hand", and this one is
         // leaving the hand to be played.
-        var sources = Generators(facts, seat)
+        var sources = Paying(world, facts, seat, card)
+            .SelectMany(paying => Generators(facts, paying))
             .Where(source => source.Effect != card.ObjectId)
             .ToList();
 
@@ -174,15 +215,21 @@ public static class CardPlay
         // Step 5. Pay it -- "if this step is reached and the cost(s) cannot be
         // paid, **abort this process without paying any costs**", so the whole
         // payment is checked before a single card is discarded.
+        // `rr:alliance` -- for an alliance card this is every player's hand,
+        // and for every other card it is only this player's.
+        var hands = Paying(world, facts, seat, card).Select(player => player.Hand).ToList();
+
         var spent = new List<Card>();
         var generated = new System.Text.StringBuilder();
         foreach (int id in paying)
         {
             var source = world.Cards[id];
-            if (source.Area != seat.Hand)
+            if (!hands.Contains(source.Area))
             {
                 throw new RulesNotImplementedException(
-                    $"card {id} is not in {seat.Name}'s hand and cannot be spent from it");
+                    hands.Count == 1
+                        ? $"card {id} is not in {seat.Name}'s hand and cannot be spent from it"
+                        : $"card {id} is in no player's hand and cannot be spent from one");
             }
 
             if (source.ObjectId == card.ObjectId)
