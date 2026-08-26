@@ -18,6 +18,7 @@ own "equivalent to the following constant ability" line.
 | **Incite X** | *When Revealed: place X threat on the main scheme* | `Reveal.Keywords`, through `Threat.Place` |
 | **Overkill** | excess damage from a defeated ally goes to its controller's identity; from a minion, to the villain | `Damage.Attack` |
 | **Patrol** | the engaged player cannot thwart the **main** scheme | `BasicPowers.Thwartable` |
+| **Peril** | while it resolves, only the resolving player may trigger anything | `Offering.Eligible` |
 | **Piercing** | discard **each** tough status card before dealing damage | `Damage.Attack` |
 | **Quickstrike** | *Forced Response (Hero): after this minion engages a player, it attacks that player* | `Reveal.Quickstrike` |
 | **Ranged** | this attack ignores retaliate | `Damage.Attack` |
@@ -59,7 +60,6 @@ zero.
 | **Setup** | 39 | a setup step that puts cards into play before step 1 |
 | **Linked** | 14 | set-aside cards brought in by the card that names them |
 | **Alliance** | 13 | other players helping pay a cost |
-| **Peril** | 12 | table talk, and other players not acting |
 
 ### Teamwork's two statements disagree
 
@@ -73,6 +73,27 @@ It also **activates** rather than attacking, which is the difference from
 quickstrike. Quickstrike says outright *"a player whose identity is in hero
 form"*; teamwork does not, so `rr:activation.1` reads the form and a teamwork
 minion engaging an alter-ego schemes rather than doing nothing.
+
+### Peril is two rules with different reaches
+
+`rr:peril.1` states one constant ability with two clauses, and they are not the
+same restriction:
+
+- *"While a player is resolving this card, that player cannot consult other
+  players, and other players cannot trigger abilities."* — **any** ability, not
+  only ones on this card. A peril card is resolved alone.
+- *"While this card is in a player's play area, other players cannot trigger
+  abilities on this card."* — narrower, and longer-lived: it lasts as long as
+  the card sits there rather than only while it resolves.
+
+Both land in `Offering.Eligible`, which is the one place the engine decides what
+a seat may take out of a window. A player with nothing eligible is already
+skipped in silence rather than asked, so nothing else had to change: the other
+players pass, and the window closes.
+
+**Table talk is not implemented and cannot be.** "Cannot consult other players"
+is a rule about a room, and an engine that offers no opportunity has already
+done everything it can about it.
 
 ### A team-up name is not always a card title
 
