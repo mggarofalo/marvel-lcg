@@ -72,6 +72,38 @@ public static class StateFields
             "restricted_limit", "retaliate", "stalwart", "steady", "surge", "toughness",
             "vulnerable",
         ],
+        // **Reasoned, not measured, and the only row here that is.** No
+        // recorded digest reaches hero form, so nothing can be read off a
+        // board: `rr:identity.1` starts every player in alter-ego form,
+        // `rhino / spider_man / 12345` is the one case carrying full
+        // `step_digests` rather than hashes, and `01001a` appears in none of
+        // its seven steps.
+        //
+        // Derived from the `AlterEgo` row, which is measured, by the two
+        // differences between the faces: an alter-ego prints `REC` and a hero
+        // does not, and a hero prints `ATK`, `THW` and `DEF` and an alter-ego
+        // does not. `ally_limit`, `hand_size` and `restricted_limit` stay --
+        // they are the player's limits and both faces carry `HS`.
+        //
+        // `defense` is the one key in this whole table that no recorded card
+        // has. That is consistent rather than alarming: across all 58 faces and
+        // 65 distinct field keys of the recording there is no `defense`,
+        // because DEF is printed on hero faces alone -- allies and villains
+        // have none -- and no hero face is ever faceup.
+        //
+        // The consequential-damage pair is deliberately absent.
+        // `rr:consequential-damage` is an ally rule: "after an **ally**
+        // attacks, it takes consequential damage". A hero does not.
+        //
+        // If a recording ever disagrees, it disagrees loudly -- an emitted key
+        // set is compared whole. That is the point of writing it down instead
+        // of leaving heroes registering nothing.
+        [CardKind.Hero] =
+        [
+            "ally_limit", "attack", "defense", "hand_size", "health", "is_infinite_health",
+            "restricted_limit", "retaliate", "stalwart", "steady", "surge", "thwart",
+            "toughness", "vulnerable",
+        ],
         [CardKind.Minion] =
         [
             "acceleration_icon", "amplify", "attack", "boost_const", "engaged_with", "guard",
@@ -103,6 +135,11 @@ public static class StateFields
     private static readonly Dictionary<CardKind, string[]> TokensOnceInPlay = new()
     {
         [CardKind.AlterEgo] = ["k_threat"],
+        // Same pool, same reasoning as the `Hero` row above: one card, and
+        // `rr:form-change-form.2` keeps its tokens across a form change, so a
+        // pool that vanished when the card flipped would be the rule's
+        // opposite.
+        [CardKind.Hero] = ["k_threat"],
         [CardKind.MainScheme] = ["k_threat"],
         [CardKind.EncounterVillain] = ["k_threat"],
         [CardKind.Treachery] = ["k_threat"],
@@ -123,6 +160,7 @@ public static class StateFields
         ["guard"] = "Guard",
         ["boost_const"] = "Boost",
         ["recover"] = "REC",
+        ["defense"] = "DEF",
         ["hand_size"] = "HS",
         ["escalation_threat"] = "EscalationThreat",
         ["target_threat"] = "TargetThreat",
@@ -346,6 +384,12 @@ public static class StateFields
         switch (kind)
         {
             case CardKind.AlterEgo:
+            case CardKind.Hero:
+                // Both faces of one card, and `rr:form-change-form.2` says a
+                // form change keeps the damage and the tokens, so the two
+                // cases are one case. What differs between them is which keys
+                // they registered, and `Registered` has already decided that.
+                //
                 // `health` is the only one still gated on being in play. The
                 // recording cannot say whether it is a printed constant or a
                 // pool filled on entry, because nothing in it takes damage --

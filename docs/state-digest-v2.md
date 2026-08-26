@@ -363,6 +363,13 @@ Token, counter and form keys (`k_<name>`, `c_<name>`, `f_<name>`) come from game
 data, so the key set is open-ended and a port cannot enumerate it from a fixed
 schema.
 
+**No recording contains an `f_` key, or any hero face.** Every recorded game
+stays in alter-ego form (`rr:identity.1`), so the C# `Hero` row in
+`StateFields.Registered` is reasoned from the measured `AlterEgo` row rather
+than read off a board, and `defense` is a key no recorded card has. Nothing
+emits an `f_` key, because which card would carry it is unknown. Both gaps, and
+what would close them, are in [forms.md](forms.md).
+
 ## Serialisation
 
 `game/world/digest.py`.

@@ -71,4 +71,32 @@ public sealed class Seat
     /// change on this same card.
     /// </remarks>
     public Card IdentityCard { get; set; } = null!;
+
+    /// <summary>
+    /// The round this player last used their voluntary form change, or 0.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:form-change-form.1</c> permits one form change per player per
+    /// round, and this is the whole of that permission. <b>It is not the
+    /// form</b> — that is read off the identity card by
+    /// <see cref="Forms.Of"/> and never stored — it is the once-a-round budget
+    /// for changing it voluntarily.
+    /// </para>
+    /// <para>
+    /// Separate for a reason the rulebook states outright.
+    /// <c>rr:form-change-form.3</c>: "If a card ability causes a player to
+    /// change forms, it does not count against the one voluntary form change
+    /// the player is permitted during their turn that round." A single flag on
+    /// the flip itself would spend the budget on an ability's change, which is
+    /// exactly what that clause forbids.
+    /// </para>
+    /// <para>
+    /// <b>Not on the wire.</b> No recorded digest field carries it, so a game
+    /// restored from a digest alone would forget whether the budget had been
+    /// spent. That is a gap in the digest rather than a reason to invent a key
+    /// for it — see <c>docs/forms.md</c>.
+    /// </para>
+    /// </remarks>
+    public int FormChangedInRound { get; set; }
 }

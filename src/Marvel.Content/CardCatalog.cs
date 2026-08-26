@@ -58,6 +58,9 @@ public sealed class CardCatalog : ICardFacts
     public CardKind Kind(string faceId) => Find(faceId).Kind;
 
     /// <inheritdoc />
+    public string? FormKeyword(string faceId) => Find(faceId).Form;
+
+    /// <inheritdoc />
     public IReadOnlyList<string> Traits(string faceId) => Find(faceId).Traits;
 
     /// <inheritdoc />
@@ -191,7 +194,88 @@ public sealed class CardCatalog : ICardFacts
             }
         }
 
-        return new Entry(kind, traits, attributes);
+        string? form = null;
+        if (element.TryGetProperty("engine", out var engineText)
+            && engineText.ValueKind == JsonValueKind.Object
+            && engineText.TryGetProperty("text", out var printedText))
+        {
+            form = FormOf(printedText.GetString());
+        }
+
+        return new Entry(kind, traits, attributes, form);
+    }
+
+    /// <summary>
+    /// The <c>[type]</c> of a "[type] form" keyword in a card's printed text.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:form-change-form.6</c>. The keyword is a sentence of its own on the
+    /// keyword line — "Energy form. Permanent." on <c>21002</c>, and
+    /// "Permanent. Mass form." on <c>57046a</c>, so it is not always first.
+    /// Reading it as a whole sentence is what separates the keyword from prose
+    /// naming a form: obligation <c>42024</c> says "If you are in Archangel
+    /// form, place 2 threat", and Nick Fury's <c>32031a</c> says "After you
+    /// attack or defend in Solid mass form" — neither is a sentence, and
+    /// neither grants anything.
+    /// </para>
+    /// <para>
+    /// Measured: exactly nine faces in the 4,344-card pool, which is what
+    /// <c>CardCatalogTests.TheFormKeywordIsOnExactlyTheNineFacesThatPrintIt</c>
+    /// pins. Read from the <b>engine's</b> text and not MarvelSDB's, for the
+    /// same reason <see cref="TraitKey"/> reads the engine's traits: a card the
+    /// engine does not have gets nothing. That is why <c>26002</c> and
+    /// <c>57046a/b</c> — MarvelSDB-only faces that do print the keyword — are
+    /// not among the nine.
+    /// </para>
+    /// </remarks>
+    /// <param name="printed">The card's printed text, or null.</param>
+    public static string? FormOf(string? printed)
+    {
+        if (printed is null)
+        {
+            return null;
+        }
+
+        foreach (string line in printed.Split('\n'))
+        {
+            foreach (string sentence in line.Split('.'))
+            {
+                if (Granted(sentence.Trim()) is { } form)
+                {
+                    return form;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // "Energy form" grants; "Hero form only" and "in Archangel form, place"
+    // do not, because neither is the whole sentence.
+    private static string? Granted(string sentence)
+    {
+        const string suffix = " form";
+        if (!sentence.EndsWith(suffix, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        string type = sentence[..^suffix.Length];
+        if (type.Length == 0 || !char.IsUpper(type[0]))
+        {
+            return null;
+        }
+
+        foreach (char letter in type)
+        {
+            if (!char.IsLetter(letter) && letter != '-')
+            {
+                return null;
+            }
+        }
+
+        return type.ToLowerInvariant();
     }
 
     // The card data's `type` is the engine's face class on every kind but two:
@@ -224,5 +308,6 @@ public sealed class CardCatalog : ICardFacts
     private sealed record Entry(
         CardKind Kind,
         IReadOnlyList<string> Traits,
-        IReadOnlyDictionary<string, string> Attributes);
+        IReadOnlyDictionary<string, string> Attributes,
+        string? Form);
 }

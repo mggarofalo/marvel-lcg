@@ -174,16 +174,22 @@ public sealed class Game
         if (!input.IsDecline && Phase != GamePhase.VillainPhase)
         {
             // The turn prompts offer things that have to *do* something and
-            // none of them are written. Naming the verb rather than saying "not
-            // implemented" is the difference between a one-line diagnosis and a
-            // debugging session.
+            // most of them are still not written. Naming the verb rather than
+            // saying "not implemented" is the difference between a one-line
+            // diagnosis and a debugging session.
             //
-            // The villain phase is the exception, and the only one: what it
-            // offers is an ability waiting in a window or a character declared
-            // as a defender, and both are implemented.
+            // Two exceptions. The villain phase offers an ability waiting in a
+            // window or a character declared as a defender, and both are
+            // implemented. `Change_Form` is the other, and it is below.
             string verb = Pending.Affordances
                 .FirstOrDefault(affordance => affordance.Id == input.Affordance)?.Verb
                 ?? $"affordance {input.Affordance}";
+
+            if (string.Equals(verb, ChangeForm, StringComparison.Ordinal))
+            {
+                return ChangeFormNow();
+            }
+
             throw new RulesNotImplementedException(
                 $"taking '{verb}' is not implemented; this resolve only declines");
         }
@@ -228,6 +234,51 @@ public sealed class Game
             default:
                 throw new RulesNotImplementedException($"the {Phase} phase is not implemented");
         }
+    }
+
+    /// <summary>
+    /// Flip the active player's identity, and ask them again.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:form-change-form.1</c>: "Once each round, during their turn, each
+    /// player is permitted to change form by flipping their identity card." All
+    /// three qualifications are load-bearing and all three are enforced here —
+    /// once, each round, during their turn.
+    /// </para>
+    /// <para>
+    /// The turn does <b>not</b> end. Changing form is one thing a player may do
+    /// in their turn rather than the whole of it, so the same prompt is put
+    /// again — this time without the option, because it has been used.
+    /// </para>
+    /// <para>
+    /// <c>rr:form-change-form.3</c> is why this counter lives on the seat and
+    /// not inside <see cref="Forms.Change"/>: "if a card ability causes a player
+    /// to change forms, it does not count against the one voluntary form change
+    /// the player is permitted". An ability calls the flip without touching the
+    /// count, so the count belongs to the permission and not to the flip.
+    /// </para>
+    /// </remarks>
+    private Resolution ChangeFormNow()
+    {
+        var seat = world.Seats[Active];
+        if (seat.FormChangedInRound == Round)
+        {
+            throw new RulesNotImplementedException(
+                $"'{seat.Name}' has already changed form in round {Round}, and "
+                + "rr:form-change-form.1 permits one voluntary change each round");
+        }
+
+        string was = Forms.Change(seat, facts);
+        seat.FormChangedInRound = Round;
+
+        var happened = new List<GameEvent>
+        {
+            new CardFormChanged(seat.IdentityCard.ObjectId, was, seat.IdentityCard.FaceId),
+        };
+
+        Pending = TurnPrompt();
+        return new Resolution(world, Pending, happened);
     }
 
     private Prompt MulliganPrompt()
@@ -294,7 +345,13 @@ public sealed class Game
             // on the wire.
             Label: $"\n--- {seat.Name}'s Turn ({Round}) ---",
             Cancellable: true,
-            Affordances: [Anchored(ChangeForm, seat)]);
+            // `rr:form-change-form.1` permits one voluntary change each round,
+            // so a player who has used theirs is not offered it again. An
+            // affordance that would throw when taken is worse than an absent
+            // one -- MARVEL-130 is that same defect on the action menu.
+            Affordances: seat.FormChangedInRound == Round
+                ? []
+                : [Anchored(ChangeForm, seat)]);
     }
 
     private Prompt EndPhasePrompt()

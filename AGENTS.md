@@ -138,6 +138,7 @@ as important.
 | play areas, game areas, anything resolving by *where a card is* | [places.md](docs/places.md) |
 | `Marvel.Rules.Play`, the villain phase, what a revealed card does | [villain-phase.md](docs/villain-phase.md) |
 | enemy attacks, defending, damage, a ported card acting in a window | [enemy-attacks.md](docs/enemy-attacks.md) |
+| hero and alter-ego form, changing form, `StateFields.Registered` | [forms.md](docs/forms.md) |
 | the card ability DSL, `src/Marvel.Cards`, adding a card to `datasets/abilities/` | [card-dsl.md](docs/card-dsl.md) |
 | the client, the engine's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#dependency-rules) |
