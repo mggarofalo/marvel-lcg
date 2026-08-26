@@ -252,6 +252,32 @@ icon**". A villain's `14*` hit points do not shrink when somebody dies.
   `.4` decide by whether the new stage shares a title; a villain defeated with
   cards attached throws rather than carrying the wrong set.
 
+### Playing it with the cards doing what they say
+
+`WholeGameTests` plays with `NoCardAbilities`, so what it proves is that the
+**rules** reach an ending. It could not prove more: until recently every
+encounter card resolved to silence, and a game where nothing a card says happens
+is not the game.
+
+`RealCardsGameTests` plays the same board with the real interpreter, and states
+the gap as a **list** rather than a number. Forty seeds either run to an ending
+or stop on a card nobody has written, and *which cards* is asserted — so
+authoring one is a visible change there, and a new blocker is a failure.
+
+At the time of writing, **at least 25 of the 40 reach an ending** and three
+cards block the rest:
+
+| card | why it is hard |
+|---|---|
+| `01098` Armored Rhino Suit | a replacement effect, and damage is not an occurrence with a window |
+| `01111` Explosion | damage assigned among several characters, which the player distributes |
+| `01165` Eviction Notice | an obligation whose options carry their own costs |
+
+The policy declines what it can, which is what keeps the coverage broad rather
+than lucky: a hero who never acts meets more of the encounter deck than one who
+wins. `Question.Option` is the only question it must answer, because
+`rr:choose-option` offers a choice between things that happen.
+
 `WholeGameTests` plays the Rhino board to an ending on four seeds — 24 to 53
 decisions across 4 to 8 rounds, cards paid for and played, defenders declared —
 and checks that one seed plays the same game twice, digest and all. It plays the
