@@ -34,6 +34,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 {
     private readonly AbilityBook book = book;
 
+    // Which printed faces carry a constant ability. `Constant` is asked about
+    // every card in play every time anything reads the effect list, and all but
+    // a handful of cards answer nothing -- so the common answer is a set lookup
+    // rather than a walk of the book.
+    //
+    // **A shortcut and nothing else.** Deleting it is an equivalent mutant: the
+    // loop below finds the same abilities, just slower. It is here because
+    // reading a stat goes through the effect list, and the digest reads every
+    // stat of every card.
+    private readonly HashSet<string> constant = new(
+        book.Abilities
+            .Where(ability => ability.Trigger.Timing == AbilityType.Constant)
+            .Select(ability => ability.Card),
+        StringComparer.Ordinal);
+
     /// <summary>The verb an option carries on the wire.</summary>
     public const string ChooseVerb = "Choose_Option";
 
@@ -402,8 +417,60 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <summary>Whether one ability answers this occurrence at all.</summary>
     private static bool Answers(CardAbility ability, Card card, Occurrence what) =>
-        what.Conditions.Contains(ability.Trigger.Event, StringComparer.Ordinal)
+        ability.Trigger.Event is { } condition
+        && what.Conditions.Contains(condition, StringComparer.Ordinal)
         && Subject(ability.Trigger.Subject, card, what);
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// <para>
+    /// <b>A reader, not a runner.</b> Everything else on this class resolves an
+    /// ability once, at a moment, and records what it did. A constant ability
+    /// has no moment: <c>rr:ability</c> makes it active "as soon as its card
+    /// enters play" and keeps it active "while the card is in play", so the
+    /// question is never "what did it do" but "what is it doing". The answer is
+    /// worked out afresh whenever anything reads the effect list, which is what
+    /// <c>rr:modifiers</c> describes the game as doing continuously.
+    /// </para>
+    /// <para>
+    /// So this shares the interpreter's tests and amounts and none of its
+    /// verbs. <c>Grants</c> walks <c>seq</c> and <c>if</c> and stops at
+    /// <c>grant</c>; there is no route from here to anything that moves a card
+    /// or deals damage, which is what makes it safe to call from inside the
+    /// rules rather than between them.
+    /// </para>
+    /// </remarks>
+    public IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+
+        if (!constant.Contains(card.FaceId))
+        {
+            return [];
+        }
+
+        var found = new List<ContinuousEffect>();
+        foreach (var ability in book.On(card.FaceId))
+        {
+            if (ability.Trigger.Timing != AbilityType.Constant)
+            {
+                continue;
+            }
+
+            // No occurrence, because there is none: a constant ability is not
+            // timed to anything. The empty event list is never written to --
+            // nothing `Grants` reaches records anything -- and the card's owner
+            // stands in for the resolving player, which for an encounter card
+            // is the scenario.
+            Grants(
+                ability.Effect,
+                new Cast(world, card, new Occurrence(0, []), card.Owner, [], this),
+                found);
+        }
+
+        return found;
+    }
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> WhenDefeated(World world, Card card)
@@ -883,7 +950,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool Answers(
         CardAbility ability, Card card, Occurrence occurrence, WindowKind window)
     {
-        if (!occurrence.Is(ability.Trigger.Event))
+        // A constant ability names no condition at all -- `rr:ability.5` -- so
+        // it answers no occurrence and appears in no window. What it does is
+        // read off the board by `Constant` instead.
+        if (ability.Trigger.Event is not { } condition || !occurrence.Is(condition))
         {
             return false;
         }
@@ -1250,6 +1320,97 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             Trigger = cast.Trigger, Verb = "Attach",
         });
+    }
+
+    /// <summary>
+    /// What one constant ability grants, as continuous effects.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A deliberately tiny vocabulary: a sequence, a condition, and a grant.
+    /// <c>rr:ability.9</c> is why the condition is here rather than resolved
+    /// once — "some constant abilities continuously seek a specific condition
+    /// <i>(denoted by words such as 'during', 'if', or 'while')</i>. The effects
+    /// of such abilities are active anytime the specific condition is met." So
+    /// the test is re-read on every ask, and Unus stops retaliating the moment
+    /// Gene Pool is thwarted below three threat.
+    /// </para>
+    /// <para>
+    /// Everything else throws. A constant ability that moves a card or deals
+    /// damage is a different shape from this one — it would have to happen at a
+    /// moment, and a constant ability has no moment — so the card that needs it
+    /// needs a design rather than a case.
+    /// </para>
+    /// </remarks>
+    private static void Grants(AbilityNode node, Cast cast, List<ContinuousEffect> found)
+    {
+        switch (node.Kind)
+        {
+            case "seq":
+                foreach (var step in Nodes(node.Argument))
+                {
+                    Grants(step, cast, found);
+                }
+
+                break;
+
+            case "if":
+                string branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
+                if (node.Field(branch) is { } taken)
+                {
+                    Grants(Tree(taken), cast, found);
+                }
+
+                break;
+
+            case "grant":
+                found.Add(Grant(node, cast));
+                break;
+
+            default:
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has a constant ability using the node "
+                    + $"'{node.Kind}', which a constant ability cannot be written with");
+        }
+    }
+
+    /// <summary>One keyword a constant ability gives something.</summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The amount defaults to one, not to zero.</b> "Unus gains retaliate 1"
+    /// states its number and "Unus also gains stalwart" does not, because a
+    /// keyword without one is simply present — and the engine asks whether a
+    /// card is stalwart by reading the field and comparing it to zero
+    /// (<c>Statuses</c>, <c>rr:stalwart.1</c>). A grant defaulting to zero would
+    /// parse, register, and mean the opposite of what the card says.
+    /// </para>
+    /// <para>
+    /// The keyword is held against the fields the engine actually reads, for
+    /// the reason the whole dataset is: <c>stallwart</c> would otherwise sit in
+    /// the file looking implemented and grant nothing for ever.
+    /// </para>
+    /// </remarks>
+    private static ContinuousEffect Grant(AbilityNode node, Cast cast)
+    {
+        var target = Find(node.Require("card"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would grant to a card that is not there");
+
+        string keyword = Word(node.Require("keyword"));
+        if (!StateFields.IsPrinted(keyword) && !Keywords.Granted.Contains(keyword))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' grants '{keyword}', which is not a keyword or "
+                + "printed field the engine reads");
+        }
+
+        return new ContinuousEffect(
+            EffectSource.ConstantAbility,
+            Kind: keyword,
+            Amount: node.Field("amount") is { } amount ? Number(amount) : 1,
+            Card: cast.Source.ObjectId,
+            Affects: target.ObjectId,
+            Lasts: Duration.WhileInPlay);
     }
 
     // `rr:lasting-effects` -- an effect "for a specified duration (such as
@@ -2688,6 +2849,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ICardAbilities Abilities)
     {
         /// <summary>The trigger string this ability's events carry.</summary>
+        /// <remarks>
+        /// A constant ability resolves against no occurrence and so has none.
+        /// Nothing reachable from <c>Grants</c> asks — every use of this is in
+        /// a verb, and <c>Grants</c> refuses every verb by name — so the guard
+        /// belongs there rather than being restated here, where only one of the
+        /// two could stay right after an edit.
+        /// </remarks>
         public string Trigger => Occurrence.Conditions[0];
 
         /// <summary>

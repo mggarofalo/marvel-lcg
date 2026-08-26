@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 
 namespace Marvel.Rules.Timing;
@@ -112,10 +113,17 @@ public sealed class ContinuousEffects(World world)
 {
     private readonly List<Entry> entries = [];
 
+    // Guards `Constant` against re-entering itself. See its remarks.
+    private bool deriving;
+
     /// <summary>Everything registered, in force or not.</summary>
     /// <remarks>
     /// For a save, and for a test that wants to see a stale entry rather than
     /// have it filtered away. <see cref="Active"/> is what the game reads.
+    /// <para>
+    /// A constant ability is <b>not</b> here, because nothing registers one —
+    /// see <see cref="Active"/>.
+    /// </para>
     /// </remarks>
     public IReadOnlyList<ContinuousEffect> Registered => [.. entries.Select(entry => entry.Effect)];
 
@@ -137,12 +145,67 @@ public sealed class ContinuousEffects(World world)
 
     /// <summary>Everything actually in force on this board, right now.</summary>
     /// <remarks>
+    /// <para>
     /// Read afresh every time rather than cached onto the board, which is what
     /// <c>rr:modifiers</c> and <c>rr:lasting-effects.3</c> both describe. Cheap
     /// and called often is the intended shape.
+    /// </para>
+    /// <para>
+    /// <b>Two sources, and only one of them is a list.</b> Lasting and delayed
+    /// effects were registered by whatever created them. Constant abilities
+    /// never were: <c>rr:ability</c> makes one active "as soon as its card
+    /// enters play" and <c>rr:ability.9</c> makes a conditional one active
+    /// "anytime the specific condition is met", so both are read off the board
+    /// here, card by card, through
+    /// <c>ICardAbilities.Constant</c>. Nothing has to remember to register
+    /// one when a card arrives or to dispose it when the card goes, and there
+    /// is therefore no path into play on which a constant ability is quietly
+    /// missing.
+    /// </para>
     /// </remarks>
     public IReadOnlyList<ContinuousEffect> Active() =>
-        [.. entries.Select(entry => entry.Effect).Where(InForce)];
+        [.. entries.Select(entry => entry.Effect).Where(InForce), .. Constant()];
+
+    /// <summary>What every constant ability in play is doing right now.</summary>
+    /// <remarks>
+    /// <para>
+    /// <b>A constant ability may not read the effect list.</b> Working out what
+    /// is in force is what called this, so a card asking the question back
+    /// would be asking what it is itself part of the answer to. The rules leave
+    /// room for it — <c>rr:ability.10</c> has instances of one ability
+    /// affecting the game independently — but nothing in the pool needs it, and
+    /// an engine that cannot settle the question must say so rather than answer
+    /// with the half of the list it happens to have.
+    /// </para>
+    /// </remarks>
+    private List<ContinuousEffect> Constant()
+    {
+        if (deriving)
+        {
+            throw new RulesNotImplementedException(
+                "a constant ability read the continuous effects while they were being "
+                + "worked out, which would need the list to settle on itself");
+        }
+
+        var found = new List<ContinuousEffect>();
+        deriving = true;
+        try
+        {
+            foreach (var card in world.Cards)
+            {
+                if (DeckTypes.IsInPlay(card.Area.Type))
+                {
+                    found.AddRange(world.Abilities.Constant(world, card));
+                }
+            }
+        }
+        finally
+        {
+            deriving = false;
+        }
+
+        return found;
+    }
 
     /// <summary>
     /// End every lasting effect whose duration names this timing point.
