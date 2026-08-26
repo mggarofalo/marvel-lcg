@@ -17,7 +17,7 @@ be argued against the published text:
 
 | | | |
 |---|---|---|
-| 1 | Place Threat | the main scheme's acceleration field, per player |
+| 1 | Place Threat | the acceleration field, plus [every icon and token](#acceleration) |
 | 2 | Enemies Activate | in player order; the villain, then engaged minions |
 | | ↳ Attack *or* Scheme | `rr:activation.1`; an attack has [six steps of its own](enemy-attacks.md) |
 | 3 | Deal Encounter Cards | one each, plus one per hazard icon |
@@ -44,6 +44,60 @@ without anything having scheduled it.
 appends in call order, so the reveal has to be scheduled before the heading;
 the other way round, the heading runs again with the card still in the queue,
 forever.
+
+### Acceleration
+
+`rr:villain-phase.step.1` has a second sentence that is easy to lose: *"if any
+acceleration **icons or tokens** are active, additional threat equal to the
+number of such icons and tokens is also placed at this time."*
+
+Two sources that count the same and are deliberately **not** the same thing —
+`rr:acceleration-icon.3` and `rr:acceleration-token.4` each say the one is not
+the other, which matters to a card that removes one of them.
+
+| | where it comes from | how it goes away |
+|---|---|---|
+| **icon** | printed on an encounter card (106 in the pool) | defeating that card (`rr:acceleration-icon.2`) |
+| **token** | `rr:encounter-deck.1`, or a card ability | on the main scheme, **never** (`rr:acceleration-token.2.1`) |
+
+A token on the main scheme survives that scheme leaving play and carries to the
+next stage, so **every encounter-deck reshuffle makes every later villain phase
+worse**. That is what stops a long game settling into a loop.
+
+### When a deck runs out
+
+`rr:encounter-deck.1`: the discard pile is shuffled into a new encounter deck
+and an acceleration token is placed. Same shape as
+[the player deck](player-phase.md#when-a-deck-runs-out) and a different price.
+
+`rr:encounter-deck.4` is the other half and it **ends the game**: if both the
+deck and its discard are empty at once, *"an infinite loop occurs with an
+infinite number of acceleration tokens being placed next to the main scheme
+deck. If this happens, the players lose."* The rules work through what the loop
+would do and then name the result, which is why this is not the quiet no-op an
+empty player deck is.
+
+### The main scheme deck advances
+
+`rr:main-scheme-main-scheme-deck.2`: threat at or above the target completes the
+stage and the deck advances. `.3` gives three steps, and the order is the rule:
+
+1. Remove the old stage; return its tokens **except acceleration tokens**;
+   discard what is attached to it.
+2. Resolve any **When Revealed** on the **A** side of the new top card.
+3. Flip to **B**, place starting threat, resolve any **When Revealed** there.
+
+**Both sides get a window and they are different abilities.** Going straight to
+B would silently drop every A-side ability in the pool.
+
+`.4` — excess threat does not carry over. `.5` — acceleration tokens do.
+`.2.1` — completing the *final* stage is the villain winning, which is one of
+the three endings in `World.Result`.
+
+`.2.2` is why `is_completed` is set by the completion check and not inside the
+advance: *"if the main scheme advances other than through having threat on it
+equal to or greater than its target threat value, that main scheme is **not**
+considered completed."*
 
 ### Step 3 counts hazard icons
 
