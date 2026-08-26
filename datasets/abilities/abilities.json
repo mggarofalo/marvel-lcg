@@ -609,7 +609,7 @@
     {
       "card": "01097a",
       "name": "The Break-In!",
-      "note": "Main scheme stage 1, the A side. Its printed text is the scenario's contents list and one setup line, 'Advance to stage 1B.' Neither is an ability this card runs: the contents say what to put in the box before the game, and the advance is the setup step itself -- WorldSetup step 4 puts the first main scheme into play already turned to its B side, so by the time any ability could run the card is where the line asks it to be. rr:main-scheme-main-scheme-deck.step.2 and .step.3 are the same two-sided reveal for a stage the deck advances to, and 01097b is where that side's text lives. Read and empty, which is not the same as unread.",
+      "note": "Main scheme stage 1, the A side. Its printed text is the scenario's contents list and one setup line, 'Advance to stage 1B.' Neither is an ability this card runs: the contents say what to put in the box before the game, and the advance is the setup step itself. rr:appendix-ii-setup.step.12.b flips the main scheme to side 1B for every scenario, and the engine does it there -- so this line is that rule restated on the card, in the same category as 01097b's 'the players lose the game'. It is deliberately not authored as a Setup ability: running it at step 12a would advance the scheme and step 12b would then advance it again, off the end of a deck that has one stage in it. Sixty-two main schemes in the pool print the clause and the appendix covers all of them. rr:main-scheme-main-scheme-deck.step.2 and .step.3 are the same two-sided reveal for a stage the deck advances to, and 01097b is where that side's text lives. Read and empty, which is not the same as unread.",
       "abilities": []
     },
     {

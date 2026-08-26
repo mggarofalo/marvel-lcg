@@ -422,6 +422,49 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         && Subject(ability.Trigger.Subject, card, what);
 
     /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Setup(World world, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+
+        if (!book.Authored.Contains(card.FaceId))
+        {
+            // The same distinction `WhenRevealed` makes, and setup is where it
+            // matters most: a scenario whose main scheme nobody has read would
+            // otherwise deal a board that is quietly missing whatever its first
+            // card said, and every later assertion would be about the wrong
+            // game.
+            throw new RulesNotImplementedException(
+                $"card '{card.FaceId}' is being set up and no ability data is written for it; "
+                + $"this engine has {book.Authored.Count} authored card(s)");
+        }
+
+        var events = new List<GameEvent>();
+
+        // `rr:setup-triggered-ability.2` times these to a step of setup rather
+        // than to anything happening, so `Steps.Setup` is the step's name and
+        // not a triggering condition -- no card can name it, because the reader
+        // refuses an `event` on a Setup ability. What it is for is the events:
+        // a board built during setup is told apart in the stream from one built
+        // during a round.
+        //
+        // There is no player whose turn it is either. The card's owner resolves
+        // it, which for an encounter card is the scenario.
+        var occurrence = new Occurrence(
+            0, [Steps.Setup], Subject: card.ObjectId, Player: card.Owner);
+
+        foreach (var ability in book.On(card.FaceId))
+        {
+            if (ability.Trigger.Timing == AbilityType.Setup)
+            {
+                Run(ability.Effect, new Cast(world, card, occurrence, card.Owner, events, this));
+            }
+        }
+
+        return events;
+    }
+
+    /// <inheritdoc/>
     /// <remarks>
     /// <para>
     /// <b>A reader, not a runner.</b> Everything else on this class resolves an

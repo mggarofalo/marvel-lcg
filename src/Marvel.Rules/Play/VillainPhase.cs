@@ -172,6 +172,32 @@ public interface ICardAbilities : IWindowAbilities
     Prompts.Prompt? Choosing(World world, Card source, int player, int stoppedAt);
 
     /// <summary>
+    /// Resolves a card's "<b>Setup</b>" abilities —
+    /// <c>rr:setup-triggered-ability</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "'<b>Setup</b>' is a type of triggered ability that is resolved during
+    /// setup", and <c>.1</c> makes it mandatory — so there is nothing to offer
+    /// and nothing to decline, which is why this resolves rather than opening a
+    /// window.
+    /// </para>
+    /// <para>
+    /// <b>Which step of setup is the caller's business.</b>
+    /// <c>rr:setup-triggered-ability.2</c> puts an encounter card's at
+    /// "Resolve Scenario Setup and When Revealed Abilities"
+    /// (<c>rr:appendix-ii-setup.step.12</c>) and <c>.3</c> puts a player card's
+    /// at a later step of its own. The two are far apart — the opening hands
+    /// are drawn between them — so this takes the card and the deal decides
+    /// when.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="card">The card whose setup ability, if any, is due.</param>
+    /// <returns>What changed, which is nothing for most cards.</returns>
+    IReadOnlyList<GameEvent> Setup(World world, Card card);
+
+    /// <summary>
     /// The effects this card's constant abilities have in force right now —
     /// <c>rr:ability.5</c>.
     /// </summary>
@@ -257,6 +283,9 @@ public class NoCardAbilities : ICardAbilities
         World world, PendingAbility ability, IReadOnlyList<int> paying) =>
         throw new RulesNotImplementedException(
             "no card has an action, so none of them can be triggered");
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Setup(World world, Card card) => [];
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<Timing.ContinuousEffect> Constant(World world, Card card) => [];

@@ -900,6 +900,68 @@ public sealed class SinisterSyndicateTests
     /// answer to what cannot -- a card's own choice is not cancellable, because
     /// the ability is resolving and one of the things it offers will happen.
     /// </summary>
+    [Rule("rr:attack-enemy-activation.step.2")]
+    [Rule("rr:activation.8")]
+    [Fact]
+    public void TheDefenderDeclaredDuringAPlayersOwnTurnCanBeAnswered()
+    {
+        // Speed Demon's counter-attack is the ordinary way an activation begins
+        // in a player's *own* turn, and every activation asks who defends --
+        // `rr:attack-enemy-activation.step.2` is a step of its own with its own
+        // name. So the question is put to the player mid-turn.
+        //
+        // `Game.Resolve` sent it to the turn's verb table, which has no
+        // `Defense` case, and refused it: "taking 'Defense' is not implemented;
+        // this resolve only declines". The answer had nowhere to go, not
+        // nothing to do -- `Sequence.Answer` has handled a step's own question
+        // since it was written. MARVEL-246.
+        var world = Deal();
+        var demon = world.CreateCard(
+            AuthoredCards.SpeedDemon,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        // **An ally swings, not the hero.** `rr:ally.5` puts an ally's attack
+        // outside the identity, so the identity is still ready when the
+        // counter-attack asks who defends -- and `rr:defend.1` exhausts the
+        // defender, so a hero who had attacked could not be one and the step
+        // would have nobody to ask.
+        var cat = world.CreateCard(
+            BlackCat, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var game = Game.Begin(world, Cards, AuthoredCards.Runner());
+
+        game.Resolve(Decision.Decline);
+        Take(game, Game.ChangeForm);
+        game.Resolve(Decision.Take(
+            game.Pending!.Affordances
+                .First(option => option.Verb == BasicPowers.AttackVerb
+                    && option.AnchorId == cat.ObjectId).Id,
+            [demon.ObjectId],
+            []));
+
+        var asked = game.Pending!;
+        Assert.Equal(Question.Defender, asked.Asking);
+
+        // The answer this could not take. Declaring the identity as the
+        // defender is the interesting half, because it is the answer that does
+        // something: a decline would have been accepted by the old code path.
+        var defender = asked.Affordances.First(
+            option => option.AnchorId == world.Seats[0].IdentityCard.ObjectId);
+
+        game.Resolve(Decision.Take(defender.Id, [], []));
+
+        Assert.Equal(GamePhase.PlayerTurn, game.Phase);
+        Assert.NotNull(game.Pending);
+    }
+
+    /// <summary>Takes the one option with this verb, and asserts there was one.</summary>
+    private static void Take(Game game, string verb, params int[] targets)
+    {
+        var taken = Assert.Single(
+            game.Pending!.Affordances,
+            option => string.Equals(option.Verb, verb, StringComparison.Ordinal));
+
+        game.Resolve(Decision.Take(taken.Id, targets, []));
+    }
+
     private static List<GameEvent> Run(World world)
     {
         var abilities = AuthoredCards.Runner();

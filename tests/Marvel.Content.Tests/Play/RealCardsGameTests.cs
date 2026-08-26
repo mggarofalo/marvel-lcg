@@ -109,7 +109,10 @@ public sealed class RealCardsGameTests
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, campaign, ["spider_man"]), Cards),
             ["Spider-Man"],
-            seed);
+            seed,
+            // `rr:appendix-ii-setup.step.12` is part of the deal, so the
+            // interpreter has to be there before `Game.Begin` sees the board.
+            AuthoredCards.Runner());
         var game = Game.Begin(world, Cards, AuthoredCards.Runner());
 
         try

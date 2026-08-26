@@ -214,7 +214,7 @@ public sealed class ConstantAbilityTests
             } ] } ] }
             """));
 
-        Assert.Contains("is constant and triggers on", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("is 'Constant' and triggers on", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]
