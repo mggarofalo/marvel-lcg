@@ -11,10 +11,10 @@ namespace Marvel.Content.Setup;
 /// this is a wire format and not a convenience.
 /// </para>
 /// <para>
-/// <b>Nothing checks this order.</b> It has to be right — an id is a wire
-/// format and everything else depends on it — and what should check it is
-/// <c>rr:appendix-ii-setup</c> read against <c>datasets/setup/setup.json</c>.
-/// MARVEL-251.
+/// <c>SetupDealTests</c> holds it, against <c>rr:appendix-ii-setup</c> for where a
+/// card ends up and against this contract for which id it is given. The two are
+/// separate claims: the rulebook orders the <i>steps</i> and says nothing about
+/// ids, so a test that cited a rule for the allocation would be misreading one.
 /// </para>
 /// <para>
 /// Two things it does not do, because neither affects allocation and both

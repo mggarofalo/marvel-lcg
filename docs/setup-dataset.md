@@ -98,14 +98,27 @@ step after. An obligation is *created* into its player's nemesis pile and
 *moved* onto the encounter deck before the shuffle; both are true and only the
 first one is an id.
 
-### Held against a real game — no longer
+### Held against the rulebook
 
-The deal order was checked against a recording that named the card at every
-`object_id` for `rhino / spider_man / 12345`, all **81** agreeing in order. The
-recording was the Python engine's, and it is gone.
+`SetupDealTests` checks the deal in two separable ways.
 
-Nothing checks the allocation today. What should is `rr:appendix-ii-setup`
-read against this dataset — MARVEL-251.
+**Where a card ends up** is `rr:appendix-ii-setup`, cited step by step: the
+nemesis set is set aside (step 5); the encounter deck is the listed sets plus
+the obligations and nothing else (step 10); the villain deck and main scheme
+deck are in play (step 8); each player has their own shuffled deck (steps 1
+and 6); one seat holds the first player token (step 3).
+
+**Which id a card is given** is not in the rulebook at all, so those tests cite
+no rule and say why. The allocation runs are unbroken and in a fixed sequence,
+and every dealt card is on the board exactly once — the completeness claim a
+zone-by-zone check cannot make, because a card left in no area is invisible to
+every test that does not know to look for it.
+
+One distinction the deal turns on: a card **dealt for** a player is not
+therefore **owned by** them. An obligation and a nemesis set are dealt per
+identity and belong to the scenario, because `rr:obligation` calls an obligation
+"an encounter card type" and `rr:encounter-card` lists obligations among the
+eight.
 
 ### The one flip
 
