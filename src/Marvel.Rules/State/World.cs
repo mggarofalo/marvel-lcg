@@ -1,4 +1,5 @@
 using Marvel.Core.Digest;
+using Marvel.Core.Random;
 
 namespace Marvel.Rules.State;
 
@@ -30,12 +31,14 @@ public sealed class World
     /// <summary>Creates an empty world.</summary>
     /// <param name="facts">The printed card data this game is played with.</param>
     /// <param name="players">How many players are in the game.</param>
-    public World(ICardFacts facts, int players)
+    /// <param name="seed">The game's seed.</param>
+    public World(ICardFacts facts, int players, uint seed = 0)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(players);
         this.facts = facts;
         Players = players;
+        Random = new EngineRandom(seed);
         Effects = new Timing.ContinuousEffects(this);
         Windows = new Timing.Windows(this);
         Agenda = new Play.Agenda();
@@ -130,6 +133,68 @@ public sealed class World
     /// board change even though no card moves.
     /// </remarks>
     public int FirstPlayer { get; set; }
+
+    /// <summary>
+    /// The game's one random stream.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>On the board rather than in the dealer, because the game keeps
+    /// drawing from it.</b> Non-negotiable 2 in <c>AGENTS.md</c> is "one
+    /// MT19937 stream, seeded once per game": setup's two shuffles are the
+    /// first draws from it and <c>rr:player-deck.1</c>'s reshuffle is a later
+    /// one. A second generator made mid-game would restart the stream and
+    /// change every card drawn afterwards.
+    /// </para>
+    /// <para>
+    /// Seeded at construction, so a world built by hand for a test has a
+    /// deterministic stream too — seed 0 — rather than no stream at all.
+    /// </para>
+    /// </remarks>
+    public EngineRandom Random { get; }
+
+    /// <summary>
+    /// The seats in player order — <c>rr:in-player-order</c>.
+    /// </summary>
+    /// <remarks>
+    /// "The first player performs their part of the sequence first, followed by
+    /// the other players in clockwise order." Clockwise is ascending seat index
+    /// wrapping at the table, so this is the first player and then everyone
+    /// else, and it moves when the first player token does.
+    /// </remarks>
+    public IEnumerable<int> PlayerOrder
+    {
+        get
+        {
+            for (int offset = 0; offset < Players; offset++)
+            {
+                yield return (FirstPlayer + offset) % Players;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Shuffles a pile, drawing from the game's one stream.
+    /// </summary>
+    /// <remarks>
+    /// <b>A pile of fewer than two cards is not shuffled at all</b>, and that
+    /// is not an optimisation: calling through would consume a slot in the
+    /// shared stream and desynchronise every draw after it. The Python engine
+    /// draws nothing for such a pile, so neither does this.
+    /// </remarks>
+    /// <param name="area">The pile.</param>
+    public void Shuffle(Area area)
+    {
+        ArgumentNullException.ThrowIfNull(area);
+        if (area.Cards.Count < 2)
+        {
+            return;
+        }
+
+        var order = area.Cards.ToList();
+        Random.Shuffle(order);
+        area.Replace(order);
+    }
 
     /// <summary>Makes an empty game area.</summary>
     /// <remarks>

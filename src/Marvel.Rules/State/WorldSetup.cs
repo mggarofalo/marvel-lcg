@@ -1,4 +1,3 @@
-using Marvel.Core.Random;
 
 namespace Marvel.Rules.State;
 
@@ -71,8 +70,11 @@ public static class WorldSetup
         ArgumentNullException.ThrowIfNull(seats);
 
         int players = seats.Count;
-        var world = new World(facts, players);
-        var random = new EngineRandom(seed);
+
+        // The seed goes to the world, not to a local generator: the reshuffle
+        // in `rr:player-deck.1` draws from this same stream years of turns
+        // later, and a second generator would restart it.
+        var world = new World(facts, players, seed);
 
         var insert = world.CreateArea(DeckType.RemovedArea);
         var encounterDeck = world.CreateArea(DeckType.EncounterDeck);
@@ -127,7 +129,7 @@ public static class WorldSetup
         // 3. The player decks are shuffled, in seat order. First draw of the game.
         foreach (var seat in world.Seats)
         {
-            Shuffle(random, seat.Deck);
+            world.Shuffle(seat.Deck);
         }
 
         // 4. The first main scheme enters play, turned to its `B` side. This is
@@ -160,7 +162,7 @@ public static class WorldSetup
             World.MoveToTop(obligation, encounterDeck);
         }
 
-        Shuffle(random, encounterDeck);
+        world.Shuffle(encounterDeck);
 
         // 7. Opening hands, off the top of an already-shuffled deck. No draw.
         for (int seat = 0; seat < players; seat++)
@@ -181,18 +183,4 @@ public static class WorldSetup
         return world;
     }
 
-    private static void Shuffle(EngineRandom random, Area area)
-    {
-        // The engine draws nothing for a pile of fewer than two cards, so a
-        // guard here is not an optimisation -- calling through would consume a
-        // slot in the shared stream and desynchronise every draw after it.
-        if (area.Cards.Count < 2)
-        {
-            return;
-        }
-
-        var order = area.Cards.ToList();
-        random.Shuffle(order);
-        area.Replace(order);
-    }
 }
