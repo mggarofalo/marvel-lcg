@@ -28,6 +28,7 @@ own "equivalent to the following constant ability" line.
 | **Steady** | one additional card of each; not afflicted until two | `Statuses.Limit` |
 | **Surge** | *When Revealed: deal yourself 1 facedown encounter card* | `Reveal.Keywords` |
 | **Teamwork (trait)** | *Forced Response: after this minion enters play, if another minion shares the trait, it activates against the engaged player* | `Reveal.Teamwork` |
+| **Team-Up (a and b)** | cannot be played unless both named friendly characters are in play | `CardPlay.TeamedUp` |
 | **Temporary** | *Forced Interrupt: when the round ends, discard this card from play* | `PhaseEnd` |
 | **Toughness** | *Forced Response: after this character enters play, give it a tough status card* | `Reveal.EnterPlay` |
 | **Uses (X "type")** | enters play with X counters of that type | `Reveal.EnterPlay` |
@@ -56,7 +57,6 @@ zero.
 |---|---|---|
 | **Permanent** | 86 | "except by card abilities **in the same set**" needs the effect's set, not just the card's |
 | **Setup** | 39 | a setup step that puts cards into play before step 1 |
-| **Team-Up** | 28 | a play restriction naming two characters in play |
 | **Linked** | 14 | set-aside cards brought in by the card that names them |
 | **Alliance** | 13 | other players helping pay a cost |
 | **Peril** | 12 | table talk, and other players not acting |
@@ -73,6 +73,35 @@ It also **activates** rather than attacking, which is the difference from
 quickstrike. Quickstrike says outright *"a player whose identity is in hero
 form"*; teamwork does not, so `rr:activation.1` reads the form and a teamwork
 minion engaging an alter-ego schemes rather than doing nothing.
+
+### A team-up name is not always a card title
+
+`rr:team-up.1` matches a friendly character "whose title or subtitle matches",
+and `rr:friendly` makes "friendly" every player's rather than yours — one
+sentence, "a blanket term that refers to cards **the players** control — so at a
+table the other player's Wasp is the Wasp the card needs.
+
+Thirty-four names appear across the 28 cards and thirty-two of them are a card's
+title or subtitle. The other two are **`Black Panther/T'Challa`** and
+**`Black Panther/Shuri`**, on "Heart of the Panther": two identities share the
+hero title *Black Panther*, and the alter-ego is what tells them apart. No card
+carries either name, so the slash is read rather than matched — as two halves,
+against every face of the identity card.
+
+`rr:unique-icon.1.2` is why that is not a liberty. The rules already use an
+identity's **alter-ego title** as one of its identifying names: *"the identity
+with the T'Challa alter-ego, the T'Challa ally, and the Black Panther ally with
+the subtitle 'T'Challa' are all considered to match."* Reading only the faceup
+side would make the notation name nothing at all, since neither face carries
+both halves.
+
+A **plain** name still reads the faceup side only, because `rr:identity.4` says
+so: "the faceup side of an identity card is considered to be in play". A player
+who has flipped down is not the hero a team-up card names.
+
+The deck-building half of `rr:team-up.1` is not here. The decks reach this engine
+already built, and a rule about what may go in one has nothing to check at play
+time.
 
 ### The requirement is part of the cost, not additional to it
 
@@ -103,7 +132,7 @@ data.
 
 Five other keywords print a word rather than a number: **Uses** (69 cards),
 **Team-Up** (28), **Requirement** (13), **Form** (9) and **Linked** (9). Uses,
-Form and Requirement are read; Team-Up and Linked are in the table below.
+Form, Requirement and Team-Up are read; Linked is in the table below.
 
 **Uses is half done and says so**: the counters are placed, and "when the last
 all-purpose counter is removed, discard that card" waits for an ability that can

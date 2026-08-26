@@ -77,6 +77,9 @@ public sealed class CardCatalog : ICardFacts
     /// <inheritdoc />
     public string Title(string faceId) => Find(faceId).Title;
 
+    /// <inheritdoc/>
+    public string Subtitle(string faceId) => Find(faceId).Subtitle;
+
     /// <inheritdoc />
     public IReadOnlyList<string> Traits(string faceId) => Find(faceId).Traits;
 
@@ -284,7 +287,13 @@ public sealed class CardCatalog : ICardFacts
             ? printedName.GetString() ?? string.Empty
             : string.Empty;
 
-        return new Entry(kind, traits, attributes, title);
+        // `rr:team-up.2` matches "either its title or subtitle", so the small
+        // line under the name is printed data the rules turn on too.
+        string subtitle = element.TryGetProperty("subname", out var printedSub)
+            ? printedSub.GetString() ?? string.Empty
+            : string.Empty;
+
+        return new Entry(kind, traits, attributes, title, subtitle);
     }
 
     /// <summary>
@@ -389,5 +398,6 @@ public sealed class CardCatalog : ICardFacts
         CardKind Kind,
         IReadOnlyList<string> Traits,
         IReadOnlyDictionary<string, string> Attributes,
-        string Title);
+        string Title,
+        string Subtitle);
 }

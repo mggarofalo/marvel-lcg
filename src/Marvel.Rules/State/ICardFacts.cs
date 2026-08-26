@@ -142,4 +142,23 @@ public interface ICardFacts
     /// </remarks>
     /// <param name="faceId">A printed card id.</param>
     string Title(string faceId) => faceId;
+
+    /// <summary>
+    /// The face's printed subtitle, or an empty string.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The small line under the title — Wasp's ally card is "Wasp", subtitled
+    /// "Janet van Dyne". <c>rr:team-up.2</c> is the rule that needs it: "an
+    /// ally counts as a named character if <b>either its title or subtitle</b>
+    /// matches the named character", so a hero's own ally card and the ally
+    /// another player is running can be the same character under two names.
+    /// </para>
+    /// <para>
+    /// Defaulted to empty, like <see cref="FormKeyword"/>: most cards have
+    /// none, and a board built by hand should not have to say so.
+    /// </para>
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    string Subtitle(string faceId) => string.Empty;
 }
