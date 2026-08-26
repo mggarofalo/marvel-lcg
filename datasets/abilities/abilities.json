@@ -287,6 +287,39 @@
           "effect": { "revealTop": 1 }
         }
       ]
+    },
+    {
+      "card": "01190",
+      "name": "Shadow of the Past",
+      "note": "When Revealed: Reveal your set-aside nemesis minion and put it into play engaged with you. Reveal your set-aside nemesis side scheme and put it into play. Shuffle the rest of your set-aside nemesis encounter set into the encounter deck. If your nemesis minion does not enter the game this way, this card gains surge. The card appears in 132 of the 135 campaigns in the dataset, more than any other encounter card. 'Put into play engaged with you' and 'put it into play' are both rr:reveal.step.2 by card type, so both are a reveal rather than a placement. The two reveals happen before the shuffle so that the cards they take are no longer among 'the rest'; the obligation is not among them either, because setup shuffled it into the encounter deck long before this resolves.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": { "exists": { "query": "yourAsideMinion" } },
+                  "then": { "reveal": { "query": "yourAsideMinion" } },
+                  "else": { "gainSurge": 1 }
+                }
+              },
+              {
+                "if": {
+                  "test": { "exists": { "query": "yourAsideSideScheme" } },
+                  "then": { "reveal": { "query": "yourAsideSideScheme" } }
+                }
+              },
+              {
+                "shuffleInto": {
+                  "cards": { "query": "yourAsidePile" },
+                  "deck": "encounterDeck"
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

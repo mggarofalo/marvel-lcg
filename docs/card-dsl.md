@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and twenty-one cards in `datasets/abilities/abilities.json`.
+`src/Marvel.Cards`, and twenty-two cards in `datasets/abilities/abilities.json`.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -592,8 +592,8 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop` |
-| Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto` |
+| Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile` |
 | Amounts | a number, `{ "perPlayer": n }`, or `{ "result": "healed" }` |
 | Bindings | `this`, `you`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
 
@@ -782,6 +782,19 @@ everything — `01190` Shadow of the Past appears in 132 of the 135 campaigns, a
 other encounter card in the pool comes near. So the Standard sets are worth
 authoring before anything else, and after them the curve falls away to nine
 scenarios and fewer.
+
+### A reveal moves the card now and resolves it later
+
+`reveal` puts the card in the revealing area at once and schedules the step that
+resolves it. The scheduling is the same reason `search` has: a reveal is a step
+with an interrupt window and a response window around it, and the card revealed
+may itself ask a player something.
+
+The *moving* is Shadow of the Past's doing. It reveals two cards out of the
+player's set-aside pile and then shuffles **the rest** of that pile into the
+encounter deck — so a reveal that only scheduled would shuffle away the two
+cards it had just chosen. Nothing else in the pool has yet needed the
+distinction, and it is one line apart.
 
 ### Read and empty is not unread
 
