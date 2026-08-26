@@ -26,7 +26,7 @@ public static class AbilityCatalog
     // was read the way it was, and what its data deliberately does not say.
     // Nothing reads it, and that is the point -- it is for the next person.
     private static readonly HashSet<string> CardKeys =
-        new(StringComparer.Ordinal) { "card", "name", "note", "abilities" };
+        new(StringComparer.Ordinal) { "card", "name", "note", "abilities", "attachTo" };
 
     private static readonly HashSet<string> AbilityKeys =
         new(StringComparer.Ordinal)
@@ -53,6 +53,7 @@ public static class AbilityCatalog
 
         var abilities = new List<CardAbility>();
         var authored = new HashSet<string>(StringComparer.Ordinal);
+        var attachTo = new Dictionary<string, AbilityValue>(StringComparer.Ordinal);
 
         foreach (var element in cards.EnumerateArray())
         {
@@ -67,6 +68,18 @@ public static class AbilityCatalog
                 throw new AbilityException($"card '{card}' is authored twice");
             }
 
+            // `rr:attach-to` is a property of the card rather than one of its
+            // abilities, so it sits beside `abilities` rather than inside it.
+            if (element.TryGetProperty("attachTo", out var host))
+            {
+                // Held as a value rather than a node: what it names is read by
+                // the same `Find` a card's effect uses, and that takes the
+                // value. `Node` is still called, for the "exactly one named
+                // operation" check it makes.
+                Node(host, card);
+                attachTo[card] = Value(host, card);
+            }
+
             if (!element.TryGetProperty("abilities", out var list))
             {
                 continue;
@@ -78,7 +91,7 @@ public static class AbilityCatalog
             }
         }
 
-        return new AbilityBook(abilities, authored);
+        return new AbilityBook(abilities, authored, attachTo);
     }
 
     private static JsonDocument Read(string json)

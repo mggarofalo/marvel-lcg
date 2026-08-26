@@ -422,6 +422,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         && Subject(ability.Trigger.Subject, card, what);
 
     /// <inheritdoc/>
+    public int? AttachesTo(World world, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+
+        if (book.Attaches(card.FaceId) is not { } element)
+        {
+            return null;
+        }
+
+        // No occurrence and no events, for the reason `Constant` has none:
+        // this is asked while a card is being placed, so it answers a question
+        // and does not act on the answer. `Find` reads the board and nothing
+        // else.
+        return Find(
+            element,
+            new Cast(world, card, new Occurrence(0, []), card.Owner, [], this))?.ObjectId;
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Setup(World world, Card card)
     {
         ArgumentNullException.ThrowIfNull(world);

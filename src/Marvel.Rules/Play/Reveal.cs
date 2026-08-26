@@ -217,9 +217,32 @@ public static class Reveal
             // revealing it."
             CardKind.Obligation => world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(player)),
 
-            // `rr:reveal.6` and `.7`, and `.1` for an attachment with no
-            // "attach to" text: on the table in front of the player, which is
-            // not in play. Step 4 discards a treachery from there.
+            // `rr:attach-to`: "if a card uses the phrase 'attach to', it must
+            // be attached to *(placed beneath and slightly overlapped by)* the
+            // specified game element **as it enters play**." A rule about the
+            // phrase rather than an ability, so it is answered here on the way
+            // in and not by a "When Revealed" — `rr:when-revealed-abilities.2`
+            // does not trigger one on a card put into play without being
+            // revealed, and a setup attachment is exactly that.
+            //
+            // `rr:attach-to.3.1` is the case this does not reach: "the 'attach
+            // to' phrase on a card is not resolved if another ability causes
+            // that card to attach to a specific game element." An ability that
+            // attaches says so with the `attachTo` node instead, and it moves
+            // the card itself rather than coming through here.
+            CardKind.Attachment when world.Abilities.AttachesTo(world, card) is { } element
+                => world.AreaOf(
+                    DeckType.UpgradesArea,
+                    world.Cards[element].Area.PlayArea,
+                    element,
+                    world.Cards[element].Area.CardOwner),
+
+            // `rr:reveal.6` and `.7`, and `rr:attach-to.3` for an attachment
+            // whose phrase found nothing — "it remains in its prior state or
+            // game area", which here is the table in front of the player and is
+            // not in play. Step 4 discards it from there, which is the rest of
+            // that clause: "if such a card cannot remain in its prior state or
+            // game area, discard it."
             _ => null,
         };
 

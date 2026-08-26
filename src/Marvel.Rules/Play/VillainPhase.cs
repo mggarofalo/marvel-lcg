@@ -172,6 +172,36 @@ public interface ICardAbilities : IWindowAbilities
     Prompts.Prompt? Choosing(World world, Card source, int player, int stoppedAt);
 
     /// <summary>
+    /// The game element this card's "attach to" phrase names —
+    /// <c>rr:attach-to</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "If a card uses the phrase 'attach to', it must be attached to
+    /// <i>(placed beneath and slightly overlapped by)</i> the specified game
+    /// element <b>as it enters play</b>." A rule about the phrase, not an
+    /// ability — so the engine attaches on every path into play and the card
+    /// supplies only the element, which is all this answers.
+    /// </para>
+    /// <para>
+    /// <c>rr:attach-to.3</c> is why it may answer nothing: "the 'attach to'
+    /// phrase is checked for legality when the card would be attached [...] if
+    /// the initial check does not pass, the card is not able to be attached, so
+    /// it remains in its prior state or game area." Null is that check failing
+    /// as well as the card printing no such phrase, and the caller treats them
+    /// alike because the rule does.
+    /// </para>
+    /// <para>
+    /// <b>Pure</b>, like <see cref="Constant"/>: it is asked while a card is
+    /// being placed, so it must not move anything itself.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="card">The card entering play.</param>
+    /// <returns>The object id it attaches to, or null.</returns>
+    int? AttachesTo(World world, Card card);
+
+    /// <summary>
     /// Resolves a card's "<b>Setup</b>" abilities —
     /// <c>rr:setup-triggered-ability</c>.
     /// </summary>
@@ -283,6 +313,9 @@ public class NoCardAbilities : ICardAbilities
         World world, PendingAbility ability, IReadOnlyList<int> paying) =>
         throw new RulesNotImplementedException(
             "no card has an action, so none of them can be triggered");
+
+    /// <inheritdoc/>
+    public virtual int? AttachesTo(World world, Card card) => null;
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Setup(World world, Card card) => [];

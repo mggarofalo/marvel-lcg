@@ -139,7 +139,12 @@ public sealed class ActionAbilityTests
             {
                 horn = board.CreateCard(
                     AuthoredCards.IvoryHorn, board.AreaOf(DeckType.RevealingArea));
-                AuthoredCards.Runner().WhenRevealed(board, horn, 0);
+
+                // Through the reveal: `rr:attach-to` makes "Attach to Rhino" a
+                // rule about the card entering play rather than a "When
+                // Revealed" ability, so the route in is what attaches it.
+                board.Abilities = AuthoredCards.Runner();
+                Reveal.Resolve(board, Cards, horn, 0, []);
                 Physical(board, 3);
             },
             hero: true);
@@ -229,7 +234,12 @@ public sealed class ActionAbilityTests
             {
                 horn = board.CreateCard(
                     AuthoredCards.IvoryHorn, board.AreaOf(DeckType.RevealingArea));
-                AuthoredCards.Runner().WhenRevealed(board, horn, 0);
+
+                // Through the reveal: `rr:attach-to` makes "Attach to Rhino" a
+                // rule about the card entering play rather than a "When
+                // Revealed" ability, so the route in is what attaches it.
+                board.Abilities = AuthoredCards.Runner();
+                Reveal.Resolve(board, Cards, horn, 0, []);
                 Hand(board, Mentals, 3);
             },
             hero: true);
