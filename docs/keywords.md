@@ -26,6 +26,7 @@ own "equivalent to the following constant ability" line.
 | **Stalwart** | cannot have confused or stunned status cards | `Statuses.Limit` |
 | **Steady** | one additional card of each; not afflicted until two | `Statuses.Limit` |
 | **Surge** | *When Revealed: deal yourself 1 facedown encounter card* | `Reveal.Keywords` |
+| **Teamwork (trait)** | *Forced Response: after this minion enters play, if another minion shares the trait, it activates against the engaged player* | `Reveal.Teamwork` |
 | **Temporary** | *Forced Interrupt: when the round ends, discard this card from play* | `PhaseEnd` |
 | **Toughness** | *Forced Response: after this character enters play, give it a tough status card* | `Reveal.EnterPlay` |
 | **Uses (X "type")** | enters play with X counters of that type | `Reveal.EnterPlay` |
@@ -59,7 +60,33 @@ zero.
 | **Alliance** | 13 | other players helping pay a cost |
 | **Requirement** | 13 | specific resources that must be *spent*, not merely generated |
 | **Peril** | 12 | table talk, and other players not acting |
-| **Teamwork** | 31 | a minion activating on another minion entering play |
+
+### Teamwork's two statements disagree
+
+The entry says *"at least one other minion **that shares the specified trait**
+in play"*; `rr:teamwork.1`'s equivalent ability says only *"another minion in
+play"*. The trait is followed — it is what the keyword prints and what the entry
+says, and a reading that dropped it would activate an Acolyte beside an
+unrelated Hydra trooper.
+
+It also **activates** rather than attacking, which is the difference from
+quickstrike. Quickstrike says outright *"a player whose identity is in hero
+form"*; teamwork does not, so `rr:activation.1` reads the form and a teamwork
+minion engaging an alter-ego schemes rather than doing nothing.
+
+### The keyword's argument is a word, not a number
+
+`Teamwork ([[ACOLYTE]])` prints as the attribute `Teamwork = "ACOLYTE"`, so it
+is read off the raw attribute table: `PrintedValue` answers zero for it, which
+is what it answers for a card with no teamwork at all. **The digest field is
+zero too** — the recorded corpus shows `"teamwork":0` on Senyaka, a Teamwork
+(ACOLYTE) minion, with the trait riding on `t_ACOLYTE` instead. So the keyword's
+presence is not on the wire, and the behaviour has to come from the printed
+data.
+
+Five other keywords print a word rather than a number: **Uses** (69 cards),
+**Team-Up** (28), **Requirement** (13), **Form** (9) and **Linked** (9). Uses
+and Form are read; the other three are in the table below.
 
 **Uses is half done and says so**: the counters are placed, and "when the last
 all-purpose counter is removed, discard that card" waits for an ability that can
