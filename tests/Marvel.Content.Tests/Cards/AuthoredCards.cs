@@ -87,6 +87,9 @@ internal static class AuthoredCards
     /// <summary>The printed id of "Under Fire".</summary>
     public const string UnderFire = "01193";
 
+    /// <summary>The printed id of "Eviction Notice".</summary>
+    public const string EvictionNotice = "01165";
+
     /// <summary>The printed id of "The Vulture's Plans".</summary>
     public const string VulturesPlans = "01169";
 

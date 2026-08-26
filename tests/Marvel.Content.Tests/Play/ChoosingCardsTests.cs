@@ -72,7 +72,7 @@ public sealed class ChoosingCardsTests
         var world = Deal("spider_man", "she_hulk");
         var (card, _) = Reveal(world, AuthoredCards.HydraBomber, player: 1);
 
-        var asked = AuthoredCards.Runner().Choosing(world, card, player: 1)!;
+        var asked = AuthoredCards.Runner().Choosing(world, card, player: 1, stoppedAt: 1)!;
 
         Assert.Equal(1, asked.Player);
         Assert.Equal(Question.Option, asked.Asking);
@@ -94,7 +94,7 @@ public sealed class ChoosingCardsTests
         var world = Deal("spider_man", "she_hulk");
         var (card, _) = Reveal(world, AuthoredCards.HydraBomber, player: 1);
 
-        AuthoredCards.Runner().Chose(world, card, 1, Decision.Take(0));
+        AuthoredCards.Runner().Chose(world, card, 1, 1, Decision.Take(0));
 
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(2, world.Seats[1].IdentityCard.Damage);
@@ -111,7 +111,7 @@ public sealed class ChoosingCardsTests
         var world = Deal();
         var (card, _) = Reveal(world, AuthoredCards.HydraBomber);
 
-        AuthoredCards.Runner().Chose(world, card, 0, Decision.Take(1));
+        AuthoredCards.Runner().Chose(world, card, 0, 1, Decision.Take(1));
 
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(
@@ -129,9 +129,9 @@ public sealed class ChoosingCardsTests
         var runner = AuthoredCards.Runner();
 
         Assert.Throws<RulesNotImplementedException>(
-            () => runner.Chose(world, card, 0, Decision.Decline));
+            () => runner.Chose(world, card, 0, 1, Decision.Decline));
         Assert.Throws<RulesNotImplementedException>(
-            () => runner.Chose(world, card, 0, Decision.Take(2)));
+            () => runner.Chose(world, card, 0, 1, Decision.Take(2)));
     }
 
     [Rule("rr:surge.2")]
@@ -173,14 +173,18 @@ public sealed class ChoosingCardsTests
         Assert.False(world.Agenda.IsBusy);
     }
 
+    [Rule("rr:choose-option")]
     [Fact]
-    public void AnEffectAfterAChoiceIsRefusedRatherThanRunFirst()
+    public void AnEffectAfterAChoiceWaitsForTheAnswer()
     {
-        // The bound this design is honest about. `choose` suspends the ability
-        // and nothing resumes it part-way through, so a `seq` with a step after
-        // the choice would run that step *before* the choice it was written to
-        // follow -- an ability that looks like it worked and did the wrong
-        // thing in the wrong order.
+        // **An ability can ask more than once, and what follows a question
+        // waits for it.** This used to be refused by name: a `choose` stopped
+        // the ability and nothing resumed it, so an effect after one would have
+        // run *before* the choice it was written to follow.
+        //
+        // A suspended ability now remembers where -- an index into its
+        // top-level sequence, one number, which is what a `PhaseStep` can carry
+        // and what survives a save.
         var book = Marvel.Cards.Dsl.AbilityCatalog.Parse(
             """
             {"cards":[{"card":"01110","abilities":[{
@@ -188,15 +192,73 @@ public sealed class ChoosingCardsTests
               "effect":{"seq":[
                 {"choose":{"options":[{"draw":{"player":"you","count":1}},
                                       {"draw":{"player":"you","count":2}}]}},
-                {"gainSurge":1}]}}]}]}
+                {"giveStatus":{"card":"you","status":"stunned"}}]}}]}]}
             """);
 
+        var runner = new Marvel.Cards.Run.AbilityRunner(book);
         var world = Deal();
-        var card = world.CreateCard(AuthoredCards.HydraBomber, world.AreaOf(DeckType.RevealingArea));
+        world.Abilities = runner;
+        var identity = world.Seats[0].IdentityCard;
+        var card = world.CreateCard(
+            AuthoredCards.HydraBomber, world.AreaOf(DeckType.RevealingArea));
+        int held = world.Seats[0].Hand.Cards.Count;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => new Marvel.Cards.Run.AbilityRunner(book).WhenRevealed(world, card, 0));
-        Assert.Contains("after a choice", thrown.Message, StringComparison.Ordinal);
+        runner.WhenRevealed(world, card, 0);
+
+        // The question is out and the step after it has not happened.
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        Assert.Equal(Steps.ChooseOption, waiting.What);
+        Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+
+        runner.Chose(world, card, 0, waiting.Index, Decision.Take(1));
+
+        // The option ran, and then the rest of the sequence did.
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
+        Assert.True(Statuses.Has(world, identity, Statuses.Stunned));
+    }
+
+    [Fact]
+    public void ACardCanAskTwice()
+    {
+        // Eviction Notice's shape: "you may flip to alter-ego form" and then
+        // "choose:". 36 cards in the pool pair a "may" with a listed choice,
+        // and every "may" is itself a question.
+        var book = Marvel.Cards.Dsl.AbilityCatalog.Parse(
+            """
+            {"cards":[{"card":"01110","abilities":[{
+              "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
+              "effect":{"seq":[
+                {"choose":{"options":[{"draw":{"player":"you","count":1}},
+                                      {"seq":[]}]}},
+                {"choose":{"options":[{"giveStatus":{"card":"you","status":"stunned"}},
+                                      {"giveStatus":{"card":"you","status":"confused"}}]}}]}}]}]}
+            """);
+
+        var runner = new Marvel.Cards.Run.AbilityRunner(book);
+        var world = Deal();
+        world.Abilities = runner;
+        var identity = world.Seats[0].IdentityCard;
+        var card = world.CreateCard(
+            AuthoredCards.HydraBomber, world.AreaOf(DeckType.RevealingArea));
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.WhenRevealed(world, card, 0);
+        var first = Assert.Single(world.Agenda.Outstanding);
+        Assert.Equal(1, first.Index);
+
+        // Answering the first asks the second, at the next index.
+        runner.Chose(world, card, 0, first.Index, Decision.Take(0));
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+
+        var second = world.Agenda.Outstanding[^1];
+        Assert.Equal(Steps.ChooseOption, second.What);
+        Assert.Equal(2, second.Index);
+
+        runner.Chose(world, card, 0, second.Index, Decision.Take(1));
+
+        Assert.True(Statuses.Has(world, identity, Statuses.Confused));
+        Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
     }
 
     private static (Card Card, IReadOnlyList<Marvel.Rules.Events.GameEvent> Events) Reveal(

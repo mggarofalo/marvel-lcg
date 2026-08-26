@@ -540,12 +540,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public Prompt? Choosing(World world, Card source, int player)
+    public Prompt? Choosing(World world, Card source, int player, int stoppedAt)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
 
-        var choice = Choice(source);
+        var choice = Choice(source, stoppedAt);
         bool cards = choice.Kind == "chooseCard";
 
         // `rr:choose-option` and `rr:choose-game-element` are two questions and
@@ -581,13 +581,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public IReadOnlyList<GameEvent> Chose(World world, Card source, int player, Decision input)
+    public IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(input);
 
-        var choice = Choice(source);
+        var choice = Choice(source, stoppedAt);
         var cast = Resolving(world, source, player);
 
         if (choice.Kind == "chooseCard")
@@ -599,7 +600,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     $"'{source.FaceId}' did not offer card {input.Affordance} to choose"));
 
             Run(Tree(choice.Require("effect")), cast);
-            return cast.Events;
+            return Continue(source, cast, stoppedAt);
         }
 
         var options = Nodes(choice.Require("options")).ToList();
@@ -611,6 +612,32 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         Run(options[input.Affordance], cast);
+        return Continue(source, cast, stoppedAt);
+    }
+
+    /// <summary>
+    /// Runs what is left of the ability after the answered choice.
+    /// </summary>
+    /// <remarks>
+    /// The chosen option has already run; this is the rest of the sequence it
+    /// was a step of. If the rest holds another choice, it suspends again and
+    /// the step it schedules says where to pick up next.
+    /// </remarks>
+    private List<GameEvent> Continue(Card source, Cast cast, int from)
+    {
+        var effect = book.On(source.FaceId)
+            .Select(ability => ability.Effect)
+            .FirstOrDefault(tree => Choices(tree).Any());
+
+        // **The resume point belongs to the top-level sequence and nowhere
+        // else.** Carried on the `Cast` it would leak into any `seq` the chosen
+        // option itself contains -- an option of three effects resumed at two
+        // would run only the third.
+        if (effect is { Kind: "seq" } && !cast.Suspended)
+        {
+            Sequence(effect, cast, from);
+        }
+
         return cast.Events;
     }
 
@@ -630,17 +657,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// and it is charged by name: a second one would make which of them is
     /// waiting a guess.
     /// </remarks>
-    private AbilityNode Choice(Card source)
+    private AbilityNode Choice(Card source, int stoppedAt)
     {
-        var found = book.On(source.FaceId)
-            .SelectMany(ability => Choices(ability.Effect))
-            .ToList();
+        // **Which choice, when a card has several.** The step says where the
+        // ability stopped, and the choice that stopped it is the step before
+        // that. A card whose whole effect is one choice has no sequence at all,
+        // and resumes at one.
+        var effect = book.On(source.FaceId)
+            .Select(ability => ability.Effect)
+            .FirstOrDefault(tree => Choices(tree).Any())
+            ?? throw new RulesNotImplementedException(
+                $"'{source.FaceId}' has no choice waiting on an answer");
 
-        return found.Count == 1
-            ? found[0]
+        if (effect.Kind != "seq")
+        {
+            return Choices(effect).Single();
+        }
+
+        var steps = Nodes(effect.Argument).ToList();
+        return stoppedAt >= 1 && stoppedAt <= steps.Count
+            && steps[stoppedAt - 1] is { Kind: "choose" or "chooseCard" } waiting
+            ? waiting
             : throw new RulesNotImplementedException(
-                $"'{source.FaceId}' holds {found.Count} choices, and exactly one can be "
-                + "waiting on an answer");
+                $"'{source.FaceId}' has no choice at step {stoppedAt - 1} of its sequence");
     }
 
     /// <summary>Every <c>choose</c> node in one effect tree.</summary>
@@ -702,23 +741,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         switch (node.Kind)
         {
             case "seq":
-                foreach (var step in Nodes(node.Argument))
-                {
-                    if (cast.Suspended)
-                    {
-                        // A `choose` stops the ability until a player answers,
-                        // and resuming part-way through one is not written. So
-                        // an effect *after* a choice is refused by name rather
-                        // than run before the choice it was meant to follow --
-                        // which is the reading that looks like it worked.
-                        throw new RulesNotImplementedException(
-                            $"'{cast.Source.FaceId}' has an effect after a choice, and "
-                            + "resuming an ability part-way through is not implemented");
-                    }
-
-                    Run(step, cast);
-                }
-
+                Sequence(node, cast, from: 0);
                 break;
 
             case "generate":
@@ -730,6 +753,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' generates a resource, which is read while a "
                     + "cost is paid rather than resolved as an effect");
+
+            case "changeForm":
+                ChangeForm(node, cast);
+                break;
+
+            case "removeFromGame":
+                RemoveFromGame(node, cast);
+                break;
 
             case "exhaust":
                 Exhaust(node, cast);
@@ -1020,6 +1051,69 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     // ---- reading a value ---------------------------------------------------
 
+    /// <summary>
+    /// "Flip to alter-ego form" — <c>rr:form-change-form</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>It does not use up the turn's flip.</b> <c>rr:form-change-form.3</c>:
+    /// "if a card ability causes a player to change forms, it does not count
+    /// against the one voluntary form change the player is permitted during
+    /// their turn that round." So this goes through <c>Forms.Change</c>, which
+    /// turns the card, and leaves <c>Seat.FormChangedInRound</c> alone —
+    /// <c>Game</c> sets that when the player takes the turn option.
+    /// </para>
+    /// <para>
+    /// A player already in the named form does nothing. "Flip <b>to</b>
+    /// alter-ego form" names a destination, and flipping an alter-ego would
+    /// arrive at the wrong one.
+    /// </para>
+    /// </remarks>
+    private static void ChangeForm(AbilityNode node, Cast cast)
+    {
+        var seat = cast.World.Seats[Seat(node.Require("player"), cast)];
+        string form = Word(node.Require("to"));
+        if (Forms.In(cast.World, seat, cast.World.Facts, form))
+        {
+            return;
+        }
+
+        string was = seat.IdentityCard.FaceId;
+        Forms.Change(seat, cast.World.Facts);
+        cast.Events.Add(new CardsFlipped([seat.IdentityCard.ObjectId], true)
+        {
+            Trigger = cast.Trigger, Verb = "Change_Form",
+        });
+
+        if (!Forms.In(cast.World, seat, cast.World.Facts, form))
+        {
+            throw new RulesNotImplementedException(
+                $"flipping '{was}' did not reach {form}");
+        }
+    }
+
+    /// <summary>"Remove … from the game" — <c>rr:removed-from-the-game</c>.</summary>
+    /// <remarks>
+    /// Removed and not discarded: <c>rr:defeat.2</c> keeps the two apart, and a
+    /// card in the discard pile can come back where one out of the game cannot.
+    /// </remarks>
+    private static void RemoveFromGame(AbilityNode node, Cast cast)
+    {
+        var card = Find(node.Argument, cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would remove a card that is not there");
+
+        var from = card.Area;
+        var removed = cast.World.AreaOf(DeckType.RemovedArea);
+        World.MoveToTop(card, removed);
+        cast.Events.Add(new CardsMoved(
+            Places.Reference(from), Places.Reference(removed),
+            [new Landing(card.ObjectId, removed.Cards.Count - 1)])
+        {
+            Trigger = cast.Trigger, Verb = "Remove_From_Game",
+        });
+    }
+
     /// <summary>"Exhaust …" — <c>rr:exhausted</c>.</summary>
     /// <remarks>
     /// A card already exhausted stays exhausted and reports nothing:
@@ -1219,6 +1313,39 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// owner, which an encounter card has not got.
     /// </para>
     /// </remarks>
+    /// <summary>
+    /// The steps of a <c>seq</c>, from wherever the ability left off.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>An ability can ask more than once.</b> Eviction Notice says "you may
+    /// flip to alter-ego form" and then "choose:", which is two questions in a
+    /// row; 36 cards in the pool pair a "may" with a listed choice, and every
+    /// "may" is itself a question.
+    /// </para>
+    /// <para>
+    /// So a suspended ability remembers <i>where</i>, and that place is an
+    /// index into the top-level sequence — one number, which is what a
+    /// <see cref="PhaseStep"/> can carry and what survives a save. A choice
+    /// nested inside an <c>if</c> inside a <c>seq</c> is refused by name
+    /// instead; nothing in the pool needs one, and inventing a path notation
+    /// for it would be inventing the general case for no card.
+    /// </para>
+    /// </remarks>
+    private static void Sequence(AbilityNode node, Cast cast, int from)
+    {
+        var steps = Nodes(node.Argument).ToList();
+        for (int step = from; step < steps.Count; step++)
+        {
+            cast.At(step);
+            Run(steps[step], cast);
+            if (cast.Suspended)
+            {
+                return;
+            }
+        }
+    }
+
     private static void Choose(AbilityNode node, Cast cast)
     {
         if (node.Kind == "choose" && Nodes(node.Require("options")).Count() < 2)
@@ -1239,11 +1366,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "guard the choice with `exists`");
         }
 
+        // `Index` is where to pick the ability up: the step *after* this
+        // choice in the top-level sequence. A choice that is the whole effect
+        // has nothing after it and resumes at one, which runs nothing.
         cast.World.Agenda.Then(new PhaseStep(
             Steps.ChooseOption,
             cast.World.Agenda.Current?.Round ?? 0,
             2,
-            Index: cast.Player,
+            Index: cast.Position + 1,
             Subject: cast.Source.ObjectId,
             Seat: cast.Player));
 
@@ -1746,6 +1876,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         /// <summary>Stops the ability here — <c>rr:choose-option</c>.</summary>
         public void Suspend() => Suspended = true;
+
+        /// <summary>Which step of the top-level sequence is running.</summary>
+        public int Position { get; private set; }
+
+        /// <summary>Records which step of the sequence this is.</summary>
+        /// <param name="step">Its index.</param>
+        public void At(int step) => Position = step;
 
         /// <summary>The card the player picked, once they have.</summary>
         public Card? Chosen { get; private set; }

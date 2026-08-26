@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and thirty cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
+`src/Marvel.Cards`, and thirty-two cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -592,7 +592,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
 | Amounts | a number, `{ "perPlayer": n }`, or `{ "result": "healed" }` |
 | Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
@@ -620,6 +620,28 @@ threat reaches its target however the threat arrived. Both are one-line
 mutations that no state assertion in the card tests would catch, which is why
 the tests assert the tough card and the ending rather than the number.
 
+### An ability can ask more than once
+
+Eviction Notice says *"you may flip to alter-ego form"* and then *"choose:"* —
+two questions in a row. **36 cards in the pool pair a "may" with a listed
+choice**, and every "may" is itself a question, so this is not one card's
+peculiarity.
+
+A suspended ability now remembers **where**, and that place is an index into its
+top-level sequence: one number, which is what a `PhaseStep` can carry and what
+survives a save. `Chose` runs the option and then runs the rest of the sequence
+from there; if the rest holds another choice, it suspends again and says where
+to pick up next.
+
+**The resume point belongs to the top-level sequence and nowhere else.** Carried
+on the `Cast` it leaked into any `seq` the chosen option itself contained — an
+option of three effects resumed at two ran only the third. It is a parameter to
+`Sequence` instead, which is why `Run` never sees one.
+
+A choice nested inside an `if` inside a `seq` is still refused by name. Nothing
+in the pool needs one, and inventing a path notation for it would be inventing
+the general case for no card.
+
 **`choose` is the shape the interpreter did not have.** Everything else a card
 could do was something the engine could finish; "choose to either take 2 damage
 or place 1 threat on the main scheme" is not — the ability has to stop, a player
@@ -635,9 +657,9 @@ Two bounds are charged by name rather than guessed at:
 - **A step carries a card, not an effect tree.** So the node is found again
   from the card, and a card holding *two* choices is refused — which of them
   was waiting would otherwise be a guess.
-- **Nothing resumes an ability part-way through.** An effect *after* a choice
-  in a `seq` throws, rather than running before the choice it was written to
-  follow. That is the failure that looks like it worked.
+- **A `seq` resumes; anything deeper does not.** A choice nested inside an `if`
+  is refused by name, because the resume point is one index into the top-level
+  sequence.
 
 `rr:choose-game-element.1` settles who is asked: the player resolving the
 ability. For a revealed encounter card that is the player it was dealt to — not
