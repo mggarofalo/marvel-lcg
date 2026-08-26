@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and six cards in `datasets/abilities/abilities.json`.
+`src/Marvel.Cards`, and nine cards in `datasets/abilities/abilities.json`.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -592,8 +592,9 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes` |
-| Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat` |
+| Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes` |
+| Amounts | a number, or `{ "perPlayer": n }` |
 | Bindings | `this`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
@@ -608,6 +609,28 @@ reads a player's form to choose between attacking and scheming, but that rule is
 about the activation the villain phase schedules. "Assault" says the villain
 attacks you, and reading the form again here would make it do nothing to a hero
 who had flipped since the card was dealt.
+
+**`dealDamage` and `placeThreat` go through the engine's rule, never at the
+token.** Damage written straight to `k_damage` walks past `rr:tough.2`, which
+prevents *all* of an instance of damage and discards a status card instead, and
+past `rr:defeat`, which is the other half of the same moment — leaving a
+defeated character standing. Threat written straight to `k_threat` walks past
+`rr:main-scheme-main-scheme-deck.2`, which completes a scheme the moment its
+threat reaches its target however the threat arrived. Both are one-line
+mutations that no state assertion in the card tests would catch, which is why
+the tests assert the tough card and the ending rather than the number.
+
+**`query: heroes` is not every identity.** `rr:form-change-form.5`: "while a
+player is in alter-ego form, card abilities that interact with their hero do not
+interact with their identity." So Shocker's *"Deal 1 damage to each hero"*
+passes over a player who has flipped down — a distinction that is invisible at
+one player and invisible again at two if the flipped-down player happens to be
+last, which is why the test has three with the alter-ego in the middle.
+
+**`{ "perPlayer": n }` counts eliminated players.** `rr:player-elimination.6`:
+"effects that refer to the players in the game ignore eliminated players,
+**except for the per player icon**." So this multiplies by `World.Players` and
+not by the number still playing.
 
 **`inForm` is a test and not a trigger field**, because the printed `(Hero)` and
 `(Alter-Ego)` parentheses gate two abilities that are exclusive — `rr:form-change-form`
@@ -668,6 +691,7 @@ the engine is adding a case; growing the game is adding a row; they are
 different activities and they read differently.
 
 The gaps that have that shape today, all of them from the Rhino scenario's own
-twenty-four cards: `dealDamage`, `heal`, `placeThreat`, a `choose` between two
-effects, and a query for a card the player controls. Those are what stands
-between the engine and its first scenario in which every card does what it says.
+twenty-four cards: `heal` and the `result` of it, a status on a *player* rather
+than a card, a `choose` between two effects, a query for a card the player
+controls, and a search of the encounter deck. Those are what stands between the
+engine and its first scenario in which every card does what it says.

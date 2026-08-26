@@ -107,6 +107,39 @@
           }
         }
       ]
+    },
+    {
+      "card": "01103",
+      "name": "Shocker",
+      "note": "When Revealed: Deal 1 damage to each hero. A minion, so the card also enters play; the ability is what the reveal resolves. 'Each hero' is not each identity -- rr:form-change-form.5 says abilities that interact with a player's hero do not interact with the identity of a player in alter-ego form, so a player who has flipped down takes nothing.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "dealDamage": { "cards": { "query": "heroes" }, "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01107",
+      "name": "Breakin' & Takin'",
+      "note": "When Revealed: Place an additional 1 [per_hero] threat here. 'Additional' is additional to the printed starting threat, which rr:side-scheme.1 has already placed by the time this resolves -- so this places only what the text says and does not restate the 2. 'Here' is the card itself. The hazard icon is a printed field and not this ability.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": "this", "amount": { "perPlayer": 1 } } }
+        }
+      ]
+    },
+    {
+      "card": "01109",
+      "name": "Bomb Scare",
+      "note": "When Revealed: Place an additional 1 [per_hero] threat here. Word for word Breakin' & Takin', from a different encounter set; the acceleration icon rather than the hazard icon is the difference, and both are printed fields rather than abilities.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": "this", "amount": { "perPlayer": 1 } } }
+        }
+      ]
     }
   ]
 }
