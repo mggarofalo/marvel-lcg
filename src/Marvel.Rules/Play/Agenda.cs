@@ -305,6 +305,18 @@ public static class Steps
     /// <summary>"When a card is revealed" — <c>rr:reveal</c>.</summary>
     public const string CardRevealed = "WhenCardRevealed";
 
+    /// <summary>
+    /// A player triggering an "Action" ability on their turn —
+    /// <c>rr:player-turn.5</c>.
+    /// </summary>
+    /// <remarks>
+    /// A condition rather than a step: an action is not scheduled, it is one of
+    /// the six things a turn offers and it happens when the player says so. It
+    /// is here so that a card can answer "after a player triggers an action",
+    /// and so that <see cref="EveryCondition"/> knows the name.
+    /// </remarks>
+    public const string TurnAction = "WhenActionTriggered";
+
     private static readonly Dictionary<string, string[]> Conditions = new(StringComparer.Ordinal)
     {
         [PlaceThreat] = ["WhenThreatPlaced"],
@@ -323,6 +335,7 @@ public static class Steps
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
+        [TurnAction] = [TurnAction],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 

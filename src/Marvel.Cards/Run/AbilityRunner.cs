@@ -126,7 +126,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var events = new List<GameEvent>();
-        Run(found[0].Effect, new Cast(world, card, occurrence, ability.Player, events, this));
+        var cast = new Cast(world, card, occurrence, ability.Player, events, this);
+
+        // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
+        // before step 6 resolves. Nothing here can abort, because step 3 --
+        // `Payable`, when the ability was offered -- already asked whether it
+        // could be paid.
+        Pay(found[0].Cost, cast);
+        Run(found[0].Effect, cast);
         return events;
     }
 
@@ -213,6 +220,114 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         return events;
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<PendingAbility> Actions(World world, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        var found = new List<PendingAbility>();
+        foreach (var card in Triggerable(world, player))
+        {
+            foreach (var ability in book.On(card.FaceId))
+            {
+                if (ability.Trigger.Timing == AbilityType.Action
+                    && InForm(world, player, ability.Trigger.Form)
+                    && Payable(world, card, ability.Cost))
+                {
+                    found.Add(new PendingAbility(card.ObjectId, AbilityType.Action, player));
+                }
+            }
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// The cards one player may trigger an action on —
+    /// <c>rr:player-turn.5</c>'s four places.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>.a</c> "a card in play they control", <c>.b</c> "an encounter card in
+    /// play", <c>.d</c> "an event card in their hand <i>(by playing that
+    /// event)</i>". <c>.c</c> — "any card in play with text that allows that
+    /// player to trigger its action ability" — is a card's own text and belongs
+    /// to whichever card says it, so there is nothing general to write here.
+    /// </para>
+    /// <para>
+    /// <b>An event is reached from the hand and nowhere else.</b> That is why
+    /// <c>CardPlay.Price</c> refuses to offer one: an event is not
+    /// <c>rr:player-turn.2</c>'s "ally, upgrade, support, or player side
+    /// scheme", it is played by triggering its action.
+    /// </para>
+    /// </remarks>
+    private static IEnumerable<Card> Triggerable(World world, int player)
+    {
+        foreach (var area in world.Areas)
+        {
+            if (!DeckTypes.IsInPlay(area.Type))
+            {
+                continue;
+            }
+
+            foreach (var card in area.Cards)
+            {
+                // `.a` and `.b`: yours, or nobody's. A card another player
+                // controls is theirs to trigger -- `rr:player-turn.6` is how
+                // you ask them.
+                if (card.Owner == player || card.Owner == World.Scenario)
+                {
+                    yield return card;
+                }
+            }
+        }
+
+        // `.d`, and only events: an ally in hand is played rather than
+        // triggered, and `rr:player-turn.2` is where that happens.
+        foreach (var card in world.Seats[player].Hand.Cards)
+        {
+            if (world.Facts.Kind(card.FaceId) == CardKind.Event)
+            {
+                yield return card;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether the player is in the form an ability requires —
+    /// <c>rr:player-turn.5.1</c>.
+    /// </summary>
+    private static bool InForm(World world, int player, string? form) =>
+        form is null || Forms.In(world, world.Seats[player], world.Facts, form);
+
+    /// <summary>
+    /// Whether an ability's cost can be paid — <c>rr:initiating-abilities.step.3</c>.
+    /// </summary>
+    /// <remarks>
+    /// Asked before the ability is offered, because "the player's ability to pay
+    /// them" is step 3 and step 5 aborts "without paying any costs" — so an
+    /// ability that would abort is not an offer, it is a trap. An exhausted card
+    /// cannot pay a cost of exhausting itself: <c>rr:exhausted.2</c>.
+    /// </remarks>
+    private static bool Payable(World world, Card card, AbilityNode? cost) => cost switch
+    {
+        null => true,
+        { Kind: "exhaust" } => card.Ready,
+        _ => throw new RulesNotImplementedException(
+            $"'{card.FaceId}' has a cost of '{cost.Kind}', which is not implemented"),
+    };
+
+    /// <summary>Pays an ability's cost — <c>rr:initiating-abilities.step.5</c>.</summary>
+    private static void Pay(AbilityNode? cost, Cast cast)
+    {
+        if (cost is null)
+        {
+            return;
+        }
+
+        Run(cost, cast);
     }
 
     /// <inheritdoc/>

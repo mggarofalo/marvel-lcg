@@ -106,20 +106,29 @@ public sealed class AbilityDataTests
         }
     }
 
+    [Rule("rr:player-turn.5")]
     [Fact]
-    public void EveryAbilityIsWaitingInAWindowOrIsTheOccurrence()
+    public void EveryAbilityIsWaitingInAWindowOrIsTheOccurrenceOrIsATurnOption()
     {
-        // A timing that is neither an interrupt, a response, nor the occurrence
-        // itself would put the ability in no tier at all -- `AbilityWindow`
-        // would drop it and nothing would ever offer it.
+        // A timing that reaches the board through none of these routes is an
+        // ability nothing ever offers: `AbilityWindow` would drop it, no
+        // occurrence would run it, and no turn would list it.
+        //
+        // **The third route is newer than the other two.** `rr:player-turn.5`
+        // makes an "Action" one of the six things a turn offers rather than
+        // something timed around an occurrence, and `AbilityTypes.PriorityOf`
+        // has always refused to give it a tier for exactly that reason. Until
+        // an action could be triggered, this test read as "in a window or the
+        // occurrence", which was true because nothing else could be authored.
         foreach (var ability in AuthoredCards.Book.Abilities)
         {
             var timing = ability.Trigger.Timing;
             Assert.True(
                 AbilityTypes.IsInterrupt(timing)
                 || AbilityTypes.IsResponse(timing)
-                || AbilityTypes.PriorityOf(timing) == TimingPriority.Occurrence,
-                $"'{ability.Card}' has timing '{timing}', which sits in no window");
+                || AbilityTypes.PriorityOf(timing) == TimingPriority.Occurrence
+                || timing is AbilityType.Action or AbilityType.ForcedAction,
+                $"'{ability.Card}' has timing '{timing}', which nothing would offer");
         }
     }
 
@@ -267,7 +276,7 @@ public sealed class AbilityDataTests
         // this file is under: a card is authored when something reaches it.
         string[] named =
         [
-            AuthoredCards.SpiderMan, AuthoredCards.Charge, AuthoredCards.Shocker,
+            AuthoredCards.SpiderMan, AuthoredCards.AuntMay, AuthoredCards.Charge, AuthoredCards.Shocker,
             AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
             AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
             AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,

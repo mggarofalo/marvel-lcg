@@ -34,7 +34,14 @@ namespace Marvel.Cards.Dsl;
 /// read: <c>rr:ability</c> lists types and gives them an order.
 /// </param>
 /// <param name="Subject">One of <see cref="AbilitySubjects"/>.</param>
-public sealed record AbilityTrigger(string Event, AbilityType Timing, string Subject);
+/// <param name="Form">
+/// The form the player must be in, or null. <c>rr:player-turn.5.1</c>: "if the
+/// action ability is preceded by <b>Hero</b> or <b>Alter-Ego</b>, the player
+/// must be in the specified form in order to trigger the ability" — and 728 of
+/// the 966 action abilities in the pool are preceded by one.
+/// </param>
+public sealed record AbilityTrigger(
+    string Event, AbilityType Timing, string Subject, string? Form = null);
 
 /// <summary>
 /// Which occurrences an ability answers, out of all those with its condition.
@@ -89,8 +96,17 @@ public static class AbilitySubjects
 /// the deserialiser refuses an ability carrying a field it does not know, so a
 /// card that needs one fails rather than silently losing it.
 /// </remarks>
+/// <param name="Cost">
+/// What must be paid to use it, or null. <c>rr:cost</c> — "a cost is anything a
+/// player must do or pay in order to initiate an ability" — and
+/// <c>rr:initiating-abilities.step.5</c> makes paying it a step of its own,
+/// aborted "without paying any costs" if it cannot be met. 560 of the 966 action
+/// abilities in the pool print one, and by far the commonest is exhausting the
+/// card the ability is on.
+/// </param>
 public sealed record CardAbility(
-    string Card, string Name, AbilityTrigger Trigger, AbilityNode Effect);
+    string Card, string Name, AbilityTrigger Trigger, AbilityNode Effect,
+    AbilityNode? Cost = null);
 
 /// <summary>
 /// Every authored card, and every ability on them.

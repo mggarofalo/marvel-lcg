@@ -75,6 +75,9 @@ public sealed class Game
     /// <summary>The affordance verb for flipping between hero and alter-ego.</summary>
     public const string ChangeForm = "Change_Form";
 
+    /// <summary>The verb a triggered "Action" carries — <c>rr:player-turn.5</c>.</summary>
+    public const string ActionVerb = "Action";
+
     /// <summary>The affordance verb for resolving a turn's end phase.</summary>
     public const string EndPhaseVerb = "End Phase";
 
@@ -199,6 +202,12 @@ public sealed class Game
                 && string.Equals(verb, CardPlay.Verb, StringComparison.Ordinal))
             {
                 return PlayCard(input);
+            }
+
+            if (Phase == GamePhase.PlayerTurn
+                && string.Equals(verb, ActionVerb, StringComparison.Ordinal))
+            {
+                return TriggerAction(input);
             }
 
             if (string.Equals(verb, EndPhaseVerb, StringComparison.Ordinal)
@@ -384,6 +393,54 @@ public sealed class Game
     }
 
     /// <summary>
+    /// Triggers the "Action" ability an affordance is anchored to —
+    /// <c>rr:player-turn.5</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Like a basic power, the turn does not end: <c>rr:player-turn</c> lets
+    /// every option except changing form "be performed as many times as the
+    /// player is able", so what is put again is the turn prompt with whatever
+    /// is still possible.
+    /// </para>
+    /// <para>
+    /// The ability is found again from the card rather than carried on the
+    /// affordance, for the same reason a suspended choice is: an affordance is
+    /// a small value on the wire and an ability is a tree.
+    /// </para>
+    /// </remarks>
+    private Resolution TriggerAction(Decision input)
+    {
+        var taken = Pending!.Affordances.First(option => option.Id == input.Affordance);
+        var ability = abilities.Actions(world, Active)
+            .FirstOrDefault(pending => pending.Card == taken.AnchorId);
+
+        if (ability.Card != taken.AnchorId)
+        {
+            throw new RulesNotImplementedException(
+                $"card {taken.AnchorId} has no action this player can trigger");
+        }
+
+        // `rr:action` is not a window, so there is no occurrence around it --
+        // the ability *is* what is happening, and the card it is on is its
+        // subject.
+        var happened = new List<GameEvent>(abilities.Resolve(
+            world,
+            new Occurrence(0, [Steps.TurnAction], Subject: taken.AnchorId, Player: Active),
+            ability));
+
+        if (world.IsOver)
+        {
+            Phase = GamePhase.Over;
+            Pending = null;
+            return new Resolution(world, null, happened);
+        }
+
+        Pending = TurnPrompt();
+        return new Resolution(world, Pending, happened);
+    }
+
+    /// <summary>
     /// Plays the card an affordance is anchored to.
     /// </summary>
     /// <remarks>
@@ -551,9 +608,9 @@ public sealed class Game
     /// defect on the action menu.
     /// </para>
     /// <para>
-    /// <c>rr:player-turn</c> lists six options and three are here: change form,
-    /// and the basic powers under <c>rr:player-turn.3</c>. Playing a card, ally
-    /// actions, triggered actions and asking another player are not written.
+    /// <c>rr:player-turn</c> lists six options and five are here: change form,
+    /// playing a card, ally actions, the basic powers, and triggering an
+    /// action. Asking another player (<c>.6</c>) is not written.
     /// </para>
     /// </remarks>
     /// <param name="seat">Whose turn.</param>
@@ -596,6 +653,19 @@ public sealed class Game
                 BasicPowers.Attackable(world, facts, seat.Index));
             Offer(options, ally, BasicPowers.ThwartVerb,
                 BasicPowers.Thwartable(world, facts, seat.Index));
+        }
+
+        // `rr:player-turn.5`: "trigger an **Action** ability on a card in play
+        // they control, an encounter card in play, [...] or an event card in
+        // their hand (by playing that event)". Not a window -- an action is one
+        // of the six things a turn offers, so it is asked with the others.
+        //
+        // `.5.1` is applied where the ability is found: "if the action ability
+        // is preceded by Hero or Alter-Ego, the player must be in the specified
+        // form", and 728 of the 966 in the pool are.
+        foreach (var action in abilities.Actions(world, seat.Index))
+        {
+            options.Add(abilities.Describe(world, action) with { Verb = ActionVerb });
         }
 
         // `rr:player-turn.3`: the hero's basic attack or thwart in hero form,
