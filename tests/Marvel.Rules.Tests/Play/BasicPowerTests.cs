@@ -301,6 +301,63 @@ public sealed class BasicPowerTests
         Assert.Equal(0, next.Damage);
     }
 
+    [Rule("rr:villain-defeat.3")]
+    [Rule("rr:villain-defeat.3.2")]
+    [Fact]
+    public void ANewStageWithTheSameTitleKeepsWhatWasOnTheOldOne()
+    {
+        // "Attachments, upgrades, status cards, counters, and non-damage tokens
+        // on a villain **carry over** to the new stage." Rhino's three stages
+        // share a title and Charge attaches to Rhino, so this is the ordinary
+        // case in the one scenario the engine plays.
+        var printed = new Printed()
+            .With("hero", ("ATK", "9"))
+            .With("villain", ("HP", "5"))
+            .With("villain2", ("HP", "12"));
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var next = world.CreateCard("villain2", world.AreaOf(DeckType.VillainDeck));
+        villain.PlaceTokens("k_threat", 3);
+        var attached = world.CreateCard(
+            "upgrade",
+            world.AreaOf(DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId));
+        // Stunned rather than tough on purpose: a tough card would prevent all
+        // the damage (`rr:tough.2`) and the stage would never be defeated at
+        // all, which is correct and not what this is about.
+        Statuses.Give(world, villain, Statuses.Stunned);
+
+        BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Assert.Equal(next.ObjectId, attached.Area.Host);
+        Assert.Equal(3, next.Tokens["k_threat"]);
+        Assert.True(Statuses.Has(world, next, Statuses.Stunned));
+    }
+
+    [Rule("rr:villain-defeat.4")]
+    [Rule("rr:villain-defeat.4.2")]
+    [Fact]
+    public void ANewStageWithADifferentTitleKeepsNothing()
+    {
+        // "Attachments, upgrades, status cards, counters, and non-damage tokens
+        // do **not** carry over." The title is the whole of the difference.
+        var printed = new Printed()
+            .With("hero", ("ATK", "9"))
+            .With("villain", ("HP", "5"))
+            .With("stranger", ("HP", "12"));
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var next = world.CreateCard("stranger", world.AreaOf(DeckType.VillainDeck));
+        villain.PlaceTokens("k_threat", 3);
+        var attached = world.CreateCard(
+            "upgrade",
+            world.AreaOf(DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId));
+
+        BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, attached.Area.Type);
+        Assert.Equal(0, next.Tokens.GetValueOrDefault("k_threat"));
+    }
+
     [Rule("rr:villain-defeat")]
     [Fact]
     public void DefeatingTheFinalStageWinsTheGame()
@@ -380,6 +437,8 @@ public sealed class BasicPowerTests
             "hero" => CardKind.Hero,
             "scheme" => CardKind.MainScheme,
             "minion" => CardKind.Minion,
+            "upgrade" => CardKind.Attachment,
+            "tough" or "stunned" => CardKind.Status,
             _ => CardKind.EncounterVillain,
         };
 
@@ -395,5 +454,9 @@ public sealed class BasicPowerTests
             && long.TryParse(value, out long number)
                 ? number
                 : fallback;
+
+        /// <summary>`villain` and `villain2` are two stages of one character.</summary>
+        public string Title(string faceId) =>
+            faceId.StartsWith("villain", StringComparison.Ordinal) ? "villain" : faceId;
     }
 }

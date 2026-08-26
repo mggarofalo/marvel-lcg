@@ -122,4 +122,24 @@ public interface ICardFacts
     /// <param name="faceId">A printed card id.</param>
     /// <param name="attribute">The power, <c>ATK</c> or <c>THW</c>.</param>
     long ConsequentialDamage(string faceId, string attribute) => 0;
+
+    /// <summary>
+    /// The face's printed title.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Printed data, and the rules turn on it in places a name would look
+    /// merely decorative. <c>rr:villain-defeat.3</c> and <c>.4</c> decide
+    /// whether a defeated villain stage's attachments, status cards and tokens
+    /// carry over by whether "the new stage of the villain has the <b>same
+    /// title</b>"; <c>rr:identity.2</c> makes a card naming Angel not reach
+    /// Archangel.
+    /// </para>
+    /// <para>
+    /// Defaulted to the face id, so a board built by hand out of made-up faces
+    /// gets titles that are distinct exactly when the faces are.
+    /// </para>
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    string Title(string faceId) => faceId;
 }
