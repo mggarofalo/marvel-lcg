@@ -305,8 +305,8 @@ public static class VillainPhase
         // icons and tokens is also placed at this time.**"
         long amount = facts.PrintedValue(scheme.FaceId, "EscalationThreat", world.Players)
             + MainScheme.Acceleration(world, facts);
-        Threat(scheme, amount, "villain phase, place threat", events);
-        CheckCompleted(world, facts, abilities, scheme, events);
+        Threat.Place(
+            world, facts, abilities, scheme, amount, "villain phase, place threat", events);
     }
 
     /// <summary>An enemy schemes. <c>rr:scheme-enemy-activation</c>.</summary>
@@ -339,8 +339,7 @@ public static class VillainPhase
         var target = world.TheCardIn(DeckType.MainSchemesArea);
         if (target is not null)
         {
-            Threat(target, scheme, "scheme", events);
-            CheckCompleted(world, facts, abilities, target, events);
+            Threat.Place(world, facts, abilities, target, scheme, "scheme", events);
         }
     }
 
@@ -490,7 +489,7 @@ public static class VillainPhase
         // When Revealed text has exactly two. The prompt is not implemented, so
         // the order here is fixed and deterministic rather than chosen. See
         // MARVEL-187.
-        Reveal.Keywords(world, facts, card, player, events);
+        Reveal.Keywords(world, facts, abilities, card, player, events);
         events.AddRange(abilities.WhenRevealed(world, card, player));
 
         // `rr:quickstrike.2` puts this after the card's own abilities, and it
@@ -522,77 +521,4 @@ public static class VillainPhase
     private static void PassFirstPlayerToken(World world) =>
         world.FirstPlayer = world.Players > 0 ? (world.FirstPlayer + 1) % world.Players : 0;
 
-    /// <summary>Ends the game when the last main scheme completes.</summary>
-    /// <remarks>
-    /// <para>
-    /// <c>rr:main-scheme-main-scheme-deck.2</c>: "If the amount of threat on a
-    /// main scheme is equal to or greater than its target threat value, that
-    /// main scheme is completed and the main scheme deck advances. <b>If the
-    /// villain completes the final stage of the main scheme deck, the villain
-    /// wins the game.</b>"
-    /// </para>
-    /// <para>
-    /// <b>Only the final stage is implemented, because it is the one the
-    /// recording reaches.</b> The Rhino scenario's main scheme deck holds one
-    /// card, so completing it is the villain winning. Advancing to a next stage
-    /// is three more steps of that same rule — remove, resolve, flip and place
-    /// starting threat — and it throws rather than being skipped, because a
-    /// scheme that completed and did not advance would sit there accumulating
-    /// threat forever.
-    /// </para>
-    /// <para>
-    /// Checked after each placement rather than at the end of the phase: the
-    /// engine's own log completes the scheme in the middle of the villain's
-    /// activation, and never deals the encounter cards that would have followed.
-    /// The recorded game ends there, on step 6, which is why the fixture holds
-    /// seven steps of a twenty-step request.
-    /// </para>
-    /// </remarks>
-    private static void CheckCompleted(
-        World world, ICardFacts facts, ICardAbilities abilities, Card scheme,
-        List<GameEvent> events)
-    {
-        long threat = scheme.Tokens.TryGetValue("k_threat", out long held) ? held : 0;
-        long target = facts.PrintedValue(scheme.FaceId, "TargetThreat", world.Players);
-        if (target <= 0 || threat < target)
-        {
-            return;
-        }
-
-        // `rr:main-scheme-main-scheme-deck.2`: the scheme is completed either
-        // way. `.2.2` is the converse and the reason this flag is set here
-        // rather than inside `Advance` -- "if the main scheme advances other
-        // than through having threat on it equal to or greater than its target
-        // threat value, that main scheme is **not** considered completed."
-        scheme.PlaceTokens("is_completed", 1);
-        events.Add(new FieldSet(scheme.ObjectId, "is_completed", 0, 1)
-        {
-            Trigger = "main scheme completed", Verb = "Complete",
-        });
-
-        if (world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0)
-        {
-            MainScheme.Advance(world, facts, abilities, scheme, "main scheme completed", events);
-            return;
-        }
-
-        // `.2.1` -- "if the villain completes the final stage of the main
-        // scheme deck, the villain wins the game."
-        world.Finish(Outcome.VillainWins);
-    }
-
-    private static void Threat(Card scheme, long amount, string trigger, List<GameEvent> events)
-    {
-        if (amount == 0)
-        {
-            return;
-        }
-
-        long before = scheme.Tokens.TryGetValue("k_threat", out long held) ? held : 0;
-        scheme.PlaceTokens("k_threat", amount);
-        events.Add(new FieldSet(scheme.ObjectId, "k_threat", before, before + amount)
-        {
-            Trigger = trigger, Verb = "Place_Threat",
-        });
-    }
 }

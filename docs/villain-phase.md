@@ -99,6 +99,24 @@ advance: *"if the main scheme advances other than through having threat on it
 equal to or greater than its target threat value, that main scheme is **not**
 considered completed."*
 
+### Threat placed is threat placed, however it arrived
+
+`rr:main-scheme-main-scheme-deck.2` completes a scheme the moment its threat
+reaches its target and says **nothing** about what put the threat there. So one
+`Threat.Place` does the placing and the checking for all of it — the
+acceleration field, an enemy scheming, the `incite X` keyword, and a card's own
+ability.
+
+They were not one thing. The villain phase placed threat and looked; `incite X`
+placed threat inline and did not. A scenario one threat short of its target
+carried on past its own ending, and **thirty-three cards in the pool carry
+incite**.
+
+A *side* scheme prints a target threat value too and reaching it does nothing:
+`rr:side-scheme.2` keeps one in play *"until there is no threat on it"*, which
+is the opposite direction. So the check is bounded to the main scheme area, and
+a Bomb Scare gathering threat does not hand the villain the win.
+
 ### What a revealed card does
 
 `rr:reveal.step.2` is a list by card type, and until MARVEL-188 none of it was

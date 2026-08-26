@@ -15,7 +15,7 @@ own "equivalent to the following constant ability" line.
 | **Form** | grants an identity a unique form | [forms.md](forms.md) |
 | **Guard** | the engaged player cannot attack any villain | `BasicPowers.Attackable` |
 | **Hinder X** | enters play with X threat **on the card** | `Reveal.EnterPlay` |
-| **Incite X** | *When Revealed: place X threat on the main scheme* | `Reveal.Keywords` |
+| **Incite X** | *When Revealed: place X threat on the main scheme* | `Reveal.Keywords`, through `Threat.Place` |
 | **Overkill** | excess damage from a defeated ally goes to its controller's identity; from a minion, to the villain | `Damage.Attack` |
 | **Patrol** | the engaged player cannot thwart the **main** scheme | `BasicPowers.Thwartable` |
 | **Piercing** | discard **each** tough status card before dealing damage | `Damage.Attack` |
