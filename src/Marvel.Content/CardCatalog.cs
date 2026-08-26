@@ -58,7 +58,21 @@ public sealed class CardCatalog : ICardFacts
     public CardKind Kind(string faceId) => Find(faceId).Kind;
 
     /// <inheritdoc />
-    public string? FormKeyword(string faceId) => Find(faceId).Form;
+    /// <remarks>
+    /// Read from the printed <c>Form</c> attribute, which the card data carries
+    /// as a structured field on exactly the nine faces that print the keyword.
+    /// <see cref="FormOf"/> reads the same fact out of the printed <i>text</i>,
+    /// and <c>FormDataTests</c> holds the two against each other — the
+    /// attribute drives the engine, and the text is what would catch a face
+    /// whose attribute was missed when the dataset was built.
+    /// </remarks>
+    public string? FormKeyword(string faceId)
+    {
+        var printed = Find(faceId).Attributes;
+        return printed.TryGetValue("Form", out string? form) && form.Length > 0
+            ? form.ToLowerInvariant()
+            : null;
+    }
 
     /// <inheritdoc />
     public IReadOnlyList<string> Traits(string faceId) => Find(faceId).Traits;
@@ -194,15 +208,7 @@ public sealed class CardCatalog : ICardFacts
             }
         }
 
-        string? form = null;
-        if (element.TryGetProperty("engine", out var engineText)
-            && engineText.ValueKind == JsonValueKind.Object
-            && engineText.TryGetProperty("text", out var printedText))
-        {
-            form = FormOf(printedText.GetString());
-        }
-
-        return new Entry(kind, traits, attributes, form);
+        return new Entry(kind, traits, attributes);
     }
 
     /// <summary>
@@ -220,13 +226,11 @@ public sealed class CardCatalog : ICardFacts
     /// neither grants anything.
     /// </para>
     /// <para>
-    /// Measured: exactly nine faces in the 4,344-card pool, which is what
-    /// <c>CardCatalogTests.TheFormKeywordIsOnExactlyTheNineFacesThatPrintIt</c>
-    /// pins. Read from the <b>engine's</b> text and not MarvelSDB's, for the
-    /// same reason <see cref="TraitKey"/> reads the engine's traits: a card the
-    /// engine does not have gets nothing. That is why <c>26002</c> and
-    /// <c>57046a/b</c> — MarvelSDB-only faces that do print the keyword — are
-    /// not among the nine.
+    /// <b>Not what the engine reads.</b> <see cref="FormKeyword"/> reads the
+    /// structured <c>Form</c> attribute instead; this is the same fact taken
+    /// from the printed words, and the two are held against each other so that
+    /// a face whose attribute was missed when the dataset was built fails a
+    /// test rather than silently granting no form.
     /// </para>
     /// </remarks>
     /// <param name="printed">The card's printed text, or null.</param>
@@ -308,6 +312,5 @@ public sealed class CardCatalog : ICardFacts
     private sealed record Entry(
         CardKind Kind,
         IReadOnlyList<string> Traits,
-        IReadOnlyDictionary<string, string> Attributes,
-        string? Form);
+        IReadOnlyDictionary<string, string> Attributes);
 }

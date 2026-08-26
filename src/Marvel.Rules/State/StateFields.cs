@@ -165,6 +165,27 @@ public static class StateFields
         ["escalation_threat"] = "EscalationThreat",
         ["target_threat"] = "TargetThreat",
         ["printed_stage"] = "Stage",
+        ["acceleration_icon"] = "Acceleration",
+        ["amplify"] = "Amplify",
+        ["assault"] = "Assault",
+        ["crisis"] = "Crisis",
+        ["hazard"] = "Hazard",
+        ["incite"] = "Incite",
+        ["patrol"] = "Patrol",
+        ["peril"] = "Peril",
+        ["permanent"] = "Permanent",
+        ["quickstrike"] = "Quickstrike",
+        ["restricted"] = "Restricted",
+        ["retaliate"] = "Retaliate",
+        ["stalwart"] = "Stalwart",
+        ["steady"] = "Steady",
+        ["surge"] = "Surge",
+        ["teamwork"] = "Teamwork",
+        ["temporary"] = "Temporary",
+        ["toughness"] = "Toughness",
+        ["victory"] = "Victory",
+        ["villainous"] = "Villainous",
+        ["vulnerable"] = "Vulnerable",
     };
 
     // What a card attached to another adds to it. The engine's own attribute
@@ -179,6 +200,17 @@ public static class StateFields
         ["scheme"] = "SCH+",
         ["thwart"] = "THW+",
     };
+
+    /// <summary>
+    /// Which printed attribute fills each field, for the tests that hold this
+    /// map to the card pool.
+    /// </summary>
+    /// <remarks>
+    /// Exposed because the interesting failure is a field <b>missing</b> from
+    /// it: an unmapped field reads zero forever and looks implemented. See
+    /// <c>PrintedKeywordTests</c>.
+    /// </remarks>
+    public static IReadOnlyDictionary<string, string> FilledFrom => PrintedFrom;
 
     /// <summary>The default ally limit an identity registers.</summary>
     public const long AllyLimit = 3;
