@@ -106,7 +106,9 @@ public sealed class PlayerTurnTests
         var change = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm);
         game.Resolve(Decision.Take(change.Id));
 
-        Assert.Empty(game.Pending!.Affordances);
+        // The change is gone and the rest of the turn is not: a hero in hero
+        // form can attack and thwart, which is `rr:player-turn.3`.
+        Assert.DoesNotContain(game.Pending!.Affordances, a => a.Verb == Game.ChangeForm);
         game.Resolve(Decision.Decline);
 
         Assert.Equal(1, game.Pending!.Player);

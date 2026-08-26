@@ -196,8 +196,11 @@ public sealed class FormDataTests
         // Still the same turn, still being asked, and no longer offered.
         Assert.Equal(Question.TurnOption, game.Pending!.Asking);
         Assert.Equal(GamePhase.PlayerTurn, game.Phase);
-        Assert.Empty(game.Pending.Affordances);
         Assert.Equal(1, world.Seats[0].FormChangedInRound);
+
+        // The change is no longer on offer. The rest of the turn still is --
+        // `rr:player-turn` limits only this one option to once each turn.
+        Assert.DoesNotContain(game.Pending.Affordances, a => a.Verb == Game.ChangeForm);
     }
 
     [Rule("rr:activation.1")]
