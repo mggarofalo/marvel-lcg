@@ -184,6 +184,76 @@ public sealed class StandardSetCardsTests
         Assert.All(world.Agenda.Outstanding, step => Assert.Equal(1, step.Seat));
     }
 
+    [Rule("rr:player-side-scheme")]
+    [Fact]
+    public void MasterplanPilesThreatOnEverySideSchemeInPlay()
+    {
+        // "Place 4 threat on each side scheme." Four flat, not per player, and
+        // **each** -- two schemes take four apiece rather than four between
+        // them. `rr:player-side-scheme` calls a player's "the player card
+        // equivalent of the side schemes found in the encounter deck" and puts
+        // it in the same place, so it counts too.
+        var world = Deal();
+        var area = world.AreaOf(DeckType.SideSchemesArea);
+        var scenarios = world.CreateCard("01107", area);
+        var players = world.CreateCard("01108", area);
+
+        Reveal(world, AuthoredCards.Masterplan);
+
+        Assert.Equal(4, scenarios.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(4, players.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
+    [Rule("rr:discard.4")]
+    [Fact]
+    public void MasterplanDigsForOneWhenThereIsNoneInPlay()
+    {
+        // "If there are no side schemes in play, discard cards from the top of
+        // the encounter deck until a side scheme is discarded. Reveal that side
+        // scheme." One card at a time and in order -- `rr:discard.4` -- so the
+        // pile below the side scheme is everything the search passed over.
+        var world = Deal();
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
+        int before = deck.Cards.Count;
+
+        Reveal(world, AuthoredCards.Masterplan);
+
+        var found = Assert.Single(world.Agenda.Outstanding);
+        Assert.Equal(Steps.RevealEncounterCard, found.What);
+        Assert.Equal(
+            CardKind.EncounterSideScheme,
+            Cards.Kind(world.Cards[found.Subject].FaceId));
+
+        // Everything it passed over is in the discard pile, and the card it
+        // found is out of it and on its way through a reveal.
+        Assert.Equal(before - discard.Cards.Count - 1, deck.Cards.Count);
+        Assert.Equal(DeckType.RevealingArea, world.Cards[found.Subject].Area.Type);
+    }
+
+    [Fact]
+    public void MasterplanStopsWhenThereIsNoSideSchemeToFind()
+    {
+        // The bound, and it is a rule rather than a fear: `EncounterDeck.TakeTop`
+        // reshuffles an empty deck, so a search for a card that is in neither
+        // the deck nor the discard pile would go round for ever.
+        var world = Deal();
+        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
+        foreach (var card in world.AreaOf(DeckType.EncounterDeck).Cards.ToList())
+        {
+            if (Cards.Kind(card.FaceId) == CardKind.EncounterSideScheme)
+            {
+                World.MoveToTop(card, world.AreaOf(DeckType.RemovedArea));
+            }
+        }
+
+        Reveal(world, AuthoredCards.Masterplan);
+
+        Assert.Empty(world.Agenda.Outstanding);
+        Assert.NotEmpty(discard.Cards);
+    }
+
     private static IReadOnlyList<Marvel.Rules.Events.GameEvent> Reveal(
         World world, string faceId, int player = 0)
     {

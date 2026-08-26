@@ -320,6 +320,23 @@
           }
         }
       ]
+    },
+    {
+      "card": "01192",
+      "name": "Masterplan",
+      "note": "When Revealed: Place 4 threat on each side scheme. If there are no side schemes in play, discard cards from the top of the encounter deck until a side scheme is discarded. Reveal that side scheme. Written as if/else because the sentence is one: 'each side scheme' when there are any, the search when there are none. 'Each side scheme' reaches the players' as well as the scenario's -- rr:player-side-scheme calls them the player card equivalent and .1 puts them in the same place. Four threat flat, not per player.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "exists": { "query": "sideSchemes" } },
+              "then": { "placeThreat": { "scheme": { "query": "sideSchemes" }, "amount": 4 } },
+              "else": { "discardUntil": { "from": "encounterDeck", "kind": "sideScheme" } }
+            }
+          }
+        }
+      ]
     }
   ]
 }

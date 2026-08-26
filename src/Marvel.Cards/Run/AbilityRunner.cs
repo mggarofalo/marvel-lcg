@@ -362,6 +362,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 RevealCard(Find(node.Argument, cast), cast);
                 break;
 
+            case "discardUntil":
+                DiscardUntil(node, cast);
+                break;
+
             case "shuffleInto":
                 ShuffleInto(node, cast);
                 break;
@@ -878,14 +882,79 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void PlaceThreat(AbilityNode node, Cast cast)
     {
-        var scheme = Find(node.Require("scheme"), cast)
-            ?? throw new RulesNotImplementedException(
+        // "On each side scheme" and "here" are the same node with a different
+        // query: `Every` answers one card or many, so a card that names one
+        // scheme and a card that names all of them read alike.
+        var schemes = Every(node.Require("scheme"), cast);
+        if (schemes.Count == 0)
+        {
+            throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would place threat on a scheme that is not there");
+        }
 
-        Threat.Place(
-            cast.World, cast.World.Facts, cast.Abilities, scheme,
-            Amount(node.Require("amount"), cast), cast.Trigger, cast.Events);
+        long amount = Amount(node.Require("amount"), cast);
+        foreach (var scheme in schemes)
+        {
+            Threat.Place(
+                cast.World, cast.World.Facts, cast.Abilities, scheme, amount,
+                cast.Trigger, cast.Events);
+        }
     }
+
+    /// <summary>
+    /// "Discard cards from the top of the encounter deck until a … is
+    /// discarded" — <c>rr:discard.4</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "If multiple cards are discarded from a deck by a singular effect, place
+    /// those cards in the appropriate discard pile <b>one at a time (without
+    /// changing the order)</b>", and <c>.4.1</c> makes them simultaneous all
+    /// the same. So this takes the top card each time rather than counting
+    /// ahead — and through <see cref="EncounterDeck.TakeTop"/>, so a deck that
+    /// empties mid-search reshuffles instead of ending the search.
+    /// </para>
+    /// <para>
+    /// <b>Bounded, and the bound is a rule and not a fear.</b> A search for a
+    /// card that is in neither the deck nor the discard pile would otherwise
+    /// reshuffle for ever. The bound is how many cards there are, so a card
+    /// that exists is always found and one that does not ends the search
+    /// instead of the game.
+    /// </para>
+    /// </remarks>
+    private static void DiscardUntil(AbilityNode node, Cast cast)
+    {
+        var deck = Area(Word(node.Require("from")), cast);
+        var wanted = Kind(Word(node.Require("kind")));
+
+        long bound = deck.Cards.Count
+            + cast.World.AreaOf(DeckType.EncounterDiscardPile).Cards.Count;
+
+        for (long looked = 0; looked < bound; looked++)
+        {
+            var card = EncounterDeck.TakeTop(cast.World, cast.Trigger, cast.Events);
+            if (card is null)
+            {
+                return;
+            }
+
+            Marvel.Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
+            if (cast.World.Facts.Kind(card.FaceId) == wanted)
+            {
+                RevealCard(card, cast);
+                return;
+            }
+        }
+    }
+
+    /// <summary>Which card type a word names.</summary>
+    private static CardKind Kind(string named) => named switch
+    {
+        "sideScheme" => CardKind.EncounterSideScheme,
+        "minion" => CardKind.Minion,
+        _ => throw new RulesNotImplementedException(
+            $"'{named}' is not a card type this engine can search for"),
+    };
 
     /// <summary>
     /// "The villain attacks you", "the villain schemes" — an enemy activation
@@ -955,6 +1024,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [.. cast.World
                 .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player))
                 .Cards];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } schemes
+            && schemes.Argument is AbilityValue.Word { Value: "sideSchemes" })
+        {
+            // "Each side scheme", which reaches the players' as well as the
+            // scenario's: `rr:player-side-scheme` calls them "the player card
+            // equivalent of the side schemes found in the encounter deck" and
+            // `.1` puts them in the same place, next to the main scheme.
+            return [.. cast.World.AreaOf(DeckType.SideSchemesArea).Cards];
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } pile
