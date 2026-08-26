@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Marvel.Rules.Index</RootNamespace>
+    <AssemblyName>Marvel.Rules.Index</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- One copy, linked. See tests/Shared/RepositoryPaths.cs. The tool reads
+         the same committed datasets the suite does and finds them the same way. -->
+    <Compile Include="../../tests/Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
+  </ItemGroup>
+
+</Project>

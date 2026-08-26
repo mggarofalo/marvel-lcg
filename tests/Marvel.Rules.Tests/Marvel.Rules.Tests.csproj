@@ -21,6 +21,9 @@
     <Compile Include="../Shared/DigestDiff.cs" Link="DigestDiff.cs" />
     <Compile Include="../Shared/Rule.cs" Link="Rule.cs" />
     <Compile Include="../Shared/RuleCitations.cs" Link="RuleCitations.cs" />
+
+    <!-- One file, so one project holds it. See tests/Shared/RulesGraphTests.cs. -->
+    <Compile Include="../Shared/RulesGraphTests.cs" Link="RulesGraphTests.cs" />
     <Compile Include="../Shared/Agendas.cs" Link="Agendas.cs" />
   </ItemGroup>
 
