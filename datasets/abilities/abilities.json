@@ -1246,6 +1246,67 @@
       ]
     },
     {
+      "card": "45065",
+      "name": "Infinite Hunter",
+      "note": "When Revealed: Deal 3 damage to an ally you control. [star] Boost: Choose to either place 2 threat on Gene Pool, or the activating enemy gets +2 SCH and +2 ATK for this activation. Two abilities on one card, kept apart by rr:boost-boost-icon.2, and the first card in this dataset with a choice in each -- which is why a suspended choice now carries the tier it came from. 'An ally you control' is where the card is: rr:play-area.1 puts a player's cards in their own play area. With no ally the reveal does nothing, guarded by exists, because rr:choose-game-element has nothing to choose from and the card names no alternative. The boost half is the first card to name the activating enemy: a boost card is turned faceup in the middle of an activation and its own occurrence is about the boost card, so the enemy is read off the board. rr:activation is why one answer serves both kinds. EndOfActivation rather than EndOfAttack is the duration because rr:activation.6 gives an activation an end and a scheme is not an attack -- a +2 that outlived a scheme would go off during somebody's attack, against somebody it was never about. SCH and ATK are two grants because the engine reads two fields.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": { "exists": { "query": "alliesYouControl" } },
+              "then": {
+                "chooseCard": {
+                  "from": { "query": "alliesYouControl" },
+                  "effect": { "dealDamage": { "cards": "chosen", "amount": 3 } }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "choose": {
+              "options": [
+                {
+                  "placeThreat": { "scheme": { "titled": "Gene Pool" }, "amount": 2 }
+                },
+                {
+                  "seq": [
+                    {
+                      "grantUntil": {
+                        "card": "activatingEnemy",
+                        "keyword": "scheme",
+                        "amount": 2,
+                        "until": "EndOfActivation"
+                      }
+                    },
+                    {
+                      "grantUntil": {
+                        "card": "activatingEnemy",
+                        "keyword": "attack",
+                        "amount": 2,
+                        "until": "EndOfActivation"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "card": "45072",
       "name": "Hunted",
       "note": "Alter-Ego Action: Discard a card from your hand -> discard this card. An obligation, so rr:reveal.4 puts it into the revealing player's play area and it stays there; the printed hazard icon is a field the engine already reads and the whole of the card's text is this one way out. The cost is the first in this dataset that is not resources: rr:cost.3 spends resources by discarding cards from hand, and this discards a card from hand without reading what it would have generated -- a card with no printed RES pays it, and a card printing two does not pay twice. So the payment is a chosen card rather than a number, which is why it travels as a target: rr:initiating-abilities keeps step 2's choosing and step 5's paying apart, and the answer carries both separately. rr:player-turn.5.1 is the Alter-Ego, checked where every action's form is.",

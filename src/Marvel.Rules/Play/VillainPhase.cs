@@ -717,6 +717,11 @@ public static class VillainPhase
             return;
         }
 
+        // `rr:activation` -- the other kind, and the one that had no value on
+        // the board until now. Set after `rr:stun-stunned`'s cancellation
+        // above, because a cancelled activation is not one.
+        world.Activation = new EnemyActivation(villain.ObjectId, seat, Attacking: false);
+
         // `rr:scheme-enemy-activation.step.1`, the same clause the attack has:
         // a villain always, a minion only with `rr:villainous`.
         long icons = Keywords.IsBoosted(villain, facts, world.Players)
@@ -793,6 +798,7 @@ public static class VillainPhase
         // survive into somebody's attack -- `rr:activation` makes a scheme an
         // activation, and `rr:activation.6` gives an activation an end.
         world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.Activation = null;
     }
 
     /// <summary>Gives the enemy a boost card, resolves it, and returns its icons.</summary>

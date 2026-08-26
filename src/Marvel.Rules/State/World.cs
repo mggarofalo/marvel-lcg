@@ -108,6 +108,15 @@ public sealed class World
     public IReadOnlyList<GameArea> GameAreas => gameAreas;
 
     /// <summary>
+    /// The enemy activation being resolved, of either kind, or <c>null</c>.
+    /// </summary>
+    /// <remarks>
+    /// The umbrella over <see cref="Attack"/> and a scheme activation, which
+    /// had no value of its own. See <see cref="EnemyActivation"/>.
+    /// </remarks>
+    public EnemyActivation? Activation { get; set; }
+
+    /// <summary>
     /// The enemy attack being resolved, or <c>null</c> when none is.
     /// </summary>
     /// <remarks>
