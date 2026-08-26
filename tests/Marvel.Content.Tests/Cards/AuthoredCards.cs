@@ -38,12 +38,7 @@ internal static class AuthoredCards
 
         foreach (var card in cards.RootElement.GetProperty("cards").EnumerateArray())
         {
-            // `engine` is null on a card the extract could not match, which
-            // is not an absent property -- `TryGetProperty` finds it and hands
-            // back a null element.
-            if (!card.TryGetProperty("engine", out var engine)
-                || engine.ValueKind != System.Text.Json.JsonValueKind.Object
-                || !engine.TryGetProperty("traits", out var traits)
+            if (!card.TryGetProperty("traits", out var traits)
                 || traits.ValueKind != System.Text.Json.JsonValueKind.Array)
             {
                 continue;

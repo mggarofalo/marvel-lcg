@@ -86,10 +86,13 @@ think about twice — but they are not a reason the DSL has to be large.
 this is the single most important bounded set in the design. **Do not hand-write
 the list.** `tools/cards/scripts.py` derives it from `PlayerAsk` plus three entry
 points on `PlayerAction`, precisely so that a prompt added to the engine is
-counted instead of silently going missing, and publishes the result to
-`datasets/cards/summary.json`. The five heaviest are `ChooseAbilities` (299
-sites), `DiscardControlCards` (51), `MayChooseOneAbility` (40),
-`DiscardHandCards` (39) and `AskChooseFace` (35).
+counted instead of silently going missing. The five heaviest were
+`ChooseAbilities` (299 sites), `DiscardControlCards` (51),
+`MayChooseOneAbility` (40), `DiscardHandCards` (39) and `AskChooseFace` (35).
+
+Those counts are a measurement of the engine that was being replaced, and both
+it and the tool that counted have been removed. They are here as the evidence
+the vocabulary was sized against, not as something to re-run.
 
 ### Two superseded measurements
 

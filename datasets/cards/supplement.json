@@ -1,0 +1,1046 @@
+{
+  "dataset_version": 1,
+  "note": "Printed facts `datasets/marvelsdb/` does not record, and cards it does not have. Read by tools/Marvel.Cards.Extract, which is the only thing that writes datasets/cards/cards.json. Every group says why it is here: a supplement nobody can audit is a place for a made-up number to live. All of it is carried from the dataset this replaced and none of it has been checked against a printed card -- MARVEL-256.",
+  "groups": [
+    {
+      "why": "A printed stat modifier on an attachment or an upgrade -- the small `ATK +1` in the stat box, which `rr:attachment.1` makes declarative. MarvelSDB records one for most of the 170 cards that carry one and not for these.",
+      "cards": [
+        {
+          "card_id": "01153",
+          "attributes": {
+            "ATK+": "1"
+          }
+        },
+        {
+          "card_id": "16056",
+          "attributes": {
+            "ATK+": "2"
+          }
+        },
+        {
+          "card_id": "16064",
+          "attributes": {
+            "ATK+": "1"
+          }
+        },
+        {
+          "card_id": "16109",
+          "attributes": {
+            "ATK+": "1",
+            "SCH+": "1"
+          }
+        },
+        {
+          "card_id": "16122",
+          "attributes": {
+            "ATK+": "3"
+          }
+        },
+        {
+          "card_id": "16149",
+          "attributes": {
+            "ATK+": "1",
+            "SCH+": "1",
+            "THW+": "1"
+          }
+        },
+        {
+          "card_id": "19028",
+          "attributes": {
+            "ATK+": "2",
+            "Boost": "1"
+          }
+        },
+        {
+          "card_id": "21104",
+          "attributes": {
+            "ATK+": "1"
+          }
+        },
+        {
+          "card_id": "22030",
+          "attributes": {
+            "ATK+": "1"
+          }
+        },
+        {
+          "card_id": "27089",
+          "attributes": {
+            "ATK+": "3"
+          }
+        },
+        {
+          "card_id": "27090",
+          "attributes": {
+            "SCH+": "1"
+          }
+        },
+        {
+          "card_id": "29031",
+          "attributes": {
+            "ATK+": "1"
+          }
+        },
+        {
+          "card_id": "52009",
+          "attributes": {
+            "THW+": "1"
+          }
+        }
+      ]
+    },
+    {
+      "why": "A character whose stat box prints a value MarvelSDB leaves out. Every one is a villain stage that prints a dash or a special value where a number goes; the game reads a dash as zero.",
+      "cards": [
+        {
+          "card_id": "02001a",
+          "attributes": {
+            "ATK": "0"
+          }
+        },
+        {
+          "card_id": "02001b",
+          "attributes": {
+            "SCH": "0"
+          }
+        },
+        {
+          "card_id": "02002a",
+          "attributes": {
+            "ATK": "0"
+          }
+        },
+        {
+          "card_id": "02002b",
+          "attributes": {
+            "SCH": "0"
+          }
+        },
+        {
+          "card_id": "02003a",
+          "attributes": {
+            "ATK": "0"
+          }
+        },
+        {
+          "card_id": "02003b",
+          "attributes": {
+            "SCH": "0"
+          }
+        }
+      ]
+    },
+    {
+      "why": "A stat box whose printed value is not a number. `rr:hit-points` gives every character a hit point total; these four villain stages print an infinity glyph, and upstream records the glyph as zero -- which is a character already defeated.",
+      "cards": [
+        {
+          "card_id": "16080b",
+          "attributes": {
+            "HP": "INF"
+          }
+        },
+        {
+          "card_id": "16081b",
+          "attributes": {
+            "HP": "INF"
+          }
+        },
+        {
+          "card_id": "21136b",
+          "attributes": {
+            "HP": "INF"
+          }
+        },
+        {
+          "card_id": "21137b",
+          "attributes": {
+            "HP": "INF"
+          }
+        }
+      ]
+    },
+    {
+      "why": "`rr:boost-boost-icon` -- boost icons are printed on the card's back and MarvelSDB records them per card. These carry icons it has no value for.",
+      "cards": [
+        {
+          "card_id": "03030",
+          "attributes": {
+            "Boost": "2"
+          }
+        },
+        {
+          "card_id": "05029",
+          "attributes": {
+            "Boost": "2"
+          }
+        },
+        {
+          "card_id": "12028",
+          "attributes": {
+            "Boost": "1"
+          },
+          "traits": [
+            "CONDITION"
+          ]
+        },
+        {
+          "card_id": "16099",
+          "attributes": {
+            "Boost": "3"
+          }
+        },
+        {
+          "card_id": "19025",
+          "attributes": {
+            "Boost": "2"
+          }
+        },
+        {
+          "card_id": "19026",
+          "attributes": {
+            "Boost": "2"
+          }
+        },
+        {
+          "card_id": "19027",
+          "attributes": {
+            "Boost": "3"
+          }
+        },
+        {
+          "card_id": "19029",
+          "attributes": {
+            "Boost": "2"
+          }
+        },
+        {
+          "card_id": "50136",
+          "attributes": {
+            "Boost": "1"
+          }
+        },
+        {
+          "card_id": "51035",
+          "attributes": {
+            "Boost": "1"
+          }
+        }
+      ]
+    },
+    {
+      "why": "An identity the card names in a sentence MarvelSDB's text does not carry -- `Give to the [name] player`, `[name]'s Side Scheme`.",
+      "cards": [
+        {
+          "card_id": "21066",
+          "attributes": {
+            "GiveTo": "Adam Warlock"
+          }
+        },
+        {
+          "card_id": "21098b",
+          "attributes": {
+            "CorrespondingCard": "Proxima Midnight"
+          }
+        },
+        {
+          "card_id": "21099b",
+          "attributes": {
+            "CorrespondingCard": "Corvus Glaive"
+          }
+        },
+        {
+          "card_id": "22027",
+          "attributes": {
+            "GiveTo": "Nebula"
+          }
+        },
+        {
+          "card_id": "34028",
+          "attributes": {
+            "GiveTo": "Jean Grey"
+          }
+        }
+      ]
+    },
+    {
+      "why": "A keyword the card prints and MarvelSDB's text box does not say. `rr:keywords.1` puts them at the top of the box, and these are missing from the transcription rather than from the card.",
+      "cards": [
+        {
+          "card_id": "12028",
+          "attributes": {
+            "Uses": "3,size"
+          }
+        },
+        {
+          "card_id": "16110",
+          "attributes": {
+            "Uses": "1+1*,fury"
+          }
+        },
+        {
+          "card_id": "21141",
+          "attributes": {
+            "Amplify": "1"
+          }
+        },
+        {
+          "card_id": "21142",
+          "attributes": {
+            "Hazard": "1"
+          }
+        },
+        {
+          "card_id": "23033",
+          "attributes": {
+            "MaxPerUnit": "2"
+          }
+        },
+        {
+          "card_id": "27102b",
+          "attributes": {
+            "Hazard": "1"
+          }
+        },
+        {
+          "card_id": "32048",
+          "attributes": {
+            "Toughness": "1"
+          }
+        },
+        {
+          "card_id": "33005",
+          "attributes": {
+            "Temporary": "1"
+          }
+        },
+        {
+          "card_id": "33006",
+          "attributes": {
+            "Temporary": "1"
+          }
+        },
+        {
+          "card_id": "33007",
+          "attributes": {
+            "Temporary": "1"
+          }
+        },
+        {
+          "card_id": "35021",
+          "attributes": {
+            "Toughness": "1"
+          }
+        },
+        {
+          "card_id": "37002",
+          "attributes": {
+            "Toughness": "1"
+          }
+        },
+        {
+          "card_id": "38012",
+          "attributes": {
+            "Toughness": "1"
+          }
+        },
+        {
+          "card_id": "43020",
+          "attributes": {
+            "MaxPerUnit": "1"
+          }
+        },
+        {
+          "card_id": "44055",
+          "attributes": {
+            "Restricted": "2"
+          }
+        },
+        {
+          "card_id": "45102b",
+          "attributes": {
+            "Steady": "1"
+          }
+        },
+        {
+          "card_id": "45176",
+          "attributes": {
+            "MaxPerUnit": "1"
+          }
+        },
+        {
+          "card_id": "48004",
+          "attributes": {
+            "Restricted": "2"
+          }
+        },
+        {
+          "card_id": "48028",
+          "attributes": {
+            "Hazard": "1"
+          }
+        },
+        {
+          "card_id": "51031",
+          "attributes": {
+            "Victory": "0"
+          }
+        },
+        {
+          "card_id": "53029",
+          "attributes": {
+            "Victory": "0"
+          }
+        },
+        {
+          "card_id": "54020",
+          "attributes": {
+            "MaxPerUnit": "1"
+          }
+        },
+        {
+          "card_id": "54033",
+          "attributes": {
+            "MaxPerUnit": "1"
+          }
+        },
+        {
+          "card_id": "56084",
+          "attributes": {
+            "MaxPerUnit": "1"
+          }
+        },
+        {
+          "card_id": "56108",
+          "attributes": {
+            "Hinder": "1*"
+          }
+        }
+      ]
+    },
+    {
+      "why": "`rr:trait` -- traits are game text and cards match on them. MarvelSDB records none for these.",
+      "cards": [
+        {
+          "card_id": "01172",
+          "traits": [
+            "CRIMINAL"
+          ]
+        },
+        {
+          "card_id": "07006",
+          "traits": [
+            "WEAPON"
+          ]
+        },
+        {
+          "card_id": "07007",
+          "traits": [
+            "CONDITION"
+          ]
+        },
+        {
+          "card_id": "12027",
+          "traits": [
+            "CRIMINAL"
+          ]
+        },
+        {
+          "card_id": "18027",
+          "traits": [
+            "ARMOR",
+            "TECH"
+          ]
+        },
+        {
+          "card_id": "25032",
+          "traits": [
+            "CONDITION"
+          ]
+        }
+      ]
+    },
+    {
+      "why": "A card MarvelSDB does not have. The status cards are not printed cards at all -- `rr:status-card` has the game make them -- and the generic minions and allies are the same: `Reveal.EnterPlay` needs a face for `put a minion into play` when no printed card is named. The Challenge cards and the two rule inserts are the campaign expansions' own components.",
+      "cards": [
+        {
+          "card_id": "01144",
+          "name": "Android Efficiency",
+          "subname": "",
+          "type": "Treachery",
+          "traits": [],
+          "attributes": {},
+          "text": "<b>When Revealed</b>: Each player puts the top card of their deck into play facedown, engaged with them as a [[Drone]] minion.",
+          "pack": "core",
+          "set": "ultron"
+        },
+        {
+          "card_id": "2401_the_ground_is_lava",
+          "name": "The Ground is Lava",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Win the Mutagen Formula scenario with the Flight modular encounter set, using only heroes who have or can gain the Aerial trait. During this scenario, whenever an identity changes to alter-ego form, deal that identity 2 damage.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2402_two_for_one",
+          "name": "Two for One",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat a minion and the villain at the same time with the damage dealt by the Fastball Special event.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2403_magnets_and_metal",
+          "name": "Magnets and Metal",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat the Magneto villain using only heroes from the following list: Iron Man, War Machine, Ironheart, and/or SP//dr. After setup, search the encounter deck for the Seized! side scheme and reveal it.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2404_teamwork_makes_the_dream_work",
+          "name": "Teamwork Makes the Dream Work",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat the Hood villain using the Acolytes, Dark Riders, Reavers, Blue Moon, Nasty Boys, Brotherhood, and Exodus modular encounter sets.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2405_form_flippers",
+          "name": "Form Flippers",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Win the En Sabah Nur scenario using any combination of the following heroes: Ant-Man, Wasp, Spectrum, Vision, Shadowcat, and/or Angel.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2406_flower_power",
+          "name": "Flower Power",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat the Ronan the Accuser villain as the Groot hero. Groot must be at full health and possess the Power Stone at the end of the scenario.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2407_breakin_and_takin",
+          "name": "Breakin' and Takin': Ultimate Edition",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat the Rhino villain while including the following modular encounter sets: Infinity Gauntlet, Flight, Super Strength, and Telepathy.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2408_absorbing_the_elements",
+          "name": "Absorbing the Elements",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat the Absorbing Man villain while the following characters are in play (as heroes or allies): Groot, Iceman, Rockslide, and Colossus.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2409_gene_pool_party",
+          "name": "Gene Pool Party",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat the Unus villain using only heroes with the ‘Pool aspect, one of whom must be Phoenix.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2410_need_for_speed",
+          "name": "Need for Speed",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Attack the Speed Demon minion three times in one turn with the Quicksilver hero.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2411_whose_show_is_it_anyway",
+          "name": "Whose Show is it Anyway?",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat the Mojo villain as the Spider-Ham and/or Deadpool hero(es). During this scenario, Show environments cannot leave play (ignore their “When Revealed” effects).",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2412_wrath_of_the_mad_titan",
+          "name": "Wrath of the Mad Titan",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat the Thanos villain using only Avenger and/or Guardian heroes. The final blow can only be dealt by a hero with 1 remaining hit point. After completing setup, advance the main scheme to stage 2A.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2413_complete_the_collection",
+          "name": "Complete the Collection",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Win the Infiltrate the Museum scenario as any hero(es). During this scenario, players cannot remove cards from The Collection, and The Grand Collection main scheme no longer causes players to lose when there are 5 per player cards in The Collection.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2414_symbiote_smackdown",
+          "name": "Symbiote Smackdown",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat the Venom villain with the Venom Nemesis encounter set as the modular encounter set.\nOnly the Venom hero, Web-Warrior heroes, or heroes with “Spider” in their title can be used. After setup, each player searches their collection for a Symbiote Suit and puts it in play under their control, then searches the encounter deck for an Enraged Symbiote and reveals it.\nDuring this scenario, each Symbiote Suit gains permanent, and each Enraged Symbiote triggers the villain’s Forced Response when attacked.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2415_fickle_crowds",
+          "name": "Fickle Crowds",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat MaGog as any hero(es). During this scenario, at the end of each villain phase, move 1 per player ratings counters from The Challengers to The Champion.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2416_everyday_heroes",
+          "name": "Everyday Heroes",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Win any scenario as any hero(es) without any identities flipping to hero form (each player must stay in alter-ego form for the entire game).",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2417_mystic_mayhem",
+          "name": "Mystic Mayhem",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat Ebony Maw using the Adam Warlock Nemesis and the Doctor Strange Nemesis encounter sets as modular encounter sets. Only Mystic heroes can be used for this scenario. At the end of each villain phase, first player reveals the top card of the encounter deck.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2418_lock_and_load",
+          "name": "Lock and Load",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat Crossbones using the Osborn Tech, Goblin Gear, and Military Grade modular encounter sets (remove Experimental Weapons). During setup, shuffle four random Weapon cards from these modular sets together to form the Experimental Weapons deck. Shuffle the remaining cards into the encounter deck as normal. For this scenario, only heroes with Weapon or Armor identity-specific upgrades may be used.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2419_lone_wolf",
+          "name": "Lone Wolf",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat Stryfe solo as any hero with no allies in your deck (replace any identity-specific allies with aspect/basic cards). During this scenario, whenever you defeat a minion, draw 1 card.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2420_field_study",
+          "name": "Field Study",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat Dark Beast using the Temporal modular encounter set. Each player must use a hero whose alter-ego has the Genius trait. During this scenario, whenever a minion is revealed, resolve the “Special” ability on the Setting environment.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2421_battle_of_the_bots",
+          "name": "Battle of the Bots",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat Ultron as any hero(es) using the Sentinels modular encounter set. During this scenario, Drone minions gain the Sentinel trait, and Sentinel minions gain the Drone trait.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2422_not_easy_being_green",
+          "name": "Not Easy Being Green",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Win the Risky Business scenario using only heroes from the following list: She-Hulk, Hulk, Gamora, and/or Drax. Each hero deck must use the Protection aspect for this scenario. During this scenario, if there are ever 6 per player or more infamy counters on Criminal Enterprise, the players lose the game.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2423_the_wreckoning",
+          "name": "The Wreckoning",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Win the Wrecking Crew scenario as any hero(es). After setup, search each encounter deck for the following attachments and reveal them: Magic Crowbar, Ball and Chain, Distracting Taunts, and Bulldozer’s Helmet. During this scenario, each villain gains +1 SCH and +1 ATK for each defeated villain.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2424_absolutely_zero_tolerance",
+          "name": "Absolutely Zero Tolerance",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Win the Project Wideawake scenario using the Future Past modular encounter set. Players can only use X-Men heroes for this scenario. After setup, search the encounter deck for Bastion and deal him to the first player as a facedown encounter card. At the end of each villain phase, if Bastion is in the encounter discard pile or victory display, deal him to the first player as a facedown encounter card.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "2425_boss_rush",
+          "name": "Boss Rush",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "Defeat the Hela, Taskmaster, and Mister Sinister scenarios, in that order. Players do not reset the game state between each scenario; instead, as soon as one scenario is won, remove all encounter cards from the game (except for Captive allies) and replace them with those of the next scenario, then resume play from the beginning of the player phase. During these scenarios, if any hero is defeated, the players lose the challenge.",
+          "pack": "challenges",
+          "set": ""
+        },
+        {
+          "card_id": "26002a",
+          "name": "Intangible",
+          "subname": "",
+          "type": "Upgrade",
+          "traits": [],
+          "attributes": {
+            "Class": "Hero",
+            "Cost": "0",
+            "Form": "Mass",
+            "Permanent": "1"
+          },
+          "text": "Mass form. Permanent.\nVision cannot attack or defend.\nReduce the amount of damage Vision takes from each attack by 2.",
+          "pack": "vision",
+          "set": "vision"
+        },
+        {
+          "card_id": "26002b",
+          "name": "Dense",
+          "subname": "",
+          "type": "Upgrade",
+          "traits": [],
+          "attributes": {
+            "Class": "Hero",
+            "Cost": "0",
+            "Form": "Mass",
+            "Permanent": "1"
+          },
+          "text": "Mass form. Permanent.",
+          "pack": "vision",
+          "set": "vision"
+        },
+        {
+          "card_id": "confused",
+          "name": "Confused",
+          "subname": "",
+          "type": "Status",
+          "traits": [],
+          "attributes": {},
+          "text": "",
+          "pack": "status",
+          "set": ""
+        },
+        {
+          "card_id": "controlled_minion",
+          "name": "Controlled Minion",
+          "subname": "",
+          "type": "Minion",
+          "traits": [
+            "CONTROLLED"
+          ],
+          "attributes": {
+            "HP": "0"
+          },
+          "text": "",
+          "pack": "storm",
+          "set": ""
+        },
+        {
+          "card_id": "enthralled_minion",
+          "name": "Enthralled Minion",
+          "subname": "",
+          "type": "Minion",
+          "traits": [
+            "ENTHRALLED"
+          ],
+          "attributes": {
+            "HP": "0"
+          },
+          "text": "",
+          "pack": "valk",
+          "set": ""
+        },
+        {
+          "card_id": "karma_controlled_ally",
+          "name": "Controlled Ally",
+          "subname": "",
+          "type": "Ally",
+          "traits": [
+            "CONTROLLED"
+          ],
+          "attributes": {
+            "ATK": "0**",
+            "Class": "Encounter",
+            "HP": "0",
+            "THW": "0**"
+          },
+          "text": "",
+          "pack": "rogue",
+          "set": ""
+        },
+        {
+          "card_id": "minion",
+          "name": "Minion",
+          "subname": "",
+          "type": "Minion",
+          "traits": [],
+          "attributes": {
+            "HP": "0"
+          },
+          "text": "",
+          "pack": "",
+          "set": ""
+        },
+        {
+          "card_id": "phoenix_controlled_ally",
+          "name": "Controlled Ally",
+          "subname": "",
+          "type": "Ally",
+          "traits": [
+            "CONTROLLED"
+          ],
+          "attributes": {
+            "ATK": "0*",
+            "Class": "Encounter",
+            "HP": "0",
+            "THW": "0*"
+          },
+          "text": "",
+          "pack": "phoenix",
+          "set": ""
+        },
+        {
+          "card_id": "pool_minion",
+          "name": "'Pool Minion",
+          "subname": "",
+          "type": "Minion",
+          "traits": [
+            "'POOL"
+          ],
+          "attributes": {
+            "HP": "0"
+          },
+          "text": "",
+          "pack": "deadpool",
+          "set": ""
+        },
+        {
+          "card_id": "possessed_minion",
+          "name": "Possessed Minion",
+          "subname": "",
+          "type": "Minion",
+          "traits": [
+            "POSSESSED"
+          ],
+          "attributes": {
+            "HP": "0"
+          },
+          "text": "",
+          "pack": "next_evol",
+          "set": ""
+        },
+        {
+          "card_id": "redemption_redeemed_ally",
+          "name": "Redeemed Ally",
+          "subname": "",
+          "type": "Ally",
+          "traits": [
+            "REDEEMED"
+          ],
+          "attributes": {
+            "ATK": "0*",
+            "Class": "Encounter",
+            "HP": "0",
+            "THW": "0*"
+          },
+          "text": "",
+          "pack": "bp",
+          "set": ""
+        },
+        {
+          "card_id": "regressed_minion",
+          "name": "Regressed Minion",
+          "subname": "",
+          "type": "Minion",
+          "traits": [
+            "REGRESSED"
+          ],
+          "attributes": {
+            "HP": "0"
+          },
+          "text": "",
+          "pack": "jubilee",
+          "set": ""
+        },
+        {
+          "card_id": "reluctant_foe_elite_minion",
+          "name": "Elite Minion",
+          "subname": "",
+          "type": "Minion",
+          "traits": [
+            "ELITE"
+          ],
+          "attributes": {
+            "HP": "0",
+            "Villainous": "1"
+          },
+          "text": "",
+          "pack": "aos",
+          "set": "baron_zemo"
+        },
+        {
+          "card_id": "rule_a",
+          "name": "rule",
+          "subname": "",
+          "type": "Insert",
+          "traits": [],
+          "attributes": {},
+          "text": "",
+          "pack": "",
+          "set": ""
+        },
+        {
+          "card_id": "rule_b",
+          "name": "rule",
+          "subname": "",
+          "type": "Insert",
+          "traits": [],
+          "attributes": {},
+          "text": "",
+          "pack": "",
+          "set": ""
+        },
+        {
+          "card_id": "stunned",
+          "name": "Stunned",
+          "subname": "",
+          "type": "Status",
+          "traits": [],
+          "attributes": {},
+          "text": "",
+          "pack": "status",
+          "set": ""
+        },
+        {
+          "card_id": "tough",
+          "name": "Tough",
+          "subname": "",
+          "type": "Status",
+          "traits": [],
+          "attributes": {},
+          "text": "",
+          "pack": "status",
+          "set": ""
+        },
+        {
+          "card_id": "ultron_facedown_drone",
+          "name": "Drone Minion",
+          "subname": "",
+          "type": "Minion",
+          "traits": [
+            "DRONE"
+          ],
+          "attributes": {
+            "HP": "0"
+          },
+          "text": "",
+          "pack": "core",
+          "set": ""
+        },
+        {
+          "card_id": "undead_minion",
+          "name": "Undead Minion",
+          "subname": "",
+          "type": "Minion",
+          "traits": [
+            "UNDEAD"
+          ],
+          "attributes": {
+            "HP": "0"
+          },
+          "text": "",
+          "pack": "mts",
+          "set": ""
+        },
+        {
+          "card_id": "wild",
+          "name": "Wild",
+          "subname": "",
+          "type": "Challenge",
+          "traits": [],
+          "attributes": {},
+          "text": "",
+          "pack": "endless",
+          "set": ""
+        }
+      ]
+    }
+  ],
+  "dropped": {
+    "why": "Cards upstream has that this dataset does not. `26002` Vision's `Intangible` is one upstream record for a double-sided upgrade, and the engine deals faces: both sides are here as `26002a` and `26002b`.",
+    "cards": [
+      "26002"
+    ]
+  }
+}

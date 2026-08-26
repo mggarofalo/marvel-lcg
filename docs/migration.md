@@ -223,7 +223,7 @@ The discipline that makes this trustworthy at scale: **a scenario is not trusted
 
 **3. The puzzle system** — `game/puzzle/puzzle.py` `RunPuzzle` is already a state-setup DSL (`CreateHandCards`, `SetThreat`, `Damage`, `Confuse`, …). It is the Gherkin `Given` clause, already built. `When` is selecting an effect; `Then` is a state assertion. This is how per-card specs execute, and it is also how cards unreachable by self-play get covered.
 
-Vary spec depth by card complexity rather than writing a fixed number per card. The 531 scripts with no handler need very little; the 440 that suspend for player choice need the most. `datasets/cards/summary.json` carries both, recomputed.
+Vary spec depth by card complexity rather than writing a fixed number per card. The 531 scripts with no handler need very little; the 440 that suspend for player choice need the most. Both counts were published to `datasets/cards/summary.json`, which went with the pipeline that computed them.
 
 ## Sequencing
 

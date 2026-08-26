@@ -126,9 +126,7 @@ public sealed class PrintedKeywordTests
                 byAttribute.Add($"{id}={attribute}");
             }
 
-            if (element.TryGetProperty("engine", out var engine)
-                && engine.ValueKind == JsonValueKind.Object
-                && engine.TryGetProperty("text", out var text)
+            if (element.TryGetProperty("text_plain", out var text)
                 && CardCatalog.FormOf(text.GetString()) is { } written)
             {
                 byText.Add($"{id}={written}");
@@ -136,7 +134,7 @@ public sealed class PrintedKeywordTests
         }
 
         Assert.Equal(byText, byAttribute);
-        Assert.Equal(9, byAttribute.Count);
+        Assert.Equal(11, byAttribute.Count);
     }
 
     [Rule("rr:consequential-damage")]
@@ -201,15 +199,24 @@ public sealed class PrintedKeywordTests
         // The reading, held against the whole pool rather than three cards:
         // for every ally ATK/THW value, the number before the star is
         // MarvelSDB's printed value and the star count is its consequential
-        // damage. 660 of 664 agree; the four that do not are two cards
-        // MarvelSDB records with a base of -1, where the star count still does.
+        // damage. 640 of 644 agree; the four that do not are two cards
+        // upstream records with a base of -1, where the star count still does.
+        //
+        // **Held against the vendored snapshot and not against the dataset.**
+        // `datasets/cards/` is generated from `datasets/marvelsdb/`, so
+        // comparing it with itself would say only that the generator is
+        // consistent. Upstream's own fields are the independent reading, and
+        // they are what this walks.
         int agree = 0, differ = 0;
-        using var document = JsonDocument.Parse(CardText);
-        foreach (var element in document.RootElement.GetProperty("cards").EnumerateArray())
+        foreach (var element in Upstream())
         {
-            string id = element.GetProperty("card_id").GetString()!;
-            if (Cards.Kind(id) != CardKind.Ally
-                || !element.TryGetProperty("stats", out var stats))
+            string id = element.GetProperty("code").GetString()!;
+            var stats = element;
+
+            // `26002` is one upstream record for a double-sided upgrade and
+            // the dataset carries its two faces instead -- see
+            // `datasets/cards/supplement.json`. It is not an ally either way.
+            if (!Cards.Has(id) || Cards.Kind(id) != CardKind.Ally)
             {
                 continue;
             }
@@ -242,8 +249,23 @@ public sealed class PrintedKeywordTests
             }
         }
 
-        Assert.Equal(660, agree);
+        Assert.Equal(640, agree);
         Assert.Equal(4, differ);
+    }
+
+    /// <summary>Every card in the vendored MarvelSDB snapshot.</summary>
+    private static IEnumerable<JsonElement> Upstream()
+    {
+        foreach (string path in Directory
+            .EnumerateFiles(RepositoryPaths.Dataset("marvelsdb", "pack"), "*.json")
+            .OrderBy(path => path, StringComparer.Ordinal))
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            foreach (var card in document.RootElement.EnumerateArray())
+            {
+                yield return card.Clone();
+            }
+        }
     }
 
     [Rule("rr:villain-defeat.3")]
@@ -279,9 +301,7 @@ public sealed class PrintedKeywordTests
 
         foreach (var element in document.RootElement.GetProperty("cards").EnumerateArray())
         {
-            if (!element.TryGetProperty("engine", out var engine)
-                || engine.ValueKind != JsonValueKind.Object
-                || !engine.TryGetProperty("attributes", out var attributes)
+            if (!element.TryGetProperty("attributes", out var attributes)
                 || attributes.ValueKind != JsonValueKind.Object)
             {
                 continue;
