@@ -759,6 +759,56 @@
           }
         }
       ]
+    },
+    {
+      "card": "24042",
+      "name": "Crime Pays",
+      "note": "When Revealed: Search the encounter deck for a [[Criminal]] minion and put it into play engaged with you. (Shuffle.) If no minion was put into play this way, this card gains surge. Three rules meet on this card. rr:search.1 gives the player the choice when several cards match, which is a chooseCard over what the search found rather than the interpreter picking. rr:search.3 shuffles 'upon completion of that game step, game function, or card ability' -- after the answer, and in both branches, because the deck was searched whether or not anything was found. And rr:when-revealed-abilities.2 is why the minion is put into play rather than revealed: 'if an encounter card with a When Revealed ability is put into play without being revealed, the When Revealed ability does not trigger.' Its keywords still fire, because rr:enters-play is 'any time when a card transitions from an out-of-play area into play' and a card put into play does. The trait is the engine's spelling.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "area": "encounterDeck",
+                    "kind": "Minion",
+                    "trait": "CRIMINAL"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "area": "encounterDeck",
+                      "kind": "Minion",
+                      "trait": "CRIMINAL"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      { "putIntoPlay": { "card": "chosen", "where": "engagedWithYou" } },
+                      { "shuffle": "encounterDeck" }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "seq": [
+                  { "gainSurge": 1 },
+                  { "shuffle": "encounterDeck" }
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

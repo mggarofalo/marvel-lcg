@@ -1050,6 +1050,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Activate(node, cast, Steps.Scheme);
                 break;
 
+            case "putIntoPlay":
+                PutIntoPlay(node, cast);
+                break;
+
+            case "shuffle":
+                // `rr:search.3` -- "if any portion of a deck is searched, upon
+                // completion of that game step, game function, or card ability,
+                // shuffle that entire deck." A step of the card rather than
+                // part of the search, because "upon completion" is after the
+                // player has answered which card they took.
+                cast.World.Shuffle(Area(Word(node.Argument), cast));
+                break;
+
             case "draw":
                 Draw.Cards(
                     cast.World, Seat(node.Require("player"), cast),
@@ -1120,6 +1133,60 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             $"'{cast.Source.FaceId}' uses the test node '{node.Kind}', "
             + "which is not implemented"),
     };
+
+    /// <summary>
+    /// "Put it into play engaged with you" — <c>rr:play-put-into-play</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Put into play is not revealed.</b>
+    /// <c>rr:when-revealed-abilities.2</c>: "if an encounter card with a
+    /// '<b>When Revealed</b>' ability is put into play without being revealed,
+    /// the '<b>When Revealed</b>' ability does not trigger." So this moves the
+    /// card and stops, where <c>Steps.RevealEncounterCard</c> would have run
+    /// the card's own text — and the difference is the whole reason the two are
+    /// separate words here.
+    /// </para>
+    /// <para>
+    /// <b>The keywords still fire.</b> <c>rr:enters-play</c> is "any time when
+    /// a card transitions from an out-of-play area into play", which a card put
+    /// into play does — so toughness and uses X apply, and only the "When
+    /// Revealed" is skipped.
+    /// </para>
+    /// <para>
+    /// "Engaged with you" is the only destination any authored card asks for.
+    /// <c>rr:engage.1</c> makes it a place: "when a minion engages a player, it
+    /// is placed in that player's play area", so engagement is where the card
+    /// sits rather than a flag on it.
+    /// </para>
+    /// </remarks>
+    private static void PutIntoPlay(AbilityNode node, Cast cast)
+    {
+        var card = Find(node.Require("card"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would put a card into play that is not there");
+
+        string where = Word(node.Require("where"));
+        if (!string.Equals(where, "engagedWithYou", StringComparison.Ordinal))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' puts a card into play '{where}', "
+                + "which is not implemented");
+        }
+
+        var into = cast.World.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player));
+        var from = card.Area;
+        World.MoveToTop(card, into);
+        card.TurnFaceUp();
+        cast.Events.Add(new CardsMoved(
+            Places.Reference(from), Places.Reference(into),
+            [new Landing(card.ObjectId, into.Cards.Count - 1)])
+        {
+            Trigger = cast.Trigger, Verb = "Put_Into_Play",
+        });
+
+        Reveal.EnterPlay(cast.World, cast.World.Facts, card, cast.Events);
+    }
 
     private static void GiveStatus(AbilityNode node, Cast cast)
     {
@@ -2165,6 +2232,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return Ranked(ranked, cast);
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "cardsIn" } search)
+        {
+            return CardsIn(search, cast);
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "enemiesWithTrait" } trait)
         {
             // "Each **[[Criminal]]** enemy in play." A query with an argument
@@ -2257,6 +2329,51 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         return Find(value, cast) is { } one ? [one] : [];
+    }
+
+    /// <summary>
+    /// The cards in one area that match a search's criteria — <c>rr:search</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "Search the encounter deck for a <b>[[Criminal]] minion</b>." Three
+    /// named facets and no fourth: which area, which card type, which trait.
+    /// <c>docs/card-dsl.md</c> is explicit that selection must be "a fixed
+    /// vocabulary of relations, <b>not</b> as a general 'run this predicate'
+    /// hook" — so this grows a facet when a card prints one, and never a
+    /// filter expression.
+    /// </para>
+    /// <para>
+    /// <b>Nothing leaves the area here.</b> <c>rr:search.2</c>: "cards being
+    /// searched are not considered to leave the searched area." This answers
+    /// which cards a player may pick; the picking is a <c>chooseCard</c>, which
+    /// is where <c>rr:search.1</c> puts the choice — "if a player finds
+    /// multiple cards that satisfy the criteria of a search, the player chooses
+    /// among those options."
+    /// </para>
+    /// <para>
+    /// <b>The shuffle is not here either.</b> <c>rr:search.3</c> shuffles "upon
+    /// completion of that game step, game function, or card ability", which is
+    /// after the choice has been answered — so the card carries it as a step of
+    /// its own, in both branches, because the deck was searched whether or not
+    /// anything was found.
+    /// </para>
+    /// </remarks>
+    private static IReadOnlyList<Card> CardsIn(AbilityNode node, Cast cast)
+    {
+        var area = Area(Word(node.Require("area")), cast);
+        string? kind = node.Field("kind") is { } named ? Word(named) : null;
+        string? trait = node.Field("trait") is { } carried ? Word(carried) : null;
+
+        return
+        [
+            .. area.Cards
+                .Where(card => kind is null || string.Equals(
+                    cast.World.Facts.Kind(card.FaceId).ToString(), kind, StringComparison.Ordinal))
+                .Where(card => trait is null || cast.World.Facts
+                    .Traits(card.FaceId)
+                    .Contains(trait, StringComparer.Ordinal)),
+        ];
     }
 
     /// <summary>
