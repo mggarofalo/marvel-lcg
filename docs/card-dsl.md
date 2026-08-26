@@ -596,7 +596,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `dealEncounterCards`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
-| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`, `defeated`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game` |
+| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`, `defeated`, `activatingEnemy`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game` |
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
@@ -1448,3 +1448,33 @@ What is still ambiguous, and refused by name: two abilities at the *same* tier
 each holding a choice. The tier is as fine as the step gets, so that is the next
 thing it would have to carry rather than something to guess at. No printed card
 needs it.
+
+### The activating enemy is read off the board, not off the moment
+
+Infinite Hunter (`45065`): "[star] **Boost:** Choose to either place 2 threat on
+Gene Pool, or **the activating enemy** gets +2 SCH and +2 ATK for this
+activation."
+
+A boost card is turned faceup in the middle of an activation, and its own
+occurrence is about the boost card — so there is nothing in the moment to answer
+with. `rr:activation` is what makes one answer serve both kinds: "whenever an
+enemy attacks or schemes, it is considered to have activated". Only the attack
+half had a value on the board, so the binding needed `World.Activation`: which
+enemy, against which seat, and which kind — the umbrella `EnemyAttack` sits
+under rather than a second copy of it.
+
+**"This activation" is `EndOfActivation`, not `EndOfAttack`.** `rr:activation.6`
+gives an activation an end, and a scheme is not an attack: a +2 that outlived a
+scheme would go off during somebody's attack, against somebody it was never
+about. Both timing points already existed and the two are one word apart, which
+is exactly the kind of mistake that reads correctly and plays wrong.
+
+**"+2 SCH" is the same node as "gains overkill".** `grantUntil` registers a
+modifier, and a stat field is something the engine reads modifiers into — so the
+two are one mechanism and the card names the field. It is now held against the
+fields the engine actually reads, which a constant ability's `grant` always was:
+an unrecognised name registered happily, expired on time, and modified nothing
+in between.
+
+The two grants are one printed sentence and two nodes, because the engine reads
+two fields.

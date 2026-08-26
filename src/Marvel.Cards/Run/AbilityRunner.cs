@@ -1827,9 +1827,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would grant to a card that is not there");
 
+        // Held against the fields the engine actually reads, exactly as a
+        // constant ability's grant is: an unrecognised name would register
+        // happily, expire on time, and modify nothing in between. "+2 SCH" is
+        // the same mechanism as "gains overkill" and reaches it through the
+        // same door, which is why `scheme` sits in this vocabulary beside
+        // `overkill`.
+        string keyword = Word(node.Require("keyword"));
+        if (!StateFields.IsModifiable(keyword) && !Keywords.Granted.Contains(keyword))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' grants '{keyword}' for a duration, which is not a "
+                + "keyword or field the engine reads modifiers into");
+        }
+
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
-            Kind: Word(node.Require("keyword")),
+            Kind: keyword,
             Amount: node.Field("amount") is { } amount ? Number(amount) : 0,
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
@@ -3138,6 +3152,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the player who defeated a card, and no player "
                 + "did"),
+
+        // "The **activating enemy** gets +2 SCH and +2 ATK for this
+        // activation." A boost card is turned faceup in the middle of an
+        // activation and its own occurrence is about the boost card, so the
+        // enemy is read off the board rather than off the moment --
+        // `rr:activation` is what makes one answer serve an attack and a scheme
+        // alike.
+        "activatingEnemy" => cast.World.Activation is { } activating
+            ? cast.World.Cards[activating.Enemy]
+            : throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' names the activating enemy, and no enemy is "
+                + "activating"),
 
         // "After **an ally** is defeated by anything other than consequential
         // damage." The card the occurrence defeated, which is not its subject:

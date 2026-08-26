@@ -92,6 +92,11 @@ public static class Attack
             : world.Seats[step.Seat].IdentityCard;
         world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId);
 
+        // `rr:activation` -- "whenever an enemy attacks or schemes, it is
+        // considered to have activated". The umbrella, which a scheme sets too;
+        // `world.Attack` is the six steps below it.
+        world.Activation = new EnemyActivation(step.Subject, step.Seat, Attacking: true);
+
         // One attack's facts do not outlive the start of the next.
         world.FinishedAttack = null;
 
@@ -485,8 +490,10 @@ public static class Attack
         world.Effects.Expire(TimingPoints.EndOfAttack);
 
         // An attack is one of the two kinds of activation -- `rr:activation` --
-        // so anything bounded by "this activation" ends here too.
+        // so anything bounded by "this activation" ends here too, and there is
+        // no longer an activating enemy for a card to name.
         world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.Activation = null;
         DelayedEffects.Occur(world, Steps.AttackEnds, events);
 
         // Kept for the window that follows this step. `.step.6.a`'s abilities
