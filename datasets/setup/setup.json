@@ -7479,7 +7479,6 @@
       "name": "Zzzax"
     }
   },
-  "generated_by": "python -m tools.setup.emit_setup",
   "heroes": {
     "adam_warlock": {
       "hero": [
@@ -11263,21 +11262,6 @@
       ]
     }
   },
-  "note": "Projected through the engine's own descriptor dataclasses, so a key the engine ignores is absent here. Names resolve in the order `engine/file/manager.py:FindJsonPath` searches.",
-  "resolution": {
-    "campaigns": [
-      "data/scenarios",
-      "data/challenges",
-      "data/scenarios_custom"
-    ],
-    "encounter_sets": [
-      "data/encounter_sets",
-      "data/nemesis"
-    ],
-    "heroes": [
-      "deck/starter"
-    ]
-  },
-  "setup_version": 1,
-  "shadowed": {}
+  "note": "Authored, not generated: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",
+  "setup_version": 1
 }
