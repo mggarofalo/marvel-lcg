@@ -1096,6 +1096,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return false;
         }
 
+        // **The rest of the sentence, when the rest of the sentence is about
+        // the occurrence.** `rr:triggering-condition.2` gives one window to an
+        // occurrence that created several conditions, so a card whose triggering
+        // condition is "Unus **attacks and** defeats an ally" is answering a
+        // moment that carries both -- and an occurrence carrying only the defeat
+        // has not met it. `rr:forced.1` is why this gates the trigger rather
+        // than guarding the effect: a forced ability must resolve when its
+        // condition is met, so an ability that initiates and does nothing has
+        // already been the wrong answer -- it takes a place in `rr:forced.5`'s
+        // ordering question that it should never have been offered.
+        if (ability.Trigger.Also is { } also && !occurrence.Is(also))
+        {
+            return false;
+        }
+
         bool belongs = window switch
         {
             WindowKind.Interrupt => AbilityTypes.IsInterrupt(ability.Trigger.Timing),
@@ -1402,6 +1417,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // `Cause`.
         "defeatedBy" => cast.Occurrence.Defeat is { } defeat
             && string.Equals(defeat.How, Cause(Word(node.Argument), cast), StringComparison.Ordinal),
+
+
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses the test node '{node.Kind}', "
             + "which is not implemented"),

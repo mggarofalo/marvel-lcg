@@ -1246,6 +1246,41 @@
       ]
     },
     {
+      "card": "45063",
+      "name": "Prelate Sidearm",
+      "note": "Attach to Unus. [star] Forced Response: After Unus attacks and defeats an ally, place 1 threat on Gene Pool. Hero Response: After you make a basic attack against Unus, spend [energy] [physical] resources -> discard this card. The second half is 45064 Prelate Armor's, two letters different. The first is the sentence rr:triggering-condition.2 makes writable: 'attacks and defeats' is one occurrence carrying two conditions -- 'a single attack causing a character to both take damage and be defeated' -- so the card answers the defeat and reads the attack off the same occurrence rather than needing the two to be joined up. The subject is attachedTo because Occurrence.Subject through an enemy attack is the attacking enemy, which is what 'Unus attacks' means; 'an ally' is the defeated card's kind. An ally killed by its own consequential damage is a different occurrence with a different subject, and one killed by Unus's retaliate is the same subject and a different verb -- retaliate is damage dealt to whoever attacked him, and being attacked is not attacking. So the subject alone is not the sentence: alsoHappened names the other triggering condition rr:triggering-condition.2 gives the same window to, which for an enemy's attack is WhenDamageDealt and for a character attacking him is not. Gene Pool is named by title -- rr:identity.2 makes a title name one card. The [star] ATK+1 and Boost 3 are printed fields rather than abilities.",
+      "attachTo": { "query": "villain" },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "alsoHappened": "WhenDamageDealt",
+            "timing": "ForcedResponse",
+            "subject": "attachedTo"
+          },
+          "effect": {
+            "if": {
+              "test": { "isKind": { "card": "defeated", "kind": "ally" } },
+              "then": {
+                "placeThreat": { "scheme": { "titled": "Gene Pool" }, "amount": 1 }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCharacterAttacks",
+            "timing": "Response",
+            "subject": "attachedTo",
+            "form": "hero",
+            "player": "trigger.player"
+          },
+          "cost": { "spend": "YR" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
       "card": "45064",
       "name": "Prelate Armor",
       "note": "Attach to Unus. [star] Forced Response: After Unus schemes, give him a tough status card. Hero Response: After you make a basic attack against Unus, spend [mental] [physical] resources -> discard this card. The star is rr:star-icon.2 -- the ability is about the attached enemy -- so both triggers name attachedTo rather than this, the same as 01099 Charge. The second is 01100 Enhanced Ivory Horn one tier over: the same attachment, the same arrow cost, the same discard, timed to a response instead of an action. rr:cost-arrow-icon puts the payment before the effect, and rr:initiating-abilities.step.5 pays it. Two things the window had never been asked for and an action always had: whose form to read -- step 2, and a Hero Response is as much a form requirement as a Hero Action -- and whose hand to price it against. rr:you-your.7 answers both by pointing at the player the occurrence happened to, which is what the trigger's 'player' says. The [star] SCH+1 and Boost 3 are printed fields rather than abilities.",

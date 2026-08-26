@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
@@ -35,7 +36,7 @@ public static class AbilityCatalog
         };
 
     private static readonly HashSet<string> TriggerKeys =
-        new(StringComparer.Ordinal) { "event", "timing", "subject", "form", "player" };
+        new(StringComparer.Ordinal) { "event", "timing", "subject", "form", "alsoHappened", "player" };
 
     /// <summary>Parses the canonical ability dataset.</summary>
     /// <param name="json">The dataset text.</param>
@@ -144,7 +145,13 @@ public static class AbilityCatalog
         return new CardAbility(
             card,
             Text(element, "name") ?? cardName,
-            new AbilityTrigger(when, type, subject, Form(trigger, card), Whose(trigger, card)),
+            new AbilityTrigger(
+                when,
+                type,
+                subject,
+                Form(trigger, card),
+                Also(trigger, card),
+                Whose(trigger, card)),
             Node(effect, card),
             element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
             element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null);
@@ -213,6 +220,29 @@ public static class AbilityCatalog
         throw new AbilityException(
             $"'{card}' requires the form '{form}', and an ability may require "
             + $"'{Forms.Hero}' or '{Forms.AlterEgo}'");
+    }
+
+    /// <summary>
+    /// A second triggering condition of the same occurrence, or null.
+    /// </summary>
+    /// <remarks>
+    /// Held against <c>Steps.EveryCondition</c> exactly as
+    /// a trigger's event is, and for the same reason: the vocabulary is the
+    /// engine's spelling of a triggering condition rather than a DSL word, so a
+    /// name nothing produces is a card that would never fire and this is where
+    /// that is caught.
+    /// </remarks>
+    private static string? Also(JsonElement trigger, string card)
+    {
+        string? also = Text(trigger, "alsoHappened");
+        if (also is null || Steps.EveryCondition.Contains(also))
+        {
+            return also;
+        }
+
+        throw new AbilityException(
+            $"'{card}' asks whether '{also}' also happened, and no step in this engine "
+            + "produces that triggering condition");
     }
 
     /// <summary>

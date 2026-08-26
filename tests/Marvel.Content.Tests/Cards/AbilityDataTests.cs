@@ -59,7 +59,37 @@ public sealed class AbilityDataTests
                 $"'{ability.Card}' triggers on '{ability.Trigger.Event}', which no step "
                 + $"produces. The engine's conditions are: "
                 + string.Join(", ", Steps.EveryCondition.Order(StringComparer.Ordinal)));
+
+            // The second condition of a `rr:triggering-condition.2` pair, held
+            // against the same set for the same reason. A card gated on a
+            // condition nothing produces never fires at all, which is worse
+            // than one that fires too often and just as invisible.
+            if (ability.Trigger.Also is { } also)
+            {
+                Assert.True(
+                    Steps.EveryCondition.Contains(also),
+                    $"'{ability.Card}' also requires '{also}', which no step produces");
+            }
         }
+    }
+
+    [Rule("rr:triggering-condition.2")]
+    [Fact]
+    public void ASecondConditionNothingProducesIsRefusedWhenTheDatasetIsRead()
+    {
+        // Refused where a typo is cheapest to find. The two fields speak one
+        // vocabulary -- the engine's own spelling of a triggering condition --
+        // and neither of them gets an escape hatch.
+        var refused = Assert.Throws<AbilityException>(() => AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01105", "abilities": [ {
+                "trigger": { "event": "WhenCardDefeated", "alsoHappened": "WhenUnusAttacks",
+                             "timing": "ForcedResponse", "subject": "this" },
+                "effect": { "discard": "this" }
+            } ] } ] }
+            """));
+
+        Assert.Contains("'WhenUnusAttacks'", refused.Message, StringComparison.Ordinal);
     }
 
     [Rule("rr:stalwart.1")]

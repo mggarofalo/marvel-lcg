@@ -589,7 +589,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 
 | | |
 |---|---|
-| Envelope | `trigger { event, timing, subject, form, player }`, `name`, `cost`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
+| Envelope | `trigger { event, alsoHappened, timing, subject, form, player }`, `name`, `cost`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `inExpertMode`, `isKind`, `defeatedBy` |
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `dealEncounterCards`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
@@ -1348,3 +1348,45 @@ Both refusals name the field that is missing.
   `rr:resource.4`. A cost of a bare number with a `Requirement` printed beside
   it goes through `Resources.Required` instead, and no *ability* prints one —
   only cards being played do.
+
+### "Attacks **and** defeats" is one occurrence, and the trigger names both
+
+Prelate Sidearm (`45063`): "[star] **Forced Response:** After Unus attacks and
+defeats an ally, place 1 threat on Gene Pool."
+
+`rr:triggering-condition.2` is what makes the sentence writable at all — the
+attack and the defeat are one occurrence with one window pair between them, so
+by the time the card answers the defeat, the attack is still the thing that is
+happening. Nothing has to remember a moment ago.
+
+But a trigger names *one* condition, and the subject narrows it to one card. The
+two together are not the sentence:
+
+| the occurrence | subject | conditions |
+|---|---|---|
+| Unus attacks, and kills the defending ally | Unus | `WhenDamageDealt`, `WhenCardDefeated` |
+| an ally attacks Unus, and his **retaliate** kills it | Unus | `WhenCharacterAttacks`, `WhenCardDefeated` |
+| a **minion** attacks, and kills the defending ally | the minion | `WhenDamageDealt`, `WhenCardDefeated` |
+
+The subject tells the third apart from the first. Only the other condition tells
+apart the second — `rr:retaliate-x.1` is "after **this character is attacked**,
+deal X damage to the attacker", and Unus being attacked is not Unus attacking.
+So the trigger carries both:
+
+```json
+{ "event": "WhenCardDefeated", "alsoHappened": "WhenDamageDealt",
+  "timing": "ForcedResponse", "subject": "attachedTo" }
+```
+
+**It gates the trigger and not the effect**, which is the part worth arguing
+with. The obvious place for a qualifier is an `if` in the effect, which is where
+"an **ally**" lives on this same card and on Gene Pool. The difference is
+`rr:forced.1`: a forced ability "must be resolved when its triggering condition
+is met", so an ability that initiates and does nothing has already answered
+wrongly — and it is observable, because `rr:forced.5` then asks the first player
+to order two forced abilities when only one of them had a condition to meet.
+Retaliate killing an ally produced exactly that question before this existed.
+
+The line that falls out: **the trigger matches the occurrence, and the effect
+reads the cards involved.** `alsoHappened` is a fact about the occurrence.
+`isKind` on the defeated card is a fact about a card, and stays in the effect.
