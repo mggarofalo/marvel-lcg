@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -90,6 +91,115 @@ public sealed class AbilityDataTests
             """));
 
         Assert.Contains("'WhenUnusAttacks'", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EveryWordTheDatasetUsesIsWrittenDownInTheDslDocument()
+    {
+        // `docs/card-dsl.md` is the document that says what this vocabulary is,
+        // and a vocabulary nobody wrote down is one nobody can author against.
+        // The failure this exists for is quiet: a node added to the interpreter
+        // for one card works, the card ships, and the table that claims to list
+        // what is implemented silently stops being true. Measured when this was
+        // written, fourteen words were already only in the code.
+        //
+        // Held against the *whole* document rather than the slice table alone,
+        // because a word may be introduced by the prose or by one of the cards
+        // written out in full — and either of those is somebody having written
+        // it down.
+        var doc = File.ReadAllText(RepositoryPaths.Repository("docs", "card-dsl.md"));
+        var used = new SortedSet<string>(StringComparer.Ordinal);
+
+        using var json = JsonDocument.Parse(
+            File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")));
+
+        foreach (var card in json.RootElement.GetProperty("cards").EnumerateArray())
+        {
+            // Only the parts of a row that are vocabulary. `card`, `name` and
+            // `note` are a printed id and prose about it, and the same word
+            // `card` is a *field* inside a node — which is why this picks the
+            // rows apart here rather than skipping a name wherever it appears.
+            if (card.TryGetProperty("attachTo", out var attach))
+            {
+                Words(attach, used);
+            }
+
+            foreach (var ability in card.GetProperty("abilities").EnumerateArray())
+            {
+                foreach (var part in ability.EnumerateObject())
+                {
+                    if (part.Name == "name")
+                    {
+                        continue;
+                    }
+
+                    used.Add(part.Name);
+                    Words(part.Value, used);
+                }
+            }
+        }
+
+        // What was collected, before what is missing from it. A walk that
+        // quietly gathered nothing, or gathered `query` instead of the query's
+        // name, would find nothing missing and pass — so the two things this
+        // has to read are named.
+        Assert.Contains("placeThreat", used);
+        Assert.Contains("alliesYouControl", used);
+        Assert.DoesNotContain("query", used);
+
+        var missing = used.Where(word => !doc.Contains(word, StringComparison.Ordinal)).ToList();
+
+        Assert.True(
+            missing.Count == 0,
+            $"{missing.Count} word(s) the dataset uses appear nowhere in docs/card-dsl.md: "
+            + string.Join(", ", missing));
+    }
+
+    /// <summary>
+    /// Every name an ability tree uses: the keys, and a query's value.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A query is the one place the vocabulary is in the value rather than the
+    /// key — <c>{ "query": "alliesYouControl" }</c> — because a query names a
+    /// set of cards and the node names the act of asking.
+    /// </para>
+    /// <para>
+    /// Only the keys, and a query's value. A word in any other value position
+    /// is a card id, a keyword the engine already reads, or a trait — all held
+    /// against something else already.
+    /// </para>
+    /// </remarks>
+    private static void Words(JsonElement element, SortedSet<string> found)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (var field in element.EnumerateObject())
+                {
+                    if (field.Name == "query" && field.Value.ValueKind == JsonValueKind.String)
+                    {
+                        found.Add(field.Value.GetString()!);
+                        continue;
+                    }
+
+                    found.Add(field.Name);
+                    Words(field.Value, found);
+                }
+
+                break;
+
+            case JsonValueKind.Array:
+                foreach (var item in element.EnumerateArray())
+                {
+                    Words(item, found);
+                }
+
+                break;
+
+            default:
+                break;
+        }
     }
 
     [Rule("rr:stalwart.1")]

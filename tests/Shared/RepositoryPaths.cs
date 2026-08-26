@@ -23,6 +23,15 @@ internal static class RepositoryPaths
     public static string Dataset(params string[] parts) =>
         Path.Combine([Root, "datasets", .. parts]);
 
+    /// <summary>A path anywhere under the repository root.</summary>
+    /// <remarks>
+    /// For the documents a test holds the code against — <c>docs/card-dsl.md</c>
+    /// says what the ability vocabulary is, and a vocabulary nobody wrote down
+    /// is one nobody can author against.
+    /// </remarks>
+    public static string Repository(params string[] parts) =>
+        Path.Combine([Root, .. parts]);
+
     private static string Find()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
