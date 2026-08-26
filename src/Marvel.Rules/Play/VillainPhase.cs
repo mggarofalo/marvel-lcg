@@ -181,7 +181,8 @@ public static class VillainPhase
                 break;
 
             case Steps.RevealEncounterCard:
-                RevealEncounterCard(world, abilities, world.Cards[step.Subject], step.Index, events);
+                RevealEncounterCard(
+                    world, facts, abilities, world.Cards[step.Subject], step.Index, events);
                 break;
 
             case Steps.PassFirstPlayerToken:
@@ -247,25 +248,35 @@ public static class VillainPhase
 
         foreach (int seat in world.PlayerOrder)
         {
-            // `rr:villain-phase.step.2.b`. A minion engaged with a player
-            // activates too, and nothing on the milestone board is ever engaged.
-            var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat));
-            if (engaged.Cards.Count > 0)
-            {
-                throw new RulesNotImplementedException(
-                    $"{engaged.Cards.Count} minion(s) engaged with {world.Seats[seat].Name} "
-                    + "would activate, and minion activation is not implemented");
-            }
-
-            // `rr:activation.1`: hero form and the villain attacks, alter-ego
+            // `rr:activation.1`: hero form and the enemy attacks, alter-ego
             // form and it schemes. Which face is showing *is* which form, so
             // this needs no separate flag.
             var identity = world.Seats[seat].IdentityCard;
             bool attacking = facts.Kind(identity.FaceId) != CardKind.AlterEgo;
 
-            world.Agenda.Then(new PhaseStep(
-                attacking ? Steps.Attack : Steps.Scheme,
-                step.Round, 2, Index: seat, Subject: villain.ObjectId, Seat: seat));
+            // `rr:villain-phase.step.2.a` then `.step.2.b`: "the villain
+            // activates against the player", and then "each minion engaged with
+            // the player activates against them, in the order of that player's
+            // choice".
+            //
+            // **The order is the player's and this takes it in the order they
+            // sit in the play area.** `rr:minion.3` says so outright, and the
+            // recorded prompt vocabulary has a verb for asking --
+            // `Minion_Activates_Order`, twice in the fixture. Asking is not
+            // implemented; the order here is deterministic and stated rather
+            // than a silent pick.
+            var enemies = new List<int> { villain.ObjectId };
+            enemies.AddRange(world
+                .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat))
+                .Cards
+                .Select(minion => minion.ObjectId));
+
+            foreach (int enemy in enemies)
+            {
+                world.Agenda.Then(new PhaseStep(
+                    attacking ? Steps.Attack : Steps.Scheme,
+                    step.Round, 2, Index: seat, Subject: enemy, Seat: seat));
+            }
         }
     }
 
@@ -433,7 +444,8 @@ public static class VillainPhase
 
     /// <summary>Step 4. Each player reveals their cards, in the order dealt.</summary>
     private static void RevealEncounterCard(
-        World world, ICardAbilities abilities, Card card, int player, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
+        List<GameEvent> events)
     {
         // Same reason as the boost card: the revealing area is where an
         // encounter card registers its pools.
@@ -444,14 +456,27 @@ public static class VillainPhase
             Trigger = "villain phase", Verb = "Reveal",
         });
 
+        // `rr:reveal.step.2` -- **where the card goes is decided by its type**,
+        // and it happens before step 3's "When Revealed" abilities. A minion
+        // that entered play is already engaged when its own ability resolves.
+        Reveal.Resolve(world, facts, card, player, events);
+
+        // Step 3. "Resolve each **When Revealed** ability on that card
+        // *(including those provided by keywords)*."
+        //
+        // **The order between them is the first player's choice and this does
+        // not ask.** `rr:forced.5`: "if two or more forced abilities would
+        // initiate at the same moment, the first player determines the order in
+        // which the abilities initiate" -- and a card carrying surge and its own
+        // When Revealed text has exactly two. The prompt is not implemented, so
+        // the order here is fixed and deterministic rather than chosen. See
+        // MARVEL-187.
+        Reveal.Keywords(world, facts, card, player, events);
         events.AddRange(abilities.WhenRevealed(world, card, player));
 
-        // `rr:reveal`: what happens next is decided by the card's type. A
-        // treachery resolves and is discarded; an attachment or a minion
-        // *enters play* and stays there. Rather than switching on the type
-        // here, this asks where the card is: an ability that put it somewhere
-        // has already answered, and one that did not leaves it in the revealing
-        // area to be discarded.
+        // Step 4. "If the card is a treachery, discard it." Asked as "is it
+        // still where step 2 left something not in play", so that an ability
+        // that put the card somewhere is not undone.
         if (card.Area.Type != DeckType.RevealingArea)
         {
             return;

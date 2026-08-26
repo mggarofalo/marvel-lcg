@@ -162,21 +162,58 @@ public sealed class VillainPhaseTests
     }
 
     [Rule("rr:villain-phase.step.2.b")]
-    [Rule("rr:activation.2")]
+    [Rule("rr:minion.3")]
     [Fact]
-    public void AMinionEngagedWithAPlayerSaysSoRatherThanBeingSkipped()
+    public void EachEngagedMinionActivatesAfterTheVillain()
     {
-        // Skipping it silently is the dangerous failure: the board is right
-        // about everything except the damage nobody took.
+        // "The villain activates against the player", then "each minion engaged
+        // with the player activates against them". Skipping the minion silently
+        // is the dangerous failure: the board is right about everything except
+        // the damage nobody took.
+        //
+        // Alter-ego form, so both enemies scheme and the threat placed is the
+        // sum of their SCH -- which separates "the villain activated" from
+        // "everything engaged activated" in one number.
         var printed = new Printed()
-            .With("villain", ("SCH", "0"))
-            .With("scheme", ("EscalationThreat", "0"));
+            .With("villain", ("SCH", "2"))
+            .With("minion", ("SCH", "3"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("boost", ("Boost", "0"));
         var world = Board(printed, players: 1);
         world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Run(world, printed));
-        Assert.Contains("engaged", thrown.Message, StringComparison.Ordinal);
+        Run(world, printed);
+
+        Assert.Equal(5, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+    }
+
+    [Rule("rr:reveal.3")]
+    [Rule("rr:engage")]
+    [Fact]
+    public void ARevealedMinionEntersPlayEngagedRatherThanBeingDiscarded()
+    {
+        // `rr:reveal.3`: "it enters play in the play area of the player
+        // revealing it. **It is considered to engage that player.**" Before
+        // this, every revealed minion went straight to the discard pile -- the
+        // encounter deck was a pile of treacheries however it was built.
+        var printed = new Printed()
+            .With("villain", ("SCH", "0"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("boost", ("Boost", "0"));
+        var world = Board(printed, players: 1);
+
+        // The board's deck is [encounter, boost] with the boost on top, and the
+        // villain's activation takes the top card. Putting the minion under the
+        // boost is what makes it the card that gets *dealt*.
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var boost = deck.Cards[^1];
+        world.CreateCard("minion", deck);
+        World.MoveToTop(boost, deck);
+
+        Run(world, printed);
+
+        var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
+        Assert.Equal(["minion"], engaged.Cards.Select(card => card.FaceId));
     }
 
     [Rule("rr:main-scheme-main-scheme-deck.2")]

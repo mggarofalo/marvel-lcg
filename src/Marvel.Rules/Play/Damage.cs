@@ -47,6 +47,31 @@ public static class Damage
             return false;
         }
 
+        // `rr:tough.2`: "if a character with a tough status card would take any
+        // amount of damage, **prevent all of that damage** and discard a tough
+        // status card from that character instead." All of it, however much --
+        // and `.2.1`, only one card per instance of damage.
+        //
+        // `rr:tough.2.2` is why this is checked here rather than earlier: "when
+        // a hero with a tough status card defends an attack, they reduce the
+        // damage from the attack by their DEF **first**. If the damage is
+        // reduced to 0, the hero does not lose their tough status card." The
+        // `amount <= 0` return above is that clause.
+        if (Statuses.Has(world, target, Statuses.Tough))
+        {
+            var tough = world.Areas
+                .Where(area => area.Type == DeckType.StatusArea && area.Host == target.ObjectId)
+                .SelectMany(area => area.Cards)
+                .First(status => status.FaceId == Statuses.Tough);
+
+            Discard.Card(world, tough, trigger, events);
+
+            // `rr:tough.3`: "as a tough status card prevents damage fully, the
+            // character who had the tough status card is **not considered to
+            // have taken damage**." So no health event, and no defeat.
+            return false;
+        }
+
         long printed = Health(world, facts, target);
         long before = Math.Max(0, printed - target.Damage);
         target.TakeDamage(amount);
