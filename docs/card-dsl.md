@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and twenty-six cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
+`src/Marvel.Cards`, and thirty cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -840,6 +840,24 @@ The status lives in the effect's `Kind` because `ContinuousEffect` has nowhere
 else to put it: it carries a number, two card ids and a duration, and it has to
 survive a save, so it cannot carry a closure either. Confusing or toughening the
 damaged character is another constant beside `StunTheSubject`.
+
+### A card that draws on the random stream
+
+One MT19937 stream runs the whole game, so **how many numbers a card takes and
+in what order is a wire format**, not a detail. `EngineRandom.Choice` is the
+ported primitive and is already pinned against recorded RNG vectors;
+`discardAtRandom` is the first card ability to reach it.
+
+Two consequences the tests assert directly rather than the board:
+
+- **A player with an empty hand takes no draw.** The draw is inside the loop
+  rather than counted ahead, so a hand with nothing in it costs the stream
+  nothing. A board that took one draw and a board that took two are the same
+  board and different games — which is why the test compares the *next* number
+  off the stream against a control that made exactly one `Choice` by hand.
+- **"Each player" goes in player order.** `rr:each-player.1`, and the order is
+  what the stream sees. `rr:player-elimination.6` is why it is `PlayerOrder`:
+  "effects that refer to the players in the game ignore eliminated players".
 
 ### A search of a deck is bounded, and the bound is a rule
 
