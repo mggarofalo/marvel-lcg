@@ -32,6 +32,8 @@ namespace Marvel.Content.Tests.Play;
 /// </remarks>
 public sealed class WholeGameTests
 {
+    private const string Campaign = "rhino";
+
     private static readonly SetupCatalog Setup =
         SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
 
@@ -45,7 +47,7 @@ public sealed class WholeGameTests
     [InlineData(4242u)]
     public void AGameRunsFromTheDealToAnEnding(uint seed)
     {
-        var (game, world) = Deal(seed);
+        var (game, world) = Deal(seed, "spider_man");
         var played = Run(game, world);
 
         // An ending, and a definite one: `World.Result` names which of the
@@ -59,14 +61,32 @@ public sealed class WholeGameTests
         Assert.True(played > 0, "no card was ever played");
     }
 
+    [Theory]
+    [InlineData(12345u)]
+    [InlineData(2026u)]
+    public void ATwoPlayerGameRunsToo(uint seed)
+    {
+        // **A second player is not a bigger version of the first.** Every
+        // sentence in the rules that says "in player order", "the next
+        // clockwise player" or "a different player" is unreachable at one, and
+        // the first two-player game this ran hit `rr:defend-defense.5` --
+        // She-Hulk defending an attack aimed at Spider-Man -- inside one round.
+        var (game, world) = Deal(seed, "spider_man", "she_hulk");
+        var played = Run(game, world);
+
+        Assert.Null(game.Pending);
+        Assert.NotEqual(Outcome.Unfinished, world.Result);
+        Assert.True(played > 0, "no card was ever played");
+    }
+
     [Fact]
     public void TheSameSeedPlaysTheSameGame()
     {
         // Non-negotiable 1: determinism is what makes the replay corpus an
         // oracle. Two deals of one seed, driven by one policy, must agree about
         // everything -- including the shuffles a reshuffled deck consumed.
-        var (first, firstWorld) = Deal(2026);
-        var (second, secondWorld) = Deal(2026);
+        var (first, firstWorld) = Deal(2026, "spider_man");
+        var (second, secondWorld) = Deal(2026, "spider_man");
 
         Run(first, firstWorld);
         Run(second, secondWorld);
@@ -160,12 +180,12 @@ public sealed class WholeGameTests
         return generated >= cost ? [.. spent] : null;
     }
 
-    private static (Game Game, World World) Deal(uint seed)
+    private static (Game Game, World World) Deal(uint seed, params string[] heroes)
     {
         var world = WorldSetup.Deal(
             Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"])),
-            [Setup.Hero("spider_man").Name],
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, heroes)),
+            [.. heroes.Select(hero => Setup.Hero(hero).Name)],
             seed);
         return (Game.Begin(world, Cards), world);
     }
