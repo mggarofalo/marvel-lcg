@@ -398,6 +398,7 @@ public sealed class AbilityDataTests
             .. AuthoredCards.Unus,
             .. AuthoredCards.Superpowers,
             .. AuthoredCards.HuntingGeneTraitors,
+            .. AuthoredCards.UnusEncounters,
             .. AuthoredCards.ReadAndSilent,
         ];
 

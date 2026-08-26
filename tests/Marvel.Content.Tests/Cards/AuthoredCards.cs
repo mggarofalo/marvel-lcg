@@ -168,6 +168,15 @@ internal static class AuthoredCards
     public const string GenePool = "45071";
 
     /// <summary>
+    /// The Unus scenario's encounter cards that are read, in card order.
+    /// </summary>
+    /// <remarks>
+    /// Grown one batch at a time as the whole-game test meets them. The ones
+    /// still missing are what it stops on.
+    /// </remarks>
+    public static readonly string[] UnusEncounters = ["45068", "45069", "45070", "45073"];
+
+    /// <summary>
     /// The printed ids of the three Superpower attachments, in card order.
     /// </summary>
     /// <remarks>

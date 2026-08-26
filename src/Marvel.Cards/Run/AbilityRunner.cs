@@ -1530,11 +1530,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         string keyword = Word(node.Require("keyword"));
-        if (!StateFields.IsPrinted(keyword) && !Keywords.Granted.Contains(keyword))
+        if (!StateFields.IsModifiable(keyword) && !Keywords.Granted.Contains(keyword))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' grants '{keyword}', which is not a keyword or "
-                + "printed field the engine reads");
+                + "field the engine reads modifiers into");
         }
 
         return new ContinuousEffect(
