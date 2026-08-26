@@ -300,4 +300,54 @@ public sealed class PrintedKeywordTests
 
         return names;
     }
+    [Rule("rr:team-up")]
+    [Rule("rr:unique-icon.1.2")]
+    [Fact]
+    public void EveryNameATeamUpCardPrintsIsACharacterThatExists()
+    {
+        // A team-up card names two characters, and if a name matches nothing
+        // the card is unplayable for ever — silently, because "no such
+        // character is in play" and "no such character exists" look identical
+        // from inside the restriction.
+        //
+        // Two of the thirty-four names the pool prints are the reason this is
+        // a test rather than an assumption: `Black Panther/T'Challa` and
+        // `Black Panther/Shuri` are titles no card carries. They are read as
+        // two halves, which is what makes them resolve.
+        var names = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var card in Every())
+        {
+            if (Cards.Attributes(card).TryGetValue("TeamUp", out string? printed))
+            {
+                names.UnionWith(printed.Split(';', StringSplitOptions.RemoveEmptyEntries));
+            }
+        }
+
+        Assert.NotEmpty(names);
+        foreach (string name in names)
+        {
+            Assert.True(
+                name.Split('/', StringSplitOptions.RemoveEmptyEntries).All(Exists),
+                $"the team-up name '{name}' matches no card's title or subtitle");
+        }
+    }
+
+    /// <summary>Whether any card in the pool is titled or subtitled this.</summary>
+    private static bool Exists(string name) => Every().Any(card =>
+        string.Equals(Cards.Title(card), name, StringComparison.Ordinal)
+        || string.Equals(Cards.Subtitle(card), name, StringComparison.Ordinal));
+
+    /// <summary>Every printed card id in the pool.</summary>
+    private static IEnumerable<string> Every()
+    {
+        using var document = JsonDocument.Parse(CardText);
+        foreach (var card in document.RootElement.GetProperty("cards").EnumerateArray())
+        {
+            if (card.TryGetProperty("card_id", out var id) && id.GetString() is { } faceId)
+            {
+                yield return faceId;
+            }
+        }
+    }
+
 }

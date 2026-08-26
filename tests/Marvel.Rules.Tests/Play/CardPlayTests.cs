@@ -200,6 +200,124 @@ public sealed class CardPlayTests
         Assert.Equal(DeckType.DiscardPile, paying.Area.Type);
     }
 
+    [Rule("rr:team-up")]
+    [Fact]
+    public void ATeamUpCardNeedsBothOfTheCharactersItNames()
+    {
+        // "A card with the team-up keyword cannot be played unless **both** of
+        // the named friendly characters *(identity or ally)* are in play."
+        // One is not both, which is the half a looser reading would allow.
+        var printed = Cards();
+        var world = Board(printed);
+        var card = InHand(world, "swarm");
+        var allies = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+
+        Assert.Null(CardPlay.Price(world, printed, world.Seats[0], card));
+
+        world.CreateCard("Ant-Man", allies);
+        Assert.Null(CardPlay.Price(world, printed, world.Seats[0], card));
+
+        world.CreateCard("Wasp", allies);
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
+    }
+
+    [Rule("rr:team-up.2")]
+    [Fact]
+    public void AnAllyCountsUnderItsSubtitleToo()
+    {
+        // "An ally counts as a named character if **either its title or
+        // subtitle** matches the named character." Wasp's ally card is titled
+        // for one of her names and subtitled for the other, and the card that
+        // names her does not say which.
+        var printed = Cards();
+        var world = Board(printed);
+        var card = InHand(world, "swarm");
+        var allies = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+        world.CreateCard("Ant-Man", allies);
+        world.CreateCard("Janet", allies);
+
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
+    }
+
+    [Rule("rr:friendly")]
+    [Fact]
+    public void AnotherPlayersCharacterIsFriendlyToo()
+    {
+        // `rr:friendly` is one sentence -- "a blanket term that refers to cards
+        // **the players** control" -- so the other player's Wasp is the Wasp
+        // this card needs. Unreachable at one player, and the reason a team-up
+        // card is a card about a table.
+        var printed = Cards();
+        var world = new World(printed, players: 2);
+        world.CreateSeat("p0");
+        world.CreateSeat("p1");
+        world.Seats[0].IdentityCard = world.CreateCard("Ant-Man", world.Seats[0].Hero);
+        world.Seats[1].IdentityCard = world.CreateCard("Wasp", world.Seats[1].Hero);
+        var card = world.CreateCard("swarm", world.Seats[0].Hand);
+
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
+    }
+
+    [Rule("rr:identity.4")]
+    [Fact]
+    public void OnlyTheFaceupSideOfAnIdentityIsInPlay()
+    {
+        // "The faceup side of an identity card is considered to be in play. The
+        // facedown side [...] is considered to be out of play." So a player
+        // whose alter-ego is showing is not the hero the card names, however
+        // sure the table is about who they are.
+        var printed = Cards();
+        var world = Board(printed);
+        var identity = world.CreateCard("alterego,Wasp", world.Seats[0].Hero);
+        world.Seats[0].IdentityCard = identity;
+        world.CreateCard(
+            "Ant-Man", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var card = InHand(world, "swarm");
+
+        identity.TurnTo("Wasp");
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
+
+        // Flipped down, and the same card is now unplayable. The two faces of
+        // an identity print different titles and only one of them is on the
+        // table.
+        identity.TurnTo("alterego");
+        Assert.Null(CardPlay.Price(world, printed, world.Seats[0], card));
+    }
+
+    [Rule("rr:unique-icon.1.2")]
+    [Fact]
+    public void ASlashNamesOneCharacterByTwoOfItsNames()
+    {
+        // "Heart of the Panther" prints *Team-Up (Black Panther/T'Challa and
+        // Black Panther/Shuri)*, because two identities share the hero title
+        // Black Panther and the alter-ego is what tells them apart. **No card
+        // is titled "Black Panther/T'Challa"**, so the notation is read rather
+        // than matched -- and it is read against every face of the identity,
+        // because neither face carries both halves.
+        //
+        // `rr:unique-icon.1.2` is why that is not a liberty: the rules already
+        // use an identity's alter-ego title as one of its identifying names.
+        var printed = Cards();
+        var world = new World(printed, players: 2);
+        world.CreateSeat("p0");
+        world.CreateSeat("p1");
+        world.Seats[0].IdentityCard =
+            world.CreateCard("Black Panther,T'Challa", world.Seats[0].Hero);
+        var card = world.CreateCard("panther", world.Seats[0].Hand);
+
+        // One of the two, so far.
+        Assert.Null(CardPlay.Price(world, printed, world.Seats[0], card));
+
+        var other = world.CreateCard("Black Panther,Shuri", world.Seats[1].Hero);
+        world.Seats[1].IdentityCard = other;
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
+
+        // And it stays true when they flip: which face is up decides what is in
+        // play, and it does not decide which character the identity *is*.
+        other.TurnTo("Shuri");
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
+    }
+
     [Rule("rr:cost.3")]
     [Fact]
     public void ACardCannotPayForItself()
@@ -432,7 +550,18 @@ public sealed class CardPlayTests
         // energy, mental and physical.
         .With("physical", ("RES", "R"))
         .With("mental", ("RES", "B"))
-        .With("demanding", ("Cost", "1"), ("RES", "R"), ("Requirement", "R"));
+        .With("demanding", ("Cost", "1"), ("RES", "R"), ("Requirement", "R"))
+
+        // `rr:team-up` -- 28 cards print one, and every one names two heroes.
+        .With("swarm", ("Cost", "0"), ("TeamUp", "Ant-Man;Wasp"))
+        .With("Ant-Man", ("HP", "9"))
+        .With("Wasp", ("HP", "9"))
+        .With("Janet", ("HP", "3"))
+        .Sub("Janet", "Wasp")
+        .With("panther", ("Cost", "0"), ("TeamUp", "Black Panther/T'Challa;Black Panther/Shuri"))
+        .With("Black Panther", ("HP", "9"))
+        .With("T'Challa", ("HP", "9"))
+        .With("Shuri", ("HP", "9"));
 
     private sealed class Silent : NoCardAbilities
     {
@@ -464,6 +593,8 @@ public sealed class CardPlayTests
         private readonly Dictionary<string, Dictionary<string, string>> attributes =
             new(StringComparer.Ordinal);
 
+        private readonly Dictionary<string, string> subtitles = new(StringComparer.Ordinal);
+
         public Printed With(string faceId, params (string Key, string Value)[] values)
         {
             var table = attributes.TryGetValue(faceId, out var found)
@@ -486,6 +617,16 @@ public sealed class CardPlayTests
             "event" => CardKind.Event,
             _ => CardKind.Upgrade,
         };
+
+        /// <summary>A printed subtitle — `rr:team-up.2` matches on it too.</summary>
+        public Printed Sub(string faceId, string subtitle)
+        {
+            subtitles[faceId] = subtitle;
+            return this;
+        }
+
+        public string Subtitle(string faceId) =>
+            subtitles.TryGetValue(faceId, out string? found) ? found : string.Empty;
 
         public IReadOnlyList<string> Traits(string faceId) => [];
 
