@@ -520,6 +520,45 @@
           }
         }
       ]
+    },
+    {
+      "card": "01111",
+      "name": "Explosion",
+      "note": "When Revealed: If Bomb Scare is in play, assign X damage among heroes and allies, where X is the amount of threat on Bomb Scare. If Bomb Scare is not in play, this card gains surge. X is read off the board rather than printed -- rr:threat counts tokens -- so it is the threat pool on the card named by title. The assignment is rr:indirect-damage: .2 divides it among friendly characters in play, .3 assigns the whole lot before resolving any of it, and .3.1 caps each character at its remaining hit points. Only two cards in the pool say 'assign ... among' and the other one says 'indirect' outright; this one does not, but the division it describes is the same one.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "titleInPlay": "Bomb Scare" },
+              "then": {
+                "indirectDamage": {
+                  "among": { "query": "heroesAndAllies" },
+                  "amount": { "tokensOn": { "titled": "Bomb Scare" } }
+                }
+              },
+              "else": { "gainSurge": 1 }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "01166",
+      "name": "Highway Robbery",
+      "note": "When Revealed: Each player places a random card from their hand facedown here. When Defeated: Return each facedown card here to its owner's hand. Placed and not discarded -- the cards come back, which is what the second ability is for -- so they go onto the scheme as attachments, facedown. 'Its owner's hand' is the card's owner and not whoever defeated the scheme, which is why each player gets their own card back. rr:when-defeated-abilities.2.1 runs the return before the scheme leaves play, which is what lets it still find what is attached to it.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "placeAtRandom": { "player": "each", "count": 1, "on": "this" }
+          }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "returnToHand": { "query": "attachedToThis" } }
+        }
+      ]
     }
   ]
 }
