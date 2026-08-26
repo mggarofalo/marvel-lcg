@@ -11,8 +11,9 @@ namespace Marvel.Rules.Events;
 /// </para>
 /// <para>
 /// Byte equality is <b>not</b> required here: events are consumed by a client
-/// rather than compared. What matters is that the names hold, and nothing
-/// checks that they do — MARVEL-251.
+/// rather than compared. What matters is that the names hold, which
+/// <c>EventVocabularyTests</c> checks against the table in
+/// <c>docs/event-stream.md</c>.
 /// </para>
 /// </remarks>
 public static class EventJson

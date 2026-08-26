@@ -77,10 +77,12 @@ happened, so it is one event carrying five cards, not five events.
 
 ## The vocabulary
 
-Nine records, defined by `src/Marvel.Rules/Events/GameEvent.cs`. There was a
-`datasets/events/vocabulary.json` holding this list against a Python one; both
-are gone, and nothing currently checks that the names below match the code —
-MARVEL-251.
+Nine records, defined by `src/Marvel.Rules/Events/GameEvent.cs`.
+
+**The table below is checked, not decorative.** `EventVocabularyTests` parses
+it out of this file and holds it against what the serialiser actually writes —
+kind for kind and key for key. Renaming a field in C# without renaming it here
+fails, and so does the reverse.
 
 | event | payload |
 |---|---|
