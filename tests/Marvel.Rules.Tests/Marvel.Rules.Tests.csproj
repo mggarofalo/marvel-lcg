@@ -21,6 +21,7 @@
     <Compile Include="../Shared/DigestDiff.cs" Link="DigestDiff.cs" />
     <Compile Include="../Shared/Rule.cs" Link="Rule.cs" />
     <Compile Include="../Shared/RuleCitations.cs" Link="RuleCitations.cs" />
+    <Compile Include="../Shared/Agendas.cs" Link="Agendas.cs" />
   </ItemGroup>
 
 </Project>

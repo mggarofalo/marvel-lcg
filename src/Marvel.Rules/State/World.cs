@@ -133,6 +133,25 @@ public sealed class World
     /// </remarks>
     public EnemyAttack? FinishedAttack { get; set; }
 
+    /// <summary>
+    /// The character attack being resolved, or <c>null</c> when none is.
+    /// </summary>
+    /// <remarks>
+    /// The player's half of <see cref="Attack"/>, and separate for the same
+    /// reason: <c>rr:attack-player-ability-type.step.7</c> puts abilities
+    /// around a character's attack — "after [character] attacks [and
+    /// damages/defeats] [an enemy/a minion]", "after [character] is attacked"
+    /// — and an ability may ask the player something, so the attack spans more
+    /// than one turn of the loop.
+    /// <para>
+    /// <b>Who attacked, not just which seat.</b> <c>rr:ally.2</c> lets a player
+    /// attack with an ally, and <c>rr:you-your.15</c> is emphatic that an
+    /// ally's attack is <b>not</b> performed by that player's identity — so a
+    /// card that acts on "the attacking character" needs the character.
+    /// </para>
+    /// </remarks>
+    public CharacterAttack? CharacterAttack { get; set; }
+
     /// <summary>Whether the game has ended.</summary>
     /// <remarks>
     /// The engine answers a <c>null</c> prompt once this is set, which is the only

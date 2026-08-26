@@ -360,6 +360,16 @@ public static class VillainPhase
                 Attack.DealDamage(world, facts, events);
                 break;
 
+            case Steps.CharacterAttacks:
+                BasicPowers.ResolveCharacterAttack(world, facts, events);
+                break;
+
+            case Steps.AllyConsequentialDamage:
+                BasicPowers.Consequential(
+                    world, facts, world.Cards[step.Subject], byAttack: true,
+                    BasicPowers.AttackVerb, events);
+                break;
+
             case Steps.EndAttack:
                 Attack.End(world, events);
                 break;

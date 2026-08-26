@@ -201,10 +201,105 @@ public static class BasicPowers
             return;
         }
 
+        Initiate(world, character, enemy, player);
+    }
+
+    /// <summary>
+    /// Puts a character's attack on the agenda —
+    /// <c>rr:attack-player-ability-type</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Scheduled rather than resolved.</b> <c>.step.7</c> and <c>.step.8</c>
+    /// put abilities around the attack — "after [character] attacks [and
+    /// damages/defeats] [an enemy/a minion]", "after [character] is attacked"
+    /// — and one of them may ask the player something. A basic attack that
+    /// dealt its damage inline had nowhere to open those windows, which is why
+    /// Shocker's "after Shocker is attacked" could not be written.
+    /// </para>
+    /// <para>
+    /// The cost is already paid by the time this runs:
+    /// <c>rr:initiating-abilities.step.5</c> pays before step 6 resolves, and
+    /// exhausting is the cost of a basic power.
+    /// </para>
+    /// </remarks>
+    private static void Initiate(World world, Card attacker, Card enemy, int player)
+    {
+        world.CharacterAttack = new CharacterAttack(attacker.ObjectId, enemy.ObjectId, player);
+        world.Agenda.Then(new PhaseStep(
+            Steps.CharacterAttacks,
+            world.Agenda.Current?.Round ?? 0,
+            2,
+            Index: player,
+            Subject: enemy.ObjectId,
+            Seat: player));
+    }
+
+    /// <summary>
+    /// Deals the attack's damage — <c>rr:attack-player-ability-type.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// "This deals damage equal to the character's ATK value to the enemy."
+    /// Through <see cref="Damage.Attack"/>, which is the same primitive an
+    /// enemy's attack uses: <c>rr:damage</c> is one rule however the damage
+    /// arrived.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="events">Where to record what happened.</param>
+    public static void ResolveCharacterAttack(
+        World world, ICardFacts facts, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (world.CharacterAttack is not { } attack)
+        {
+            throw new RulesNotImplementedException(
+                "a character attack is resolving and the board holds none");
+        }
+
+        var attacker = world.Cards[attack.Attacker];
         Damage.Attack(
-            world, facts, character, enemy,
-            StateFields.Modified(world, character, "attack", facts, world.Players),
+            world, facts, attacker, world.Cards[attack.Enemy],
+            StateFields.Modified(world, attacker, "attack", facts, world.Players),
             AttackVerb, AttackVerb, events);
+    }
+
+    /// <summary>
+    /// An ally's consequential damage —
+    /// <c>rr:attack-player-ability-type.step.9</c>.
+    /// </summary>
+    /// <remarks>
+    /// The icons sit under the field that was used, as stars inside
+    /// <c>ATK</c>/<c>THW</c> rather than an attribute of their own — so the
+    /// printed half is read and the modified half is looked up, the same split
+    /// as <c>Damage.Health</c>.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="ally">The ally that attacked or thwarted.</param>
+    /// <param name="byAttack">Whether the field used was <c>ATK</c>.</param>
+    /// <param name="verb">What the ally did.</param>
+    /// <param name="events">Where to record what happened.</param>
+    public static void Consequential(
+        World world, ICardFacts facts, Card ally, bool byAttack, string verb,
+        List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(ally);
+        ArgumentNullException.ThrowIfNull(events);
+
+        long consequential =
+            facts.ConsequentialDamage(ally.FaceId, byAttack ? "ATK" : "THW")
+            + StateFields.Modified(
+                world, ally,
+                byAttack ? "attack_consequential_damage" : "thwart_consequential_damage",
+                facts, world.Players);
+
+        Damage.Deal(world, facts, ally, consequential, verb, "Consequential_Damage", events);
     }
 
     /// <summary>
@@ -388,31 +483,31 @@ public static class BasicPowers
 
         if (attacking)
         {
-            Damage.Attack(
-                world, facts, ally, target,
-                StateFields.Modified(world, ally, "attack", facts, world.Players),
-                verb, verb, events);
-        }
-        else
-        {
-            RemoveThreat(world, facts, ally, target, events);
+            // Scheduled, like a hero's -- and the consequential damage after
+            // it, because `rr:attack-player-ability-type.step.9` puts it last,
+            // after `.step.7` and `.step.8`'s abilities. Dealt inline it would
+            // land before an enemy that answers "after this is attacked" had
+            // spoken.
+            Initiate(world, ally, target, ally.Owner);
+            world.Agenda.Then(new PhaseStep(
+                Steps.AllyConsequentialDamage,
+                world.Agenda.Current?.Round ?? 0,
+                9,
+                Index: ally.Owner,
+                Subject: ally.ObjectId,
+                Seat: ally.Owner));
+            return;
         }
 
-        // `rr:consequential-damage.1`: dealt "after resolving abilities that are
-        // triggered by the ally attacking or thwarting", so after the attack and
-        // not as part of it. The icons sit under the field that was used.
-        // The printed icons, plus anything modifying the field. The icons are
-        // stars inside `ATK`/`THW` rather than an attribute of their own, so
-        // the printed half is read and the modified half is looked up -- the
-        // same split as `Damage.Health`.
-        long consequential =
-            facts.ConsequentialDamage(ally.FaceId, byAttack ? "ATK" : "THW")
-            + StateFields.Modified(
-                world, ally,
-                byAttack ? "attack_consequential_damage" : "thwart_consequential_damage",
-                facts, world.Players);
+        RemoveThreat(world, facts, ally, target, events);
 
-        Damage.Deal(world, facts, ally, consequential, verb, "Consequential_Damage", events);
+        // `rr:consequential-damage.1`: dealt "after resolving abilities that
+        // are triggered by the ally attacking or thwarting". A thwart deals it
+        // here rather than as a step of its own, because nothing opens a window
+        // around a thwart yet -- scheduling it would move nothing and add a
+        // step nobody can observe. The attack half is scheduled, because
+        // `rr:attack-player-ability-type.step.7` does put abilities there.
+        Consequential(world, facts, ally, byAttack, verb, events);
     }
 
     /// <summary>

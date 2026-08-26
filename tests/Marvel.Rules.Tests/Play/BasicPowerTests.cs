@@ -30,6 +30,8 @@ public sealed class BasicPowerTests
 
         BasicPowers.BasicAttack(world, printed, 0, villain, events);
 
+        Agendas.Finish(world, printed);
+
         Assert.False(world.Seats[0].IdentityCard.Ready);
         Assert.Equal(3, villain.Damage);
     }
@@ -56,6 +58,8 @@ public sealed class BasicPowerTests
                 DeckType.UpgradesArea, identity.Area.PlayArea, identity.ObjectId, cardOwner: 0));
 
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Agendas.Finish(world, printed);
 
         Assert.Equal(5, villain.Damage);
     }
@@ -284,6 +288,8 @@ public sealed class BasicPowerTests
 
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
 
+        Agendas.Finish(world, printed);
+
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
 
@@ -315,6 +321,8 @@ public sealed class BasicPowerTests
         var next = world.CreateCard("villain2", world.AreaOf(DeckType.VillainDeck));
 
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Agendas.Finish(world, printed);
 
         Assert.Equal(DeckType.RemovedArea, villain.Area.Type);
         Assert.Equal(DeckType.VillainArea, next.Area.Type);
@@ -354,6 +362,8 @@ public sealed class BasicPowerTests
 
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
 
+        Agendas.Finish(world, printed);
+
         Assert.Equal(next.ObjectId, attached.Area.Host);
         Assert.Equal(3, next.Tokens["k_threat"]);
         Assert.True(Statuses.Has(world, next, Statuses.Stunned));
@@ -379,6 +389,8 @@ public sealed class BasicPowerTests
             world.AreaOf(DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId));
 
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Agendas.Finish(world, printed);
 
         Assert.Equal(DeckType.EncounterDiscardPile, attached.Area.Type);
         Assert.Equal(0, next.Tokens.GetValueOrDefault("k_threat"));
@@ -409,6 +421,8 @@ public sealed class BasicPowerTests
 
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
 
+        Agendas.Finish(world, printed);
+
         Assert.True(Statuses.Has(world, next, Statuses.Tough));
     }
 
@@ -437,6 +451,8 @@ public sealed class BasicPowerTests
 
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
 
+        Agendas.Finish(world, printed);
+
         Assert.Single(
             world.Areas
                 .Where(area => area.Host == next.ObjectId)
@@ -456,6 +472,8 @@ public sealed class BasicPowerTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Agendas.Finish(world, printed);
 
         Assert.Equal(Outcome.PlayersWin, world.Result);
         Assert.True(world.IsOver);

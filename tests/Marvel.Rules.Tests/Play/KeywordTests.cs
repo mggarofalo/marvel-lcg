@@ -259,6 +259,8 @@ public sealed class KeywordTests
 
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
 
+        Agendas.Finish(world, printed);
+
         Assert.Equal(2, minion.Damage);
         Assert.Equal(3, world.Seats[0].IdentityCard.Damage);
     }
@@ -279,6 +281,8 @@ public sealed class KeywordTests
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
+
+        Agendas.Finish(world, printed);
 
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
