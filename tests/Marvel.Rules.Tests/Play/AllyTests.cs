@@ -30,6 +30,7 @@ public sealed class AllyTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
         BasicPowers.AllyPower(world, printed, ally, villain, BasicPowers.AttackVerb, []);
+        Agendas.Finish(world, printed);
 
         Assert.False(ally.Ready);
         Assert.Equal(2, villain.Damage);
@@ -51,6 +52,7 @@ public sealed class AllyTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
         BasicPowers.AllyPower(world, printed, ally, villain, BasicPowers.AttackVerb, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(2, villain.Damage);
     }
@@ -74,6 +76,7 @@ public sealed class AllyTests
             : Threatened(world);
 
         BasicPowers.AllyPower(world, printed, ally, target, verb, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(expected, ally.Damage);
     }
@@ -94,6 +97,7 @@ public sealed class AllyTests
         BasicPowers.AllyPower(
             world, printed, ally, world.TheCardIn(DeckType.VillainArea)!,
             BasicPowers.AttackVerb, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
     }

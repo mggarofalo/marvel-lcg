@@ -809,6 +809,36 @@
           }
         }
       ]
+    },
+    {
+      "card": "24045",
+      "name": "Shocker",
+      "note": "Forced Response: After Shocker is attacked, stun the attacking character. [star] Boost: Stun the character you control with the highest ATK value. The response is rr:attack-player-ability-type.step.7, which lists 'after [character] is attacked' among the forced abilities an attack's resolution triggers -- and it is the reason a character's basic attack is a step of the agenda at all rather than a call that returns. Subject 'this' because the occurrence is about the enemy being attacked. 'The attacking character' is the character and not the player: rr:ally.2 lets a player attack with an ally and rr:you-your.15 says an ally's attack is not performed by that player's identity, so Shocker stuns whichever character swung. The boost half goes through chooseCard because maxBy keeps ties and the Rules Reference gives no tie-break for 'the highest X'; an alter-ego prints no ATK and rr:dash-value.3 makes that an unmodifiable 0, so a table in alter-ego form still has a highest.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCharacterAttacks",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "effect": { "giveStatus": { "card": "attacker", "status": "stunned" } }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "maxBy": { "of": { "query": "charactersYouControl" }, "by": "attack" }
+              },
+              "effect": { "giveStatus": { "card": "chosen", "status": "stunned" } }
+            }
+          }
+        }
+      ]
     }
   ]
 }

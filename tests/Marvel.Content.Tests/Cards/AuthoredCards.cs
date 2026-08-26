@@ -145,6 +145,12 @@ internal static class AuthoredCards
     /// <summary>The printed id of "Crime Pays", of the Sinister Syndicate.</summary>
     public const string CrimePays = "24042";
 
+    /// <summary>
+    /// The printed id of the Sinister Syndicate's "Shocker", which is not the
+    /// Rhino set's <see cref="Shocker"/>.
+    /// </summary>
+    public const string SyndicateShocker = "24045";
+
     /// <summary>The printed id of "Masterplan".</summary>
     public const string Masterplan = "01192";
 

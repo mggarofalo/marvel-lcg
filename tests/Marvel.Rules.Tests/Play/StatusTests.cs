@@ -34,6 +34,8 @@ public sealed class StatusTests
 
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
 
+        Agendas.Finish(world, printed);
+
         Assert.False(hero.Ready);
         Assert.Equal(0, villain.Damage);
         Assert.Equal(0, Statuses.Count(world, hero, Statuses.Stunned));
@@ -60,6 +62,7 @@ public sealed class StatusTests
 
         Statuses.Give(world, hero, Statuses.Stunned);
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(0, villain.Damage);
         Assert.Equal(0, Statuses.Count(world, hero, Statuses.Stunned));
@@ -201,6 +204,8 @@ public sealed class StatusTests
 
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
 
+        Agendas.Finish(world, printed);
+
         Assert.Equal(0, villain.Damage);
         Assert.Equal(0, Statuses.Count(world, hero, Statuses.Stunned));
     }
@@ -245,6 +250,7 @@ public sealed class StatusTests
 
         Grant(world, hero, Marvel.Rules.Timing.Keywords.Piercing);
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        Agendas.Finish(world, printed);
 
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
         Assert.Equal(2, minion.Damage);
@@ -266,6 +272,7 @@ public sealed class StatusTests
 
         Grant(world, hero, Marvel.Rules.Timing.Keywords.Piercing);
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        Agendas.Finish(world, printed);
 
         Assert.True(Statuses.Has(world, minion, Statuses.Tough));
     }
@@ -287,6 +294,7 @@ public sealed class StatusTests
 
         Grant(world, hero, Marvel.Rules.Timing.Keywords.Piercing);
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(0, Statuses.Count(world, minion, Statuses.Tough));
         Assert.Equal(2, minion.Damage);
@@ -307,6 +315,8 @@ public sealed class StatusTests
 
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
 
+        Agendas.Finish(world, printed);
+
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Equal(0, villain.Damage);
     }
@@ -323,6 +333,7 @@ public sealed class StatusTests
 
         Grant(world, hero, Marvel.Rules.Timing.Keywords.Ranged);
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(2, minion.Damage);
         Assert.Equal(0, hero.Damage);
@@ -346,6 +357,7 @@ public sealed class StatusTests
 
         Grant(world, hero, Marvel.Rules.Timing.Keywords.Overkill);
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Equal(4, villain.Damage);
@@ -396,6 +408,7 @@ public sealed class StatusTests
 
         Grant(world, hero, Marvel.Rules.Timing.Keywords.Overkill);
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(0, minion.Damage);
         Assert.Equal(0, villain.Damage);

@@ -2292,6 +2292,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } characters
+            && characters.Argument is AbilityValue.Word { Value: "charactersYouControl" })
+        {
+            // "The character you control with the highest ATK value." Every
+            // character, not only those in hero form: `rr:you-your.10` reads
+            // "you control" as the cards in that player's play area, and an
+            // alter-ego is a character with a hit point dial. An alter-ego
+            // prints no ATK, and `rr:dash-value.3` makes that "an unmodifiable
+            // 0" rather than a card that cannot be compared.
+            return
+            [
+                cast.World.Seats[cast.Player].IdentityCard,
+                .. cast.World.AreaOf(DeckType.AlliesArea, PlayArea.Of(cast.Player)).Cards,
+            ];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } upgrades
             && upgrades.Argument is AbilityValue.Word { Value: "upgradesYouControl" })
         {
@@ -2443,6 +2459,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static Card? Named(string name, Cast cast) => name switch
     {
         "this" => cast.Source,
+
+        // "Stun **the attacking character**." Not the attacking player:
+        // `rr:ally.2` lets a player attack with an ally, and `rr:you-your.15`
+        // is emphatic that an ally's attack is *not* performed by that player's
+        // identity -- so Shocker stuns whichever character swung, and the
+        // player standing behind it is untouched.
+        "attacker" => cast.World.CharacterAttack is { } attacking
+            ? cast.World.Cards[attacking.Attacker]
+            : throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' names the attacking character and no character "
+                + "is attacking"),
 
         // The card a `chooseCard` was answered with. Null while the ability is
         // still asking, which is why nothing before the answer can read it.

@@ -230,6 +230,33 @@ public static class Steps
     /// </summary>
     public const string EndAttack = "EndAttack";
 
+    /// <summary>
+    /// A hero or ally attacking an enemy —
+    /// <c>rr:attack-player-ability-type</c>.
+    /// </summary>
+    /// <remarks>
+    /// A step and not a call, for the reason every other attack is: `.step.7`
+    /// and `.step.8` put abilities around it — "after [character] attacks [and
+    /// damages/defeats] [an enemy/a minion]", "after [character] is attacked" —
+    /// and an ability may ask the player something. A basic attack that
+    /// resolved inline had nowhere to open those windows.
+    /// </remarks>
+    public const string CharacterAttacks = "CharacterAttacks";
+
+    /// <summary>
+    /// An ally's consequential damage —
+    /// <c>rr:attack-player-ability-type.step.9</c>.
+    /// </summary>
+    /// <remarks>
+    /// Last of the steps an attack's resolution runs, after the forced and
+    /// non-forced abilities of <c>.step.7</c> and <c>.step.8</c> —
+    /// <c>rr:consequential-damage.1</c> says the same thing the other way
+    /// round, "after resolving abilities that are triggered by the ally
+    /// attacking or thwarting". A step of its own because those abilities are
+    /// windows and a window can ask.
+    /// </remarks>
+    public const string AllyConsequentialDamage = "AllyConsequentialDamage";
+
     /// <summary>Step 3 — <c>rr:villain-phase.step.3</c>.</summary>
     public const string DealEncounterCards = "DealEncounterCards";
 
@@ -338,6 +365,20 @@ public static class Steps
     /// </remarks>
     public const string CardDefeated = "WhenCardDefeated";
 
+    /// <summary>
+    /// A character attacking an enemy —
+    /// <c>rr:attack-player-ability-type.step.7</c>.
+    /// </summary>
+    /// <remarks>
+    /// One condition for both printed shapes, because the occurrence carries
+    /// both ends: <see cref="Occurrence.Subject"/> is the enemy being attacked,
+    /// so a card on that enemy answers with <c>this</c> — Shocker's "after
+    /// Shocker is attacked" — and <see cref="Occurrence.Player"/> is the seat
+    /// attacking, so a player card answers with <c>you</c>. Two conditions
+    /// would need two subjects and there is only one subject field.
+    /// </remarks>
+    public const string CharacterAttacksEnemy = "WhenCharacterAttacks";
+
     private static readonly Dictionary<string, string[]> Conditions = new(StringComparer.Ordinal)
     {
         [PlaceThreat] = ["WhenThreatPlaced"],
@@ -358,6 +399,7 @@ public static class Steps
         [RevealEncounterCard] = [CardRevealed],
         [TurnAction] = [TurnAction],
         [CardDefeated] = [CardDefeated],
+        [CharacterAttacks] = [CharacterAttacksEnemy],
         [DamageWouldBeDealt] = [DamageWouldBeDealt],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],

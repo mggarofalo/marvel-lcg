@@ -178,6 +178,18 @@ public sealed class Game
             throw new InvalidOperationException("the game is over; there is nothing to answer");
         }
 
+        // A window opened during a player's own turn is answered the same way
+        // one in the villain phase is. `rr:attack-player-ability-type.step.7`
+        // and `.step.8` put abilities around a character's attack, and a turn
+        // that could offer the question and not take the answer would be a
+        // turn where no card can speak.
+        if (world.Windows.Current is not null && Phase == GamePhase.PlayerTurn)
+        {
+            var during = new List<GameEvent>();
+            Sequence.Answer(world, facts, abilities, Pending, input, during);
+            return Turn(during);
+        }
+
         if (!input.IsDecline && Phase != GamePhase.VillainPhase)
         {
             // The turn prompts offer things that have to *do* something and
@@ -383,17 +395,7 @@ public sealed class Game
                 return null;
         }
 
-        if (world.IsOver)
-        {
-            // `rr:villain-defeat` -- the players can win here, and nothing is
-            // asked of anybody after a game is over.
-            Phase = GamePhase.Over;
-            Pending = null;
-            return new Resolution(world, null, happened);
-        }
-
-        Pending = TurnPrompt();
-        return new Resolution(world, Pending, happened);
+        return Turn(happened);
     }
 
     /// <summary>
@@ -430,15 +432,7 @@ public sealed class Game
         // the affordance already said what could pay.
         var happened = new List<GameEvent>(abilities.Act(world, ability, input.Spent));
 
-        if (world.IsOver)
-        {
-            Phase = GamePhase.Over;
-            Pending = null;
-            return new Resolution(world, null, happened);
-        }
-
-        Pending = TurnPrompt();
-        return new Resolution(world, Pending, happened);
+        return Turn(happened);
     }
 
     /// <summary>
@@ -463,8 +457,7 @@ public sealed class Game
             world, facts, abilities, seat, world.Cards[affordance.AnchorId],
             input.Spent, happened);
 
-        Pending = TurnPrompt();
-        return new Resolution(world, Pending, happened);
+        return Turn(happened);
     }
 
     /// <summary>The one target a basic power takes.</summary>
@@ -546,6 +539,44 @@ public sealed class Game
             // the same thing twice.
             Cancellable: false,
             Affordances: [HandChoice(seat, ResolveMulligans)]);
+    }
+
+    /// <summary>
+    /// Runs out whatever the turn just put on the agenda, then asks again.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A basic attack is <c>Steps.CharacterAttacks</c> and not a call, because
+    /// <c>rr:attack-player-ability-type.step.7</c> puts abilities around it and
+    /// one of them may ask the player something. So what follows a turn option
+    /// is the agenda draining, and the turn prompt is put again only once it
+    /// has.
+    /// </para>
+    /// <para>
+    /// <c>rr:player-turn</c> is why the turn prompt comes back at all: "each
+    /// option, <b>except 'change form'</b>, may be performed as many times as
+    /// the player is able", so a turn is not over because one option was taken.
+    /// </para>
+    /// </remarks>
+    private Resolution Turn(List<GameEvent> happened)
+    {
+        if (Sequence.Work(world, facts, abilities, happened) is { } asked)
+        {
+            Pending = asked;
+            return new Resolution(world, Pending, happened);
+        }
+
+        if (world.IsOver)
+        {
+            // `rr:villain-defeat` -- the players can win in the middle of their
+            // own turn, and nothing is asked of anybody after a game is over.
+            Phase = GamePhase.Over;
+            Pending = null;
+            return new Resolution(world, null, happened);
+        }
+
+        Pending = TurnPrompt();
+        return new Resolution(world, Pending, happened);
     }
 
     private Resolution Work(List<GameEvent> happened)

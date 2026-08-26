@@ -1,4 +1,5 @@
 using Marvel.Content.Setup;
+using Marvel.Cards.Dsl;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -546,6 +547,171 @@ public sealed class SinisterSyndicateTests
         AuthoredCards.Runner().WhenRevealed(world, card, player);
     }
 
+    [Rule("rr:attack-player-ability-type.step.7")]
+    [Fact]
+    public void ShockerStunsTheHeroThatAttackedIt()
+    {
+        // "**Forced Response:** After Shocker is attacked, stun the attacking
+        // character." `rr:attack-player-ability-type.step.7` lists "after
+        // [character] is attacked" among the forced abilities an attack's
+        // resolution triggers -- and it is the reason a character's basic
+        // attack is a step of the agenda rather than a call that returns.
+        var world = Deal();
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        var shocker = world.CreateCard(
+            AuthoredCards.SyndicateShocker,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        BasicPowers.BasicAttack(world, Cards, 0, shocker, []);
+        Run(world);
+
+        Assert.True(shocker.Damage > 0, "the attack landed");
+        Assert.True(Statuses.Has(world, identity, Statuses.Stunned));
+    }
+
+    [Rule("rr:ally.2")]
+    [Rule("rr:you-your.15")]
+    [Fact]
+    public void AnAllyThatAttacksIsStunnedAndItsControllerIsNot()
+    {
+        // "The attacking **character**", not the attacking player.
+        // `rr:ally.2` lets a player use an ally to attack, and
+        // `rr:you-your.15` is emphatic that an ally's attack is **not**
+        // performed by that player's identity -- so the hero standing behind
+        // it is untouched.
+        var world = Deal();
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        var cat = Ally(world, BlackCat, 0);
+        var shocker = world.CreateCard(
+            AuthoredCards.SyndicateShocker,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        BasicPowers.AllyPower(world, Cards, cat, shocker, BasicPowers.AttackVerb, []);
+        Run(world);
+
+        Assert.True(Statuses.Has(world, cat, Statuses.Stunned));
+        Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
+    }
+
+    [Rule("rr:attack-player-ability-type.step.9")]
+    [Rule("rr:consequential-damage.1")]
+    [Fact]
+    public void AnAllysConsequentialDamageComesAfterTheEnemyHasAnswered()
+    {
+        // `.step.9` puts consequential damage last, after the forced abilities
+        // of `.step.7`. `rr:consequential-damage.1` says the same the other way
+        // round -- "after resolving abilities that are triggered by the ally
+        // attacking or thwarting".
+        //
+        // The order is observable because `rr:ally.3`'s parenthesis makes the
+        // stun matter: "if an ally attempts to attack or thwart **while stunned
+        // or confused**, respectively, that ally will not take consequential
+        // damage." The ally here was not stunned when it attacked, so it takes
+        // the damage; Shocker's stun landing first would not change that, and
+        // what this pins is that both happened rather than one replacing the
+        // other.
+        // Spider-Woman rather than Black Cat: the consequential icons sit
+        // under the field that was used, and Black Cat's star is on her THW.
+        // An ally with no icon under its ATK takes nothing for attacking,
+        // which would make this test pass without the step existing.
+        var world = Deal();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var woman = Ally(world, SpiderWoman, 0);
+        var shocker = world.CreateCard(
+            AuthoredCards.SyndicateShocker,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        BasicPowers.AllyPower(world, Cards, woman, shocker, BasicPowers.AttackVerb, []);
+        var happened = Run(world);
+
+        Assert.True(Statuses.Has(world, woman, Statuses.Stunned));
+        Assert.Equal(1, woman.Damage);
+
+        // The order, which is the whole claim. Both happen either way; only
+        // the sequence says whether the consequential damage was a step after
+        // `.step.7` or a tail on the attack itself.
+        var verbs = happened.Select(what => what.Verb).ToList();
+        Assert.True(
+            verbs.IndexOf("Give_Status") < verbs.IndexOf("Consequential_Damage"),
+            $"the stun must come first; the events were {string.Join(", ", verbs)}");
+    }
+
+    [Rule("rr:dash-value.3")]
+    [Fact]
+    public void AsABoostCardShockerStunsTheStrongestCharacterYouControl()
+    {
+        // "★ **Boost:** Stun the character you control with the highest ATK
+        // value." Spider-Man's ATK is 2 and Black Cat's is 1, so the hero is
+        // the one that goes down.
+        var world = Deal();
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        var cat = Ally(world, BlackCat, 0);
+        var card = world.CreateCard(
+            AuthoredCards.SyndicateShocker, world.AreaOf(DeckType.BoostingArea));
+
+        AuthoredCards.Runner().Boost(world, card, 0);
+        Run(world);
+
+        Assert.True(Statuses.Has(world, identity, Statuses.Stunned));
+        Assert.False(Statuses.Has(world, cat, Statuses.Stunned));
+    }
+
+    [Rule("rr:attack-player-ability-type.step.8")]
+    [Rule("rr:response.1")]
+    [Fact]
+    public void AnOptionalResponseToYourOwnAttackIsAskedAndCanBeTaken()
+    {
+        // `.step.8` is the other half of `.step.7`: "**non-forced** abilities
+        // with the triggers listed above." A non-forced ability is a question,
+        // and until this the player's own turn had nowhere to put one -- the
+        // turn took an option, resolved it, and asked the turn prompt again, so
+        // an ability waiting in a window was offered and then refused with
+        // "taking that is not implemented".
+        //
+        // Written here rather than authored on a card, because no printed card
+        // the engine reaches yet carries an optional response to an attack.
+        // What is under test is the route, not a card.
+        var book = AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "24045", "name": "test", "abilities": [ {
+                "name": "test",
+                "trigger": { "event": "WhenCharacterAttacks", "timing": "Response",
+                             "subject": "this" },
+                "effect": { "giveStatus": { "card": "attacker", "status": "confused" } }
+            } ] } ] }
+            """);
+
+        var world = Deal();
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        var shocker = world.CreateCard(
+            AuthoredCards.SyndicateShocker,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var game = Game.Begin(world, Cards, new Marvel.Cards.Run.AbilityRunner(book));
+
+        // Into the turn, then attack.
+        game.Resolve(Decision.Decline);
+        var attack = game.Pending!.Affordances.First(
+            option => option.Verb == BasicPowers.AttackVerb
+                && option.Targets!.Legal.Contains(shocker.ObjectId));
+        game.Resolve(Decision.Take(attack.Id, [shocker.ObjectId], []));
+
+        // The window opened during the player's own turn, and it is the
+        // ability that is on offer rather than the turn's options.
+        Assert.Equal(Question.Opportunity, game.Pending!.Asking);
+        game.Resolve(Decision.Take(game.Pending.Affordances[0].Id));
+
+        Assert.True(Statuses.Has(world, identity, Statuses.Confused));
+
+        // And the turn came back afterwards, because `rr:player-turn` lets
+        // every option but changing form "be performed as many times as the
+        // player is able".
+        Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+    }
+
     /// <summary>Empties a deck to the removed area, and answers with it.</summary>
     private static Area Emptied(World world, DeckType type)
     {
@@ -588,7 +754,7 @@ public sealed class SinisterSyndicateTests
     /// answer to what cannot -- a card's own choice is not cancellable, because
     /// the ability is resolving and one of the things it offers will happen.
     /// </summary>
-    private static void Run(World world)
+    private static List<GameEvent> Run(World world)
     {
         var abilities = AuthoredCards.Runner();
         var events = new List<GameEvent>();
@@ -599,6 +765,8 @@ public sealed class SinisterSyndicateTests
             Sequence.Answer(world, Cards, abilities, asked, Decline(asked), events);
             asked = Sequence.Work(world, Cards, abilities, events);
         }
+
+        return events;
     }
 
     private static Decision Decline(Prompt asked) =>
