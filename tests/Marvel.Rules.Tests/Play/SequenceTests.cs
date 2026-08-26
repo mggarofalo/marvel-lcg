@@ -195,21 +195,17 @@ public sealed class SequenceTests
     }
 
     /// <summary>No card waits in any window.</summary>
-    private class Silent : ICardAbilities
+    private class Silent : NoCardAbilities
     {
-        public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
 
-        public virtual IReadOnlyList<PendingAbility> Waiting(
-            World world, Occurrence occurrence, WindowKind window) => [];
-
-        public IReadOnlyList<GameEvent> Resolve(
+        public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability)
         {
             Resolved.Add(ability.Card);
             return [];
         }
 
-        public Affordance Describe(World world, PendingAbility ability) =>
+        public override Affordance Describe(World world, PendingAbility ability) =>
             new(Handle, "Use", ability.Card, ability.Player, "an interrupt");
 
         public List<int> Resolved { get; } = [];

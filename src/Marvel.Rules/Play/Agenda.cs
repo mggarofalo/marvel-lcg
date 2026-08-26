@@ -249,6 +249,19 @@ public static class Steps
     public const string RevealEncounterCard = "RevealEncounterCard";
 
     /// <summary>Step 5 — <c>rr:villain-phase.step.5</c>.</summary>
+    /// <summary>
+    /// A card ability waiting for a player to choose between its options —
+    /// <c>rr:choose-option</c>.
+    /// </summary>
+    /// <remarks>
+    /// A step rather than a call for the same reason an attack is one: the
+    /// ability has to stop and ask, and an interpreter that returns a list of
+    /// events has nowhere to stop. What suspends is the ability; what resumes
+    /// it is the answer to this.
+    /// </remarks>
+    public const string ChooseOption = "ChooseOption";
+
+    /// <summary>Step 5 — <c>rr:villain-phase.step.5</c>.</summary>
     public const string PassFirstPlayerToken = "PassFirstPlayerToken";
 
     /// <summary>Step 6 — <c>rr:villain-phase.step.6</c>.</summary>
@@ -310,6 +323,7 @@ public static class Steps
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
+        [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 
         // Two conditions at one moment, because `rr:villain-phase.step.6` is

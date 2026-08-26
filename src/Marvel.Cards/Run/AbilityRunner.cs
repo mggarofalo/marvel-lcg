@@ -34,6 +34,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 {
     private readonly AbilityBook book = book;
 
+    /// <summary>The verb an option carries on the wire.</summary>
+    public const string ChooseVerb = "Choose_Option";
+
+    private static readonly string[] Branches = ["then", "else"];
+
     /// <summary>The authored cards, whether or not they do anything.</summary>
     public IReadOnlySet<string> Authored => book.Authored;
 
@@ -161,6 +166,100 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return events;
     }
 
+    /// <inheritdoc/>
+    public Prompt? Choosing(World world, Card source, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(source);
+
+        return new Prompt(
+            Player: player,
+            Asking: Question.Option,
+            When: TimingPriority.Untimed,
+            Trigger: Steps.CardRevealed,
+            Label: $"{source.FaceId}: choose an option",
+
+            // `rr:choose-option` gives no way out. The ability is resolving,
+            // and one of its options is going to happen.
+            Cancellable: false,
+            Affordances:
+            [
+                .. Options(source).Select((option, index) => new Affordance(
+                    Id: index,
+                    Verb: ChooseVerb,
+                    AnchorId: source.ObjectId,
+                    AnchorPlayer: World.Scenario,
+                    Label: option.Kind)),
+            ]);
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Chose(World world, Card source, int player, Decision input)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(input);
+
+        var options = Options(source);
+        if (input.IsDecline || input.Affordance < 0 || input.Affordance >= options.Count)
+        {
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' offers {options.Count} options and none of them is "
+                + $"number {input.Affordance}");
+        }
+
+        var events = new List<GameEvent>();
+        var occurrence = new Occurrence(
+            0, [Steps.CardRevealed], Subject: source.ObjectId, Player: player);
+        Run(options[input.Affordance], new Cast(world, source, occurrence, player, events, this));
+        return events;
+    }
+
+    /// <summary>The one choice a card offers, found again from the card.</summary>
+    /// <remarks>
+    /// A step cannot carry an effect tree, so it carries the card and the node
+    /// is looked up again. That makes "exactly one choice per card" the price,
+    /// and it is charged by name: a second one would make which of them is
+    /// waiting a guess.
+    /// </remarks>
+    private List<AbilityNode> Options(Card source)
+    {
+        var found = book.On(source.FaceId)
+            .SelectMany(ability => Choices(ability.Effect))
+            .ToList();
+
+        return found.Count == 1
+            ? [.. Nodes(found[0].Require("options"))]
+            : throw new RulesNotImplementedException(
+                $"'{source.FaceId}' holds {found.Count} choices, and exactly one can be "
+                + "waiting on an answer");
+    }
+
+    /// <summary>Every <c>choose</c> node in one effect tree.</summary>
+    private static IEnumerable<AbilityNode> Choices(AbilityNode node)
+    {
+        if (node.Kind == "choose")
+        {
+            yield return node;
+            yield break;
+        }
+
+        var children = node.Kind switch
+        {
+            "seq" => Nodes(node.Argument),
+            "if" => Branches
+                .Select(node.Field)
+                .Where(branch => branch is not null)
+                .Select(branch => Tree(branch!)),
+            _ => [],
+        };
+
+        foreach (var found in children.SelectMany(Choices))
+        {
+            yield return found;
+        }
+    }
+
     /// <summary>Whether one ability answers this occurrence, in this window.</summary>
     private static bool Answers(
         CardAbility ability, Card card, Occurrence occurrence, WindowKind window)
@@ -197,9 +296,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             case "seq":
                 foreach (var step in Nodes(node.Argument))
                 {
+                    if (cast.Suspended)
+                    {
+                        // A `choose` stops the ability until a player answers,
+                        // and resuming part-way through one is not written. So
+                        // an effect *after* a choice is refused by name rather
+                        // than run before the choice it was meant to follow --
+                        // which is the reading that looks like it worked.
+                        throw new RulesNotImplementedException(
+                            $"'{cast.Source.FaceId}' has an effect after a choice, and "
+                            + "resuming an ability part-way through is not implemented");
+                    }
+
                     Run(step, cast);
                 }
 
+                break;
+
+            case "choose":
+                Choose(node, cast);
                 break;
 
             case "if":
@@ -414,6 +529,43 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     // ---- reading a value ---------------------------------------------------
+
+    /// <summary>
+    /// "Choose to either … or …" — <c>rr:choose-option</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The ability stops here.</b> An interpreter that returns a list of
+    /// events has nowhere to ask a question, so the choice becomes a step on
+    /// the agenda and what resumes the ability is the answer to it. The step
+    /// carries the source card and the seat; <see cref="Options"/> finds the
+    /// node again from the card, which is why an ability may hold only one.
+    /// </para>
+    /// <para>
+    /// <c>rr:choose-game-element.1</c> settles who is asked, and it is the
+    /// player resolving the ability — not the first player, and not the card's
+    /// owner, which an encounter card has not got.
+    /// </para>
+    /// </remarks>
+    private static void Choose(AbilityNode node, Cast cast)
+    {
+        int offered = Nodes(node.Require("options")).Count();
+        if (offered < 2)
+        {
+            throw new AbilityException(
+                $"'{cast.Source.FaceId}' offers a choice of {offered}, which is not a choice");
+        }
+
+        cast.World.Agenda.Then(new PhaseStep(
+            Steps.ChooseOption,
+            cast.World.Agenda.Current?.Round ?? 0,
+            2,
+            Index: cast.Player,
+            Subject: cast.Source.ObjectId,
+            Seat: cast.Player));
+
+        cast.Suspend();
+    }
 
     /// <summary>"… heals N damage" — <c>rr:heal</c>.</summary>
     /// <remarks>
@@ -702,5 +854,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// this sentence and not about the game.
         /// </remarks>
         public Dictionary<string, long> Results { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>Whether this ability has stopped to ask a question.</summary>
+        public bool Suspended { get; private set; }
+
+        /// <summary>Stops the ability here — <c>rr:choose-option</c>.</summary>
+        public void Suspend() => Suspended = true;
     }
 }

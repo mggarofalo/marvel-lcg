@@ -265,13 +265,42 @@ public sealed class AbilityDataTests
         // Stated as a set so that a card added to the dataset is a deliberate
         // act with a test behind it, not something that accumulates. The rule
         // this file is under: a card is authored when something reaches it.
+        string[] named =
+        [
+            AuthoredCards.SpiderMan, AuthoredCards.Charge, AuthoredCards.Shocker,
+            AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
+            AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
+            AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,
+            AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
+            .. AuthoredCards.ReadAndSilent,
+        ];
+
         Assert.Equal(
-            [
-                AuthoredCards.SpiderMan, AuthoredCards.Charge, AuthoredCards.Shocker,
-                AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
-                AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare, AuthoredCards.FalseAlarm,
-                AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
-            ],
+            named.Order(StringComparer.Ordinal),
             AuthoredCards.Book.Authored.Order(StringComparer.Ordinal));
     }
+
+    [Fact]
+    public void ACardReadAndFoundEmptyIsNotACardNobodyRead()
+    {
+        // The distinction the dataset exists to be able to make. Five of the
+        // Rhino scenario's cards carry no ability at all -- a keyword the
+        // engine already reads, a printed icon, or a rule restated on the card
+        // -- and each is a row saying so.
+        //
+        // Revealing one resolves to silence, which is correct. Revealing a card
+        // nobody has read throws, which is also correct. A dataset that could
+        // not tell them apart would have to pick one, and either choice is
+        // wrong for half the pool.
+        var world = new World(Printed, players: 1);
+        world.CreateSeat("p0");
+        var runner = AuthoredCards.Runner();
+
+        foreach (string faceId in AuthoredCards.ReadAndSilent)
+        {
+            var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
+            Assert.Empty(runner.WhenRevealed(world, card, 0));
+        }
+    }
+
 }

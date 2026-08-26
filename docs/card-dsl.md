@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and eleven cards in `datasets/abilities/abilities.json`.
+`src/Marvel.Cards`, and seventeen cards in `datasets/abilities/abilities.json` — seventeen of the Rhino scenario's twenty-four.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -590,7 +590,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | | |
 |---|---|
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
-| Control | `seq`, `if` |
+| Control | `seq`, `if`, `choose` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast` |
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes` |
@@ -619,6 +619,30 @@ defeated character standing. Threat written straight to `k_threat` walks past
 threat reaches its target however the threat arrived. Both are one-line
 mutations that no state assertion in the card tests would catch, which is why
 the tests assert the tough card and the ending rather than the number.
+
+**`choose` is the shape the interpreter did not have.** Everything else a card
+could do was something the engine could finish; "choose to either take 2 damage
+or place 1 threat on the main scheme" is not — the ability has to stop, a player
+has to answer, and only then does anything happen.
+
+The mechanism is the agenda, the same one an activation uses. `choose` suspends
+the ability and puts a `ChooseOption` step behind the step that is running; the
+step asks; the answer runs the option. That gets `rr:surge.2`'s "finish
+resolving the current card first" for free, which an inline question could not.
+
+Two bounds are charged by name rather than guessed at:
+
+- **A step carries a card, not an effect tree.** So the node is found again
+  from the card, and a card holding *two* choices is refused — which of them
+  was waiting would otherwise be a guess.
+- **Nothing resumes an ability part-way through.** An effect *after* a choice
+  in a `seq` throws, rather than running before the choice it was written to
+  follow. That is the failure that looks like it worked.
+
+`rr:choose-game-element.1` settles who is asked: the player resolving the
+ability. For a revealed encounter card that is the player it was dealt to — not
+the first player, and not the card's owner, which an encounter card has not got.
+`rr:choose-option` gives no way out, so the prompt is not cancellable.
 
 **`result.*` is the first thing the design called for that could not be faked.**
 "Rhino heals 4 damage. **If no damage was healed this way**, this card gains
@@ -711,10 +735,23 @@ complete, the engine is not, and the message says which node to write. Growing
 the engine is adding a case; growing the game is adding a row; they are
 different activities and they read differently.
 
-The gaps that have that shape today, all of them from the Rhino scenario's own
-twenty-four cards: a `choose` between two effects (Hydra Bomber), a query for a
-card the player controls (Caught Off Guard), a search of the encounter deck
-(Rhino's second stage), an attachment that redirects damage (Armored Rhino
-Suit), a **Hero Action** with a resource cost (Enhanced Ivory Horn), the crisis
-icon (Crowd Control), and the nemesis set (Shadow of the Past). Eleven of the
-twenty-four are written; those seven are what is left.
+The gaps that have that shape today, all from the Rhino scenario's own
+twenty-four cards: a query for a card the player controls (Caught Off Guard),
+a search of the encounter deck (Rhino's second stage), an attachment that
+redirects damage (Armored Rhino Suit), a **Hero Action** with a resource cost
+(Enhanced Ivory Horn), a delayed effect on an attack's damage (Stampede), damage
+assigned among several characters (Explosion), and the nemesis set (Shadow of
+the Past). Seventeen of the twenty-four are written; those seven are what is
+left.
+
+### Read and empty is not unread
+
+Five of those seventeen carry no ability at all — Rhino's first stage, Hydra
+Mercenary, Sandman, Crowd Control and the main scheme's B side. Each is a
+keyword the engine already reads, a printed icon, or a rule restated on the
+card, and each is a row in the dataset saying so.
+
+That is the distinction the file exists to be able to make. Revealing one of
+them resolves to silence, which is correct. Revealing a card nobody has read
+throws, which is also correct. A dataset that could not tell them apart would
+have to pick one behaviour, and either choice is wrong for half the pool.

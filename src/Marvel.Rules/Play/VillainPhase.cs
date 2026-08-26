@@ -34,27 +34,67 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player);
 
+    /// <summary>
+    /// The question a suspended ability is waiting on —
+    /// <c>rr:choose-option</c>.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:choose-game-element.1</c> settles who is asked, and it is the
+    /// player resolving the ability rather than the first player or the card's
+    /// owner. An encounter card has no owner, so there would be nobody else to
+    /// ask.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="source">The card whose ability is waiting.</param>
+    /// <param name="player">The seat resolving it.</param>
+    /// <returns>The question, or null when there is nothing to ask.</returns>
+    Prompts.Prompt? Choosing(World world, Card source, int player);
+
+    /// <summary>Resolves the option that answer names.</summary>
+    /// <param name="world">The world.</param>
+    /// <param name="source">The card whose ability is waiting.</param>
+    /// <param name="player">The seat resolving it.</param>
+    /// <param name="input">Which option they took.</param>
+    /// <returns>What changed.</returns>
+    IReadOnlyList<GameEvent> Chose(World world, Card source, int player, Decision input);
+
 
 }
 
 /// <summary>Nothing has an ability. What an engine with no cards ported does.</summary>
-public sealed class NoCardAbilities : ICardAbilities
+/// <remarks>
+/// Open rather than sealed, and every member virtual, so that something which
+/// does <i>one</i> thing can say only that. Tests want a card that answers a
+/// window and nothing else far more often than they want the whole interface,
+/// and nine copies of "return an empty list" is nine places for this interface
+/// to grow through.
+/// </remarks>
+public class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
-    public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
+    public virtual IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
 
     /// <inheritdoc/>
-    public IReadOnlyList<PendingAbility> Waiting(
+    public virtual Prompts.Prompt? Choosing(World world, Card source, int player) => null;
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, Decision input) =>
+        throw new RulesNotImplementedException(
+            "no card has an ability, so none of them is waiting on a choice");
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<PendingAbility> Waiting(
         World world, Occurrence occurrence, WindowKind window) => [];
 
     /// <inheritdoc/>
-    public IReadOnlyList<GameEvent> Resolve(
+    public virtual IReadOnlyList<GameEvent> Resolve(
         World world, Occurrence occurrence, PendingAbility ability) =>
         throw new RulesNotImplementedException(
             "nothing is waiting in any window, so nothing can be resolved from one");
 
     /// <inheritdoc/>
-    public Prompts.Affordance Describe(World world, PendingAbility ability) =>
+    public virtual Prompts.Affordance Describe(World world, PendingAbility ability) =>
         throw new RulesNotImplementedException(
             "nothing is waiting in any window, so nothing can be described from one");
 }
@@ -186,6 +226,9 @@ public static class VillainPhase
                     step.Round, events);
                 break;
 
+            case Steps.ChooseOption:
+                return abilities.Choosing(world, world.Cards[step.Subject], step.Seat);
+
             case Steps.PassFirstPlayerToken:
                 PassFirstPlayerToken(world);
                 break;
@@ -217,16 +260,27 @@ public static class VillainPhase
     /// <summary>Give a step the answer it stopped for.</summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">What cards do.</param>
     /// <param name="step">The step that asked.</param>
     /// <param name="input">The player's answer.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void Answered(
-        World world, ICardFacts facts, PhaseStep step, Decision input, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step, Decision input,
+        List<GameEvent> events)
     {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(events);
+
         switch (step.What)
         {
             case Steps.DeclareDefender:
                 Attack.Defend(world, facts, input, events);
+                break;
+
+            case Steps.ChooseOption:
+                events.AddRange(
+                    abilities.Chose(world, world.Cards[step.Subject], step.Seat, input));
                 break;
 
             default:
