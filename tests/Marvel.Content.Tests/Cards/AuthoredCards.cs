@@ -29,6 +29,12 @@ internal static class AuthoredCards
     /// <summary>The printed id of "Charge".</summary>
     public const string Charge = "01099";
 
+    /// <summary>The printed id of "Hard to Keep Down".</summary>
+    public const string HardToKeepDown = "01104";
+
+    /// <summary>The printed id of "False Alarm".</summary>
+    public const string FalseAlarm = "01112";
+
     /// <summary>The printed id of "I'm Tough".</summary>
     public const string ImTough = "01105";
 
