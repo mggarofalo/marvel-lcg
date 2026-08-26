@@ -1,73 +1,40 @@
 # The setup dataset, and the order a board is dealt
 
-Tracked as `MARVEL-176`. Written against engine build `0.5.9.x`, measured on
-2026-08-24.
+Tracked as `MARVEL-176`.
 
 This dataset describes what the engine is asked to compute *with* — which
-scenario holds which encounters, which hero opens with which forty cards. It
-sat alongside three others describing how the engine *computes*: the RNG
-stream, the state digest and the prompts. Those three were emitted by the
-Python engine and were dropped with it; this one is content and stays.
+scenario holds which encounters, which hero opens with which forty cards.
 
-**Its generator no longer exists — MARVEL-252.** The committed dataset is
-correct and the engine reads it; what is missing is the ability to rebuild it,
-and its inputs were hand-maintained data with no upstream to re-derive from.
+It is **authored**: most of what it records is printed in a scenario's rules
+insert and on the back of a product box rather than on any card, so there is
+nothing to generate it from and no upstream to vendor it from. See
+[its UPSTREAM.md](../datasets/setup/UPSTREAM.md) for what that means and what
+gates it instead.
 
 ## What is in it
 
 One file, `datasets/setup/setup.json`, about 195 KB, three groups keyed by the
 name the engine resolves:
 
-| group | records | from |
-|---|---|---|
-| `campaigns` | 135 | `data/scenarios/`, `data/challenges/`, `data/scenarios_custom/` |
-| `heroes` | 63 | `deck/starter/` |
-| `encounter_sets` | 184 | `data/encounter_sets/`, `data/nemesis/` |
+| group | records |
+|---|---|
+| `campaigns` | 135 |
+| `heroes` | 63 |
+| `encounter_sets` | 184 |
 
-**Names, not paths.** The engine resolves a bare name against an ordered folder
-list (`engine/file/manager.py:FindJsonPath`), so the name is the identifier and
-the folder is an implementation detail. The emitter walks the folders in that
-same order, the first hit wins, and any later hit is written into a `shadowed`
-key rather than silently discarded — a name whose meaning depends on a search
-order is exactly what a second engine will get wrong. It is empty today.
+**Names, not paths.** A scenario, a hero and an encounter set are each
+identified by a bare name, and the three groups are three separate tables — so
+a name in two of them is two different things and not an ambiguity.
+**Eleven names are in two**, every one of them a character who is both a
+playable hero and the villain of their own scenario: Black Widow, Captain
+America, Captain Marvel, Iron Man, Magneto, Nebula, Spider-Woman, Venom, and
+three more. Harmless here; not harmless to anything that flattens the three
+into one lookup, which is why `SetupDatasetTests` pins the list.
 
-Three folders the engine searches are **not** read. `./deck/` is gitignored, so
-it holds whatever decks the developer built this morning, and a fixture compared
-byte for byte cannot read a folder that differs per checkout — first-party
-starter decks are content, a deck somebody made is not. The other two hold no
-file of any of these kinds: `./data/` holds `cards.json` and its three
-neighbours, none of them a scenario or an encounter set; and `.`, the working
-directory, which `FindJsonPath` prepends to *every* list and searches first,
-holds `launch.json` and nothing else — reading it would emit a `launch`
-campaign, a `launch` hero and a `launch` encounter set out of one editor config.
-
-`.` is the exclusion worth stating out loud, because it is searched **first**.
-A collision there would win in the engine and would not appear under
-`shadowed`, which only records the later hit. So the emitter's folder list is
-held against the order `FindJsonPath` really walks — read out of the function by
-spying on `FileManager.Exists`, not re-derived from the module constants — and
-against the claim that no name is held by two groups at once. Without that
-check the dataset could quietly stop covering a scenario, with every
-byte-comparison gate still green.
-
-## It is a projection, not a translation
-
-Every record is produced by loading the file through the same dataclass the
-engine loads it through — `CampaignDescriptor`, `HeroDescriptor`,
-`EncounterSetDescriptor` — so **a key the engine ignores is a key this file does
-not have**. `deck/starter/spider_man.json` carries `set_aside` and `metadata`;
-`HeroDescriptor` declares neither; `Json.ConvertDictToDataclass` drops both; so
-does the dataset. A port written from the raw files would implement fields the
-oracle does not have.
-
-One field is dropped on purpose: `version`. It stamps the format the Python
-engine wrote, `UpdateVersion` is `pass` on all three descriptors, and carrying it
-would churn the fixture on a bump that changes no setup.
-
-`modular_sets` stays separate from `encounter_sets`. `SceneLoader.NewFromJson`
-appends one to the other *only when the caller names no sets of its own*, so
-resolving them at emit time would make the other case — a scenario played with
-chosen modulars — inexpressible. `deal.EncounterSetNames` does the join.
+`modular_sets` stays separate from `encounter_sets`. A scenario's printed
+insert names the sets it always uses and the modular sets it draws from, and
+those are different questions — resolving them into one list would make a
+scenario played with chosen modulars inexpressible. `Dealer` does the join.
 
 ## The order a board is dealt in
 
@@ -267,13 +234,11 @@ carries MarvelSDB's printed spelling, `Hero for Hire` and `S.H.I.E.L.D.`.
 Upper-casing, dropping a trailing full stop and turning spaces into underscores
 reproduces every `t_` key on this board.
 
-**Derivation is not the same as having the engine's list.** Compared across 3,999
-cards, the printed traits and the Python engine's own trait lists disagree
-outright on **142** — the engine gives `01172` the `CRIMINAL` trait and the
-printed card has none; `02033` is the other way round. None is on the milestone
-board, so this is a gap rather than a failure, and it will surface the moment a
-replay reaches one of them. The fix is for `datasets/cards/` to carry the
-engine's trait list beside the printed one.
+`datasets/cards/` carries one trait list and it is the printed one, so
+deriving the key from it is the whole of the answer. It did not always: the
+dataset was once a join carrying a second, engine-side list beside the printed
+one, and the two disagreed about a hundred and forty cards. See
+[card-dataset.md](card-dataset.md).
 
 ### What this does not yet do
 
