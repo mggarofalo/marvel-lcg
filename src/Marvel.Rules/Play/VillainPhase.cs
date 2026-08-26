@@ -52,25 +52,51 @@ public interface ICardAbilities : IWindowAbilities
     IReadOnlyList<GameEvent> Boost(World world, Card card, int player);
 
     /// <summary>
-    /// Resolves a defeated card's "When Defeated" abilities —
-    /// <c>rr:when-defeated-abilities</c>.
+    /// Resolves the abilities that trigger when a card is defeated —
+    /// <c>rr:damage.step.7</c>.
     /// </summary>
     /// <remarks>
-    /// <c>.2.1</c> puts it before the card goes: "a defeated card leaves play
-    /// <b>after</b> its When Defeated ability is resolved, if any." So the
-    /// card is still where it was while this runs, which is what lets the
-    /// ability read its own tokens and what is attached to it.
+    /// <para>
+    /// <b>One timing point, two kinds of card.</b> Step 7 of <c>rr:damage</c>
+    /// is "abilities that trigger <i>when [character] is defeated…</i>
+    /// <i>(including <b>When Defeated</b> abilities)</i>", and the parenthesis
+    /// is the whole of it: the defeated card's own ability and another card's
+    /// forced interrupt on the same defeat are the same moment. Genetic
+    /// Experiments — "<b>Forced Interrupt</b>: When attached minion is
+    /// defeated, place 2 threat on Gene Pool" — is the second kind, and
+    /// <c>rr:when-defeated-abilities.1</c> makes the first kind
+    /// "<b>Forced Interrupt</b>: When this card is defeated…" in so many
+    /// words.
+    /// </para>
+    /// <para>
+    /// It sits <i>after</i> the damage, which is why it is a call rather than
+    /// a window. <c>rr:damage.step.5</c> places the damage and
+    /// <c>.step.8</c> discards the defeated card; step 7 is between them, and
+    /// the occurrence's interrupt window closed before step 1. Nothing is lost
+    /// by that for a <i>forced</i> ability — <c>rr:forced.1</c> leaves nothing
+    /// to offer and nothing to decline. A non-forced interrupt on another
+    /// card's defeat would need a window that can ask, and is refused by name
+    /// rather than skipped.
+    /// </para>
+    /// <para>
+    /// <c>rr:when-defeated-abilities.2.1</c> puts all of it before the card
+    /// goes: "a defeated card leaves play <b>after</b> its When Defeated
+    /// ability is resolved, if any." So the card is still where it was while
+    /// this runs, which is what lets an ability read its own tokens and what
+    /// is attached to it — and what lets an attachment still be in play to
+    /// answer.
+    /// </para>
     /// </remarks>
     /// <param name="world">The world.</param>
     /// <param name="card">The card that was defeated.</param>
     /// <param name="defeated">
-    /// Who did it and how. The card's own ability may need it —
+    /// Who did it and how. An ability may need it —
     /// "<b>When Defeated</b>: the player who defeated this scheme confuses
     /// their identity" — and it is not readable from the board, because the
     /// board records what a card <i>is</i> and not what happened to it.
     /// </param>
     /// <returns>What changed.</returns>
-    IReadOnlyList<GameEvent> WhenDefeated(World world, Card card, Defeated defeated);
+    IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated);
 
     /// <summary>
     /// Step 1 of dealing damage — <c>rr:damage.step.1</c>.
@@ -314,7 +340,7 @@ public class NoCardAbilities : ICardAbilities
     public virtual IReadOnlyList<GameEvent> Boost(World world, Card card, int player) => [];
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> WhenDefeated(
+    public virtual IReadOnlyList<GameEvent> WhenCardDefeated(
         World world, Card card, Defeated defeated) => [];
 
     /// <inheritdoc/>

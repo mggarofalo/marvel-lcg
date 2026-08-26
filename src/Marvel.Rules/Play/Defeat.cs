@@ -59,6 +59,16 @@ public enum Outcome
 /// of its own. <see cref="Record"/> is where that happens, and it is why a
 /// card can answer "after an ally is defeated" at all.
 /// </para>
+/// <para>
+/// <b>The interrupt tier is not in that window.</b> <c>rr:damage</c> numbers
+/// nine steps and puts "abilities that trigger <i>when [character] is
+/// defeated…</i>" at <c>.step.7</c> — after <c>.step.5</c> places the damage,
+/// before <c>.step.8</c> discards the card. So it is reached from inside the
+/// damage rather than from the window, which closed before <c>.step.1</c>.
+/// <c>ICardAbilities.WhenCardDefeated</c> is that step, and it holds a card's
+/// own "When Defeated" and another card's forced interrupt on the same defeat
+/// alike, because the parenthesis in <c>.step.7</c> says they are one moment.
+/// </para>
 /// </remarks>
 public static class Defeat
 {
@@ -88,17 +98,24 @@ public static class Defeat
 
         var defeated = Record(world, character, by, how);
 
-        // `rr:when-defeated-abilities.2.1` -- "a defeated card leaves play
-        // **after** its When Defeated ability is resolved, if any." So this
-        // runs while the card is still where it was, which is what lets the
-        // ability read its own tokens and what is attached to it.
+        // `rr:damage.step.7` -- "abilities that trigger *when [character] is
+        // defeated…* *(including **When Defeated** abilities)*". The card's own
+        // and every other card's forced interrupt on the same defeat, in the
+        // one place the rule puts them: after `.step.5` has placed the damage
+        // and before `.step.8` discards the card.
         //
-        // `.1` makes it "**Forced Interrupt**: when this card is defeated",
-        // and a forced interrupt has no choice in it -- there is nothing to
-        // offer and nothing to decline, so it resolves here rather than in the
-        // occurrence's interrupt window, which closed before the damage that
-        // caused this was dealt.
-        events.AddRange(world.Abilities.WhenDefeated(world, character, defeated));
+        // `rr:when-defeated-abilities.2.1` says the same thing from the card's
+        // side -- "a defeated card leaves play **after** its When Defeated
+        // ability is resolved, if any" -- so this runs while the card is still
+        // where it was, which is what lets an ability read its own tokens and
+        // what is attached to it.
+        //
+        // A call and not a window because everything here is forced, and
+        // `rr:forced.1` leaves nothing to offer and nothing to decline. The
+        // occurrence's interrupt window closed before the damage that caused
+        // this was dealt, and `rr:damage`'s own order is what says that is not
+        // where these belong.
+        events.AddRange(world.Abilities.WhenCardDefeated(world, character, defeated));
 
         switch (facts.Kind(character.FaceId))
         {
@@ -162,7 +179,7 @@ public static class Defeat
 
         // `rr:when-defeated-abilities.2` lists a side scheme among the cards
         // this happens to, and `.2.1` puts it before the card goes.
-        events.AddRange(world.Abilities.WhenDefeated(world, scheme, defeated));
+        events.AddRange(world.Abilities.WhenCardDefeated(world, scheme, defeated));
 
         if (!ToVictoryDisplay(world, facts, scheme, trigger, events))
         {
