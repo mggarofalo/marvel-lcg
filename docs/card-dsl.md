@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and three cards in `datasets/abilities/abilities.json`.
+`src/Marvel.Cards`, and six cards in `datasets/abilities/abilities.json`.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -591,10 +591,30 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 |---|---|
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if` |
-| Tests | `and`, `or`, `not`, `exists`, `hasStatus` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil` |
-| Queries | `query: villain`, `query: mainScheme` |
-| Bindings | `this`, `attachedTo`, `trigger.subject`, `trigger.player` |
+| Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes` |
+| Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou` |
+| Bindings | `this`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
+
+**`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
+activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
+player who is defending, so a card that causes one cannot resolve it and return
+a list of events. The node puts a step on the agenda, and `Agenda.Then` places
+it after the step that is running — which is also what `rr:surge.2` asks for:
+the card that caused the activation finishes resolving first.
+
+Which of the two happens is the *card's* to say, not the form's. `rr:activation.1`
+reads a player's form to choose between attacking and scheming, but that rule is
+about the activation the villain phase schedules. "Assault" says the villain
+attacks you, and reading the form again here would make it do nothing to a hero
+who had flipped since the card was dealt.
+
+**`inForm` is a test and not a trigger field**, because the printed `(Hero)` and
+`(Alter-Ego)` parentheses gate two abilities that are exclusive — `rr:form-change-form`
+opens with "a player can be in either hero or alter-ego form at a given time" —
+so they collapse to one `if`. It reads `Forms.In`, which answers from the faceup
+side rather than a flag, and answers a *set*: an identity can print more than
+two faces.
 
 `grantUntil` and `delayUntil` are two nodes rather than one because the rules
 make them two things: `rr:lasting-effects` is a condition that holds for a
@@ -640,8 +660,14 @@ wrong.
 
 ### What is deliberately still missing
 
-`gainSurge` is the honest example. "I'm Tough" has a surge branch, the data says
-so, and the interpreter throws naming the node. That is the shape every gap
-should have: the card is complete, the engine is not, and the message says which
-node to write. Growing the engine is adding a case; growing the game is adding a
-row; they are different activities and they now read differently.
+`gainSurge` used to be the honest example: "I'm Tough" had a surge branch, the
+data said so, and the interpreter threw naming the node. It is written now, and
+the shape it demonstrated is the one every gap should have — the card is
+complete, the engine is not, and the message says which node to write. Growing
+the engine is adding a case; growing the game is adding a row; they are
+different activities and they read differently.
+
+The gaps that have that shape today, all of them from the Rhino scenario's own
+twenty-four cards: `dealDamage`, `heal`, `placeThreat`, a `choose` between two
+effects, and a query for a card the player controls. Those are what stands
+between the engine and its first scenario in which every card does what it says.

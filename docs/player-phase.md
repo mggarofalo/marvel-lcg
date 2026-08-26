@@ -208,4 +208,7 @@ icon**". A villain's `14*` hit points do not shrink when somebody dies.
 
 `WholeGameTests` plays the Rhino board to an ending on four seeds — 24 to 53
 decisions across 4 to 8 rounds, cards paid for and played, defenders declared —
-and checks that one seed plays the same game twice, digest and all.
+and checks that one seed plays the same game twice, digest and all. It plays the
+same board at two and three players, because a second player makes every "in
+player order" sentence reachable and a third makes "the next clockwise player"
+stop meaning "the other one".

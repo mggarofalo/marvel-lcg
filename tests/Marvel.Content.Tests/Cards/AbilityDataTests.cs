@@ -266,7 +266,10 @@ public sealed class AbilityDataTests
         // act with a test behind it, not something that accumulates. The rule
         // this file is under: a card is authored when something reaches it.
         Assert.Equal(
-            [AuthoredCards.SpiderMan, AuthoredCards.Charge, AuthoredCards.ImTough],
+            [
+                AuthoredCards.SpiderMan, AuthoredCards.Charge, AuthoredCards.ImTough,
+                AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
+            ],
             AuthoredCards.Book.Authored.Order(StringComparer.Ordinal));
     }
 }

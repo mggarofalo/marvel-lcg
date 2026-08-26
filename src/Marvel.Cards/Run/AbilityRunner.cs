@@ -249,6 +249,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
                 break;
 
+            case "enemyAttacks":
+                Activate(node, cast, Steps.Attack);
+                break;
+
+            case "enemySchemes":
+                Activate(node, cast, Steps.Scheme);
+                break;
+
             case "draw":
                 Draw.Cards(
                     cast.World, Seat(node.Require("player"), cast),
@@ -269,6 +277,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "or" => Nodes(node.Argument).Any(each => Test(each, cast)),
         "not" => !Test(Tree(node.Argument), cast),
         "exists" => Find(node.Argument, cast) is not null,
+
+        // `rr:form` -- "(Hero)" and "(Alter-Ego)" on a card gate the ability by
+        // which form the player is in. Not a boolean: `Forms.Of` answers with a
+        // set, because a hero can print more than two faces.
+        "inForm" => Forms.In(
+            cast.World,
+            cast.World.Seats[Seat(node.Require("player"), cast)],
+            cast.World.Facts,
+            Word(node.Require("form"))),
+
         "hasStatus" => Find(node.Require("card"), cast) is { } host
             && Statuses.Has(cast.World, host, Word(node.Require("status"))),
         _ => throw new RulesNotImplementedException(
@@ -380,6 +398,79 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     // ---- reading a value ---------------------------------------------------
+
+    /// <summary>
+    /// "The villain attacks you", "the villain schemes" — an enemy activation
+    /// a card asked for.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Scheduled, not called.</b> <c>rr:attack-enemy-activation</c> is six
+    /// steps and one of them asks a player who is defending, so an activation
+    /// cannot resolve inside an ability that has to return. It goes on the
+    /// agenda, and <c>Agenda.Then</c> puts it after the step that is running —
+    /// which is what <c>rr:surge.2</c> wants anyway: finish resolving the card
+    /// before what it caused happens.
+    /// </para>
+    /// <para>
+    /// <b>Which activation is the card's to say.</b> <c>rr:activation.1</c>
+    /// reads it off the player's form — attack in hero form, scheme in
+    /// alter-ego form — but that rule is about the activation the villain phase
+    /// schedules. A card that says "the villain attacks you" has already
+    /// chosen, and reading the form here would make Assault do nothing to a
+    /// hero who had flipped since the card was dealt.
+    /// </para>
+    /// <para>
+    /// One step per enemy, in the order <see cref="Every"/> returns them.
+    /// <c>rr:minion.3</c> makes that order the player's choice; it is taken
+    /// here as the order the minions sit in the play area, deterministically
+    /// and stated, exactly as the villain phase's own step 2 takes it.
+    /// </para>
+    /// </remarks>
+    private static void Activate(AbilityNode node, Cast cast, string what)
+    {
+        // Against the player resolving the card. Every printed card that causes
+        // an activation says "you", and `rr:reveal.2` makes that the revealing
+        // player -- so there is no field here to name somebody else, and a card
+        // that names one grows the vocabulary then rather than leaving an
+        // untaken branch now.
+        int seat = cast.Player;
+
+        // The round the activation belongs to is the round the card was
+        // revealed in. Nothing else on the agenda can tell it.
+        int round = cast.World.Agenda.Current?.Round ?? 0;
+
+        foreach (var enemy in Every(node.Require("enemies"), cast))
+        {
+            cast.World.Agenda.Then(new PhaseStep(
+                what, round, 2, Index: seat, Subject: enemy.ObjectId, Seat: seat));
+        }
+    }
+
+    /// <summary>Every card a value names, which may be none.</summary>
+    /// <remarks>
+    /// A value that names one card answers with that one, so a card reading
+    /// "the villain attacks you" and one reading "each minion engaged with you
+    /// attacks you" are the same node with a different argument.
+    /// </remarks>
+    private static IReadOnlyList<Card> Every(AbilityValue value, Cast cast)
+    {
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } query
+            && query.Argument is AbilityValue.Word { Value: "minionsEngagedWithYou" })
+        {
+            // `rr:engage.1` -- "when a minion engages a player, it is placed in
+            // that player's play area". Engagement *is* which area the minion
+            // sits in, so this is a read of the board and not of a flag; and
+            // "you" is the player resolving the card, so a minion engaged with
+            // somebody else is not in this list however close it is on the
+            // table.
+            return [.. cast.World
+                .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player))
+                .Cards];
+        }
+
+        return Find(value, cast) is { } one ? [one] : [];
+    }
 
     /// <summary>Which card a value names, or null when it names none.</summary>
     private static Card? Find(AbilityValue value, Cast cast) => value switch

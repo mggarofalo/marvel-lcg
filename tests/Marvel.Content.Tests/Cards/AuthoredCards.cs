@@ -32,6 +32,15 @@ internal static class AuthoredCards
     /// <summary>The printed id of "I'm Tough".</summary>
     public const string ImTough = "01105";
 
+    /// <summary>The printed id of "Advance".</summary>
+    public const string Advance = "01186";
+
+    /// <summary>The printed id of "Assault".</summary>
+    public const string Assault = "01187";
+
+    /// <summary>The printed id of "Gang-Up".</summary>
+    public const string GangUp = "01189";
+
     /// <summary>The canonical dataset text. Declared first: <see cref="Book"/> reads it.</summary>
     public static string Text { get; } =
         File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json"));

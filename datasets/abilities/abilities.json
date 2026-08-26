@@ -57,6 +57,56 @@
           }
         }
       ]
+    },
+    {
+      "card": "01186",
+      "name": "Advance",
+      "note": "When Revealed: The villain schemes. rr:scheme is the fifth basic power and this is the villain using it outside its own activation, so it is scheduled as a Scheme step rather than resolved here. It is a scheme however the revealing player's form would have activated the villain: rr:activation.1 decides the *scheduled* activation of the villain phase, and this card has already decided.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "enemySchemes": { "enemies": { "query": "villain" } } }
+        }
+      ]
+    },
+    {
+      "card": "01187",
+      "name": "Assault",
+      "note": "When Revealed (Alter-Ego): This card gains surge. When Revealed (Hero): The villain attacks you. Two printed abilities gated on form, written as one 'if' because the two forms are exclusive: the parenthesis is a condition on the ability rather than two abilities that could both apply. 'You' is the player revealing the card, which is the seat the When Revealed occurrence carries.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "enemyAttacks": { "enemies": { "query": "villain" } } },
+              "else": { "gainSurge": 1 }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "01189",
+      "name": "Gang-Up",
+      "note": "When Revealed (Alter-Ego): This card gains surge. When Revealed (Hero): The villain and each minion engaged with you attacks you. Two activations rather than one attack by several enemies -- rr:attack-enemy-activation is one enemy's -- and a minion engaged with you attacking is the same thing villain phase step 2.b would have done. The order is the play area's, for the reason rr:minion.3 is taken that way there.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": {
+                "seq": [
+                  { "enemyAttacks": { "enemies": { "query": "villain" } } },
+                  { "enemyAttacks": { "enemies": { "query": "minionsEngagedWithYou" } } }
+                ]
+              },
+              "else": { "gainSurge": 1 }
+            }
+          }
+        }
+      ]
     }
   ]
 }
