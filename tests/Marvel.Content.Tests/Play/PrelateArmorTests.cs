@@ -264,6 +264,7 @@ public sealed class PrelateArmorTests
             board.World,
             new Occurrence(0, [Steps.CharacterAttacksEnemy], Subject: board.Unus.ObjectId),
             new PendingAbility(board.Unus.ObjectId, AbilityType.ForcedResponse, 0),
+            [],
             []));
 
         Assert.Contains("mandatory ability with a cost", refused.Message, StringComparison.Ordinal);

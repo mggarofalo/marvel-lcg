@@ -200,7 +200,7 @@ public sealed class SequenceTests
 
         public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying)
+            IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
         {
             Resolved.Add(ability.Card);
             return [];

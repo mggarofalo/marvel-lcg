@@ -33,8 +33,17 @@ public interface IWindowAbilities
     /// <param name="paying">
     /// The generators the player spent, by <c>ResourceSource.Effect</c>.
     /// </param>
+    /// <param name="chosen">
+    /// The objects the player chose for it, in the order they were chosen —
+    /// including any a <i>cost</i> asked for, which <c>rr:cost</c> makes a
+    /// choice like any other.
+    /// </param>
     IReadOnlyList<GameEvent> Resolve(
-        World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying);
+        World world,
+        Occurrence occurrence,
+        PendingAbility ability,
+        IReadOnlyList<int> paying,
+        IReadOnlyList<int> chosen);
 
     /// <summary>How to describe one ability to a player who may take it.</summary>
     /// <param name="world">The world.</param>
@@ -130,7 +139,7 @@ public static class Offering
                 // `rr:forced.1` -- a forced ability resolves without anybody being
                 // asked, so there is no payment to carry. A forced ability with
                 // a cost is refused by the runner rather than paid for here.
-                events.AddRange(abilities.Resolve(world, occurrence, forced[0], []));
+                events.AddRange(abilities.Resolve(world, occurrence, forced[0], [], []));
 
                 // rr:forced.6 -- each resolves as completely as possible before
                 // the next initiates, so the board is re-read rather than the

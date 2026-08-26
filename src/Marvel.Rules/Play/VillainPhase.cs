@@ -152,9 +152,18 @@ public interface ICardAbilities : IWindowAbilities
     /// <param name="world">The world.</param>
     /// <param name="ability">Which action, from <see cref="Actions"/>.</param>
     /// <param name="paying">Cards discarded to pay, by object id.</param>
+    /// <param name="chosen">
+    /// The objects chosen for it, in the order they were chosen. A cost can ask
+    /// for one — Hunted's "discard a card from your hand" names no resource and
+    /// no type, only a card — and <c>rr:initiating-abilities</c> keeps choosing
+    /// and paying in different steps, so the two lists arrive separately.
+    /// </param>
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> Act(
-        World world, PendingAbility ability, IReadOnlyList<int> paying);
+        World world,
+        PendingAbility ability,
+        IReadOnlyList<int> paying,
+        IReadOnlyList<int> chosen);
 
     /// <summary>
     /// The question a suspended ability is waiting on —
@@ -317,7 +326,8 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Act(
-        World world, PendingAbility ability, IReadOnlyList<int> paying) =>
+        World world, PendingAbility ability, IReadOnlyList<int> paying,
+        IReadOnlyList<int> chosen) =>
         throw new RulesNotImplementedException(
             "no card has an action, so none of them can be triggered");
 
@@ -347,7 +357,7 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Resolve(
         World world, Occurrence occurrence, PendingAbility ability,
-        IReadOnlyList<int> paying) =>
+        IReadOnlyList<int> paying, IReadOnlyList<int> chosen) =>
         throw new RulesNotImplementedException(
             "nothing is waiting in any window, so nothing can be resolved from one");
 

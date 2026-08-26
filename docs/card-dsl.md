@@ -590,6 +590,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | | |
 |---|---|
 | Envelope | `trigger { event, alsoHappened, timing, subject, form, player }`, `name`, `cost`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
+| Costs | `spend` (resource letters), `exhaust`, `discardFromHand` (a count) |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `inExpertMode`, `isKind`, `defeatedBy` |
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `dealEncounterCards`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
@@ -1390,3 +1391,38 @@ Retaliate killing an ally produced exactly that question before this existed.
 The line that falls out: **the trigger matches the occurrence, and the effect
 reads the cards involved.** `alsoHappened` is a fact about the occurrence.
 `isKind` on the defeated card is a fact about a card, and stays in the effect.
+
+### A cost can be a card rather than a number
+
+Hunted (`45072`): "**Alter-Ego Action:** Discard a card from your hand →
+discard this card." An obligation, so `rr:reveal.4` puts it into the revealing
+player's play area and it stays there; its printed hazard icon is a field the
+engine already reads, and this one sentence is the whole way out.
+
+Every cost written before it was resources. `rr:cost.3` spends them "by
+discarding cards from their hand to generate the resource or resources indicated
+at the bottom-left corner of the card" — the letters are what is spent and the
+discard is how they are generated. **This cost reads no letters at all.** A card
+printing no `RES` pays it; a card printing two does not pay twice.
+
+```json
+{ "trigger": { "event": "WhenActionTriggered", "timing": "Action",
+               "subject": "this", "form": "alter-ego" },
+  "cost": { "discardFromHand": 1 },
+  "effect": { "discard": "this" } }
+```
+
+**So it travels as a target and not as a payment.** `Decision.Resources` is "the
+generators spent, by `ResourceSource.Effect`", and a card being handed over for
+what it *is* rather than what it makes is not a generator; describing it as one
+would put a price on the wire that a client would try to meet with resources.
+`Affordance.Targets` already says "what still has to be chosen before this can
+resolve", which is exactly the question. `rr:initiating-abilities` keeps step 2's
+choosing and step 5's paying in different steps, and the answer carries the two
+separately for the same reason.
+
+The affordance carries the hand and a count of exactly one, and the engine never
+picks. A payment that is not the cost — none chosen, or two — is refused rather
+than trimmed: `rr:initiating-abilities.step.5` aborts "without paying any
+costs", and an engine that trimmed would be making a decision the player was
+asked to make.

@@ -253,7 +253,7 @@ public sealed class MainSchemeTests
 
         public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying) => [];
+            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
 
     }
 
@@ -277,7 +277,7 @@ public sealed class MainSchemeTests
 
         public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying) => [];
+            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
 
     }
 

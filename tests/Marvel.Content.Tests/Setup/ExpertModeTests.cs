@@ -122,6 +122,7 @@ public sealed class ExpertModeTests
             world,
             new Occurrence(0, ["WhenThreatPlaced"], Subject: scheme.ObjectId),
             new PendingAbility(scheme.ObjectId, AbilityType.ForcedResponse, -1),
+            [],
             []));
 
         Assert.Contains("'heroic' mode", refused.Message, StringComparison.Ordinal);

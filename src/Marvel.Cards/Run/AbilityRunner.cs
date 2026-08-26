@@ -137,16 +137,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
             Label: found.Name,
+            Targets: Asking(world, ability.Player, found.Cost),
             Costs: price is null ? null : [price]);
     }
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Resolve(
-        World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying)
+        World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying,
+        IReadOnlyList<int> chosen)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
         ArgumentNullException.ThrowIfNull(paying);
+        ArgumentNullException.ThrowIfNull(chosen);
 
         var card = world.Cards[ability.Card];
         var found = book.On(card.FaceId)
@@ -202,7 +205,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // asked whether the cost could be paid at all. What it cannot check is
         // that the player named a payment that works, and `CardPlay.Spend`
         // refuses one that does not.
-        Pay(found[0].Cost, paying, cast);
+        Pay(found[0].Cost, paying, chosen, cast);
         Run(found[0].Effect, cast);
         return events;
     }
@@ -622,10 +625,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Act(
-        World world, PendingAbility ability, IReadOnlyList<int> paying)
+        World world, PendingAbility ability, IReadOnlyList<int> paying,
+        IReadOnlyList<int> chosen)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(paying);
+        ArgumentNullException.ThrowIfNull(chosen);
 
         var card = world.Cards[ability.Card];
         var found = book.On(card.FaceId)
@@ -644,7 +649,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
         // before step 6 resolves.
-        Pay(found.Cost, paying, cast);
+        Pay(found.Cost, paying, chosen, cast);
         Run(found.Effect, cast);
         return events;
     }
@@ -785,9 +790,50 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Word(cost.Argument).Length,
                 Word(cost.Argument)),
 
+            // "Discard **a card** from your hand" -- `rr:cost.3` spends
+            // resources by discarding cards, and this is the other thing a
+            // discard can be: the card is the cost and what it would have
+            // generated is not read at all. So the question is a count and not
+            // a sum, and a card with no printed `RES` pays it.
+            { Kind: "discardFromHand" } =>
+                world.Seats[player].Hand.Cards.Count >= Number(cost.Argument),
+
             _ => throw new RulesNotImplementedException(
                 $"'{card.FaceId}' has a cost of '{cost.Kind}', which is not implemented"),
         };
+
+    /// <summary>
+    /// What a cost still has to be told, or null.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:initiating-abilities</c> keeps choosing and paying in different
+    /// steps, and this is the choosing half of a cost that has one. A resource
+    /// cost has none: <see cref="CostOption.Sources"/> is the menu and which
+    /// subset pays is the <i>payment</i>, which travels in
+    /// <c>Decision.Resources</c>.
+    /// </para>
+    /// <para>
+    /// <b>The whole hand, and not the hand minus this card.</b> Hunted is an
+    /// obligation in the player's play area rather than a card in hand, so
+    /// there is nothing here for <c>CardPlay.Spend</c>'s "a card being played
+    /// cannot also pay for itself" to guard against — and a card that could
+    /// would be a different rule, checked where that one is.
+    /// </para>
+    /// </remarks>
+    private static TargetRequest? Asking(World world, int player, AbilityNode? cost)
+    {
+        if (cost is not { Kind: "discardFromHand" })
+        {
+            return null;
+        }
+
+        long many = Number(cost.Argument);
+        return new TargetRequest(
+            [.. world.Seats[player].Hand.Cards.Select(card => card.ObjectId)],
+            (int)many,
+            (int)many);
+    }
 
     /// <summary>What an action's cost looks like on a prompt, or null.</summary>
     /// <remarks>
@@ -811,10 +857,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <summary>Pays an ability's cost — <c>rr:initiating-abilities.step.5</c>.</summary>
-    private static void Pay(AbilityNode? cost, IReadOnlyList<int> paying, Cast cast)
+    private static void Pay(
+        AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, Cast cast)
     {
         if (cost is null)
         {
+            return;
+        }
+
+        if (cost.Kind == "discardFromHand")
+        {
+            DiscardToPay(cost, chosen, cast);
             return;
         }
 
@@ -835,6 +888,42 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         Run(cost, cast);
+    }
+
+    /// <summary>
+    /// "Discard a card from your hand" — a cost whose payment is a card and not
+    /// a number of resources.
+    /// </summary>
+    /// <remarks>
+    /// Refused rather than corrected when the answer does not match the
+    /// request. <c>rr:initiating-abilities.step.5</c> aborts "without paying
+    /// any costs" if the cost cannot be paid, and an engine that picked a card
+    /// for the player would be making a decision the player was asked to make.
+    /// </remarks>
+    private static void DiscardToPay(AbilityNode cost, IReadOnlyList<int> chosen, Cast cast)
+    {
+        long many = Number(cost.Argument);
+        var hand = cast.World.Seats[cast.Player].Hand;
+
+        if (chosen.Count != many)
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' costs {many} card(s) from hand and {chosen.Count} "
+                + "were chosen; rr:initiating-abilities.step.5 aborts without paying");
+        }
+
+        foreach (int id in chosen)
+        {
+            var card = cast.World.Cards[id];
+            if (card.Area != hand)
+            {
+                throw new RulesNotImplementedException(
+                    $"card {id} is not in {cast.World.Seats[cast.Player].Name}'s hand "
+                    + "and cannot be discarded from it");
+            }
+
+            Rules.Play.Discard.Card(cast.World, card, CardPlay.Verb, cast.Events);
+        }
     }
 
     /// <inheritdoc/>

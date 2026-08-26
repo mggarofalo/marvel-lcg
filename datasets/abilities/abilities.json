@@ -1246,6 +1246,23 @@
       ]
     },
     {
+      "card": "45072",
+      "name": "Hunted",
+      "note": "Alter-Ego Action: Discard a card from your hand -> discard this card. An obligation, so rr:reveal.4 puts it into the revealing player's play area and it stays there; the printed hazard icon is a field the engine already reads and the whole of the card's text is this one way out. The cost is the first in this dataset that is not resources: rr:cost.3 spends resources by discarding cards from hand, and this discards a card from hand without reading what it would have generated -- a card with no printed RES pays it, and a card printing two does not pay twice. So the payment is a chosen card rather than a number, which is why it travels as a target: rr:initiating-abilities keeps step 2's choosing and step 5's paying apart, and the answer carries both separately. rr:player-turn.5.1 is the Alter-Ego, checked where every action's form is.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "cost": { "discardFromHand": 1 },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
       "card": "45063",
       "name": "Prelate Sidearm",
       "note": "Attach to Unus. [star] Forced Response: After Unus attacks and defeats an ally, place 1 threat on Gene Pool. Hero Response: After you make a basic attack against Unus, spend [energy] [physical] resources -> discard this card. The second half is 45064 Prelate Armor's, two letters different. The first is the sentence rr:triggering-condition.2 makes writable: 'attacks and defeats' is one occurrence carrying two conditions -- 'a single attack causing a character to both take damage and be defeated' -- so the card answers the defeat and reads the attack off the same occurrence rather than needing the two to be joined up. The subject is attachedTo because Occurrence.Subject through an enemy attack is the attacking enemy, which is what 'Unus attacks' means; 'an ally' is the defeated card's kind. An ally killed by its own consequential damage is a different occurrence with a different subject, and one killed by Unus's retaliate is the same subject and a different verb -- retaliate is damage dealt to whoever attacked him, and being attacked is not attacking. So the subject alone is not the sentence: alsoHappened names the other triggering condition rr:triggering-condition.2 gives the same window to, which for an enemy's attack is WhenDamageDealt and for a character attacking him is not. Gene Pool is named by title -- rr:identity.2 makes a title name one card. The [star] ATK+1 and Boost 3 are printed fields rather than abilities.",
