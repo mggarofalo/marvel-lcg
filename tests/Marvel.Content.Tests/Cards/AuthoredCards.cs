@@ -175,7 +175,13 @@ internal static class AuthoredCards
     /// still missing are what it stops on.
     /// </remarks>
     public static readonly string[] UnusEncounters =
-        ["45068", "45069", "45070", "45073", "45074"];
+        ["45064", "45068", "45069", "45070", "45073", "45074"];
+
+    /// <summary>The printed id of "Prelate Armor", the attachment on Unus.</summary>
+    public const string PrelateArmor = "45064";
+
+    /// <summary>The printed id of "Infinite Soldier", the scenario's minion.</summary>
+    public const string InfiniteSoldier = "45069";
 
     /// <summary>
     /// The printed ids of the three Superpower attachments, in card order.

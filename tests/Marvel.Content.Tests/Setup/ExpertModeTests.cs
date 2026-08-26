@@ -121,7 +121,8 @@ public sealed class ExpertModeTests
         var refused = Assert.Throws<RulesNotImplementedException>(() => runner.Resolve(
             world,
             new Occurrence(0, ["WhenThreatPlaced"], Subject: scheme.ObjectId),
-            new PendingAbility(scheme.ObjectId, AbilityType.ForcedResponse, -1)));
+            new PendingAbility(scheme.ObjectId, AbilityType.ForcedResponse, -1),
+            []));
 
         Assert.Contains("'heroic' mode", refused.Message, StringComparison.Ordinal);
     }

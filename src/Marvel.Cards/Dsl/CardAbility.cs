@@ -50,8 +50,24 @@ namespace Marvel.Cards.Dsl;
 /// must be in the specified form in order to trigger the ability" — and 728 of
 /// the 966 action abilities in the pool are preceded by one.
 /// </param>
+/// <param name="Player">
+/// Whose opportunity the ability is, or null for its card's controller.
+/// <para>
+/// The one value is <c>trigger.player</c> — the seat the occurrence happened
+/// to. <c>rr:ability.8</c> lets <i>any</i> player trigger an optional ability
+/// on an encounter card, so the scenario owning a card is not by itself a
+/// reason to narrow it; what narrows it is the card saying "you", which
+/// <c>rr:you-your.7</c> points at the player the occurrence happened to rather
+/// than at an owner the card has not got. Both are things an encounter card can
+/// say, so the card says which.
+/// </para>
+/// </param>
 public sealed record AbilityTrigger(
-    string? Event, AbilityType Timing, string Subject, string? Form = null);
+    string? Event,
+    AbilityType Timing,
+    string Subject,
+    string? Form = null,
+    string? Player = null);
 
 /// <summary>
 /// Which occurrences an ability answers, out of all those with its condition.
@@ -100,6 +116,23 @@ public static class AbilitySubjects
     /// <summary>Every subject this vocabulary has.</summary>
     public static IReadOnlySet<string> All { get; } =
         new HashSet<string>(StringComparer.Ordinal) { This, AttachedTo, You, Game };
+}
+
+/// <summary>The players an ability can name.</summary>
+/// <remarks>
+/// Shared between the trigger's <c>player</c> and the effect tree's, so the
+/// same phrase means the same seat wherever a card writes it.
+/// </remarks>
+public static class AbilityPlayers
+{
+    /// <summary>The seat the occurrence happened to.</summary>
+    public const string TriggerPlayer = "trigger.player";
+
+    /// <summary>The seat resolving the ability.</summary>
+    public const string You = "you";
+
+    /// <summary>The seat that controls the ability's card.</summary>
+    public const string Controller = "controller";
 }
 
 /// <summary>

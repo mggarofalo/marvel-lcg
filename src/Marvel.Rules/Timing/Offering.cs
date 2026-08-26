@@ -19,10 +19,22 @@ public interface IWindowAbilities
     IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window);
 
     /// <summary>Resolves one ability that was waiting in a window.</summary>
+    /// <remarks>
+    /// <b>The payment is the player's, and a window is where it arrives.</b>
+    /// <c>rr:initiating-abilities.step.5</c> pays before step 6 resolves, and
+    /// nothing in that sequence is about which tier the ability sits in — a
+    /// response with a cost is priced by <see cref="Describe"/>, paid from the
+    /// answer, and resolved here. A forced ability passes an empty list,
+    /// because nobody was asked.
+    /// </remarks>
     /// <param name="world">The world.</param>
     /// <param name="occurrence">What it is timed to.</param>
     /// <param name="ability">Which ability, from <see cref="Waiting"/>.</param>
-    IReadOnlyList<GameEvent> Resolve(World world, Occurrence occurrence, PendingAbility ability);
+    /// <param name="paying">
+    /// The generators the player spent, by <c>ResourceSource.Effect</c>.
+    /// </param>
+    IReadOnlyList<GameEvent> Resolve(
+        World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying);
 
     /// <summary>How to describe one ability to a player who may take it.</summary>
     /// <param name="world">The world.</param>
@@ -115,7 +127,10 @@ public static class Offering
             if (forced.Count == 1)
             {
                 occurrence.Trigger(kind, forced[0].Card);
-                events.AddRange(abilities.Resolve(world, occurrence, forced[0]));
+                // `rr:forced.1` -- a forced ability resolves without anybody being
+                // asked, so there is no payment to carry. A forced ability with
+                // a cost is refused by the runner rather than paid for here.
+                events.AddRange(abilities.Resolve(world, occurrence, forced[0], []));
 
                 // rr:forced.6 -- each resolves as completely as possible before
                 // the next initiates, so the board is re-read rather than the
