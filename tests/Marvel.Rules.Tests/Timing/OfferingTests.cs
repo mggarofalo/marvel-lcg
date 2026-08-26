@@ -292,7 +292,8 @@ public sealed class OfferingTests
             [.. waiting.Where(ability => ability.Card != WithdrawnCard)];
 
         public IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability)
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying)
         {
             Resolved.Add(ability.Card);
             return [new CardsFlipped([ability.Card], true) { Trigger = "test" }];

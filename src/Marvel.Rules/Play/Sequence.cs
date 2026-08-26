@@ -163,7 +163,11 @@ public static class Sequence
         }
 
         window.Occurrence.Trigger(window.Kind, ability.Card);
-        events.AddRange(abilities.Resolve(world, window.Occurrence, ability));
+
+        // `rr:initiating-abilities.step.5` -- what the player spent is part of
+        // the answer, not something the engine picks for them. Empty when the
+        // affordance was free, which is almost all of them.
+        events.AddRange(abilities.Resolve(world, window.Occurrence, ability, input.Spent));
 
         // Not a close: rr:interrupt.5 is about *further* abilities, so using one
         // gives everybody another opportunity and the step stays where it is.

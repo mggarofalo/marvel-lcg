@@ -217,7 +217,7 @@ public sealed class UnusScenarioTests
         long before = pool.Tokens.GetValueOrDefault("k_threat");
         world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
         var soldier = world.CreateCard(
-            AuthoredCards.UnusEncounters[1],
+            AuthoredCards.InfiniteSoldier,
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         soldier.TakeDamage(Damage.Health(world, Cards, soldier) - 1);
 

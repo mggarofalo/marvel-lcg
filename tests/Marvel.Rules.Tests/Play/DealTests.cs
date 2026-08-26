@@ -262,7 +262,8 @@ public sealed class DealTests
 
 
         public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability) => [];
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying) => [];
 
     }
 
@@ -286,7 +287,8 @@ public sealed class DealTests
 
 
         public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability) => [];
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying) => [];
 
     }
 

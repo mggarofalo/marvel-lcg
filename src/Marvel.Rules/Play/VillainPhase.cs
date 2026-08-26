@@ -346,7 +346,8 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Resolve(
-        World world, Occurrence occurrence, PendingAbility ability) =>
+        World world, Occurrence occurrence, PendingAbility ability,
+        IReadOnlyList<int> paying) =>
         throw new RulesNotImplementedException(
             "nothing is waiting in any window, so nothing can be resolved from one");
 
