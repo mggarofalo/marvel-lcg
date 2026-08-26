@@ -342,6 +342,64 @@ public sealed class AttackTests
         }
     }
 
+    [Rule("rr:attack-enemy-activation.step.6.a")]
+    [Rule("rr:tough.3")]
+    [Fact]
+    public void AnAttackRecordsWhetherItLandedAndOnlyItsOwnWindowSeesIt()
+    {
+        // `.step.6.a` lists "after [character] attacks **and damages** ... you"
+        // as a trigger of its own, so "it attacked" and "it landed" are two
+        // facts -- and by the time those abilities run, the attack is over and
+        // the damage is on a dial that had damage on it before. The attack
+        // carries what it did.
+        //
+        // `rr:tough.3` is what pulls the two apart in an ordinary game, and it
+        // is the second half of this test: a tough card absorbs the attack, and
+        // a character who "is not considered to have taken damage" was not
+        // damaged by it.
+        var facts = Printed(atk: 3, boost: 0);
+        var world = Board(facts);
+        Finish(world, facts);
+
+        Assert.NotNull(world.FinishedAttack);
+        Assert.True(world.FinishedAttack!.Damaged);
+
+        // A second attack, absorbed. The record is the new attack's own -- the
+        // first one's `true` must not still be standing when this window opens.
+        Statuses.Give(world, world.Seats[0].IdentityCard, Statuses.Tough);
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, Round: 2, Number: 2, Index: 0,
+            Subject: world.TheCardIn(DeckType.VillainArea)!.ObjectId, Seat: 0));
+        Finish(world, facts);
+
+        Assert.False(world.FinishedAttack!.Damaged);
+    }
+
+    [Rule("rr:attack-enemy-activation")]
+    [Fact]
+    public void AnAttackInProgressHasNoFinishedAttackToRead()
+    {
+        // The record belongs to one attack. While the next one is resolving
+        // there is no finished attack, rather than the previous one's facts
+        // sitting there looking current -- an interrupt on the second attack
+        // that asked what the attack did would otherwise be answered about the
+        // first.
+        var facts = Printed(atk: 3, boost: 0);
+        var world = Board(facts);
+        Finish(world, facts);
+        Assert.NotNull(world.FinishedAttack);
+
+        Attack.Initiate(
+            world,
+            facts,
+            new PhaseStep(
+                Steps.Attack, 2, 2, Subject: world.TheCardIn(DeckType.VillainArea)!.ObjectId,
+                Seat: 0),
+            []);
+
+        Assert.Null(world.FinishedAttack);
+    }
+
     /// <summary>A villain, one hero-form identity per seat, one boost card.</summary>
     private static World Board(ICardFacts facts, int players = 1)
     {

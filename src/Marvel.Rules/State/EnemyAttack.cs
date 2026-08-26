@@ -41,8 +41,17 @@ namespace Marvel.Rules.State;
 /// reduce it (<c>rr:defend-defense.3</c>), and neither does a defense-labeled
 /// ability (<c>rr:defend-defense.4.3</c>).
 /// </param>
+/// <param name="Damaged">
+/// Whether the attack actually dealt damage to a character.
+/// <c>rr:attack-enemy-activation.step.6.a</c> lists "after [character] attacks
+/// <b>and damages</b> ... you" as a trigger of its own, so "it attacked" and
+/// "it landed" are two different facts. <c>rr:tough.3</c> is what makes them
+/// come apart in an ordinary game: a character whose tough status card absorbed
+/// the attack "is not considered to have taken damage".
+/// </param>
 public sealed record EnemyAttack(
-    int Enemy, int Player, int Target, int Defender = -1, bool BasicDefense = false)
+    int Enemy, int Player, int Target, int Defender = -1, bool BasicDefense = false,
+    bool Damaged = false)
 {
     /// <summary>Whether any character was declared the defender.</summary>
     public bool IsDefended => Defender >= 0;

@@ -4,6 +4,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -36,6 +37,12 @@ public sealed class SinisterSyndicateTests
 
     /// <summary>Spider-Woman, a second ally, so that "each" can be wrong.</summary>
     private const string SpiderWoman = "01011";
+
+    /// <summary>Spider-Tracer, a one-cost upgrade.</summary>
+    private const string SpiderTracer = "01007";
+
+    /// <summary>Webbed Up, a four-cost upgrade — dearer, so "lowest" can be wrong.</summary>
+    private const string WebbedUp = "01009";
 
     private static readonly SetupCatalog Setup =
         SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
@@ -157,8 +164,105 @@ public sealed class SinisterSyndicateTests
         Assert.Empty(world.Agenda.Outstanding);
     }
 
+    [Rule("rr:attack-enemy-activation.step.6.a")]
+    [Rule("rr:tough.3")]
+    [Fact]
+    public void BeetleTakesTheCheapestUpgradeWhenTheAttackLands()
+    {
+        // "**Forced Response:** After Beetle attacks and damages you, discard
+        // the lowest-cost upgrade you control." One at cost 1 and one at cost
+        // 4, and the cheap one goes.
+        var world = Deal();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var cheap = Upgrade(world, SpiderTracer, 0);
+        var dear = Upgrade(world, WebbedUp, 0);
+        var beetle = world.CreateCard(
+            AuthoredCards.Beetle, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: beetle.ObjectId, Seat: 0));
+        Run(world);
+
+        Assert.Equal(DeckType.DiscardPile, cheap.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, dear.Area.Type);
+    }
+
+    [Rule("rr:tough.3")]
+    [Fact]
+    public void BeetleTakesNothingWhenAToughCardAteTheAttack()
+    {
+        // "Attacks **and damages** you" is two facts, and `rr:tough.3` is what
+        // pulls them apart at a real table: a character whose tough status card
+        // absorbed the attack "is not considered to have taken damage". Beetle
+        // attacked; Beetle did not damage; the upgrade stays.
+        var world = Deal();
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        Statuses.Give(world, identity, Statuses.Tough);
+        var cheap = Upgrade(world, SpiderTracer, 0);
+        var beetle = world.CreateCard(
+            AuthoredCards.Beetle, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: beetle.ObjectId, Seat: 0));
+        Run(world);
+
+        Assert.Equal(0, identity.Damage);
+        Assert.Equal(DeckType.UpgradesArea, cheap.Area.Type);
+    }
+
+    [Rule("rr:permanent.4.1")]
+    [Fact]
+    public void APermanentIsNotTheLowestCostUpgradeHoweverCheapItIs()
+    {
+        // "If a permanent card would be targeted by such an effect *(for
+        // example, 'discard the lowest-cost support you control')*, that effect
+        // instead targets the **non-permanent** card that fits its criteria."
+        //
+        // So a permanent is dropped before the comparison rather than after it.
+        // Dropped after, a cheap permanent would be picked, found untouchable,
+        // and shield the dearer card the effect should have taken.
+        var world = Deal();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var permanent = Upgrade(world, SpiderTracer, 0);
+        var dear = Upgrade(world, WebbedUp, 0);
+        var beetle = world.CreateCard(
+            AuthoredCards.Beetle, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        // Granted on the board rather than printed: Spider-Tracer is not a
+        // permanent card, and what is under test is the interpreter's reading
+        // of the keyword rather than a card. `rr:permanent.1` makes it "a
+        // constant ability", which is the kind of thing a card can grant, so
+        // this is also the shape the rule allows.
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, Kind: "permanent", Amount: 1,
+            Card: permanent.ObjectId, Affects: permanent.ObjectId));
+
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: beetle.ObjectId, Seat: 0));
+        Run(world);
+
+        Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, dear.Area.Type);
+    }
+
+    /// <summary>
+    /// An upgrade in a player's play area, owned by them.
+    /// </summary>
+    /// <remarks>
+    /// <c>cardOwner</c> and not only <c>PlayArea.Of</c>: they are two questions
+    /// — where the area sits, and who a card made there belongs to — and
+    /// <c>Discard.Card</c> reads the second to pick which discard pile. An
+    /// upgrade made without an owner is discarded to the encounter pile.
+    /// </remarks>
+    private static Card Upgrade(World world, string faceId, int seat) =>
+        world.CreateCard(
+            faceId,
+            world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(seat), cardOwner: seat));
+
     private static Card Ally(World world, string faceId, int seat) =>
-        world.CreateCard(faceId, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(seat)));
+        world.CreateCard(
+            faceId, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(seat), cardOwner: seat));
 
     /// <summary>
     /// Runs the agenda out. Declines what can be declined and takes the first

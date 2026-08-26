@@ -117,6 +117,22 @@ public sealed class World
     /// </remarks>
     public EnemyAttack? Attack { get; set; }
 
+    /// <summary>
+    /// The enemy attack that just finished, or <c>null</c> outside the window
+    /// that follows one.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:attack-enemy-activation.step.6.a</c> lists four printed trigger
+    /// shapes that all reason about an attack <i>after</i> it is over — "after
+    /// [character] attacks <b>and damages/defeats</b> [you/an ally]", "after
+    /// [character] is attacked", "after [character] defends <b>and takes no
+    /// damage</b>", "after [character] [takes/deals] damage". Each of them
+    /// needs a fact about the attack that <see cref="Attack"/> no longer holds:
+    /// the attack is cleared when it ends, and the abilities in question run in
+    /// the window after that.
+    /// </remarks>
+    public EnemyAttack? FinishedAttack { get; set; }
+
     /// <summary>Whether the game has ended.</summary>
     /// <remarks>
     /// The engine answers a <c>null</c> prompt once this is set, which is the only

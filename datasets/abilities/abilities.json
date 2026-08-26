@@ -649,6 +649,56 @@
           }
         }
       ]
+    },
+    {
+      "card": "24043",
+      "name": "Beetle",
+      "note": "Forced Response: After Beetle attacks and damages you, discard the lowest-cost upgrade you control. [star] Boost: Choose and discard an upgrade you control. 'And damages' is a second fact about the same attack, and rr:attack-enemy-activation.step.6.a's abilities all run after the attack is over -- so the attack records whether it landed and attackDamaged reads it. rr:tough.3 is what makes it come apart in an ordinary game: a character whose tough status card absorbed the attack 'is not considered to have taken damage', so Beetle attacked and did not damage. The response takes the lowest-cost upgrade through chooseCard rather than straight, because the Rules Reference gives no tie-break for 'the lowest-cost X' and minBy keeps ties -- with one candidate the question has one answer, which is what Caught Off Guard's choice already does. rr:permanent.4.1 names this shape outright and Ranked drops permanents before comparing, so a cheap permanent cannot shield a dearer upgrade.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  { "attackDamaged": "you" },
+                  { "exists": { "query": "upgradesYouControl" } }
+                ]
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "minBy": { "of": { "query": "upgradesYouControl" }, "by": "cost" }
+                  },
+                  "effect": { "discard": "chosen" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": { "exists": { "query": "upgradesYouControl" } },
+              "then": {
+                "chooseCard": {
+                  "from": { "query": "upgradesYouControl" },
+                  "effect": { "discard": "chosen" }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

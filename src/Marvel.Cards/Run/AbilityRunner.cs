@@ -1100,6 +1100,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             cast.World.Facts,
             Word(node.Require("form"))),
 
+        // "After [enemy] attacks **and damages** you". Two facts, and
+        // `rr:attack-enemy-activation.step.6.a` lists them as one trigger
+        // shape -- but the abilities it lists all run in the window *after* the
+        // attack, by which time the damage is on a dial that had damage on it
+        // before. So the attack carries what it did, and this reads it.
+        //
+        // A test rather than a triggering condition of its own, because the two
+        // are indistinguishable for a forced ability: it is in the same window
+        // either way, and does nothing when the attack did not land. A card
+        // whose trigger is optional would be able to tell them apart -- the
+        // prompt would appear -- and that is the case to change this for.
+        "attackDamaged" => cast.World.FinishedAttack is { Damaged: true } landed
+            && landed.Enemy == cast.Source.ObjectId,
+
         "hasStatus" => Find(node.Require("card"), cast) is { } host
             && Statuses.Has(cast.World, host, Word(node.Require("status"))),
         _ => throw new RulesNotImplementedException(
@@ -2146,6 +2160,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "minBy" or "maxBy" } ranked)
+        {
+            return Ranked(ranked, cast);
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } upgrades
+            && upgrades.Argument is AbilityValue.Word { Value: "upgradesYouControl" })
+        {
+            // The upgrade half of `upgradesAndSupportsYouControl`, on its own,
+            // because Beetle's two abilities both say "upgrade" and a support
+            // is not one. Same reading of control: `rr:play-area.1` puts "any
+            // cards in play under their control" in a player's own play area.
+            return [.. cast.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(cast.Player)).Cards];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allies
             && allies.Argument is AbilityValue.Word { Value: "alliesYouControl" })
         {
@@ -2173,6 +2202,62 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         return Find(value, cast) is { } one ? [one] : [];
+    }
+
+    /// <summary>
+    /// "The lowest-cost upgrade you control" — <c>minBy</c> and <c>maxBy</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Ties are kept.</b> The Rules Reference gives no tie-break for "the
+    /// lowest-cost X", and collapsing one here would be the interpreter
+    /// deciding something the rules leave to the table. So this answers with
+    /// every card that shares the extreme value, and the card that wants one
+    /// wraps it in a <c>chooseCard</c> — which is where
+    /// <c>rr:choose-game-element.1</c> puts the question, to the player
+    /// resolving.
+    /// </para>
+    /// <para>
+    /// <b>Permanents are not among the candidates.</b>
+    /// <c>rr:permanent.4.1</c> names this exact shape: "if a permanent card
+    /// would be targeted by such an effect <i>(for example, 'discard the
+    /// lowest-cost support you control')</i>, that effect instead targets the
+    /// <b>non-permanent</b> card that fits its criteria." So a permanent is
+    /// dropped before the comparison rather than after it, or a cheap
+    /// permanent would shield a dearer card that the effect should have taken.
+    /// </para>
+    /// </remarks>
+    private static IReadOnlyList<Card> Ranked(AbilityNode node, Cast cast)
+    {
+        // Through `StateFields` rather than straight at the printed field:
+        // `rr:permanent.1` makes the keyword "equivalent to the following
+        // constant ability", and a constant ability is something a card can
+        // grant. Reading print alone would miss a permanence handed out in
+        // play.
+        var among = Every(node.Require("of"), cast)
+            .Where(card => StateFields.Modified(
+                cast.World, card, "permanent", cast.World.Facts, cast.World.Players) <= 0)
+            .ToList();
+
+        if (among.Count == 0)
+        {
+            return [];
+        }
+
+        string key = Word(node.Require("by"));
+        long Rank(Card card) => key switch
+        {
+            // `rr:dash-value.3` -- a printed dash "is treated as an
+            // unmodifiable 0", which is what `PrintedValue` answers for a field
+            // that is not a number, so nothing extra is needed for it here.
+            "cost" => cast.World.Facts.PrintedValue(card.FaceId, "Cost", cast.World.Players),
+            "attack" => StateFields.Modified(
+                cast.World, card, "attack", cast.World.Facts, cast.World.Players),
+            _ => throw new AbilityException($"'{key}' is not a value cards can be ranked by"),
+        };
+
+        long extreme = node.Kind == "minBy" ? among.Min(Rank) : among.Max(Rank);
+        return [.. among.Where(card => Rank(card) == extreme)];
     }
 
     /// <summary>Which card a value names, or null when it names none.</summary>
