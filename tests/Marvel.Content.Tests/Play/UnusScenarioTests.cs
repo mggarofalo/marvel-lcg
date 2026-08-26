@@ -273,14 +273,21 @@ public sealed class UnusScenarioTests
     {
         // The list this file earns its keep by shrinking. Forty seeds with a
         // player who acts: some reach an ending, and the rest stop on one of
-        // the six encounter cards still to author — never on anything else, so
-        // a card that starts failing for a different reason is visible here
+        // the three encounter cards still to author — never on anything else,
+        // so a card that starts failing for a different reason is visible here
         // rather than lost in a count.
+        //
+        // **Shrinking it is the point, so it is kept short.** `45063` Prelate
+        // Sidearm, `45064` Prelate Armor and `45065` Infinite Hunter have been
+        // authored and no seed stops on them any more. Left in the list they
+        // would still pass — the assertion only asks that the card stopped on
+        // is *somewhere* in it — so a name that has stopped being reachable
+        // quietly stops testing anything.
         //
         // `RealCardsGameTests` carried the same list for the Rhino board while
         // there were any, and what is left of it there is one assertion. This
         // is that list at the stage before.
-        string[] unread = ["45063", "45064", "45065", "45066", "45067", "45072"];
+        string[] unread = ["45066", "45067", "45072"];
         int ended = 0;
 
         for (uint seed = 1; seed <= 40; seed++)
