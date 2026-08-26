@@ -182,4 +182,17 @@ public interface ICardFacts
     /// </remarks>
     /// <param name="faceId">A printed card id.</param>
     bool HasBoostAbility(string faceId) => false;
+
+    /// <summary>
+    /// Whether this face prints a "<b>When Defeated</b>" ability —
+    /// <c>rr:when-defeated-abilities</c>.
+    /// </summary>
+    /// <remarks>
+    /// The same question <see cref="HasBoostAbility"/> asks and for the same
+    /// reason: nothing in the printed attributes records it, so an unwritten
+    /// ability and a card that has none look identical. 255 cards in the pool
+    /// have one.
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    bool HasWhenDefeated(string faceId) => false;
 }

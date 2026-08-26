@@ -183,6 +183,32 @@ public sealed class World
     public ICardFacts Facts => facts;
 
     /// <summary>
+    /// What the cards in this game do.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Here for the same reason <see cref="Facts"/> is, and with the same
+    /// bargain: the rules take <c>ICardAbilities</c> as a parameter wherever
+    /// they can, because that keeps a function's inputs visible in its
+    /// signature. This is for the callers that have a world and nothing else.
+    /// </para>
+    /// <para>
+    /// <b>Defeat is the caller that needed it.</b>
+    /// <c>rr:when-defeated-abilities</c> resolves a card's ability before the
+    /// card leaves play, and a defeat happens inside <c>Damage.Deal</c> —
+    /// four calls below anything that was ever handed an
+    /// <c>ICardAbilities</c>. Threading one down that path would put it in
+    /// seventeen signatures that have no use for it.
+    /// </para>
+    /// <para>
+    /// Defaults to <see cref="Play.NoCardAbilities"/>, so a board built by hand
+    /// is a board where no card does anything — which is what a board built by
+    /// hand is.
+    /// </para>
+    /// </remarks>
+    public Play.ICardAbilities Abilities { get; set; } = new Play.NoCardAbilities();
+
+    /// <summary>
     /// The game's one random stream.
     /// </summary>
     /// <remarks>

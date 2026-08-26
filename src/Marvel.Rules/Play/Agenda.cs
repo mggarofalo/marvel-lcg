@@ -317,6 +317,15 @@ public static class Steps
     /// </remarks>
     public const string TurnAction = "WhenActionTriggered";
 
+    /// <summary>A card being defeated — <c>rr:defeat</c>.</summary>
+    /// <remarks>
+    /// A condition rather than a step: a defeat happens inside dealing damage
+    /// or removing threat, wherever the rules put it, and not on the agenda.
+    /// It is here so that <c>rr:when-defeated-abilities</c> has a condition to
+    /// name.
+    /// </remarks>
+    public const string CardDefeated = "WhenCardDefeated";
+
     private static readonly Dictionary<string, string[]> Conditions = new(StringComparer.Ordinal)
     {
         [PlaceThreat] = ["WhenThreatPlaced"],
@@ -336,6 +345,7 @@ public static class Steps
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
         [TurnAction] = [TurnAction],
+        [CardDefeated] = [CardDefeated],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 

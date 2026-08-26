@@ -155,7 +155,11 @@ public sealed class Game
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
-        return new Game(world, facts, abilities ?? new NoCardAbilities());
+        // The world carries them too, for `rr:when-defeated-abilities` and its
+        // like: a defeat happens deep inside `Damage.Deal`, four calls below
+        // anything that was handed an `ICardAbilities`.
+        world.Abilities = abilities ?? new NoCardAbilities();
+        return new Game(world, facts, world.Abilities);
     }
 
     /// <summary>Applies one answer and produces the next question.</summary>

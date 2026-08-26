@@ -90,6 +90,15 @@ public sealed class CardCatalog : ICardFacts
     public bool HasBoostAbility(string faceId) =>
         Find(faceId).Text.Contains("Boost:", StringComparison.Ordinal);
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Out of the text box, like <see cref="HasBoostAbility"/>: the printed
+    /// attributes say nothing about it, so an unwritten ability and a card
+    /// that has none would otherwise look identical.
+    /// </remarks>
+    public bool HasWhenDefeated(string faceId) =>
+        Find(faceId).Text.Contains("When Defeated:", StringComparison.Ordinal);
+
     /// <inheritdoc />
     public IReadOnlyList<string> Traits(string faceId) => Find(faceId).Traits;
 

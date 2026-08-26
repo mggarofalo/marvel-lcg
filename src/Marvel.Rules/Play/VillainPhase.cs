@@ -52,6 +52,21 @@ public interface ICardAbilities : IWindowAbilities
     IReadOnlyList<GameEvent> Boost(World world, Card card, int player);
 
     /// <summary>
+    /// Resolves a defeated card's "When Defeated" abilities —
+    /// <c>rr:when-defeated-abilities</c>.
+    /// </summary>
+    /// <remarks>
+    /// <c>.2.1</c> puts it before the card goes: "a defeated card leaves play
+    /// <b>after</b> its When Defeated ability is resolved, if any." So the
+    /// card is still where it was while this runs, which is what lets the
+    /// ability read its own tokens and what is attached to it.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="card">The card that was defeated.</param>
+    /// <returns>What changed.</returns>
+    IReadOnlyList<GameEvent> WhenDefeated(World world, Card card);
+
+    /// <summary>
     /// The "<b>Action</b>" abilities one player may trigger on their turn —
     /// <c>rr:player-turn.5</c>.
     /// </summary>
@@ -123,6 +138,9 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Boost(World world, Card card, int player) => [];
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> WhenDefeated(World world, Card card) => [];
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<PendingAbility> Actions(World world, int player) => [];

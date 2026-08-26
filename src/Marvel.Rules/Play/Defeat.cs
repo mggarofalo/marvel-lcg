@@ -77,6 +77,18 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(character);
         ArgumentNullException.ThrowIfNull(events);
 
+        // `rr:when-defeated-abilities.2.1` -- "a defeated card leaves play
+        // **after** its When Defeated ability is resolved, if any." So this
+        // runs while the card is still where it was, which is what lets the
+        // ability read its own tokens and what is attached to it.
+        //
+        // `.1` makes it "**Forced Interrupt**: when this card is defeated",
+        // and a forced interrupt has no choice in it -- there is nothing to
+        // offer and nothing to decline, so it resolves here rather than in a
+        // window. The window *around* a defeat is a separate thing and is not
+        // opened; no card in the pool interrupts one except by this.
+        events.AddRange(world.Abilities.WhenDefeated(world, character));
+
         switch (facts.Kind(character.FaceId))
         {
             case CardKind.Ally:
@@ -128,6 +140,11 @@ public static class Defeat
         World world, ICardFacts facts, Card scheme, string trigger, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(events);
+
+        // `rr:when-defeated-abilities.2` lists a side scheme among the cards
+        // this happens to, and `.2.1` puts it before the card goes.
+        events.AddRange(world.Abilities.WhenDefeated(world, scheme));
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(scheme);
         ArgumentNullException.ThrowIfNull(events);
