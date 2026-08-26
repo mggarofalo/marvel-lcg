@@ -103,6 +103,39 @@ action menu. So a basic attack appears only when there is an enemy that can be
 attacked, a basic thwart only when a scheme holds at least one threat, and a
 basic recovery only when there is damage to heal.
 
+### Triggering an action
+
+`rr:player-turn.5` — "trigger an **Action** ability on: a. a card in play they
+control. b. an encounter card in play. c. any card in play with text that allows
+that player to trigger its action ability. d. an event card in their hand *(by
+playing that event)*."
+
+**966 cards in the pool print one**, 445 of them events — and an event is
+reached *only* this way, which is why `CardPlay.Price` refuses to offer one:
+`rr:player-turn.2`'s list of what may be played from hand does not include
+events at all.
+
+An action is **not in a window**. It happens because a player says so on their
+turn, so it is offered beside the basic powers rather than in an interrupt or a
+response — which is why `AbilityTypes.PriorityOf` has always refused to give it
+a tier, and why `ICardAbilities` asks for it separately from `Waiting`.
+
+`.c` is a card's own text and belongs to whichever card says it, so there is
+nothing general to write for it. `.6`, asking another player, is not
+implemented.
+
+**The form gate is `.5.1`**: "if the action ability is preceded by *Hero* or
+*Alter-Ego*, the player must be in the specified form", and 728 of the 966 are.
+It is a field on the trigger rather than two more ability types, because it is a
+form and not a timing.
+
+**Costs are the ability's, not the card's.** `rr:cost` — "a cost is anything a
+player must do or pay in order to initiate an ability" — and 560 of the 966
+print one. The commonest by far is exhausting the card the ability is on, which
+is the only form written; `rr:initiating-abilities.step.3` asks whether it can
+be paid *before the ability is offered*, because step 5 aborts "without paying
+any costs" and an affordance that would abort is a trap rather than an offer.
+
 ### The basic powers
 
 `rr:basic-power.1` lists five. Three are a player's to use on their turn:
@@ -191,9 +224,8 @@ icon**". A villain's `14*` hit points do not shrink when somebody dies.
 
 ## What is not implemented
 
-- **Ally actions** (`rr:player-turn.4` covers using an ally to attack or thwart,
-  which is written; a card's own **Action** ability is not), **triggered
-  actions** (`.5`) and **asking another player** (`.6`).
+- **Asking another player** (`rr:player-turn.6`). Triggering an action (`.5`) is
+  written; `.5.c` is a card's own text and has nothing general behind it.
 - **`rr:resource-ability`** — the "**Resource**" timing trigger. The recorded
   prompt lists six generators for a hand of six cards, one of which is being
   played, so one generator is not a card in hand at all. That one is this.

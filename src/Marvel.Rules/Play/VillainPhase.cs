@@ -52,6 +52,20 @@ public interface ICardAbilities : IWindowAbilities
     IReadOnlyList<GameEvent> Boost(World world, Card card, int player);
 
     /// <summary>
+    /// The "<b>Action</b>" abilities one player may trigger on their turn —
+    /// <c>rr:player-turn.5</c>.
+    /// </summary>
+    /// <remarks>
+    /// Not a window. An action is one of the six things a turn offers, so it is
+    /// asked with the others rather than in an interrupt or a response — which
+    /// is why it is here and not in <see cref="IWindowAbilities.Waiting"/>.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="player">Whose turn it is.</param>
+    /// <returns>What they could trigger, which may be nothing.</returns>
+    IReadOnlyList<PendingAbility> Actions(World world, int player);
+
+    /// <summary>
     /// The question a suspended ability is waiting on —
     /// <c>rr:choose-option</c>.
     /// </summary>
@@ -93,6 +107,9 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Boost(World world, Card card, int player) => [];
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<PendingAbility> Actions(World world, int player) => [];
 
     /// <inheritdoc/>
     public virtual Prompts.Prompt? Choosing(World world, Card source, int player) => null;

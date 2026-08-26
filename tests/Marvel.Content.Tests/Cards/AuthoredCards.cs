@@ -66,6 +66,9 @@ internal static class AuthoredCards
     /// <summary>The printed id of Rhino's second stage.</summary>
     public const string RhinoTwo = "01095";
 
+    /// <summary>The printed id of "Aunt May".</summary>
+    public const string AuntMay = "01006";
+
     /// <summary>The printed id of "Shadow of the Past".</summary>
     public const string ShadowOfThePast = "01190";
 

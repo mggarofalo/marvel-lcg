@@ -407,6 +407,23 @@
           }
         }
       ]
+    },
+    {
+      "card": "01006",
+      "name": "Aunt May",
+      "note": "Alter-Ego Action: Exhaust Aunt May -> heal 4 damage from Peter Parker. The first card in the dataset with a cost, and the first with an action. rr:player-turn.5.1 is the 'Alter-Ego' in front of it: the player must be in that form to trigger it, which is the trigger's 'form'. rr:initiating-abilities keeps the steps apart, so the exhaust is the ability's cost rather than the first thing its effect does -- and rr:exhausted.2 is why an already-exhausted Aunt May is not offered at all. 'Peter Parker' is the player's identity: the card is in their play area and rr:you-your resolves the alter-ego by title to the identity showing it.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "cost": { "exhaust": "this" },
+          "effect": { "heal": { "card": "you", "amount": 4 } }
+        }
+      ]
     }
   ]
 }

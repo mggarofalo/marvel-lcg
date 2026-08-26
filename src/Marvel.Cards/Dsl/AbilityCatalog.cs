@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Dsl;
@@ -28,10 +29,10 @@ public static class AbilityCatalog
         new(StringComparer.Ordinal) { "card", "name", "note", "abilities" };
 
     private static readonly HashSet<string> AbilityKeys =
-        new(StringComparer.Ordinal) { "name", "note", "trigger", "effect" };
+        new(StringComparer.Ordinal) { "name", "note", "trigger", "effect", "cost" };
 
     private static readonly HashSet<string> TriggerKeys =
-        new(StringComparer.Ordinal) { "event", "timing", "subject" };
+        new(StringComparer.Ordinal) { "event", "timing", "subject", "form" };
 
     /// <summary>Parses the canonical ability dataset.</summary>
     /// <param name="json">The dataset text.</param>
@@ -127,8 +128,32 @@ public static class AbilityCatalog
         return new CardAbility(
             card,
             Text(element, "name") ?? cardName,
-            new AbilityTrigger(when, type, subject),
-            Node(effect, card));
+            new AbilityTrigger(when, type, subject, Form(trigger, card)),
+            Node(effect, card),
+            element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null);
+    }
+
+    /// <summary>
+    /// The form a triggered ability requires, or null —
+    /// <c>rr:player-turn.5.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// "If the action ability is preceded by <b>Hero</b> or <b>Alter-Ego</b>,
+    /// the player must be in the specified form in order to trigger the
+    /// ability." A closed set, because it is a form and not a predicate: the
+    /// only two the parenthesis ever names are the two an identity has.
+    /// </remarks>
+    private static string? Form(JsonElement trigger, string card)
+    {
+        string? form = Text(trigger, "form");
+        if (form is null || form == Forms.Hero || form == Forms.AlterEgo)
+        {
+            return form;
+        }
+
+        throw new AbilityException(
+            $"'{card}' requires the form '{form}', and an ability may require "
+            + $"'{Forms.Hero}' or '{Forms.AlterEgo}'");
     }
 
     /// <summary>One node: a value with exactly one named operation in it.</summary>
