@@ -384,6 +384,66 @@ public sealed class BasicPowerTests
         Assert.Equal(0, next.Tokens.GetValueOrDefault("k_threat"));
     }
 
+    [Rule("rr:enters-play")]
+    [Rule("rr:toughness")]
+    [Rule("rr:toughness.1")]
+    [Fact]
+    public void ANewStageEntersPlayWithTheKeywordsItPrints()
+    {
+        // A villain stage comes out of the villain deck, and `rr:enters-play`
+        // is "any time when a card transitions from an out-of-play area into
+        // play" -- so `rr:toughness`'s "when a character with the toughness
+        // keyword enters play, place a tough status card on it" applies to the
+        // stage the deck advances to, not only to the one setup dealt.
+        //
+        // Rhino's third stage is the card that made this visible: it prints
+        // toughness and nothing was reading it, because the scenario the engine
+        // could play never advanced the villain deck to a stage with any.
+        var printed = new Printed()
+            .With("hero", ("ATK", "9"))
+            .With("villain", ("HP", "5"))
+            .With("villain2", ("HP", "12"), ("Toughness", "1"));
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var next = world.CreateCard("villain2", world.AreaOf(DeckType.VillainDeck));
+
+        BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Assert.True(Statuses.Has(world, next, Statuses.Tough));
+    }
+
+    [Rule("rr:villain-defeat.3.2")]
+    [Rule("rr:toughness.1")]
+    [Fact]
+    public void AToughCardCarriedOverIsNotDoubledByToughness()
+    {
+        // The two rules meet on the same card. `rr:villain-defeat.3.2` carries
+        // a tough status across to a stage of the same title, and `rr:toughness`
+        // would give it one for entering play -- but `rr:status-cards.1` caps a
+        // character at one tough card, so the keyword finds its work already
+        // done. Order is why this is a test: inheriting first is what makes the
+        // cap the thing that decides, rather than the sequence.
+        //
+        // Confused rather than tough on the defeated stage would not do: a tough
+        // card would prevent all the damage (`rr:tough.2`) and the stage would
+        // never be defeated at all.
+        var printed = new Printed()
+            .With("hero", ("ATK", "9"))
+            .With("villain", ("HP", "5"))
+            .With("villain2", ("HP", "12"), ("Toughness", "1"));
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var next = world.CreateCard("villain2", world.AreaOf(DeckType.VillainDeck));
+
+        BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Assert.Single(
+            world.Areas
+                .Where(area => area.Host == next.ObjectId)
+                .SelectMany(area => area.Cards),
+            card => card.FaceId == Statuses.Tough);
+    }
+
     [Rule("rr:villain-defeat")]
     [Fact]
     public void DefeatingTheFinalStageWinsTheGame()

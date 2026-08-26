@@ -58,17 +58,39 @@ public sealed class RealCardsGameTests
         // is left of it is this assertion.
         for (uint seed = 1; seed <= 40; seed++)
         {
-            string? stopped = Play(seed);
+            string? stopped = Play("rhino", seed);
+            Assert.True(stopped is null, $"seed {seed} stopped: {stopped}");
+        }
+    }
+
+    [Fact]
+    public void EverySeedPlaysTheExpertScenarioToAnEnding()
+    {
+        // The same board dealt for expert mode, which `01097a`'s contents line
+        // describes as "Rhino (II) and Rhino (III) instead" -- so the villain
+        // deck opens on the second stage and the encounter set gains
+        // Exhaustion, Masterplan and Under Fire.
+        //
+        // **What this does not reach is stage III.** The policy below declines
+        // everything it can, so it never attacks, so the villain deck never
+        // advances and every seed here ends in a villain win. Rhino III is
+        // covered by `RhinoThreeTests` instead, which defeats a stage outright
+        // rather than hoping a declining player gets there. Said out loud
+        // because a green test over a board it never explores is the exact
+        // shape of the sweep probe this suite deleted for lying.
+        for (uint seed = 1; seed <= 40; seed++)
+        {
+            string? stopped = Play("rhino_expert", seed);
             Assert.True(stopped is null, $"seed {seed} stopped: {stopped}");
         }
     }
 
     /// <summary>Plays one seed out; answers with the message it stopped on.</summary>
-    private static string? Play(uint seed)
+    private static string? Play(string campaign, uint seed)
     {
         var world = WorldSetup.Deal(
             Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
+            Blueprints.From(Dealer.DealOrder(Setup, campaign, ["spider_man"]), Cards),
             ["Spider-Man"],
             seed);
         var game = Game.Begin(world, Cards, AuthoredCards.Runner());

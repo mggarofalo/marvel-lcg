@@ -1093,10 +1093,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static void GiveStatus(AbilityNode node, Cast cast)
     {
-        var host = Find(node.Require("card"), cast)
-            ?? throw new RulesNotImplementedException(
+        // "Stun **each hero**" and "stun your hero" are the same node with a
+        // different query, the way `placeThreat` names one scheme or all of
+        // them: `Every` answers both.
+        var hosts = Every(node.Require("card"), cast);
+        if (hosts.Count == 0)
+        {
+            throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would give a status to a card that is not there");
+        }
 
+        foreach (var host in hosts)
+        {
+            GiveStatus(node, cast, host);
+        }
+    }
+
+    private static void GiveStatus(AbilityNode node, Cast cast, Card host)
+    {
         string what = Word(node.Require("status"));
 
         // Through the rules rather than straight at `Statuses.Give`:

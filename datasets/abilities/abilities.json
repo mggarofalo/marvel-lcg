@@ -588,6 +588,29 @@
           }
         }
       ]
+    },
+    {
+      "card": "01096",
+      "name": "Rhino",
+      "note": "Stage III, which only the expert villain deck reaches. Toughness is a printed keyword rather than an ability -- rr:toughness.1 spells it out as a Forced Response and Reveal.EnterPlay is where the engine keeps it -- so the When Revealed is all there is to author. 'Each hero' is rr:form-change-form.5: while a player is in alter-ego form, card abilities that interact with their hero do not interact with their identity, so a table that has flipped down takes nothing.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "giveStatus": { "card": { "query": "heroes" }, "status": "stunned" }
+          }
+        }
+      ]
+    },
+    {
+      "card": "01097a",
+      "name": "The Break-In!",
+      "note": "Main scheme stage 1, the A side. Its printed text is the scenario's contents list and one setup line, 'Advance to stage 1B.' Neither is an ability this card runs: the contents say what to put in the box before the game, and the advance is the setup step itself -- WorldSetup step 4 puts the first main scheme into play already turned to its B side, so by the time any ability could run the card is where the line asks it to be. rr:main-scheme-main-scheme-deck.step.2 and .step.3 are the same two-sided reveal for a stage the deck advances to, and 01097b is where that side's text lives. Read and empty, which is not the same as unread.",
+      "abilities": []
     }
   ]
 }
