@@ -52,12 +52,10 @@ public enum Starts
 /// <summary>One line of a page, in reading order.</summary>
 /// <param name="Runs">The line, split where its setting changes.</param>
 /// <param name="Left">Where the line starts, in points from the page's left edge.</param>
-/// <param name="Indent">How far in from its column's left edge, in points.</param>
-/// <param name="Top">Where it sits, in points from the page's bottom edge.</param>
 /// <param name="Size">The tallest glyph on the line, which is what separates a heading from prose.</param>
 /// <param name="Kind">What the line starts.</param>
 public readonly record struct Line(
-    IReadOnlyList<Run> Runs, double Left, double Indent, double Top, double Size, Starts Kind)
+    IReadOnlyList<Run> Runs, double Left, double Size, Starts Kind)
 {
     /// <summary>The line with its setting thrown away.</summary>
     public string Text => string.Concat(Runs.Select(run => run.Text));
@@ -205,10 +203,11 @@ public static partial class Pages
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The indent is measured from the <b>column's own</b> left edge and not
-    /// the page's, because this document sets recto and verso with different
-    /// margins: the same clause bullet is at 65.9pt on one page and 78.8pt on
-    /// the next, and only the 9pt it sits in from the body text is the same.
+    /// <b>By marker, not by indent.</b> This document sets recto and verso with
+    /// different margins, so the same clause bullet is at 65.9pt on one page
+    /// and 78.8pt on the next — and a clause's wrapped second line sits exactly
+    /// where a sub-clause hangs its marker. What each line starts is legible in
+    /// the glyph it opens with and not in where it sits.
     /// </para>
     /// <para>
     /// <b>A sub-clause's marker is a glyph its font does not carry.</b> The
@@ -221,16 +220,8 @@ public static partial class Pages
     /// </remarks>
     private static IEnumerable<Line> Classified(IEnumerable<Line> column)
     {
-        var lines = column.ToList();
-        if (lines.Count == 0)
+        foreach (var line in column)
         {
-            yield break;
-        }
-
-        double edge = lines.Min(line => line.Left);
-        foreach (var line in lines)
-        {
-            double indent = line.Left - edge;
             var kind = Starts.More;
 
             if (line.Size >= 8 && line.Titled)
@@ -260,7 +251,7 @@ public static partial class Pages
                 kind = Starts.SubStep;
             }
 
-            yield return line with { Indent = indent, Kind = kind };
+            yield return line with { Kind = kind };
         }
     }
 
@@ -353,8 +344,6 @@ public static partial class Pages
             yield return new Line(
                 runs,
                 first.GlyphRectangle.Left,
-                0,
-                group.Key,
                 ordered.SelectMany(word => word.Letters)
                        .Max(letter => letter.GlyphRectangle.Height),
                 Starts.More)
