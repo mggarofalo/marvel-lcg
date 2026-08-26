@@ -98,18 +98,43 @@ public static class Defeat
             case CardKind.AlterEgo:
                 // `rr:hit-points.2.1` -- "if a player's hit point dial is
                 // reduced to zero, that player is defeated and eliminated from
-                // the game". `rr:player-elimination` is a page of consequences
-                // -- their cards leave play, their obligations are removed,
-                // and at one player the game simply ends -- and none of it is
-                // written.
-                throw new RulesNotImplementedException(
-                    $"{world.Seats[character.Owner].Name} was defeated, and "
-                    + "rr:player-elimination is not implemented");
+                // the game." What that costs is `rr:player-elimination`.
+                Elimination.Eliminate(world, facts, character.Owner, trigger, events);
+                return true;
 
             default:
                 throw new RulesNotImplementedException(
                     $"a {facts.Kind(character.FaceId)} was defeated, and rr:defeat does not "
                     + "say what happens to one");
+        }
+    }
+
+    /// <summary>
+    /// A side scheme with no threat left on it — <c>rr:defeat</c>,
+    /// <c>rr:side-scheme.2</c>.
+    /// </summary>
+    /// <remarks>
+    /// "If a character has zero or fewer remaining hit points, <b>or if a side
+    /// scheme has no threat on it</b>, it is defeated", and <c>rr:defeat.1</c>
+    /// discards it. The same two destinations as a character: the victory
+    /// display if it is worth points, and the discard pile otherwise.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="scheme">The side scheme.</param>
+    /// <param name="trigger">What caused it, for the event stream.</param>
+    /// <param name="events">Where to record what happened.</param>
+    public static void Scheme(
+        World world, ICardFacts facts, Card scheme, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(scheme);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (!ToVictoryDisplay(world, facts, scheme, trigger, events))
+        {
+            Discard.Card(world, scheme, trigger, events);
         }
     }
 

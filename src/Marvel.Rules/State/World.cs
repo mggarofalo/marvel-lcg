@@ -216,7 +216,16 @@ public sealed class World
         {
             for (int offset = 0; offset < Players; offset++)
             {
-                yield return (FirstPlayer + offset) % Players;
+                int seat = (FirstPlayer + offset) % Players;
+
+                // `rr:player-elimination.6`: "effects that refer to the players
+                // in the game ignore eliminated players." The seat stays in the
+                // list -- `Players` is the starting count and the per-player
+                // icon still uses it -- but nothing takes a turn there.
+                if (seats.Count > seat && !seats[seat].Eliminated)
+                {
+                    yield return seat;
+                }
             }
         }
     }

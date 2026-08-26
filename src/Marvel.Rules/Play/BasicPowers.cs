@@ -537,6 +537,21 @@ public static class BasicPowers
         {
             Trigger = ThwartVerb, Verb = ThwartVerb,
         });
+
+        // `rr:defeat`: "if a character has zero or fewer remaining hit points,
+        // **or if a side scheme has no threat on it**, it is defeated", and
+        // `rr:side-scheme.2` says the same from the other side -- a side scheme
+        // "remains in play until there is no threat on it *(which causes it to
+        // be defeated and discarded)*".
+        //
+        // The main scheme is not a side scheme and stays: `rr:main-scheme.6`
+        // says main scheme cards cannot be discarded from play, and a main
+        // scheme at zero threat is simply one the players are winning.
+        if (scheme.Area.Type == DeckType.SideSchemesArea
+            && scheme.Tokens.GetValueOrDefault("k_threat") == 0)
+        {
+            Defeat.Scheme(world, facts, scheme, ThwartVerb, events);
+        }
     }
 
     private static void Exhaust(Card character, string verb, List<GameEvent> events)
