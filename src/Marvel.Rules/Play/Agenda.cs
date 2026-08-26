@@ -48,9 +48,20 @@ public enum Stage
 /// <c>rr:attacks-against-allies.1</c> keeps the player attacked either way. So
 /// this names a character and not a second seat.
 /// </param>
+/// <param name="Tier">
+/// Which of a card's abilities suspended here, or null for a step that is not
+/// an ability waiting on an answer.
+/// <para>
+/// Only <c>Steps.ChooseOption</c> carries one. A suspended ability is found
+/// again from its card, because a step cannot hold an effect tree — and a card
+/// with a choice in two of its abilities cannot be found again from the card
+/// and a position alone. Infinite Hunter is the first: a "When Revealed" that
+/// chooses an ally and a "Boost" that chooses between two effects.
+/// </para>
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
-    bool Plan = false, int Character = -1)
+    bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>

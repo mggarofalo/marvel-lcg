@@ -184,7 +184,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // that player's identity, which is about who acts, not about who the
         // word points at.
         int resolving = ability.Player >= 0 ? ability.Player : occurrence.Player;
-        var cast = new Cast(world, card, occurrence, resolving, events, this);
+        var cast = new Cast(world, card, occurrence, resolving, events, this)
+        {
+            Tier = found[0].Trigger.Timing,
+        };
 
         // **A forced ability is resolved, never offered, and so never priced.**
         // `rr:forced.1` makes it resolve when its condition is met, which is
@@ -241,7 +244,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             if (ability.Trigger.Timing == AbilityType.WhenRevealed
                 && string.Equals(ability.Trigger.Event, Steps.CardRevealed, StringComparison.Ordinal))
             {
-                Run(ability.Effect, new Cast(world, card, occurrence, player, events, this));
+                Run(
+                    ability.Effect,
+                    new Cast(world, card, occurrence, player, events, this)
+                    {
+                        Tier = ability.Trigger.Timing,
+                    });
             }
         }
 
@@ -287,7 +295,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // `rr:ability` puts a "Boost" ability at the occurrence tier, like
             // "When Revealed": it is the thing happening rather than a window
             // around it, so there is nothing to offer and nothing to decline.
-            Run(ability.Effect, new Cast(world, card, occurrence, player, events, this));
+            Run(
+                ability.Effect,
+                new Cast(world, card, occurrence, player, events, this)
+                {
+                    Tier = ability.Trigger.Timing,
+                });
         }
 
         return events;
@@ -416,6 +429,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             var cast = new Cast(world, card, occurrence, target.Owner, events, this)
             {
                 Incoming = left,
+                Tier = ability.Trigger.Timing,
             };
 
             Run(ability.Effect, cast);
@@ -517,7 +531,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             if (ability.Trigger.Timing == AbilityType.Setup)
             {
-                Run(ability.Effect, new Cast(world, card, occurrence, card.Owner, events, this));
+                Run(
+                    ability.Effect,
+                    new Cast(world, card, occurrence, card.Owner, events, this)
+                    {
+                        Tier = ability.Trigger.Timing,
+                    });
             }
         }
 
@@ -617,7 +636,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         foreach (var ability in written)
         {
-            Run(ability.Effect, new Cast(world, card, occurrence, card.Owner, events, this));
+            Run(
+                ability.Effect,
+                new Cast(world, card, occurrence, card.Owner, events, this)
+                {
+                    Tier = ability.Trigger.Timing,
+                });
         }
 
         return events;
@@ -645,7 +669,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             new Occurrence(0, [Steps.TurnAction], Subject: card.ObjectId, Player: ability.Player),
             ability.Player,
             events,
-            this);
+            this)
+        {
+            Tier = found.Trigger.Timing,
+        };
 
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
         // before step 6 resolves.
@@ -927,16 +954,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public Prompt? Choosing(World world, Card source, int player, int stoppedAt)
+    public Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt, AbilityType? tier = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
 
-        var choice = Choice(source, stoppedAt);
+        var choice = Choice(source, stoppedAt, tier);
 
         if (choice.Kind == "indirectDamage")
         {
-            return Sharing(world, source, player, choice);
+            return Sharing(world, source, player, choice, tier);
         }
 
         bool cards = choice.Kind == "chooseCard";
@@ -946,7 +974,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // on the board. `Question` has told them apart since before anything
         // asked either.
         var affordances = cards
-            ? Every(choice.Require("from"), Resolving(world, source, player))
+            ? Every(choice.Require("from"), Resolving(world, source, player, tier))
                 .Select(card => new Affordance(
                     Id: card.ObjectId,
                     Verb: ChooseVerb,
@@ -983,9 +1011,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// chosen multiple times" is about <i>targets</i>, and this is a division
     /// rather than a target list.
     /// </remarks>
-    private Prompt Sharing(World world, Card source, int player, AbilityNode choice)
+    private Prompt Sharing(
+        World world, Card source, int player, AbilityNode choice, AbilityType? tier)
     {
-        var cast = Resolving(world, source, player);
+        var cast = Resolving(world, source, player, tier);
         long amount = Amount(choice.Require("amount"), cast);
         var eligible = Assignable(choice.Require("among"), cast);
 
@@ -1019,14 +1048,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Chose(
-        World world, Card source, int player, int stoppedAt, Decision input)
+        World world, Card source, int player, int stoppedAt, Decision input,
+        AbilityType? tier = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(input);
 
-        var choice = Choice(source, stoppedAt);
-        var cast = Resolving(world, source, player);
+        var choice = Choice(source, stoppedAt, tier);
+        var cast = Resolving(world, source, player, tier);
 
         if (choice.Kind == "indirectDamage")
         {
@@ -1107,13 +1137,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <summary>A fresh resolution of one card's ability, by one player.</summary>
-    private Cast Resolving(World world, Card source, int player) =>
+    private Cast Resolving(World world, Card source, int player, AbilityType? tier) =>
         new(world,
             source,
             new Occurrence(0, [Steps.CardRevealed], Subject: source.ObjectId, Player: player),
             player,
             [],
-            this);
+            this)
+        {
+            Tier = tier,
+        };
 
     /// <summary>The one choice a card offers, found again from the card.</summary>
     /// <remarks>
@@ -1122,13 +1155,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// and it is charged by name: a second one would make which of them is
     /// waiting a guess.
     /// </remarks>
-    private AbilityNode Choice(Card source, int stoppedAt)
+    private AbilityNode Choice(Card source, int stoppedAt, AbilityType? tier)
     {
-        // **Which choice, when a card has several.** The step says where the
-        // ability stopped, and the choice that stopped it is the step before
-        // that. A card whose whole effect is one choice has no sequence at all,
-        // and resumes at one.
-        var effect = book.On(source.FaceId)
+        // **Which ability, when a card has a choice in more than one.** The
+        // step carries the tier that suspended, because the card and the
+        // position do not say: Infinite Hunter's "When Revealed" chooses an ally
+        // and its "Boost" chooses between two effects, and picking the first
+        // ability with a choice in it would resume the wrong one -- silently,
+        // and with a legal-looking question about the wrong cards.
+        var written = book.On(source.FaceId)
+            .Where(ability => tier is null || ability.Trigger.Timing == tier)
+            .ToList();
+
+        if (written.Count > 1 && written.Count(a => Choices(a.Effect).Any()) > 1)
+        {
+            // Two choices at one tier on one card. The tier is as fine as the
+            // step gets, so this is the next thing to carry rather than
+            // something to guess at.
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' has a choice in more than one '{tier}' ability, and a "
+                + "suspended ability is found again from its card and its tier");
+        }
+
+        var effect = written
             .Select(ability => ability.Effect)
             .FirstOrDefault(tree => Choices(tree).Any())
             ?? throw new RulesNotImplementedException(
@@ -2209,7 +2258,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             2,
             Index: cast.Position + 1,
             Subject: cast.Source.ObjectId,
-            Seat: cast.Player));
+            Seat: cast.Player,
+
+            // Which ability stopped. A card can have a choice in two of them,
+            // and the card and the position do not say which -- see `Choice`.
+            Tier: cast.Tier));
 
         cast.Suspend();
     }
@@ -2293,7 +2346,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             2,
             Index: cast.Position + 1,
             Subject: cast.Source.ObjectId,
-            Seat: cast.Player));
+            Seat: cast.Player,
+
+            // Which ability stopped. A card can have a choice in two of them,
+            // and the card and the position do not say which -- see `Choice`.
+            Tier: cast.Tier));
 
         cast.Suspend();
     }
@@ -3290,6 +3347,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <summary>Records the card a <c>chooseCard</c> was answered with.</summary>
         /// <param name="card">What they picked.</param>
         public void Choose(Card card) => Chosen = card;
+
+        /// <summary>
+        /// Which of the card's abilities is running, or null.
+        /// </summary>
+        /// <remarks>
+        /// Only a suspended choice reads it, and it reads it to find its way
+        /// back: a card with a choice in two of its abilities cannot be resumed
+        /// from the card and a position alone. See <c>Choice</c>.
+        /// </remarks>
+        public AbilityType? Tier { get; init; }
 
         /// <summary>How much damage is about to be dealt — <c>rr:damage.step.1</c>.</summary>
         public long Incoming { get; init; }

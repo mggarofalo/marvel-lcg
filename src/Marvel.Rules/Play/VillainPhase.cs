@@ -183,8 +183,15 @@ public interface ICardAbilities : IWindowAbilities
     /// up at. An ability can ask more than once, so <i>which</i> choice is
     /// waiting is part of the question.
     /// </param>
+    /// <param name="tier">
+    /// Which of the card's abilities stopped, or null when the card has only
+    /// one ability with a choice in it and there is nothing to tell apart. A
+    /// card can have a choice in more than one, and the card and the position
+    /// do not say which.
+    /// </param>
     /// <returns>The question, or null when there is nothing to ask.</returns>
-    Prompts.Prompt? Choosing(World world, Card source, int player, int stoppedAt);
+    Prompts.Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt, Timing.AbilityType? tier = null);
 
     /// <summary>
     /// The game element this card's "attach to" phrase names —
@@ -281,9 +288,11 @@ public interface ICardAbilities : IWindowAbilities
     /// <param name="player">The seat resolving it.</param>
     /// <param name="stoppedAt">Where the ability stopped.</param>
     /// <param name="input">Which option they took.</param>
+    /// <param name="tier">Which of the card's abilities stopped.</param>
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> Chose(
-        World world, Card source, int player, int stoppedAt, Decision input);
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier = null);
 
 
 }
@@ -342,11 +351,13 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual Prompts.Prompt? Choosing(
-        World world, Card source, int player, int stoppedAt) => null;
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier = null) => null;
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Chose(
-        World world, Card source, int player, int stoppedAt, Decision input) =>
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier = null) =>
         throw new RulesNotImplementedException(
             "no card has an ability, so none of them is waiting on a choice");
 
@@ -509,7 +520,7 @@ public static class VillainPhase
 
             case Steps.ChooseOption:
                 return abilities.Choosing(
-                    world, world.Cards[step.Subject], step.Seat, step.Index);
+                    world, world.Cards[step.Subject], step.Seat, step.Index, step.Tier);
 
             case Steps.PassFirstPlayerToken:
                 PassFirstPlayerToken(world);
@@ -590,7 +601,7 @@ public static class VillainPhase
 
             case Steps.ChooseOption:
                 events.AddRange(abilities.Chose(
-                    world, world.Cards[step.Subject], step.Seat, step.Index, input));
+                    world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier));
                 break;
 
             default:
