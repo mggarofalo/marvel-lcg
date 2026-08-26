@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and twenty-two cards in `datasets/abilities/abilities.json`.
+`src/Marvel.Cards`, and twenty-three cards in `datasets/abilities/abilities.json` — the whole of the Standard sets among them.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -592,8 +592,8 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto` |
-| Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil` |
+| Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
 | Amounts | a number, `{ "perPlayer": n }`, or `{ "result": "healed" }` |
 | Bindings | `this`, `you`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
 
@@ -779,9 +779,26 @@ encounter-side cards**. Of those, 61 print no text at all and want a row saying
 The distribution is what makes it tractable. The **Standard** sets reach almost
 everything — `01190` Shadow of the Past appears in 132 of the 135 campaigns, and
 `01191` Exhaustion, `01192` Masterplan and `01193` Under Fire in 75 each. No
-other encounter card in the pool comes near. So the Standard sets are worth
-authoring before anything else, and after them the curve falls away to nine
-scenarios and fewer.
+other encounter card in the pool comes near, and after them the curve falls away
+to nine scenarios and fewer.
+
+**All ten Standard cards are written.** Advance, Assault, Caught Off Guard,
+Gang-Up, Shadow of the Past, Exhaustion, Masterplan and Under Fire, and the two
+that are read and empty. So the set every scenario is built on resolves, and
+what is left is each scenario's own cards.
+
+### A search of a deck is bounded, and the bound is a rule
+
+`discardUntil` takes the top card each time rather than counting ahead, because
+`rr:discard.4` says so: "if multiple cards are discarded from a deck by a
+singular effect, place those cards in the appropriate discard pile **one at a
+time (without changing the order)**". It goes through `EncounterDeck.TakeTop`,
+so a deck that empties mid-search reshuffles rather than ending it.
+
+Which is exactly why it needs a bound. A search for a card that is in neither
+the deck nor the discard pile would reshuffle for ever. The bound is how many
+cards there are, so a card that exists is always found and one that does not
+ends the search instead of the game.
 
 ### A reveal moves the card now and resolves it later
 
