@@ -18,6 +18,12 @@
          BDD runner would also require step definitions for an engine that does
          not exist yet. -->
     <PackageVersion Include="Gherkin" Version="34.0.0" />
+
+    <!-- Reads the Rules Reference PDF, for `tools/Marvel.Rules.Harvest`. Not
+         an engine dependency and not on any path a game takes: the harvester
+         is run by hand when a new Rules Reference ships, against a PDF this
+         repository does not hold and cannot hold. -->
+    <PackageVersion Include="PdfPig" Version="0.1.11" />
   </ItemGroup>
 
 </Project>

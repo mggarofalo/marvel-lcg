@@ -52,7 +52,7 @@ So the harvest emits both, from one parse, covered by the same hashes:
 
 | | For | Grain |
 |---|---|---|
-| `index.json` | machines — spec pinning, `tools.rules.diff` | every citable unit |
+| `index.json` | machines — citation checking, version diffs | every citable unit |
 | `entries/*.md` | agents and humans | one linked document per entry |
 | `icons.json` | both | glyph legend, derived from the document |
 
@@ -119,13 +119,18 @@ audit.
 
 ## The patch loop
 
-The same four steps, whichever authority moved.
+The same four steps, whichever authority moved. **Steps 1 has tooling; steps 2
+to 4 describe a design whose implementation went with the Python tree and has
+not been rebuilt.**
 
 **1. Refresh the snapshot. It is a diff, not a sync.**
 
 ```bash
-python -m tools.rules.harvest --check     # is the pinned RR still current?
-python -m tools.cards.extract --check     # is the card dataset stale?
+# Is the pinned Rules Reference still what the harvester reads?
+dotnet run --project tools/Marvel.Rules.Harvest -- check [pdf]
+
+# Is the card dataset what its generator produces?
+dotnet run --project tools/Marvel.Cards.Extract -- check
 ```
 
 A refresh is a reviewable act. `datasets/marvelsdb/UPSTREAM.md` is already
@@ -135,11 +140,10 @@ tells you exactly which ones.
 
 **2. Compute the affected set.**
 
-```bash
-python -m tools.rules.diff --from 1.5 --to 1.6
-```
-
-Entries added, removed, and changed. This is the whole of what moved.
+Entries added, removed, and changed. This is the whole of what moved, and
+`tools/Marvel.Rules.Harvest -- check` is what reports it today: it names every
+record id the new document has that the committed one does not, and the other
+way round.
 
 **3. Compute the blast radius.**
 

@@ -10,19 +10,18 @@ carries rulings, and neither carries a *rule*.
 | | |
 |---|---|
 | Upstream | Rules Reference **v1.8**, `mc_rulesreference_v18_compressed.pdf` (FFG/Asmodee) |
-| Harvested with | a PDF harvester, since removed — MARVEL-253 |
+| Harvested with | `tools/Marvel.Rules.Harvest` |
 | Harvested | 2026-08-24 |
 | Pinned by | the RR version printed on the document's cover |
 | Tier | `rr:` — the glossary, plus Appendix II. The `pack:` tier is not yet implemented. |
 
 ## Why this exists
 
-`specs/rules/` holds ten rules specifications, and before this dataset
-every one of them asserted what the Python engine does, cross-checked against
-nothing. AGENTS.md names the hazard: a spec authored from ambiguous printed
-words, validated against an engine implementing the same reading of the same
-words, enters `specs/trusted.json` having confirmed only that the engine agrees
-with itself.
+AGENTS.md's first non-negotiable is that the rulebook decides, and before this
+dataset there was no rulebook in the repository to decide with. The hazard it
+names is a behaviour argued from ambiguous printed words and confirmed against
+an implementation that read the same words the same way — which confirms only
+that the implementation agrees with itself.
 
 The worked example is MARVEL-169. The engine models resource generation and
 cost payment as a single step — a static table of what each card would yield,
@@ -38,7 +37,7 @@ repository could say. `rr:cost.3` says it:
 
 | | For | Grain |
 |---|---|---|
-| `index.json` | machines — spec pinning, `tools.rules.diff` | every citable unit |
+| `index.json` | machines — citation checking, version diffs | every citable unit |
 | `entries/*.md` | agents and humans | one linked document per entry |
 | `icons.json` | both | glyph legend, derived from the document |
 
@@ -85,7 +84,7 @@ Simultaneous Timing Priority chart is a run-on sentence inside one clause, and
 Ids are positional rather than derived from the text, so that a citation
 survives a rewording — which is exactly when it most needs to. Inserting a
 clause does renumber the clauses below it; that is real, and it is what
-`tools.rules.diff` will exist to report.
+`-- check` reports when a new version is harvested.
 
 `entries/*.md` carries the **full normative text**, not the one-sentence
 `fragment` the index uses. That distinction is the point: `fragment` exists to
@@ -105,19 +104,48 @@ regenerate-or-fail CI gate**, unlike `../rng/`, `../digest/` and `../cards/`.
 CI has nothing to regenerate from. It is *vendored*, on the same footing as
 `../marvelcdb-faq/`.
 
-**There is no harvester.** The one that produced this snapshot read a PDF held
-locally and has been removed, so a new Rules Reference version cannot currently
-be taken up — MARVEL-253. That is the live exposure here: this document assumes
-an authority can move and the repository can follow it.
+```
+$ dotnet run --project tools/Marvel.Rules.Harvest -- write [pdf] [into]
+$ dotnet run --project tools/Marvel.Rules.Harvest -- check [pdf]
+```
 
-What is verified is this snapshot's internal consistency —
-clause anchors, icon coverage, and front-matter agreement with the index. Every
-one of them is pinned to a defect the parser actually shipped during
-development.
+`check` reads the document and reports how what it produces differs from what
+is committed here. It is not a CI gate and cannot be: CI has no PDF.
+
+What is verified is the harvester's reading of the document — how a heading
+becomes a citation id, and how the document's emphasis becomes Markdown. Those
+need no PDF, so they are held in the suite: `HarvestTests`.
+
+## What the harvester reproduces
+
+Against the v1.8 document, as of the harvester's first version:
+
+| | |
+|---|---|
+| entries | 261 of 262 — Appendix II is page 51 and the reader stops at the glossary |
+| citable records | 1,218, the same number the snapshot holds |
+| record ids | 26 differ, all in five entries |
+| first sentences | 1,168 of 1,218 identical |
+| whole documents | 196 of 260 byte-identical |
+
+**The remaining differences are not all defects in the harvester**, and three
+classes are the other way round:
+
+- The document sets a hyphenated word across a line break — "ally-turned-" and
+  "minion" — and the snapshot joined them with a space. The harvester joins
+  them into a word.
+- A bold word opening a clause, "**Exception**: For abilities that…", lost its
+  opening emphasis in the snapshot.
+- `rr:cost.1` quotes the cost arrow icon, and the snapshot dropped the glyph.
+
+The rest are `rr:teamwork`, whose heading prints "(TRAIT)" that the snapshot
+dropped, and lettered sub-steps attaching one level differently in four
+entries. **Regenerating this dataset is therefore a deliberate act and not a
+routine one** — the ids are what the suite cites, and 26 of them would move.
 
 ## The gutter, and why it is found rather than fixed
 
-Worth knowing before touching `geometry.py`. This document sets recto and verso
+Worth knowing before touching `Pages.Gutter`. This document sets recto and verso
 with **different margins**, so the empty band between its two columns is at
 roughly 291-308pt on one and 303-321pt on the other. The first version of the
 harvester used a single measured split at 300pt, which is correct for the first
@@ -130,17 +158,18 @@ elsewhere in the page — so "a hero does not exhaust" entered the corpus as
 dropped trailing character, in a dataset whose entire purpose is to be
 quotable.
 
-The split is now found per page as the widest character-free band, and
-`harvest` refuses to parse a page whose split cuts through a glyph — a split
-that bisects a character is not a gutter. `unit_test/test_rules_index.py`
-covers both.
+The split is now found per page as the widest character-free band. It is
+searched only across the middle half of the page, because the margins are wider
+than the gutter and would win.
 
 ## Known gaps
 
 - **The appendices are not parsed.** Twenty cross-references point at Appendix I
   (Deck Customization), II (Setup) and III (Card Anatomy) and resolve to
-  nothing. `unit_test/test_rules_index.py` asserts that these are the *only*
-  unresolved references, so the gap cannot silently widen.
+  nothing. They are listed in each entry's `see_also_unresolved`, which is what
+  that field is for: naming what the snapshot does not carry, rather than
+  handing back a quietly shorter list. Appendix II is here anyway, added by hand
+  — see above.
 - **The `pack:` tier does not exist yet.** The 61 rulesheets, inserts and
   expansion rulebooks are prose about one hero or one scenario, with no shared
   structure to parse — and they are where new keywords arrive. They need a
@@ -154,5 +183,20 @@ covers both.
 
 A new Rules Reference version is the patch loop in
 [`docs/rules-provenance.md`](../../docs/rules-provenance.md), entered at step 1.
-Re-run the harvest against the new PDF, diff the index, and let provenance
-pinning drop every trusted scenario whose cited entry moved.
+Run `check` against the new PDF first — it says which entries moved — then
+`write`, then read what changed. `RuleCitationTests` fails the build on a
+citation whose id no longer resolves, which is the point: a renumbered clause
+should stop the build rather than quietly re-aim a test at a different rule.
+
+## What the harvester knows about the document
+
+Five things, each of which cost a defect to find, and each written down where
+the code does it:
+
+| | |
+|---|---|
+| The gutter moves between recto and verso | found per page as the widest character-free band, not measured once |
+| Section titles are overprinted | `OOVVEERRVVIIEEWW` is one word drawn twice |
+| Headings carry no space glyphs | `THEGOLDENRULES` — the words divide by a measured gap |
+| The second-level bullet is a glyph its font does not carry | `U+0000` on one page and `U+0020` on another, so the *face* is the signal |
+| The document reproduces cards, and a card has text on it | Rhino's boost icons read as part of the prose beside them |

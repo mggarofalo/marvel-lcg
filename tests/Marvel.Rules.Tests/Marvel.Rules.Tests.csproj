@@ -7,6 +7,12 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Marvel.Rules/Marvel.Rules.csproj" />
+
+    <!-- The Rules Reference harvester. Referenced so that the rules it reads
+         the document by (how a heading becomes an id, how emphasis is written)
+         are held against the 262 entries the document holds, rather than only
+         against whatever page somebody last looked at. -->
+    <ProjectReference Include="../../tools/Marvel.Rules.Harvest/Marvel.Rules.Harvest.csproj" />
   </ItemGroup>
 
   <ItemGroup>
