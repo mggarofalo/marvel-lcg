@@ -175,7 +175,10 @@ internal static class AuthoredCards
     /// still missing are what it stops on.
     /// </remarks>
     public static readonly string[] UnusEncounters =
-        ["45063", "45064", "45068", "45069", "45070", "45073", "45074"];
+        ["45063", "45064", "45068", "45069", "45070", "45072", "45073", "45074"];
+
+    /// <summary>The printed id of "Hunted", the scenario's obligation.</summary>
+    public const string Hunted = "45072";
 
     /// <summary>The printed id of "Prelate Sidearm", the attachment on Unus.</summary>
     public const string PrelateSidearm = "45063";

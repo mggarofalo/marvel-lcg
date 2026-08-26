@@ -255,7 +255,10 @@ public sealed class ActionAbilityTests
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => AuthoredCards.Runner().Act(
-                world, ability, [.. world.Seats[0].Hand.Cards.Select(card => card.ObjectId)]));
+                world,
+                ability,
+                [.. world.Seats[0].Hand.Cards.Select(card => card.ObjectId)],
+                []));
 
         Assert.Contains("requiring 'RRR'", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(3, world.Seats[0].Hand.Cards.Count);

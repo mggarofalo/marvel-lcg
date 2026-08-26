@@ -473,7 +473,8 @@ public sealed class Game
         // `rr:initiating-abilities.step.5` -- the answer carries which cards
         // were spent, because a cost of resources is a choice of *which* and
         // the affordance already said what could pay.
-        var happened = new List<GameEvent>(abilities.Act(world, ability, input.Spent));
+        var happened = new List<GameEvent>(
+            abilities.Act(world, ability, input.Spent, input.Targets));
 
         return Turn(happened);
     }

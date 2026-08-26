@@ -293,7 +293,7 @@ public sealed class OfferingTests
 
         public IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying)
+            IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
         {
             Resolved.Add(ability.Card);
             return [new CardsFlipped([ability.Card], true) { Trigger = "test" }];
