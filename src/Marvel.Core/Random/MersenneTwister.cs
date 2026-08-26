@@ -102,6 +102,11 @@ public sealed class MersenneTwister
 
         uint y = _mt[_index];
         y ^= y >> 11;
+
+        // Bit 0 of this mask is unreachable: the operand is `y << 7`, whose
+        // low seven bits are always zero. Mutating it is an equivalent change
+        // and no test can catch one -- worth knowing before trying to write
+        // the test that would.
         y ^= (y << 7) & 0x9D2C5680u;
         y ^= (y << 15) & 0xEFC60000u;
         y ^= y >> 18;
@@ -126,8 +131,8 @@ public sealed class MersenneTwister
     /// parameter wraps that to 0; the mask coincidentally still comes out
     /// <c>0xFFFFFFFF</c>, but <c>value &lt; n</c> becomes <c>value &lt; 0</c>,
     /// which is never true on an unsigned type — so the loop spins forever.
-    /// The vectors cover <c>n = 2^32</c>, so getting this wrong fails the
-    /// fixture by hanging rather than by returning a wrong answer.
+    /// <c>MersenneTwisterTests</c> covers <c>n = 2^32</c>, so getting this
+    /// wrong hangs a test rather than returning a wrong answer.
     /// </para>
     /// <para>
     /// Nothing is special-cased. <c>n = 1</c> still consumes a word, because
@@ -198,10 +203,8 @@ public sealed class MersenneTwister
     /// </para>
     /// <para>
     /// <paramref name="k"/> outside <c>[0, count]</c> is an error and is
-    /// <b>rejected, not clamped</b>. The vectors cannot catch this, because
-    /// they only record successful calls: an implementation that clamped would
-    /// pass every one of them and then quietly hand the game the wrong number
-    /// of targets.
+    /// <b>rejected, not clamped</b>. A clamp would hand the game the wrong
+    /// number of targets while looking like a successful call.
     /// </para>
     /// </remarks>
     public List<T> ChooseWithoutReplacement<T>(IReadOnlyList<T> items, int k)
