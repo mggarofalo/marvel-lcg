@@ -11,7 +11,7 @@ the Plane project `MARVEL` — see [docs/plane.md](docs/plane.md).
 ```
 src/        the engine — `Marvel.Core`, `Marvel.Rules`, `Marvel.Cards`, `Marvel.Content`
 tests/      the test suite, plus `godot-wall/` (projects that must fail to build)
-tools/      repo-level scripts
+tools/      repo-level scripts, and the three that read a dataset in or out
 datasets/   the rules, the cards, and what a scenario is dealt from
 specs/      Gherkin scenarios written from printed card text — all drafts
 docs/       design documents and wire-format specifications
@@ -90,6 +90,16 @@ as important.
 
 10. **Never close or merge a pull request you did not open in this session.** If
     a PR looks like a blocker, report it and stop.
+
+## The tools
+
+Three, all run by hand and none on any path a game takes.
+
+| | |
+|---|---|
+| `tools/Marvel.Cards.Extract` | builds `datasets/cards/` from the vendored MarvelSDB snapshot. `-- check` is a CI gate. |
+| `tools/Marvel.Rules.Harvest` | reads the Rules Reference PDF into `datasets/rules-reference/`. Not a gate: the document is copyrighted and CI has no copy. |
+| `tools/Marvel.Rules.Index` | asks the rules corpus questions — `refs` walks the citation graph both ways, `citations` reports what the suite holds the engine to. |
 
 ## Before you touch X, read Y
 
