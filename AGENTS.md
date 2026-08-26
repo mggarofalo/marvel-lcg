@@ -53,8 +53,10 @@ as important.
 
 6. **The RNG and the state digest are wire formats.** One MT19937 stream,
    seeded once per game, no floating point. `World.Digest()` serialises every
-   card. Changing either format changes every game outcome. Nothing currently
-   pins the canonical form — MARVEL-251.
+   card. Changing either format changes every game outcome. Both are pinned
+   against an authority rather than a recording: `MersenneTwisterTests` holds
+   the stream to ISO/IEC 14882 §rand.predef, and `StateDigestTests` holds the
+   digest to the spelling it emits.
 
 7. **Printed card text lives in `datasets/cards/`.** It is the joined,
    corrected text. Do not author a card or a spec from anywhere else.
