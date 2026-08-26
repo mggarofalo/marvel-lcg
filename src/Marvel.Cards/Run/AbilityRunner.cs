@@ -1459,6 +1459,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would grant to a card that is not there");
 
+        // `rr:traits.1` -- "traits have no inherent effects on the game.
+        // Instead, some card abilities reference cards that possess or lack
+        // specific traits." So a granted trait carries no amount and is not
+        // held against the printed fields: it is a name other cards ask about,
+        // and the pool spells one in capitals.
+        if (node.Field("trait") is { } gained)
+        {
+            return new ContinuousEffect(
+                EffectSource.ConstantAbility,
+                Kind: Rules.State.Traits.Granted + Word(gained),
+                Card: cast.Source.ObjectId,
+                Affects: target.ObjectId,
+                Lasts: Duration.WhileInPlay);
+        }
+
         string keyword = Word(node.Require("keyword"));
         if (!StateFields.IsPrinted(keyword) && !Keywords.Granted.Contains(keyword))
         {
@@ -2514,7 +2529,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     .Where(area => area.Type is DeckType.VillainArea
                         or DeckType.EngagedEnemiesArea)
                     .SelectMany(area => area.Cards)
-                    .Where(card => cast.World.Facts.Traits(card.FaceId)
+                    .Where(card => Rules.State.Traits.Of(cast.World, card, cast.World.Facts)
                         .Contains(wanted, StringComparer.Ordinal)),
             ];
         }
@@ -2647,9 +2662,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             .. area.Cards
                 .Where(card => kind is null || string.Equals(
                     cast.World.Facts.Kind(card.FaceId).ToString(), kind, StringComparison.Ordinal))
-                .Where(card => trait is null || cast.World.Facts
-                    .Traits(card.FaceId)
-                    .Contains(trait, StringComparer.Ordinal)),
+                .Where(card => trait is null
+                    || Rules.State.Traits.Has(cast.World, card, trait, cast.World.Facts)),
         ];
     }
 

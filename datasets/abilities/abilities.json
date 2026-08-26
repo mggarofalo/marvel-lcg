@@ -1024,6 +1024,57 @@
           }
         }
       ]
+    },
+    {
+      "card": "40151",
+      "name": "Flight",
+      "note": "Setup. Attach to the villain. Permanent. The attach-to is rr:attach-to, a rule about the phrase rather than an ability, so it is the card's attachTo and not a When Revealed -- rr:when-revealed-abilities.2 would not fire one on a card put into play by rr:appendix-ii-setup.step.11 without being revealed. Permanent and the printed ATK+ 1 are declarative: rr:permanent is a printed field and rr:attachment.1 makes a printed modifier something StateFields reads off the attachment without an ability. What is left is one constant ability -- rr:ability.5, no bold timing trigger -- and rr:ability.9 keeps it in force only while the card is in play. Attached villain gains the AERIAL trait. [star] Attached villain's attacks gain overkill. The star sits in the ATK field, which rr:star-icon.2 makes a reminder to check the text box whenever the attached enemy uses that value to attack -- so the overkill is about the villain's attacks. Granting it to the villain outright is the same thing here and not a shortcut: rr:overkill is only ever asked of the attacker during an attack, and nothing else in the engine asks whether a character has it.",
+      "attachTo": { "query": "villain" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": {
+            "seq": [
+              { "grant": { "card": "attachedTo", "trait": "AERIAL" } },
+              { "grant": { "card": "attachedTo", "keyword": "overkill" } }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "40155",
+      "name": "Super Strength",
+      "note": "Setup. Attach to the villain. Permanent. The attach-to is rr:attach-to, a rule about the phrase rather than an ability, so it is the card's attachTo and not a When Revealed -- rr:when-revealed-abilities.2 would not fire one on a card put into play by rr:appendix-ii-setup.step.11 without being revealed. Permanent and the printed ATK+ 1 are declarative: rr:permanent is a printed field and rr:attachment.1 makes a printed modifier something StateFields reads off the attachment without an ability. What is left is one constant ability -- rr:ability.5, no bold timing trigger -- and rr:ability.9 keeps it in force only while the card is in play. Attached villain gains the BRUTE trait and steady. Steady is a printed field the engine already reads -- rr:status-cards.1.1 lets a steady character have one additional confused and one additional stunned status card, and Statuses.Limit asks through StateFields.Modified -- so granting it is adding to that field.",
+      "attachTo": { "query": "villain" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": {
+            "seq": [
+              { "grant": { "card": "attachedTo", "trait": "BRUTE" } },
+              { "grant": { "card": "attachedTo", "keyword": "steady" } }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "40159",
+      "name": "Telepathy",
+      "note": "Setup. Attach to the villain. Permanent. The attach-to is rr:attach-to, a rule about the phrase rather than an ability, so it is the card's attachTo and not a When Revealed -- rr:when-revealed-abilities.2 would not fire one on a card put into play by rr:appendix-ii-setup.step.11 without being revealed. Permanent and the printed SCH+ 1 are declarative: rr:permanent is a printed field and rr:attachment.1 makes a printed modifier something StateFields reads off the attachment without an ability. What is left is one constant ability -- rr:ability.5, no bold timing trigger -- and rr:ability.9 keeps it in force only while the card is in play. Attached villain gains the PSIONIC trait and retaliate 1. Retaliate carries a number where steady does not, which is why the grant states one: rr:retaliate-x deals X damage to the attacker, and Damage.Retaliate reads X through StateFields.Modified.",
+      "attachTo": { "query": "villain" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": {
+            "seq": [
+              { "grant": { "card": "attachedTo", "trait": "PSIONIC" } },
+              { "grant": { "card": "attachedTo", "keyword": "retaliate", "amount": 1 } }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

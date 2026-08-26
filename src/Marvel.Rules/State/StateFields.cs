@@ -264,7 +264,12 @@ public static class StateFields
             ["is_exhaust"] = card.Ready ? 0 : 1,
         };
 
-        foreach (string trait in facts.Traits(faceId))
+        // `rr:traits` — printed *and* granted. A villain wearing Super
+        // Strength has the BRUTE trait, and a digest that emitted only the
+        // printed list would describe a board nobody is playing.
+        foreach (string trait in world is null
+            ? facts.Traits(faceId)
+            : Traits.Of(world, card, facts))
         {
             Merge(fields, "t_" + trait, 1);
         }

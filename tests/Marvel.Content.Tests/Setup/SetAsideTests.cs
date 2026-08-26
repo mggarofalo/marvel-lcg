@@ -45,16 +45,21 @@ public sealed class SetAsideTests
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
     [Rule("rr:permanent.2")]
-    [Rule("rr:setup-keyword.1")]
     [Fact]
     public void APermanentCardIsSetAsideRatherThanShuffledIn()
     {
-        var world = Deal();
+        // "Permanent cards are set aside **before step 1 of setup**." Asserted
+        // on the deal order rather than on the finished board, because the
+        // board no longer shows it: `rr:appendix-ii-setup.step.11` searches the
+        // set-aside area and puts the card into play, so being set aside is a
+        // stage of the deal and not where it ends up — the same shape
+        // `SetupOrderTests` already records for the obligations.
+        var blueprint = Assert.Single(
+            Blueprints.From(Dealer.DealOrder(Setup, Campaign, ["spider_man"]), Cards),
+            each => each.Spec.StartsWith(Flight, StringComparison.Ordinal));
 
-        var card = Assert.Single(world.Cards, each => each.FaceId == Flight);
-
-        Assert.Equal(DeckType.AsideDeck, card.Area.Type);
-        Assert.True(card.Area.PlayArea.IsVillains, "a scenario card goes to the villain's pile");
+        Assert.Equal(SetupSlot.SetAside, blueprint.Slot);
+        Assert.Equal(-1, blueprint.Seat);
     }
 
     [Fact]
@@ -63,13 +68,12 @@ public sealed class SetAsideTests
         // The three keywords reroute a card and nothing else does. The rest of
         // the same set is shuffled into the encounter deck as it always was,
         // which is what makes this a routing change rather than a new pile.
-        var world = Deal();
-        var others = world.Cards
-            .Where(card => card.FaceId is "40152" or "40153" or "40154")
+        var others = Dealt()
+            .Where(card => card.Spec is "40152" or "40153" or "40154")
             .ToList();
 
         Assert.NotEmpty(others);
-        Assert.All(others, card => Assert.Equal(DeckType.EncounterDeck, card.Area.Type));
+        Assert.All(others, card => Assert.Equal(SetupSlot.Encounter, card.Slot));
     }
 
     [Fact]
@@ -79,12 +83,12 @@ public sealed class SetAsideTests
         // and rerouting must not renumber anything — so the ids of the whole
         // scenario are exactly the sequence they would be without the change.
         var order = Dealer.DealOrder(Setup, Campaign, ["spider_man"]);
-        var world = Deal();
+        var dealt = Dealt();
 
-        Assert.Equal(order.Count, world.Cards.Count);
+        Assert.Equal(order.Count, dealt.Count);
         for (int id = 0; id < order.Count; id++)
         {
-            Assert.Equal(order[id].Spec.Split(',')[0], world.Cards[id].Faces[0]);
+            Assert.Equal(order[id].Spec, dealt[id].Spec);
         }
     }
 
@@ -153,9 +157,16 @@ public sealed class SetAsideTests
             card => card.Area.Type == DeckType.AsideDeck && card.Area.PlayArea.IsVillains);
     }
 
-    private static World Deal() => WorldSetup.Deal(
-        Cards,
-        Blueprints.From(Dealer.DealOrder(Setup, Campaign, ["spider_man"]), Cards),
-        ["Spider-Man"],
-        12345);
+    /// <summary>The deal order, which is where routing is decided.</summary>
+    /// <remarks>
+    /// Read off the blueprints rather than off a dealt board, and that is not a
+    /// convenience. Where a card is <i>routed</i> and where it <i>ends up</i>
+    /// stopped being the same question at
+    /// <c>rr:appendix-ii-setup.step.11</c>: a setup card is searched out of the
+    /// pile it was set aside in and put into play, so a board shows the second
+    /// and this file is about the first. <c>SetupCardTests</c> is where the
+    /// step itself is held.
+    /// </remarks>
+    private static IReadOnlyList<CardBlueprint> Dealt() =>
+        Blueprints.From(Dealer.DealOrder(Setup, Campaign, ["spider_man"]), Cards);
 }

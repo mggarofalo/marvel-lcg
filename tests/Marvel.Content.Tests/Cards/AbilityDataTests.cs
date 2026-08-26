@@ -386,6 +386,7 @@ public sealed class AbilityDataTests
             AuthoredCards.Masterplan, AuthoredCards.UnderFire, AuthoredCards.RhinoThree,
             AuthoredCards.Boomerang, AuthoredCards.Beetle, AuthoredCards.WhiteRabbit, AuthoredCards.SinisterOnslaught, AuthoredCards.CrimePays, AuthoredCards.SyndicateShocker, AuthoredCards.SpeedDemon,
             .. AuthoredCards.Unus,
+            .. AuthoredCards.Superpowers,
             .. AuthoredCards.ReadAndSilent,
         ];
 

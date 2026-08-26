@@ -20,8 +20,9 @@ namespace Marvel.Content.Tests.Setup;
 /// <b>What is unimplemented is asserted as unimplemented, by name.</b> Not all
 /// of Appendix II is written yet, and a test that only checked the part that is
 /// would let the rest be forgotten. Such a test fails when somebody implements
-/// the step, which is the point: it tells them it is here. Step 12 was one of
-/// these and is now <c>SetupAbilityTests</c>; step 11 still is.
+/// the step, which is the point: it tells them it is here. Steps 11 and 12 were
+/// both of these, and are now <c>SetupCardTests</c> and
+/// <c>SetupAbilityTests</c>.
 /// </para>
 /// </remarks>
 public sealed class SetupOrderTests
@@ -104,30 +105,32 @@ public sealed class SetupOrderTests
 
     [Rule("rr:appendix-ii-setup.step.11")]
     [Fact]
-    public void PutSetupCardsIntoPlayIsNotImplemented()
+    public void PutSetupCardsIntoPlayLeavesNothingBehindInAPile()
     {
         // "Search each deck and the set aside area for any cards with the setup
-        // keyword and put them into play." **This step does not run** --
-        // MARVEL-211 -- so a setup card is still in the pile it was set aside
-        // in when the deal returns.
+        // keyword and put them into play." Held as an absence over the whole
+        // board rather than as one card in one place: the step is a search, so
+        // what it must not do is miss one.
         //
-        // Asserted rather than left silent, because a step that does not happen
-        // and a step that happens and finds nothing look identical on the Rhino
-        // board, which has no setup card at all. So this deals a board that has
-        // one.
+        // The Rhino board has no setup card at all, which is why this deals one
+        // that has -- and `SetupCardTests` is where each kind's destination is
+        // held.
         var world = WorldSetup.Deal(
             Cards,
             Blueprints.From(
-                Dealer.DealOrder(Setup, "2401_the_ground_is_lava", ["spider_man"]), Cards),
+                [
+                    .. Dealer.DealOrder(Setup, Campaign, ["spider_man"]),
+                    new Creation("40151", CreationSource.EncounterSet, Creation.Scenario),
+                ],
+                Cards),
             ["Spider-Man"],
-            Seed);
+            Seed,
+            AuthoredCards.Runner());
 
-        var flight = Assert.Single(world.Cards, card => card.FaceId == "40151");
-
-        Assert.Equal(DeckType.AsideDeck, flight.Area.Type);
-        Assert.True(
-            Cards.PrintedValue(flight.FaceId, "Setup", world.Players) > 0,
-            "the card this is about must actually carry the keyword");
+        Assert.DoesNotContain(
+            world.Cards,
+            card => Cards.PrintedValue(card.FaceId, "Setup", world.Players) > 0
+                && !DeckTypes.IsInPlay(card.Area.Type));
     }
 
     [Rule("rr:appendix-ii-setup.step.12.a")]
