@@ -6,12 +6,25 @@
     {
       "card": "01001a",
       "name": "Spider-Man",
-      "note": "Spider-Sense -- Interrupt: When the villain initiates an attack against you, draw 1 card. 'You' is the attacked player and not the attacked character: rr:attack-enemy-activation.1.4. Printed on the hero face only, which is why the alter-ego face 01001b is a separate card id and carries nothing.",
+      "note": "Spider-Sense -- Interrupt: When the villain initiates an attack against you, draw 1 card. 'You' is the attacked player and not the attacked character: rr:attack-enemy-activation.1.4. Printed on the hero face only, which is why the alter-ego face 01001b is a separate card id and carries its own.",
       "abilities": [
         {
           "name": "Spider-Sense",
           "trigger": { "event": "WhenEnemyAttacks", "timing": "Interrupt", "subject": "you" },
           "effect": { "draw": { "player": "trigger.player", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01001b",
+      "name": "Peter Parker",
+      "note": "Scientist -- Resource: Generate a [mental] resource. (Limit once per round.) The sixth generator in the recorded prompt, and the reason that prompt lists six for five payable cards: rr:resource-ability.1 makes one triggerable 'anytime the player who controls the ability is generating resources to pay a cost', so it sits beside the cards in hand rather than in a window. rr:limit counts the use per instance of the ability, which is per card in play -- two Peter Parkers at one table would have one use each.",
+      "abilities": [
+        {
+          "name": "Scientist",
+          "trigger": { "event": "WhenActionTriggered", "timing": "Resource", "subject": "this" },
+          "limitPerRound": 1,
+          "effect": { "generate": "B" }
         }
       ]
     },

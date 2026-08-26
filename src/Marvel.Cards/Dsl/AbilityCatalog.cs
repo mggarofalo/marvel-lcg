@@ -29,7 +29,10 @@ public static class AbilityCatalog
         new(StringComparer.Ordinal) { "card", "name", "note", "abilities" };
 
     private static readonly HashSet<string> AbilityKeys =
-        new(StringComparer.Ordinal) { "name", "note", "trigger", "effect", "cost" };
+        new(StringComparer.Ordinal)
+        {
+            "name", "note", "trigger", "effect", "cost", "limitPerRound",
+        };
 
     private static readonly HashSet<string> TriggerKeys =
         new(StringComparer.Ordinal) { "event", "timing", "subject", "form" };
@@ -130,7 +133,8 @@ public static class AbilityCatalog
             Text(element, "name") ?? cardName,
             new AbilityTrigger(when, type, subject, Form(trigger, card)),
             Node(effect, card),
-            element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null);
+            element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
+            element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null);
     }
 
     /// <summary>

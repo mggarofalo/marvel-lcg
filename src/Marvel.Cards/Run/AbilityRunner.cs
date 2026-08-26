@@ -223,6 +223,96 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        var sources = new List<ResourceSource>();
+        foreach (var card in Triggerable(world, player))
+        {
+            foreach (var ability in book.On(card.FaceId))
+            {
+                if (ability.Trigger.Timing != AbilityType.Resource
+                    || !Available(world, card, ability))
+                {
+                    continue;
+                }
+
+                // The letters this makes, read off the effect rather than the
+                // printed `RES` field: `RES` is what discarding the card
+                // generates, and an ability is a different way to make one.
+                sources.Add(new ResourceSource(card.ObjectId, Generated(ability.Effect)));
+            }
+        }
+
+        return sources;
+    }
+
+    /// <summary>
+    /// Whether an ability has uses left this round — <c>rr:limit</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "Each copy of an ability with such a limit may be used X times per the
+    /// specified period, <b>per instance of that ability</b>", so the count is
+    /// kept against the card in play rather than the printed id: two Peter
+    /// Parkers at one table have one use each.
+    /// </para>
+    /// <para>
+    /// <b>Kept as a lasting effect and not a token.</b> A card's tokens are on
+    /// the wire — they are the digest's <c>fields</c> — so counting uses there
+    /// would put a number in every recorded board that the recording does not
+    /// have. A lasting effect is not digested, and it expires at the end of the
+    /// round without anything having to remember to clear it.
+    /// </para>
+    /// </remarks>
+    private static bool Available(World world, Card card, CardAbility ability) =>
+        ability.Limit is not { } limit
+        || world.Effects.Active().Count(effect =>
+            effect.Card == card.ObjectId
+            && string.Equals(effect.Kind, Spent(ability), StringComparison.Ordinal)) < limit;
+
+    /// <summary>Records one use of a limited ability, until the round ends.</summary>
+    private static void Use(World world, Card card, CardAbility ability)
+    {
+        if (ability.Limit is not null)
+        {
+            world.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: Spent(ability),
+                Card: card.ObjectId,
+                Affects: card.ObjectId,
+                Lasts: Duration.UntilEndOf(TimingPoints.EndOfRound)));
+        }
+    }
+
+    /// <summary>The effect kind that stands for one use of an ability.</summary>
+    private static string Spent(CardAbility ability) => "spent:" + ability.Name;
+
+    /// <summary>What letters an effect generates, if it only generates.</summary>
+    private static string Generated(AbilityNode effect) => effect.Kind == "generate"
+        ? Word(effect.Argument)
+        : throw new RulesNotImplementedException(
+            $"a resource ability whose effect is '{effect.Kind}' generates nothing this "
+            + "engine can read");
+
+    /// <inheritdoc/>
+    public string UseResource(World world, int player, int card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        var holder = world.Cards[card];
+        var ability = book.On(holder.FaceId).FirstOrDefault(candidate =>
+            candidate.Trigger.Timing == AbilityType.Resource
+            && Available(world, holder, candidate))
+            ?? throw new RulesNotImplementedException(
+                $"card {card} has no resource ability left to use this round");
+
+        Use(world, holder, ability);
+        return Generated(ability.Effect);
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<GameEvent> WhenDefeated(World world, Card card)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -392,7 +482,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // so if everything together cannot pay then no choice among them
             // can, and if it can then spending it all is a payment.
             { Kind: "spend" } => Resources.Pays(
-                string.Concat(CardPlay.Generators(world.Facts, world.Seats[player])
+                string.Concat(CardPlay.Generators(world, world.Facts, world.Seats[player])
                     .SelectMany(source => source.Generates)),
                 Word(cost.Argument).Length,
                 Word(cost.Argument)),
@@ -419,7 +509,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Target: card.ObjectId,
             Cost: letters.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Rule: [letters],
-            Sources: CardPlay.Generators(world.Facts, world.Seats[player]));
+            Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]));
     }
 
     /// <summary>Pays an ability's cost — <c>rr:initiating-abilities.step.5</c>.</summary>
@@ -441,6 +531,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 letters.Length,
                 letters,
                 itself: -1,
+                cast.Player,
                 cast.Events);
             return;
         }
@@ -629,6 +720,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
 
                 break;
+
+            case "generate":
+                // `rr:resource-ability` -- a resource ability is *read* while a
+                // cost is being paid rather than run like an effect, so nothing
+                // happens here. `ResourceAbilities` takes its letters and
+                // `UseResource` counts the use; running it would be a second
+                // way to generate the same resource.
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' generates a resource, which is read while a "
+                    + "cost is paid rather than resolved as an effect");
 
             case "exhaust":
                 Exhaust(node, cast);

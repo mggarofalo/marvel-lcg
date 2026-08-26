@@ -44,14 +44,25 @@ public static class CardPlay
     /// simply absent from this list rather than misreported.
     /// </para>
     /// </remarks>
+    /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="seat">Whose hand.</param>
-    public static IReadOnlyList<ResourceSource> Generators(ICardFacts facts, Seat seat)
+    public static IReadOnlyList<ResourceSource> Generators(
+        World world, ICardFacts facts, Seat seat)
     {
+        ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(seat);
 
-        var sources = new List<ResourceSource>();
+        // `rr:resource-ability.1` -- one "can be triggered **anytime the player
+        // who controls the ability is generating resources to pay a cost**", so
+        // it belongs beside the cards in hand: another way to make a resource
+        // rather than another moment. Peter Parker's "Scientist" is the one the
+        // recorded prompt carries, and it is why that prompt lists six
+        // generators for five payable cards.
+        var sources = new List<ResourceSource>(world.Abilities.ResourceAbilities(
+            world, seat.Index));
+
         foreach (var card in seat.Hand.Cards)
         {
             string generates = Resources.GeneratedBy(card.FaceId, facts);
@@ -151,7 +162,7 @@ public static class CardPlay
         // resources "by discarding cards from their hand", and this one is
         // leaving the hand to be played.
         var sources = Paying(world, facts, seat, card)
-            .SelectMany(paying => Generators(facts, paying))
+            .SelectMany(paying => Generators(world, facts, paying))
             .Where(source => source.Effect != card.ObjectId)
             .ToList();
 
@@ -221,7 +232,7 @@ public static class CardPlay
 
         Spend(
             world, facts, hands, paying, cost, Resources.Required(card.FaceId, facts),
-            card.ObjectId, events);
+            card.ObjectId, seat.Index, events);
 
         // Steps 6 and 7. The card is played: it enters play, or it is an event
         // and its ability resolves before it is discarded.
@@ -255,10 +266,13 @@ public static class CardPlay
     /// resources "by discarding cards from their hand", and a card leaving the
     /// hand to be played is not also in it.
     /// </param>
+    /// <param name="payer">
+    /// Whose cost it is, for a generator that is an ability rather than a card.
+    /// </param>
     /// <param name="events">Where to record what moved.</param>
     public static void Spend(
         World world, ICardFacts facts, IReadOnlyList<Area> hands, IReadOnlyList<int> paying,
-        long cost, string required, int itself, List<GameEvent> events)
+        long cost, string required, int itself, int payer, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -268,9 +282,28 @@ public static class CardPlay
 
         var spent = new List<Card>();
         var generated = new System.Text.StringBuilder();
+
+        // `rr:resource-ability` -- a generator that is not a card in hand is an
+        // ability on a card in play, and using one is not discarding it.
+        // `rr:cost.3` spends resources "by discarding cards from their hand",
+        // which is the *other* way and not the only one.
+        //
+        // Asked as "was this one offered" rather than "is this card in a hand",
+        // so that a payment naming a card that is neither still says the thing
+        // that is wrong with it.
+        var abilities = world.Abilities.ResourceAbilities(world, payer)
+            .Select(source => source.Effect)
+            .ToHashSet();
+
         foreach (int id in paying)
         {
             var source = world.Cards[id];
+            if (abilities.Contains(id) && !hands.Contains(source.Area))
+            {
+                generated.Append(world.Abilities.UseResource(world, payer, id));
+                continue;
+            }
+
             if (!hands.Contains(source.Area))
             {
                 // Named, because "not in a hand" and "not in *yours*" are

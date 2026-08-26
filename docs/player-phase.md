@@ -103,6 +103,36 @@ action menu. So a basic attack appears only when there is an enemy that can be
 attacked, a basic thwart only when a scheme holds at least one threat, and a
 basic recovery only when there is damage to heal.
 
+### A generator that is not a card in hand
+
+`rr:resource-ability.1`: one "can be triggered **anytime the player who controls
+the ability is generating resources to pay a cost**" — so it sits beside the
+cards in hand rather than in a window. Another way to make a resource, not
+another moment. 75 cards print one.
+
+**The recorded prompt has been carrying it all along.** It lists *six*
+generators for a hand of six cards one of which is being played, and a list
+built from hand cards alone was short by exactly that one. It is Peter Parker's
+"Scientist — **Resource**: generate a [mental] resource", printed on the
+alter-ego face the recorded board is showing.
+
+Using one is **not** discarding it: `rr:cost.3`'s "by discarding cards from
+their hand" is the other way, and an identity cannot be discarded at all
+(`rr:identity.3`).
+
+**"Limit once per round" is kept as a lasting effect, not a token.** A card's
+tokens are the digest's `fields`, so counting uses there would put a number in
+every recorded board that the recording does not have. A lasting effect is not
+digested and expires at the end of the round without anything having to
+remember. `rr:limit` counts "per instance of that ability", which is per card in
+play — two Peter Parkers at one table would have one use each.
+
+`PlayerPhaseTests` could not assert the recorded generators at all before this.
+It now compares them **by what they make**: the count and the letters match
+exactly. The ids still cannot be compared, and that is a separate finding —
+the recording's `effect` is the Python engine's own effect id rather than an
+object id (MARVEL-223).
+
 ### Triggering an action
 
 `rr:player-turn.5` — "trigger an **Action** ability on: a. a card in play they
@@ -234,9 +264,6 @@ icon**". A villain's `14*` hit points do not shrink when somebody dies.
 
 - **Asking another player** (`rr:player-turn.6`). Triggering an action (`.5`) is
   written; `.5.c` is a card's own text and has nothing general behind it.
-- **`rr:resource-ability`** — the "**Resource**" timing trigger. The recorded
-  prompt lists six generators for a hand of six cards, one of which is being
-  played, so one generator is not a card in hand at all. That one is this.
 - Cost modifiers, `X` costs and the per-player icon on a cost — all refused by
   name rather than read as a number.
 - **The interrupt window around a defeat.**

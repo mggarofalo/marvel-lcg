@@ -67,6 +67,35 @@ public interface ICardAbilities : IWindowAbilities
     IReadOnlyList<GameEvent> WhenDefeated(World world, Card card);
 
     /// <summary>
+    /// The "<b>Resource</b>" abilities a player could generate from —
+    /// <c>rr:resource-ability</c>.
+    /// </summary>
+    /// <remarks>
+    /// "A resource ability can be triggered <b>anytime the player who controls
+    /// the ability is generating resources to pay a cost</b>", so these sit
+    /// beside the cards in hand rather than in a window: they are another way
+    /// to make a resource, not another moment.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="player">Whose cost is being paid.</param>
+    /// <returns>One source per ability still available this round.</returns>
+    IReadOnlyList<Prompts.ResourceSource> ResourceAbilities(World world, int player);
+
+    /// <summary>
+    /// Uses one resource ability to help pay a cost, and answers what it made.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="ResourceAbilities"/> because generating is a
+    /// choice: the affordance offers the ability and the answer takes it, the
+    /// same shape a card in hand has. <c>rr:limit</c> counts the use here.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="player">Whose cost is being paid.</param>
+    /// <param name="card">The card whose ability it is.</param>
+    /// <returns>The resource letters it generated.</returns>
+    string UseResource(World world, int player, int card);
+
+    /// <summary>
     /// The "<b>Action</b>" abilities one player may trigger on their turn —
     /// <c>rr:player-turn.5</c>.
     /// </summary>
@@ -141,6 +170,15 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> WhenDefeated(World world, Card card) => [];
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<Prompts.ResourceSource> ResourceAbilities(
+        World world, int player) => [];
+
+    /// <inheritdoc/>
+    public virtual string UseResource(World world, int player, int card) =>
+        throw new RulesNotImplementedException(
+            "no card has a resource ability, so none of them can be used");
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<PendingAbility> Actions(World world, int player) => [];

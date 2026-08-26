@@ -107,14 +107,15 @@ public sealed class AbilityDataTests
     }
 
     [Rule("rr:player-turn.5")]
+    [Rule("rr:resource-ability.1")]
     [Fact]
-    public void EveryAbilityIsWaitingInAWindowOrIsTheOccurrenceOrIsATurnOption()
+    public void EveryAbilityReachesTheBoardSomehow()
     {
         // A timing that reaches the board through none of these routes is an
         // ability nothing ever offers: `AbilityWindow` would drop it, no
         // occurrence would run it, and no turn would list it.
         //
-        // **The third route is newer than the other two.** `rr:player-turn.5`
+        // **The routes past the first two are newer.** `rr:player-turn.5`
         // makes an "Action" one of the six things a turn offers rather than
         // something timed around an occurrence, and `AbilityTypes.PriorityOf`
         // has always refused to give it a tier for exactly that reason. Until
@@ -127,7 +128,14 @@ public sealed class AbilityDataTests
                 AbilityTypes.IsInterrupt(timing)
                 || AbilityTypes.IsResponse(timing)
                 || AbilityTypes.PriorityOf(timing) == TimingPriority.Occurrence
-                || timing is AbilityType.Action or AbilityType.ForcedAction,
+                || timing is AbilityType.Action or AbilityType.ForcedAction
+
+                // The fourth route, and the newest. `rr:resource-ability.1`
+                // makes one triggerable "anytime the player who controls the
+                // ability is generating resources to pay a cost" -- so it is
+                // neither timed around an occurrence nor a turn option, it is
+                // reached while a cost is being paid.
+                || timing == AbilityType.Resource,
                 $"'{ability.Card}' has timing '{timing}', which nothing would offer");
         }
     }
@@ -280,7 +288,7 @@ public sealed class AbilityDataTests
         // this file is under: a card is authored when something reaches it.
         string[] named =
         [
-            AuthoredCards.SpiderMan, AuthoredCards.AuntMay, AuthoredCards.Charge, AuthoredCards.IvoryHorn, AuthoredCards.Shocker,
+            AuthoredCards.SpiderMan, AuthoredCards.PeterParker, AuthoredCards.AuntMay, AuthoredCards.Charge, AuthoredCards.IvoryHorn, AuthoredCards.Shocker,
             AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
             AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
             AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,
