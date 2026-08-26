@@ -10,12 +10,10 @@ namespace Marvel.Rules.Tests.State;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>There is no oracle for any of this, and that is measured.</b> The v2
-/// digest cannot see a play area — creating a game area on the legacy engine and
-/// moving 47 cards into it left it byte-identical (MARVEL-174). Kang reaches a
-/// second game area in <b>0 of 3,462 steps</b> across all 42 recorded scenes,
-/// and <c>py_src</c> has no Fear No Evil cards at all. So these tests are
-/// written from the rulebooks, and each one names the rule it comes from.
+/// <b>Nothing but the rulebook can check any of this.</b> The digest cannot see a
+/// play area — moving 47 cards into a freshly created game area left it
+/// byte-identical (MARVEL-174). So these tests are written from the rulebooks,
+/// and each one names the rule it comes from.
 /// </para>
 /// <para>
 /// The boards are built by hand rather than dealt, because the point is the

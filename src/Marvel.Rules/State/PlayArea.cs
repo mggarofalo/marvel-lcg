@@ -24,9 +24,9 @@ namespace Marvel.Rules.State;
 /// seat a card made in an area belongs to, and the play area the area sits in
 /// are all seat-shaped and none of them is the others. The digest's
 /// <c>owner</c> is the first, <c>Area.CardOwner</c> is the second, and this is
-/// the third; measured over corpus steps, the first and third agree 98.1% of
-/// the time, which is exactly often enough for a confusion to pass its tests
-/// and fail on the cards where whose-is-it drives rules.
+/// the third. Measured over a large sample of recorded play, the first and
+/// third agreed 98.1% of the time — exactly often enough for a confusion to
+/// pass its tests and fail on the cards where whose-is-it drives rules.
 /// </para>
 /// <para>
 /// <b>The name is overloaded in the published rules and this is the safe

@@ -11,10 +11,9 @@ namespace Marvel.Rules.Tests.Prompts;
 /// The affordance shape holds what the engine actually has to say at a prompt.
 /// </summary>
 /// <remarks>
-/// The numbers here come from <c>py_src/tools/affordances/census.py</c> over 30
-/// games, 1,997 prompts and 6,351 options — see <c>docs/affordances.md</c>. The
-/// tests are about shape rather than about the measurement, but the measurement
-/// is why the shape is this size.
+/// The numbers here were measured once, over 30 games, 1,997 prompts and 6,351
+/// options. The tests are about shape rather than about the measurement, but
+/// the measurement is why the shape is this size.
 /// </remarks>
 public sealed class AffordanceTests
 {
@@ -105,7 +104,7 @@ public sealed class AffordanceTests
     public void AnAlternativeCostIsAdditiveNotAReplacement()
     {
         // Flattening "a mental resource or two of any type" to a bare "2" is
-        // what corrupted a corpus in MARVEL-158: the payer met the number with
+        // what MARVEL-158 found breaking games: the payer met the number with
         // the wrong types and the ability failed mid-resolution.
         var cost = new CostOption(0, "1", Rule: ["mental"], OrCost: "2", OrRule: []);
 
@@ -140,7 +139,7 @@ public sealed class AffordanceTests
     {
         // One member per kind of question the Rules Reference describes, each
         // citing where. The four members this replaced were a census of what
-        // one sampled corpus happened to contain -- a sample, not a domain.
+        // one sample happened to contain -- a sample, not a domain.
         Assert.Equal(
             [
                 Question.TurnOption, Question.Opportunity, Question.Element,

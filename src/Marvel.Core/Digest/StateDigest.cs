@@ -28,10 +28,9 @@ namespace Marvel.Core.Digest;
 /// </para>
 /// <para>
 /// The writer is <see cref="Utf8JsonWriter"/> with
-/// <see cref="JavaScriptEncoder.UnsafeRelaxedJsonEscaping"/>, which reproduces
-/// Python's <c>json.dumps</c> exactly over the strings a digest can contain —
-/// see <see cref="CanonicalOptions"/> for what "can contain" means and why it
-/// is a constraint rather than an observation.
+/// <see cref="JavaScriptEncoder.UnsafeRelaxedJsonEscaping"/>, normalised
+/// afterwards — see <see cref="CanonicalOptions"/> for what a digest string can
+/// contain and why that is a constraint rather than an observation.
 /// </para>
 /// </remarks>
 public sealed partial class StateDigest
@@ -85,21 +84,29 @@ public sealed partial class StateDigest
     private static partial Regex Escape();
 
     /// <summary>
-    /// Reconciles this writer's output with Python's <c>json.dumps</c>.
+    /// Normalises this writer's output to the canonical spelling.
     /// </summary>
     /// <remarks>
     /// <para>
     /// The digest is compared byte for byte, so the spelling of the JSON is the
-    /// contract. Two differences survive every configuration option either
-    /// platform offers:
+    /// contract, and the contract picks two things .NET does not offer a switch
+    /// for:
     /// </para>
     /// <list type="bullet">
-    /// <item><description><b>Hex case.</b> Python writes <c>\u001f</c>, .NET
-    /// writes <c>\u001F</c>, and neither exposes a switch.</description></item>
-    /// <item><description><b>Escape or not.</b> Python's <c>ensure_ascii=True</c>
-    /// escapes every non-ASCII character; the relaxed encoder leaves most of
-    /// them raw.</description></item>
+    /// <item><description><b>Hex case is lower.</b> <c>\u001f</c>, where .NET
+    /// writes <c>\u001F</c>.</description></item>
+    /// <item><description><b>Non-ASCII is escaped.</b> Every character outside
+    /// ASCII, where the relaxed encoder leaves most of them
+    /// raw.</description></item>
     /// </list>
+    /// <para>
+    /// <b>Both choices were inherited and neither is now load-bearing.</b> They
+    /// made the digest byte-identical to another implementation's; that
+    /// implementation is gone, so this is simply the canonical form, and its
+    /// only remaining virtue is that it holds still. Dropping the normaliser
+    /// would be legitimate and would change every digest ever produced, which
+    /// is why it is a decision rather than a cleanup.
+    /// </para>
     /// <para>
     /// Both are mechanical, so they are fixed here rather than by hand-writing
     /// an encoder. The platform writer still decides everything structural —
@@ -111,9 +118,8 @@ public sealed partial class StateDigest
     /// comment there. It was checked against a 420-case fixture, 400 of them
     /// fuzzed over an alphabet of backslashes, <c>u</c>, hex digits and
     /// surrogate halves — because "obviously correct" is exactly the claim that
-    /// was wrong the first time. That fixture came from the Python engine and
-    /// went with it; the ordering argument stands on its own, and MARVEL-251
-    /// tracks replacing the cases.
+    /// was wrong the first time. Those cases are gone; the ordering argument
+    /// stands on its own, and MARVEL-251 tracks replacing them.
     /// </para>
     /// <para>
     /// On the strings a digest actually contains this does nothing at all: card

@@ -18,9 +18,9 @@ namespace Marvel.Core.Tests.Specs;
 /// </para>
 /// <para>
 /// <b>This checks the format and says nothing about the behaviour.</b> Every
-/// scenario in there is a draft: they were validated against the Python engine
-/// and that validation is retired, because the Rules Reference decides what the
-/// game does. See <c>specs/README.md</c>.
+/// scenario in there is a draft: the validation they once passed is retired,
+/// because the Rules Reference decides what the game does. See
+/// <c>specs/README.md</c>.
 /// </para>
 /// <para>
 /// This uses the <c>Gherkin</c> package directly, which is the parser Reqnroll
@@ -103,7 +103,7 @@ public sealed class GherkinFormatTests
     public void TagsSurviveTheParse()
     {
         // The `@card:` and `@rr:` tags are how a scenario is joined to the card
-        // dataset and to the rules corpus. A parser that dropped or mangled
+        // dataset and to the Rules Reference. A parser that dropped or mangled
         // them would take the whole citation graph with it (MARVEL-154).
         var parser = new Parser();
         var tags = new HashSet<string>(StringComparer.Ordinal);

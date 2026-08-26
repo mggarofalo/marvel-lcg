@@ -100,9 +100,10 @@ public sealed class WholeGameTests
     [Fact]
     public void TheSameSeedPlaysTheSameGame()
     {
-        // Non-negotiable 1: determinism is what makes the replay corpus an
-        // oracle. Two deals of one seed, driven by one policy, must agree about
-        // everything -- including the shuffles a reshuffled deck consumed.
+        // Non-negotiable 1: a seed names a game. Two deals of one seed, driven
+        // by one policy, must agree about everything -- including the shuffles
+        // a reshuffled deck consumed. This is the only determinism check the
+        // engine has, and it compares a game against a second run of itself.
         var (first, firstWorld) = Deal(2026, "spider_man");
         var (second, secondWorld) = Deal(2026, "spider_man");
 

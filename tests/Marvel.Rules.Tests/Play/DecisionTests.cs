@@ -14,8 +14,8 @@ public sealed class DecisionTests
     {
         // `rr:initiating-abilities` makes them different steps -- 3 determines
         // the cost, 5 pays it, and 2 checked the play restrictions before
-        // either. The Python engine's recorded input agrees: `CommandDescriptor`
-        // has `id`, `targets` and `resources`, three fields.
+        // either. So an answer carries three things and they are not
+        // interchangeable.
         var decision = Decision.Take(affordance: 4, targets: [11], paying: [7, 9]);
 
         Assert.Equal(4, decision.Affordance);

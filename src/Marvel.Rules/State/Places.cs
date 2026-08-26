@@ -32,13 +32,10 @@ namespace Marvel.Rules.State;
 /// only by the scenarios that need them.
 /// </para>
 /// <para>
-/// <b>Not verifiable against the corpus, and that is measured rather than
-/// assumed.</b> The v2 digest cannot see a play area (MARVEL-174): creating a
-/// game area on the legacy engine and moving 47 cards into it left the digest
-/// byte-identical. Kang reaches a second game area in 0 of 3,462 steps across
-/// all 42 recorded scenes, and <c>py_src</c> has no Fear No Evil cards at all.
-/// So these are held against the published rules, quoted at each one, and the
-/// tests cite the rule they come from.
+/// <b>Nothing but the rulebook can check this.</b> The digest cannot see a play
+/// area at all (MARVEL-174): moving 47 cards into a freshly created game area
+/// left it byte-identical. So these are held against the published rules,
+/// quoted at each one, and the tests cite the rule they come from.
 /// </para>
 /// </remarks>
 public static class Places
@@ -53,8 +50,8 @@ public static class Places
     /// </para>
     /// <para>
     /// <c>Id</c> travels because a zone name and an owner do not identify an
-    /// area: measured over 6,554 corpus steps, <c>(zone, owner, host)</c>
-    /// collides on 5,969 of them.
+    /// area: over a 6,554-step sample of recorded play, <c>(zone, owner, host)</c>
+    /// collided on 5,969 of them.
     /// </para>
     /// </remarks>
     /// <param name="area">The area.</param>

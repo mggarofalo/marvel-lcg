@@ -7,11 +7,9 @@ namespace Marvel.Rules.Play;
 
 /// <summary>Where a game is in the round structure.</summary>
 /// <remarks>
-/// The Python engine's console log names each of these as it enters it, which is
-/// how the sequence was read: <c>=== Round 1 Start ===</c>,
-/// <c>--- Player Phase ---</c>, <c>--- Spider-Man's Turn (1) ---</c>,
-/// <c>--- Spider-Man Turn End ---</c>, <c>Spider-Man End Phase</c>,
-/// <c>--- Player Phase End ---</c>, <c>--- Villain Phase ---</c>.
+/// The order is <c>rr:game-round</c>'s: a round is a player phase and then a
+/// villain phase, and the player phase is each player's turn in player order,
+/// each turn ending with that player's end phase.
 /// </remarks>
 public enum GamePhase
 {
@@ -90,13 +88,11 @@ public sealed class Game
     private static readonly HashSet<string> Derived =
         [ResolveMulligans, ChangeForm, EndPhaseVerb];
 
-    // An affordance id is a handle. The Python engine hands out effect object
-    // ids, which are stable for the life of a game -- `End Phase` is id 1 at
-    // recorded steps 2, 4 and 6, and `Change_Form` is id 7 at steps 1, 3 and 5.
-    // This reproduces that property without reproducing the numbers: the same
-    // option re-offered keeps its handle. The numbers themselves are not
-    // reproduced and must not be compared, because effect ids are allocated per
-    // session and drift -- see the remarks on `Affordance.Id`.
+    // An affordance id is a handle, and the property that matters is that the
+    // same option re-offered keeps it: a client that has drawn `End Phase` once
+    // can recognise it next turn. The numbers themselves are allocated per
+    // session and must never be compared across one -- see the remarks on
+    // `Affordance.Id`.
     /// <summary>Who put the pending question, which decides who takes its answer.</summary>
     /// <remarks>
     /// Not derivable from the prompt. A turn option and a step's own question
@@ -295,8 +291,9 @@ public sealed class Game
 
             case GamePhase.PlayerTurn:
                 // Declining the main turn ends it. Progress in the game's terms
-                // and no change to the board -- the largest class of no-op
-                // decision in the corpus at 187 of 320 declines.
+                // and no change to the board -- much the largest class of no-op
+                // decision there is, at 187 of 320 declines in the sample this
+                // was designed against.
                 //
                 // `rr:player-phase`: "during the player phase, **each player**
                 // *(in player order)* takes one turn". So the phase is over
@@ -1014,10 +1011,10 @@ public sealed class Game
             Verb: verb,
             AnchorId: anchor,
             AnchorPlayer: seat.Index,
-            // The Python engine carries one string where this record carries
-            // two: an option's `name` is both its verb and its label, and there
-            // is no second source to fill `Label` from. Filling it from anywhere
-            // else would be inventing it.
+            // Verb and label are the same string for a derived affordance.
+            // There is no second source to fill `Label` from, and filling it
+            // from anywhere else would be inventing it -- a client that wants
+            // richer wording can build it from the verb and the anchor.
             Label: verb);
     }
 }

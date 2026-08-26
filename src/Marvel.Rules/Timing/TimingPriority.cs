@@ -17,12 +17,11 @@ namespace Marvel.Rules.Timing;
 /// beats an ordinary one, and a forced response beats an ordinary one.
 /// </para>
 /// <para>
-/// The numeric values order the tiers and are not a wire format. The recorded
-/// prompt fixture spells <c>ability_type</c> with the names of the Python
-/// engine's own <c>TimingPriority</c>, which has twelve members, four of them
-/// (<c>Rule</c>, <c>Statistics</c>, <c>Normal</c>, <c>End</c>) naming nothing in
-/// the rulebook. That spelling is a corpus concern and is translated at the
-/// digest boundary rather than being adopted here.
+/// The numeric values order the tiers and are not a wire format. The members
+/// are the rulebook's own tiers and nothing else — no <c>Normal</c>, no
+/// <c>Rule</c>, no catch-all. A tier that names nothing in <c>rr:ability</c>
+/// has no rule deciding when it resolves, which is the whole point of the
+/// type.
 /// </para>
 /// </remarks>
 public enum TimingPriority

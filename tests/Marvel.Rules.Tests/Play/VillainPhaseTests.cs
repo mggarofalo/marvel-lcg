@@ -106,9 +106,9 @@ public sealed class VillainPhaseTests
     }
 
     // Deliberately uncited: no published rule says a card acquires a token
-    // pool. It is an artefact of the Python engine's serialisation that the
-    // digest forces the port to reproduce, and `docs/rules-citations.md` uses
-    // it as the example of what an uncited test honestly is.
+    // pool. It is an artefact of how the digest serialises a card, kept because
+    // the digest is a wire format, and `docs/rules-citations.md` uses it as the
+    // example of what an uncited test honestly is.
     [Fact]
     public void TokenPoolsSurviveLeavingPlay()
     {

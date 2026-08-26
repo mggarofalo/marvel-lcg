@@ -12,9 +12,9 @@ namespace Marvel.Rules.Prompts;
 /// response are the same question asked in different tiers, not two questions.
 /// </para>
 /// <para>
-/// The four members this replaces were a census of what one sampled corpus
-/// happened to contain, which is a sample rather than a domain. These are read
-/// off the rulebook instead.
+/// The four members this replaces were a census of what one sample happened to
+/// contain, which is a sample rather than a domain. These are read off the
+/// rulebook instead.
 /// </para>
 /// </remarks>
 public enum Question
@@ -126,9 +126,9 @@ public enum Question
 /// deliberately not symmetrical.
 /// </para>
 /// <para>
-/// The numbers quoted throughout these types were measured by
-/// <c>py_src/tools/affordances/census.py</c> over 30 games, 1,997 prompts and
-/// 6,351 options. See <c>docs/affordances.md</c>.
+/// The numbers quoted throughout these types were measured once, over 30 games,
+/// 1,997 prompts and 6,351 options. They are the sample that shaped the design;
+/// nothing re-measures them.
 /// </para>
 /// </remarks>
 public sealed record Prompt(

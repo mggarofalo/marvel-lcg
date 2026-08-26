@@ -6,10 +6,9 @@ namespace Marvel.Rules.Events;
 /// <remarks>
 /// <para>
 /// Snake case, spelling its keys <c>face_up</c>, <c>from</c>, <c>to</c>. The
-/// spelling came from a vocabulary contract the Python side wrote; that
-/// contract is gone and the spelling stays, because a wire format is worth
-/// having only if it holds still, and there is no reason to prefer a different
-/// one now.
+/// vocabulary contract that fixed this spelling is gone; the spelling stays,
+/// because a wire format is worth having only if it holds still and there is no
+/// reason to prefer a different one now.
 /// </para>
 /// <para>
 /// Byte equality is <b>not</b> required here: events are consumed by a client,

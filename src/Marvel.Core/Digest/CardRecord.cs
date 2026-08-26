@@ -41,11 +41,10 @@ public sealed record CardRecord(
 
         writer.WriteStartObject("fields");
 
-        // Ordinal — by code point, which is what the spec says and what
-        // Python's `sorted()` does on `str`. A culture-aware comparison would
-        // put `t_GENIUS` and `toughness` in the other order on some machines
-        // and the same on others, which is the worst possible failure mode for
-        // a byte comparison.
+        // Ordinal -- by code point, which is what the format specifies. A
+        // culture-aware comparison would put `t_GENIUS` and `toughness` in the
+        // other order on some machines and the same on others, which is the
+        // worst possible failure mode for a byte comparison.
         foreach (var field in Fields.OrderBy(f => f.Key, StringComparer.Ordinal))
         {
             writer.WriteNumber(field.Key, field.Value);

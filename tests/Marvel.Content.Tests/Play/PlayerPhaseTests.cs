@@ -17,12 +17,11 @@ namespace Marvel.Content.Tests.Play;
 /// <remarks>
 /// <para>
 /// <b>This file used to be a comparison and is now a set of claims.</b> Seven
-/// of its tests held the engine against recorded steps of a Python game —
-/// three distinct boards, the prompts beside them, and a hash over the whole
-/// trace. Those recordings were the Python engine's account of what the game
-/// does, and the rulebook is the authority, so they went with it. MARVEL-251
-/// tracks re-expressing what they covered against
-/// <c>datasets/rules-reference/entries/*.md</c>.
+/// of its tests held the engine against a recording — three distinct boards,
+/// the prompts beside them, and a hash over the whole trace. A recording is
+/// another implementation's account of what the game does, and the rulebook is
+/// the authority, so they went. MARVEL-251 tracks re-expressing what they
+/// covered against <c>datasets/rules-reference/entries/*.md</c>.
 /// </para>
 /// <para>
 /// What is left tests the loop on its own terms: that declining changes
@@ -429,99 +428,6 @@ public sealed class PlayerPhaseTests
 
         Assert.Equal(first.Pending!.Affordances.Single().Id,
                      second.Pending!.Affordances.Single().Id);
-    }
-
-    private static void AssertAffordances(JsonElement expected, Prompt actual, string where)
-    {
-        var recorded = expected.GetProperty("affordances").EnumerateArray()
-            .Where(affordance => Game.DerivedVerbs.Contains(
-                affordance.GetProperty("verb").GetString()!)
-                || affordance.GetProperty("verb").GetString() == CardPlay.Verb)
-            .ToList();
-
-        // **Including `Play`, which this used to filter out of the recording.**
-        // The engine offers every one of these the recording offers, in the
-        // same order, and nothing it does not -- an extra affordance is as
-        // wrong as a missing one, and only this direction catches it.
-        //
-        // Getting the `Play` list right is a sharper check than it looks. The
-        // opening hand holds six cards and the recording offers four: `01088`
-        // Energy is a resource card and cannot be played at all
-        // (`rr:player-turn.2` does not list one), and `01003` Backflip is an
-        // event whose ability is an Interrupt rather than an Action, so
-        // `rr:player-turn.5.d` does not reach it either.
-        Assert.Equal(recorded.Count, actual.Affordances.Count);
-
-        for (int index = 0; index < recorded.Count; index++)
-        {
-            var want = recorded[index];
-            var got = actual.Affordances[index];
-            string what = $"{where}, affordance {index} ({got.Verb})";
-
-            Assert.Equal(want.GetProperty("verb").GetString(), got.Verb);
-            Assert.Equal(want.GetProperty("anchor_id").GetInt32(), got.AnchorId);
-            Assert.Equal(want.GetProperty("anchor_player").GetInt32(), got.AnchorPlayer);
-            Assert.Null(got.Illegal);
-
-            // The cost as printed, **and its generators**, against what the
-            // recording carries.
-            //
-            // The generators used to be skipped. The recording lists six for a
-            // hand of six cards, one of which is being played -- so one
-            // generator is not a card in hand at all, and a list built from
-            // hand cards alone was short by exactly that one. It is
-            // `rr:resource-ability`: Peter Parker's "Scientist -- **Resource**:
-            // generate a [mental] resource", printed on the alter-ego face the
-            // recorded board is showing. Now that it is written, this is the
-            // sharpest check in the file: the order and the letters, on the
-            // wire.
-            var costs = want.GetProperty("costs");
-            Assert.Equal(costs.GetArrayLength(), got.CostOptions.Count);
-            for (int price = 0; price < got.CostOptions.Count; price++)
-            {
-                Assert.Equal(
-                    costs[price].GetProperty("cost").GetString(),
-                    got.CostOptions[price].Cost);
-
-                // **The generators, by what they make rather than by id.**
-                //
-                // The recording's `effect` is the Python engine's own effect
-                // id, not an object id: the four plays above list sources
-                // `{3, 33, 38, 41, 42, 43}` for a hand whose object ids are
-                // `{42, 45, 37, 9, 47, 46}`, and each play omits exactly the
-                // one belonging to the card being played. So the ids cannot be
-                // compared and the *letters* can. MARVEL-223.
-                //
-                // The count is the sharp half. It was five before
-                // `rr:resource-ability` was written and the recording says six:
-                // Peter Parker's "Scientist — **Resource**: generate a [mental]
-                // resource" is a generator that is not a card in hand at all.
-                var recordedLetters = costs[price].GetProperty("sources").EnumerateArray()
-                    .Select(source => source.GetProperty("generates").GetString())
-                    .Order(StringComparer.Ordinal);
-                var madeLetters = (got.CostOptions[price].Sources ?? [])
-                    .Select(source => source.Generates)
-                    .Order(StringComparer.Ordinal);
-
-                Assert.Equal(recordedLetters, madeLetters);
-            }
-
-            var targets = want.GetProperty("targets");
-            if (targets.ValueKind == JsonValueKind.Null)
-            {
-                Assert.Null(got.Targets);
-                continue;
-            }
-
-            Assert.NotNull(got.Targets);
-            Assert.Equal(
-                targets.GetProperty("legal").EnumerateArray().Select(id => id.GetInt32()),
-                got.Targets.Legal);
-            Assert.Equal(targets.GetProperty("min").GetInt32(), got.Targets.Min);
-            Assert.Equal(targets.GetProperty("max").GetInt32(), got.Targets.Max);
-            Assert.Equal(targets.GetProperty("is_search").GetBoolean(), got.Targets.IsSearch);
-            Assert.False(got.Targets.IsGrouped, what);
-        }
     }
 
     private sealed class Colliding(World world) : NoCardAbilities

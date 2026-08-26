@@ -36,9 +36,9 @@ public sealed class EngineRandom(uint seed)
     /// after it.
     /// </para>
     /// <para>
-    /// It was inherited from the Python engine and pinned by a fixture that
-    /// recorded <c>words_consumed: 0</c> for exactly this shape. Both are gone.
-    /// The behaviour stays because it is correct, not because it was recorded.
+    /// A fixture used to pin it, recording <c>words_consumed: 0</c> for exactly
+    /// this shape. It is gone, and the behaviour stays because it is correct
+    /// rather than because it was recorded — MARVEL-251.
     /// </para>
     /// </remarks>
     public List<T> Choice2<T>(IReadOnlyList<T> items, int x)

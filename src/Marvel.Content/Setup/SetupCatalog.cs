@@ -7,15 +7,12 @@ namespace Marvel.Content.Setup;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Reads <c>datasets/setup/setup.json</c>, which is generated from the Python
-/// engine's own data by <c>py_src/tools/setup/emit_setup.py</c> and gated byte
-/// for byte in CI. See <c>docs/setup-dataset.md</c>.
+/// Reads <c>datasets/setup/setup.json</c>. See <c>docs/setup-dataset.md</c>.
 /// </para>
 /// <para>
-/// <b>Names, not paths.</b> The Python engine resolves a bare name against an
-/// ordered list of folders, so the name is the identifier and the folder is an
-/// implementation detail. The dataset has already done that resolution and
-/// recorded any collision, which is why nothing here needs a search order.
+/// <b>Names, not paths.</b> A scenario or starter deck is identified by a bare
+/// name; the dataset has already resolved every one and recorded any collision,
+/// which is why nothing here needs a folder search order.
 /// </para>
 /// </remarks>
 public sealed class SetupCatalog

@@ -344,9 +344,9 @@ public sealed class World
     /// </summary>
     /// <remarks>
     /// <b>A pile of fewer than two cards is not shuffled at all</b>, and that
-    /// is not an optimisation: calling through would consume a slot in the
-    /// shared stream and desynchronise every draw after it. The Python engine
-    /// draws nothing for such a pile, so neither does this.
+    /// is not an optimisation: there is nothing to shuffle, and calling through
+    /// would consume a slot in the shared stream and desynchronise every draw
+    /// after it.
     /// </remarks>
     /// <param name="area">The pile.</param>
     public void Shuffle(Area area)
@@ -389,12 +389,11 @@ public sealed class World
     /// </para>
     /// <para>
     /// <b>The engine cannot yet tell a client this happened.</b> The event
-    /// vocabulary is the set that explains every state change in the frozen
-    /// corpus, and a game area is invisible to the digest the corpus is made of
-    /// (MARVEL-174) — so this change is emittable but not derivable, and no
-    /// existing event kind covers it. Raised on MARVEL-175 rather than settled
-    /// here, because <c>tools/events/model.py</c> already records the opposite
-    /// decision in as many words.
+    /// vocabulary is the set that explained every state change in a large
+    /// sample of recorded play, and a game area is invisible to the digest
+    /// (MARVEL-174) — so a sample drawn from digests could never have contained
+    /// one. This change is emittable but not derivable, and no existing event
+    /// kind covers it. Raised on MARVEL-175 rather than settled here.
     /// </para>
     /// </remarks>
     /// <param name="area">The play area that is moving.</param>
@@ -439,10 +438,10 @@ public sealed class World
     /// <summary>Makes a seat and the areas that belong to it.</summary>
     /// <param name="name">The player's name, e.g. <c>Spider-Man</c>.</param>
     /// <remarks>
-    /// The five areas are made here in the order the Python engine makes them,
-    /// which is why this is one call rather than five. Area ids are not on the
-    /// wire, but keeping the order lets a divergence be read against the
-    /// engine's own log.
+    /// The five areas are made in one fixed order, which is why this is one
+    /// call rather than five. Area ids are not on the wire, so the order does
+    /// not have to be this one — but it does have to be the same every time,
+    /// or two deals of a seed allocate ids differently.
     /// </remarks>
     public Seat CreateSeat(string name)
     {
@@ -584,8 +583,8 @@ public sealed class World
         foreach (var card in cards)
         {
             // `/absent` should not happen. It is emitted rather than raised
-            // because an oracle that can crash while computing itself is worse
-            // than one with a visible anomaly.
+            // because a digest that can crash while computing itself is worse
+            // than one with a visible anomaly in it.
             var (zone, index) = positions.TryGetValue(card.ObjectId, out var found)
                 ? found
                 : (card.Area.Type + "/absent", -1);

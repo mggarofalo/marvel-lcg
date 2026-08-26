@@ -3,10 +3,9 @@ namespace Marvel.Tests;
 /// <summary>Finds the repository's committed datasets from the test binary.</summary>
 /// <remarks>
 /// <para>
-/// The cross-language fixtures live in <c>datasets/</c> at the repository root
-/// and are shared with the Python engine, so they cannot be copied next to the
-/// test assembly without becoming a second copy that can drift from the first.
-/// The test walks up to find them instead.
+/// The datasets live in <c>datasets/</c> at the repository root, and copying
+/// them next to the test assembly would make a second copy that can drift from
+/// the first. The test walks up to find them instead.
 /// </para>
 /// <para>
 /// Linked into every test project rather than duplicated per project, for the

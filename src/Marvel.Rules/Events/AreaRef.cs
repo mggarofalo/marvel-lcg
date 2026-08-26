@@ -65,8 +65,8 @@ namespace Marvel.Rules.Events;
 /// </para>
 /// <para>
 /// <b>Why <see cref="Id"/> exists.</b> The three fields above were the whole
-/// type until MARVEL-163 replayed the corpus against engine state and counted.
-/// They are not a key: two areas share a triple for <c>AsideDeck</c> — a
+/// type until MARVEL-163 counted how often they collide. They are not a key:
+/// two areas share a triple for <c>AsideDeck</c> — a
 /// three-hero game has three set-aside nemesis decks, all owned by the
 /// scenario, all hanging off nothing — and again for <c>RemovedArea</c>. So the
 /// triple describes an area and <see cref="Id"/> addresses it. An engine has

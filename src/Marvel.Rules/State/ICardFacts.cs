@@ -2,10 +2,10 @@ namespace Marvel.Rules.State;
 
 /// <summary>What kind of thing a printed face is.</summary>
 /// <remarks>
-/// One member per face class the Python engine instantiates. The mapping from
-/// the card data's <c>engine.type</c> is the identity on all but two:
-/// <c>Villain</c> and <c>SideScheme</c> each have a player and an encounter
-/// variant, and only the encounter one appears in a scenario's own cards.
+/// One member per kind of printed face. The mapping from the card data's
+/// <c>engine.type</c> is the identity on all but two: <c>Villain</c> and
+/// <c>SideScheme</c> each have a player and an encounter variant, and only the
+/// encounter one appears in a scenario's own cards.
 /// </remarks>
 public enum CardKind
 {
