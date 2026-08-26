@@ -24,11 +24,10 @@ namespace Marvel.Rules.Play;
 /// about <see cref="Forms"/>, not about the card.
 /// </para>
 /// <para>
-/// <b>The verb strings are on the wire.</b> The oracle's
-/// <c>Effect.GetDisplayName</c> names the four basic powers <c>Attack</c>,
-/// <c>Defense</c>, <c>Thwart</c> and <c>Recover</c>, and
-/// <c>datasets/digest/prompts.json</c> is there to check the half of the return
-/// value they appear in.
+/// <b>The verb strings are on the wire.</b> The four basic powers are spelled
+/// <c>Attack</c>, <c>Defense</c>, <c>Thwart</c> and <c>Recover</c> — the
+/// rulebook's own names for them, capitalised. A client renders these, so they
+/// are a contract and not a label: change one and every caller changes with it.
 /// </para>
 /// </remarks>
 public static class BasicPowers

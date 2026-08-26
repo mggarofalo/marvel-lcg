@@ -108,11 +108,12 @@ public sealed partial class StateDigest
     /// </para>
     /// <para>
     /// Correctness rests on the ordering inside <see cref="Escape"/>; see the
-    /// comment there. It is checked against
-    /// <c>datasets/digest/escaping.json</c>, 420 cases of which 400 are fuzzed
-    /// over an alphabet of backslashes, <c>u</c>, hex digits and surrogate
-    /// halves — because "obviously correct" is exactly the claim that was wrong
-    /// the first time.
+    /// comment there. It was checked against a 420-case fixture, 400 of them
+    /// fuzzed over an alphabet of backslashes, <c>u</c>, hex digits and
+    /// surrogate halves — because "obviously correct" is exactly the claim that
+    /// was wrong the first time. That fixture came from the Python engine and
+    /// went with it; the ordering argument stands on its own, and MARVEL-251
+    /// tracks replacing the cases.
     /// </para>
     /// <para>
     /// On the strings a digest actually contains this does nothing at all: card

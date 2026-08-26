@@ -252,18 +252,22 @@ has watched evaluate to true is a claim about a build, not a property of one.
 
 ## Testing and verification
 
-Three oracles already exist. Two more come with this proposal.
+> **Historical.** This section was written when the Python engine was the
+> reference and the plan was to converge on it. Points 1 and 2 described
+> fixtures and a corpus that have since been dropped, along with the engine
+> that produced them; they are kept here because the rest of the document
+> reasons from them. The rulebook is the authority now.
 
-1. Vector fixtures come first. `datasets/rng/vectors.json` and
-   `datasets/digest/vectors.json` are cross-language acceptance fixtures that
-   exist today. The first C# written should be the RNG and the digest reader,
-   tested against those files, before any game logic. That is MARVEL-8.
+1. ~~Vector fixtures come first.~~ The cross-language acceptance fixtures are
+   gone. What replaces them is `[Rule]`-cited tests against
+   `datasets/rules-reference/entries/*.md`.
 
-2. Corpus replay in `Marvel.Sim`. Resolve the recorded inputs, compare the digest
-   at every step. Digest v2 prints a card-by-card, field-by-field diff on
-   mismatch. This is the mechanism that makes the port converge.
+2. ~~Corpus replay in `Marvel.Sim`.~~ The corpus was 10 GB of recorded Python
+   games and is dropped.
 
-3. Reqnroll against the same `.feature` files, run in place from `specs/`.
+3. Reqnroll against the `.feature` files in `specs/` — still wanted, and the
+   only one of the three that survives. Note those scenarios are drafts; see
+   [specs/README.md](../specs/README.md).
    MARVEL-41 already forbids forking them, and requires a step catalogue
    conformance test on the C# side. Nothing here changes that.
 

@@ -42,11 +42,10 @@ public static class Attack
     /// <c>rr:defend-defense.2</c>.
     /// </summary>
     /// <remarks>
-    /// Spelled as the oracle spells it. Its <c>Effect.GetDisplayName</c> names
-    /// the four basic powers <c>Attack</c>, <c>Defense</c>, <c>Thwart</c> and
-    /// <c>Recover</c>, and those strings are on the wire — a verb invented here
-    /// would be a divergence in the half of the return value
-    /// <c>datasets/digest/prompts.json</c> is there to check.
+    /// Spelled <c>Defense</c>, with the other three basic powers — see
+    /// <see cref="BasicPowers"/>, which holds them and the reasoning. These
+    /// strings are on the wire, so a verb invented here would be a divergence
+    /// a client would render.
     /// </remarks>
     public const string DefenseVerb = "Defense";
 

@@ -11,13 +11,16 @@ namespace Marvel.Content.Setup;
 /// this is a wire format and not a convenience.
 /// </para>
 /// <para>
-/// Read out of the Python engine rather than invented — <c>RegisterPlayRule</c>,
-/// <c>PlayerSetup.SelectIdentity</c>, <c>World.SelectScenario</c> and
-/// <c>World.Initialize</c> — and held against a recorded game:
-/// <c>datasets/digest/vectors.json</c> names the card at every id for
-/// <c>rhino / spider_man / 12345</c> and all 81 agree. The Python mirror of this
-/// is <c>py_src/tools/setup/deal.py</c>; the two are deliberately the same
-/// shape so a divergence is a diff rather than an argument.
+/// The order was read out of the Python engine rather than derived from
+/// <c>rr:appendix-ii-setup</c>, and held against a recorded game that named the
+/// card at every one of 81 ids. Both the engine and the recording are gone.
+/// </para>
+/// <para>
+/// <b>So nothing checks this today.</b> The allocation still has to be right —
+/// an id is a wire format and everything else depends on it — but the thing
+/// that proved it was a fixture, and the thing that should prove it is
+/// <c>rr:appendix-ii-setup</c> read against <c>datasets/setup/setup.json</c>.
+/// MARVEL-251.
 /// </para>
 /// <para>
 /// Two things it does not do, because neither affects allocation and both

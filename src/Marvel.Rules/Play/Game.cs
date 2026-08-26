@@ -52,12 +52,10 @@ public enum GamePhase
 /// </para>
 /// <para>
 /// <b>The affordances are the derivable ones.</b> <see cref="DerivedVerbs"/> is
-/// the set this builds from state alone. The recorded prompts also offer
-/// <c>Play</c>, which needs a card's cost, its play restrictions and the
-/// resources every other card can generate — card abilities, in other words, and
-/// the next piece of work rather than this one. A port checks its coverage
-/// against <c>datasets/digest/prompts.json</c> and this set together; neither
-/// alone says what is missing.
+/// the set this builds from state alone. <c>Play</c> is the other one, and it
+/// needs a card's cost, its play restrictions and the resources every other
+/// card can generate — card abilities, in other words, which is why it lives in
+/// <see cref="CardPlay"/> and not here.
 /// </para>
 /// <para>
 /// <b>Not a hot path yet.</b> <c>docs/presentation-layer.md</c> asks for LINQ out

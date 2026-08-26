@@ -74,10 +74,11 @@ as important.
    `python -m tools.determinism.check_runs` after any gameplay change.
 
 2. **The RNG and the state digest are wire formats.** One MT19937 stream, seeded
-   once per game, no floating point. `World.CalculateDigest()` serialises every
-   card and is compared on every replayed step. `datasets/rng/vectors.json` and
-   `datasets/digest/vectors.json` are the cross-language fixtures the C# port is
-   accepted against. Changing either changes every game outcome.
+   once per game, no floating point. `World.Digest()` serialises every card, and
+   determinism tests compare a game against a second run of itself. Changing
+   either format changes every game outcome. The cross-language fixtures that
+   used to accept the port are gone with the engine that emitted them, so
+   nothing pins the canonical form today — MARVEL-251.
 
 3. **Card scripts are executed as Python.** `py_src/cards/database.py` calls
    `exec()` with no sandboxing; the AST denylist in
@@ -134,7 +135,6 @@ as important.
 | ability timing, interrupt and response windows, continuous effects | [timing.md](docs/timing.md) |
 | `datasets/cards/`, `tools/cards/extract` | [card-dataset.md](docs/card-dataset.md) |
 | `datasets/setup/`, scenario or starter-deck data, setup order | [setup-dataset.md](docs/setup-dataset.md) |
-| `datasets/digest/prompts.json`, `Marvel.Rules.Play`, what a prompt offers | [prompt-dataset.md](docs/prompt-dataset.md) |
 | play areas, game areas, anything resolving by *where a card is* | [places.md](docs/places.md) |
 | `Marvel.Rules.Play`, the villain phase, what a revealed card does | [villain-phase.md](docs/villain-phase.md) |
 | the player phase, hand size, readying, a player deck running out | [player-phase.md](docs/player-phase.md) |

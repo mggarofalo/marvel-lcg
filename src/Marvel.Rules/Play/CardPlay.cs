@@ -25,9 +25,10 @@ public static class CardPlay
 {
     /// <summary>The affordance verb for playing a card.</summary>
     /// <remarks>
-    /// Spelled as the recording spells it: <c>datasets/digest/prompts.json</c>
-    /// records eighteen <c>Play</c> affordances across its prompts, which is the
-    /// most common verb in the fixture.
+    /// <c>rr:player-turn.2</c> is "play a card", so the verb is <c>Play</c>.
+    /// The most common one on the wire by a wide margin, and a client renders
+    /// it, so it is a contract like the basic powers in
+    /// <see cref="BasicPowers"/>.
     /// </remarks>
     public const string Verb = "Play";
 

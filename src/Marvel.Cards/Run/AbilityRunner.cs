@@ -126,10 +126,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ?? throw new AbilityException(
                 $"card '{card.FaceId}' has no '{ability.Type}' ability to describe");
 
-        // The ability's own name is the verb, which is the engine's convention:
-        // `datasets/digest/prompts.json` offers `Foresight` and `"I_Object!"`,
-        // both card names. One string does for both fields because the engine
-        // carries one -- see the remarks on `Affordance.Id`.
+        // The ability's own name is the verb: an affordance for Foresight is
+        // offered as `Foresight`, so a client has something to render without
+        // knowing what the ability does. One string does for both fields
+        // because the engine carries one -- see the remarks on `Affordance.Id`.
         var price = Price(world, card, ability.Player, found.Cost);
         return new Affordance(
             Id: ability.Card,

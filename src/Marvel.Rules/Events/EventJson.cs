@@ -5,17 +5,16 @@ namespace Marvel.Rules.Events;
 /// <summary>How the event stream is spelled on the wire.</summary>
 /// <remarks>
 /// <para>
-/// Snake case, because the vocabulary contract in
-/// <c>datasets/events/vocabulary.json</c> is written by the Python side and
-/// names its keys <c>face_up</c>, <c>from</c>, <c>to</c>. Two implementations
-/// agreeing on the kinds but not on the key spelling would be a contract that
-/// passes its own test and fails in the field.
+/// Snake case, spelling its keys <c>face_up</c>, <c>from</c>, <c>to</c>. The
+/// spelling came from a vocabulary contract the Python side wrote; that
+/// contract is gone and the spelling stays, because a wire format is worth
+/// having only if it holds still, and there is no reason to prefer a different
+/// one now.
 /// </para>
 /// <para>
-/// Unlike the state digest, byte equality is <b>not</b> required here: events
-/// are consumed by a client, not compared between engines. What matters is that
-/// the names match, which <c>EventVocabularyTests</c> checks against the
-/// fixture.
+/// Byte equality is <b>not</b> required here: events are consumed by a client,
+/// not compared between engines. What matters is that the names hold, and at
+/// the moment nothing checks that they do — MARVEL-251.
 /// </para>
 /// </remarks>
 public static class EventJson

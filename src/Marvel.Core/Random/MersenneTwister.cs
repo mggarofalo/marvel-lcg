@@ -5,11 +5,16 @@ namespace Marvel.Core.Random;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Specified by <c>docs/rng-contract.md</c> and accepted by
-/// <c>datasets/rng/vectors.json</c>. This is not "a" random generator — it is
-/// the one the Python engine used to produce the frozen corpus, and every
-/// replay in that corpus depends on this class making the same draws in the
-/// same order.
+/// MT19937 as Matsumoto and Nishimura published it. This is not "a" random
+/// generator: a game is reproducible from its seed only if every draw comes out
+/// in the same order on every machine, so the algorithm is part of the
+/// contract and not an implementation detail.
+/// </para>
+/// <para>
+/// <b>Nothing currently checks that this is really MT19937.</b> The fixture
+/// that did was emitted by the Python engine and went with it. The standard
+/// published test vector would restore the check without borrowing anyone's
+/// opinion — MARVEL-251.
 /// </para>
 /// <para>
 /// <b>There are no floating point numbers anywhere in this contract.</b>
