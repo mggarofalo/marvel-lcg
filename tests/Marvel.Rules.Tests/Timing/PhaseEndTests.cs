@@ -25,7 +25,7 @@ public sealed class PhaseEndTests
         world.Effects.Register(Lasting(TimingPoints.EndOfRound));
         world.Effects.Register(Lasting(TimingPoints.EndOfPlayerPhase));
 
-        PhaseEnd.EndVillainPhase(world, []);
+        PhaseEnd.EndVillainPhase(world, new Facts(), []);
 
         var left = Assert.Single(world.Effects.Active());
         Assert.Equal(TimingPoints.EndOfPlayerPhase, left.Lasts!.Until);
@@ -132,7 +132,7 @@ public sealed class PhaseEndTests
             Lasts: Duration.NextTime(PhaseEnd.RoundEnds)));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => PhaseEnd.EndVillainPhase(world, []));
+            () => PhaseEnd.EndVillainPhase(world, new Facts(), []));
         Assert.Contains("came due", thrown.Message, StringComparison.Ordinal);
     }
 

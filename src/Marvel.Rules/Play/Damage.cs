@@ -114,6 +114,48 @@ public static class Damage
     }
 
     /// <summary>
+    /// A character that was attacked hits back — <c>rr:retaliate-x</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "<b>Forced Response</b>: after this character is attacked, deal X damage
+    /// to the attacker." So it happens after the attack has resolved, not as
+    /// part of the damage.
+    /// </para>
+    /// <para>
+    /// <c>rr:retaliate-x.2</c>: "the character with retaliate X <b>must be in
+    /// play after the attack resolves</b> to deal this damage" — an attack that
+    /// defeated it kills the retaliation with it.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="attacked">Who was attacked.</param>
+    /// <param name="attacker">Who attacked them.</param>
+    /// <param name="trigger">What caused it, for the event stream.</param>
+    /// <param name="events">Where to record what happened.</param>
+    public static void Retaliate(
+        World world, ICardFacts facts, Card attacked, Card attacker,
+        string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(attacked);
+        ArgumentNullException.ThrowIfNull(attacker);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (!DeckTypes.IsInPlay(attacked.Area.Type))
+        {
+            return;
+        }
+
+        long retaliate = StateFields.Modified(
+            world, attacked, "retaliate", facts, world.Players);
+
+        Deal(world, facts, attacker, retaliate, trigger, "Retaliate", events);
+    }
+
+    /// <summary>
     /// Heals damage from a character — <c>rr:heal</c>.
     /// </summary>
     /// <remarks>

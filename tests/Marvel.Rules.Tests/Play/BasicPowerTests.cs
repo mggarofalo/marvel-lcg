@@ -155,7 +155,7 @@ public sealed class BasicPowerTests
         var world = Board(printed);
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
 
-        Assert.Empty(BasicPowers.Thwartable(world, printed));
+        Assert.Empty(BasicPowers.Thwartable(world, printed, 0));
 
         scheme.PlaceTokens("k_threat", 5);
         BasicPowers.BasicThwart(world, printed, 0, scheme, []);
