@@ -24,6 +24,19 @@ public enum Outcome
 
     /// <summary>The villain completed the final main scheme.</summary>
     VillainWins,
+
+    /// <summary>
+    /// The encounter deck and its discard pile emptied together.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:encounter-deck.4</c>, and it is worded from the players' side
+    /// rather than the villain's: "an infinite loop occurs with an infinite
+    /// number of acceleration tokens being placed next to the main scheme deck.
+    /// <b>If this happens, the players lose.</b>" Kept apart from
+    /// <see cref="VillainWins"/> because the cause is different and a player
+    /// asking why they lost deserves the difference.
+    /// </remarks>
+    PlayersLose,
 }
 
 /// <summary>

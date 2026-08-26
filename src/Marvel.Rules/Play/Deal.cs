@@ -39,14 +39,15 @@ public static class Deal
         ArgumentNullException.ThrowIfNull(events);
 
         var deck = world.AreaOf(DeckType.EncounterDeck);
-        var card = deck.TakeTop();
+
+        // `rr:encounter-deck.3`: "if the encounter deck empties during the
+        // resolution of any other type of game effect *(for example, the
+        // dealing of encounter cards)*, that effect finishes resolving after
+        // the encounter deck has been reset." So the deal does not stop at an
+        // empty deck -- it waits for the reset and carries on.
+        var card = EncounterDeck.TakeTop(world, trigger, events);
         if (card is null)
         {
-            // `rr:encounter-deck.1` -- the discard is shuffled into a new
-            // encounter deck when it empties. Named rather than approximated
-            // for the same reason as the player deck: the shuffle consumes
-            // randomness, and doing it at the wrong moment changes every card
-            // dealt afterwards.
             return null;
         }
 

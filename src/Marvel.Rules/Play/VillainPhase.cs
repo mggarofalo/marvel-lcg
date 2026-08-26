@@ -138,7 +138,7 @@ public static class VillainPhase
         switch (step.What)
         {
             case Steps.PlaceThreat:
-                PlaceThreat(world, facts, events);
+                PlaceThreat(world, facts, abilities, events);
                 break;
 
             case Steps.EnemiesActivate:
@@ -146,7 +146,7 @@ public static class VillainPhase
                 break;
 
             case Steps.Scheme:
-                Scheme(world, facts, world.Cards[step.Subject], events);
+                Scheme(world, facts, abilities, world.Cards[step.Subject], events);
                 break;
 
             case Steps.Attack:
@@ -278,7 +278,8 @@ public static class VillainPhase
     /// three. Acceleration icons and tokens add more; nothing on the milestone
     /// board has one.
     /// </remarks>
-    private static void PlaceThreat(World world, ICardFacts facts, List<GameEvent> events)
+    private static void PlaceThreat(
+        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
     {
         var scheme = world.TheCardIn(DeckType.MainSchemesArea);
         if (scheme is null)
@@ -286,9 +287,14 @@ public static class VillainPhase
             return;
         }
 
-        long amount = facts.PrintedValue(scheme.FaceId, "EscalationThreat", world.Players);
+        // `rr:villain-phase.step.1`: "place the amount of threat indicated in
+        // the main scheme's acceleration field. **If any acceleration icons or
+        // tokens are active, additional threat equal to the number of such
+        // icons and tokens is also placed at this time.**"
+        long amount = facts.PrintedValue(scheme.FaceId, "EscalationThreat", world.Players)
+            + MainScheme.Acceleration(world, facts);
         Threat(scheme, amount, "villain phase, place threat", events);
-        CheckCompleted(world, facts, scheme, events);
+        CheckCompleted(world, facts, abilities, scheme, events);
     }
 
     /// <summary>An enemy schemes. <c>rr:scheme-enemy-activation</c>.</summary>
@@ -298,7 +304,8 @@ public static class VillainPhase
     /// threat equal to the modified SCH on the main scheme.
     /// </remarks>
     private static void Scheme(
-        World world, ICardFacts facts, Card villain, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, Card villain,
+        List<GameEvent> events)
     {
         long scheme = facts.PrintedValue(villain.FaceId, "SCH", world.Players);
         scheme += ResolveBoostCard(world, facts, events);
@@ -307,7 +314,7 @@ public static class VillainPhase
         if (target is not null)
         {
             Threat(target, scheme, "scheme", events);
-            CheckCompleted(world, facts, target, events);
+            CheckCompleted(world, facts, abilities, target, events);
         }
     }
 
@@ -329,7 +336,7 @@ public static class VillainPhase
     private static long ResolveBoostCard(World world, ICardFacts facts, List<GameEvent> events)
     {
         var deck = world.AreaOf(DeckType.EncounterDeck);
-        var boost = deck.TakeTop();
+        var boost = EncounterDeck.TakeTop(world, "boost", events);
         if (boost is null)
         {
             return 0;
@@ -493,7 +500,8 @@ public static class VillainPhase
     /// </para>
     /// </remarks>
     private static void CheckCompleted(
-        World world, ICardFacts facts, Card scheme, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, Card scheme,
+        List<GameEvent> events)
     {
         long threat = scheme.Tokens.TryGetValue("k_threat", out long held) ? held : 0;
         long target = facts.PrintedValue(scheme.FaceId, "TargetThreat", world.Players);
@@ -502,22 +510,26 @@ public static class VillainPhase
             return;
         }
 
-        if (world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0)
-        {
-            throw new RulesNotImplementedException(
-                $"the main scheme completed at {threat} of {target} threat and the deck would "
-                + "advance to its next stage; advancing is not implemented");
-        }
-
+        // `rr:main-scheme-main-scheme-deck.2`: the scheme is completed either
+        // way. `.2.2` is the converse and the reason this flag is set here
+        // rather than inside `Advance` -- "if the main scheme advances other
+        // than through having threat on it equal to or greater than its target
+        // threat value, that main scheme is **not** considered completed."
         scheme.PlaceTokens("is_completed", 1);
-
-        // `rr:main-scheme-main-scheme-deck.2.1` -- "if the villain completes
-        // the final stage of the main scheme deck, the villain wins the game."
-        world.Finish(Outcome.VillainWins);
         events.Add(new FieldSet(scheme.ObjectId, "is_completed", 0, 1)
         {
             Trigger = "main scheme completed", Verb = "Complete",
         });
+
+        if (world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0)
+        {
+            MainScheme.Advance(world, facts, abilities, scheme, "main scheme completed", events);
+            return;
+        }
+
+        // `.2.1` -- "if the villain completes the final stage of the main
+        // scheme deck, the villain wins the game."
+        world.Finish(Outcome.VillainWins);
     }
 
     private static void Threat(Card scheme, long amount, string trigger, List<GameEvent> events)
