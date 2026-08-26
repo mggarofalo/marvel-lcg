@@ -611,6 +611,44 @@
       "name": "The Break-In!",
       "note": "Main scheme stage 1, the A side. Its printed text is the scenario's contents list and one setup line, 'Advance to stage 1B.' Neither is an ability this card runs: the contents say what to put in the box before the game, and the advance is the setup step itself -- WorldSetup step 4 puts the first main scheme into play already turned to its B side, so by the time any ability could run the card is where the line asks it to be. rr:main-scheme-main-scheme-deck.step.2 and .step.3 are the same two-sided reveal for a stage the deck advances to, and 01097b is where that side's text lives. Read and empty, which is not the same as unread.",
       "abilities": []
+    },
+    {
+      "card": "24044",
+      "name": "Boomerang",
+      "note": "Forced Response: After Boomerang attacks you, deal 1 damage to each ally you control. [star] Boost: Deal 2 damage to an ally you control. The response is on rr:attack-enemy-activation.step.6.a -- 'the attack finishes resolving and the following types of abilities trigger in order: forced abilities with the following triggers ... after [character] attacks [and damages/defeats] [you/an ally]' -- so it waits for the whole attack rather than firing at the damage step. Subject 'this' because the occurrence is Boomerang's own attack; who 'you' is comes from the occurrence rather than from the trigger, which is rr:you-your.7 -- 'for abilities that trigger after [enemy] attacks you, you refers to the attacked player, even if that player defended with an ally' -- and rr:attack-enemy-activation.1.4 says the same thing about which character was targeted. The boost half is guarded by exists: rr:choose-game-element has nothing to choose when the player controls no ally, and a card that asks anyway would stop the game on a board where the answer is 'nothing happens'.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": { "query": "alliesYouControl" },
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": { "exists": { "query": "alliesYouControl" } },
+              "then": {
+                "chooseCard": {
+                  "from": { "query": "alliesYouControl" },
+                  "effect": { "dealDamage": { "cards": "chosen", "amount": 2 } }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

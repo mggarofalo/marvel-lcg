@@ -128,7 +128,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var events = new List<GameEvent>();
-        var cast = new Cast(world, card, occurrence, ability.Player, events, this);
+
+        // **Who "you" is, which is not who may trigger it.**
+        // `PendingAbility.Player` is control -- `rr:ability.8` lets any player
+        // use an optional ability on an encounter card, so an encounter card's
+        // is the scenario. That is the right answer to "whose opportunity is
+        // this" and the wrong one to "who does the card mean by *you*".
+        //
+        // `rr:you-your.7` is explicit for the case this arrived on: "for
+        // abilities that trigger 'after [enemy] attacks you,' 'you' refers to
+        // the attacked player, even if that player defended with an ally." The
+        // attacked player is the occurrence's, so an ability on a card nobody
+        // owns resolves as the player the occurrence happened to. `.16` is not
+        // in the way -- it says an encounter card's ability is not performed by
+        // that player's identity, which is about who acts, not about who the
+        // word points at.
+        int resolving = ability.Player >= 0 ? ability.Player : occurrence.Player;
+        var cast = new Cast(world, card, occurrence, resolving, events, this);
 
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
         // before step 6 resolves. Nothing here can abort, because step 3 --
@@ -2128,6 +2144,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .. Owned.SelectMany(where =>
                     cast.World.AreaOf(where, PlayArea.Of(cast.Player)).Cards),
             ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allies
+            && allies.Argument is AbilityValue.Word { Value: "alliesYouControl" })
+        {
+            // "Each ally **you control**", which is where the card is:
+            // `rr:play-area.1` puts "any cards in play under their control" in
+            // a player's own play area, so control is a read of the board
+            // rather than a field -- the same reading `rr:engage.1` gets for a
+            // minion. Not `heroesAndAllies`, which is every player's: Boomerang
+            // hits the allies of the player it attacked and nobody else's.
+            return [.. cast.World.AreaOf(DeckType.AlliesArea, PlayArea.Of(cast.Player)).Cards];
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } heroes
