@@ -340,6 +340,7 @@ public sealed class KeywordTests
         side.PlaceTokens("k_threat", 9);
 
         BasicPowers.BasicThwart(world, printed, 0, side, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(5, side.Tokens["k_threat"]);
     }
@@ -386,6 +387,7 @@ public sealed class KeywordTests
         side.PlaceTokens("k_threat", 9);
 
         BasicPowers.AllyPower(world, printed, ally, side, BasicPowers.ThwartVerb, []);
+        Agendas.Finish(world, printed);
 
         // Thwarted for its ATK, and took the icon under it.
         Assert.Equal(7, side.Tokens["k_threat"]);

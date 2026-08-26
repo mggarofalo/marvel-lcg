@@ -198,6 +198,42 @@ take more threat than is on the scheme (`rr:threat` counts tokens, and a scheme
 cannot hold a negative number), and `rr:guard.1` is engagement-specific — a
 minion guarding *another* player does not stop you.
 
+#### A basic power is scheduled, not called
+
+`BasicPowers.BasicAttack` and `BasicPowers.BasicThwart` pay the cost — the
+character exhausts — and then put a **step** on the agenda. Neither one deals
+its damage or takes its threat off before returning, and a test that calls
+either has to run the agenda out (`Agendas.Finish`) before asking what the
+board looks like.
+
+The reason is that a basic power has windows around it and a window can ask.
+For the attack the rules write the windows out: `rr:attack-player-ability-type.step.7`
+and `.step.8` are the abilities triggered by it. For the thwart they do not —
+`rr:thwart` lists no steps at all — so the case is made by
+`rr:consequential-damage.1`, which deals an ally's consequential damage *"after
+resolving abilities that are triggered by the ally attacking **or
+thwarting**"*. A rule that orders something after the abilities triggered by a
+thwart takes for granted that there are such abilities and that they have a
+place to go.
+
+So both halves are three steps rather than one call:
+
+| step | what it is |
+|---|---|
+| `Steps.CharacterAttacks` | the ATK damage lands |
+| `Steps.CharacterThwarts` | the THW threat comes off |
+| `Steps.AllyConsequentialDamage` | an ally that attacked takes its icons |
+| `Steps.AllyThwartConsequentialDamage` | an ally that thwarted takes its icons |
+
+The last two are one rule and two steps only because they differ in what they
+record: the event stream spells the damage under the verb the ally used, and a
+reader telling an attack from a thwart reads that. **Which field** the icons
+came from is a third question and is asked when the damage is dealt rather than
+when the step was scheduled — `rr:assault.2` sends an ally thwarting an
+assaulted scheme to the icons under its ATK, and `rr:ability.9` makes a
+constant ability true only while its condition holds, which a step is long
+enough for it to stop doing.
+
 ## Damage, and defeat
 
 `rr:damage` is one rule however the damage arrived, so an enemy attacking a

@@ -174,6 +174,7 @@ public sealed class EliminationTests
         side.PlaceTokens("k_threat", 2);
 
         BasicPowers.BasicThwart(world, printed, 0, side, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(DeckType.EncounterDiscardPile, side.Area.Type);
     }
@@ -191,6 +192,7 @@ public sealed class EliminationTests
         main.PlaceTokens("k_threat", 2);
 
         BasicPowers.BasicThwart(world, printed, 0, main, []);
+        Agendas.Finish(world, printed);
 
         Assert.Equal(DeckType.MainSchemesArea, main.Area.Type);
         Assert.Equal(0, main.Tokens["k_threat"]);

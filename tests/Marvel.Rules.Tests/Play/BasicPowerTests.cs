@@ -163,6 +163,7 @@ public sealed class BasicPowerTests
 
         scheme.PlaceTokens("k_threat", 5);
         BasicPowers.BasicThwart(world, printed, 0, scheme, []);
+        Agendas.Finish(world, printed);
 
         Assert.False(world.Seats[0].IdentityCard.Ready);
         Assert.Equal(3, scheme.Tokens["k_threat"]);
@@ -180,6 +181,7 @@ public sealed class BasicPowerTests
 
         var events = new List<GameEvent>();
         BasicPowers.BasicThwart(world, printed, 0, scheme, events);
+        events.AddRange(Agendas.Finish(world, printed));
 
         Assert.Equal(0, scheme.Tokens["k_threat"]);
 
