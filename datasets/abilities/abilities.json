@@ -39,7 +39,7 @@
     {
       "card": "01105",
       "name": "\"I'm Tough\"",
-      "note": "When Revealed: Give Rhino a tough status card. If Rhino already has a tough status card, this card gains surge. The no-villain case is not printed; py_src/cards/pack/core/rhino/01105.py surges there, and that is the reading encoded. 'gainSurge' is not an implemented node, so the surge branch throws by name rather than silently dealing one card too few.",
+      "note": "When Revealed: Give Rhino a tough status card. If Rhino already has a tough status card, this card gains surge. The no-villain case is not printed; py_src/cards/pack/core/rhino/01105.py surges there, and that is the reading encoded. Both branches run: `giveStatus` is capped by rr:status-cards.1 and `gainSurge` deals one encounter card, which is rr:surge.1's 'When Revealed: deal yourself 1 facedown encounter card'.",
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },

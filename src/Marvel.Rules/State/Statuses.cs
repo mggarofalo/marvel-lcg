@@ -101,9 +101,17 @@ public static class Statuses
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(host);
 
+        // `rr:status-cards.1` caps **every** type: "a character cannot have more
+        // than one status card of each type at a time." Tough included --
+        // `rr:tough.2.1` describes what happens to a character that has more
+        // than one, which is a state a card ability can create by saying so,
+        // not one this default permits.
+        //
+        // The two keywords move the cap and only for the two statuses they
+        // name; neither says anything about tough.
         if (status is not (Stunned or Confused))
         {
-            return int.MaxValue;
+            return 1;
         }
 
         if (StateFields.Modified(world, host, "stalwart", facts, world.Players) > 0)
@@ -111,6 +119,9 @@ public static class Statuses
             return 0;
         }
 
+        // `rr:status-cards.1.1`: "characters with the steady keyword can have
+        // one additional confused status card and one additional stunned status
+        // card."
         return StateFields.Modified(world, host, "steady", facts, world.Players) > 0 ? 2 : 1;
     }
 
@@ -197,5 +208,38 @@ public static class Statuses
         return Count(world, host, status) < Limit(world, facts, host, status)
             ? Give(world, host, status)
             : null;
+    }
+
+    /// <summary>
+    /// Whether a character is discarded for becoming stunned or confused —
+    /// <c>rr:vulnerable</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// "<b>Forced Interrupt</b>: when this character becomes confused or
+    /// stunned, discard it." <c>rr:vulnerable.2</c> is emphatic that it is a
+    /// discard and not a defeat — "it is discarded before the damage is applied
+    /// and <b>is not considered defeated</b>" — so no "When Defeated" ability
+    /// fires and nothing goes to the victory display.
+    /// </para>
+    /// <para>
+    /// <c>rr:vulnerable.3</c>: "if a character has both the steady and
+    /// vulnerable keywords, the vulnerable keyword does not take effect until
+    /// that character has two confused or two stunned status cards" — which is
+    /// <see cref="Afflicted"/>, so this asks that rather than counting cards.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="host">The character.</param>
+    public static bool Vulnerable(World world, ICardFacts facts, Card host)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(host);
+
+        return StateFields.Modified(world, host, "vulnerable", facts, world.Players) > 0
+            && (Afflicted(world, facts, host, Stunned)
+                || Afflicted(world, facts, host, Confused));
     }
 }

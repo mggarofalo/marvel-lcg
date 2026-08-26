@@ -342,6 +342,26 @@ public sealed class CardsInWindowsTests
         return board;
     }
 
+    [Rule("rr:status-cards.1")]
+    [Fact]
+    public void ACardGivingAStatusGoesThroughTheRulesRatherThanRoundThem()
+    {
+        // `"I'm Tough"` gives Rhino a tough status card. A second copy gives
+        // him nothing: `rr:status-cards.1` caps every type at one, and a card
+        // ability reaching straight past that cap would be a second place for
+        // the status rules to live.
+        var world = Deal();
+        var abilities = AuthoredCards.Runner();
+        var rhino = world.TheCardIn(DeckType.VillainArea)!;
+        var copies = world.Cards.Where(card => card.FaceId == AuthoredCards.ImTough).ToList();
+
+        abilities.WhenRevealed(world, copies[0], 0);
+        Assert.Equal(1, Statuses.Count(world, rhino, Statuses.Tough));
+
+        abilities.WhenRevealed(world, copies[1], 0);
+        Assert.Equal(1, Statuses.Count(world, rhino, Statuses.Tough));
+    }
+
     /// <summary>Answers <c>rr:end-of-player-phase.step.1</c>, discarding the excess.</summary>
     private static Resolution EndPhase(Game game)
     {

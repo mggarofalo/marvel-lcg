@@ -231,6 +231,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Discard(node, cast);
                 break;
 
+            case "gainSurge":
+                // `rr:surge`: "the player resolving the card deals themself a
+                // facedown encounter card from the top of the encounter deck",
+                // and `.1` writes it as "**When Revealed**: deal yourself 1
+                // facedown encounter card". A card that *gains* surge does the
+                // same thing the keyword would have -- so this is one deal, and
+                // the number beside the node is how many.
+                //
+                // `.2` finishes the original card first, which the villain
+                // phase's reveal queue does without anything here.
+                for (long dealt = 0; dealt < Number(node.Argument); dealt++)
+                {
+                    Deal.EncounterCard(
+                        cast.World, cast.Player, cast.Occurrence.Conditions[0], cast.Events);
+                }
+
+                break;
+
             case "draw":
                 Draw.Cards(
                     cast.World, Seat(node.Require("player"), cast),
@@ -265,13 +283,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{cast.Source.FaceId}' would give a status to a card that is not there");
 
         string what = Word(node.Require("status"));
-        var status = Statuses.Give(cast.World, host, what);
 
-        cast.Events.Add(new CardsCreated(
-            Places.Reference(status.Area), [new CreatedCard(status.ObjectId, status.FaceId)])
+        // Through the rules rather than straight at `Statuses.Give`:
+        // `rr:status-cards.1` caps how many a character can hold,
+        // `rr:stalwart` makes that cap zero, and `rr:vulnerable` discards the
+        // character. A card giving a status does not get to skip any of them.
+        var status = Reveal.Afflict(
+            cast.World, cast.World.Facts, host, what, cast.Trigger, cast.Events);
+        if (status is null)
         {
-            Trigger = cast.Trigger, Verb = "Give_Status",
-        });
+            return;
+        }
+
         cast.Events.Add(new CardAttached(status.ObjectId, host.ObjectId)
         {
             Trigger = cast.Trigger, Verb = "Give_Status",

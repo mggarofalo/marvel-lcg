@@ -495,6 +495,193 @@ public sealed class KeywordTests
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:crisis-icon")]
+    [Rule("rr:crisis-icon.1")]
+    [Fact]
+    public void ACrisisIconStopsTheMainSchemeBeingThwarted()
+    {
+        // "While **at least one** crisis icon is in play, threat cannot be
+        // removed from the main scheme by player cards." A hero's identity and
+        // an ally are both player cards, so it takes the main scheme off
+        // everybody's list -- unlike `rr:patrol`, which is one player's.
+        //
+        // A side scheme is untouched: the rule names the main scheme.
+        var printed = new Printed().With("sideScheme", ("Crisis", "1"));
+        var world = Board(printed);
+        world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 5);
+        var side = world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        side.PlaceTokens("k_threat", 2);
+
+        Assert.Equal([side.ObjectId],
+            BasicPowers.Thwartable(world, printed, 0).Select(scheme => scheme.ObjectId));
+    }
+
+    [Rule("rr:crisis-icon")]
+    [Fact]
+    public void WithoutACrisisIconTheMainSchemeIsThwartableAgain()
+    {
+        var printed = new Printed().With("sideScheme", ("Crisis", "0"));
+        var world = Board(printed);
+        world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 5);
+        world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+
+        Assert.Single(BasicPowers.Thwartable(world, printed, 0));
+    }
+
+    [Rule("rr:crisis-icon")]
+    [Fact]
+    public void ACrisisIconOutOfPlayStopsNothing()
+    {
+        // "While at least one crisis icon is **in play**." The encounter deck
+        // is full of them in an ordinary game, and counting those would make
+        // the main scheme permanently unthwartable.
+        var printed = new Printed().With("sideScheme", ("Crisis", "1"));
+        var world = Board(printed);
+        world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 5);
+        world.CreateCard("sideScheme", world.AreaOf(DeckType.EncounterDeck));
+
+        Assert.Single(BasicPowers.Thwartable(world, printed, 0));
+    }
+
+    [Rule("rr:amplify-icon")]
+    [Fact]
+    public void AmplifyIconsAddToAnAttacksBoostCardToo()
+    {
+        // "When a boost card is turned faceup **during an enemy activation**" --
+        // an attack is an activation as much as a scheme is. ATK 1 plus a boost
+        // card worth 1 plus two amplify icons is 4.
+        var printed = new Printed()
+            .With("hero", ("HP", "10"))
+            .With("villain", ("ATK", "1"), ("HP", "20"))
+            .With("boost", ("Boost", "1"))
+            .With("sideScheme", ("Amplify", "2"));
+        var world = Board(printed);
+        world.Seats[0].IdentityCard.TurnTo("hero");
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
+
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Undefended(world, printed);
+
+        Assert.Equal(4, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:amplify-icon")]
+    [Theory]
+    [InlineData(0, 3)]
+    // "Add one additional boost icon to that card for each amplify icon in
+    // play", so a boost card worth 1 with two amplify icons is worth 3.
+    [InlineData(1, 4)]
+    [InlineData(2, 5)]
+    public void AmplifyIconsAddToEveryBoostCard(int amplify, int expected)
+    {
+        var printed = new Printed()
+            .With("villain", ("SCH", "2"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("boost", ("Boost", "1"))
+            .With("sideScheme", ("Amplify", amplify.ToString()));
+        var world = Board(printed);
+        world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
+
+        VillainPhase.Schedule(world.Agenda, round: 1);
+        Sequence.Finish(world, printed, new NoCardAbilities(), []);
+
+        Assert.Equal(expected, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+    }
+
+    [Rule("rr:status-cards.1")]
+    [Rule("rr:tough.2.1")]
+    [Fact]
+    public void EveryStatusTypeIsCappedAtOneIncludingTough()
+    {
+        // "A character cannot have more than one status card of **each type**
+        // at a time." Each type -- tough is not exempt, and `rr:status-cards.1.1`
+        // extends the cap for steady on the other two only.
+        //
+        // `rr:tough.2.1` describes a character "with multiple tough status
+        // cards", which is a state a card ability can create by saying so
+        // rather than one this default permits.
+        var printed = new Printed()
+            .With("minion", ("HP", "9"))
+            .With("steady", ("HP", "9"), ("Steady", "1"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Assert.NotNull(Reveal.Afflict(world, printed, minion, Statuses.Tough, "test", []));
+        Assert.Null(Reveal.Afflict(world, printed, minion, Statuses.Tough, "test", []));
+        Assert.Equal(1, Statuses.Count(world, minion, Statuses.Tough));
+
+        // And a steady character gets no extra tough card either: the keyword
+        // names confused and stunned.
+        var steady = world.CreateCard(
+            "steady", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Assert.NotNull(Reveal.Afflict(world, printed, steady, Statuses.Tough, "test", []));
+        Assert.Null(Reveal.Afflict(world, printed, steady, Statuses.Tough, "test", []));
+    }
+
+    [Rule("rr:vulnerable")]
+    [Rule("rr:vulnerable.2")]
+    [Fact]
+    public void AVulnerableCharacterIsDiscardedWhenItIsStunned()
+    {
+        // "**Forced Interrupt**: when this character becomes confused or
+        // stunned, discard it", and `.2`: "it is discarded [...] and **is not
+        // considered defeated**" -- so nothing reaches the victory display even
+        // though the card is worth points.
+        var printed = new Printed()
+            .With("minion", ("HP", "9"), ("Vulnerable", "1"), ("Victory", "2"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Reveal.Afflict(world, printed, minion, Statuses.Stunned, "test", []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Empty(world.AreaOf(DeckType.VictoryDisplay).Cards);
+    }
+
+    [Rule("rr:vulnerable.3")]
+    [Fact]
+    public void ASteadyVulnerableCharacterSurvivesTheFirstStatusCard()
+    {
+        // "If a character has both the steady and vulnerable keywords, the
+        // vulnerable keyword does not take effect until that character has two
+        // confused or two stunned status cards."
+        var printed = new Printed()
+            .With("minion", ("HP", "9"), ("Vulnerable", "1"), ("Steady", "1"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Reveal.Afflict(world, printed, minion, Statuses.Stunned, "test", []);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
+
+        Reveal.Afflict(world, printed, minion, Statuses.Stunned, "test", []);
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+    }
+
+    [Rule("rr:stalwart.1")]
+    [Fact]
+    public void AStalwartCharacterIsNotDiscardedByVulnerable()
+    {
+        // Stalwart stops the status card landing at all, so vulnerable never
+        // has a condition to fire on. The two keywords together are inert.
+        var printed = new Printed()
+            .With("minion", ("HP", "9"), ("Vulnerable", "1"), ("Stalwart", "1"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        Assert.Null(Reveal.Afflict(world, printed, minion, Statuses.Stunned, "test", []));
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
+    }
+
     /// <summary>Runs the attack, declining the defender prompt.</summary>
     private static void Undefended(World world, Printed printed)
     {
@@ -552,7 +739,7 @@ public sealed class KeywordTests
             "permanentish" => CardKind.Support,
             "villain" => CardKind.EncounterVillain,
             "scheme" => CardKind.MainScheme,
-            "minion" => CardKind.Minion,
+            "minion" or "steady" => CardKind.Minion,
             "sideScheme" => CardKind.EncounterSideScheme,
             "obligation" => CardKind.Obligation,
             "tough" => CardKind.Status,

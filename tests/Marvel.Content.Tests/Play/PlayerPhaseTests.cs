@@ -336,28 +336,37 @@ public sealed class PlayerPhaseTests
                      placements.Select(e => (e.From!.Value, e.To!.Value)));
     }
 
+    [Rule("rr:surge")]
     [Fact]
     public void ImToughSurgesWhenTheVillainIsAlreadyTough()
     {
-        // The other branch of the only card written. The recorded game never
-        // takes it -- `01105` is revealed once, and Rhino is not Tough yet --
-        // so without this the branch is unexecuted code that reads as if it
-        // works. Surge is not implemented, so the honest outcome is a named
-        // refusal rather than a Tough that silently stacks.
+        // The other branch of the card. The recorded game never takes it --
+        // `01105` is revealed once, and Rhino is not Tough yet -- so without
+        // this the branch is unexecuted code that reads as if it works.
+        //
+        // `rr:surge.1`: "**When Revealed**: deal yourself 1 facedown encounter
+        // card." Dealt, not revealed: `.2` finishes the original card first,
+        // and the villain phase's reveal queue is what makes that happen.
         var game = Begin();
         game.Resolve(Decision.Decline);
         game.Resolve(Decision.Decline);
         game.Resolve(Decision.Decline);
 
-        var villain = game.State.TheCardIn(DeckType.VillainArea)!;
-        Assert.True(Statuses.Has(game.State, villain, Statuses.Tough));
+        var world = game.State;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Assert.True(Statuses.Has(world, villain, Statuses.Tough));
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => AuthoredCards.Runner().WhenRevealed(
-                game.State,
-                game.State.Cards.First(card => card.FaceId == AuthoredCards.ImTough),
-                0));
-        Assert.Contains("surge", thrown.Message, StringComparison.OrdinalIgnoreCase);
+        var queue = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0));
+        int before = queue.Cards.Count;
+
+        AuthoredCards.Runner().WhenRevealed(
+            world, world.Cards.First(card => card.FaceId == AuthoredCards.ImTough), 0);
+
+        // One card dealt, and Rhino is no more Tough than he already was --
+        // `rr:status-cards.1` caps it at one and the card's own text says the
+        // same thing by surging instead.
+        Assert.Equal(before + 1, queue.Cards.Count);
+        Assert.Equal(1, Statuses.Count(world, villain, Statuses.Tough));
     }
 
     [Fact]
