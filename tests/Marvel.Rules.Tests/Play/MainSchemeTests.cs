@@ -247,26 +247,21 @@ public sealed class MainSchemeTests
     }
 
     /// <summary>Nothing has an ability.</summary>
-    private sealed class Silent : ICardAbilities
+    private sealed class Silent : NoCardAbilities
     {
-        public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
 
-        public IReadOnlyList<PendingAbility> Waiting(
-            World world, Occurrence occurrence, WindowKind window) => [];
 
-        public IReadOnlyList<GameEvent> Resolve(
+        public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability) => [];
 
-        public Marvel.Rules.Prompts.Affordance Describe(World world, PendingAbility ability) =>
-            throw new NotSupportedException();
     }
 
     /// <summary>Records which faces were offered a "When Revealed" window.</summary>
-    private sealed class Revealing : ICardAbilities
+    private sealed class Revealing : NoCardAbilities
     {
         public List<string> Faces { get; } = [];
 
-        public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
+        public override IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
         {
             // Only the scheme stages; the encounter cards this board deals are
             // not what the test is about.
@@ -278,14 +273,10 @@ public sealed class MainSchemeTests
             return [];
         }
 
-        public IReadOnlyList<PendingAbility> Waiting(
-            World world, Occurrence occurrence, WindowKind window) => [];
 
-        public IReadOnlyList<GameEvent> Resolve(
+        public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability) => [];
 
-        public Marvel.Rules.Prompts.Affordance Describe(World world, PendingAbility ability) =>
-            throw new NotSupportedException();
     }
 
     /// <summary>Printed data for a handful of made-up cards.</summary>

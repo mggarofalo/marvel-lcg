@@ -257,26 +257,21 @@ public sealed class DealTests
     }
 
     /// <summary>Nothing waits in a window, and nothing is revealed.</summary>
-    private sealed class Silent : ICardAbilities
+    private sealed class Silent : NoCardAbilities
     {
-        public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
 
-        public IReadOnlyList<PendingAbility> Waiting(
-            World world, Occurrence occurrence, WindowKind window) => [];
 
-        public IReadOnlyList<GameEvent> Resolve(
+        public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability) => [];
 
-        public Marvel.Rules.Prompts.Affordance Describe(World world, PendingAbility ability) =>
-            throw new NotSupportedException();
     }
 
     /// <summary>One card whose "When Revealed" deals another encounter card.</summary>
-    private sealed class DealsOnReveal : ICardAbilities
+    private sealed class DealsOnReveal : NoCardAbilities
     {
         private bool used;
 
-        public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
+        public override IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
         {
             if (used)
             {
@@ -289,14 +284,10 @@ public sealed class DealTests
             return events;
         }
 
-        public IReadOnlyList<PendingAbility> Waiting(
-            World world, Occurrence occurrence, WindowKind window) => [];
 
-        public IReadOnlyList<GameEvent> Resolve(
+        public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability) => [];
 
-        public Marvel.Rules.Prompts.Affordance Describe(World world, PendingAbility ability) =>
-            throw new NotSupportedException();
     }
 
     /// <summary>Printed data for a handful of made-up cards.</summary>

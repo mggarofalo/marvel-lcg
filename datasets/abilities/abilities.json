@@ -178,6 +178,55 @@
           }
         }
       ]
+    },
+    {
+      "card": "01110",
+      "name": "Hydra Bomber",
+      "note": "When Revealed: Choose to either take 2 damage or place 1 threat on the main scheme. rr:choose-game-element.1 asks the player resolving the ability, which for a revealed encounter card is the player it was dealt to. rr:you-your.2 makes 'take 2 damage' damage to that player's identity. Neither option needs a target beyond one that is always there, so rr:choose-option.1 -- an encounter card cannot offer an option with no valid target -- never bites here.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "choose": {
+              "options": [
+                { "dealDamage": { "cards": "you", "amount": 2 } },
+                { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "01094",
+      "name": "Rhino",
+      "note": "Stage I. No text at all: the printed HP, ATK, SCH and the Boost field are attributes rather than abilities, and rr:attachment.1 makes the printed modifiers on what is attached to him declarative too. Read and empty, which is not the same as unread.",
+      "abilities": []
+    },
+    {
+      "card": "01101",
+      "name": "Hydra Mercenary",
+      "note": "Guard, and nothing else. rr:guard is a keyword the engine reads off the printed field -- see docs/keywords.md -- so there is no ability here to author.",
+      "abilities": []
+    },
+    {
+      "card": "01102",
+      "name": "Sandman",
+      "note": "Toughness, and nothing else. rr:toughness gives the minion a tough status card as it enters play, which Reveal.EnterPlay does from the printed keyword.",
+      "abilities": []
+    },
+    {
+      "card": "01108",
+      "name": "Crowd Control",
+      "note": "A crisis icon and no text. rr:crisis-icon.1 makes the icon 'equivalent to the following constant ability: player cards cannot remove threat from the main scheme', and the engine reads it off the printed field in BasicPowers -- a constant ability is not a triggered one and has nothing to wait for.",
+      "abilities": []
+    },
+    {
+      "card": "01097b",
+      "name": "The Break-In!",
+      "note": "Stage 1B. 'If this stage is completed, the players lose the game' is rr:main-scheme-main-scheme-deck.2.1 restated on the card, and the engine answers it in Threat.Completed: an empty main scheme deck under a completed scheme is the villain winning. Nothing here to trigger."
+      ,
+      "abilities": []
     }
   ]
 }

@@ -131,7 +131,7 @@ public static class Sequence
                     $"'{asked.Label}' was answered with nothing outstanding");
             }
 
-            VillainPhase.Answered(world, facts, step, input, events);
+            VillainPhase.Answered(world, facts, abilities, step, input, events);
             world.Agenda.Advance();
             return;
         }

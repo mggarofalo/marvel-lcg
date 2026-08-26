@@ -93,7 +93,7 @@ public sealed class PhaseEndTests
         // about everything except the ability nobody was offered. Offering it
         // needs a prompt that can name a window -- MARVEL-179.
         var world = Board();
-        var waiting = new Waiting(new PendingAbility(0, AbilityType.Response, 0));
+        var waiting = new Offering(new PendingAbility(0, AbilityType.Response, 0));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => EndRound(world, waiting));
@@ -109,7 +109,7 @@ public sealed class PhaseEndTests
         // choosing on their behalf, and `rr:forced.6` means the choice is
         // observable: each resolves completely before the next initiates.
         var world = Board();
-        var waiting = new Waiting(
+        var waiting = new Offering(
             new PendingAbility(0, AbilityType.ForcedResponse, 0),
             new PendingAbility(1, AbilityType.ForcedResponse, 0));
 
@@ -155,7 +155,7 @@ public sealed class PhaseEndTests
     }
 
     /// <summary>Reads the board each time it is asked, and remembers what it saw.</summary>
-    private sealed class Watcher(World world) : ICardAbilities
+    private sealed class Watcher(World world) : NoCardAbilities
     {
         private readonly Dictionary<WindowKind, int> active = [];
 
@@ -165,7 +165,7 @@ public sealed class PhaseEndTests
 
         public int ActiveAt(WindowKind window) => active[window];
 
-        public IReadOnlyList<PendingAbility> Waiting(
+        public override IReadOnlyList<PendingAbility> Waiting(
             World asked, Occurrence occurrence, WindowKind window)
         {
             Seen.Add(occurrence);
@@ -173,27 +173,23 @@ public sealed class PhaseEndTests
             return [];
         }
 
-        public IReadOnlyList<GameEvent> WhenRevealed(World asked, Card card, int player) => [];
-
-        public IReadOnlyList<GameEvent> Resolve(
+        public override IReadOnlyList<GameEvent> Resolve(
             World asked, Occurrence occurrence, PendingAbility ability) => [];
 
-        public Affordance Describe(World asked, PendingAbility ability) =>
+        public override Affordance Describe(World asked, PendingAbility ability) =>
             new(ability.Card, "Use", ability.Card, ability.Player, $"ability on {ability.Card}");
     }
 
     /// <summary>Puts a fixed set of abilities into every window.</summary>
-    private sealed class Waiting(params PendingAbility[] abilities) : ICardAbilities
+    private sealed class Offering(params PendingAbility[] abilities) : NoCardAbilities
     {
-        IReadOnlyList<PendingAbility> IWindowAbilities.Waiting(
+        public override IReadOnlyList<PendingAbility> Waiting(
             World world, Occurrence occurrence, WindowKind window) => abilities;
 
-        public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
-
-        public IReadOnlyList<GameEvent> Resolve(
+        public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability) => [];
 
-        public Affordance Describe(World world, PendingAbility ability) =>
+        public override Affordance Describe(World world, PendingAbility ability) =>
             new(ability.Card, "Use", ability.Card, ability.Player, $"ability on {ability.Card}");
     }
 

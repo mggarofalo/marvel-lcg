@@ -371,38 +371,29 @@ public sealed class CardPlayTests
         .With("expensive", ("Cost", "9"), ("RES", "B"))
         .With("suited2", ("Form", "Suit"));
 
-    private sealed class Silent : ICardAbilities
+    private sealed class Silent : NoCardAbilities
     {
-        public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
 
-        public IReadOnlyList<PendingAbility> Waiting(
-            World world, Occurrence occurrence, WindowKind window) => [];
 
-        public IReadOnlyList<GameEvent> Resolve(
+        public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability) => [];
 
-        public Marvel.Rules.Prompts.Affordance Describe(World world, PendingAbility ability) =>
-            throw new NotSupportedException();
     }
 
-    private sealed class Counting : ICardAbilities
+    private sealed class Counting : NoCardAbilities
     {
         public int Resolved { get; private set; }
 
-        public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
+        public override IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
         {
             Resolved += 1;
             return [];
         }
 
-        public IReadOnlyList<PendingAbility> Waiting(
-            World world, Occurrence occurrence, WindowKind window) => [];
 
-        public IReadOnlyList<GameEvent> Resolve(
+        public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability) => [];
 
-        public Marvel.Rules.Prompts.Affordance Describe(World world, PendingAbility ability) =>
-            throw new NotSupportedException();
     }
 
     private sealed class Printed : ICardFacts
