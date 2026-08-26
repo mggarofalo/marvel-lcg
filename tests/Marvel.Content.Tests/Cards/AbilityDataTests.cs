@@ -300,7 +300,7 @@ public sealed class AbilityDataTests
             AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
             AuthoredCards.ShadowOfThePast, AuthoredCards.Exhaustion,
             AuthoredCards.Masterplan, AuthoredCards.UnderFire, AuthoredCards.RhinoThree,
-            AuthoredCards.Boomerang,
+            AuthoredCards.Boomerang, AuthoredCards.Beetle,
             .. AuthoredCards.ReadAndSilent,
         ];
 

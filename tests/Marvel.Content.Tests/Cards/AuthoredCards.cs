@@ -96,6 +96,9 @@ internal static class AuthoredCards
     /// <summary>The printed id of "Boomerang", of the Sinister Syndicate.</summary>
     public const string Boomerang = "24044";
 
+    /// <summary>The printed id of "Beetle", of the Sinister Syndicate.</summary>
+    public const string Beetle = "24043";
+
     /// <summary>The printed id of "Masterplan".</summary>
     public const string Masterplan = "01192";
 

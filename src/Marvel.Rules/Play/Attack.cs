@@ -87,6 +87,9 @@ public static class Attack
         var target = world.Seats[step.Seat].IdentityCard;
         world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId);
 
+        // One attack's facts do not outlive the start of the next.
+        world.FinishedAttack = null;
+
         world.Agenda.Then(new PhaseStep(
             Steps.GiveBoostCard, step.Round, 1, Index: step.Seat, Subject: step.Subject));
         world.Agenda.Then(new PhaseStep(
@@ -374,6 +377,17 @@ public static class Attack
         {
             DelayedEffects.Occur(world, "WhenDamageDealt", card.ObjectId, events);
         }
+
+        // Recorded on the attack rather than derived later, because by the time
+        // `rr:attack-enemy-activation.step.6.a`'s abilities run the damage is on
+        // a dial that had damage on it before. `damaged` is the list
+        // `rr:tough.3` shortens -- a character whose tough card absorbed the
+        // attack "is not considered to have taken damage" -- so an attack that
+        // hit a tough card did not damage anybody.
+        if (damaged.Count > 0)
+        {
+            world.Attack = attack with { Damaged = true };
+        }
     }
 
     /// <summary>
@@ -437,6 +451,12 @@ public static class Attack
         // so anything bounded by "this activation" ends here too.
         world.Effects.Expire(TimingPoints.EndOfActivation);
         DelayedEffects.Occur(world, Steps.AttackEnds, events);
+
+        // Kept for the window that follows this step. `.step.6.a`'s abilities
+        // are the ones that ask what the attack did, and they run after the
+        // attack is over -- so clearing `Attack` without keeping the facts
+        // would leave them nothing to read.
+        world.FinishedAttack = world.Attack;
         world.Attack = null;
     }
 
