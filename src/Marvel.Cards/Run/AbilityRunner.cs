@@ -350,6 +350,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
                 break;
 
+            case "exhaust":
+                Exhaust(node, cast);
+                break;
+
+            case "revealTop":
+                RevealTop(cast);
+                break;
+
             case "search":
                 Search(node, cast);
                 break;
@@ -575,6 +583,69 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     // ---- reading a value ---------------------------------------------------
+
+    /// <summary>"Exhaust …" — <c>rr:exhausted</c>.</summary>
+    /// <remarks>
+    /// A card already exhausted stays exhausted and reports nothing:
+    /// <c>rr:exhausted</c> is a state and not a counter, so exhausting
+    /// twice is not two exhaustions and must not be two events on the wire.
+    /// </remarks>
+    private static void Exhaust(AbilityNode node, Cast cast)
+    {
+        var target = Find(node.Argument, cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would exhaust a card that is not there");
+
+        if (!target.Ready)
+        {
+            return;
+        }
+
+        target.Exhaust();
+        cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
+        {
+            Trigger = cast.Trigger, Verb = "Exhaust",
+        });
+    }
+
+    /// <summary>
+    /// "Reveal the top card of the encounter deck" — <c>rr:reveal</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Revealed, not dealt.</b> <c>rr:deal-deal-an-encounter-card</c> puts a
+    /// card facedown in a queue to be resolved later; this one is turned over
+    /// now. The difference is a whole villain phase, and Under Fire says
+    /// "reveal".
+    /// </para>
+    /// <para>
+    /// Scheduled, for the same reason <c>search</c> schedules: revealing an
+    /// encounter card is a step with an interrupt window and a response window
+    /// around it, and the card revealed may itself ask a player something.
+    /// </para>
+    /// <para>
+    /// <c>EncounterDeck.TakeTop</c> is what draws it, so an empty deck
+    /// reshuffles its discard pile first — <c>rr:encounter-deck.3</c> — rather
+    /// than this quietly doing nothing.
+    /// </para>
+    /// </remarks>
+    private static void RevealTop(Cast cast)
+    {
+        var card = EncounterDeck.TakeTop(cast.World, cast.Trigger, cast.Events);
+        if (card is null)
+        {
+            return;
+        }
+
+        World.MoveToTop(card, cast.World.AreaOf(DeckType.RevealingArea));
+        cast.World.Agenda.Then(new PhaseStep(
+            Steps.RevealEncounterCard,
+            cast.World.Agenda.Current?.Round ?? 0,
+            4,
+            Index: cast.Player,
+            Subject: card.ObjectId,
+            Seat: cast.Player));
+    }
 
     /// <summary>
     /// "Search the encounter deck and discard pile for … and reveal it" —

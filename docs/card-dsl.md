@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and nineteen cards in `datasets/abilities/abilities.json` — nineteen of the Rhino scenario's twenty-four.
+`src/Marvel.Cards`, and twenty-one cards in `datasets/abilities/abilities.json`.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -592,7 +592,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Envelope | `trigger { event, timing, subject }`, `name`, `effect`. Not `when`, `cost`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast` |
-| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search` |
+| Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: upgradesAndSupportsYouControl` |
 | Amounts | a number, `{ "perPlayer": n }`, or `{ "result": "healed" }` |
 | Bindings | `this`, `you`, `chosen`, `attachedTo`, `trigger.subject`; players `you`, `controller`, `trigger.player` |
@@ -763,12 +763,25 @@ complete, the engine is not, and the message says which node to write. Growing
 the engine is adding a case; growing the game is adding a row; they are
 different activities and they read differently.
 
-The gaps that have that shape today, all from the Rhino scenario's own
-twenty-four cards: an attachment that redirects damage (Armored Rhino Suit), a
+The gaps that have that shape today, from the Rhino scenario's own twenty-four
+cards: an attachment that redirects damage (Armored Rhino Suit), a
 **Hero Action** with a resource cost (Enhanced Ivory Horn), a delayed effect on
 an attack's damage (Stampede), damage assigned among several characters
 (Explosion), and the nemesis set (Shadow of the Past). Nineteen of the
 twenty-four are written; those five are what is left.
+
+### How big the job actually is
+
+Measured across the 135 campaigns in the dataset: **1,477 distinct
+encounter-side cards**. Of those, 61 print no text at all and want a row saying
+"read, does nothing"; the rest have something to say.
+
+The distribution is what makes it tractable. The **Standard** sets reach almost
+everything — `01190` Shadow of the Past appears in 132 of the 135 campaigns, and
+`01191` Exhaustion, `01192` Masterplan and `01193` Under Fire in 75 each. No
+other encounter card in the pool comes near. So the Standard sets are worth
+authoring before anything else, and after them the curve falls away to nine
+scenarios and fewer.
 
 ### Read and empty is not unread
 

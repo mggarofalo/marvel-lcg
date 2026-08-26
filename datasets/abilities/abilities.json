@@ -265,6 +265,28 @@
           }
         }
       ]
+    },
+    {
+      "card": "01191",
+      "name": "Exhaustion",
+      "note": "Surge. When Revealed: Exhaust your identity card. The surge is a printed keyword the engine already reads, so the ability is the one sentence. 'Your identity card' is rr:you-your again -- the resolving player's identity, whichever face is showing, and rr:form-change-form.2 keeps the exhausted state across a flip.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "exhaust": "you" }
+        }
+      ]
+    },
+    {
+      "card": "01193",
+      "name": "Under Fire",
+      "note": "Surge. When Revealed: Reveal the top card of the encounter deck. Revealed and not dealt -- rr:deal-deal-an-encounter-card puts a card facedown in a queue for the next villain phase, and this one is turned over now. The surge deals a card as well, so this treachery costs two: one revealed at once and one queued.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "revealTop": 1 }
+        }
+      ]
     }
   ]
 }
