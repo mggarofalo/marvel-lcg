@@ -142,33 +142,35 @@ public static class Attack
             return;
         }
 
-        var attack = Current(world);
-        var attacker = world.Cards[attack.Enemy];
+        var activation = Activating(world);
+        var enemy = world.Cards[activation.Enemy];
 
-        // `rr:attack-enemy-activation.step.1`: only a villain, or a minion with
-        // `rr:villainous`, is given one. "If a minion without the villainous
-        // keyword is attacking, **skip this step**" -- and skipping matters
-        // beyond the icons, because taking a card off the encounter deck moves
-        // every later deal.
-        if (!Keywords.IsBoosted(attacker, facts, world.Players))
+        // `rr:attack-enemy-activation.step.1` and
+        // `rr:scheme-enemy-activation.step.1`, the same clause twice: only a
+        // villain, or a minion with `rr:villainous`, is given one. "If a minion
+        // without the villainous keyword is attacking, **skip this step**" --
+        // and skipping matters beyond the icons, because taking a card off the
+        // encounter deck moves every later deal.
+        if (!Keywords.IsBoosted(enemy, facts, world.Players))
         {
             return;
         }
 
+        string trigger = Activated(activation);
         var deck = world.AreaOf(DeckType.EncounterDeck);
-        var boost = EncounterDeck.TakeTop(world, Steps.EnemyAttacks, events);
+        var boost = EncounterDeck.TakeTop(world, trigger, events);
         if (boost is null)
         {
             return;
         }
 
-        var onto = BoostCards(world, attack.Enemy);
+        var onto = BoostCards(world, activation.Enemy);
         onto.Append(boost);
         events.Add(new CardsMoved(
             Places.Reference(deck), Places.Reference(onto),
             [new Landing(boost.ObjectId, onto.Cards.Count - 1)])
         {
-            Trigger = Steps.EnemyAttacks, Verb = "Boost",
+            Trigger = trigger, Verb = "Boost",
         });
     }
 
@@ -310,8 +312,9 @@ public static class Attack
             return;
         }
 
-        var attack = Current(world);
-        var waiting = BoostCards(world, attack.Enemy);
+        var activation = Activating(world);
+        var waiting = BoostCards(world, activation.Enemy);
+        string trigger = Activated(activation);
 
         // "one at a time and in the order in which they were dealt", which is
         // bottom-first -- rr:attack-enemy-activation.step.3.
@@ -319,13 +322,13 @@ public static class Attack
         {
             var boost = waiting.Cards[0];
 
-            // Through the boosting area for the same reason a scheme's boost
-            // card is: passing through is what registers the card's token
-            // pools, and the discarded card's `k_threat` key is on the wire.
+            // Through the boosting area: passing through is what registers the
+            // card's token pools, and the discarded card's `k_threat` key is on
+            // the wire.
             World.MoveToTop(boost, world.AreaOf(DeckType.BoostingArea));
             events.Add(new CardsFlipped([boost.ObjectId], true)
             {
-                Trigger = Steps.EnemyAttacks, Verb = "Boost",
+                Trigger = trigger, Verb = "Boost",
             });
 
             // rr:attack-enemy-activation.step.3.c -- increase the enemy's ATK
@@ -340,13 +343,20 @@ public static class Attack
                 + MainScheme.Amplify(world, facts);
             if (icons > 0)
             {
+                // Which value and for how long is the only place the two
+                // activations part company. `rr:scheme-enemy-activation.step.2.c`
+                // raises SCH where `.step.3.c` raises ATK, and the durations are
+                // the two the rulebook names: an attack ends at step 6, a scheme
+                // has no step past the threat, so `rr:activation.6` is its end.
                 world.Effects.Register(new ContinuousEffect(
                     EffectSource.LastingEffect,
-                    Kind: "attack",
+                    Kind: activation.Attacking ? "attack" : "scheme",
                     Amount: icons,
                     Card: boost.ObjectId,
-                    Affects: attack.Enemy,
-                    Lasts: Duration.UntilEndOf(TimingPoints.EndOfAttack)));
+                    Affects: activation.Enemy,
+                    Lasts: Duration.UntilEndOf(activation.Attacking
+                        ? TimingPoints.EndOfAttack
+                        : TimingPoints.EndOfActivation)));
             }
 
             // rr:attack-enemy-activation.step.3.b and rr:boost-boost-icon.2 --
@@ -355,7 +365,7 @@ public static class Attack
             // it. The printed `Boost` attribute counts icons and cannot say
             // whether there is a star, so `ICardFacts.HasBoostAbility` reads the
             // text box, which is the only place the star survives.
-            events.AddRange(abilities.Boost(world, boost, attack.Player));
+            events.AddRange(abilities.Boost(world, boost, activation.Player));
             var discard = world.AreaOf(DeckType.EncounterDiscardPile);
             var from = boost.Area;
             World.MoveToTop(boost, discard);
@@ -363,7 +373,7 @@ public static class Attack
                 Places.Reference(from), Places.Reference(discard),
                 [new Landing(boost.ObjectId, discard.Cards.Count - 1)])
             {
-                Trigger = Steps.EnemyAttacks, Verb = "Boost",
+                Trigger = trigger, Verb = "Boost",
             });
         }
     }
@@ -534,9 +544,31 @@ public static class Attack
     {
         ArgumentNullException.ThrowIfNull(world);
 
-        return world.Attack is not { } attack
-            || !DeckTypes.IsInPlay(world.Cards[attack.Enemy].Area.Type);
+        return world.Activation is not { } activation
+            || !DeckTypes.IsInPlay(world.Cards[activation.Enemy].Area.Type);
     }
+
+    /// <summary>The activation these steps belong to, of either kind.</summary>
+    /// <remarks>
+    /// <c>rr:activation</c>: an attack and a scheme are both activations, and
+    /// steps 1 and 3 of an attack are word-for-word steps 1 and 2 of a scheme.
+    /// So the boost-card steps read the umbrella — which enemy, against which
+    /// seat — and only reach for <see cref="EnemyAttack"/> where they need
+    /// something an attack has and a scheme does not.
+    /// </remarks>
+    private static EnemyActivation Activating(World world) =>
+        world.Activation
+        ?? throw new RulesNotImplementedException("no enemy is activating");
+
+    /// <summary>Which condition this activation's boost cards are recorded under.</summary>
+    /// <remarks>
+    /// The two kinds keep their own names on the wire. <c>Steps.EnemyAttacks</c>
+    /// and <c>Steps.EnemySchemes</c> are separate conditions because a card can
+    /// name either one, and a boost card taken off the encounter deck during a
+    /// scheme was not taken during an attack.
+    /// </remarks>
+    private static string Activated(EnemyActivation activation) =>
+        activation.Attacking ? Steps.EnemyAttacks : Steps.EnemySchemes;
 
     /// <summary>Where an enemy's facedown boost cards wait.</summary>
     private static Area BoostCards(World world, int enemy) =>
