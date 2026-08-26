@@ -296,6 +296,11 @@ public static class CardPlay
             });
         }
 
+        // `rr:enters-play`: the keywords that fire when a card enters play do
+        // not care how it got there. Eighteen allies in the pool print
+        // `rr:toughness`, and before this a played one got no tough status card
+        // -- only a *revealed* card ran them.
+        Reveal.EnterPlay(world, facts, card, events);
         Restricted(world, facts, seat, card, events);
     }
 

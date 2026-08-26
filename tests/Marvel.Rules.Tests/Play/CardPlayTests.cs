@@ -256,6 +256,30 @@ public sealed class CardPlayTests
         Assert.NotNull(CardPlay.Price(world, printed, seat, expensive));
     }
 
+    [Rule("rr:toughness")]
+    [Rule("rr:uses-x-type")]
+    [Fact]
+    public void APlayedCardRunsItsEntersPlayKeywords()
+    {
+        // The keywords that fire when a card enters play do not care how it got
+        // there. Eighteen allies in the pool print `rr:toughness`, and a played
+        // one used to get no tough status card at all -- only a *revealed* card
+        // ran them.
+        var printed = Cards()
+            .With("bruiser", ("Cost", "0"), ("RES", "R"), ("HP", "3"), ("Toughness", "1"))
+            .With("gadget", ("Cost", "0"), ("RES", "R"), ("Uses", "3,web"));
+        var world = Board(printed);
+        var seat = world.Seats[0];
+
+        var ally = InHand(world, "bruiser");
+        CardPlay.Play(world, printed, new Silent(), seat, ally, [], []);
+        Assert.True(Statuses.Has(world, ally, Statuses.Tough));
+
+        var upgrade = InHand(world, "gadget");
+        CardPlay.Play(world, printed, new Silent(), seat, upgrade, [], []);
+        Assert.Equal(3, upgrade.Tokens["c_web"]);
+    }
+
     [Rule("rr:restricted")]
     [Rule("rr:restricted.1")]
     [Fact]
@@ -404,7 +428,7 @@ public sealed class CardPlayTests
             "alterego" => CardKind.AlterEgo,
             "hero" => CardKind.Hero,
             "res" => CardKind.Resource,
-            "ally" => CardKind.Ally,
+            "ally" or "bruiser" => CardKind.Ally,
             "event" => CardKind.Event,
             _ => CardKind.Upgrade,
         };
