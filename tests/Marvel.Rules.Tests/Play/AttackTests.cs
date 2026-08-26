@@ -400,6 +400,34 @@ public sealed class AttackTests
         Assert.Null(world.FinishedAttack);
     }
 
+    [Rule("rr:activation.6")]
+    [Fact]
+    public void AnAttackerThatLeavesPlayMidAttackStopsThere()
+    {
+        // "If an activating minion **leaves play**, that minion's activation
+        // ends immediately and **no further steps of that activation
+        // resolve**." An attack is six steps and any of them can be the one
+        // that takes the attacker off the table -- an interrupt answering the
+        // attack by defeating the thing making it is the ordinary case.
+        //
+        // Here the attack is begun and the attacker removed between its steps,
+        // which is what such an interrupt would do. Nothing after it may
+        // happen: no boost card off the encounter deck, and no damage.
+        var facts = Printed(atk: 3, boost: 0);
+        var world = Board(facts);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        int deck = world.AreaOf(DeckType.EncounterDeck).Cards.Count;
+
+        Attack.Initiate(
+            world, facts,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        World.MoveToTop(villain, world.AreaOf(DeckType.RemovedArea));
+        Finish(world, facts);
+
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(deck, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
+    }
+
     /// <summary>A villain, one hero-form identity per seat, one boost card.</summary>
     private static World Board(ICardFacts facts, int players = 1)
     {
