@@ -149,14 +149,56 @@ thing a player wants to know.
 `rr:villain-defeat.2`: excess damage does not carry over, so a new stage starts
 clean.
 
+## Playing a card
+
+`rr:player-turn.2` — "play an ally, upgrade, support, or player side scheme card
+from hand" — and `rr:initiating-abilities`' seven steps, numbered in the code
+because the order **is** the rule: restrictions before cost, cost before
+payment, and step 5 aborting *without paying anything* when the payment falls
+short.
+
+Resources are letters, because `ResourceSource.Generates` carries "resource-type
+letters — one per resource". `B` is mental, `Y` energy, `R` physical and `G`
+wild, measured over the 1,717 single-type cards that carry both the engine's
+`RES` field and MarvelSDB's stat; three disagree and are filed rather than
+decided.
+
+`rr:resource.4`'s specific types are **part of** the cost rather than additional
+to it, and a wild is spent only when no exact match is left — spending one that
+did not have to be spent can fail a later requirement.
+
+**Two restrictions the recorded prompt pinned.** Its opening hand holds six
+cards and it offers four: `01088` Energy is a resource card, which
+`rr:player-turn.2` does not list, and `01003` Backflip is an event whose ability
+is an *Interrupt* — `rr:player-turn.5.d` reaches an event only through an
+**Action** ability, and 555 of the 602 events in the pool have none.
+
+## Losing
+
+`rr:player-elimination` — a player whose identity is defeated. Five steps, and
+step 1 hands the first player token on **before** step 5 removes the play area
+it was sitting in.
+
+Step 5 **removes** rather than discards: "remove the eliminated player's play
+area and each other game element within it *(hand, deck, discard pile, cards in
+play, hit point dial, etc.)*". Discarding a deck into its own discard pile is
+[`rr:player-deck.1`'s trigger](#when-a-deck-runs-out), so an eliminated player
+would reshuffle a deck they no longer have.
+
+`rr:player-elimination.6` is why the seat stays: "effects that refer to the
+players in the game ignore eliminated players, **except for the per player
+icon**". A villain's `14*` hit points do not shrink when somebody dies.
+
 ## What is not implemented
 
-- **Playing cards.** `rr:player-turn.2` and `.5` — an ally, upgrade, support or
-  event from hand — needs resources and costs, which is the largest piece left.
-- **Ally actions** (`.4`), **triggered actions** (`.5`) and **asking another
-  player** (`.6`).
-- **`rr:player-elimination`.** A defeated identity throws by name: their cards
-  leave play, their obligations are removed, and at one player the game ends.
+- **Ally actions** (`rr:player-turn.4` covers using an ally to attack or thwart,
+  which is written; a card's own **Action** ability is not), **triggered
+  actions** (`.5`) and **asking another player** (`.6`).
+- **`rr:resource-ability`** — the "**Resource**" timing trigger. The recorded
+  prompt lists six generators for a hand of six cards, one of which is being
+  played, so one generator is not a card in hand at all. That one is this.
+- Cost modifiers, `X` costs and the per-player icon on a cost — all refused by
+  name rather than read as a number.
 - **`rr:when-defeated-abilities`.** A forced interrupt, so it resolves *before*
   the card leaves play — which makes it an agenda step with a window rather than
   part of the defeat call. Nothing in the dataset has one yet.
@@ -164,7 +206,6 @@ clean.
   `.4` decide by whether the new stage shares a title; a villain defeated with
   cards attached throws rather than carrying the wrong set.
 
-Playing the Rhino board with a crude "always attack" policy now reaches round 4
-with eight damage on Rhino, and "always thwart" reaches round 6, before the
-villain completes the scheme. Neither wins, and neither should: winning needs
-cards.
+`WholeGameTests` plays the Rhino board to an ending on four seeds — 24 to 53
+decisions across 4 to 8 rounds, cards paid for and played, defenders declared —
+and checks that one seed plays the same game twice, digest and all.

@@ -314,9 +314,9 @@ a target of 7 — so *strictly greater* also fires there, and a resolve that req
 it produces every recorded digest and ends the game a round late. The boundary
 needs a hand-built board.
 
-Advancing to a *next* stage is not implemented and throws rather than being
-skipped: a scheme that completed and did not advance would sit there
-accumulating threat for ever.
+Advancing to a *next* stage is [three steps of the same
+rule](#the-main-scheme-deck-advances), and completing the *last* one is the
+villain winning.
 
 ## Reproducing
 
