@@ -364,7 +364,15 @@ public sealed class Game
 
         var happened = new List<GameEvent>
         {
-            new CardFormChanged(seat.IdentityCard.ObjectId, was, seat.IdentityCard.FaceId),
+            new CardFormChanged(seat.IdentityCard.ObjectId, was, seat.IdentityCard.FaceId)
+            {
+                // The moment and the action, as every other event carries them.
+                // A client is told a card changed face and, without these, not
+                // why -- and `rr:player-turn.1` makes changing form one of the
+                // six things a turn offers rather than something that merely
+                // happens.
+                Trigger = TurnTrigger, Verb = ChangeForm,
+            },
         };
 
         Pending = TurnPrompt();
