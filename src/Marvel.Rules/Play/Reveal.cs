@@ -208,6 +208,11 @@ public static class Reveal
             // `rr:reveal.5`: "it enters play in the villain's play area."
             CardKind.EncounterSideScheme => world.AreaOf(DeckType.SideSchemesArea),
 
+            // `rr:reveal.2`: the same place, and an area of its own because
+            // `rr:environment` makes an environment "active so long as it
+            // remains in play" rather than something that resolves and goes.
+            CardKind.Environment => world.AreaOf(DeckType.EnvironmentArea),
+
             // `rr:reveal.4`: "it enters play in the play area of the player
             // revealing it."
             CardKind.Obligation => world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(player)),
