@@ -143,6 +143,7 @@ public sealed class UnusScenarioTests
         scheme.PlaceTokens("k_threat", 1);
 
         BasicPowers.BasicThwart(world, Cards, 0, scheme, []);
+        Agendas.Finish(world, Cards, AuthoredCards.Runner());
 
         Assert.True(Statuses.Has(world, hero, Statuses.Confused));
 
@@ -175,6 +176,7 @@ public sealed class UnusScenarioTests
         }
 
         BasicPowers.BasicThwart(world, Cards, 1, scheme, []);
+        Agendas.Finish(world, Cards, AuthoredCards.Runner());
 
         Assert.True(Statuses.Has(world, world.Seats[1].IdentityCard, Statuses.Confused));
         Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Confused));

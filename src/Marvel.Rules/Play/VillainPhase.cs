@@ -462,10 +462,13 @@ public static class VillainPhase
                 BasicPowers.ResolveCharacterAttack(world, facts, events);
                 break;
 
+            case Steps.CharacterThwarts:
+                BasicPowers.ResolveCharacterThwart(world, facts, events);
+                break;
+
             case Steps.AllyConsequentialDamage:
-                BasicPowers.Consequential(
-                    world, facts, world.Cards[step.Subject], byAttack: true,
-                    BasicPowers.AttackVerb, events);
+            case Steps.AllyThwartConsequentialDamage:
+                AllyConsequentialDamage(world, facts, step, events);
                 break;
 
             case Steps.EndAttack:
@@ -516,6 +519,34 @@ public static class VillainPhase
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// An ally's consequential damage — <c>rr:consequential-damage</c>.
+    /// </summary>
+    /// <remarks>
+    /// Two facts, and they are not the same fact. <b>What the ally did</b> is
+    /// the step's own name, and it is what the event stream records. <b>Which
+    /// field it used</b> is <c>rr:assault.2</c>'s question — "it takes the
+    /// consequential damage listed under its ATK instead of its THW" — and it
+    /// is read here rather than when the step was scheduled, because assault
+    /// is a constant ability and <c>rr:ability.9</c> makes those true only
+    /// while their condition holds. A scheme that stopped being assaulted
+    /// while the window was open stops sending the ally to its ATK icons.
+    /// </remarks>
+    private static void AllyConsequentialDamage(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        bool attacked = string.Equals(
+            step.What, Steps.AllyConsequentialDamage, StringComparison.Ordinal);
+
+        BasicPowers.Consequential(
+            world,
+            facts,
+            world.Cards[step.Subject],
+            byAttack: attacked || BasicPowers.Assaulted(world, facts, world.Cards[step.Character]),
+            attacked ? BasicPowers.AttackVerb : BasicPowers.ThwartVerb,
+            events);
     }
 
     /// <summary>Give a step the answer it stopped for.</summary>

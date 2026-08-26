@@ -282,6 +282,20 @@ public static class Steps
     public const string CharacterAttacks = "CharacterAttacks";
 
     /// <summary>
+    /// A hero or ally thwarting a scheme — <c>rr:thwart.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// A step for the reason <see cref="CharacterAttacks"/> is one, arrived at
+    /// from the other end. <c>rr:thwart</c> lists no steps of its own, but
+    /// <c>rr:consequential-damage.1</c> deals an ally's consequential damage
+    /// "after resolving abilities that are triggered by the ally attacking
+    /// <b>or thwarting</b>" — so the rules take it for granted that a thwart
+    /// has abilities triggered by it, and abilities triggered by something are
+    /// abilities in its windows.
+    /// </remarks>
+    public const string CharacterThwarts = "CharacterThwarts";
+
+    /// <summary>
     /// An ally's consequential damage —
     /// <c>rr:attack-player-ability-type.step.9</c>.
     /// </summary>
@@ -294,6 +308,20 @@ public static class Steps
     /// windows and a window can ask.
     /// </remarks>
     public const string AllyConsequentialDamage = "AllyConsequentialDamage";
+
+    /// <summary>
+    /// An ally's consequential damage after a thwart —
+    /// <c>rr:consequential-damage.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// The same rule as <see cref="AllyConsequentialDamage"/> and a separate
+    /// step only because the two differ in what they record: an ally that
+    /// thwarted takes its damage under the verb "Thwart", and the event stream
+    /// is how a reader tells the two apart. Which <i>field</i> was used is a
+    /// third question and not this one — <c>rr:assault.2</c> makes a thwart
+    /// against an assaulted scheme take the damage printed under ATK.
+    /// </remarks>
+    public const string AllyThwartConsequentialDamage = "AllyThwartConsequentialDamage";
 
     /// <summary>Step 3 — <c>rr:villain-phase.step.3</c>.</summary>
     public const string DealEncounterCards = "DealEncounterCards";
@@ -430,6 +458,17 @@ public static class Steps
     /// </remarks>
     public const string CharacterAttacksEnemy = "WhenCharacterAttacks";
 
+    /// <summary>
+    /// A character thwarting a scheme — <c>rr:thwart.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// The same two-ended shape <see cref="CharacterAttacksEnemy"/> has:
+    /// <see cref="Occurrence.Subject"/> is the scheme, so a card on it answers
+    /// with <c>this</c>, and <see cref="Occurrence.Player"/> is the seat
+    /// thwarting, so a player card answers with <c>you</c>.
+    /// </remarks>
+    public const string CharacterThwartsScheme = "WhenCharacterThwarts";
+
     private static readonly Dictionary<string, string[]> Conditions = new(StringComparer.Ordinal)
     {
         [PlaceThreat] = ["WhenThreatPlaced"],
@@ -451,6 +490,7 @@ public static class Steps
         [TurnAction] = [TurnAction],
         [CardDefeated] = [CardDefeated],
         [CharacterAttacks] = [CharacterAttacksEnemy],
+        [CharacterThwarts] = [CharacterThwartsScheme],
         [DamageWouldBeDealt] = [DamageWouldBeDealt],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],

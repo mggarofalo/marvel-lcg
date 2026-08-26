@@ -201,7 +201,7 @@ public static class BasicPowers
             return;
         }
 
-        Initiate(world, character, enemy, player);
+        InitiateAttack(world, character, enemy, player);
     }
 
     /// <summary>
@@ -223,7 +223,7 @@ public static class BasicPowers
     /// exhausting is the cost of a basic power.
     /// </para>
     /// </remarks>
-    private static void Initiate(World world, Card attacker, Card enemy, int player)
+    private static void InitiateAttack(World world, Card attacker, Card enemy, int player)
     {
         world.CharacterAttack = new CharacterAttack(attacker.ObjectId, enemy.ObjectId, player);
         world.Agenda.Then(new PhaseStep(
@@ -233,6 +233,70 @@ public static class BasicPowers
             Index: player,
             Subject: enemy.ObjectId,
             Seat: player));
+    }
+
+    /// <summary>
+    /// Puts a character's thwart on the agenda — <c>rr:thwart.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Scheduled rather than resolved</b>, for the reason
+    /// <see cref="InitiateAttack"/> is. <c>rr:thwart</c> writes out no steps of
+    /// its own, so the case comes from <c>rr:consequential-damage.1</c>: an
+    /// ally's consequential damage is dealt "after resolving abilities that are
+    /// triggered by the ally attacking <b>or thwarting</b>". Abilities triggered
+    /// by a thwart are abilities in the window after it, and a thwart that took
+    /// its threat off inline had nowhere to open one.
+    /// </para>
+    /// <para>
+    /// The number is 3 where the attack's is 2 so that <c>Moment.Id</c> tells
+    /// the two apart, and <b>nothing yet reads that number</b>: an occurrence
+    /// remembers which abilities have used it in a set of its own, so what
+    /// distinguishes two occurrences at run time is that they are two objects.
+    /// Giving a thwart the attack's number changes no behaviour today. It is
+    /// written correctly anyway because the id is what a saved game would have
+    /// to rebuild an occurrence from, and a number that was already wrong when
+    /// nothing read it would be wrong on the day something did.
+    /// </para>
+    /// </remarks>
+    private static void InitiateThwart(World world, Card thwarter, Card scheme, int player)
+    {
+        world.CharacterThwart = new CharacterThwart(thwarter.ObjectId, scheme.ObjectId, player);
+        world.Agenda.Then(new PhaseStep(
+            Steps.CharacterThwarts,
+            world.Agenda.Current?.Round ?? 0,
+            3,
+            Index: player,
+            Subject: scheme.ObjectId,
+            Seat: player));
+    }
+
+    /// <summary>
+    /// Takes the thwart's threat off — <c>rr:thwart.1</c>.
+    /// </summary>
+    /// <remarks>
+    /// "This removes threat equal to the character's THW value from the
+    /// scheme." The mirror of <see cref="ResolveCharacterAttack"/>, and the
+    /// place a scheme thwarted to zero is defeated from.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="events">Where to record what happened.</param>
+    public static void ResolveCharacterThwart(
+        World world, ICardFacts facts, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (world.CharacterThwart is not { } thwart)
+        {
+            throw new RulesNotImplementedException(
+                "a character thwart is resolving and the board holds none");
+        }
+
+        RemoveThreat(
+            world, facts, world.Cards[thwart.Thwarter], world.Cards[thwart.Scheme], events);
     }
 
     /// <summary>
@@ -343,7 +407,7 @@ public static class BasicPowers
             return;
         }
 
-        RemoveThreat(world, facts, character, scheme, events);
+        InitiateThwart(world, character, scheme, player);
     }
 
     /// <summary>Whether a basic thwart against this scheme uses ATK.</summary>
@@ -474,40 +538,32 @@ public static class BasicPowers
             return;
         }
 
-        // `rr:assault`: "while a character is making a basic thwart against this
-        // scheme, that character uses its **ATK instead of its THW**." So the
-        // field an ally used is not always the one the verb names, and `.2`
-        // sends the consequential damage after it: "it takes the consequential
-        // damage listed under its ATK instead of its THW".
-        bool byAttack = attacking || Assaulted(world, facts, target);
-
+        // Scheduled, both halves -- and the consequential damage after the
+        // power, because `rr:consequential-damage.1` deals it "after resolving
+        // abilities that are triggered by the ally attacking or thwarting".
+        // Dealt inline it would land before the enemy that answers "after this
+        // is attacked" had spoken.
+        //
+        // `rr:attack-player-ability-type.step.9` says the same thing from the
+        // attack's side, and puts it last of all: after `.step.7`'s forced
+        // abilities and `.step.8`'s optional ones.
         if (attacking)
         {
-            // Scheduled, like a hero's -- and the consequential damage after
-            // it, because `rr:attack-player-ability-type.step.9` puts it last,
-            // after `.step.7` and `.step.8`'s abilities. Dealt inline it would
-            // land before an enemy that answers "after this is attacked" had
-            // spoken.
-            Initiate(world, ally, target, ally.Owner);
-            world.Agenda.Then(new PhaseStep(
-                Steps.AllyConsequentialDamage,
-                world.Agenda.Current?.Round ?? 0,
-                9,
-                Index: ally.Owner,
-                Subject: ally.ObjectId,
-                Seat: ally.Owner));
-            return;
+            InitiateAttack(world, ally, target, ally.Owner);
+        }
+        else
+        {
+            InitiateThwart(world, ally, target, ally.Owner);
         }
 
-        RemoveThreat(world, facts, ally, target, events);
-
-        // `rr:consequential-damage.1`: dealt "after resolving abilities that
-        // are triggered by the ally attacking or thwarting". A thwart deals it
-        // here rather than as a step of its own, because nothing opens a window
-        // around a thwart yet -- scheduling it would move nothing and add a
-        // step nobody can observe. The attack half is scheduled, because
-        // `rr:attack-player-ability-type.step.7` does put abilities there.
-        Consequential(world, facts, ally, byAttack, verb, events);
+        world.Agenda.Then(new PhaseStep(
+            attacking ? Steps.AllyConsequentialDamage : Steps.AllyThwartConsequentialDamage,
+            world.Agenda.Current?.Round ?? 0,
+            9,
+            Index: ally.Owner,
+            Subject: ally.ObjectId,
+            Seat: ally.Owner,
+            Character: target.ObjectId));
     }
 
     /// <summary>
@@ -519,7 +575,7 @@ public static class BasicPowers
                 world, minion, "patrol", facts, world.Players) > 0);
 
     /// <summary>Whether a scheme carries <c>rr:assault</c>.</summary>
-    private static bool Assaulted(World world, ICardFacts facts, Card scheme) =>
+    internal static bool Assaulted(World world, ICardFacts facts, Card scheme) =>
         StateFields.Modified(world, scheme, "assault", facts, world.Players) > 0;
 
     /// <summary>

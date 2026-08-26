@@ -153,6 +153,18 @@ public sealed class World
     public CharacterAttack? CharacterAttack { get; set; }
 
     /// <summary>
+    /// The character thwart being resolved, or <c>null</c> when none is.
+    /// </summary>
+    /// <remarks>
+    /// The thwart's half of <see cref="CharacterAttack"/>. It spans more than
+    /// one turn of the loop for the same reason: <c>rr:consequential-damage.1</c>
+    /// puts an ally's consequential damage after "abilities that are triggered
+    /// by the ally attacking <b>or thwarting</b>", so a window sits between the
+    /// power being used and the ally taking its damage.
+    /// </remarks>
+    public CharacterThwart? CharacterThwart { get; set; }
+
+    /// <summary>
     /// How the card being defeated came to be — <see cref="State.Defeated"/>.
     /// </summary>
     /// <remarks>
