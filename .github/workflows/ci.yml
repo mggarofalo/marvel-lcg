@@ -1,9 +1,8 @@
 name: CI
 
 # Every gate in this workflow is verified green on BOTH windows-latest and
-# ubuntu-latest. Anything that is not cross-OS clean belongs in
-# determinism.yml, not here — a red master must mean "something broke", never
-# "that gate has never worked on Linux".
+# ubuntu-latest. A red master must mean "something broke", never "that gate has
+# never worked on Linux".
 
 on:
   push:
@@ -21,162 +20,7 @@ concurrency:
   # leaves the commit that broke it with no verdict at all.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-defaults:
-  run:
-    # bash on both runners: one syntax for line continuations and conditionals.
-    shell: bash
-    # All Python paths are relative to py_src/ — see AGENTS.md, "Run everything
-    # from py_src/". Running from the repo root makes the engine miss its data.
-    working-directory: py_src
-
-env:
-  # UTF-8 for every step, so a log line carrying a game symbol survives the
-  # cp1252 stdout Windows hands a redirected process.
-  #
-  # The engine no longer needs this: MARVEL-36 moved the decision into
-  # `System.UseUtf8Streams`, which runs when `core` is imported, so anything
-  # that boots the engine configures its own streams. It stays for the steps
-  # that never import `core` — `tools.cards.extract --check` prints card names
-  # straight from the MarvelSDB snapshot — and because a green matrix should
-  # not depend on which tool happens to import what.
-  #
-  # A consequence worth knowing: with this set, the Windows leg cannot
-  # demonstrate the MARVEL-36 fix, because it would pass without it.
-  # `unit_test/test_console_encoding.py` is what proves the fix, on a synthetic
-  # cp1252 stream that behaves the same on every platform.
-  PYTHONIOENCODING: utf-8
-
 jobs:
-  test:
-    name: tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    # A hang is a realistic failure here, not a hypothetical one:
-    # Controller.ChoiceOne blocks a thread waiting for input, and -test once
-    # fell through to the interactive keyboard device and blocked in
-    # WaitUntilGameStart() forever (MARVEL-28). The whole matrix runs in ~1
-    # minute, so anything past 15 is stuck, not slow.
-    timeout-minutes: 15
-    strategy:
-      # Both legs always run: which OS failed is the whole point of the matrix.
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-python@v7
-        with:
-          # Single source of truth for the pin — the same file uv reads locally.
-          python-version-file: py_src/.python-version
-          cache: pip
-          cache-dependency-path: py_src/requirements.lock
-
-      - name: Install pinned dependencies
-        run: pip install -r requirements.lock
-
-      # unittest discover is deliberately not used: it picks up
-      # unit_test/test_all.py, an old harness that mutates Build.release,
-      # appends to sys.argv and writes result files into the working directory.
-      # Name the modules explicitly. See AGENTS.md, "Testing".
-      - name: Unit suite — fast tier
-        run: |
-          python -m unittest \
-            unit_test.test_bot unit_test.test_teamup_order \
-            unit_test.test_local_effect_order unit_test.test_scene_hash \
-            unit_test.test_bot_timeout unit_test.test_bot_crash \
-            unit_test.test_card_dataset unit_test.test_rng \
-            unit_test.test_package_tools unit_test.test_digest \
-            unit_test.test_event_model unit_test.test_event_verify \
-            unit_test.test_affordance_verify \
-            unit_test.test_log_errors unit_test.test_card_coverage \
-            unit_test.test_invariants unit_test.test_verify_replays \
-            unit_test.test_integrity_errors unit_test.test_config \
-            unit_test.test_file_paths unit_test.test_cross_os \
-            unit_test.test_console_encoding unit_test.test_fixture_staleness \
-            unit_test.test_render_skip unit_test.test_no_progress \
-            unit_test.test_hand_size unit_test.test_policy_driver \
-            unit_test.test_run_digest unit_test.test_heuristic_policy \
-            unit_test.test_max_health_guard unit_test.test_config_record \
-            unit_test.test_base_thwart_unreachable \
-            unit_test.test_corpus_plan unit_test.test_coverage_reach \
-            unit_test.test_coverage_literals unit_test.test_card_rulings \
-            unit_test.test_corpus_freeze unit_test.test_rules_index \
-            unit_test.test_rules_coverage unit_test.test_rules_version \
-            unit_test.test_rules_citations \
-            unit_test.test_rules_packs unit_test.test_corpus_expand \
-            unit_test.test_spec_coverage unit_test.test_decks unit_test.test_deck_build \
-            unit_test.test_dsl_blockers unit_test.test_select_rules \
-            unit_test.test_may_choose_one \
-            unit_test.test_target_before_payment \
-            unit_test.test_world_visibility unit_test.test_setup_dataset \
-            unit_test.test_prompt_dataset
-
-      - name: Unit suite — engine-booting tier
-        run: |
-          python -m unittest \
-            unit_test.test_spec_harness unit_test.test_spec_validate \
-            unit_test.test_puzzle unit_test.test_worlds_encounter \
-            unit_test.test_card_coverage_play unit_test.test_card_removal \
-            unit_test.test_cannot_defend unit_test.test_probe_temp0_order \
-            unit_test.test_base_health_grant unit_test.test_base_stat_grant \
-            unit_test.test_choice_cost unit_test.test_main_scheme_completion \
-            unit_test.test_target_affordability
-
-      # MARVEL-55: the suite used to bump the version and leave a commit on
-      # whatever branch was checked out. unit_test/test_package_tools.py guards
-      # the unit level; this guards the whole run.
-      - name: The suite left the repository untouched
-        working-directory: .
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "::error::The test suite modified the working tree:"
-            git status --porcelain
-            exit 1
-          fi
-
-      # Cross-language fixtures the C# port will be accepted against. Each is a
-      # regenerate-or-fail check, so a stale fixture is caught at the commit
-      # that staled it rather than at the port.
-      #
-      # All seven compare byte for byte, through one shared definition of
-      # "stale" in py_src/tools/fixtures.py — read that file before changing
-      # any of them. Line endings are part of the comparison, which is why
-      # .gitattributes pinning eol=lf is load-bearing on the Windows leg
-      # (MARVEL-67, MARVEL-73). unit_test/test_fixture_staleness.py, in the
-      # fast tier above, mutation-tests the comparison itself.
-      - name: Fixture staleness — RNG vectors
-        run: python -m tools.rng.emit_vectors --check
-
-      - name: Fixture staleness — state digest vectors
-        run: python -m tools.digest.emit_vectors --check
-
-      - name: Fixture staleness — prompt vectors
-        run: python -m tools.digest.emit_prompts --check
-
-      - name: Fixture staleness — JSON escaping cases
-        run: python -m tools.digest.emit_escaping --check
-
-      - name: Fixture staleness — event vocabulary
-        run: python -m tools.events.emit_vocabulary --check
-
-      - name: Fixture staleness — card dataset
-        run: python -m tools.cards.extract --check
-
-      - name: Fixture staleness — setup dataset
-        run: python -m tools.setup.emit_setup --check
-
-      - name: Trusted behavioral specs
-        run: python -m tools.spec.validate --trusted-only
-
-      # Generates one game and replay-verifies it per-step against the digest.
-      # This is the cheap end of the oracle; the expensive end is determinism.yml.
-      - name: Generate and replay-verify one game
-        run: python main.py -bot -bot_verify
-
-  # The C# engine. A separate job because everything above defaults to
-  # `working-directory: py_src` and this builds from the repository root — and
-  # because a red Python suite and a red C# suite are different news.
   dotnet:
     name: C# engine (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -185,9 +29,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
-    defaults:
-      run:
-        working-directory: .
 
     steps:
       - uses: actions/checkout@v7
@@ -195,9 +36,9 @@ jobs:
       # Two installs on purpose. `global.json` pins the SDK that builds; the
       # assemblies target `net8.0` so Godot can reference them
       # (Directory.Build.props), and running the tests on the .NET 8 runtime
-      # rather than rolling forward to 10 is the point -- the digest's JSON
-      # escaping is runtime behaviour, so it has to be exercised on the runtime
-      # the client will actually host.
+      # rather than rolling forward to 10 is the point -- JSON escaping is
+      # runtime behaviour, so it has to be exercised on the runtime the client
+      # will actually host.
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
@@ -217,10 +58,10 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      # The cross-language fixtures are the acceptance criteria, not the unit
-      # tests: `datasets/rng/vectors.json` was emitted by the Python engine
-      # that generated the frozen corpus, so when C# and it disagree, C# is
-      # wrong.
+      # `datasets/rules-reference/entries/*.md` is what these are held to.
+      # There was a time when the acceptance criteria were fixtures emitted by
+      # the Python engine, and disagreeing with them meant C# was wrong; that
+      # is no longer true and the fixtures are going. The rulebook decides.
       - name: Test
         run: dotnet test --no-build --configuration Release
 

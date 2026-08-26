@@ -262,16 +262,13 @@ says nothing.
 
 | Workflow | Runs | What |
 |---|---|---|
-| [`ci.yml`](.github/workflows/ci.yml) | every push to `master`, every PR | both unit tiers, five fixture staleness checks, trusted specs, one generated-and-verified game, `git status` clean, the C# build and test suite, and the Godot wall |
-| [`determinism.yml`](.github/workflows/determinism.yml) | nightly 06:00 UTC, or manually | `check_runs` across fresh processes, cross-OS digest comparison, replay and invariant probes |
+| [`ci.yml`](.github/workflows/ci.yml) | every push to `master`, every PR | the C# build and test suite, and the Godot wall |
 
-Both pin Python from `py_src/.python-version`, install from `requirements.lock`,
-and set `PYTHONIOENCODING=utf-8`.
+There is one workflow and no Python in it. `determinism.yml` was six jobs of
+cross-OS digest comparison, replay probes and corpus verification, all of them
+Python and all of them measuring the Python engine against itself; it went with
+the engine.
 
 **Everything in `ci.yml` is verified green on Windows and Linux.** Keep it that
-way: a gate that has never passed on one OS belongs in `determinism.yml` behind
-an explicit `runs-on`. A red `master` must mean something broke.
-
-`replays/` is empty and untracked, so **there is no regression suite yet**.
-Building it is the entire point of the `Corpus and Oracle` phase — weigh changes
-accordingly.
+way: a gate that has never passed on one OS does not belong here. A red
+`master` must mean something broke.
