@@ -108,6 +108,82 @@ public sealed class StandardSetCardsTests
         Assert.Single(world.Agenda.Outstanding);
     }
 
+    [Rule("rr:reveal.step.2")]
+    [Fact]
+    public void ShadowOfThePastBringsTheNemesisSetIn()
+    {
+        // The card that reaches furthest of any in the pool -- 132 of the 135
+        // campaigns. Spider-Man's nemesis set is Vulture, Highway Robbery and
+        // three treacheries, all set aside at the deal.
+        //
+        // "Put into play engaged with you" and "put it into play" are both
+        // `rr:reveal.step.2` by card type, so both are a reveal rather than a
+        // placement -- which is why the minion arrives engaged and the side
+        // scheme arrives with its starting threat, neither of them stated here.
+        var world = Deal();
+        var aside = world.Seats[0].Nemesis;
+        var minion = aside.Cards.Single(card => Cards.Kind(card.FaceId) == CardKind.Minion);
+        var scheme = aside.Cards.Single(
+            card => Cards.Kind(card.FaceId) == CardKind.EncounterSideScheme);
+        int deck = world.AreaOf(DeckType.EncounterDeck).Cards.Count;
+
+        Reveal(world, AuthoredCards.ShadowOfThePast);
+
+        // Both taken out of the pile and both on their way through a reveal.
+        Assert.Equal(DeckType.RevealingArea, minion.Area.Type);
+        Assert.Equal(DeckType.RevealingArea, scheme.Area.Type);
+        Assert.Equal(
+            [minion.ObjectId, scheme.ObjectId],
+            world.Agenda.Outstanding.Select(step => step.Subject));
+
+        // "The rest" -- the three treacheries -- into the encounter deck, and
+        // the pile empty. **The two revealed cards are not among the rest**,
+        // which is why the reveal moves the card now rather than only
+        // scheduling it.
+        Assert.Empty(aside.Cards);
+        Assert.Equal(deck + 3, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
+    }
+
+    [Fact]
+    public void ShadowOfThePastSurgesWhenTheNemesisMinionHasGone()
+    {
+        // "If your nemesis minion does not enter the game this way, this card
+        // gains surge." A second copy of the card, after the first has already
+        // emptied the pile.
+        var world = Deal();
+        foreach (var card in world.Seats[0].Nemesis.Cards.ToList())
+        {
+            World.MoveToTop(card, world.AreaOf(DeckType.EncounterDeck));
+        }
+
+        int queued = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count;
+
+        Reveal(world, AuthoredCards.ShadowOfThePast);
+
+        Assert.Empty(world.Agenda.Outstanding);
+        Assert.Equal(
+            queued + 1,
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count);
+    }
+
+    [Rule("rr:you-your")]
+    [Fact]
+    public void ItIsYourNemesisSetAndNotTheOtherPlayers()
+    {
+        // Every player has one, and this card takes the resolving player's.
+        // Revealed by the second player of two, so a reading that took the
+        // first would pass at one player and fail on a table.
+        var world = Deal("spider_man", "she_hulk");
+        var mine = world.Seats[1].Nemesis;
+        var theirs = world.Seats[0].Nemesis.Cards.Count;
+
+        Reveal(world, AuthoredCards.ShadowOfThePast, player: 1);
+
+        Assert.Empty(mine.Cards);
+        Assert.Equal(theirs, world.Seats[0].Nemesis.Cards.Count);
+        Assert.All(world.Agenda.Outstanding, step => Assert.Equal(1, step.Seat));
+    }
+
     private static IReadOnlyList<Marvel.Rules.Events.GameEvent> Reveal(
         World world, string faceId, int player = 0)
     {

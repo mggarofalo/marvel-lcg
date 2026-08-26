@@ -355,7 +355,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "revealTop":
-                RevealTop(cast);
+                RevealCard(TopOfTheEncounterDeck(cast), cast);
+                break;
+
+            case "reveal":
+                RevealCard(Find(node.Argument, cast), cast);
+                break;
+
+            case "shuffleInto":
+                ShuffleInto(node, cast);
                 break;
 
             case "search":
@@ -629,9 +637,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// than this quietly doing nothing.
     /// </para>
     /// </remarks>
-    private static void RevealTop(Cast cast)
+    private static Card? TopOfTheEncounterDeck(Cast cast) =>
+        EncounterDeck.TakeTop(cast.World, cast.Trigger, cast.Events);
+
+    /// <summary>Reveals one card, wherever it was.</summary>
+    /// <remarks>
+    /// <b>The card moves now and resolves later.</b> It goes to the revealing
+    /// area at once, so a later step of the same ability cannot find it where
+    /// it was — Shadow of the Past reveals two cards out of a pile and then
+    /// shuffles "the rest" of that pile away, and a reveal that only scheduled
+    /// would shuffle the two it had just chosen.
+    /// </remarks>
+    private static void RevealCard(Card? card, Cast cast)
     {
-        var card = EncounterDeck.TakeTop(cast.World, cast.Trigger, cast.Events);
         if (card is null)
         {
             return;
@@ -645,6 +663,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Index: cast.Player,
             Subject: card.ObjectId,
             Seat: cast.Player));
+    }
+
+    /// <summary>
+    /// "Shuffle the rest of … into the encounter deck" — <c>rr:shuffle</c>.
+    /// </summary>
+    /// <remarks>
+    /// The cards move in the order the query answers and the deck is shuffled
+    /// once afterwards, not once per card. The shuffle draws from the game's
+    /// single random stream, so how many times it happens is a wire fact and
+    /// not a detail.
+    /// </remarks>
+    private static void ShuffleInto(AbilityNode node, Cast cast)
+    {
+        var deck = Area(Word(node.Require("deck")), cast);
+        foreach (var card in Every(node.Require("cards"), cast))
+        {
+            var from = card.Area;
+            World.MoveToTop(card, deck);
+            cast.Events.Add(new CardsMoved(
+                Places.Reference(from), Places.Reference(deck),
+                [new Landing(card.ObjectId, deck.Cards.Count - 1)])
+            {
+                Trigger = cast.Trigger, Verb = "Shuffle_Into",
+            });
+        }
+
+        cast.World.Shuffle(deck);
     }
 
     /// <summary>
@@ -912,6 +957,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Cards];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } pile
+            && pile.Argument is AbilityValue.Word { Value: "yourAsidePile" })
+        {
+            // "The rest of your set-aside nemesis encounter set" -- whatever is
+            // still in the pile once the cards this ability took out of it have
+            // gone. The obligation is not among them: setup shuffles it into
+            // the encounter deck long before this resolves.
+            return [.. cast.World.Seats[cast.Player].Nemesis.Cards];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } yours
             && yours.Argument is AbilityValue.Word { Value: "upgradesAndSupportsYouControl" })
         {
@@ -985,10 +1040,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // `rr:villain-villain-deck` -- one villain is in the villain area.
             "villain" => cast.World.TheCardIn(DeckType.VillainArea),
             "mainScheme" => cast.World.TheCardIn(DeckType.MainSchemesArea),
+
+            // "Your set-aside nemesis minion" and "your set-aside nemesis side
+            // scheme". A nemesis set holds one of each, so naming the kind
+            // names the card -- and answering null when it has already been
+            // taken is what Shadow of the Past's surge branch reads.
+            "yourAsideMinion" => Aside(cast, CardKind.Minion),
+            "yourAsideSideScheme" => Aside(cast, CardKind.EncounterSideScheme),
             _ => throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' queries '{what}', which is not implemented"),
         };
     }
+
+    /// <summary>The one card of a kind in the player's set-aside pile.</summary>
+    private static Card? Aside(Cast cast, CardKind kind) =>
+        cast.World.Seats[cast.Player].Nemesis.Cards
+            .FirstOrDefault(card => cast.World.Facts.Kind(card.FaceId) == kind);
 
     private static int Seat(AbilityValue value, Cast cast) =>
         value is AbilityValue.Word word
