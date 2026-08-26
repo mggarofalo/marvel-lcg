@@ -415,6 +415,12 @@ public static class VillainPhase
         {
             Threat.Place(world, facts, abilities, target, scheme, "scheme", events);
         }
+
+        // The other kind of activation ends here. A boost card's ability that
+        // says "this activation" was given for *this* scheme and must not
+        // survive into somebody's attack -- `rr:activation` makes a scheme an
+        // activation, and `rr:activation.6` gives an activation an end.
+        world.Effects.Expire(TimingPoints.EndOfActivation);
     }
 
     /// <summary>Gives the enemy a boost card, resolves it, and returns its icons.</summary>

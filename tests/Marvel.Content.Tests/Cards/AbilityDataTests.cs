@@ -272,7 +272,7 @@ public sealed class AbilityDataTests
             AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
             AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,
             AuthoredCards.CaughtOffGuard, AuthoredCards.RhinoTwo,
-            AuthoredCards.Stampede,
+            AuthoredCards.Stampede, AuthoredCards.SweepingSwoop,
             AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
             AuthoredCards.ShadowOfThePast, AuthoredCards.Exhaustion, AuthoredCards.Masterplan, AuthoredCards.UnderFire,
             .. AuthoredCards.ReadAndSilent,

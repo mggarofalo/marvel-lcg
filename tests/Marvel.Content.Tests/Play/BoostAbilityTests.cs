@@ -109,6 +109,31 @@ public sealed class BoostAbilityTests
     }
 
     [Fact]
+    public void HalfAWrittenCardIsNotAWrittenBoostAbility()
+    {
+        // The guard asks whether **this half** is written, not whether the card
+        // is. `01168` Sweeping Swoop is the card it was tightened for: it says
+        // one thing when revealed and another as a boost card, and a card
+        // authored for the first would otherwise pass here and go back to being
+        // silent for the second.
+        var book = AbilityCatalog.Parse(
+            """
+            {"cards":[{"card":"01123","abilities":[{
+              "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
+              "effect":{"giveStatus":{"card":"you","status":"confused"}}}]}]}
+            """);
+
+        var world = Deal();
+        var card = world.CreateCard(SonicBoom, world.AreaOf(DeckType.BoostingArea));
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => new AbilityRunner(book).Boost(world, card, 0));
+
+        Assert.Contains("'Boost' ability", thrown.Message, StringComparison.Ordinal);
+        Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Confused));
+    }
+
+    [Fact]
     public void ItIsTheBoostTierAndNotTheRevealOne()
     {
         // A card may carry both, and matching on the condition alone would run
