@@ -542,6 +542,109 @@ public sealed class KeywordTests
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:teamwork")]
+    [Fact]
+    public void ATeamworkMinionActivatesWhenOneOfItsOwnIsAlreadyThere()
+    {
+        // "After a minion with teamwork enters play and engages a player, **if
+        // there is at least one other minion that shares the specified trait in
+        // play**, the minion that just entered play activates against the
+        // player it is engaged with."
+        var printed = new Printed()
+            .With("hero", ("HP", "10"))
+            .With("acolyte", ("Teamwork", "ACOLYTE"), ("ATK", "2"), ("HP", "3"))
+            .With("friend", ("HP", "3"))
+            .Trait("acolyte", "ACOLYTE")
+            .Trait("friend", "ACOLYTE");
+        var world = Board(printed);
+        world.Seats[0].IdentityCard.TurnTo("hero");
+        var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
+        world.CreateCard("friend", engaged);
+        var arriving = world.CreateCard("acolyte", engaged);
+        world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
+
+        Reveal.Teamwork(world, printed, arriving, 0, round: 1);
+        Undefended(world, printed);
+
+        Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:teamwork")]
+    [Fact]
+    public void ATeamworkMinionAloneDoesNothing()
+    {
+        // "At least one **other** minion." The arriving minion does not count
+        // itself, and a minion of a different trait is not one of its own --
+        // which is the clause `rr:teamwork.1`'s shorter restatement drops.
+        var printed = new Printed()
+            .With("hero", ("HP", "10"))
+            .With("acolyte", ("Teamwork", "ACOLYTE"), ("ATK", "2"), ("HP", "3"))
+            .With("stranger", ("HP", "3"))
+            .Trait("acolyte", "ACOLYTE")
+            .Trait("stranger", "HYDRA");
+        var world = Board(printed);
+        world.Seats[0].IdentityCard.TurnTo("hero");
+        var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
+        var alone = world.CreateCard("acolyte", engaged);
+
+        Reveal.Teamwork(world, printed, alone, 0, round: 1);
+        Assert.False(world.Agenda.IsBusy);
+
+        world.CreateCard("stranger", engaged);
+        Reveal.Teamwork(world, printed, alone, 0, round: 1);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Rule("rr:teamwork")]
+    [Rule("rr:activation.1")]
+    [Fact]
+    public void ATeamworkMinionSchemesAgainstAnAlterEgo()
+    {
+        // The difference from quickstrike, which says outright "a player whose
+        // identity is in hero form". Teamwork says the minion **activates**,
+        // and `rr:activation.1` reads the form to choose between attacking and
+        // scheming -- so an alter-ego is schemed at rather than left alone.
+        var printed = new Printed()
+            .With("acolyte", ("Teamwork", "ACOLYTE"), ("ATK", "2"), ("SCH", "2"), ("HP", "3"))
+            .With("friend", ("HP", "3"))
+            .Trait("acolyte", "ACOLYTE")
+            .Trait("friend", "ACOLYTE");
+        var world = Board(printed);
+        var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
+        world.CreateCard("friend", engaged);
+        var arriving = world.CreateCard("acolyte", engaged);
+
+        Reveal.Teamwork(world, printed, arriving, 0, round: 1);
+
+        var step = Assert.Single(world.Agenda.Outstanding);
+        Assert.Equal(Steps.Scheme, step.What);
+        Assert.Equal(arriving.ObjectId, step.Subject);
+    }
+
+    [Rule("rr:teamwork")]
+    [Fact]
+    public void ATeamworkMinionCountsFriendsInAnotherPlayersArea()
+    {
+        // "In play", not "engaged with you". A minion in the other player's
+        // area is in play, and this is unreachable at one player -- which is
+        // the only board the recording has.
+        var printed = new Printed()
+            .With("hero", ("HP", "10"))
+            .With("acolyte", ("Teamwork", "ACOLYTE"), ("ATK", "2"), ("HP", "3"))
+            .With("friend", ("HP", "3"))
+            .Trait("acolyte", "ACOLYTE")
+            .Trait("friend", "ACOLYTE");
+        var world = Board(printed, players: 2);
+        var arriving = world.CreateCard(
+            "acolyte", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.CreateCard(
+            "friend", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+
+        Reveal.Teamwork(world, printed, arriving, 0, round: 1);
+
+        Assert.Equal(arriving.ObjectId, Assert.Single(world.Agenda.Outstanding).Subject);
+    }
+
     [Rule("rr:quickstrike")]
     [Fact]
     public void AMinionWithoutQuickstrikeWaitsForTheVillainPhase()
@@ -816,6 +919,8 @@ public sealed class KeywordTests
         private readonly Dictionary<string, Dictionary<string, string>> attributes =
             new(StringComparer.Ordinal);
 
+        private readonly Dictionary<string, string[]> traits = new(StringComparer.Ordinal);
+
         public Printed With(string faceId, params (string Key, string Value)[] values)
         {
             var table = attributes.TryGetValue(faceId, out var found)
@@ -846,7 +951,15 @@ public sealed class KeywordTests
             _ => CardKind.Treachery,
         };
 
-        public IReadOnlyList<string> Traits(string faceId) => [];
+        /// <summary>Traits, upper-cased as the digest spells them.</summary>
+        public Printed Trait(string faceId, params string[] names)
+        {
+            traits[faceId] = names;
+            return this;
+        }
+
+        public IReadOnlyList<string> Traits(string faceId) =>
+            traits.TryGetValue(faceId, out string[]? found) ? found : [];
 
         public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
             attributes.TryGetValue(faceId, out var found)

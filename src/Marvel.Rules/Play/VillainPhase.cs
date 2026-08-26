@@ -551,6 +551,12 @@ public static class VillainPhase
         // beside them.
         Reveal.Quickstrike(world, facts, card, player, round);
 
+        // `rr:teamwork.2` puts this in the same place, after the card's own
+        // abilities. A minion carrying both keywords activates twice, which is
+        // what two forced responses to one moment do -- `rr:forced.5` gives the
+        // first player their order, and asking is MARVEL-187.
+        Reveal.Teamwork(world, facts, card, player, round);
+
         // Step 4. "If the card is a treachery, discard it." Asked as "is it
         // still where step 2 left something not in play", so that an ability
         // that put the card somewhere is not undone.
