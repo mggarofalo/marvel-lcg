@@ -407,8 +407,14 @@ public sealed class CardsInWindowsTests
         // Put into play by the card's own ported text, "Attach to Rhino",
         // rather than by placing it on the table here. The Rhino set holds more
         // than one copy, so this is the first of them and not the only one.
+        //
+        // Through the reveal, because `rr:attach-to` makes the phrase a rule
+        // about a card entering play rather than a "When Revealed" ability —
+        // so the route into play is what resolves it, and calling the ability
+        // directly would now attach nothing.
         var charge = world.Cards.First(card => card.FaceId == AuthoredCards.Charge);
-        abilities.WhenRevealed(world, charge, 0);
+        world.Abilities = abilities;
+        Reveal.Resolve(world, Cards, charge, 0, []);
 
         return new Board(world, abilities, charge);
     }

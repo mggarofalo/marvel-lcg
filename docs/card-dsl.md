@@ -589,7 +589,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 
 | | |
 |---|---|
-| Envelope | `trigger { event, timing, subject }`, `name`, `effect`. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
+| Envelope | `trigger { event, timing, subject }`, `name`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged` |
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `returnToHand`, `soakDamage` |
@@ -962,6 +962,49 @@ player's set-aside pile and then shuffles **the rest** of that pile into the
 encounter deck — so a reveal that only scheduled would shuffle away the two
 cards it had just chosen. Nothing else in the pool has yet needed the
 distinction, and it is one line apart.
+
+### "Attach to" is a rule about a phrase, not an ability
+
+`rr:attach-to`: "if a card uses the phrase 'attach to', it must be attached to
+*(placed beneath and slightly overlapped by)* the specified game element **as it
+enters play**." So the engine does the attaching, on every path into play, and
+the card supplies only the element:
+
+```json
+{ "card": "01099", "name": "Charge",
+  "attachTo": { "query": "villain" },
+  "abilities": [ … ] }
+```
+
+It sits beside `abilities` rather than inside one, because it is not one.
+`ICardAbilities.AttachesTo` answers the question and moves nothing —
+`Reveal.Resolve` is where the card is placed.
+
+**The modelling it replaces was a "When Revealed".** That reads correctly for a
+card revealed off the encounter deck, and is wrong everywhere else:
+`rr:when-revealed-abilities.2` says a card put into play *without being revealed*
+does not trigger one, and a setup attachment is put into play without being
+revealed. That is what blocked step 11 (MARVEL-211).
+
+Two other things fell out of reading it as the rule:
+
+- **`rr:attach-to.3`** — legality is checked once, when the card would be
+  attached, and a card that fails "remains in its prior state or game area. If
+  such a card cannot remain in its prior state or game area, discard it." So an
+  attachment naming an element that is not there stays on the table in front of
+  the player, where the reveal's own step 4 discards it. Naming nothing and
+  naming something absent end in the same place, which is why the answer is
+  nullable rather than a throw.
+- **`rr:attach-to.3.1`** — "the 'attach to' phrase on a card is not resolved if
+  another ability causes that card to attach to a specific game element." That
+  is why the `attachTo` *node* stays in the effect vocabulary: Genetic
+  Experiments' "**Boost:** Attach this card to an [[Infinite]] minion" is an
+  ability doing the attaching, and it moves the card itself.
+
+**A quieter bug it fixed.** `Reveal.Resolve` sent every attachment to nowhere, so
+`Reveal.EnterPlay` never ran for one. Eleven attachments in the pool print
+`uses X`, a keyword that fires on entering play — each had been arriving with an
+empty counter pool and an ability that spends from it.
 
 ### A "Setup" ability runs during the deal
 

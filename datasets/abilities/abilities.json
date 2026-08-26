@@ -32,11 +32,8 @@
       "card": "01099",
       "name": "Charge",
       "note": "Attach to Rhino. [star] Forced Interrupt: When Rhino attacks, the attack gains overkill. At the end of this attack, discard Charge. The star sits in this card's ATK field, which rr:star-icon.2 makes a reminder to check the text box whenever the attached enemy uses that value to attack -- so this is an attachment ability while in play, not a 'Boost' ability. The printed ATK+ 3 is not here: rr:attachment.1 makes a printed modifier declarative, and StateFields reads it off the attachment without an ability. 'Rhino' is written as the villain in play because the card belongs to Rhino's encounter set and no other villain can share a table with it; a name query would need a lookup the printed data spells differently.",
+      "attachTo": { "query": "villain" },
       "abilities": [
-        {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "attachTo": { "query": "villain" } }
-        },
         {
           "name": "Charge",
           "trigger": { "event": "WhenEnemyAttacks", "timing": "ForcedInterrupt", "subject": "attachedTo" },
@@ -442,11 +439,8 @@
       "card": "01100",
       "name": "Enhanced Ivory Horn",
       "note": "Attach to Rhino. Hero Action: Spend [physical] [physical] [physical] resources -> discard this card. An encounter card in play, so rr:player-turn.5.b is what lets a player trigger it -- it is nobody's card and everybody's action. The printed ATK+ 1 is not here: rr:attachment.1 makes a printed modifier declarative and StateFields reads it off the attachment without an ability. The spend is the ability's cost rather than the first thing its effect does, which is why rr:initiating-abilities.step.3 can refuse to offer it to a hand that cannot pay.",
+      "attachTo": { "query": "villain" },
       "abilities": [
-        {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "attachTo": { "query": "villain" } }
-        },
         {
           "trigger": {
             "event": "WhenActionTriggered",

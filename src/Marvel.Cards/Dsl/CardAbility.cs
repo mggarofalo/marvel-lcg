@@ -136,12 +136,33 @@ public sealed record CardAbility(
 /// </remarks>
 /// <param name="Abilities">Every ability, in the order the data lists them.</param>
 /// <param name="Authored">Every card that has been read, whether or not it does anything.</param>
+/// <param name="AttachTo">
+/// What each card that prints "attach to" names, by printed face id.
+/// <para>
+/// <b>Not an ability, and that is the point.</b> <c>rr:attach-to</c> is a rule
+/// about the phrase — "if a card uses the phrase 'attach to', it must be
+/// attached to the specified game element <b>as it enters play</b>" — so the
+/// engine does the attaching on every path into play and the card supplies only
+/// the element. Modelling it as a "When Revealed" instead reads correctly for a
+/// card revealed off the encounter deck and is wrong everywhere else:
+/// <c>rr:when-revealed-abilities.2</c> says a card put into play without being
+/// revealed does not trigger one, and a setup attachment is put into play
+/// without being revealed.
+/// </para>
+/// </param>
 public sealed record AbilityBook(
-    IReadOnlyList<CardAbility> Abilities, IReadOnlySet<string> Authored)
+    IReadOnlyList<CardAbility> Abilities,
+    IReadOnlySet<string> Authored,
+    IReadOnlyDictionary<string, AbilityValue>? AttachTo = null)
 {
     /// <summary>An empty book. No card has been read.</summary>
     public static AbilityBook None { get; } =
         new([], new HashSet<string>(StringComparer.Ordinal));
+
+    /// <summary>What one card's "attach to" names, or null when it prints none.</summary>
+    /// <param name="card">A printed face id.</param>
+    public AbilityValue? Attaches(string card) =>
+        AttachTo is { } named && named.TryGetValue(card, out var element) ? element : null;
 
     /// <summary>The abilities on one printed face.</summary>
     /// <param name="card">A printed face id.</param>
