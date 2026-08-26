@@ -591,10 +591,17 @@ For a C# port targeting byte-identical output, in dependency order:
 9. **Compare as strings**, and diff structurally only when they differ.
 10. **Reject by default.**
 
-**There is no acceptance fixture.** `StateDigest` emits the format above and
-determinism tests compare a game against a second run of itself, so the
-serialiser is exercised — but its canonical form is pinned to nothing.
-MARVEL-251.
+**The canonical form is pinned by `StateDigestTests`**, not by a recorded
+document. Key order is asserted as the table order rather than alphabetical;
+fields are asserted code-point ordered, with a case a case-insensitive
+comparison would invert; whitespace is asserted absent; and only what JSON
+requires is escaped, so an apostrophe and a non-ASCII character survive
+literally — three traits in the pool carry an apostrophe, and the default .NET
+encoder would escape every one.
+
+Strings are fuzzed over an alphabet of backslashes, `u`, hex digits and quotes,
+seeded so a failure reproduces. "Obviously correct" is not a safe claim about
+escaping.
 
 ## How the measurements were taken
 

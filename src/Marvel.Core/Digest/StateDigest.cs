@@ -113,9 +113,10 @@ public sealed class StateDigest
 
     /// <summary>Reads a canonical document back into records.</summary>
     /// <remarks>
-    /// Needed for the diff on mismatch, and for the round-trip test that proves
-    /// the writer agrees with the recorded fixture. Deliberately strict: a
-    /// document this cannot parse is one the comparison cannot explain.
+    /// Needed for the diff on mismatch, and for the round-trip that proves
+    /// reading a digest and writing it back changes no byte. Deliberately
+    /// strict: a document this cannot parse is one the comparison cannot
+    /// explain.
     /// </remarks>
     public static StateDigest Parse(string canonical)
     {
