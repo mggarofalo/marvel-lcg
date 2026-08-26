@@ -254,6 +254,22 @@ public static class Steps
     /// <summary>Step 6 — <c>rr:villain-phase.step.6</c>.</summary>
     public const string EndVillainPhase = "EndVillainPhase";
 
+    /// <summary>
+    /// Step 2 — <c>rr:end-of-player-phase.step.2</c>.
+    /// </summary>
+    /// <remarks>
+    /// "Each player <b>simultaneously</b> draws up to their hand size", so one
+    /// step for the table rather than one per player. Step 1 is the opposite —
+    /// it is "in player order" — and lives on the turn prompt, because it is a
+    /// question rather than something that happens.
+    /// </remarks>
+    public const string DrawToHandSize = "DrawToHandSize";
+
+    /// <summary>
+    /// Step 3 — <c>rr:end-of-player-phase.step.3</c>. Simultaneous, as step 2 is.
+    /// </summary>
+    public const string ReadyCards = "ReadyCards";
+
     /// <summary>The end of the player phase — <c>rr:end-of-player-phase</c>.</summary>
     public const string EndPlayerPhase = "EndPlayerPhase";
 

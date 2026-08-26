@@ -190,6 +190,15 @@ public sealed class Game
                 return ChangeFormNow();
             }
 
+            if (string.Equals(verb, EndPhaseVerb, StringComparison.Ordinal)
+                && Phase == GamePhase.EndPhase)
+            {
+                // `rr:end-of-player-phase.step.1`. Taking this is discarding
+                // the cards named in the answer; declining is discarding none,
+                // which is the same code path with an empty list.
+                return EndOfPlayerPhase(input);
+            }
+
             throw new RulesNotImplementedException(
                 $"taking '{verb}' is not implemented; this resolve only declines");
         }
@@ -198,7 +207,14 @@ public sealed class Game
         {
             case GamePhase.Mulligan:
                 // Declining a mulligan keeps the opening hand, so nothing moves.
+                //
+                // `Active` is read from the board here and not left as it was
+                // set at `Begin`: the first player is whoever holds the token
+                // when the phase starts, and a scenario or a card can move it
+                // between the deal and the first turn. Every later round does
+                // the same in `Work`.
                 Round = 1;
+                Active = world.FirstPlayer;
                 Phase = GamePhase.PlayerTurn;
                 Pending = TurnPrompt();
                 return new Resolution(world, Pending, []);
@@ -207,23 +223,24 @@ public sealed class Game
                 // Declining the main turn ends it. Progress in the game's terms
                 // and no change to the board -- the largest class of no-op
                 // decision in the corpus at 187 of 320 declines.
+                //
+                // `rr:player-phase`: "during the player phase, **each player**
+                // *(in player order)* takes one turn". So the phase is over
+                // when the last of them has had theirs, not when the first has.
+                if (Next(Active) is { } player)
+                {
+                    Active = player;
+                    Pending = TurnPrompt();
+                    return new Resolution(world, Pending, []);
+                }
+
+                Active = world.FirstPlayer;
                 Phase = GamePhase.EndPhase;
                 Pending = EndPhasePrompt();
                 return new Resolution(world, Pending, []);
 
             case GamePhase.EndPhase:
-                // The end phase refills the hand to hand size, and this game
-                // still cannot say when: the recorded hand is full at every
-                // step, so the trace is identical whether the refill happens
-                // before this prompt or after it. Left out rather than guessed.
-                Phase = GamePhase.VillainPhase;
-
-                // rr:end-of-player-phase.step.4 and .step.5. Steps 1 to 3 --
-                // discard down to hand size, draw up to it, ready every card --
-                // are not implemented; see PhaseEnd.EndPlayerPhase.
-                world.Agenda.Add(new PhaseStep(Steps.EndPlayerPhase, Round, 4));
-                VillainPhase.Schedule(world.Agenda, Round);
-                return Work([]);
+                return EndOfPlayerPhase(input);
 
             case GamePhase.VillainPhase:
                 // Answering a question the villain phase asked. The window
@@ -279,6 +296,63 @@ public sealed class Game
 
         Pending = TurnPrompt();
         return new Resolution(world, Pending, happened);
+    }
+
+    /// <summary>
+    /// The seat after this one in player order, or null at the end of the table.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:in-player-order.2</c>: "the phrase 'next player' always refers to
+    /// the next <i>(clockwise)</i> player in player order." Null rather than
+    /// wrapping, because both callers want to know when the round of
+    /// opportunities is <i>complete</i> — <c>rr:in-player-order.1</c>'s
+    /// condition for stopping.
+    /// </remarks>
+    /// <param name="seat">The seat that has just finished.</param>
+    private int? Next(int seat)
+    {
+        int taken = ((seat - world.FirstPlayer) + world.Players) % world.Players;
+        return taken + 1 < world.Players
+            ? (world.FirstPlayer + taken + 1) % world.Players
+            : null;
+    }
+
+    /// <summary>
+    /// Steps 1 to 5 of <c>rr:end-of-player-phase</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Step 1 is this prompt: "in player order, each player may discard any
+    /// number of cards from their hand". <b>In player order</b>, so it is asked
+    /// once per seat and the phase does not move on until the last has
+    /// answered. Steps 2 and 3 are "simultaneously", so they are one step each
+    /// on the agenda rather than one per player.
+    /// </para>
+    /// <para>
+    /// Declining discards nothing, which the rule allows — "<b>may</b> discard
+    /// any number" — right up until the hand is over its size, and
+    /// <see cref="PhaseEnd.DiscardToHandSize"/> is where that is refused.
+    /// </para>
+    /// </remarks>
+    /// <param name="input">The answer: which cards this player discards.</param>
+    private Resolution EndOfPlayerPhase(Decision input)
+    {
+        var happened = new List<GameEvent>();
+        PhaseEnd.DiscardToHandSize(world, facts, Active, input.Targets, happened);
+
+        if (Next(Active) is { } player)
+        {
+            Active = player;
+            Pending = EndPhasePrompt();
+            return new Resolution(world, Pending, happened);
+        }
+
+        Phase = GamePhase.VillainPhase;
+        world.Agenda.Add(new PhaseStep(Steps.DrawToHandSize, Round, 2));
+        world.Agenda.Add(new PhaseStep(Steps.ReadyCards, Round, 3));
+        world.Agenda.Add(new PhaseStep(Steps.EndPlayerPhase, Round, 4));
+        VillainPhase.Schedule(world.Agenda, Round);
+        return Work(happened);
     }
 
     private Prompt MulliganPrompt()

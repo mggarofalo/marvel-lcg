@@ -282,14 +282,19 @@ public sealed class CardsInWindowsTests
     public void TheWholeGameStopsInTheVillainPhaseToAskAboutSpiderSense()
     {
         // The same thing again through the engine's own entry point rather than
-        // through `Sequence`, because that is what a client sees: three
-        // declines and the game is part-way through the villain phase, holding
-        // a question a card put there.
+        // through `Sequence`, because that is what a client sees: the mulligan,
+        // the turn, the end of the phase, and the game is part-way through the
+        // villain phase holding a question a card put there.
+        //
+        // The last of the three is not a decline. This board is in hero form,
+        // so its hand size is Spider-Man's 5 against the 6 Peter Parker was
+        // dealt, and `rr:end-of-player-phase.step.1` makes discarding the odd
+        // one out compulsory.
         var game = Playing();
 
         game.Resolve(Decision.Decline);
         game.Resolve(Decision.Decline);
-        var result = game.Resolve(Decision.Decline);
+        var result = EndPhase(game);
 
         Assert.Equal(GamePhase.VillainPhase, game.Phase);
         Assert.NotNull(result.Prompt);
@@ -335,6 +340,21 @@ public sealed class CardsInWindowsTests
         board.World.Agenda.Add(new PhaseStep(
             Steps.Attack, Round: 1, Number: 2, Index: 0, Subject: rhino.ObjectId, Seat: 0));
         return board;
+    }
+
+    /// <summary>Answers <c>rr:end-of-player-phase.step.1</c>, discarding the excess.</summary>
+    private static Resolution EndPhase(Game game)
+    {
+        var world = game.State;
+        var seat = world.Seats[game.Pending!.Player];
+        long limit = PhaseEnd.HandSize(world, seat, Cards);
+        var excess = seat.Hand.Cards
+            .Take(Math.Max(0, seat.Hand.Cards.Count - (int)limit))
+            .Select(card => card.ObjectId)
+            .ToArray();
+
+        var affordance = game.Pending.Affordances.Single(a => a.Verb == Game.EndPhaseVerb);
+        return game.Resolve(Decision.Take(affordance.Id, excess, []));
     }
 
     /// <summary>The same board, driven through the engine from the mulligan.</summary>

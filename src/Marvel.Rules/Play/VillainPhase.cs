@@ -192,6 +192,14 @@ public static class VillainPhase
                 PhaseEnd.EndVillainPhase(world, events);
                 break;
 
+            case Steps.DrawToHandSize:
+                PhaseEnd.DrawToHandSize(world, facts, events);
+                break;
+
+            case Steps.ReadyCards:
+                PhaseEnd.ReadyCards(world, events);
+                break;
+
             case Steps.EndPlayerPhase:
                 PhaseEnd.EndPlayerPhase(world, events);
                 break;
