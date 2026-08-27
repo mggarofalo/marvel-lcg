@@ -159,7 +159,8 @@ public static class EachPlayerEffects
                 Plan: true,
                 Tier: tier,
                 FinalStep: finalStep,
-                FinalPlayer: position == players.Count - 1));
+                FinalPlayer: position == players.Count - 1,
+                EachPlayerFrame: true));
         }
     }
 

@@ -81,11 +81,17 @@ public enum Stage
 /// lets the card interpreter resume any outer sequence after the final frame
 /// without retaining a live iterator or effect tree.
 /// </param>
+/// <param name="EachPlayerFrame">
+/// Whether a suspended choice belongs to one player's frame of an each-player
+/// effect. Together with <paramref name="FinalPlayer"/>, this tells the card
+/// interpreter whether answering the choice resumes only this player's body or
+/// also the outer sequence. The spelling is an engine save-format choice.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
     ThreatPlacement? Placement = null, int ActivationId = -1, bool FinalStep = false,
-    bool FinalPlayer = false)
+    bool FinalPlayer = false, bool EachPlayerFrame = false)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>

@@ -98,6 +98,49 @@ public sealed class EachPlayerEffectsTests
         Assert.Equal([true], abilities.FinalPlayers);
     }
 
+    [Fact]
+    public void AChoiceSuspendsAndResumesWithItsOwnPlayerFrameContext()
+    {
+        var world = Board(2);
+        var source = world.CreateCard("treachery", world.AreaOf(DeckType.EncounterDiscardPile));
+        var abilities = new ChoiceRecorder();
+        EachPlayerEffects.Schedule(
+            world, source, stoppedAt: 7, AbilityType.WhenRevealed, finalStep: true);
+
+        var ordering = Sequence.Work(world, world.Facts, abilities, []);
+        var order = Assert.Single(ordering!.Affordances);
+        var identities = world.Seats.Select(seat => seat.IdentityCard.ObjectId).ToArray();
+        Sequence.Answer(
+            world,
+            world.Facts,
+            abilities,
+            ordering,
+            new Decision(order.Id, identities),
+            []);
+
+        var first = Sequence.Work(world, world.Facts, abilities, []);
+        Assert.NotNull(first);
+        Assert.Equal(0, first.Player);
+        Assert.Equal(8, world.Agenda.Current!.Value.Index);
+        Assert.True(world.Agenda.Current.Value.EachPlayerFrame);
+        Assert.False(world.Agenda.Current.Value.FinalPlayer);
+        Sequence.Answer(
+            world, world.Facts, abilities, first, Decision.Take(ChoiceRecorder.Option), []);
+
+        var second = Sequence.Work(world, world.Facts, abilities, []);
+        Assert.NotNull(second);
+        Assert.Equal(1, second.Player);
+        Assert.Equal(8, world.Agenda.Current!.Value.Index);
+        Assert.True(world.Agenda.Current.Value.EachPlayerFrame);
+        Assert.True(world.Agenda.Current.Value.FinalPlayer);
+        Sequence.Answer(
+            world, world.Facts, abilities, second, Decision.Take(ChoiceRecorder.Option), []);
+        Assert.Null(Sequence.Work(world, world.Facts, abilities, []));
+
+        Assert.Equal([(0, false), (1, true)], abilities.Asked);
+        Assert.Equal([(0, false), (1, true)], abilities.Answered);
+    }
+
     [Rule("rr:resource.1")]
     [Fact]
     public void PrintedResourceCountCountsBothIconsOnADoubleResourceCard()
@@ -164,6 +207,58 @@ public sealed class EachPlayerEffectsTests
 
             return base.ResolveEachPlayer(
                 world, source, player, stoppedAt, tier, finalStep, finalPlayer);
+        }
+    }
+
+    private sealed class ChoiceRecorder : Recorder
+    {
+        public const int Option = 55;
+
+        public List<(int Player, bool FinalPlayer)> Asked { get; } = [];
+        public List<(int Player, bool FinalPlayer)> Answered { get; } = [];
+
+        public override IReadOnlyList<GameEvent> ResolveEachPlayer(
+            World world, Card source, int player, int stoppedAt,
+            AbilityType? tier, bool finalStep, bool finalPlayer)
+        {
+            world.Agenda.Then(new PhaseStep(
+                Steps.ChooseOption,
+                world.Agenda.Current?.Round ?? 0,
+                2,
+                Index: stoppedAt + 1,
+                Subject: source.ObjectId,
+                Seat: player,
+                Tier: tier,
+                FinalStep: finalStep,
+                FinalPlayer: finalPlayer,
+                EachPlayerFrame: true));
+            return [];
+        }
+
+        public override Prompt? Choosing(
+            World world, Card source, int player, int stoppedAt,
+            AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer)
+        {
+            Assert.True(eachPlayerFrame);
+            Asked.Add((player, finalPlayer));
+            return new Prompt(
+                player,
+                Question.Option,
+                TimingPriority.Untimed,
+                Steps.ChooseOption,
+                "choose for this player",
+                false,
+                [new Affordance(Option, "Choose", source.ObjectId, player, "option")]);
+        }
+
+        public override IReadOnlyList<GameEvent> Chose(
+            World world, Card source, int player, int stoppedAt, Decision input,
+            AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer)
+        {
+            Assert.True(eachPlayerFrame);
+            Assert.Equal(Option, input.Affordance);
+            Answered.Add((player, finalPlayer));
+            return [];
         }
     }
 

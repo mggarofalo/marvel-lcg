@@ -334,6 +334,14 @@ public interface ICardAbilities : IWindowAbilities
         Choosing(world, source, player, stoppedAt, tier);
 
     /// <summary>
+    /// Reconstructs a choice with its each-player continuation context.
+    /// </summary>
+    Prompts.Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
+        Choosing(world, source, player, stoppedAt, tier, finalStep);
+
+    /// <summary>
     /// The game element this card's "attach to" phrase names —
     /// <c>rr:attach-to</c>.
     /// </summary>
@@ -461,6 +469,14 @@ public interface ICardAbilities : IWindowAbilities
         Timing.AbilityType? tier, bool finalStep) =>
         Chose(world, source, player, stoppedAt, input, tier);
 
+    /// <summary>
+    /// Resumes a choice with the persisted each-player frame it belongs to.
+    /// </summary>
+    IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
+        Chose(world, source, player, stoppedAt, input, tier, finalStep);
+
 
 }
 
@@ -576,6 +592,12 @@ public class NoCardAbilities : ICardAbilities
         Choosing(world, source, player, stoppedAt, tier);
 
     /// <inheritdoc/>
+    public virtual Prompts.Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
+        Choosing(world, source, player, stoppedAt, tier, finalStep);
+
+    /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Chose(
         World world, Card source, int player, int stoppedAt, Decision input,
         Timing.AbilityType? tier = null) =>
@@ -587,6 +609,12 @@ public class NoCardAbilities : ICardAbilities
         World world, Card source, int player, int stoppedAt, Decision input,
         Timing.AbilityType? tier, bool finalStep) =>
         Chose(world, source, player, stoppedAt, input, tier);
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
+        Chose(world, source, player, stoppedAt, input, tier, finalStep);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<PendingAbility> Waiting(
@@ -774,7 +802,7 @@ public static class VillainPhase
             case Steps.ChooseOption:
                 return abilities.Choosing(
                     world, world.Cards[step.Subject], step.Seat, step.Index, step.Tier,
-                    step.FinalStep);
+                    step.FinalStep, step.EachPlayerFrame, step.FinalPlayer);
 
             case Steps.OrderEachPlayer:
                 return EachPlayerEffects.Ordering(world, step);
@@ -888,7 +916,7 @@ public static class VillainPhase
             case Steps.ChooseOption:
                 events.AddRange(abilities.Chose(
                     world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier,
-                    step.FinalStep));
+                    step.FinalStep, step.EachPlayerFrame, step.FinalPlayer));
                 break;
 
             case Steps.OrderEachPlayer:
