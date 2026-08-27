@@ -150,6 +150,108 @@ public sealed class CoreCardDslTests
         Assert.Equal(DeckType.HandsArea, second.Area.Type);
     }
 
+    [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:heal")]
+    [Fact]
+    public void RechannelRequiresAndPaysItsHealingCostBeforeDrawing()
+    {
+        // The damage removal is left of the arrow. An undamaged Captain Marvel
+        // cannot initiate Rechannel; once damaged, both costs precede the draw.
+        var world = Hero("01010a");
+        var payment = world.CreateCard("01087", world.Seats[0].Hand);
+        var drawn = world.CreateCard("01087", world.Seats[0].Deck);
+        world.CreateCard("01087", world.Seats[0].Deck);
+        world.CreateCard("01087", world.Seats[0].Deck);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+
+        Assert.DoesNotContain(runner.Actions(world, 0), action =>
+            action.Card == world.Seats[0].IdentityCard.ObjectId);
+
+        world.Seats[0].IdentityCard.TakeDamage(2);
+        var action = Assert.Single(runner.Actions(world, 0), action =>
+            action.Card == world.Seats[0].IdentityCard.ObjectId);
+        runner.Act(world, action, [payment.ObjectId], []);
+
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+        Assert.Single(world.Seats[0].Hand.Cards);
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+    }
+
+    [Rule("rr:prevent")]
+    [Fact]
+    public void CosmicFlightPreventsExactlyThreeDamage()
+    {
+        var world = Hero("01010a");
+        var flight = world.CreateCard(
+            "01017", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("01087", world.Seats[0].Deck);
+        var villain = world.CreateCard("01134", world.AreaOf(DeckType.VillainArea));
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var occurrence = Occurrence.ForAttack(
+            1, [Steps.DamageWouldBeDealt], world, Cards, villain.ObjectId,
+            world.Seats[0].IdentityCard.ObjectId, player: 0);
+        var interrupt = Assert.Single(
+            runner.Waiting(world, occurrence, WindowKind.Interrupt),
+            pending => pending.Card == flight.ObjectId);
+
+        runner.Resolve(world, occurrence, interrupt, [], []);
+
+        Assert.Equal(2, runner.WouldBeDealt(
+            world, world.Seats[0].IdentityCard, villain, 5, []));
+        Assert.Equal(DeckType.DiscardPile, flight.Area.Type);
+    }
+
+    [Rule("rr:printed")]
+    [Fact]
+    public void SplitPersonalityDrawsToTheNewFacesPrintedHandSize()
+    {
+        var world = Hero("01019a,01019b");
+        var split = world.CreateCard("01025", world.Seats[0].Hand);
+        var payments = Enumerable.Range(0, 3)
+            .Select(_ => world.CreateCard("01087", world.Seats[0].Hand)).ToList();
+        for (int card = 0; card < 8; card++)
+        {
+            world.CreateCard("01087", world.Seats[0].Deck);
+        }
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, Kind: "hand_size", Amount: 3,
+            Card: world.Seats[0].IdentityCard.ObjectId,
+            Affects: world.Seats[0].IdentityCard.ObjectId));
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == split.ObjectId);
+
+        runner.Act(world, action, [.. payments.Select(card => card.ObjectId)], []);
+
+        Assert.Equal("01019b", world.Seats[0].IdentityCard.FaceId);
+        Assert.Equal(6, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(DeckType.DiscardPile, split.Area.Type);
+    }
+
+    [Rule("rr:when-defeated-abilities")]
+    [Rule("rr:deal-deal-an-encounter-card")]
+    [Fact]
+    public void HydraSoldierDealsOnlyItsEngagedPlayerAnEncounterCard()
+    {
+        var world = Hero("01010a", players: 2);
+        var soldier = world.CreateCard(
+            "01182", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+        var encounter = world.CreateCard("01186", world.AreaOf(DeckType.EncounterDeck));
+        var runner = AuthoredCards.Runner();
+        var occurrence = new Occurrence(
+            1, [Steps.CardDefeated], Subject: soldier.ObjectId, Player: 0);
+
+        runner.Resolve(
+            world, occurrence,
+            new PendingAbility(soldier.ObjectId, AbilityType.WhenDefeated, 0), [], []);
+
+        Assert.Equal(DeckType.DealtEncounterCardsDeck, encounter.Area.Type);
+        Assert.Equal(1, encounter.Area.PlayArea.Player);
+        Assert.Empty(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards);
+    }
+
     private static long Modified(World world, Card card, string field) =>
         StateFields.Modified(world, card, field, Cards, world.Players);
 

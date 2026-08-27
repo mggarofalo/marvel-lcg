@@ -132,6 +132,214 @@
       ]
     },
     {
+      "card": "01010a",
+      "name": "Captain Marvel",
+      "note": "Rechannel -- Action: spend an energy resource and heal 1 damage from Captain Marvel, then draw 1 card. rr:initiating-abilities.step.5 pays both the resource and healing cost before the draw; rr:limit counts this use once per round.",
+      "abilities": [
+        {
+          "name": "Rechannel",
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "limitPerRound": 1,
+          "cost": { "seq": [
+            { "spend": "Y" },
+            { "heal": { "card": "you", "amount": 1 } }
+          ] },
+          "effect": { "draw": { "player": "you", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01017",
+      "name": "Cosmic Flight",
+      "note": "Captain Marvel gains the AERIAL trait while this upgrade is in play. Its Hero Interrupt discards Cosmic Flight to prevent 3 of the imminent damage; rr:damage.step.1 opens the interrupt before damage is applied, and rr:prevent reduces rather than cancels an amount larger than 3.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "you", "trait": "AERIAL" } }
+        },
+        {
+          "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "target": "you", "form": "hero" },
+          "when": { "isYourIdentity": "trigger.target" },
+          "cost": { "discard": "this" },
+          "effect": { "preventDamage": { "card": "trigger.target", "amount": 3 } }
+        }
+      ]
+    },
+    {
+      "card": "01024",
+      "name": "One-Two Punch",
+      "note": "Response: after you make a basic attack using ATK, ready She-Hulk. The player basic-attack occurrence carries the attacking identity as actor and gains WhenAttackEnds only after the attack resolves, so an ability attack cannot satisfy this trigger.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you" },
+          "effect": { "ready": "you" }
+        }
+      ]
+    },
+    {
+      "card": "01025",
+      "name": "Split Personality",
+      "note": "Action: flip your identity, then draw up to the new face's printed hand size. rr:printed excludes hand-size modifiers, and rr:then makes the draw follow the form change rather than read the old face.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "effect": { "seq": [
+            {
+              "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "changeForm": { "player": "you", "to": "alter-ego" } },
+                "else": { "changeForm": { "player": "you", "to": "hero" } }
+              }
+            },
+            { "drawToPrintedHandSize": "you" }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01027",
+      "name": "Focused Rage",
+      "note": "Hero Action: exhaust Focused Rage and take 1 damage, then draw 1 card. Exhaustion and damage are costs before the arrow, so an exhausted upgrade or an identity prohibited from taking the damage cannot initiate the ability.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "seq": [
+            { "exhaust": "this" },
+            { "dealDamage": { "cards": "you", "amount": 1 } }
+          ] },
+          "effect": { "draw": { "player": "you", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01030",
+      "name": "War Machine",
+      "note": "Action: exhaust War Machine and deal 2 damage to him, then deal 1 damage to each enemy. Both costs must be payable before the effect; each current villain and engaged minion is damaged separately in deterministic board order.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "seq": [
+            { "exhaust": "this" },
+            { "dealDamage": { "cards": "this", "amount": 2 } }
+          ] },
+          "effect": { "dealDamage": { "cards": { "query": "enemies" }, "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01075",
+      "name": "Black Widow",
+      "note": "Interrupt: when a card is revealed from the encounter deck, exhaust Black Widow and spend a mental resource to cancel that card's effects and discard it, then reveal the next card. The revealed card remains the occurrence subject throughout the interrupt.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "player": "trigger.player" },
+          "cost": { "seq": [
+            { "exhaust": "this" },
+            { "spend": "B" }
+          ] },
+          "effect": { "seq": [
+            { "cancelWhenRevealed": "trigger.subject" },
+            { "discard": "trigger.subject" },
+            { "revealTop": 1 }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01141",
+      "name": "Program Transmitter",
+      "note": "Attach to Ultron. Its Forced Response places 1 threat on each side scheme after Ultron schemes. The Hero Action exhausts the resolving player's hero and spends two mental resources to discard this attachment.",
+      "attachTo": { "titled": "Ultron" },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenSchemeEnds", "timing": "ForcedResponse", "subject": "attachedTo" },
+          "effect": { "placeThreat": { "scheme": { "query": "sideSchemes" }, "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "seq": [
+            { "exhaust": "you" },
+            { "spend": "BB" }
+          ] },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "01146",
+      "name": "Repair Sequence",
+      "note": "When revealed, Ultron heals 2 damage per Drone engaged with the resolving player and gains surge only when the heal moved no damage. Its boost ability uses the same engaged Drone count but heals 1 per Drone.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "heal": { "card": { "query": "villain" }, "amount": { "mul": [ 2, { "count": { "query": "dronesEngagedWithYou" } } ] } } },
+            {
+              "if": {
+                "test": { "not": { "atLeast": { "value": { "result": "healed" }, "count": 1 } } },
+                "then": { "gainSurge": 1 }
+              }
+            }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "heal": { "card": { "query": "villain" }, "amount": { "count": { "query": "dronesEngagedWithYou" } } } }
+        }
+      ]
+    },
+    {
+      "card": "01152",
+      "name": "Vibranium Armor",
+      "note": "Attach to the villain. After the attached villain takes damage, its Forced Response gives it tough. The Hero Action exhausts the resolving player's hero and spends two physical resources to discard this attachment.",
+      "attachTo": { "query": "villain" },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenDamageDealt", "timing": "ForcedResponse", "target": "attachedTo" },
+          "effect": { "giveStatus": { "card": "attachedTo", "status": "tough" } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "seq": [
+            { "exhaust": "you" },
+            { "spend": "RR" }
+          ] },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "01153",
+      "name": "Concussion Blasters",
+      "note": "Attach to the villain. The attached villain continuously gains retaliate 1. The Hero Action exhausts the resolving player's hero and spends two energy resources to discard this attachment.",
+      "attachTo": { "query": "villain" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "retaliate", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "seq": [
+            { "exhaust": "you" },
+            { "spend": "YY" }
+          ] },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "01182",
+      "name": "Hydra Soldier",
+      "note": "Guard is a printed keyword. When Hydra Soldier is defeated, its engaged player is dealt one facedown encounter card; the player comes from the minion's engaged play area, not from whichever effect dealt the final damage.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "dealEncounterCards": { "player": "engagedPlayer", "count": 1 } }
+        }
+      ]
+    },
+    {
       "card": "01099",
       "name": "Charge",
       "note": "Attach to Rhino. [star] Forced Interrupt: When Rhino attacks, the attack gains overkill. At the end of this attack, discard Charge. The star sits in this card's ATK field, which rr:star-icon.2 makes a reminder to check the text box whenever the attached enemy uses that value to attack -- so this is an attachment ability while in play, not a 'Boost' ability. The printed ATK+ 3 is not here: rr:attachment.1 makes a printed modifier declarative, and StateFields reads it off the attachment without an ability. 'Rhino' is written as the villain in play because the card belongs to Rhino's encounter set and no other villain can share a table with it; a name query would need a lookup the printed data spells differently.",

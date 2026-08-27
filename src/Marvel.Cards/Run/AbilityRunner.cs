@@ -560,7 +560,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             && effect.Affects == target.ObjectId);
         if (prevention is not null && world.Effects.Use(prevention))
         {
-            return 0;
+            long prevented = prevention.Amount <= 0 ? amount : prevention.Amount;
+            return Math.Max(0, amount - prevented);
         }
 
         var occurrence = new Occurrence(
@@ -1161,7 +1162,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             null => true,
             { Kind: "seq" } => Nodes(cost.Argument).All(each =>
                 Payable(world, card, player, each)),
-            { Kind: "exhaust" } => card.Ready,
+            { Kind: "exhaust" } => CostTarget(world, card, player, cost.Argument)?.Ready == true,
+            { Kind: "discard" } => CostTarget(world, card, player,
+                cost.Field("card") ?? cost.Argument) is not null,
             { Kind: "removeCounters" } => card.Tokens.GetValueOrDefault(
                 "c_" + Word(cost.Argument)) > 0,
 
@@ -1190,8 +1193,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             { Kind: "discardFromHand" } =>
                 world.Seats[player].Hand.Cards.Count >= Number(cost.Argument),
 
+            { Kind: "heal" } => CostTarget(
+                    world, card, player, cost.Require("card")) is { Damage: > 0 }
+                && Number(cost.Require("amount")) > 0,
+
+            { Kind: "dealDamage" } => CostTarget(
+                    world, card, player, cost.Require("cards")) is { } damageTarget
+                && Number(cost.Require("amount")) > 0
+                && world.Abilities.CanTakeDamage(world, damageTarget, card),
+
             _ => throw new RulesNotImplementedException(
                 $"'{card.FaceId}' has a cost of '{cost.Kind}', which is not implemented"),
+        };
+
+    private static Card? CostTarget(World world, Card source, int player, AbilityValue value) =>
+        Word(value) switch
+        {
+            "this" => source,
+            "you" => player >= 0 ? world.Seats[player].IdentityCard : null,
+            _ => null,
         };
 
     private static bool EventPayable(World world, Card card, int player)
@@ -1652,7 +1672,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             or "cancelWhenRevealed" or "dealEncounterCards" or "revealTop"
             or "discardAtRandom" or "discardUntil" or "discardTop"
             or "recoverDiscardedByResource" or "shuffleInto" or "search"
-            or "gainSurge" or "shuffle" or "draw" or "drawToHandSize" => true,
+            or "gainSurge" or "shuffle" or "draw" or "drawToHandSize"
+            or "drawToPrintedHandSize" => true,
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
             + "legality is not implemented"),
@@ -1699,6 +1720,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "drawToHandSize" => cast.World.Seats[Seat(node.Argument, cast)].Hand.Cards.Count
                 < PhaseEnd.HandSize(
                     cast.World, cast.World.Seats[Seat(node.Argument, cast)], cast.World.Facts),
+            "drawToPrintedHandSize" => CanDrawToPrintedHandSize(node, cast),
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
@@ -2015,12 +2037,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 DrawToHandSize(node, cast);
                 break;
 
+            case "drawToPrintedHandSize":
+                DrawToPrintedHandSize(node, cast);
+                break;
+
             case "removeCounters":
                 RemoveCounters(node, cast);
                 break;
 
             case "preventDamage":
-                PreventDamage(cast);
+                PreventDamage(node, cast);
                 break;
 
             case "cancelWhenRevealed":
@@ -2317,9 +2343,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static void DealEncounterCards(AbilityNode node, Cast cast)
     {
         long each = node.Field("count") is { } count ? Number(count) : 1;
+        IReadOnlyList<int> players = node.Field("player") is { } player
+            ? [Seat(player, cast)]
+            : [.. cast.World.PlayerOrder];
         for (long dealt = 0; dealt < each; dealt++)
         {
-            foreach (int seat in cast.World.PlayerOrder)
+            foreach (int seat in players)
             {
                 if (Rules.Play.Deal.EncounterCard(
                         cast.World, seat, cast.Trigger, cast.Events) is null)
@@ -2844,9 +2873,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         int player = Seat(node.Argument, cast);
         var seat = cast.World.Seats[player];
         int count = (int)Math.Max(
-            0, PhaseEnd.HandSize(cast.World, seat, cast.World.Facts) - seat.Hand.Cards.Count);
+            0, PhaseEnd.HandSize(cast.World, seat, cast.World.Facts)
+                - HandCountDuringEvent(cast, seat));
         Draw.Cards(cast.World, player, count, cast.Trigger, cast.Events);
     }
+
+    /// <summary>"Draw up to your printed hand size" — <c>rr:printed</c>.</summary>
+    private static void DrawToPrintedHandSize(AbilityNode node, Cast cast)
+    {
+        int player = Seat(node.Argument, cast);
+        var seat = cast.World.Seats[player];
+        long printed = cast.World.Facts.PrintedValue(
+            seat.IdentityCard.FaceId, "HS", cast.World.Players);
+        int count = (int)Math.Max(0, printed - HandCountDuringEvent(cast, seat));
+        Draw.Cards(cast.World, player, count, cast.Trigger, cast.Events);
+    }
+
+    private static bool CanDrawToPrintedHandSize(AbilityNode node, Cast cast)
+    {
+        int player = Seat(node.Argument, cast);
+        var seat = cast.World.Seats[player];
+        return HandCountDuringEvent(cast, seat) < cast.World.Facts.PrintedValue(
+            seat.IdentityCard.FaceId, "HS", cast.World.Players);
+    }
+
+    private static int HandCountDuringEvent(Cast cast, Seat seat) =>
+        seat.Hand.Cards.Count - (cast.Source.Area == seat.Hand
+            && cast.World.Facts.Kind(cast.Source.FaceId) == CardKind.Event ? 1 : 0);
 
     private static void RemoveCounters(AbilityNode node, Cast cast)
     {
@@ -2872,7 +2925,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
     }
 
-    private static void PreventDamage(Cast cast)
+    private static void PreventDamage(AbilityNode node, Cast cast)
     {
         int target = cast.Occurrence.Target >= 0
             ? cast.Occurrence.Target
@@ -2880,6 +2933,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: "preventDamage",
+            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : long.MaxValue,
             Card: cast.Source.ObjectId,
             Affects: target,
             Lasts: new Duration(Uses: 1)));
@@ -4027,6 +4081,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } engagedDrones
+            && engagedDrones.Argument is AbilityValue.Word { Value: "dronesEngagedWithYou" })
+        {
+            return
+            [
+                .. cast.World.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(Resolver(cast)))
+                    .Cards.Where(card => !card.FaceUp),
+            ];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "withTrait" } withTrait)
         {
             string wanted = Word(withTrait.Require("trait"));
@@ -4321,6 +4386,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     : throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' asks for the chosen player before one "
                         + "was chosen"),
+                "engagedPlayer" => cast.Source.Area.PlayArea.Player >= 0
+                    ? cast.Source.Area.PlayArea.Player
+                    : throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' asks for its engaged player outside a "
+                        + "player's engaged area"),
                 _ => throw new AbilityException($"'{word.Value}' does not name a player"),
             }
             : throw new AbilityException(
