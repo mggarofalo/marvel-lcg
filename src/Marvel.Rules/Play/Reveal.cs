@@ -272,10 +272,9 @@ public static class Reveal
     /// the pool carry one, and the type is a word the card's own ability spends
     /// by name — which is why the count alone would not do.
     /// <para>
-    /// <b>What removes them is not here.</b> "When the last all-purpose counter
-    /// is removed from a card with uses, discard that card" needs an ability
-    /// that can remove one, and no node in the card DSL does yet. The counters
-    /// are placed and read; spending them waits for a card that spends.
+    /// Removal belongs to the ability spending a counter; the card DSL's
+    /// <c>removeCounters</c> cost also discards a uses card when the last one
+    /// leaves it.
     /// </para>
     /// </remarks>
     /// <param name="printed">The card's printed attributes.</param>

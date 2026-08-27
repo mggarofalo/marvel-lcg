@@ -1,6 +1,7 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
@@ -39,11 +40,8 @@ public static class CardPlay
     /// <c>rr:resource.1</c> — "discarding cards from their hand to generate the
     /// resource or resources indicated at the bottom-left corner of the card".
     /// A card printing nothing there generates nothing and is not a generator.
-    /// <para>
-    /// <c>rr:resource-ability</c>'s "<b>Resource</b>" abilities are the other
-    /// source and are not implemented; a card whose only contribution is one is
-    /// simply absent from this list rather than misreported.
-    /// </para>
+    /// <para><c>rr:resource-ability</c>'s resource abilities are included from
+    /// cards in play beside these hand cards.</para>
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
@@ -146,8 +144,8 @@ public static class CardPlay
         // reaches them through "trigger an **Action** ability on an event card
         // in their hand", so an event without one is played in a window and not
         // here -- 555 of the 602 events in the pool have no Action ability at
-        // all. Of the 47 that do, none has its ability authored yet, so
-        // offering one would be an affordance that throws when taken.
+        // all. An authored Action event is offered by `ICardAbilities.Actions`
+        // instead, which plays it while resolving that action.
         //
         // The recorded board is the check: its opening hand holds `01003`
         // Backflip, whose ability is an **Interrupt (defense)**, and the
@@ -192,13 +190,15 @@ public static class CardPlay
     /// <param name="card">The card.</param>
     /// <param name="paying">The cards discarded to pay, by object id.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="targets">The chosen attachment host, when the card names one.</param>
     /// <exception cref="RulesNotImplementedException">
     /// A restriction is not met, the payment does not cover the cost, or the
     /// card needs a rule this engine does not have.
     /// </exception>
     public static void Play(
         World world, ICardFacts facts, ICardAbilities abilities, Seat seat, Card card,
-        IReadOnlyList<int> paying, List<GameEvent> events)
+        IReadOnlyList<int> paying, List<GameEvent> events,
+        IReadOnlyList<int>? targets = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -237,7 +237,7 @@ public static class CardPlay
 
         // Steps 6 and 7. The card is played: it enters play, or it is an event
         // and its ability resolves before it is discarded.
-        Enter(world, facts, abilities, seat, card, events);
+        Enter(world, facts, abilities, seat, card, events, targets ?? []);
     }
 
     /// <summary>
@@ -301,7 +301,7 @@ public static class CardPlay
             var source = world.Cards[id];
             if (abilities.Contains(id) && !hands.Contains(source.Area))
             {
-                generated.Append(world.Abilities.UseResource(world, payer, id));
+                generated.Append(world.Abilities.UseResource(world, payer, id, events));
                 continue;
             }
 
@@ -482,7 +482,7 @@ public static class CardPlay
     /// <summary>Where a played card goes — <c>rr:enters-play</c>.</summary>
     private static void Enter(
         World world, ICardFacts facts, ICardAbilities abilities, Seat seat, Card card,
-        List<GameEvent> events)
+        List<GameEvent> events, IReadOnlyList<int> targets)
     {
         var kind = facts.Kind(card.FaceId);
         if (kind is CardKind.Event or CardKind.Resource)
@@ -497,6 +497,20 @@ public static class CardPlay
             return;
         }
 
+        int upgradeHost = seat.IdentityCard.ObjectId;
+        var eligibleHosts = kind == CardKind.Upgrade
+            ? abilities.AttachmentTargets(world, card)
+            : null;
+        if (eligibleHosts is not null)
+        {
+            if (targets.Count != 1 || !eligibleHosts.Contains(targets[0]))
+            {
+                throw new RulesNotImplementedException(
+                    $"card {card.ObjectId} must attach to exactly one eligible target");
+            }
+            upgradeHost = targets[0];
+        }
+
         var into = kind switch
         {
             CardKind.Ally => world.AreaOf(
@@ -508,7 +522,7 @@ public static class CardPlay
             // saying otherwise that card is the identity playing it.
             CardKind.Upgrade => world.AreaOf(
                 DeckType.UpgradesArea, PlayArea.Of(seat.Index),
-                host: seat.IdentityCard.ObjectId, cardOwner: seat.Index),
+                host: upgradeHost, cardOwner: seat.Index),
             _ => throw new RulesNotImplementedException(
                 $"a {kind} played from hand has nowhere to enter play"),
         };
@@ -524,7 +538,7 @@ public static class CardPlay
 
         if (kind == CardKind.Upgrade)
         {
-            events.Add(new CardAttached(card.ObjectId, seat.IdentityCard.ObjectId)
+            events.Add(new CardAttached(card.ObjectId, upgradeHost)
             {
                 Trigger = Verb, Verb = Verb,
             });
@@ -535,7 +549,27 @@ public static class CardPlay
         // `rr:toughness`, and before this a played one got no tough status card
         // -- only a *revealed* card ran them.
         Reveal.EnterPlay(world, facts, card, events);
+        Played(world, abilities, seat, card, events);
         Restricted(world, facts, seat, card, events);
+    }
+
+    private static void Played(
+        World world, ICardAbilities abilities, Seat seat, Card card, List<GameEvent> events)
+    {
+        var occurrence = new Occurrence(
+            0, [Steps.CardPlayed], Subject: card.ObjectId, Player: seat.Index);
+        var waiting = abilities.Waiting(world, occurrence, WindowKind.Response);
+        foreach (var ability in waiting)
+        {
+            if (ability.Type != AbilityType.ForcedResponse)
+            {
+                throw new RulesNotImplementedException(
+                    $"card {ability.Card} offers an optional response after a card is played, "
+                    + "and playing outside the agenda has no response prompt");
+            }
+
+            events.AddRange(abilities.Resolve(world, occurrence, ability, [], []));
+        }
     }
 
     /// <summary>

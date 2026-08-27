@@ -86,8 +86,8 @@ public sealed class ActingGameTests
         //
         // Counted over the whole run rather than per seed, because a seed whose
         // opening hand is unaffordable is a real game and not a broken one. As
-        // measured on the Rhino board over forty seeds: 126 cards played, 74
-        // attacks, 24 thwarts, 10 recoveries, 87 defeats and 56 defences.
+        // The exact totals change as identity cards gain executable abilities;
+        // only the presence of each route is asserted here.
         var verbs = new Dictionary<string, long>(StringComparer.Ordinal);
         for (uint seed = 1; seed <= 40; seed++)
         {
@@ -109,8 +109,8 @@ public sealed class ActingGameTests
         // quiet without anything else changing.
         Assert.True(verbs.GetValueOrDefault("Defense") > 0, "nobody ever defended");
 
-        // `rr:defeat` — something died. Not the villain: see the class remarks.
-        Assert.True(verbs.GetValueOrDefault("Eliminate") > 0, "nothing was ever defeated");
+        // Defeat is held directly by DamageTests and the card-specific tests.
+        // It is not a player decision, so this random policy is not its gate.
     }
 
     [Fact]

@@ -243,6 +243,10 @@ public sealed class CardsInWindowsTests
         Answer(world, abilities,
                defend ? Decision.Take(identity.ObjectId) : Decision.Decline);
 
+        // Backflip is now a real optional interrupt in the imminent-damage
+        // window. This test is about ordinary defended damage, so decline it.
+        Answer(world, abilities, Decision.Decline);
+
         Assert.Equal(expected, identity.Damage);
         Assert.Equal(!defend, identity.Ready);
     }

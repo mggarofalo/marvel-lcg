@@ -520,6 +520,9 @@ public static class Steps
     /// </remarks>
     public const string CardWouldBeDefeated = "WhenCardWouldBeDefeated";
 
+    /// <summary>A player card has finished entering play.</summary>
+    public const string CardPlayed = "WhenCardPlayed";
+
     /// <summary>A card being defeated — <c>rr:defeat</c>.</summary>
     /// <remarks>
     /// <para>
@@ -586,7 +589,10 @@ public static class Steps
         [GiveBoostCard] = ["WhenBoostCardGiven"],
         [DeclareDefender] = ["WhenDefenderDeclared"],
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],
-        [DealAttackDamage] = ["WhenDamageDealt"],
+        // Damage from an attack is imminent before this step applies and dealt
+        // after it applies. `rr:triggering-condition.2` gives one occurrence
+        // one pair of windows when it creates several conditions.
+        [DealAttackDamage] = [DamageWouldBeDealt, "WhenDamageDealt"],
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
@@ -596,6 +602,7 @@ public static class Steps
         [CharacterThwarts] = [CharacterThwartsScheme],
         [DamageWouldBeDealt] = [DamageWouldBeDealt],
         [CardWouldBeDefeated] = [CardWouldBeDefeated],
+        [CardPlayed] = [CardPlayed],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 
