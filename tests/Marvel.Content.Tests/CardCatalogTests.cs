@@ -56,6 +56,21 @@ public sealed class CardCatalogTests
         Assert.Contains(trait, Cards.Traits(card));
 
     [Fact]
+    public void TheCoreSupplementCarriesOnlyFactsPrintedOnRealFaces()
+    {
+        // Concussion Blasters prints an ATK +1 modifier in its stat box, and
+        // Whiplash prints the CRIMINAL trait. MarvelSDB records neither.
+        Assert.Equal(1, Cards.PrintedValue("01153", "ATK+", players: 1));
+        Assert.Contains("CRIMINAL", Cards.Traits("01172"));
+
+        // The core set prints Android Efficiency as 01144a, 01144b and 01144c.
+        // It has no base 01144 face. A player card dealt facedown as an Ultron
+        // drone also remains that card; no separate Drone Minion face exists.
+        Assert.Throws<KeyNotFoundException>(() => Cards.Title("01144"));
+        Assert.Throws<KeyNotFoundException>(() => Cards.Title("ultron_facedown_drone"));
+    }
+
+    [Fact]
     public void ATraitIsWhateverThePrintedCardSays()
     {
         // 39029 Supporting Actor prints THESPIAN. The dataset this replaced
