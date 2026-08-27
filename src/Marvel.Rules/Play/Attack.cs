@@ -276,7 +276,7 @@ public static class Attack
         {
             Defender = defender.ObjectId,
             Target = defender.ObjectId,
-            Player = defender.Owner,
+            Player = defender.Area.PlayArea.Player,
             BasicDefense = facts.Kind(defender.FaceId) != CardKind.Ally,
         };
     }

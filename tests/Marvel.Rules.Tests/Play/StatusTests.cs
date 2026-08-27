@@ -384,6 +384,7 @@ public sealed class StatusTests
         var asked = Sequence.Work(world, printed, new NoCardAbilities(), []);
         Sequence.Answer(
             world, printed, new NoCardAbilities(), asked!, Decision.Take(ally.ObjectId), []);
+
         Sequence.Finish(world, printed, new NoCardAbilities(), []);
 
         Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
@@ -414,6 +415,10 @@ public sealed class StatusTests
         var asked = Sequence.Work(world, printed, new NoCardAbilities(), []);
         Sequence.Answer(
             world, printed, new NoCardAbilities(), asked!, Decision.Take(ally.ObjectId), []);
+
+        // The ally's controller becomes the target player; ownership only
+        // decides which discard pile receives the ally after defeat.
+        Assert.Equal(1, world.Attack!.Player);
         Sequence.Finish(world, printed, new NoCardAbilities(), []);
 
         Assert.Equal(DeckType.DiscardPile, ally.Area.Type);

@@ -439,6 +439,41 @@ public sealed class ConstantAbilityTests
         Assert.True(Keywords.Has(world, villain, Keywords.Overkill, Cards));
     }
 
+    [Rule("rr:ownership-and-control.2.1")]
+    [Fact]
+    public void AConstantOnAnUpgradeUsesItsCurrentController()
+    {
+        // Combat Training may be played under another player's control. Its
+        // "your hero" is that controller's hero, while Card.Owner remains the
+        // player whose deck contained the upgrade.
+        var world = new World(Cards, players: 2);
+        for (int player = 0; player < 2; player++)
+        {
+            var seat = world.CreateSeat($"p{player}");
+            seat.IdentityCard = world.CreateCard(AuthoredCards.SpiderMan, seat.Hero);
+        }
+
+        var controlled = world.CreateCard(
+            "01057",
+            world.AreaOf(
+                DeckType.UpgradesArea,
+                PlayArea.Of(1),
+                host: world.Seats[1].IdentityCard.ObjectId,
+                cardOwner: 0));
+        world.Abilities = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01057", "abilities": [ {
+                "trigger": { "timing": "Constant" },
+                "effect": { "grant": { "card": "yourHero", "keyword": "attack",
+                                         "amount": 1 } }
+            } ] } ] }
+            """));
+
+        Assert.Equal(0, controlled.Owner);
+        Assert.Equal(2, Modified(world, world.Seats[0].IdentityCard, "attack"));
+        Assert.Equal(3, Modified(world, world.Seats[1].IdentityCard, "attack"));
+    }
+
     private static long Modified(World world, Card card, string field) =>
         StateFields.Modified(world, card, field, Cards, world.Players);
 
