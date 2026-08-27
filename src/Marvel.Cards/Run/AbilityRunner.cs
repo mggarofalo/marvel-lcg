@@ -1813,8 +1813,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var into = cast.World.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player));
         var from = card.Area;
+
+        // Moving into an in-play area turns the card faceup in `Card.MovedTo`;
+        // a second `TurnFaceUp` here would be an equivalent state write.
         World.MoveToTop(card, into);
-        card.TurnFaceUp();
         cast.Events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(into),
             [new Landing(card.ObjectId, into.Cards.Count - 1)])
@@ -3209,12 +3211,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <summary>
-    /// The cards in one area that match a search's criteria — <c>rr:search</c>.
+    /// The cards in named areas that match a search's criteria — <c>rr:search</c>.
     /// </summary>
     /// <remarks>
     /// <para>
     /// "Search the encounter deck for a <b>[[Criminal]] minion</b>." Three
-    /// named facets and no fourth: which area, which card type, which trait.
+    /// named facets: which area, which card type, which trait. The Doomsday
+    /// Chair adds the other printed shape in the core set: two areas and one
+    /// card named by title.
     /// <c>docs/card-dsl.md</c> is explicit that selection must be "a fixed
     /// vocabulary of relations, <b>not</b> as a general 'run this predicate'
     /// hook" — so this grows a facet when a card prints one, and never a
@@ -3238,17 +3242,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static IReadOnlyList<Card> CardsIn(AbilityNode node, Cast cast)
     {
-        var area = Area(Word(node.Require("area")), cast);
+        var areas = node.Field("areas") is AbilityValue.List several
+            ? several.Values.Select(named => Area(Word(named), cast)).ToList()
+            : [Area(Word(node.Require("area")), cast)];
         string? kind = node.Field("kind") is { } named ? Word(named) : null;
         string? trait = node.Field("trait") is { } carried ? Word(carried) : null;
+        string? title = node.Field("title") is { } titled ? Word(titled) : null;
 
         return
         [
-            .. area.Cards
+            .. areas.SelectMany(area => area.Cards)
                 .Where(card => kind is null || string.Equals(
                     cast.World.Facts.Kind(card.FaceId).ToString(), kind, StringComparison.Ordinal))
                 .Where(card => trait is null
-                    || Rules.State.Traits.Has(cast.World, card, trait, cast.World.Facts)),
+                    || Rules.State.Traits.Has(cast.World, card, trait, cast.World.Facts))
+                .Where(card => title is null || string.Equals(
+                    cast.World.Facts.Title(card.FaceId), title, StringComparison.Ordinal)),
         ];
     }
 
@@ -3314,9 +3323,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static Card? Find(AbilityValue value, Cast cast) => value switch
     {
         AbilityValue.Word word => Named(word.Value, cast),
-        AbilityValue.Map => Query(Tree(value), cast),
+        AbilityValue.Map => Find(Tree(value), cast),
         _ => throw new AbilityException($"{AbilityNode.Describe(value)} does not name a card"),
     };
+
+    /// <summary>Which one card a query names, refusing a player choice.</summary>
+    private static Card? Find(AbilityNode node, Cast cast)
+    {
+        if (node.Kind != "cardsIn")
+        {
+            return Query(node, cast);
+        }
+
+        var found = CardsIn(node, cast);
+        return found.Count switch
+        {
+            0 => null,
+            1 => found[0],
+            _ => throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' searched and found {found.Count} matching cards; "
+                + "rr:search.1 gives the player that choice and asking is not implemented"),
+        };
+    }
 
     private static Card? Named(string name, Cast cast) => name switch
     {

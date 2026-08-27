@@ -524,6 +524,7 @@ public sealed class AbilityDataTests
             AuthoredCards.Shocker,
             AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
             AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
+            AuthoredCards.DoomsdayChair, AuthoredCards.Modok,
             AuthoredCards.BiomechanicalUpgrades,
             AuthoredCards.Explosion, AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,
             AuthoredCards.CaughtOffGuard, AuthoredCards.RhinoTwo,

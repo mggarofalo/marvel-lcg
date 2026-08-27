@@ -94,6 +94,12 @@ internal static class AuthoredCards
     /// <summary>The printed id of "Biomechanical Upgrades".</summary>
     public const string BiomechanicalUpgrades = "01185";
 
+    /// <summary>The printed id of "The Doomsday Chair".</summary>
+    public const string DoomsdayChair = "01183";
+
+    /// <summary>The printed id of "M.O.D.O.K.".</summary>
+    public const string Modok = "01184";
+
     /// <summary>The printed id of "Hydra Bomber".</summary>
     public const string HydraBomber = "01110";
 

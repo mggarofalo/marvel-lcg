@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and 62 card faces in `datasets/abilities/abilities.json` — every card the Rhino scenario reaches, the whole of the Standard set among them.
+`src/Marvel.Cards`, and 64 card faces in `datasets/abilities/abilities.json` — every card the Rhino scenario reaches, the whole of the Standard set among them.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -594,9 +594,9 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `inExpertMode`, `isKind`, `defeatedBy` |
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `dealEncounterCards`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `shuffle`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `putIntoPlay`, `returnToHand`, `soakDamage`, `generate` |
-| Node fields | `card`, `cards`, `player`, `amount`, `count`, `status`, `keyword`, `trait`, `until`, `within`, `condition`, `effect`, `options`, `from`, `among`, `onto`, `enemies`, `against`, `first`, `where`, `scheme`, `to`, `of`, `by` |
+| Node fields | `card`, `cards`, `player`, `amount`, `count`, `status`, `keyword`, `trait`, `title`, `area`, `areas`, `until`, `within`, `condition`, `effect`, `options`, `from`, `among`, `onto`, `enemies`, `against`, `first`, `where`, `scheme`, `to`, `of`, `by` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minions`, `query: minionsEngagedWithYou`, `query: heroes`, `query: heroesAndAllies`, `query: charactersYouControl`, `query: alliesYouControl`, `query: upgradesYouControl`, `query: supportsYouControl`, `query: upgradesAndSupportsYouControl`, `query: attachedToThis`, `query: identitySpecificInYourHand`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
-| Card sources | `cardsIn { area, kind, trait }` over `encounterDeck` and `encounterDiscardPile`; `enemiesWithTrait`; `titled`; `withoutAnotherCopyAttached`; `minBy` / `maxBy` over a query, `by` `cost`, `attack`, or `printedHealth` |
+| Card sources | `cardsIn { area | areas, kind, trait, title }` over `encounterDeck` and `encounterDiscardPile`; `enemiesWithTrait`; `titled`; `withoutAnotherCopyAttached`; `minBy` / `maxBy` over a query, `by` `cost`, `attack`, or `printedHealth` |
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
 | Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`, `defeated`, `activatingEnemy`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game` |
 
