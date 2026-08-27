@@ -251,7 +251,8 @@ public sealed class StandardSetCardsTests
         Reveal(world, AuthoredCards.Masterplan);
 
         Assert.Empty(world.Agenda.Outstanding);
-        Assert.NotEmpty(discard.Cards);
+        Assert.Empty(discard.Cards);
+        Assert.NotEmpty(world.AreaOf(DeckType.EncounterDeck).Cards);
     }
 
     private static IReadOnlyList<Marvel.Rules.Events.GameEvent> Reveal(

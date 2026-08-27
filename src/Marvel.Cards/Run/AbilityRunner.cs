@@ -2090,6 +2090,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "dealDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
         "dealAttackDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
         "placeThreat" => Every(node.Require("scheme"), cast).Count > 0,
+        "placeAccelerationToken" => cast.World.TheCardIn(DeckType.MainSchemesArea) is not null,
         "removeThreat" => Find(node.Require("scheme"), cast) is not null,
         "enemyAttacks" or "enemySchemes" => Every(node.Require("enemies"), cast).Count > 0,
         "putIntoPlay" => Find(node.Require("card"), cast) is not null,
@@ -2155,6 +2156,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.World, cast.World.Seats[Seat(node.Argument, cast)], cast.World.Facts),
             "drawToPrintedHandSize" => CanDrawToPrintedHandSize(node, cast),
             "createDrones" => CanCreateDrones(node, cast),
+            "placeAccelerationToken" => HasRequiredTargets(node, cast),
             "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
                 && Amount(node.Argument, cast) > 0,
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
@@ -2762,6 +2764,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 PlaceThreat(node, cast);
                 break;
 
+            case "placeAccelerationToken":
+                EncounterDeck.PlaceAccelerationToken(cast.World, cast.Trigger, cast.Events);
+                break;
+
             case "preventThreat":
                 PreventThreat(node, cast);
                 break;
@@ -3049,7 +3055,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "which is not implemented");
         }
 
-        var into = cast.World.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player));
+        PutIntoPlay(card, cast.Player, cast);
+    }
+
+    /// <summary>Puts one exact minion into play engaged with a named player.</summary>
+    private static void PutIntoPlay(Card card, int player, Cast cast)
+    {
+        var into = cast.World.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player));
         var from = card.Area;
 
         // Moving into an in-play area turns the card faceup in `Card.MovedTo`;
@@ -4332,26 +4344,35 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void DiscardUntil(AbilityNode node, Cast cast)
     {
-        var deck = Area(Word(node.Require("from")), cast);
-        var wanted = Kind(Word(node.Require("kind")));
-
-        long bound = deck.Cards.Count
-            + cast.World.AreaOf(DeckType.EncounterDiscardPile).Cards.Count;
-
-        for (long looked = 0; looked < bound; looked++)
+        if (!string.Equals(
+            Word(node.Require("from")), "encounterDeck", StringComparison.Ordinal))
         {
-            var card = EncounterDeck.TakeTop(cast.World, cast.Trigger, cast.Events);
-            if (card is null)
-            {
-                return;
-            }
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' discards until a match from an unsupported area");
+        }
 
-            Marvel.Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-            if (cast.World.Facts.Kind(card.FaceId) == wanted)
-            {
-                RevealCard(card, cast);
-                return;
-            }
+        var wanted = Kind(Word(node.Require("kind")));
+        string? trait = node.Field("trait") is { } requiredTrait
+            ? Word(requiredTrait)
+            : null;
+        var found = EncounterDeck.DiscardUntil(
+            cast.World, cast.World.Facts, wanted, cast.Trigger, cast.Events, trait);
+        if (found is null)
+        {
+            return;
+        }
+
+        switch (Word(node.Require("then")))
+        {
+            case "reveal":
+                RevealCard(found, cast);
+                break;
+            case "putIntoPlayFirstPlayer":
+                PutIntoPlay(found, cast.World.FirstPlayer, cast);
+                break;
+            default:
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has an unsupported discard-until result");
         }
     }
 

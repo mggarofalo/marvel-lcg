@@ -975,7 +975,7 @@
             "if": {
               "test": { "exists": { "query": "sideSchemes" } },
               "then": { "placeThreat": { "scheme": { "query": "sideSchemes" }, "amount": 4 } },
-              "else": { "discardUntil": { "from": "encounterDeck", "kind": "sideScheme" } }
+              "else": { "discardUntil": { "from": "encounterDeck", "kind": "sideScheme", "then": "reveal" } }
             }
           }
         }
@@ -2850,6 +2850,56 @@
       "name": "Underground Distribution",
       "note": "Its contents, setup search, and advance instruction are scenario setup data and the generic main-scheme setup step, not an ability this face resolves after setup.",
       "abilities": []
+    },
+    {
+      "card": "01116b",
+      "name": "Underground Distribution",
+      "note": "When revealed, discard from the encounter deck until a minion is discarded, then put that exact minion into play engaged with the first player. Put into play is deliberately not reveal: rr:when-revealed-abilities.2 leaves the minion's own When Revealed ability inactive, while rr:enters-play still applies its printed enters-play keywords.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "discardUntil": { "from": "encounterDeck", "kind": "minion", "then": "putIntoPlayFirstPlayer" } }
+        }
+      ]
+    },
+    {
+      "card": "01117a",
+      "name": "Secret Rendezvous",
+      "note": "When revealed, discard from the encounter deck until a minion is discarded and put that exact minion into play engaged with the first player. The printed advance to 2B is the main-scheme stage transition rather than a second card effect.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "discardUntil": { "from": "encounterDeck", "kind": "minion", "then": "putIntoPlayFirstPlayer" } }
+        }
+      ]
+    },
+    {
+      "card": "01128",
+      "name": "The Masters of Evil",
+      "note": "When revealed, discard from the encounter deck until a printed MASTERS_OF_EVIL minion is discarded, then put that exact minion into play engaged with the first player. The trait is read from the out-of-play printed face, where rr:ability leaves continuous trait grants inactive.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "discardUntil": { "from": "encounterDeck", "kind": "minion", "trait": "MASTERS_OF_EVIL", "then": "putIntoPlayFirstPlayer" } }
+        }
+      ]
+    },
+    {
+      "card": "01160",
+      "name": "Legal Work",
+      "note": "The obligation may flip Jennifer Walters to alter-ego, then chooses between exhausting her to remove Legal Work from the game or placing one permanent acceleration token beside the main scheme and discarding the obligation. The two printed choices are two sequential questions, as on the other core obligations.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "choose": { "options": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "seq": [] } ] } },
+            { "choose": { "options": [
+              { "seq": [ { "exhaust": "you" }, { "removeFromGame": "this" } ] },
+              { "seq": [ { "placeAccelerationToken": 1 }, { "discard": "this" } ] }
+            ] } }
+          ] }
+        }
+      ]
     },
     {
       "card": "01137a",
