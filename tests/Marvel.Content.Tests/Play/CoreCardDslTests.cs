@@ -52,6 +52,36 @@ public sealed class CoreCardDslTests
         Assert.Equal(1, Modified(world, jessica, "thwart"));
     }
 
+    [Rule("rr:traits")]
+    [Rule("rr:modifiers")]
+    [Fact]
+    public void IronManCountsPrintedAndGrantedTechTraitsAndCapsAtSeven()
+    {
+        // "For each Tech upgrade you control" reads the current trait, not
+        // only the ink. The constant hand-size effect therefore settles after
+        // a lasting effect grants TECH to another controlled upgrade.
+        var world = Hero("01029a");
+        world.Abilities = AuthoredCards.Runner();
+        var upgrades = world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0);
+        world.CreateCard("01036", upgrades); // printed TECH
+        var granted = world.CreateCard("01093", upgrades); // no printed TECH
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: Traits.Granted + "TECH",
+            Amount: 1,
+            Card: granted.ObjectId,
+            Affects: granted.ObjectId));
+
+        Assert.Equal(3, Modified(world, world.Seats[0].IdentityCard, "hand_size"));
+
+        for (int copy = 0; copy < 6; copy++)
+        {
+            world.CreateCard("01037", upgrades);
+        }
+
+        Assert.Equal(7, Modified(world, world.Seats[0].IdentityCard, "hand_size"));
+    }
+
     [Rule("rr:draw")]
     [Fact]
     public void AvengersMansionDrawsForTheChosenPlayersIdentity()

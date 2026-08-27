@@ -2089,6 +2089,17 @@
       ]
     },
     {
+      "card": "01016",
+      "name": "Captain Marvel's Helmet",
+      "note": "Captain Marvel gets +2 DEF while she has AERIAL and +1 DEF otherwise. The current trait includes traits granted by lasting effects.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "you", "keyword": "defense", "amount": { "if": { "test": { "hasTrait": { "card": "you", "trait": "AERIAL" } }, "then": 2, "else": 1 } } } }
+        }
+      ]
+    },
+    {
       "card": "01021",
       "name": "Gamma Slam",
       "note": "The attack deals damage equal to the hero's sustained damage, capped at 15.",
@@ -2096,6 +2107,17 @@
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
           "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": { "min": [ 15, { "damageOn": "you" } ] } } } } }
+        }
+      ]
+    },
+    {
+      "card": "01029a",
+      "name": "Iron Man",
+      "note": "Iron Man's printed hand size is 1. He gets +1 hand size for each TECH upgrade he controls, including a currently granted TECH trait, capped at a total hand size of 7.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "you", "keyword": "hand_size", "amount": { "min": [ 6, { "count": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "TECH" } } } ] } } }
         }
       ]
     },
