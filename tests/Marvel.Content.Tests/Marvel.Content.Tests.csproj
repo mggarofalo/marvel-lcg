@@ -23,6 +23,7 @@
     <Compile Include="../Shared/Rule.cs" Link="Rule.cs" />
     <Compile Include="../Shared/RuleCitations.cs" Link="RuleCitations.cs" />
     <Compile Include="../Shared/ActingPolicy.cs" Link="ActingPolicy.cs" />
+    <Compile Include="../Shared/CoreGamePolicy.cs" Link="CoreGamePolicy.cs" />
     <Compile Include="../Shared/Agendas.cs" Link="Agendas.cs" />
   </ItemGroup>
 
