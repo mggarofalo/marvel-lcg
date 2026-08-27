@@ -509,6 +509,17 @@ public static class Steps
     /// </remarks>
     public const string DamageWouldBeDealt = "WhenDamageWouldBeDealt";
 
+    /// <summary>
+    /// A character whose remaining hit points have reached zero is about to be
+    /// defeated — <c>rr:damage.step.6</c>.
+    /// </summary>
+    /// <remarks>
+    /// Distinct from <see cref="CardDefeated"/>: <c>rr:would</c> gives this
+    /// condition higher priority, and an interrupt that changes the imminent
+    /// defeat prevents the later condition from occurring.
+    /// </remarks>
+    public const string CardWouldBeDefeated = "WhenCardWouldBeDefeated";
+
     /// <summary>A card being defeated — <c>rr:defeat</c>.</summary>
     /// <remarks>
     /// <para>
@@ -528,11 +539,9 @@ public static class Steps
     /// The response tier is <c>.step.9</c>, which is the window.
     /// </para>
     /// <para>
-    /// <c>rr:damage.step.6</c> is the one this engine has not got: "abilities
-    /// that trigger <i>when [character] <b>would</b> be defeated…</i>", which
-    /// needs telling in advance that damage will be lethal —
-    /// <c>rr:would</c> reasoning, a tier earlier than step 7 and a different
-    /// trigger. No card the engine reaches prints one.
+    /// <c>rr:damage.step.6</c> is a different condition:
+    /// <see cref="CardWouldBeDefeated"/>. It happens after damage is placed
+    /// and before this condition, so a replacement there can prevent this one.
     /// </para>
     /// </remarks>
     public const string CardDefeated = "WhenCardDefeated";
@@ -586,6 +595,7 @@ public static class Steps
         [CharacterAttacks] = [CharacterAttacksEnemy],
         [CharacterThwarts] = [CharacterThwartsScheme],
         [DamageWouldBeDealt] = [DamageWouldBeDealt],
+        [CardWouldBeDefeated] = [CardWouldBeDefeated],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 

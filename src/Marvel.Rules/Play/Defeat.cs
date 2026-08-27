@@ -69,6 +69,11 @@ public enum Outcome
 /// own "When Defeated" and another card's forced interrupt on the same defeat
 /// alike, because the parenthesis in <c>.step.7</c> says they are one moment.
 /// </para>
+/// <para>
+/// The earlier "would be defeated" interrupt is <c>rr:damage.step.6</c> and
+/// resolves in <c>Damage.Deal</c> before this class is called. If it changes
+/// the imminent defeat, <c>rr:would.1</c> means this class is not reached.
+/// </para>
 /// </remarks>
 public static class Defeat
 {

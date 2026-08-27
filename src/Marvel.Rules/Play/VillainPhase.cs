@@ -124,6 +124,16 @@ public interface ICardAbilities : IWindowAbilities
     long WouldBeDealt(World world, Card target, long amount, List<GameEvent> events);
 
     /// <summary>
+    /// Step 6 of dealing damage — <c>rr:damage.step.6</c>.
+    /// </summary>
+    /// <remarks>
+    /// The damage is already on the character, so an ability can replace the
+    /// imminent defeat by changing the board. The caller checks the
+    /// character's remaining hit points again after this returns.
+    /// </remarks>
+    void WouldBeDefeated(World world, Card target, List<GameEvent> events);
+
+    /// <summary>
     /// The "<b>Resource</b>" abilities a player could generate from —
     /// <c>rr:resource-ability</c>.
     /// </summary>
@@ -346,6 +356,12 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual long WouldBeDealt(
         World world, Card target, long amount, List<GameEvent> events) => amount;
+
+    /// <inheritdoc/>
+    public virtual void WouldBeDefeated(
+        World world, Card target, List<GameEvent> events)
+    {
+    }
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<Prompts.ResourceSource> ResourceAbilities(

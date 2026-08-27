@@ -450,6 +450,55 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return left;
     }
 
+    /// <inheritdoc/>
+    public void WouldBeDefeated(World world, Card target, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(events);
+
+        var occurrence = new Occurrence(
+            0, [Steps.CardWouldBeDefeated], Subject: target.ObjectId, Player: target.Owner);
+
+        while (AbilityWindow.Tiers(
+            Waiting(world, occurrence, WindowKind.Interrupt),
+            WindowKind.Interrupt,
+            occurrence) is { Count: > 0 } tiers)
+        {
+            var (mandatory, optional) = AbilityWindow.Split(tiers[0]);
+            if (mandatory.Count > 1)
+            {
+                throw new RulesNotImplementedException(
+                    $"{mandatory.Count} forced interrupts answer the imminent defeat of card "
+                    + $"{target.ObjectId}. rr:forced.5 gives their order to the first player, "
+                    + "and rr:damage.step.6 has no ordering prompt yet");
+            }
+
+            if (mandatory.Count == 1)
+            {
+                occurrence.Trigger(WindowKind.Interrupt, mandatory[0].Card);
+                events.AddRange(Resolve(world, occurrence, mandatory[0], [], []));
+
+                // `rr:would.1`: once the interrupt changes the imminent defeat,
+                // no later interrupt to that original condition may be used.
+                if (Damage.Health(world, world.Facts, target) - target.Damage > 0)
+                {
+                    return;
+                }
+
+                continue;
+            }
+
+            if (optional.Count > 0)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{world.Cards[optional[0].Card].FaceId}' offers an optional interrupt "
+                    + "at rr:damage.step.6, and dealing damage has no suspended window in "
+                    + "which to ask whether to use it");
+            }
+        }
+    }
+
     /// <summary>Every authored ability answering one occurrence, with its card.</summary>
     /// <remarks>
     /// <b>Gathered before any of it runs.</b> An ability can make an area —
@@ -490,9 +539,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // this is asked while a card is being placed, so it answers a question
         // and does not act on the answer. `Find` reads the board and nothing
         // else.
-        return Find(
+        var candidates = Every(
             element,
-            new Cast(world, card, new Occurrence(0, []), card.Owner, [], this))?.ObjectId;
+            new Cast(world, card, new Occurrence(0, []), card.Owner, [], this));
+
+        return candidates.Count switch
+        {
+            0 => null,
+            1 => candidates[0].ObjectId,
+            _ => throw new RulesNotImplementedException(
+                $"'{card.FaceId}' can attach to {candidates.Count} equally eligible cards. "
+                + "rr:first-player.1 gives that choice to the first player, and attaching "
+                + "during a reveal has no target prompt yet"),
+        };
     }
 
     /// <inheritdoc/>
@@ -2968,6 +3027,37 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [.. cast.World.AreaOf(DeckType.SideSchemesArea).Cards];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } minions
+            && minions.Argument is AbilityValue.Word { Value: "minions" })
+        {
+            // `rr:minion.3`: minions in play are engaged with players, so the
+            // engaged-enemy areas across every play area are the complete set.
+            return
+            [
+                .. cast.World.Areas
+                    .Where(area => area.Type == DeckType.EngagedEnemiesArea)
+                    .SelectMany(area => area.Cards)
+                    .Where(card => cast.World.Facts.Kind(card.FaceId) == CardKind.Minion),
+            ];
+        }
+
+        if (value is AbilityValue.Map
+            && Tree(value) is { Kind: "withoutAnotherCopyAttached" } unoccupied)
+        {
+            string title = cast.World.Facts.Title(cast.Source.FaceId);
+            return
+            [
+                .. Every(unoccupied.Argument, cast).Where(candidate =>
+                    !cast.World.Areas
+                        .Where(area => area.Host == candidate.ObjectId)
+                        .SelectMany(area => area.Cards)
+                        .Any(attached => attached.ObjectId != cast.Source.ObjectId
+                            && string.Equals(
+                                cast.World.Facts.Title(attached.FaceId), title,
+                                StringComparison.Ordinal))),
+            ];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } pile
             && pile.Argument is AbilityValue.Word { Value: "yourAsidePile" })
         {
@@ -3213,6 +3303,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "cost" => cast.World.Facts.PrintedValue(card.FaceId, "Cost", cast.World.Players),
             "attack" => StateFields.Modified(
                 cast.World, card, "attack", cast.World.Facts, cast.World.Players),
+            "printedHealth" => cast.World.Facts.PrintedValue(
+                card.FaceId, "HP", cast.World.Players),
             _ => throw new AbilityException($"'{key}' is not a value cards can be ranked by"),
         };
 
