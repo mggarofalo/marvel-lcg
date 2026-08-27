@@ -117,6 +117,18 @@ public sealed class World
     public EnemyActivation? Activation { get; set; }
 
     /// <summary>
+    /// The activation whose attack or scheme windows have finished, while its
+    /// initiating effect is being resumed.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:activation.7</c> makes the effect wait until the activation has
+    /// fully resolved. The result is captured when the attack or scheme ends,
+    /// remains available through that occurrence's response window, and is
+    /// cleared after the completion sentinel resumes waiting card effects.
+    /// </remarks>
+    public EnemyActivation? FinishedActivation { get; set; }
+
+    /// <summary>
     /// The enemy attack being resolved, or <c>null</c> when none is.
     /// </summary>
     /// <remarks>

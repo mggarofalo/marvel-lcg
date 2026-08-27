@@ -33,4 +33,20 @@ namespace Marvel.Rules.State;
 /// <c>rr:lasting-effects</c> gives them different endings —
 /// <c>TimingPoints.EndOfAttack</c> is not <c>TimingPoints.EndOfActivation</c>.
 /// </param>
-public sealed record EnemyActivation(int Enemy, int Player, bool Attacking);
+/// <param name="Id">The agenda-assigned identity of this activation.</param>
+/// <param name="Made">
+/// Whether the enemy actually attacked or schemed. A status card can cancel
+/// the activation before any of its steps occur.
+/// </param>
+/// <param name="DamageDealt">
+/// Damage dealt by an attack's damage step, excluding boost abilities.
+/// </param>
+/// <param name="ThreatPlaced">Threat placed by a scheme's third step.</param>
+public sealed record EnemyActivation(
+    int Enemy,
+    int Player,
+    bool Attacking,
+    int Id = -1,
+    bool Made = true,
+    long DamageDealt = 0,
+    long ThreatPlaced = 0);

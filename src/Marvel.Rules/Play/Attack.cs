@@ -92,27 +92,30 @@ public static class Attack
         // `rr:activation` -- "whenever an enemy attacks or schemes, it is
         // considered to have activated". The umbrella, which a scheme sets too;
         // `world.Attack` is the six steps below it.
-        world.Activation = new EnemyActivation(step.Subject, step.Seat, Attacking: true);
+        world.Activation = new EnemyActivation(
+            step.Subject, step.Seat, Attacking: true, Id: step.ActivationId);
 
         // One attack's facts do not outlive the start of the next.
         world.FinishedAttack = null;
 
         world.Agenda.Then(new PhaseStep(
-            Steps.GiveBoostCard, step.Round, 1, Index: step.Seat, Subject: step.Subject));
+            Steps.GiveBoostCard, step.Round, 1, Index: step.Seat, Subject: step.Subject,
+            ActivationId: step.ActivationId));
         world.Agenda.Then(new PhaseStep(
             Steps.DeclareDefender, step.Round, 2, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat));
+            Seat: step.Seat, ActivationId: step.ActivationId));
         world.Agenda.Then(new PhaseStep(
-            Steps.FlipBoostCards, step.Round, 3, Index: step.Seat, Subject: step.Subject));
+            Steps.FlipBoostCards, step.Round, 3, Index: step.Seat, Subject: step.Subject,
+            ActivationId: step.ActivationId));
         world.Agenda.Then(new PhaseStep(
             Steps.CalculateAttackDamage, step.Round, 4, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat));
+            Seat: step.Seat, ActivationId: step.ActivationId));
         world.Agenda.Then(new PhaseStep(
             Steps.DealAttackDamage, step.Round, 5, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat));
+            Seat: step.Seat, ActivationId: step.ActivationId));
         world.Agenda.Then(new PhaseStep(
             Steps.EndAttack, step.Round, 6, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat));
+            Seat: step.Seat, ActivationId: step.ActivationId));
     }
 
     /// <summary>
@@ -156,7 +159,31 @@ public static class Attack
             return;
         }
 
-        string trigger = Activated(activation);
+        DealBoostCard(world, enemy, Activated(activation), events);
+    }
+
+    /// <summary>Give an enemy one additional boost card for its activation.</summary>
+    /// <remarks>
+    /// <c>rr:boost-boost-icon.4</c> makes additional cards cumulative, and
+    /// <c>.6</c> leaves a card given before the activation facedown on the
+    /// enemy until it activates. The primitive is immediate so a Boost ability
+    /// reached while <see cref="FlipBoostCards"/> is walking the hosted queue
+    /// adds the next card that same loop resolves.
+    /// </remarks>
+    public static void GiveAdditionalBoostCard(
+        World world, Card enemy, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(enemy);
+        ArgumentException.ThrowIfNullOrWhiteSpace(trigger);
+        ArgumentNullException.ThrowIfNull(events);
+
+        DealBoostCard(world, enemy, trigger, events);
+    }
+
+    private static void DealBoostCard(
+        World world, Card enemy, string trigger, List<GameEvent> events)
+    {
         var deck = world.AreaOf(DeckType.EncounterDeck);
         var boost = EncounterDeck.TakeTop(world, trigger, events);
         if (boost is null)
@@ -164,7 +191,7 @@ public static class Attack
             return;
         }
 
-        var onto = BoostCards(world, activation.Enemy);
+        var onto = BoostCards(world, enemy.ObjectId);
         onto.Append(boost);
         events.Add(new CardsMoved(
             Places.Reference(deck), Places.Reference(onto),
@@ -455,7 +482,7 @@ public static class Attack
         // a second place for the defeat rules to be wrong.
         // One call, because `rr:piercing`, `rr:overkill` and `rr:ranged` are all
         // properties of the attack rather than of either character.
-        var damaged = Damage.Attack(
+        var damage = Damage.Attack(
             world, facts, world.Cards[attack.Enemy], world.Cards[attack.Target], amount,
             Steps.AttackInitiated, "Deal_Damage", events);
 
@@ -468,7 +495,7 @@ public static class Attack
         // that list shorter than "who was attacked": a character whose tough
         // status card ate the damage "is not considered to have taken damage",
         // so "if a character is damaged by this attack" is false for them.
-        foreach (var card in damaged)
+        foreach (var card in damage.Characters)
         {
             DelayedEffects.Occur(world, "WhenDamageDealt", card.ObjectId, events);
         }
@@ -479,9 +506,14 @@ public static class Attack
         // `rr:tough.3` shortens -- a character whose tough card absorbed the
         // attack "is not considered to have taken damage" -- so an attack that
         // hit a tough card did not damage anybody.
-        if (damaged.Count > 0)
+        if (damage.Characters.Count > 0)
         {
             world.Attack = attack with { Damaged = true };
+        }
+
+        if (world.Activation is { } activation)
+        {
+            world.Activation = activation with { DamageDealt = damage.Amount };
         }
     }
 
@@ -546,6 +578,7 @@ public static class Attack
         // so anything bounded by "this activation" ends here too, and there is
         // no longer an activating enemy for a card to name.
         world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.FinishedActivation = world.Activation;
         world.Activation = null;
         DelayedEffects.Occur(world, Steps.AttackEnds, events);
 

@@ -28,6 +28,18 @@ namespace Marvel.Rules.Play;
 public interface ICardAbilities : IWindowAbilities
 {
     /// <summary>
+    /// Resumes card effects that initiated an activation after it has fully resolved.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:activation.7</c>: an effect that initiates an activation is
+    /// considered resolved only after that activation has fully resolved. The
+    /// result names that activation rather than whichever activation happened
+    /// most recently.
+    /// </remarks>
+    IReadOnlyList<GameEvent> ActivationCompleted(
+        World world, EnemyActivation result) => [];
+
+    /// <summary>
     /// Whether threat may currently be removed from a scheme.
     /// </summary>
     /// <remarks>
@@ -388,6 +400,10 @@ public interface ICardAbilities : IWindowAbilities
 public class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> ActivationCompleted(
+        World world, EnemyActivation result) => [];
+
+    /// <inheritdoc/>
     public virtual bool CanRemoveThreat(World world, Card scheme) => true;
 
     /// <inheritdoc/>
@@ -573,6 +589,11 @@ public static class VillainPhase
                 PlanActivations(world, facts, step);
                 break;
 
+            case Steps.CompleteAttackActivation:
+            case Steps.CompleteSchemeActivation:
+                CompleteActivation(world, abilities, step, events);
+                break;
+
             case Steps.Scheme:
                 Scheme(world, facts, abilities, world.Cards[step.Subject], step.Seat, events);
                 break;
@@ -665,6 +686,22 @@ public static class VillainPhase
         }
 
         return null;
+    }
+
+    private static void CompleteActivation(
+        World world, ICardAbilities abilities, PhaseStep step, List<GameEvent> events)
+    {
+        bool attacking = step.What == Steps.CompleteAttackActivation;
+        var result = world.FinishedActivation is { } finished
+            && finished.Id == step.ActivationId
+            ? finished
+            : new EnemyActivation(
+                step.Subject, step.Seat, attacking, step.ActivationId, Made: false);
+
+        world.FinishedActivation = result;
+        events.AddRange(abilities.ActivationCompleted(world, result));
+        world.FinishedActivation = null;
+        world.Activation = null;
     }
 
     /// <summary>
@@ -832,7 +869,8 @@ public static class VillainPhase
         // `rr:activation` -- the other kind, and the one that had no value on
         // the board until now. Set after `rr:stun-stunned`'s cancellation
         // above, because a cancelled activation is not one.
-        world.Activation = new EnemyActivation(villain.ObjectId, seat, Attacking: false);
+        world.Activation = new EnemyActivation(
+            villain.ObjectId, seat, Attacking: false, Id: world.Agenda.Current?.ActivationId ?? -1);
 
         // **A scheming enemy holds boost cards, plural.**
         // `rr:scheme-enemy-activation.step.1` gives the card to the enemy --
@@ -850,9 +888,11 @@ public static class VillainPhase
         // sub-step, differing only in naming SCH where the attack names ATK.
         int round = world.Agenda.Current?.Round ?? 0;
         world.Agenda.Then(new PhaseStep(
-            Steps.GiveBoostCard, round, 1, Index: seat, Subject: villain.ObjectId));
+            Steps.GiveBoostCard, round, 1, Index: seat, Subject: villain.ObjectId,
+            ActivationId: world.Activation.Id));
         world.Agenda.Then(new PhaseStep(
-            Steps.FlipBoostCards, round, 2, Index: seat, Subject: villain.ObjectId));
+            Steps.FlipBoostCards, round, 2, Index: seat, Subject: villain.ObjectId,
+            ActivationId: world.Activation.Id));
 
         // **Step 3 is a step, because step 2 can stop and ask.** A `Boost`
         // ability that offers the player a choice suspends, and the threat used
@@ -866,7 +906,8 @@ public static class VillainPhase
             3,
             Index: seat,
             Subject: villain.ObjectId,
-            Seat: seat));
+            Seat: seat,
+            ActivationId: world.Activation.Id));
     }
 
     /// <summary>
@@ -888,9 +929,10 @@ public static class VillainPhase
         World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
         List<GameEvent> events)
     {
+        long placed = 0;
         if (world.Agenda.Occurrence is { } occurrence)
         {
-            Threat.Apply(world, facts, abilities, occurrence, events);
+            placed = Threat.Apply(world, facts, abilities, occurrence, events);
             occurrence.Also(Steps.SchemeEnds);
         }
 
@@ -899,7 +941,11 @@ public static class VillainPhase
         // survive into somebody's attack -- `rr:activation` makes a scheme an
         // activation, and `rr:activation.6` gives an activation an end.
         world.Effects.Expire(TimingPoints.EndOfActivation);
-        world.Activation = null;
+        if (world.Activation is { } activation)
+        {
+            world.FinishedActivation = activation with { ThreatPlaced = placed };
+            world.Activation = null;
+        }
     }
 
     /// <summary>Step 3. One encounter card to each player, in player order.</summary>

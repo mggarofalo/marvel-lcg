@@ -334,7 +334,7 @@ public static class BasicPowers
             ?? throw new RulesNotImplementedException(
                 "a character attack resolved without an occurrence for its response window");
         occurrence.Also(Steps.AttackEnds);
-        if (damaged.Count > 0)
+        if (damaged.Characters.Count > 0)
         {
             occurrence.Also(Steps.DamageDealt);
         }

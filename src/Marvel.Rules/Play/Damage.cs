@@ -23,6 +23,9 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Damage
 {
+    /// <summary>The characters and amount actually damaged by one attack.</summary>
+    public sealed record AttackResult(IReadOnlyList<Card> Characters, long Amount);
+
     /// <summary>
     /// Deals damage to a character, and defeats it if that was enough.
     /// </summary>
@@ -205,7 +208,7 @@ public static class Damage
     /// cards are written against that — "if a character is damaged by this
     /// attack, that character is stunned".
     /// </returns>
-    public static IReadOnlyList<Card> Attack(
+    public static AttackResult Attack(
         World world, ICardFacts facts, Card attacker, Card target, long amount,
         string trigger, string verb, List<GameEvent> events)
     {
@@ -245,6 +248,7 @@ public static class Damage
         // damage". A separate check here would be a second statement of the
         // same rule, and only one of them could be right after an edit.
         var damaged = new List<Card>();
+        int firstDamageEvent = events.Count;
         long before = target.Damage;
         if (Deal(world, facts, attacker, target, amount, trigger, verb, events, by: attacker.Owner)
             && beyond > 0
@@ -252,6 +256,13 @@ public static class Damage
         {
             Spill(world, facts, attacker, target, spillPlayer, beyond, trigger, events);
         }
+
+        long dealt = events
+            .Skip(firstDamageEvent)
+            .OfType<FieldSet>()
+            .Where(change => change.Field == "health"
+                && change.From is { } from && change.To is { } to && from > to)
+            .Sum(change => change.From!.Value - change.To!.Value);
 
         // Measured rather than assumed. A tough status card prevents all of the
         // damage, so the number on the dial is the only honest answer to
@@ -267,7 +278,7 @@ public static class Damage
             Retaliate(world, facts, target, attacker, trigger, events);
         }
 
-        return damaged;
+        return new AttackResult(damaged, dealt);
     }
 
     /// <summary>

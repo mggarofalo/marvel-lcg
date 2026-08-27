@@ -64,10 +64,15 @@ public enum Stage
 /// A threat assignment already known when the step was scheduled, or null for
 /// a step whose assignment is derived when its interrupt window begins.
 /// </param>
+/// <param name="ActivationId">
+/// The stable identity of the enemy activation this step belongs to, or -1.
+/// The spelling and allocation are engine choices; the rules require only that
+/// a nested activation wait for the current one to finish.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
-    ThreatPlacement? Placement = null)
+    ThreatPlacement? Placement = null, int ActivationId = -1)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -177,7 +182,15 @@ public readonly record struct PhaseStep(
             world, enemy, "scheme", facts, world.Players);
         if (amount <= 0)
         {
-            return new Occurrence(id, [Steps.SchemeEnds], Subject: Subject, Player: Seat);
+            return Occurrence.ForThreat(
+                id,
+                [Steps.SchemeEnds],
+                world,
+                facts,
+                new ThreatPlacement(
+                    scheme.ObjectId, enemy.ObjectId, 0, ThreatCause.EnemyScheme,
+                    "scheme", Seat),
+                subject: enemy.ObjectId);
         }
 
         return Occurrence.ForThreat(
@@ -225,7 +238,9 @@ public readonly record struct PhaseStep(
 public sealed class Agenda
 {
     private readonly List<(PhaseStep Step, Stage Stage, Occurrence? Occurrence)> items = [];
+    private readonly Dictionary<int, List<int>> queuedAfterActivation = [];
     private int scheduled;
+    private int nextActivationId;
 
     /// <summary>Whether the game is part-way through anything.</summary>
     public bool IsBusy => items.Count > 0;
@@ -277,13 +292,31 @@ public sealed class Agenda
         return occurrence;
     }
 
-    /// <summary>Every outstanding step, in the order they will be taken.</summary>
-    public IReadOnlyList<PhaseStep> Outstanding => [.. items.Select(item => item.Step)];
+    /// <summary>Every player-visible outstanding step, in resolution order.</summary>
+    /// <remarks>
+    /// Activation completion sentinels are internal suspension boundaries, not
+    /// game occurrences or decisions, so they are intentionally absent here.
+    /// </remarks>
+    public IReadOnlyList<PhaseStep> Outstanding =>
+    [
+        .. items
+            .Select(item => item.Step)
+            .Where(step => step.What is not Steps.CompleteAttackActivation
+                and not Steps.CompleteSchemeActivation),
+    ];
 
     /// <summary>Put a step at the end of the list.</summary>
     /// <param name="step">What to do.</param>
-    public void Add(PhaseStep step) =>
+    public void Add(PhaseStep step)
+    {
+        if (IsActivation(step))
+        {
+            AddActivation(step);
+            return;
+        }
+
         items.Add((step, Stage.Interrupts, step.ScheduledOccurrence));
+    }
 
     /// <summary>
     /// Schedule a step to be taken as soon as the current one is finished with.
@@ -297,10 +330,73 @@ public sealed class Agenda
     /// <param name="step">What to do next.</param>
     public void Then(PhaseStep step)
     {
+        if (IsActivation(step))
+        {
+            ThenActivation(step);
+            return;
+        }
+
         scheduled += 1;
         items.Insert(
             Math.Min(scheduled, items.Count),
             (step, Stage.Interrupts, step.ScheduledOccurrence));
+    }
+
+    /// <summary>Schedule one complete enemy activation and return its stable id.</summary>
+    /// <remarks>
+    /// The completion sentinel is present before the activation starts, so an
+    /// activation initiated during one of its substeps can be placed after the
+    /// whole activation rather than merely after that substep. This is
+    /// <c>rr:activation.8</c>. The id is allocated monotonically; it is an
+    /// engine wire choice rather than a Rules Reference value.
+    /// </remarks>
+    public int ThenActivation(PhaseStep step)
+    {
+        if (!IsActivation(step))
+        {
+            throw new ArgumentException("the step is not an enemy activation", nameof(step));
+        }
+
+        int id = nextActivationId++;
+        var root = step with { ActivationId = id };
+        var completion = Completion(root);
+        var pair = new[]
+        {
+            (root, Stage.Interrupts, root.ScheduledOccurrence),
+            (completion, Stage.Interrupts, completion.ScheduledOccurrence),
+        };
+
+        if (items.Count == 0)
+        {
+            items.AddRange(pair);
+            scheduled = 0;
+            return id;
+        }
+
+        int currentActivation = Current?.ActivationId ?? -1;
+        if (currentActivation >= 0)
+        {
+            int at = CompletionIndex(currentActivation) + 1;
+            if (queuedAfterActivation.TryGetValue(currentActivation, out var queued))
+            {
+                foreach (int queuedId in queued)
+                {
+                    at = Math.Max(at, CompletionIndex(queuedId) + 1);
+                }
+            }
+            else
+            {
+                queuedAfterActivation[currentActivation] = queued = [];
+            }
+
+            items.InsertRange(at, pair);
+            queued.Add(id);
+            return id;
+        }
+
+        scheduled += pair.Length;
+        items.InsertRange(Math.Min(scheduled - pair.Length + 1, items.Count), pair);
+        return id;
     }
 
     /// <summary>
@@ -326,6 +422,12 @@ public sealed class Agenda
     /// <param name="step">What to do first.</param>
     public void Now(PhaseStep step)
     {
+        if (IsActivation(step))
+        {
+            NowActivation(step);
+            return;
+        }
+
         Now([step]);
     }
 
@@ -341,6 +443,55 @@ public sealed class Agenda
         // scheduled nothing of its own yet.
         scheduled = 0;
     }
+
+    private void AddActivation(PhaseStep step)
+    {
+        int id = nextActivationId++;
+        var root = step with { ActivationId = id };
+        var completion = Completion(root);
+        items.Add((root, Stage.Interrupts, root.ScheduledOccurrence));
+        items.Add((completion, Stage.Interrupts, completion.ScheduledOccurrence));
+    }
+
+    private void NowActivation(PhaseStep step)
+    {
+        int id = nextActivationId++;
+        var root = step with { ActivationId = id };
+        var completion = Completion(root);
+        items.InsertRange(0,
+        [
+            (root, Stage.Interrupts, root.ScheduledOccurrence),
+            (completion, Stage.Interrupts, completion.ScheduledOccurrence),
+        ]);
+        scheduled = 0;
+    }
+
+    private int CompletionIndex(int activationId)
+    {
+        int found = items.FindIndex(item =>
+            item.Step.ActivationId == activationId
+            && item.Step.What is Steps.CompleteAttackActivation
+                or Steps.CompleteSchemeActivation);
+        return found >= 0
+            ? found
+            : throw new InvalidOperationException(
+                $"activation {activationId} has no completion sentinel");
+    }
+
+    private static bool IsActivation(PhaseStep step) =>
+        step.What is Steps.Attack or Steps.Scheme && step.ActivationId < 0;
+
+    private static PhaseStep Completion(PhaseStep root) => new(
+        root.What == Steps.Attack
+            ? Steps.CompleteAttackActivation
+            : Steps.CompleteSchemeActivation,
+        root.Round,
+        root.Number,
+        Index: root.Index,
+        Subject: root.Subject,
+        Seat: root.Seat,
+        Plan: true,
+        ActivationId: root.ActivationId);
 
     /// <summary>Move the current step on to its next part.</summary>
     /// <returns>False when the step is finished and has been taken off the list.</returns>
@@ -460,6 +611,15 @@ public static class Steps
     /// <c>rr:scheme-enemy-activation</c>. Steps 1 and 2: the boost card.
     /// </summary>
     public const string Scheme = "Scheme";
+
+    /// <summary>
+    /// The initiating effect resumes after an attack activation fully resolves —
+    /// <c>rr:activation.7</c>.
+    /// </summary>
+    public const string CompleteAttackActivation = "CompleteAttackActivation";
+
+    /// <summary>The parallel completion sentinel for a scheme activation.</summary>
+    public const string CompleteSchemeActivation = "CompleteSchemeActivation";
 
     /// <summary>
     /// Step 3 of a scheme activation —
