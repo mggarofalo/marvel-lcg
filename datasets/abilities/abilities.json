@@ -2447,6 +2447,29 @@
       ]
     },
     {
+      "card": "01123",
+      "name": "Sonic Boom",
+      "note": "When revealed, choose either to spend one energy, one mental, and one physical resource or exhaust every character you control; the resource option is offered only when payable. As a boost card it registers an effect against the current activation and exhausts your hero after completion if that activation dealt damage to you.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "payOrExhaust": {
+            "resources": "YBR",
+            "otherwise": { "exhaust": { "query": "charactersYouControl" } }
+          } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "afterActivation": { "effect": {
+            "if": {
+              "test": { "atLeast": { "value": { "result": "activationDamage" }, "count": 1 } },
+              "then": { "exhaust": "yourHero" }
+            }
+          } } }
+        }
+      ]
+    },
+    {
       "card": "01125",
       "name": "Defense Network",
       "note": "When revealed, place 1 additional threat per player here. The card's printed starting threat is applied separately when it enters play.",
@@ -3206,6 +3229,32 @@
           "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "enemy", "target": "you" },
           "when": { "heroDefended": "you" },
           "effect": { "seq": [ { "discard": "this" }, { "ready": "you" } ] }
+        }
+      ]
+    },
+    {
+      "card": "01133",
+      "name": "Masters of Mayhem",
+      "note": "Each MASTERS_OF_EVIL minion engaged with a hero attacks that own engaged hero, so the batch can span seats. The sentence resumes after every activation and, if none actually attacked, the resolving player chooses a matching minion from the encounter deck or discard pile, puts it into play engaged with them, and shuffles the searched encounter deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "enemyAttacks": { "enemies": { "withTrait": { "cards": { "query": "minions" }, "trait": "MASTERS_OF_EVIL" } }, "against": "engagedHero" } },
+            { "if": { "test": { "not": { "atLeast": { "value": { "result": "activationMade" }, "count": 1 } } }, "then": {
+              "if": {
+                "test": { "exists": { "cardsIn": { "areas": [ "encounterDeck", "encounterDiscardPile" ], "kind": "Minion", "trait": "MASTERS_OF_EVIL" } } },
+                "then": { "chooseCard": {
+                  "from": { "cardsIn": { "areas": [ "encounterDeck", "encounterDiscardPile" ], "kind": "Minion", "trait": "MASTERS_OF_EVIL" } },
+                  "effect": { "seq": [
+                    { "putIntoPlay": { "card": "chosen", "where": "engagedWithYou" } },
+                    { "shuffle": "encounterDeck" }
+                  ] }
+                } },
+                "else": { "shuffle": "encounterDeck" }
+              }
+            } } }
+          ] }
         }
       ]
     },

@@ -1,5 +1,6 @@
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.Tests;
@@ -160,6 +161,94 @@ public sealed class CoreActivationAbilityTests
             world.Agenda.Outstanding, step => step.What == Steps.PlaceThreatEffect);
         Assert.Equal(legions.ObjectId, placement.Placement!.Scheme);
         Assert.Equal(2, placement.Placement.Assigned);
+    }
+
+    [Rule("rr:attack-enemy-activation.1.1")]
+    [Fact]
+    public void MastersOfMayhemAttacksOnlyEachMinionsOwnEngagedHero()
+    {
+        var world = new World(Cards, players: 2);
+        var first = world.CreateSeat("p0");
+        first.IdentityCard = world.CreateCard("01001a", first.Hero);
+        var second = world.CreateSeat("p1");
+        second.IdentityCard = world.CreateCard("01029b", second.Hero);
+        var attacks = world.CreateCard(
+            "01129", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.CreateCard(
+            "01131", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+        var card = world.CreateCard("01133", world.AreaOf(DeckType.RevealingArea));
+
+        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+
+        var activation = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.Attack);
+        Assert.Equal(attacks.ObjectId, activation.Subject);
+        Assert.Equal(0, activation.Seat);
+    }
+
+    [Rule("rr:search.1")]
+    [Rule("rr:search.3")]
+    [Fact]
+    public void MastersOfMayhemSearchesWhenNoAttackCanBeMade()
+    {
+        var world = Board("01001b", "01113");
+        var found = world.CreateCard("01129", world.AreaOf(DeckType.EncounterDeck));
+        var card = world.CreateCard("01133", world.AreaOf(DeckType.RevealingArea));
+        var runner = AuthoredCards.Runner();
+
+        runner.WhenRevealed(world, card, 0);
+        var choice = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
+        runner.Chose(
+            world, card, 0, choice.Index, Decision.Take(found.ObjectId), choice.Tier);
+
+        Assert.Contains(
+            found,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards);
+    }
+
+    [Rule("rr:choose-option.1")]
+    [Rule("rr:exhausted")]
+    [Fact]
+    public void SonicBoomOffersOnlyExhaustWhenTheResourceOptionCannotBePaid()
+    {
+        var world = Board("01001a", "01113");
+        var ally = world.CreateCard(
+            "01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var card = world.CreateCard("01123", world.AreaOf(DeckType.RevealingArea));
+        var runner = AuthoredCards.Runner();
+
+        runner.WhenRevealed(world, card, 0);
+        var choice = Assert.Single(world.Agenda.Outstanding);
+        var prompt = runner.Choosing(world, card, 0, choice.Index, choice.Tier)!;
+        var exhaust = Assert.Single(prompt.Affordances);
+        Assert.Equal(1, exhaust.Id);
+        runner.Chose(world, card, 0, choice.Index, Decision.Take(exhaust.Id), choice.Tier);
+
+        Assert.False(world.Seats[0].IdentityCard.Ready);
+        Assert.False(ally.Ready);
+    }
+
+    [Rule("rr:activation.7")]
+    [Fact]
+    public void SonicBoomBoostWaitsForThatActivationsDamageResult()
+    {
+        var world = Board("01001a", "01113");
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var card = world.CreateCard("01123", world.AreaOf(DeckType.BoostingArea));
+        var runner = AuthoredCards.Runner();
+        world.Activation = new EnemyActivation(
+            villain.ObjectId, 0, Attacking: true, Id: 12);
+
+        runner.Boost(world, card, 0);
+        Assert.True(world.Seats[0].IdentityCard.Ready);
+
+        runner.ActivationCompleted(
+            world, new EnemyActivation(
+                villain.ObjectId, 0, Attacking: true, Id: 12,
+                Made: true, DamageDealt: 1));
+
+        Assert.False(world.Seats[0].IdentityCard.Ready);
     }
 
     private static World Board(string identity, string villain)

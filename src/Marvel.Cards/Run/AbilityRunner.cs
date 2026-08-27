@@ -38,6 +38,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     // it is a card operation. The stable agenda id is the join between them.
     // Entries live only until that activation's completion sentinel calls back.
     private readonly Dictionary<int, ActivationContinuation> activations = [];
+    private readonly Dictionary<int, List<ActivationEffect>> activationEffects = [];
 
     // Which printed faces carry a constant ability. `Constant` is asked about
     // every card in play every time anything reads the effect list, and all but
@@ -90,6 +91,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     {
                         Tier = ability.Trigger.Timing,
                     });
+            }
+        }
+
+        if (activationEffects.Remove(result.Id, out var delayed))
+        {
+            foreach (var effect in delayed)
+            {
+                var delayedCast = new Cast(
+                    world,
+                    world.Cards[effect.Source],
+                    new Occurrence(
+                        0, ["WhenActivationCompleted"],
+                        Actor: result.Enemy, Player: effect.Player),
+                    effect.Player,
+                    events,
+                    this)
+                {
+                    Tier = effect.Tier,
+                };
+                delayedCast.Results["activationDamage"] = result.DamageDealt;
+                delayedCast.Results["activationThreat"] = result.ThreatPlaced;
+                delayedCast.Results["activationMade"] = result.Made ? 1 : 0;
+                Run(effect.Effect, delayedCast);
             }
         }
 
@@ -1583,6 +1607,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                             upgrades.Count)),
                 ]);
         }
+        if (choice.Kind == "payOrExhaust")
+        {
+            string required = Word(choice.Require("resources"));
+            var sources = CardPlay.Generators(world, world.Facts, world.Seats[player]);
+            string pool = string.Concat(sources.SelectMany(source => source.Generates));
+            var offers = new List<Affordance>();
+            if (Resources.Pays(pool, required.Length, required))
+            {
+                offers.Add(new Affordance(
+                    0, ChooseVerb, source.ObjectId, World.Scenario, "spend",
+                    Costs:
+                    [
+                        new CostOption(
+                            source.ObjectId,
+                            required.Length.ToString(
+                                System.Globalization.CultureInfo.InvariantCulture),
+                            [required],
+                            Sources: sources),
+                    ]));
+            }
+            offers.Add(new Affordance(
+                1, ChooseVerb, source.ObjectId, World.Scenario, "exhaust"));
+            return new Prompt(
+                player, Question.Option, TimingPriority.Untimed,
+                Steps.CardRevealed, $"{source.FaceId}: spend or exhaust",
+                Cancellable: false, offers);
+        }
         var affordances = cards
             ? Every(choice.Require("from"), cast)
                 .Select(card => new Affordance(
@@ -1707,6 +1758,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 world.Agenda.Then(new PhaseStep(
                     Steps.ResolveSpecial, round, index + 1, Subject: id, Seat: player,
                     Plan: true, FinalStep: index == input.Targets.Count - 1));
+            }
+
+            return cast.Events;
+        }
+        if (choice.Kind == "payOrExhaust")
+        {
+            if (input.Affordance == 0)
+            {
+                string required = Word(choice.Require("resources"));
+                CardPlay.Spend(
+                    world, world.Facts, [world.Seats[player].Hand], input.Spent,
+                    required.Length, required, itself: -1, player, cast.Events);
+            }
+            else if (input.Affordance == 1)
+            {
+                Run(Tree(choice.Require("otherwise")), cast);
+            }
+            else
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' offers spend or exhaust, not option {input.Affordance}");
             }
 
             return cast.Events;
@@ -2035,18 +2107,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var steps = Nodes(effect.Argument).ToList();
-        return stoppedAt >= 1 && stoppedAt <= steps.Count
-            && steps[stoppedAt - 1] is
-                { Kind: "choose" or "chooseCard" or "indirectDamage" or "resolveSpecials" } waiting
-            ? waiting
-            : throw new RulesNotImplementedException(
-                $"'{source.FaceId}' has no choice at step {stoppedAt - 1} of its sequence");
+        if (stoppedAt >= 1 && stoppedAt <= steps.Count)
+        {
+            var nested = Choices(steps[stoppedAt - 1]).ToList();
+            if (nested.Count == 1)
+            {
+                return nested[0];
+            }
+        }
+
+        throw new RulesNotImplementedException(
+            $"'{source.FaceId}' has no single choice at step {stoppedAt - 1} of its sequence");
     }
 
     /// <summary>Every <c>choose</c> node in one effect tree.</summary>
     private static IEnumerable<AbilityNode> Choices(AbilityNode node)
     {
-        if (node.Kind is "choose" or "chooseCard" or "indirectDamage" or "resolveSpecials")
+        if (node.Kind is "choose" or "chooseCard" or "indirectDamage"
+            or "resolveSpecials" or "payOrExhaust")
         {
             yield return node;
             yield break;
@@ -2313,6 +2391,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.Suspend();
                 }
 
+                break;
+
+            case "payOrExhaust":
+                cast.World.Agenda.Then(new PhaseStep(
+                    Steps.ChooseOption,
+                    cast.World.Agenda.Current?.Round ?? 0,
+                    2,
+                    Index: cast.Position + 1,
+                    Subject: cast.Source.ObjectId,
+                    Seat: cast.Player,
+                    Tier: cast.Tier,
+                    FinalStep: cast.FinalStep));
+                cast.Suspend();
+                break;
+
+            case "afterActivation":
+                if (cast.World.Activation is not { } current)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' delays an effect and no enemy is activating");
+                }
+
+                if (!((AbilityRunner)cast.Abilities).activationEffects.TryGetValue(
+                    current.Id, out var waiting))
+                {
+                    ((AbilityRunner)cast.Abilities).activationEffects[current.Id] = waiting = [];
+                }
+                waiting.Add(new ActivationEffect(
+                    cast.Source.ObjectId, cast.Player, cast.Tier,
+                    Tree(node.Require("effect"))));
                 break;
 
             case "if":
@@ -4104,7 +4212,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // character is the player's hero". An ability naming one instead is
         // the exception the same clause allows.
         AbilityValue? namedTarget = node.Field("against");
-        int against = namedTarget is { } named
+        bool engagedHero = namedTarget is AbilityValue.Word { Value: "engagedHero" };
+        int against = namedTarget is { } named && !engagedHero
             ? Find(named, cast)?.ObjectId ?? -1
             : -1;
 
@@ -4142,8 +4251,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var activationIds = new List<int>();
         foreach (var enemy in Every(node.Require("enemies"), cast))
         {
+            int activationSeat = engagedHero ? enemy.Area.PlayArea.Player : seat;
+            if (activationSeat < 0
+                || (engagedHero && !Forms.In(
+                    cast.World,
+                    cast.World.Seats[activationSeat],
+                    cast.World.Facts,
+                    Forms.Hero)))
+            {
+                continue;
+            }
+
             var activation = new PhaseStep(
-                what, round, 2, Index: seat, Subject: enemy.ObjectId, Seat: seat,
+                what, round, 2, Index: activationSeat, Subject: enemy.ObjectId,
+                Seat: activationSeat,
                 Character: against);
 
             if (first)
@@ -5032,4 +5153,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public long Damage { get; set; }
         public long Threat { get; set; }
     }
+
+    private sealed record ActivationEffect(
+        int Source, int Player, AbilityType? Tier, AbilityNode Effect);
 }
