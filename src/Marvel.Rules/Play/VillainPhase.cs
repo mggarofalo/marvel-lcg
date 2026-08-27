@@ -255,6 +255,20 @@ public interface ICardAbilities : IWindowAbilities
         IReadOnlyList<int> chosen);
 
     /// <summary>
+    /// Resolves the <b>Special</b> ability on a card named by another ability —
+    /// <c>rr:special</c>.
+    /// </summary>
+    /// <param name="world">The world.</param>
+    /// <param name="card">The card carrying the Special ability.</param>
+    /// <param name="player">The player resolving it.</param>
+    /// <param name="finalStep">Whether it is the final step of its parent sequence.</param>
+    /// <returns>What changed.</returns>
+    IReadOnlyList<GameEvent> ResolveSpecial(
+        World world, Card card, int player, bool finalStep) =>
+        throw new RulesNotImplementedException(
+            $"card '{card.FaceId}' has no implemented Special ability");
+
+    /// <summary>
     /// The question a suspended ability is waiting on —
     /// <c>rr:choose-option</c>.
     /// </summary>
@@ -281,6 +295,20 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>The question, or null when there is nothing to ask.</returns>
     Prompts.Prompt? Choosing(
         World world, Card source, int player, int stoppedAt, Timing.AbilityType? tier = null);
+
+    /// <summary>
+    /// The question a suspended ability is waiting on, with its parent
+    /// sequence position preserved.
+    /// </summary>
+    /// <remarks>
+    /// The default keeps existing interpreters source-compatible. An
+    /// interpreter whose effect reads the flag implements this overload and
+    /// carries it into its resumed resolution.
+    /// </remarks>
+    Prompts.Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep) =>
+        Choosing(world, source, player, stoppedAt, tier);
 
     /// <summary>
     /// The game element this card's "attach to" phrase names —
@@ -386,6 +414,15 @@ public interface ICardAbilities : IWindowAbilities
         World world, Card source, int player, int stoppedAt, Decision input,
         Timing.AbilityType? tier = null);
 
+    /// <summary>
+    /// Resolves an answered ability choice with its parent sequence position
+    /// preserved.
+    /// </summary>
+    IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep) =>
+        Chose(world, source, player, stoppedAt, input, tier);
+
 
 }
 
@@ -459,6 +496,12 @@ public class NoCardAbilities : ICardAbilities
             "no card has an action, so none of them can be triggered");
 
     /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> ResolveSpecial(
+        World world, Card card, int player, bool finalStep) =>
+        throw new RulesNotImplementedException(
+            $"card '{card.FaceId}' has no implemented Special ability");
+
+    /// <inheritdoc/>
     public virtual int? AttachesTo(World world, Card card) => null;
 
     /// <inheritdoc/>
@@ -476,11 +519,23 @@ public class NoCardAbilities : ICardAbilities
         Timing.AbilityType? tier = null) => null;
 
     /// <inheritdoc/>
+    public virtual Prompts.Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep) =>
+        Choosing(world, source, player, stoppedAt, tier);
+
+    /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Chose(
         World world, Card source, int player, int stoppedAt, Decision input,
         Timing.AbilityType? tier = null) =>
         throw new RulesNotImplementedException(
             "no card has an ability, so none of them is waiting on a choice");
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep) =>
+        Chose(world, source, player, stoppedAt, input, tier);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<PendingAbility> Waiting(
@@ -656,9 +711,15 @@ public static class VillainPhase
                     step.Round, events);
                 break;
 
+            case Steps.ResolveSpecial:
+                events.AddRange(abilities.ResolveSpecial(
+                    world, world.Cards[step.Subject], step.Seat, step.FinalStep));
+                break;
+
             case Steps.ChooseOption:
                 return abilities.Choosing(
-                    world, world.Cards[step.Subject], step.Seat, step.Index, step.Tier);
+                    world, world.Cards[step.Subject], step.Seat, step.Index, step.Tier,
+                    step.FinalStep);
 
             case Steps.PassFirstPlayerToken:
                 PassFirstPlayerToken(world);
@@ -755,7 +816,8 @@ public static class VillainPhase
 
             case Steps.ChooseOption:
                 events.AddRange(abilities.Chose(
-                    world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier));
+                    world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier,
+                    step.FinalStep));
                 break;
 
             default:

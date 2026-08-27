@@ -304,7 +304,7 @@ public static class BasicPowers
     /// </summary>
     /// <remarks>
     /// "This deals damage equal to the character's ATK value to the enemy."
-    /// Through <see cref="Damage.Attack"/>, which is the same primitive an
+    /// Through <see cref="Damage"/>'s attack primitive, which is the same one an
     /// enemy's attack uses: <c>rr:damage</c> is one rule however the damage
     /// arrived.
     /// </remarks>

@@ -211,10 +211,36 @@ public static class Damage
     public static AttackResult Attack(
         World world, ICardFacts facts, Card attacker, Card target, long amount,
         string trigger, string verb, List<GameEvent> events)
+        => Attack(world, facts, attacker, attacker, target, amount, trigger, verb, events);
+
+    /// <summary>
+    /// One attack whose acting character and damage source are different cards.
+    /// </summary>
+    /// <remarks>
+    /// A card ability labelled as an attack is performed by the resolving
+    /// character, but its damage still comes from the card carrying the
+    /// ability. Keeping those roles separate lets retaliation hit the actor
+    /// while a prohibition such as “cannot take damage from [trait] upgrades”
+    /// inspect the actual source. The ordinary character-attack overload uses
+    /// the attacker for both roles.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="attacker">The character performing the attack.</param>
+    /// <param name="source">The card the damage comes from.</param>
+    /// <param name="target">Who is being attacked.</param>
+    /// <param name="amount">How much damage.</param>
+    /// <param name="trigger">What caused it, for the event stream.</param>
+    /// <param name="verb">What kind of thing caused it.</param>
+    /// <param name="events">Where to record what happened.</param>
+    public static AttackResult Attack(
+        World world, ICardFacts facts, Card attacker, Card source, Card target, long amount,
+        string trigger, string verb, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(attacker);
+        ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(events);
 
@@ -250,11 +276,11 @@ public static class Damage
         var damaged = new List<Card>();
         int firstDamageEvent = events.Count;
         long before = target.Damage;
-        if (Deal(world, facts, attacker, target, amount, trigger, verb, events, by: attacker.Owner)
+        if (Deal(world, facts, source, target, amount, trigger, verb, events, by: attacker.Owner)
             && beyond > 0
             && Keywords.Has(world, attacker, Keywords.Overkill, facts))
         {
-            Spill(world, facts, attacker, target, spillPlayer, beyond, trigger, events);
+            Spill(world, facts, source, target, spillPlayer, beyond, trigger, events);
         }
 
         long dealt = events
@@ -410,6 +436,47 @@ public static class Damage
             Trigger = trigger, Verb = verb,
         });
 
+        return healed;
+    }
+
+    /// <summary>Moves damage from one character to another — <c>rr:move</c>.</summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:move.2</c> requires both a valid source and destination. A
+    /// destination forbidden from taking this source's damage invalidates the
+    /// move, so no damage is healed from the origin as a side effect.
+    /// </para>
+    /// <para>
+    /// <c>rr:move.3.1</c> moves the same amount off the origin and onto the
+    /// destination, bounded by the damage actually present. <c>rr:move.4</c>
+    /// considers the first half healing, and <c>rr:move.5</c> considers the
+    /// second half dealt damage, so both halves use the ordinary rule paths.
+    /// Prevention at the destination changes damage taken, not the amount
+    /// dealt (<c>rr:damage.3.2</c>), and therefore does not undo the healing.
+    /// </para>
+    /// </remarks>
+    /// <returns>The amount moved off <paramref name="from"/>.</returns>
+    public static long MoveDamage(
+        World world, ICardFacts facts, Card source, Card from, Card to, long amount,
+        string trigger, string verb, List<GameEvent> events, int by = -1)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(from);
+        ArgumentNullException.ThrowIfNull(to);
+        ArgumentNullException.ThrowIfNull(events);
+
+        long moved = Math.Min(Math.Max(0, amount), from.Damage);
+        if (moved <= 0
+            || ReferenceEquals(from, to)
+            || !world.Abilities.CanTakeDamage(world, to, source))
+        {
+            return 0;
+        }
+
+        long healed = Heal(world, facts, from, moved, trigger, verb, events);
+        Deal(world, facts, source, to, healed, trigger, verb, events, by);
         return healed;
     }
 }

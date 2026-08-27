@@ -69,10 +69,16 @@ public enum Stage
 /// The spelling and allocation are engine choices; the rules require only that
 /// a nested activation wait for the current one to finish.
 /// </param>
+/// <param name="FinalStep">
+/// Whether this ability is the final step of the card-defined sequence that
+/// scheduled it. The rulebook defines sequences but does not choose this field's
+/// spelling; it is engine data carried so a suspended Special can resume with
+/// the same answer.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
-    ThreatPlacement? Placement = null, int ActivationId = -1)
+    ThreatPlacement? Placement = null, int ActivationId = -1, bool FinalStep = false)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -775,6 +781,18 @@ public static class Steps
     /// it is the answer to this.
     /// </remarks>
     public const string ChooseOption = "ChooseOption";
+
+    /// <summary>
+    /// A card's explicit instruction to resolve a <b>Special</b> ability —
+    /// <c>rr:special</c>.
+    /// </summary>
+    /// <remarks>
+    /// Scheduled as a plan step: resolving the Special is the work, not a new
+    /// triggering condition around it. Putting it on the agenda instead of a
+    /// call stack lets a choice inside the Special suspend before the next
+    /// Special in the parent sequence begins.
+    /// </remarks>
+    public const string ResolveSpecial = "ResolveSpecial";
 
     /// <summary>Step 5 — <c>rr:villain-phase.step.5</c>.</summary>
     public const string PassFirstPlayerToken = "PassFirstPlayerToken";

@@ -53,6 +53,31 @@ public sealed class DamageSourceTests
         Assert.Same(source, abilities.ReplacementSource);
     }
 
+    [Rule("rr:attack-player-ability-type.2")]
+    [Rule("rr:cannot")]
+    [Rule("rr:retaliate-x")]
+    [Fact]
+    public void AnAttackAbilityKeepsItsActorSeparateFromItsDamageSource()
+    {
+        // A labelled attack is performed by the hero, while the damage can
+        // come from the upgrade carrying the ability. The prohibition reads
+        // the latter; retaliate still hits the former.
+        var facts = new Printed();
+        var world = Board(facts);
+        var attacker = world.Seats[0].IdentityCard;
+        var source = world.CreateCard(
+            "source", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var target = world.CreateCard(
+            "retaliator", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Abilities = new Prohibition(source);
+
+        Damage.Attack(
+            world, facts, attacker, source, target, 3, "test", "Attack", []);
+
+        Assert.Equal(0, target.Damage);
+        Assert.Equal(1, attacker.Damage);
+    }
+
     private static World Board(Printed facts)
     {
         var world = new World(facts, 1);
@@ -84,8 +109,8 @@ public sealed class DamageSourceTests
         public CardKind Kind(string faceId) => faceId switch
         {
             "hero" => CardKind.Hero,
-            "source" => CardKind.Support,
-            "target" => CardKind.Minion,
+            "source" => CardKind.Upgrade,
+            "target" or "retaliator" => CardKind.Minion,
             "tough" => CardKind.Status,
             _ => CardKind.Treachery,
         };
@@ -93,9 +118,14 @@ public sealed class DamageSourceTests
         public IReadOnlyList<string> Traits(string faceId) => [];
 
         public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
-            faceId == "target"
-                ? new Dictionary<string, string> { ["HP"] = "5" }
-                : new Dictionary<string, string>();
+            faceId switch
+            {
+                "hero" => new Dictionary<string, string> { ["HP"] = "10" },
+                "target" => new Dictionary<string, string> { ["HP"] = "5" },
+                "retaliator" => new Dictionary<string, string>
+                    { ["HP"] = "5", ["Retaliate"] = "1" },
+                _ => new Dictionary<string, string>(),
+            };
 
         public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) =>
             Attributes(faceId).TryGetValue(attribute, out string? value)
