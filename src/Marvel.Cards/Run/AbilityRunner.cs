@@ -1463,15 +1463,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             : HasRequiredTargets(option, cast);
 
     /// <summary>Whether the source has a player-card face.</summary>
-    private static bool IsPlayerCard(Cast cast) => cast.World.Facts.Kind(cast.Source.FaceId) is
-        CardKind.AlterEgo or CardKind.Hero or CardKind.Ally or CardKind.Event
-            or CardKind.Resource or CardKind.Support or CardKind.Upgrade
+    private static bool IsPlayerCard(Cast cast)
+    {
+        var kind = cast.World.Facts.Kind(cast.Source.FaceId);
+        return kind is CardKind.AlterEgo
+                or CardKind.Hero
+                or CardKind.Ally
+                or CardKind.Event
+                or CardKind.Resource
+                or CardKind.Support
+                or CardKind.Upgrade
 
-        // Player side schemes are not yet a modelled kind and answer Unknown.
-        // Unlike an unknown encounter card, one created in a player's deck has
-        // that player as its owner, which preserves the rule's distinction.
-        || (cast.World.Facts.Kind(cast.Source.FaceId) == CardKind.Unknown
-            && cast.Source.Owner != World.Scenario);
+            // Player side schemes are not yet a modelled kind and answer Unknown.
+            // Unlike an unknown encounter card, one created in a player's deck has
+            // that player as its owner, which preserves the rule's distinction.
+            || (kind == CardKind.Unknown && cast.Source.Owner != World.Scenario);
+    }
 
     /// <summary>Whether every card target required by an effect exists.</summary>
     private static bool HasRequiredTargets(AbilityNode node, Cast cast) => node.Kind switch
