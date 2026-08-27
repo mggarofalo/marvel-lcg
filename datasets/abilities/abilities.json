@@ -463,7 +463,7 @@
     {
       "card": "01147",
       "name": "Swarm Attack",
-      "note": "When revealed in hero form, every facedown Drone engaged with the resolving player attacks in board order. If there is no hero or no such Drone, no attack is made and one new Drone is created instead.",
+      "note": "When revealed in hero form, every facedown Drone engaged with the resolving player attacks in board order. The sentence waits for every activation and creates one Drone if none actually attacked, including when every attempted attack was canceled by stun. In alter-ego form it creates one immediately.",
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
@@ -473,7 +473,10 @@
                 { "inForm": { "player": "you", "form": "hero" } },
                 { "exists": { "query": "dronesEngagedWithYou" } }
               ] },
-              "then": { "enemyAttacks": { "enemies": { "query": "dronesEngagedWithYou" } } },
+              "then": { "seq": [
+                { "enemyAttacks": { "enemies": { "query": "dronesEngagedWithYou" } } },
+                { "if": { "test": { "not": { "atLeast": { "value": { "result": "activationMade" }, "count": 1 } } }, "then": { "createDrones": { "player": "you", "count": 1 } } } }
+              ] },
               "else": { "createDrones": { "player": "you", "count": 1 } }
             }
           }
@@ -2962,6 +2965,36 @@
       ]
     },
     {
+      "card": "01164",
+      "name": "Titania's Fury",
+      "note": "When revealed in hero form, Titania attacks and the sentence resumes after the activation; if she did not actually attack, heal all damage from her and gain surge. In alter-ego form no attack can be initiated, so that fallback resolves immediately. Its Boost ability gives the activating villain one additional boost card.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "seq": [
+                { "enemyAttacks": { "enemies": { "titled": "Titania" } } },
+                { "if": { "test": { "not": { "atLeast": { "value": { "result": "activationMade" }, "count": 1 } } }, "then": { "seq": [
+                  { "heal": { "card": { "titled": "Titania" }, "amount": { "damageOn": { "titled": "Titania" } } } },
+                  { "gainSurge": 1 }
+                ] } } }
+              ] },
+              "else": { "seq": [
+                { "heal": { "card": { "titled": "Titania" }, "amount": { "damageOn": { "titled": "Titania" } } } },
+                { "gainSurge": 1 }
+              ] }
+            }
+          }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "giveAdditionalBoost": { "enemy": "activatingEnemy" } }
+        }
+      ]
+    },
+    {
       "card": "01136",
       "name": "Ultron",
       "note": "Each facedown Drone minion gets +1 ATK and +1 hit point. Ultron cannot take damage while any Drone is in play. When revealed, this stage searches for Ultron's Imperative by printed id and reveals it, shuffling the encounter deck as search requires.",
@@ -2994,11 +3027,15 @@
     {
       "card": "01181",
       "name": "Madame Hydra",
-      "note": "Madame Hydra cannot take damage from any source while Legions of Hydra is in play. Her attack-or-scheme forced response is authored separately once activation completion preserves an actor for schemes.",
+      "note": "Madame Hydra cannot take damage from any source while Legions of Hydra is in play. After one of her completed attacks or schemes, a single combined forced response places two threat on Legions of Hydra; a canceled activation does not satisfy 'after she attacks or schemes'.",
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
           "effect": { "preventDamageWhile": { "card": "this", "condition": { "titleInPlay": "Legions of Hydra" } } }
+        },
+        {
+          "trigger": { "event": "WhenActivationCompleted", "timing": "ForcedResponse", "actor": "this" },
+          "effect": { "placeThreat": { "scheme": { "titled": "Legions of Hydra" }, "amount": 2 } }
         }
       ]
     },

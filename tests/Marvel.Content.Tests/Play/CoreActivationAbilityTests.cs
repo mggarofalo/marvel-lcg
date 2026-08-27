@@ -89,6 +89,79 @@ public sealed class CoreActivationAbilityTests
         Assert.Contains(third, world.Seats[0].Deck.Cards.Concat(discard.Cards));
     }
 
+    [Rule("rr:activation.7")]
+    [Fact]
+    public void SwarmAttackCreatesADroneWhenEveryAttemptedAttackIsCanceled()
+    {
+        var world = Board("01001a", "01134");
+        var original = world.CreateCard(
+            "01087",
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        original.TurnFaceDown();
+        world.CreateCard("01002", world.Seats[0].Deck);
+        var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
+        var runner = AuthoredCards.Runner();
+
+        runner.WhenRevealed(world, card, 0);
+        int activation = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
+        runner.ActivationCompleted(
+            world, new EnemyActivation(original.ObjectId, 0, Attacking: true,
+                activation, Made: false));
+
+        Assert.Equal(
+            2,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards.Count);
+    }
+
+    [Rule("rr:activation.7")]
+    [Rule("rr:surge.1")]
+    [Fact]
+    public void TitaniasFuryHealsAndSurgesWhenStunCancelsHerAttack()
+    {
+        var world = Board("01001a", "01113");
+        var titania = world.CreateCard(
+            "01162", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        titania.TakeDamage(3);
+        world.CreateCard("01118", world.AreaOf(DeckType.EncounterDeck));
+        var card = world.CreateCard("01164", world.AreaOf(DeckType.RevealingArea));
+        var runner = AuthoredCards.Runner();
+
+        runner.WhenRevealed(world, card, 0);
+        int activation = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
+        runner.ActivationCompleted(
+            world, new EnemyActivation(titania.ObjectId, 0, Attacking: true,
+                activation, Made: false));
+
+        Assert.Equal(0, titania.Damage);
+        Assert.Single(world.AreaOf(
+            DeckType.DealtEncounterCardsDeck, PlayArea.Of(0), cardOwner: 0).Cards);
+    }
+
+    [Rule("rr:activation.7")]
+    [Fact]
+    public void MadameHydraPlacesThreatOnceAfterEitherKindOfActivation()
+    {
+        var world = Board("01001b", "01113");
+        var legions = world.CreateCard("01180", world.AreaOf(DeckType.SideSchemesArea));
+        var madame = world.CreateCard(
+            "01181", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var runner = AuthoredCards.Runner();
+        world.Agenda.Add(new PhaseStep(
+            Steps.CompleteSchemeActivation, 1, 1,
+            Subject: madame.ObjectId, Seat: 0, ActivationId: 7));
+
+        runner.ActivationCompleted(
+            world, new EnemyActivation(
+                madame.ObjectId, 0, Attacking: false, Id: 7, Made: true, ThreatPlaced: 1));
+
+        var placement = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.PlaceThreatEffect);
+        Assert.Equal(legions.ObjectId, placement.Placement!.Scheme);
+        Assert.Equal(2, placement.Placement.Assigned);
+    }
+
     private static World Board(string identity, string villain)
     {
         var world = new World(Cards, players: 1);

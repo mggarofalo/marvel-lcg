@@ -69,9 +69,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         ArgumentNullException.ThrowIfNull(world);
 
+        var events = new List<GameEvent>();
+        var enemy = world.Cards[result.Enemy];
+        if (result.Made)
+        {
+            foreach (var ability in book.On(enemy.FaceId).Where(ability =>
+                ability.Trigger.Timing == AbilityType.ForcedResponse
+                && string.Equals(
+                    ability.Trigger.Event, "WhenActivationCompleted",
+                    StringComparison.Ordinal)))
+            {
+                Run(
+                    ability.Effect,
+                    new Cast(
+                        world, enemy,
+                        new Occurrence(
+                            0, ["WhenActivationCompleted"],
+                            Actor: enemy.ObjectId, Player: result.Player),
+                        result.Player, events, this)
+                    {
+                        Tier = ability.Trigger.Timing,
+                    });
+            }
+        }
+
         if (!activations.Remove(result.Id, out var continuation))
         {
-            return [];
+            return events;
         }
 
         continuation.Made += result.Made ? 1 : 0;
@@ -80,10 +104,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         continuation.Remaining -= 1;
         if (continuation.Remaining > 0)
         {
-            return [];
+            return events;
         }
 
-        var events = new List<GameEvent>();
         var cast = new Cast(
             world,
             world.Cards[continuation.Source],
