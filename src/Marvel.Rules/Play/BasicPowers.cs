@@ -372,7 +372,8 @@ public static class BasicPowers
                 byAttack ? "attack_consequential_damage" : "thwart_consequential_damage",
                 facts, world.Players);
 
-        Damage.Deal(world, facts, ally, consequential, verb, "Consequential_Damage", events);
+        Damage.Deal(
+            world, facts, ally, ally, consequential, verb, "Consequential_Damage", events);
     }
 
     /// <summary>

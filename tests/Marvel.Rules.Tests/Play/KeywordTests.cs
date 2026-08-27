@@ -50,7 +50,7 @@ public sealed class KeywordTests
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Statuses.Give(world, minion, Statuses.Tough);
 
-        bool defeated = Damage.Deal(world, printed, minion, 9, "test", "test", []);
+        bool defeated = Damage.Deal(world, printed, minion, minion, 9, "test", "test", []);
 
         Assert.False(defeated);
         Assert.Equal(0, minion.Damage);
@@ -71,13 +71,13 @@ public sealed class KeywordTests
         Statuses.Give(world, minion, Statuses.Tough);
         Statuses.Give(world, minion, Statuses.Tough);
 
-        Damage.Deal(world, printed, minion, 1, "test", "test", []);
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
         Assert.True(Statuses.Has(world, minion, Statuses.Tough));
 
-        Damage.Deal(world, printed, minion, 1, "test", "test", []);
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
 
-        Damage.Deal(world, printed, minion, 1, "test", "test", []);
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
         Assert.Equal(1, minion.Damage);
     }
 
@@ -502,7 +502,7 @@ public sealed class KeywordTests
 
         Agendas.Happening(world);
 
-        Damage.Deal(world, printed, minion, 1, "test", "test", []);
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
 
         Assert.Equal(DeckType.VictoryDisplay, minion.Area.Type);
         Assert.Empty(world.AreaOf(DeckType.EncounterDiscardPile).Cards);

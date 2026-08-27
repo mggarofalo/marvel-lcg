@@ -88,7 +88,7 @@ public sealed class SpiderManCardsTests
 
         runner.Resolve(world, occurrence, ability, [], []);
 
-        Assert.Equal(0, runner.WouldBeDealt(world, hero, 7, []));
+        Assert.Equal(0, runner.WouldBeDealt(world, hero, hero, 7, []));
         Assert.Equal(DeckType.DiscardPile, backflip.Area.Type);
     }
 

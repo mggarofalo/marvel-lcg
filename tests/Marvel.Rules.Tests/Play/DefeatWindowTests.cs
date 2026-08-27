@@ -175,7 +175,7 @@ public sealed class DefeatWindowTests
         var world = Board(out var printed, out var minion);
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Damage.Deal(world, printed, minion, 5, "test", "test", []));
+            () => Damage.Deal(world, printed, minion, minion, 5, "test", "test", []));
 
         Assert.Contains(
             "nothing is happening on the agenda", thrown.Message, StringComparison.Ordinal);

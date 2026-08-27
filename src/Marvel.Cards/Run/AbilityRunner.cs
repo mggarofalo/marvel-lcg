@@ -503,7 +503,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public long WouldBeDealt(World world, Card target, long amount, List<GameEvent> events)
+    public bool CanTakeDamage(World world, Card target, Card source) => true;
+
+    /// <inheritdoc/>
+    public long WouldBeDealt(
+        World world, Card target, Card source, long amount, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(target);
@@ -3229,7 +3233,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         foreach (var (card, damage) in assigned.OrderBy(each => each.Key))
         {
             Damage.Deal(
-                cast.World, cast.World.Facts, cast.World.Cards[card], damage,
+                cast.World, cast.World.Facts, cast.Source, cast.World.Cards[card], damage,
                 cast.Trigger, "Indirect_Damage", cast.Events);
         }
     }
@@ -3248,7 +3252,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         foreach (var target in Every(node.Require("cards"), cast))
         {
             Damage.Deal(
-                cast.World, cast.World.Facts, target, amount, cast.Trigger, "Deal_Damage",
+                cast.World, cast.World.Facts, cast.Source, target, amount, cast.Trigger, "Deal_Damage",
                 cast.Events);
         }
     }

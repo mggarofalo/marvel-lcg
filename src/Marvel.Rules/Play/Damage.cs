@@ -28,6 +28,7 @@ public static class Damage
     /// </summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
+    /// <param name="source">The card dealing it.</param>
     /// <param name="target">Who takes it.</param>
     /// <param name="amount">How much. Zero or less does nothing.</param>
     /// <param name="trigger">What caused it, for the event stream.</param>
@@ -47,15 +48,24 @@ public static class Damage
     /// </param>
     /// <returns>Whether the target was defeated.</returns>
     public static bool Deal(
-        World world, ICardFacts facts, Card target, long amount,
+        World world, ICardFacts facts, Card source, Card target, long amount,
         string trigger, string verb, List<GameEvent> events, int by = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(events);
 
         if (amount <= 0)
+        {
+            return false;
+        }
+
+        // `rr:cannot` -- "cannot" is absolute. A character forbidden from
+        // taking damage from this source never reaches the damage sequence:
+        // there is no imminent damage to replace and no tough card to spend.
+        if (!world.Abilities.CanTakeDamage(world, target, source))
         {
             return false;
         }
@@ -65,7 +75,7 @@ public static class Damage
         // sits. It comes before the tough card, which is step 2, and a card
         // that replaces all of the damage leaves nothing for the rest of the
         // nine steps to do.
-        amount = world.Abilities.WouldBeDealt(world, target, amount, events);
+        amount = world.Abilities.WouldBeDealt(world, target, source, amount, events);
         if (amount <= 0)
         {
             return false;
@@ -236,11 +246,11 @@ public static class Damage
         // same rule, and only one of them could be right after an edit.
         var damaged = new List<Card>();
         long before = target.Damage;
-        if (Deal(world, facts, target, amount, trigger, verb, events, by: attacker.Owner)
+        if (Deal(world, facts, attacker, target, amount, trigger, verb, events, by: attacker.Owner)
             && beyond > 0
             && Keywords.Has(world, attacker, Keywords.Overkill, facts))
         {
-            Spill(world, facts, target, spillPlayer, beyond, trigger, events);
+            Spill(world, facts, attacker, target, spillPlayer, beyond, trigger, events);
         }
 
         // Measured rather than assumed. A tough status card prevents all of the
@@ -270,7 +280,7 @@ public static class Damage
     /// destinations, decided by what was defeated rather than by who attacked.
     /// </remarks>
     private static void Spill(
-        World world, ICardFacts facts, Card defeated, int controllingPlayer, long beyond,
+        World world, ICardFacts facts, Card source, Card defeated, int controllingPlayer, long beyond,
         string trigger, List<GameEvent> events)
     {
         var onto = facts.Kind(defeated.FaceId) switch
@@ -287,7 +297,7 @@ public static class Damage
             // villain is considered damage from an attack, but **does not
             // constitute an attack against that character**" -- so this deals
             // damage and does not retaliate.
-            Deal(world, facts, onto, beyond, trigger, Keywords.Overkill, events);
+            Deal(world, facts, source, onto, beyond, trigger, Keywords.Overkill, events);
         }
     }
 
@@ -330,7 +340,7 @@ public static class Damage
         long retaliate = StateFields.Modified(
             world, attacked, "retaliate", facts, world.Players);
 
-        Deal(world, facts, attacker, retaliate, trigger, "Retaliate", events);
+        Deal(world, facts, attacked, attacker, retaliate, trigger, "Retaliate", events);
     }
 
     /// <summary>

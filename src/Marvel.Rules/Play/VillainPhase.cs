@@ -136,30 +136,32 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated);
 
+    /// <summary>Whether the target can take damage from this source.</summary>
+    /// <remarks>
+    /// <c>rr:cannot</c>: "cannot" is absolute. This is a constant prohibition,
+    /// not a triggered replacement effect in the damage window.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="target">Who would take the damage.</param>
+    /// <param name="source">The card the damage comes from.</param>
+    bool CanTakeDamage(World world, Card target, Card source);
+
     /// <summary>
     /// Step 1 of dealing damage — <c>rr:damage.step.1</c>.
     /// </summary>
     /// <remarks>
-    /// <para>
     /// "Abilities that trigger <i>when [character] would be dealt any amount of
-    /// damage</i>", which is where a replacement effect sits:
-    /// <c>rr:replacement-effect</c> — "when [triggering condition] would happen,
-    /// do [replacement effect] instead".
-    /// </para>
-    /// <para>
-    /// It answers with how much damage is <b>left</b>, because that is what the
-    /// rest of the steps act on. A card that replaces all of it answers zero,
-    /// and <c>rr:replacement-effect.1</c> is then satisfied for free: the
-    /// damage is no longer imminent, so nothing later in the order can respond
-    /// to it.
-    /// </para>
+    /// damage</i>", which is where a replacement effect sits. It answers with
+    /// how much damage is left for the rest of the sequence.
     /// </remarks>
     /// <param name="world">The world.</param>
     /// <param name="target">Who the damage is aimed at.</param>
+    /// <param name="source">The card dealing the damage.</param>
     /// <param name="amount">How much is about to be dealt.</param>
     /// <param name="events">Where to record what any replacement did.</param>
     /// <returns>How much damage is still to be dealt.</returns>
-    long WouldBeDealt(World world, Card target, long amount, List<GameEvent> events);
+    long WouldBeDealt(
+        World world, Card target, Card source, long amount, List<GameEvent> events);
 
     /// <summary>
     /// Step 6 of dealing damage — <c>rr:damage.step.6</c>.
@@ -408,8 +410,11 @@ public class NoCardAbilities : ICardAbilities
         World world, Card card, Defeated defeated) => [];
 
     /// <inheritdoc/>
+    public virtual bool CanTakeDamage(World world, Card target, Card source) => true;
+
+    /// <inheritdoc/>
     public virtual long WouldBeDealt(
-        World world, Card target, long amount, List<GameEvent> events) => amount;
+        World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
 
     /// <inheritdoc/>
     public virtual void WouldBeDefeated(

@@ -351,7 +351,7 @@ public sealed class BasicPowerTests
 
         Agendas.Happening(world);
 
-        Assert.True(Damage.Deal(world, printed, minion, 3, "test", "test", []));
+        Assert.True(Damage.Deal(world, printed, minion, minion, 3, "test", "test", []));
     }
 
     [Rule("rr:villain-defeat")]
