@@ -56,6 +56,15 @@ public interface ICardAbilities : IWindowAbilities
     string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
         Resources.GeneratedBy(source.FaceId, world.Facts);
 
+    /// <summary>Applies card-specific restrictions to an attack's defenders.</summary>
+    /// <param name="world">The board.</param>
+    /// <param name="attack">The attack whose defender is being declared.</param>
+    /// <param name="candidates">Every character the defense rules permit.</param>
+    /// <returns>The candidates the card permits and whether one is required.</returns>
+    DefenderChoice Defenders(
+        World world, EnemyAttack attack, IReadOnlyList<Card> candidates) =>
+        new(candidates, Required: false);
+
     /// <summary>Resolves a revealed encounter card's "When Revealed" ability.</summary>
     /// <param name="world">The world.</param>
     /// <param name="card">The card being revealed.</param>
@@ -384,6 +393,11 @@ public class NoCardAbilities : ICardAbilities
         Resources.GeneratedBy(source.FaceId, world.Facts);
 
     /// <inheritdoc/>
+    public virtual DefenderChoice Defenders(
+        World world, EnemyAttack attack, IReadOnlyList<Card> candidates) =>
+        new(candidates, Required: false);
+
+    /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
 
     /// <inheritdoc/>
@@ -567,7 +581,7 @@ public static class VillainPhase
                 break;
 
             case Steps.DeclareDefender:
-                return Attack.DeclareDefender(world, facts);
+                return Attack.DeclareDefender(world, facts, abilities);
 
             case Steps.FlipBoostCards:
                 Attack.FlipBoostCards(world, facts, abilities, events);
@@ -690,7 +704,7 @@ public static class VillainPhase
         switch (step.What)
         {
             case Steps.DeclareDefender:
-                Attack.Defend(world, facts, input, events);
+                Attack.Defend(world, facts, abilities, input, events);
                 break;
 
             case Steps.ChooseOption:

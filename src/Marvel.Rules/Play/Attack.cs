@@ -6,6 +6,13 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>
+/// The legal defenders for one attack and whether a defender is mandatory.
+/// </summary>
+/// <param name="Candidates">The characters that may defend.</param>
+/// <param name="Required">Whether declining to defend is illegal.</param>
+public sealed record DefenderChoice(IReadOnlyList<Card> Candidates, bool Required);
+
+/// <summary>
 /// An enemy attack, as <c>rr:attack-enemy-activation</c> lists its steps.
 /// </summary>
 /// <remarks>
@@ -180,11 +187,14 @@ public static class Attack
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">Card-specific defender restrictions.</param>
     /// <returns>The question, or null when nobody could defend.</returns>
-    public static Prompt? DeclareDefender(World world, ICardFacts facts)
+    public static Prompt? DeclareDefender(
+        World world, ICardFacts facts, ICardAbilities abilities)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
 
         // `rr:activation.6` -- "if an activating minion leaves play, that
         // minion's activation ends immediately and no further steps of that
@@ -195,8 +205,8 @@ public static class Attack
         }
 
         var attack = Current(world);
-        var candidates = Defenders(world, facts);
-        if (candidates.Count == 0)
+        var choice = Choice(world, facts, abilities, attack);
+        if (choice.Candidates.Count == 0)
         {
             return null;
         }
@@ -209,16 +219,17 @@ public static class Attack
             Trigger: Steps.AttackInitiated,
             Label: $"{seat.Name} declares a defender",
 
-            // rr:attack-enemy-activation.4 -- an attack with no defender is
-            // undefended and resolves, so not defending is always an answer.
-            Cancellable: true,
+            // `rr:attack-enemy-activation.4` ordinarily permits no defender.
+            // A card instruction can make defending mandatory when its stated
+            // kind of defender is able, which is why this is card-provided.
+            Cancellable: !choice.Required,
             Affordances:
             [
                 // `AnchorPlayer` is whose character it is, which is not
                 // always the player being asked: `rr:defend-defense.5` lets
                 // somebody else's hero or ally defend, and taking over makes
                 // them the attack's new target.
-                .. candidates.Select(card => new Affordance(
+                .. choice.Candidates.Select(card => new Affordance(
                     Id: card.ObjectId,
                     Verb: DefenseVerb,
                     AnchorId: card.ObjectId,
@@ -230,23 +241,34 @@ public static class Attack
     /// <summary>The character that answer names becomes the defender.</summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">Card-specific defender restrictions.</param>
     /// <param name="input">The player's answer.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void Defend(
-        World world, ICardFacts facts, Decision input, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, Decision input,
+        List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(events);
 
         var attack = Current(world);
+        var choice = Choice(world, facts, abilities, attack);
         if (input.IsDecline)
         {
+            if (choice.Required)
+            {
+                throw new RulesNotImplementedException(
+                    $"the attack by card {attack.Enemy} requires a defender and cannot be "
+                    + "declined");
+            }
+
             return;
         }
 
-        var defender = Defenders(world, facts)
+        var defender = choice.Candidates
             .FirstOrDefault(card => card.ObjectId == input.Affordance)
             ?? throw new RulesNotImplementedException(
                 $"card {input.Affordance} was not offered as a defender");
@@ -610,6 +632,28 @@ public static class Attack
         }
 
         return candidates;
+    }
+
+    /// <summary>Applies card-specific defender constraints to the rules candidates.</summary>
+    private static DefenderChoice Choice(
+        World world, ICardFacts facts, ICardAbilities abilities, EnemyAttack attack)
+    {
+        var legal = Defenders(world, facts);
+        var choice = abilities.Defenders(world, attack, legal);
+        if (choice.Required && choice.Candidates.Count == 0)
+        {
+            throw new RulesNotImplementedException(
+                $"card {attack.Enemy} requires a defender but offers no legal candidate");
+        }
+
+        var legalIds = legal.Select(card => card.ObjectId).ToHashSet();
+        if (choice.Candidates.Any(card => !legalIds.Contains(card.ObjectId)))
+        {
+            throw new RulesNotImplementedException(
+                $"card {attack.Enemy} offered a character that cannot defend");
+        }
+
+        return choice;
     }
 
     /// <summary>One player's characters that could defend.</summary>

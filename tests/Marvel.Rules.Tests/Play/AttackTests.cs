@@ -246,6 +246,53 @@ public sealed class AttackTests
         Assert.Equal([0, 1], asked.Affordances.Select(option => option.AnchorPlayer));
     }
 
+    [Rule("rr:defend-defense.3")]
+    [Fact]
+    public void ACardCanRequireOnePlayersAllyToDefendIfAble()
+    {
+        // "Must defend ... with an ally they control, if able" narrows both
+        // halves of the ordinary defense question: the other legal characters
+        // are absent and declining is no longer an answer.
+        var printed = Printed(atk: 2, boost: 0);
+        var world = Board(printed, players: 2);
+        var required = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+        var abilities = new RequiresAlly(0);
+
+        var asked = Sequence.Work(world, printed, abilities, []);
+
+        Assert.NotNull(asked);
+        Assert.False(asked.Cancellable);
+        Assert.Equal(required.ObjectId, Assert.Single(asked.Affordances).AnchorId);
+        Assert.Throws<RulesNotImplementedException>(() => Attack.Defend(
+            world, printed, abilities, Decision.Decline, []));
+    }
+
+    [Rule("rr:attack-enemy-activation.4")]
+    [Fact]
+    public void TheOrdinaryOptionalDefenseReturnsWhenTheRequiredAllyIsNotAble()
+    {
+        // "If able" ends the card's requirement when its matching ally is not
+        // ready. The normal attack rule then permits any legal defender or no
+        // defender, rather than making the whole step impossible.
+        var printed = Printed(atk: 2, boost: 0);
+        var world = Board(printed, players: 2);
+        var exhausted = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        exhausted.Exhaust();
+        var abilities = new RequiresAlly(0);
+
+        var asked = Sequence.Work(world, printed, abilities, []);
+
+        Assert.NotNull(asked);
+        Assert.True(asked.Cancellable);
+        Assert.Equal(
+            [world.Seats[0].IdentityCard.ObjectId, world.Seats[1].IdentityCard.ObjectId],
+            asked.Affordances.Select(option => option.AnchorId));
+    }
+
     [Rule("rr:defend-defense.5")]
     [Fact]
     public void DefendingForAnotherPlayerMakesYouTheTarget()
@@ -475,6 +522,19 @@ public sealed class AttackTests
     }
 
     private static Facts Printed(int atk, int boost, int def = 0) => new(atk, boost, def);
+
+    private sealed class RequiresAlly(int player) : NoCardAbilities
+    {
+        public override DefenderChoice Defenders(
+            World world, EnemyAttack attack, IReadOnlyList<Card> candidates)
+        {
+            var allies = candidates.Where(card =>
+                card.Owner == player && world.Facts.Kind(card.FaceId) == CardKind.Ally).ToList();
+            return allies.Count > 0
+                ? new DefenderChoice(allies, Required: true)
+                : new DefenderChoice(candidates, Required: false);
+        }
+    }
 
     private sealed class Facts(int atk, int boost, int def) : ICardFacts
     {
