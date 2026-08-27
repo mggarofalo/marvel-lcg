@@ -511,14 +511,14 @@ public static class CardPlay
             upgradeHost = targets[0];
         }
 
-        int controller = kind == CardKind.Upgrade
-            ? world.Cards[upgradeHost].Area.PlayArea.Player
+        // An encounter card's play area is the villain's, but attaching a
+        // player upgrade to it does not give control to the scenario. The
+        // exception in `rr:ownership-and-control.2.1` applies only when the
+        // attached card is controlled by another *player*.
+        var hostArea = world.Cards[upgradeHost].Area.PlayArea;
+        int controller = kind == CardKind.Upgrade && hostArea.IsPlayers
+            ? hostArea.Player
             : seat.Index;
-        if (controller < 0)
-        {
-            throw new RulesNotImplementedException(
-                $"upgrade {card.ObjectId} would enter play attached outside a player's play area");
-        }
 
         var into = kind switch
         {

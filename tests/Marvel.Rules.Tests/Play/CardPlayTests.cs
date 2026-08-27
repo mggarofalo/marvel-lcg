@@ -589,6 +589,27 @@ public sealed class CardPlayTests
             upgrade.Area);
     }
 
+    [Rule("rr:ownership-and-control.2")]
+    [Fact]
+    public void APlayerUpgradeAttachedToAnEncounterCardStaysUnderItsOwnersControl()
+    {
+        // Encounter cards belong to the scenario, but the rule only transfers
+        // an attached upgrade to "a player other than the upgrade's owner."
+        // An upgrade such as Webbed Up remains in its owner's play area while
+        // its host sits in the villain's.
+        var printed = Cards().With("web", ("Cost", "0"), ("RES", "R"));
+        var world = Board(printed);
+        var villain = world.CreateCard("villain", world.AreaOf(DeckType.VillainArea));
+        var upgrade = InHand(world, "web");
+        var abilities = new Targets(villain.ObjectId);
+
+        CardPlay.Play(world, printed, abilities, world.Seats[0], upgrade, [], [],
+            [villain.ObjectId]);
+
+        Assert.Equal(0, upgrade.Area.PlayArea.Player);
+        Assert.Equal(villain.ObjectId, upgrade.Area.Host);
+    }
+
     /// <summary>One object id of a card in hand with the given face.</summary>
     private static int Pay(World world, string faceId) =>
         world.Seats[0].Hand.Cards.First(card => card.FaceId == faceId).ObjectId;
