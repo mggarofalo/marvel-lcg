@@ -359,7 +359,7 @@ public sealed class Game
                 + "rr:form-change-form.1 permits one voluntary change each round");
         }
 
-        string was = Forms.Change(seat, facts);
+        string was = Forms.ChangeAndSchedule(world, seat, facts, Round);
         seat.FormChangedInRound = Round;
 
         var happened = new List<GameEvent>
@@ -375,9 +375,7 @@ public sealed class Game
             },
         };
 
-        Pending = TurnPrompt();
-        asking = Asker.Game;
-        return new Resolution(world, Pending, happened);
+        return Turn(happened);
     }
 
     /// <summary>

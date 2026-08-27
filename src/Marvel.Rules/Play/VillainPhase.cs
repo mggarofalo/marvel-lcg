@@ -27,6 +27,16 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public interface ICardAbilities : IWindowAbilities
 {
+    /// <summary>Applies card text that determines the state a card enters play with.</summary>
+    /// <remarks>
+    /// Some cards print a constant such as "enters play with 4 arrow counters"
+    /// without using the Uses keyword. The rules layer owns the transition and
+    /// asks the card layer for that printed state before any response to the
+    /// transition is offered. The default is silence for cards with no such
+    /// text.
+    /// </remarks>
+    IReadOnlyList<GameEvent> EntersPlay(World world, Card card) => [];
+
     /// <summary>
     /// Resumes card effects that initiated an activation after it has fully resolved.
     /// </summary>
@@ -437,6 +447,9 @@ public interface ICardAbilities : IWindowAbilities
 public class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> EntersPlay(World world, Card card) => [];
+
+    /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> ActivationCompleted(
         World world, EnemyActivation result) => [];
 
@@ -739,6 +752,15 @@ public static class VillainPhase
 
             case Steps.EndPlayerPhase:
                 PhaseEnd.EndPlayerPhase(world, events);
+                break;
+
+            // Lifecycle steps exist to put their interrupt and response
+            // windows on the agenda. The transition itself was applied before
+            // the step was scheduled, so occurrence tier has nothing further
+            // to mutate.
+            case Steps.CardPlayed:
+            case Steps.CardEntersPlay:
+            case Steps.FormChanged:
                 break;
 
             default:
@@ -1134,7 +1156,7 @@ public static class VillainPhase
         // `rr:reveal.step.2` -- **where the card goes is decided by its type**,
         // and it happens before step 3's "When Revealed" abilities. A minion
         // that entered play is already engaged when its own ability resolves.
-        Reveal.Resolve(world, facts, card, player, events);
+        Reveal.Resolve(world, facts, card, player, events, world.Agenda.Occurrence);
 
         // Step 3. "Resolve each **When Revealed** ability on that card
         // *(including those provided by keywords)*."

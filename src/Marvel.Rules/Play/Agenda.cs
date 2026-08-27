@@ -923,6 +923,12 @@ public static class Steps
     /// <summary>A player card has finished entering play.</summary>
     public const string CardPlayed = "WhenCardPlayed";
 
+    /// <summary>A card finished entering play, however it got there.</summary>
+    public const string CardEntersPlay = "WhenCardEntersPlay";
+
+    /// <summary>An identity finished changing form.</summary>
+    public const string FormChanged = "WhenFormChanged";
+
     /// <summary>A card being defeated — <c>rr:defeat</c>.</summary>
     /// <remarks>
     /// <para>
@@ -997,7 +1003,13 @@ public static class Steps
         [CharacterThwarts] = [CharacterThwartsScheme],
         [DamageWouldBeDealt] = [DamageWouldBeDealt],
         [CardWouldBeDefeated] = [CardWouldBeDefeated],
-        [CardPlayed] = [CardPlayed],
+        // Playing a non-event card is one occurrence that both plays the card
+        // and makes it enter play. `rr:triggering-condition.2` gives a single
+        // occurrence that creates several triggering conditions one pair of
+        // windows rather than one pair per description of the moment.
+        [CardPlayed] = [CardPlayed, CardEntersPlay],
+        [CardEntersPlay] = [CardEntersPlay],
+        [FormChanged] = [FormChanged],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 

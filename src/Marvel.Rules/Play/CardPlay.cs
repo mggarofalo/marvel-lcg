@@ -563,28 +563,24 @@ public static class CardPlay
         // not care how it got there. Eighteen allies in the pool print
         // `rr:toughness`, and before this a played one got no tough status card
         // -- only a *revealed* card ran them.
-        Reveal.EnterPlay(world, facts, card, events);
-        Played(world, abilities, seat, card, events);
+        Reveal.EnterPlay(world, facts, card, events, abilities: abilities);
+        Played(world, seat, card);
         Restricted(world, facts, seat, card, events);
     }
 
-    private static void Played(
-        World world, ICardAbilities abilities, Seat seat, Card card, List<GameEvent> events)
+    private static void Played(World world, Seat seat, Card card)
     {
-        var occurrence = new Occurrence(
-            0, [Steps.CardPlayed], Subject: card.ObjectId, Player: seat.Index);
-        var waiting = abilities.Waiting(world, occurrence, WindowKind.Response);
-        foreach (var ability in waiting)
-        {
-            if (ability.Type != AbilityType.ForcedResponse)
-            {
-                throw new RulesNotImplementedException(
-                    $"card {ability.Card} offers an optional response after a card is played, "
-                    + "and playing outside the agenda has no response prompt");
-            }
-
-            events.AddRange(abilities.Resolve(world, occurrence, ability, [], []));
-        }
+        // The card has moved and all state it enters with has been applied.
+        // The agenda supplies the ordinary response window, including the
+        // optional responses `rr:ability.11` says must be chosen rather than
+        // silently resolved or refused.
+        world.Agenda.Then(new PhaseStep(
+            Steps.CardPlayed,
+            world.Agenda.Current?.Round ?? 0,
+            0,
+            Index: seat.Index,
+            Subject: card.ObjectId,
+            Seat: seat.Index));
     }
 
     /// <summary>
