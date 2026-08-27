@@ -60,6 +60,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     public IReadOnlySet<string> Authored => book.Authored;
 
     /// <inheritdoc/>
+    public string ResourcesGeneratedBy(World world, Card source, Card? payingFor)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(source);
+
+        string printed = Resources.GeneratedBy(source.FaceId, world.Facts);
+        if (payingFor is null)
+        {
+            return printed;
+        }
+
+        string classes = world.Facts.Attributes(payingFor.FaceId)
+            .GetValueOrDefault("Class", string.Empty);
+        bool doubles = book.On(source.FaceId).Any(ability =>
+            ability.Trigger.Timing == AbilityType.Constant
+            && ability.Effect.Kind == "doubleResourceFor"
+            && classes.Split(';').Contains(
+                Word(ability.Effect.Argument), StringComparer.Ordinal));
+
+        return doubles ? printed + printed : printed;
+    }
+
+    /// <inheritdoc/>
     public bool CanRemoveThreat(World world, Card scheme)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -1141,6 +1164,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static TargetRequest? Asking(World world, int player, AbilityNode? cost)
     {
+        if (cost is { Kind: "seq" })
+        {
+            return Nodes(cost.Argument)
+                .Select(step => Asking(world, player, step))
+                .SingleOrDefault(request => request is not null);
+        }
+
         if (cost is not { Kind: "discardFromHand" })
         {
             return null;
@@ -1532,7 +1562,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             is not { } branch || HasRequiredTargets(Tree(branch), cast),
         "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
         "chooseCard" => Every(node.Require("from"), cast).Count > 0,
-        "removeFromGame" or "exhaust" or "reveal" or "returnToHand" =>
+        "removeFromGame" or "exhaust" or "ready" or "reveal" or "returnToHand" =>
             Every(node.Argument, cast).Count > 0,
         "soakDamage" => Find(node.Require("onto"), cast) is not null,
         "giveStatus" => Every(node.Require("card"), cast).Count > 0,
@@ -1556,7 +1586,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             or "cancelWhenRevealed" or "dealEncounterCards" or "revealTop"
             or "discardAtRandom" or "discardUntil" or "discardTop"
             or "recoverDiscardedByResource" or "shuffleInto" or "search"
-            or "gainSurge" or "shuffle" or "draw" => true,
+            or "gainSurge" or "shuffle" or "draw" or "drawToHandSize" => true,
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
             + "legality is not implemented"),
@@ -1581,6 +1611,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "removeFromGame" => Find(node.Argument, cast) is { } card
                 && card.Area.Type != DeckType.RemovedArea,
             "exhaust" => Find(node.Argument, cast)?.Ready == true,
+            "ready" => Every(node.Argument, cast).Any(card => !card.Ready),
             "removeCounters" => cast.Source.Tokens.GetValueOrDefault(
                 "c_" + Word(node.Argument)) > 0,
             "discardAtRandom" => Amount(node.Require("count"), cast) > 0
@@ -1599,6 +1630,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "removeThreat" => CanRemoveThreat(node, cast),
             "gainSurge" => Number(node.Argument) > 0,
             "draw" => CanDraw(node, cast),
+            "drawToHandSize" => cast.World.Seats[Seat(node.Argument, cast)].Hand.Cards.Count
+                < PhaseEnd.HandSize(
+                    cast.World, cast.World.Seats[Seat(node.Argument, cast)], cast.World.Facts),
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
@@ -1907,6 +1941,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Exhaust(node, cast);
                 break;
 
+            case "ready":
+                Ready(node, cast);
+                break;
+
+            case "drawToHandSize":
+                DrawToHandSize(node, cast);
+                break;
+
             case "removeCounters":
                 RemoveCounters(node, cast);
                 break;
@@ -2136,6 +2178,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "hasStatus" => Find(node.Require("card"), cast) is { } host
             && Statuses.Has(cast.World, host, Word(node.Require("status"))),
 
+        "hasTrait" => Find(node.Require("card"), cast) is { } traitHolder
+            && Rules.State.Traits.Has(
+                cast.World, traitHolder, Word(node.Require("trait")), cast.World.Facts),
+
+        "isTitle" => Find(node.Require("card"), cast) is { } titled
+            && string.Equals(
+                cast.World.Facts.Title(titled.FaceId), Word(node.Require("title")),
+                StringComparison.Ordinal),
+
         // "After **an ally** is defeated". A card type, asked of a card the
         // ability has already named -- `rr:defeat` is one rule for every kind
         // of card and the cards are the ones that narrow it.
@@ -2364,6 +2415,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // numeric modifier and therefore contributes no effect here.
                 break;
 
+            case "doubleResourceFor":
+                // This constant acts while its resource card is spent from
+                // hand. `ResourcesGeneratedBy` reads it with the payment's
+                // target card, which is context this general effect list does
+                // not carry.
+                break;
+
             default:
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' has a constant ability using the node "
@@ -2432,7 +2490,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return new ContinuousEffect(
             EffectSource.ConstantAbility,
             Kind: keyword,
-            Amount: node.Field("amount") is { } amount ? Number(amount) : 1,
+            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : 1,
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
             Lasts: Duration.WhileInPlay);
@@ -2475,7 +2533,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: keyword,
-            Amount: node.Field("amount") is { } amount ? Number(amount) : 0,
+            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : 0,
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
             Lasts: Duration.UntilEndOf(Word(node.Require("until")))));
@@ -2650,20 +2708,35 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void Exhaust(AbilityNode node, Cast cast)
     {
-        var target = Find(node.Argument, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would exhaust a card that is not there");
-
-        if (!target.Ready)
+        foreach (var target in Every(node.Argument, cast).Where(target => target.Ready))
         {
-            return;
+            target.Exhaust();
+            cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
+            {
+                Trigger = cast.Trigger, Verb = "Exhaust",
+            });
         }
+    }
 
-        target.Exhaust();
-        cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
+    private static void Ready(AbilityNode node, Cast cast)
+    {
+        foreach (var target in Every(node.Argument, cast).Where(target => !target.Ready))
         {
-            Trigger = cast.Trigger, Verb = "Exhaust",
-        });
+            target.Refresh();
+            cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 1, 0)
+            {
+                Trigger = cast.Trigger, Verb = "Ready",
+            });
+        }
+    }
+
+    private static void DrawToHandSize(AbilityNode node, Cast cast)
+    {
+        int player = Seat(node.Argument, cast);
+        var seat = cast.World.Seats[player];
+        int count = (int)Math.Max(
+            0, PhaseEnd.HandSize(cast.World, seat, cast.World.Facts) - seat.Hand.Cards.Count);
+        Draw.Cards(cast.World, player, count, cast.Trigger, cast.Events);
     }
 
     private static void RemoveCounters(AbilityNode node, Cast cast)
@@ -3807,6 +3880,34 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Select(seat => seat.IdentityCard)];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } identities
+            && identities.Argument is AbilityValue.Word { Value: "identities" })
+        {
+            return [.. cast.World.PlayerOrder.Select(player =>
+                cast.World.Seats[player].IdentityCard)];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allCharacters
+            && allCharacters.Argument is AbilityValue.Word { Value: "characters" })
+        {
+            return
+            [
+                .. cast.World.PlayerOrder.Select(player =>
+                    cast.World.Seats[player].IdentityCard),
+                .. cast.World.Areas
+                    .Where(area => area.Type is DeckType.AlliesArea
+                        or DeckType.VillainArea or DeckType.EngagedEnemiesArea)
+                    .SelectMany(area => area.Cards),
+            ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "withTrait" } withTrait)
+        {
+            string wanted = Word(withTrait.Require("trait"));
+            return [.. Every(withTrait.Require("cards"), cast).Where(card =>
+                Rules.State.Traits.Has(cast.World, card, wanted, cast.World.Facts))];
+        }
+
         return Find(value, cast) is { } one ? [one] : [];
     }
 
@@ -4089,6 +4190,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 AbilityPlayers.TriggerPlayer => cast.Occurrence.Player,
                 AbilityPlayers.You => Resolver(cast),
                 AbilityPlayers.Controller => ControllerOf(cast.World, cast.Source),
+                "chosenPlayer" => cast.Chosen is { Owner: >= 0 } chosen
+                    ? chosen.Owner
+                    : throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' asks for the chosen player before one "
+                        + "was chosen"),
                 _ => throw new AbilityException($"'{word.Value}' does not name a player"),
             }
             : throw new AbilityException(
@@ -4145,6 +4251,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // which `rr:damage.2` puts on an ally or minion and which an
             // attachment can hold when a card puts them there.
             "damageOn" => Find(node.Argument, cast)?.Damage ?? 0,
+            "if" => Test(Tree(node.Require("test")), cast)
+                ? Amount(node.Require("then"), cast)
+                : node.Field("else") is { } otherwise
+                    ? Amount(otherwise, cast)
+                    : 0,
+            "count" => Every(node.Argument, cast).Count,
+            "discardedWithResource" => cast.Discarded.Count(card =>
+                Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(
+                    Word(node.Argument), StringComparison.Ordinal)),
+            "modified" => Find(node.Require("card"), cast) is { } modified
+                ? StateFields.Modified(
+                    cast.World, modified, Word(node.Require("field")),
+                    cast.World.Facts, cast.World.Players)
+                : 0,
+            "min" => Values(node.Argument).Select(each => Amount(each, cast)).Min(),
+            "add" => Values(node.Argument).Sum(each => Amount(each, cast)),
+            "mul" => Values(node.Argument).Aggregate(1L, (product, each) =>
+                product * Amount(each, cast)),
             _ => throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' asks for the amount '{node.Kind}', "
                 + "which is not implemented"),
@@ -4155,6 +4279,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         value is AbilityValue.Number number
             ? number.Value
             : throw new AbilityException($"{AbilityNode.Describe(value)} is not a number");
+
+    private static IReadOnlyList<AbilityValue> Values(AbilityValue value) =>
+        value is AbilityValue.List list
+            ? list.Values
+            : throw new AbilityException($"{AbilityNode.Describe(value)} is not a list");
 
     /// <summary>What one ability is resolving against.</summary>
     /// <param name="World">The board.</param>

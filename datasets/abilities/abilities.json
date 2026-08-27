@@ -1684,21 +1684,6 @@
       ]
     },
     {
-      "card": "01028",
-      "name": "Superhuman Strength",
-      "note": "She-Hulk gets +2 ATK. After She-Hulk attacks, discard this upgrade and stun the attacked enemy. The attack occurrence's actor and target preserve those two roles explicitly.",
-      "abilities": [
-        {
-          "trigger": { "timing": "Constant", "subject": "this" },
-          "effect": { "grant": { "card": "you", "keyword": "attack", "amount": 2 } }
-        },
-        {
-          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "you", "target": "enemy" },
-          "effect": { "seq": [ { "discard": "this" }, { "giveStatus": { "card": "trigger.target", "status": "stunned" } } ] }
-        }
-      ]
-    },
-    {
       "card": "01036",
       "name": "Mark V Armor",
       "note": "You get +6 hit points. The constant modifies the controlling identity's maximum hit points through the same field Damage.Health reads.",
@@ -2076,6 +2061,199 @@
         {
           "trigger": { "timing": "Constant", "subject": "this" },
           "effect": { "preventThreatRemoval": "this" }
+        }
+      ]
+    },
+    {
+      "card": "01010b",
+      "name": "Carol Danvers",
+      "note": "Commander — Action: choose a player to draw 1 card, limited once per round. Identities stand for players when the table asks the resolving player to choose one.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "limitPerRound": 1,
+          "effect": { "chooseCard": { "from": { "query": "identities" }, "effect": { "draw": { "player": "chosenPlayer", "count": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01015",
+      "name": "Alpha Flight Station",
+      "note": "The exhaust and chosen discard are costs. The resolving player draws 2 cards as Carol Danvers and 1 otherwise.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "seq": [ { "exhaust": "this" }, { "discardFromHand": 1 } ] },
+          "effect": { "if": { "test": { "isTitle": { "card": "you", "title": "Carol Danvers" } }, "then": { "draw": { "player": "you", "count": 2 } }, "else": { "draw": { "player": "you", "count": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01021",
+      "name": "Gamma Slam",
+      "note": "The attack deals damage equal to the hero's sustained damage, capped at 15.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": { "min": [ 15, { "damageOn": "you" } ] } } } } }
+        }
+      ]
+    },
+    {
+      "card": "01031",
+      "name": "Repulsor Blast",
+      "note": "The chosen enemy takes 1 damage, then the top 5 player-deck cards are discarded. Each one with a printed energy resource adds 2 damage to that same enemy.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "seq": [ { "dealDamage": { "cards": "chosen", "amount": 1 } }, { "discardTop": { "from": "yourDeck", "count": 5 } }, { "dealDamage": { "cards": "chosen", "amount": { "mul": [ 2, { "discardedWithResource": "Y" } ] } } } ] } } }
+        }
+      ]
+    },
+    {
+      "card": "01032",
+      "name": "Supersonic Punch",
+      "note": "The attack deals 8 damage while Iron Man has AERIAL and 4 damage otherwise.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": { "if": { "test": { "hasTrait": { "card": "you", "trait": "AERIAL" } }, "then": 8, "else": 4 } } } } } }
+        }
+      ]
+    },
+    {
+      "card": "01035",
+      "name": "Arc Reactor",
+      "note": "Its Hero Action exhausts Arc Reactor as its cost and readies Iron Man.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "exhaust": "this" },
+          "effect": { "ready": "you" }
+        }
+      ]
+    },
+    {
+      "card": "01038",
+      "name": "Powered Gauntlets",
+      "note": "The Hero Action exhausts the gauntlets, then deals 2 damage while Iron Man has AERIAL and 1 otherwise.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "exhaust": "this" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": { "if": { "test": { "hasTrait": { "card": "you", "trait": "AERIAL" } }, "then": 2, "else": 1 } } } } } }
+        }
+      ]
+    },
+    {
+      "card": "01059",
+      "name": "Jessica Jones",
+      "note": "Jessica Jones gets +1 THW for each side scheme in play.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "thwart", "amount": { "count": { "query": "sideSchemes" } } } }
+        }
+      ]
+    },
+    {
+      "card": "01069",
+      "name": "Get Ready",
+      "note": "The action chooses and readies an ally.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "effect": { "chooseCard": { "from": { "query": "alliesYouControl" }, "effect": { "ready": "chosen" } } }
+        }
+      ]
+    },
+    {
+      "card": "01073",
+      "name": "The Triskelion",
+      "note": "This support increases its controller's ally limit by 1 while it is in play.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "you", "keyword": "ally_limit", "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01086",
+      "name": "First Aid",
+      "note": "The action chooses any character and heals 2 damage from it.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "effect": { "chooseCard": { "from": { "query": "characters" }, "effect": { "heal": { "card": "chosen", "amount": 2 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01091",
+      "name": "Avengers Mansion",
+      "note": "The action exhausts the support, chooses a player through that player's identity, and has that player draw 1 card.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "exhaust": "this" },
+          "effect": { "chooseCard": { "from": { "query": "identities" }, "effect": { "draw": { "player": "chosenPlayer", "count": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01093",
+      "name": "Tenacity",
+      "note": "The Hero Action spends a physical resource and discards Tenacity as its costs, then readies the player's hero.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "seq": [ { "spend": "R" }, { "discard": "this" } ] },
+          "effect": { "ready": "you" }
+        }
+      ]
+    },
+    {
+      "card": "01055",
+      "name": "The Power of Aggression",
+      "note": "This card generates one wild resource normally and doubles that output while paying for an Aggression card. The card being paid for is payment context supplied by the engine, not inferred from the hand.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "doubleResourceFor": "Aggression" }
+        }
+      ]
+    },
+    {
+      "card": "01062",
+      "name": "The Power of Justice",
+      "note": "This card generates one wild resource normally and doubles that output while paying for a Justice card.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "doubleResourceFor": "Justice" }
+        }
+      ]
+    },
+    {
+      "card": "01072",
+      "name": "The Power of Leadership",
+      "note": "This card generates one wild resource normally and doubles that output while paying for a Leadership card.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "doubleResourceFor": "Leadership" }
+        }
+      ]
+    },
+    {
+      "card": "01079",
+      "name": "The Power of Protection",
+      "note": "This card generates one wild resource normally and doubles that output while paying for a Protection card.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "doubleResourceFor": "Protection" }
         }
       ]
     }
