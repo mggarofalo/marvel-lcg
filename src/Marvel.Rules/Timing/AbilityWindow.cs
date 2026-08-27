@@ -9,7 +9,12 @@ namespace Marvel.Rules.Timing;
 /// optional ability on an encounter card, so who resolves it is settled when it
 /// is offered, not when it is collected.
 /// </param>
-public readonly record struct PendingAbility(int Card, AbilityType Type, int Player);
+/// <param name="Ordinal">
+/// Which ability at this timing on the card is waiting, in printed/data order.
+/// Most cards have one and therefore use zero.
+/// </param>
+public readonly record struct PendingAbility(
+    int Card, AbilityType Type, int Player, int Ordinal = 0);
 
 /// <summary>Everything waiting at one priority, which resolves before the next.</summary>
 /// <param name="Priority">The tier.</param>

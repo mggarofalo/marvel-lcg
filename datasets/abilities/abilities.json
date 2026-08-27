@@ -3206,6 +3206,25 @@
       ]
     },
     {
+      "card": "01018",
+      "name": "Energy Channel",
+      "note": "Its first Action spends a player-chosen positive number X of energy or wild resources and places exactly that many energy counters. Its separate Hero Action (attack) discards Energy Channel as its cost, chooses an enemy, and deals twice the stored counters capped at 10 damage. The two same-tier actions carry distinct ordinals so the action prompt and resolver preserve which printed ability was chosen.",
+      "abilities": [
+        {
+          "name": "Channel Energy",
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "spendEnergyX": "Y" },
+          "effect": { "placeCounters": { "card": "this", "counter": "energy", "count": { "result": "energy" } } }
+        },
+        {
+          "name": "Release Energy",
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "discard": "this" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealAttackDamage": { "cards": "chosen", "amount": { "min": [ 10, { "mul": [ 2, { "countersOn": { "card": "this", "counter": "energy" } } ] } ] } } } } }
+        }
+      ]
+    },
+    {
       "card": "01041",
       "name": "Shuri",
       "note": "After Shuri enters play, her optional response searches the controlling player's deck for an Upgrade. The player chooses among every matching card, adds it to hand, then shuffles the searched deck.",

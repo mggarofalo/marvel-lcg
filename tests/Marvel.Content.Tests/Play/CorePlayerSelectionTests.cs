@@ -111,6 +111,47 @@ public sealed class CorePlayerSelectionTests
         Assert.Contains(other, world.Seats[0].Deck.Cards);
     }
 
+    [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:player-turn.5")]
+    [Fact]
+    public void EnergyChannelsTwoActionsRemainDistinctAndSpendTheChosenX()
+    {
+        var world = Board("01010a");
+        var channel = world.CreateCard(
+            "01018", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("01116b", world.AreaOf(DeckType.MainSchemesArea));
+        world.CreateCard("01044", world.Seats[0].Deck);
+        var first = world.CreateCard("01014", world.Seats[0].Hand);
+        var second = world.CreateCard("01014", world.Seats[0].Hand);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var runner = AuthoredCards.Runner();
+        var game = Game.Begin(world, Cards, runner);
+        game.Resolve(Decision.Decline);
+
+        var actions = game.Pending!.Affordances
+            .Where(option => option.AnchorId == channel.ObjectId)
+            .ToList();
+        Assert.Equal(2, actions.Count);
+        Assert.NotEqual(actions[0].Id, actions[1].Id);
+        var charge = actions.Single(option => option.Label == "Channel Energy");
+
+        var pending = runner.Actions(world, 0).ToList();
+        runner.Act(
+            world, pending.Single(action => action.Ordinal == 0),
+            [first.ObjectId, second.ObjectId], []);
+
+        Assert.Equal(6, channel.Tokens["c_energy"]);
+        runner.Act(world, pending.Single(action => action.Ordinal == 1), [], []);
+        var step = Assert.Single(world.Agenda.Outstanding);
+        var target = runner.Choosing(world, channel, 0, step.Index, step.Tier)!;
+        Assert.Equal(Question.Element, target.Asking);
+        runner.Chose(
+            world, channel, 0, step.Index, Decision.Take(villain.ObjectId), step.Tier);
+
+        Assert.Equal(10, villain.Damage);
+        Assert.False(DeckTypes.IsInPlay(channel.Area.Type));
+    }
+
     private static World Board(string identity)
     {
         var world = new World(Cards, players: 1);

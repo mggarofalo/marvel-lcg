@@ -469,7 +469,8 @@ public sealed class Game
     {
         var taken = Pending!.Affordances.First(option => option.Id == input.Affordance);
         var ability = abilities.Actions(world, Active)
-            .FirstOrDefault(pending => pending.Card == taken.AnchorId);
+            .FirstOrDefault(pending => pending.Card == taken.AnchorId
+                && Handle($"{ActionVerb}:{pending.Ordinal}", pending.Card) == taken.Id);
 
         if (ability.Card != taken.AnchorId)
         {
@@ -903,7 +904,7 @@ public sealed class Game
             options.Add(described with
             {
                 Verb = ActionVerb,
-                Id = Handle(ActionVerb, described.AnchorId),
+                Id = Handle($"{ActionVerb}:{action.Ordinal}", described.AnchorId),
             });
         }
 

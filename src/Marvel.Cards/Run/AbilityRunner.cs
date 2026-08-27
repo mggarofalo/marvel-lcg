@@ -274,8 +274,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 continue;
             }
 
-            foreach (var ability in book.On(card.FaceId))
+            var written = book.On(card.FaceId).ToList();
+            for (int index = 0; index < written.Count; index++)
             {
+                var ability = written[index];
                 if (!Answers(world, ability, card, occurrence, window))
                 {
                     continue;
@@ -313,8 +315,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     continue;
                 }
 
+                int ordinal = written.Take(index).Count(candidate =>
+                    candidate.Trigger.Timing == ability.Trigger.Timing);
                 waiting.Add(new PendingAbility(
-                    card.ObjectId, ability.Trigger.Timing, controller));
+                    card.ObjectId, ability.Trigger.Timing, controller, ordinal));
             }
         }
 
@@ -327,10 +331,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
 
         var card = world.Cards[ability.Card];
-        var found = book.On(card.FaceId)
-            .FirstOrDefault(candidate => candidate.Trigger.Timing == ability.Type)
-            ?? throw new AbilityException(
-                $"card '{card.FaceId}' has no '{ability.Type}' ability to describe");
+        var found = Pending(card, ability);
 
         // The ability's own name is the verb: an affordance for Foresight is
         // offered as `Foresight`, so a client has something to render without
@@ -359,20 +360,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(chosen);
 
         var card = world.Cards[ability.Card];
-        var found = book.On(card.FaceId)
-            .Where(candidate => candidate.Trigger.Timing == ability.Type)
-            .ToList();
-
-        if (found.Count != 1)
-        {
-            // Two abilities of one type on one card cannot be told apart by a
-            // `PendingAbility`, which names a card and a tier. A card that needs
-            // it needs the pending ability to carry which one, and that is a
-            // change to make when a card demands it rather than now.
-            throw new AbilityException(
-                $"card '{card.FaceId}' has {found.Count} '{ability.Type}' abilities, "
-                + "and exactly one can be resolved from a window");
-        }
+        var found = Pending(card, ability);
 
         var events = new List<GameEvent>();
 
@@ -393,7 +381,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         int resolving = ability.Player >= 0 ? ability.Player : occurrence.Player;
         var cast = new Cast(world, card, occurrence, resolving, events, this)
         {
-            Tier = found[0].Trigger.Timing,
+            Tier = found.Trigger.Timing,
         };
 
         // **A forced ability is resolved, never offered, and so never priced.**
@@ -402,7 +390,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // payment is an answer to a question. `rr:initiating-abilities.step.5`
         // would still have to be paid, out of a hand nobody chose from. No card
         // in the pool prints one; the day one does, the window has to ask.
-        if (AbilityTypes.IsMandatory(found[0].Trigger.Timing) && found[0].Cost is not null)
+        if (AbilityTypes.IsMandatory(found.Trigger.Timing) && found.Cost is not null)
         {
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' has a mandatory ability with a cost, and a mandatory ability "
@@ -416,9 +404,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // that the player named a payment that works, and `CardPlay.Spend`
         // refuses one that does not.
         PayEvent(card, paying, cast);
-        Pay(found[0].Cost, paying, chosen, cast);
-        Use(world, card, found[0]);
-        Run(found[0].Effect, cast);
+        Pay(found.Cost, paying, chosen, cast);
+        Use(world, card, found);
+        Run(found.Effect, cast);
         DiscardEvent(card, cast);
         return events;
     }
@@ -1197,10 +1185,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(chosen);
 
         var card = world.Cards[ability.Card];
-        var found = book.On(card.FaceId)
-            .SingleOrDefault(candidate => candidate.Trigger.Timing == ability.Type)
-            ?? throw new AbilityException(
-                $"card '{card.FaceId}' has no single '{ability.Type}' ability to trigger");
+        var found = Pending(card, ability);
 
         var events = new List<GameEvent>();
         var cast = new Cast(
@@ -1232,10 +1217,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var found = new List<PendingAbility>();
         foreach (var card in Triggerable(world, player))
         {
-            foreach (var ability in book.On(card.FaceId))
+            foreach (var (ability, ordinal) in book.On(card.FaceId)
+                         .Where(candidate => candidate.Trigger.Timing == AbilityType.Action)
+                         .Select((candidate, ordinal) => (candidate, ordinal)))
             {
-                if (ability.Trigger.Timing == AbilityType.Action
-                    && Available(world, card, ability)
+                if (Available(world, card, ability)
                     && InForm(world, player, ability.Trigger.Form)
                     && Payable(world, card, player, ability.Cost)
                     && EventPayable(world, card, player)
@@ -1245,13 +1231,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                             0, [Steps.TurnAction], Subject: card.ObjectId, Player: player),
                             player, [], this))))
                 {
-                    found.Add(new PendingAbility(card.ObjectId, AbilityType.Action, player));
+                    found.Add(new PendingAbility(
+                        card.ObjectId, AbilityType.Action, player, ordinal));
                 }
             }
         }
 
         return found;
     }
+
+    /// <summary>The exact same-timing ability named by a pending ordinal.</summary>
+    private CardAbility Pending(Card card, PendingAbility pending) =>
+        book.On(card.FaceId)
+            .Where(candidate => candidate.Trigger.Timing == pending.Type)
+            .ElementAtOrDefault(pending.Ordinal)
+        ?? throw new AbilityException(
+            $"card '{card.FaceId}' has no '{pending.Type}' ability at ordinal "
+            + pending.Ordinal);
 
     /// <summary>
     /// The cards one player may trigger an action on —
@@ -1372,6 +1368,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     .SelectMany(source => source.Generates)),
                 Word(cost.Argument).Length,
                 Word(cost.Argument)),
+            { Kind: "spendEnergyX" } => Resources.Pays(
+                string.Concat(CardPlay.Generators(world, world.Facts, world.Seats[player])
+                    .SelectMany(source => source.Generates)),
+                1,
+                "Y"),
 
             // "Discard **a card** from your hand" -- `rr:cost.3` spends
             // resources by discarding cards, and this is the other thing a
@@ -1465,6 +1466,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static CostOption? Price(World world, Card card, int player, AbilityNode? cost)
     {
+        if (cost is { Kind: "spendEnergyX" })
+        {
+            return new CostOption(
+                card.ObjectId, "1", ["Y"],
+                Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]));
+        }
+
         if (cost is not { Kind: "spend" })
         {
             return null;
@@ -1580,6 +1588,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 itself: -1,
                 cast.Player,
                 cast.Events);
+            return;
+        }
+
+        if (cost.Kind == "spendEnergyX")
+        {
+            if (paying.Count == 0 || paying.Distinct().Count() != paying.Count)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' requires one or more distinct generators for X");
+            }
+
+            var selected = paying.ToHashSet();
+            string generated = string.Concat(CardPlay.Generators(
+                    cast.World, cast.World.Facts, cast.World.Seats[cast.Player])
+                .Where(source => selected.Contains(source.Effect))
+                .Select(source => source.Generates));
+            CardPlay.Spend(
+                cast.World, cast.World.Facts, [cast.World.Seats[cast.Player].Hand], paying,
+                generated.Length, new string('Y', generated.Length), itself: -1,
+                cast.Player, cast.Events);
+            cast.Results["energy"] = generated.Length;
             return;
         }
 
@@ -2565,7 +2594,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     ?? throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' cannot find the card receiving counters");
                 long beforeCounters = counterCard.Tokens.GetValueOrDefault("c_" + counter);
-                long placedCounters = Number(node.Require("count"));
+                long placedCounters = Amount(node.Require("count"), cast);
                 counterCard.PlaceTokens("c_" + counter, placedCounters);
                 cast.Events.Add(new FieldSet(
                     counterCard.ObjectId, "c_" + counter,
@@ -5423,6 +5452,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // which `rr:damage.2` puts on an ally or minion and which an
             // attachment can hold when a card puts them there.
             "damageOn" => Find(node.Argument, cast)?.Damage ?? 0,
+            "countersOn" => Find(node.Require("card"), cast)?.Tokens.GetValueOrDefault(
+                "c_" + Word(node.Require("counter"))) ?? 0,
             "remainingHealth" => Find(node.Argument, cast) is { } remaining
                 ? Math.Max(
                     0,
