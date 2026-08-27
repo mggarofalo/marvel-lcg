@@ -467,6 +467,36 @@ public sealed class ConstantAbilityTests
         Assert.Equal(3, Modified(world, world.Seats[1].IdentityCard, "attack"));
     }
 
+    [Rule("rr:ownership-and-control.2.1")]
+    [Fact]
+    public void CombatTrainingCanBePlayedUnderAnotherPlayersControl()
+    {
+        var world = new World(Cards, players: 2);
+        for (int player = 0; player < 2; player++)
+        {
+            var seat = world.CreateSeat($"p{player}");
+            seat.IdentityCard = world.CreateCard(AuthoredCards.SpiderMan, seat.Hero);
+            world.CreateCard("01003", seat.Deck);
+        }
+        var training = world.CreateCard("01057", world.Seats[0].Hand);
+        var energy = world.CreateCard("01088", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var otherHero = world.Seats[1].IdentityCard;
+
+        Assert.Contains(otherHero.ObjectId, runner.AttachmentTargets(world, training)!);
+        CardPlay.Play(
+            world, Cards, runner, world.Seats[0], training, [energy.ObjectId], [],
+            [otherHero.ObjectId]);
+
+        Assert.Equal(0, training.Owner);
+        Assert.Equal(1, training.Area.PlayArea.Player);
+        Assert.Equal(otherHero.ObjectId, training.Area.Host);
+
+        var second = world.CreateCard("01057", world.Seats[0].Hand);
+        Assert.DoesNotContain(otherHero.ObjectId, runner.AttachmentTargets(world, second)!);
+    }
+
     private static long Modified(World world, Card card, string field) =>
         StateFields.Modified(world, card, field, Cards, world.Players);
 

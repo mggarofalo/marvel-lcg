@@ -83,6 +83,33 @@ public sealed class CoreFinalCardBatchTests
         Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
     }
 
+    [Rule("rr:resource.1")]
+    [Fact]
+    public void RepulsorBlastCountsEveryPrintedEnergyResource()
+    {
+        var world = Board(players: 1, identity: "01029a,01029b");
+        world.Seats[0].IdentityCard.TurnTo("01029a");
+        var target = world.CreateCard(
+            "01114", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        for (int card = 0; card < 5; card++)
+        {
+            world.CreateCard("01090", world.Seats[0].Deck);
+        }
+        world.CreateCard("01014", world.Seats[0].Deck);
+        var blast = world.CreateCard("01031", world.Seats[0].Hand);
+        var payment = world.CreateCard("01086", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+
+        var action = runner.Actions(world, 0).Single(ability => ability.Card == blast.ObjectId);
+        runner.Act(world, action, [payment.ObjectId], []);
+        var choice = Assert.Single(world.Agenda.Outstanding);
+        runner.Chose(
+            world, blast, 0, choice.Index, Decision.Take(target.ObjectId), choice.Tier);
+
+        Assert.Equal(7, target.Damage);
+    }
+
     [Rule("rr:boost-boost-icon")]
     [Rule("rr:threat")]
     [Fact]

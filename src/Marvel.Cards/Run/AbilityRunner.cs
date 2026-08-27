@@ -221,7 +221,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var allies = candidates.Where(card =>
             card.Ready
-            && card.Owner == attack.Player
+            && card.Area.PlayArea == PlayArea.Of(attack.Player)
             && world.Facts.Kind(card.FaceId) == CardKind.Ally).ToList();
         return allies.Count > 0
             ? new DefenderChoice(allies, Required: true)
@@ -4975,6 +4975,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [.. cast.World
                 .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player))
                 .Cards];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } eligibleIdentities
+            && eligibleIdentities.Argument is AbilityValue.Word
+                { Value: "identitiesWithinPerPlayerLimit" })
+        {
+            long maximum = cast.World.Facts.PrintedValue(
+                cast.Source.FaceId, "MaxPerUnit", cast.World.Players);
+            string title = cast.World.Facts.Title(cast.Source.FaceId);
+            return
+            [
+                .. cast.World.PlayerOrder
+                    .Where(player => maximum <= 0 || cast.World.Areas
+                        .Where(area => area.PlayArea == PlayArea.Of(player))
+                        .SelectMany(area => area.Cards)
+                        .Count(card => DeckTypes.IsInPlay(card.Area.Type)
+                            && string.Equals(
+                                cast.World.Facts.Title(card.FaceId),
+                                title,
+                                StringComparison.Ordinal)) < maximum)
+                    .Select(player => cast.World.Seats[player].IdentityCard),
+            ];
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } attached

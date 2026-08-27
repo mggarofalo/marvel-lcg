@@ -2275,6 +2275,7 @@
       "card": "01057",
       "name": "Combat Training",
       "note": "The controlling player's hero gets +1 ATK. The play-under-control instruction is handled by card play; this constant reads the current controller's hero.",
+      "attachTo": { "query": "identitiesWithinPerPlayerLimit" },
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
@@ -2298,6 +2299,7 @@
       "card": "01065",
       "name": "Heroic Intuition",
       "note": "The controlling player's hero gets +1 THW. The play-under-control instruction is handled by card play.",
+      "attachTo": { "query": "identitiesWithinPerPlayerLimit" },
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
@@ -2358,6 +2360,7 @@
       "card": "01081",
       "name": "Armored Vest",
       "note": "The controlling player's hero gets +1 DEF. The play-under-control instruction is handled by card play.",
+      "attachTo": { "query": "identitiesWithinPerPlayerLimit" },
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
@@ -2697,7 +2700,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
-          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "seq": [ { "dealDamage": { "cards": "chosen", "amount": 1 } }, { "discardTop": { "from": "yourDeck", "count": 5 } }, { "dealDamage": { "cards": "chosen", "amount": { "mul": [ 2, { "discardedWithResource": "Y" } ] } } } ] } } }
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "seq": [ { "dealDamage": { "cards": "chosen", "amount": 1 } }, { "discardTop": { "from": "yourDeck", "count": 5 } }, { "dealDamage": { "cards": "chosen", "amount": { "mul": [ 2, { "printedResourceCountDiscarded": "Y" } ] } } } ] } } }
         }
       ]
     },

@@ -59,7 +59,7 @@ public sealed class MelterTests
         var melter = world.CreateCard(
             "01132", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var controlled = world.CreateCard(
-            "01050", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            "01050", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 1));
         var other = world.CreateCard(
             "01051", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
         return (world, melter, world.Seats[0].IdentityCard, controlled, other);
