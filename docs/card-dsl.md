@@ -577,7 +577,7 @@ widening the DSL rather than widening it to reach the tail.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and thirty-five cards in `datasets/abilities/abilities.json` — every card the Rhino scenario reaches — the whole of the Standard sets among them.
+`src/Marvel.Cards`, and 62 card faces in `datasets/abilities/abilities.json` — every card the Rhino scenario reaches, the whole of the Standard set among them.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -595,8 +595,8 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `inExpertMode`, `isKind`, `defeatedBy` |
 | Actions | `giveStatus`, `attachTo`, `discard`, `draw`, `dealEncounterCards`, `grant`, `grantUntil`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `dealDamage`, `placeThreat`, `heal`, `search`, `exhaust`, `revealTop`, `reveal`, `shuffleInto`, `shuffle`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `putIntoPlay`, `returnToHand`, `soakDamage`, `generate` |
 | Node fields | `card`, `cards`, `player`, `amount`, `count`, `status`, `keyword`, `trait`, `until`, `within`, `condition`, `effect`, `options`, `from`, `among`, `onto`, `enemies`, `against`, `first`, `where`, `scheme`, `to`, `of`, `by` |
-| Queries | `query: villain`, `query: mainScheme`, `query: minionsEngagedWithYou`, `query: heroes`, `query: heroesAndAllies`, `query: charactersYouControl`, `query: alliesYouControl`, `query: upgradesYouControl`, `query: supportsYouControl`, `query: upgradesAndSupportsYouControl`, `query: attachedToThis`, `query: identitySpecificInYourHand`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
-| Card sources | `cardsIn { area, kind, trait }` over `encounterDeck` and `encounterDiscardPile`; `enemiesWithTrait`; `titled`; `minBy` / `maxBy` over a query, `by` a field |
+| Queries | `query: villain`, `query: mainScheme`, `query: minions`, `query: minionsEngagedWithYou`, `query: heroes`, `query: heroesAndAllies`, `query: charactersYouControl`, `query: alliesYouControl`, `query: upgradesYouControl`, `query: supportsYouControl`, `query: upgradesAndSupportsYouControl`, `query: attachedToThis`, `query: identitySpecificInYourHand`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
+| Card sources | `cardsIn { area, kind, trait }` over `encounterDeck` and `encounterDiscardPile`; `enemiesWithTrait`; `titled`; `withoutAnotherCopyAttached`; `minBy` / `maxBy` over a query, `by` `cost`, `attack`, or `printedHealth` |
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
 | Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`, `defeated`, `activatingEnemy`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game` |
 
@@ -625,10 +625,10 @@ the tests assert the tough card and the ending rather than the number.
 
 ### Damage that happens to something else
 
-`rr:damage` lists **nine steps**, and the engine now does five of them: step 1
+`rr:damage` lists **nine steps**, and the engine now does six of them: step 1
 (abilities that trigger when damage *would be* dealt), step 2 (tough cards),
-step 5 (placing), step 7 (When Defeated) and step 8 (discarding). Steps 3, 4, 6
-and 9 are ability windows nothing opens yet.
+step 5 (placing), step 6 (would be defeated), step 7 (When Defeated) and step 8
+(discarding). Steps 3, 4 and 9 are ability windows nothing opens yet.
 
 Step 1 is where a replacement effect sits — `rr:replacement-effect`'s "when
 [triggering condition] would happen, do [replacement effect] instead", on 64
@@ -1253,24 +1253,23 @@ written to notice.
 Making the thwart a step is what this turned up; see
 [player-phase.md](player-phase.md).
 
-#### The interrupt tier is still missing, and knowingly
+#### The two defeat interrupt tiers are separate
 
-A defeat can be **responded** to and not **interrupted**. The interrupt window
-is opened and closed before the damage is dealt, so while it was open the defeat
-had not happened and there was nothing to add to the occurrence. At a table both
-conditions are known in advance — the players can see the damage will be lethal
-— and telling that in advance is `rr:would` reasoning this engine has not got.
+`rr:damage.step.6` holds abilities that trigger when a character **would be
+defeated**. It runs after step 5 places damage and before the defeat happens, so
+there is no upstream prediction: `Damage.Deal` can see that the character has no
+remaining hit points, resolve the interrupt, and check again. Biomechanical
+Upgrades uses this tier to heal its minion and invalidate the imminent defeat.
 
-It has to be worked out in `Damage.Deal` and nowhere earlier, because
-`rr:tough.2`, `rr:damage.step.1` and `rr:hit-points.2.3` can all change the
-answer between a prediction and the deal. **MARVEL-249.**
+`rr:damage.step.7` is the later **when defeated** tier. It holds a card's own
+When Defeated ability and another card's forced interrupt on that defeat.
+Genetic Experiments uses this tier because it places threat without preventing
+the minion's defeat. Both tiers resolve inside the damage sequence, before step
+8 removes the defeated card.
 
-The card waiting on it is `45066` Genetic Experiments — "**Forced Interrupt:**
-When attached minion is defeated, place 2 threat on Gene Pool" — an interrupt on
-a card *other* than the one carrying it. A card's own "When Defeated" is
-unaffected and already works: `rr:when-defeated-abilities.1` makes it a forced
-interrupt, so there is nothing to offer and `Defeat` resolves it inline before
-the card leaves play.
+Forced abilities work in both tiers. Optional interrupts and simultaneous
+forced abilities still require prompts inside the damage sequence; the engine
+raises by name until those prompts exist.
 
 ### A response can cost something
 

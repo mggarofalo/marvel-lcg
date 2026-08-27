@@ -106,6 +106,17 @@ public static class Damage
             Trigger = trigger, Verb = verb,
         });
 
+        // `rr:damage.step.6` -- abilities that trigger "when [character]
+        // would be defeated". Step 5 has placed the damage, so the condition
+        // is now knowable without predicting through damage replacement or a
+        // tough status card. An ability may change that imminent defeat, and
+        // `rr:would.1` then makes the original condition invalid.
+        if (after <= 0)
+        {
+            world.Abilities.WouldBeDefeated(world, target, events);
+            after = Math.Max(0, Health(world, facts, target) - target.Damage);
+        }
+
         // `rr:defeat`: "if a character has zero or fewer remaining hit points
         // [...] it is defeated". Not "less than zero" -- exactly zero is a
         // defeat, which is why this compares remaining against zero rather

@@ -1384,6 +1384,32 @@
           "effect": { "discard": "this" }
         }
       ]
+    },
+    {
+      "card": "01185",
+      "name": "Biomechanical Upgrades",
+      "note": "Surge. Attach to the minion with the highest printed hit points and without another Biomechanical Upgrades attached. Forced Interrupt: When attached minion would be defeated, heal all damage from it instead, then discard this card. The surge is a printed keyword the reveal rule reads. The attachment selector uses printed HP rather than modified HP; the official ruling in datasets/marvelcdb-faq/faq.json says base stats on a facedown Ultron drone count as printed and '+ stats' do not. rr:first-player.1 gives a tied highest target to the first player, which the engine refuses until attachment selection can ask. rr:damage.step.6 places this interrupt after damage is placed and before defeat, so healing all damage invalidates the imminent defeat under rr:would.1. The final discard then removes this copy from play under rr:attach-to.1.",
+      "attachTo": {
+        "maxBy": {
+          "of": { "withoutAnotherCopyAttached": { "query": "minions" } },
+          "by": "printedHealth"
+        }
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardWouldBeDefeated",
+            "timing": "ForcedInterrupt",
+            "subject": "attachedTo"
+          },
+          "effect": {
+            "seq": [
+              { "heal": { "card": "attachedTo", "amount": { "damageOn": "attachedTo" } } },
+              { "discard": "this" }
+            ]
+          }
+        }
+      ]
     }
   ]
 }
