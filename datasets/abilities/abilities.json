@@ -2236,6 +2236,125 @@
       ]
     },
     {
+      "card": "01037",
+      "name": "Mark V Helmet",
+      "note": "Its Hero Action exhausts the helmet. With AERIAL it removes 1 threat from every scheme; otherwise it removes 1 from one chosen scheme.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "exhaust": "this" },
+          "effect": { "if": { "test": { "hasTrait": { "card": "you", "trait": "AERIAL" } }, "then": { "removeThreat": { "scheme": { "query": "schemes" }, "amount": 1 } }, "else": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } } } }
+        }
+      ]
+    },
+    {
+      "card": "01067",
+      "name": "Maria Hill",
+      "note": "After Maria Hill enters play, her optional response has each player draw 1 card in player order.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardPlayed", "timing": "Response", "subject": "this" },
+          "effect": { "draw": { "player": "each", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01084",
+      "name": "Nick Fury",
+      "note": "After Nick Fury enters play, choose one printed effect. The same response records the delayed end-of-round discard, which does nothing if he has already left play.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardPlayed", "timing": "ForcedResponse", "subject": "this" },
+          "effect": { "seq": [
+            { "choose": { "options": [
+              { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 2 } } } },
+              { "draw": { "player": "you", "count": 3 } },
+              { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 4 } } } }
+            ] } },
+            { "delayUntil": { "condition": "WhenRoundEnds", "effect": { "discard": "this" } } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01116a",
+      "name": "Underground Distribution",
+      "note": "Its contents, setup search, and advance instruction are scenario setup data and the generic main-scheme setup step, not an ability this face resolves after setup.",
+      "abilities": []
+    },
+    {
+      "card": "01137a",
+      "name": "The Crimson Cowl",
+      "note": "Its contents, setup instruction, and advance instruction are scenario setup data and the generic main-scheme setup step, not an ability this face resolves after setup.",
+      "abilities": []
+    },
+    {
+      "card": "01178",
+      "name": "Kree Manipulator",
+      "note": "Surge is a printed keyword. When revealed it places 1 threat on the main scheme; as a boost card it does so only during an undefended attack.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "if": { "test": { "undefendedAttack": "you" }, "then": { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01155",
+      "name": "Affairs of State",
+      "note": "The obligation may flip T'Challa to alter-ego, then chooses between exhausting him to remove it from the game or discarding a controlled BLACK PANTHER upgrade and this obligation.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "choose": { "options": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "seq": [] } ] } },
+            { "choose": { "options": [
+              { "seq": [ { "exhaust": "you" }, { "removeFromGame": "this" } ] },
+              { "chooseCard": { "from": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "BLACK PANTHER" } }, "effect": { "seq": [ { "discard": "chosen" }, { "discard": "this" } ] } } }
+            ] } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01170",
+      "name": "Business Problems",
+      "note": "The obligation may flip Tony Stark to alter-ego, then chooses between exhausting him to remove it from the game or exhausting every controlled upgrade and discarding the obligation.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "choose": { "options": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "seq": [] } ] } },
+            { "choose": { "options": [
+              { "seq": [ { "exhaust": "you" }, { "removeFromGame": "this" } ] },
+              { "seq": [ { "exhaust": { "query": "upgradesYouControl" } }, { "discard": "this" } ] }
+            ] } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01175",
+      "name": "Family Emergency",
+      "note": "The obligation may flip Carol Danvers to alter-ego, then chooses between exhausting her to remove it from the game or stunning her, gaining surge, and discarding the obligation.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "choose": { "options": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "seq": [] } ] } },
+            { "choose": { "options": [
+              { "seq": [ { "exhaust": "you" }, { "removeFromGame": "this" } ] },
+              { "seq": [ { "giveStatus": { "card": "you", "status": "stunned" } }, { "gainSurge": 1 }, { "discard": "this" } ] }
+            ] } }
+          ] }
+        }
+      ]
+    },
+    {
       "card": "01028",
       "name": "Superhuman Strength",
       "note": "She-Hulk gets +2 ATK. After her attack completes, the forced response discards this upgrade and stuns that attack's target.",

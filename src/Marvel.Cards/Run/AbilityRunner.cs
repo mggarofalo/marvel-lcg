@@ -2124,10 +2124,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "draw":
-                Draw.Cards(
-                    cast.World, Seat(node.Require("player"), cast),
-                    (int)Number(node.Require("count")),
-                    cast.Occurrence.Conditions[0], cast.Events);
+                foreach (int player in Seats(node.Require("player"), cast))
+                {
+                    Draw.Cards(
+                        cast.World, player,
+                        (int)Number(node.Require("count")),
+                        cast.Occurrence.Conditions[0], cast.Events);
+                }
                 break;
 
             default:
@@ -2225,6 +2228,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         "heroDefended" => cast.World.FinishedAttack is { BasicDefense: true } defended
             && defended.Defender == cast.World.Seats[Resolver(cast)].IdentityCard.ObjectId,
+
+        "undefendedAttack" => cast.World.Attack is { IsDefended: false },
 
         // "After **an ally** is defeated". A card type, asked of a card the
         // ability has already named -- `rr:defeat` is one rule for every kind
@@ -3439,10 +3444,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static IEnumerable<int> Seats(AbilityValue value, Cast cast) =>
         Word(value) switch
         {
-            "you" => [cast.Player],
             "each" => cast.World.PlayerOrder,
-            _ => throw new AbilityException(
-                $"'{Word(value)}' does not name a set of players"),
+            _ => [Seat(value, cast)],
         };
 
     /// <summary>
