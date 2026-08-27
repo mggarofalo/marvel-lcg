@@ -178,10 +178,12 @@ internal static partial class Keywords
 
         if (PerUnit().Match(text) is { Success: true } unit)
         {
-            // "Max 1 per enemy", "Max 1 per player", "Max 1 per hero" -- one
-            // attribute because what varies is which unit, and the engine's
-            // question is only how many.
+            // The number and its unit are separate facts. "Max 1 per player"
+            // limits a controller's play area; "Max 1 per enemy" limits one
+            // attachment host. Collapsing those sentences to the same number
+            // makes one rule enforce the other.
             into["MaxPerUnit"] = unit.Groups[1].Value;
+            into["MaxPerUnitKind"] = unit.Groups[2].Value.ToLowerInvariant();
         }
 
         if (UnitCost().Match(text) is { Success: true } cost)

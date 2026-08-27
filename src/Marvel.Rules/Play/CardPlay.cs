@@ -309,7 +309,8 @@ public static class CardPlay
         if (!Permitted(world, facts, seat, card, targets, abilities))
         {
             throw new RulesNotImplementedException(
-                $"card {card.ObjectId} cannot be played by {seat.Name} right now");
+                $"card {card.ObjectId} ('{card.FaceId}') in {card.Area.Type} cannot be played "
+                + $"by {seat.Name} right now");
         }
 
         // Steps 3 and 4. Determine the cost and apply modifiers. The same
@@ -669,6 +670,16 @@ public static class CardPlay
     {
         long maximum = facts.PrintedValue(card.FaceId, "MaxPerUnit", world.Players);
         if (maximum <= 0)
+        {
+            return true;
+        }
+
+        // The extractor preserves which printed unit the maximum names.
+        // Synthetic facts written before that field existed mean "per player";
+        // this is an engine compatibility choice, not a Rules Reference term.
+        string unit = facts.Attributes(card.FaceId)
+            .GetValueOrDefault("MaxPerUnitKind", "player");
+        if (!string.Equals(unit, "player", StringComparison.Ordinal))
         {
             return true;
         }

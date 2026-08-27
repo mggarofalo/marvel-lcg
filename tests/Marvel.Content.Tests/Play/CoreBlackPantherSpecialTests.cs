@@ -59,9 +59,9 @@ public sealed class CoreBlackPantherSpecialTests
 
         runner.ResolveSpecial(world, claws, 0, finalStep: true);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, claws, 0, choice.Index, Decision.Take(minion.ObjectId),
-            AbilityType.Special, finalStep: true);
+        var prompt = Sequence.Work(world, Cards, runner, [])!;
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(minion.ObjectId), []);
+        Sequence.Finish(world, Cards, runner, []);
 
         Assert.Equal(4, minion.Damage);
     }
@@ -69,7 +69,7 @@ public sealed class CoreBlackPantherSpecialTests
     [Rule("rr:cannot")]
     [Rule("rr:special")]
     [Fact]
-    public void VibraniumSuitCannotMoveDamageToKillmonger()
+    public void VibraniumSuitDoesNotOfferKillmongerAsAnAttackTarget()
     {
         var world = Board();
         world.Seats[0].IdentityCard.TakeDamage(2);
@@ -81,10 +81,10 @@ public sealed class CoreBlackPantherSpecialTests
 
         runner.ResolveSpecial(world, suit, 0, finalStep: true);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, suit, 0, choice.Index, Decision.Take(killmonger.ObjectId),
-            AbilityType.Special, finalStep: true);
+        var prompt = Sequence.Work(world, Cards, runner, [])!;
 
+        Assert.DoesNotContain(
+            prompt.Affordances, affordance => affordance.AnchorId == killmonger.ObjectId);
         Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(0, killmonger.Damage);
     }

@@ -158,6 +158,16 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated);
 
+    /// <summary>Resolves the body of a card ability labelled as an attack.</summary>
+    void ResolveCardAttack(
+        World world, CharacterAttack attack, Timing.Occurrence occurrence,
+        List<GameEvent> events);
+
+    /// <summary>Resolves the body of a card ability labelled as a thwart.</summary>
+    void ResolveCardThwart(
+        World world, CharacterThwart thwart, Timing.Occurrence occurrence,
+        List<GameEvent> events);
+
     /// <summary>Whether the target can take damage from this source.</summary>
     /// <remarks>
     /// <c>rr:cannot</c>: "cannot" is absolute. This is a constant prohibition,
@@ -477,6 +487,13 @@ public interface ICardAbilities : IWindowAbilities
         Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
         Chose(world, source, player, stoppedAt, input, tier, finalStep);
 
+    /// <summary>Resumes a choice with its persisted event-stream provenance.</summary>
+    IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
+        string trigger) =>
+        Chose(world, source, player, stoppedAt, input, tier, finalStep, eachPlayerFrame, finalPlayer);
+
 
 }
 
@@ -518,6 +535,18 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> WhenCardDefeated(
         World world, Card card, Defeated defeated) => [];
+
+    /// <inheritdoc/>
+    public virtual void ResolveCardAttack(
+        World world, CharacterAttack attack, Timing.Occurrence occurrence,
+        List<GameEvent> events) =>
+        throw new RulesNotImplementedException("no card attack effect is registered");
+
+    /// <inheritdoc/>
+    public virtual void ResolveCardThwart(
+        World world, CharacterThwart thwart, Timing.Occurrence occurrence,
+        List<GameEvent> events) =>
+        throw new RulesNotImplementedException("no card thwart effect is registered");
 
     /// <inheritdoc/>
     public virtual bool CanTakeDamage(World world, Card target, Card source) => true;
@@ -615,6 +644,13 @@ public class NoCardAbilities : ICardAbilities
         World world, Card source, int player, int stoppedAt, Decision input,
         Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
         Chose(world, source, player, stoppedAt, input, tier, finalStep);
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
+        string trigger) =>
+        Chose(world, source, player, stoppedAt, input, tier, finalStep, eachPlayerFrame, finalPlayer);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<PendingAbility> Waiting(
@@ -774,11 +810,11 @@ public static class VillainPhase
                 break;
 
             case Steps.CharacterAttacks:
-                BasicPowers.ResolveCharacterAttack(world, facts, events);
+                BasicPowers.ResolveCharacterAttack(world, facts, events, step.CharacterAttack);
                 break;
 
             case Steps.CharacterThwarts:
-                BasicPowers.ResolveCharacterThwart(world, facts, events);
+                BasicPowers.ResolveCharacterThwart(world, facts, events, step.CharacterThwart);
                 break;
 
             case Steps.AllyConsequentialDamage:
@@ -926,7 +962,7 @@ public static class VillainPhase
             case Steps.ChooseOption:
                 events.AddRange(abilities.Chose(
                     world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier,
-                    step.FinalStep, step.EachPlayerFrame, step.FinalPlayer));
+                    step.FinalStep, step.EachPlayerFrame, step.FinalPlayer, step.Trigger));
                 break;
 
             case Steps.OrderEachPlayer:

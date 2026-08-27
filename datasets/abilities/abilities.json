@@ -79,8 +79,10 @@
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
           "effect": { "chooseCard": {
-            "from": { "query": "enemies" },
-            "effect": { "dealDamage": { "cards": "chosen", "amount": 8 } }
+            "from": { "query": "attackableEnemies" },
+            "effect": { "attack": { "target": "chosen", "effect":
+              { "dealAttackDamage": { "cards": "chosen", "amount": 8 } }
+            } }
           } }
         }
       ]
@@ -550,8 +552,8 @@
       "abilities": [
         {
           "trigger": { "event": "WhenThreatWouldBePlaced", "timing": "Interrupt", "actor": "villain" },
-          "when": { "threatCause": "enemyScheme" },
-          "effect": { "preventThreat": 1 }
+          "when": { "and": [ { "threatCause": "enemyScheme" }, { "canAutomaticThwart": "trigger.target" } ] },
+          "effect": { "thwart": { "target": "trigger.target", "automaticTarget": 1, "effect": { "preventThreat": 1 } } }
         }
       ]
     },
@@ -563,16 +565,18 @@
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
           "effect": { "chooseCard": {
-            "from": { "query": "enemies" },
-            "effect": { "seq": [
-              { "dealAttackDamage": { "cards": "chosen", "amount": 5 } },
-              {
-                "if": {
-                  "test": { "paidWithResource": "Y" },
-                  "then": { "draw": { "player": "you", "count": 1 } }
+            "from": { "query": "attackableEnemies" },
+            "effect": { "attack": { "target": "chosen", "effect":
+              { "seq": [
+                { "dealAttackDamage": { "cards": "chosen", "amount": 5 } },
+                {
+                  "if": {
+                    "test": { "paidWithResource": "Y" },
+                    "then": { "draw": { "player": "you", "count": 1 } }
+                  }
                 }
-              }
-            ] }
+              ] }
+            } }
           } }
         }
       ]
@@ -585,14 +589,15 @@
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
           "effect": { "chooseCard": {
-            "from": { "query": "minions" },
-            "effect": {
+            "from": { "query": "attackableMinions" },
+            "effect": { "attack": { "target": "chosen", "effect":
+              {
               "if": {
                 "test": { "paidWithResource": "R" },
                 "then": { "dealAttackDamage": { "cards": "chosen", "amount": 5, "overkill": 1 } },
                 "else": { "dealAttackDamage": { "cards": "chosen", "amount": 5 } }
               }
-            }
+            } } }
           } }
         }
       ]
@@ -605,16 +610,18 @@
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
           "effect": { "chooseCard": {
-            "from": { "query": "schemes" },
-            "effect": { "removeThreat": {
-              "scheme": "chosen",
-              "amount": {
-                "if": {
-                  "test": { "paidWithResource": "B" },
-                  "then": 4,
-                  "else": 3
+            "from": { "query": "thwartableSchemes" },
+            "effect": { "thwart": { "target": "chosen", "effect":
+              { "removeThreat": {
+                "scheme": "chosen",
+                "amount": {
+                  "if": {
+                    "test": { "paidWithResource": "B" },
+                    "then": 4,
+                    "else": 3
+                  }
                 }
-              }
+              } }
             } }
           } }
         }
@@ -2255,7 +2262,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
-          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 5 } } } }
+          "effect": { "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": 5 } } } } } }
         }
       ]
     },
@@ -2324,7 +2331,7 @@
       "card": "01074",
       "name": "Inspired",
       "note": "Attach to an ally. The attached ally gets +1 THW and +1 ATK while this upgrade remains attached.",
-      "attachTo": { "query": "alliesYouControl" },
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "alliesYouControl" } },
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
@@ -2386,7 +2393,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
-          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 3 } } } }
+          "effect": { "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": 3 } } } } } }
         }
       ]
     },
@@ -2678,7 +2685,8 @@
       "abilities": [
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
-          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": { "min": [ 15, { "damageOn": "you" } ] } } } } }
+          "when": { "atLeast": { "value": { "damageOn": "you" }, "count": 1 } },
+          "effect": { "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": { "min": [ 15, { "damageOn": "you" } ] } } } } } } }
         }
       ]
     },
@@ -2700,7 +2708,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
-          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "seq": [ { "dealDamage": { "cards": "chosen", "amount": 1 } }, { "discardTop": { "from": "yourDeck", "count": 5 } }, { "dealDamage": { "cards": "chosen", "amount": { "mul": [ 2, { "printedResourceCountDiscarded": "Y" } ] } } } ] } } }
+          "effect": { "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "seq": [ { "discardTop": { "from": "yourDeck", "count": 5 } }, { "dealAttackDamage": { "cards": "chosen", "amount": { "add": [ 1, { "mul": [ 2, { "printedResourceCountDiscarded": "Y" } ] } ] } } } ] } } } } }
         }
       ]
     },
@@ -2711,7 +2719,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
-          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": { "if": { "test": { "hasTrait": { "card": "you", "trait": "AERIAL" } }, "then": 8, "else": 4 } } } } } }
+          "effect": { "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": { "if": { "test": { "hasTrait": { "card": "you", "trait": "AERIAL" } }, "then": 8, "else": 4 } } } } } } } }
         }
       ]
     },
@@ -2735,7 +2743,7 @@
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
           "cost": { "exhaust": "this" },
-          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": { "if": { "test": { "hasTrait": { "card": "you", "trait": "AERIAL" } }, "then": 2, "else": 1 } } } } } }
+          "effect": { "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": { "if": { "test": { "hasTrait": { "card": "you", "trait": "AERIAL" } }, "then": 2, "else": 1 } } } } } } } }
         }
       ]
     },
@@ -2850,7 +2858,7 @@
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
           "cost": { "exhaust": "this" },
-          "effect": { "if": { "test": { "hasTrait": { "card": "you", "trait": "AERIAL" } }, "then": { "removeThreat": { "scheme": { "query": "schemes" }, "amount": 1 } }, "else": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } } } }
+          "effect": { "if": { "test": { "hasTrait": { "card": "you", "trait": "AERIAL" } }, "then": { "thwartSchemes": { "schemes": { "query": "thwartableSchemes" }, "power": { "thwart": { "target": "chosen", "effect": { "removeThreat": { "scheme": { "query": "powerTargets" }, "amount": 1 } } } } } }, "else": { "chooseCard": { "from": { "query": "thwartableSchemes" }, "effect": { "thwart": { "target": "chosen", "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } } } } } }
         }
       ]
     },
@@ -3157,7 +3165,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
-          "effect": { "thwartDifferentSchemes": { "schemes": { "query": "schemes" } } }
+          "effect": { "thwartDifferentSchemes": { "schemes": { "query": "thwartableSchemes" }, "power": { "thwart": { "target": "chosen", "effect": { "removeThreat": { "scheme": { "query": "powerTargets" }, "amount": 2 } } } } } }
         }
       ]
     },
@@ -3222,8 +3230,9 @@
         {
           "name": "Release Energy",
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "when": { "atLeast": { "value": { "countersOn": { "card": "this", "counter": "energy" } }, "count": 1 } },
           "cost": { "discard": "this" },
-          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealAttackDamage": { "cards": "chosen", "amount": { "min": [ 10, { "mul": [ 2, { "countersOn": { "card": "this", "counter": "energy" } } ] } ] } } } } }
+          "effect": { "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": { "min": [ 10, { "mul": [ 2, { "countersOn": { "card": "this", "counter": "energy" } } ] } ] } } } } } } }
         }
       ]
     },
@@ -3370,7 +3379,7 @@
       "name": "Panther Claws",
       "note": "Special (attack): choose an enemy and deal two damage, or four when this is the final step. The upgrade is the damage source.",
       "abilities": [
-        { "trigger": { "event": "ResolveSpecial", "timing": "Special", "subject": "this" }, "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": { "if": { "test": { "finalStep": "true" }, "then": 4, "else": 2 } }, "attack": "true" } } } } }
+        { "trigger": { "event": "ResolveSpecial", "timing": "Special", "subject": "this" }, "effect": { "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": { "if": { "test": { "finalStep": "true" }, "then": 4, "else": 2 } } } } } } } } }
       ]
     },
     {
@@ -3378,7 +3387,7 @@
       "name": "Tactical Genius",
       "note": "Special (thwart): choose a scheme and remove one threat, or two when this is the final step.",
       "abilities": [
-        { "trigger": { "event": "ResolveSpecial", "timing": "Special", "subject": "this" }, "effect": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": { "if": { "test": { "finalStep": "true" }, "then": 2, "else": 1 } } } } } } }
+        { "trigger": { "event": "ResolveSpecial", "timing": "Special", "subject": "this" }, "effect": { "chooseCard": { "from": { "query": "thwartableSchemes" }, "effect": { "thwart": { "target": "chosen", "effect": { "removeThreat": { "scheme": "chosen", "amount": { "if": { "test": { "finalStep": "true" }, "then": 2, "else": 1 } } } } } } } } }
       ]
     },
     {
@@ -3386,7 +3395,7 @@
       "name": "Vibranium Suit",
       "note": "Special (attack): choose an enemy and move one damage from your hero to it, or two when final. The suit is the damage source, so source-based prohibitions can prevent the move before damage leaves the hero.",
       "abilities": [
-        { "trigger": { "event": "ResolveSpecial", "timing": "Special", "subject": "this" }, "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "moveDamage": { "from": "you", "to": "chosen", "amount": { "if": { "test": { "finalStep": "true" }, "then": 2, "else": 1 } } } } } } }
+        { "trigger": { "event": "ResolveSpecial", "timing": "Special", "subject": "this" }, "effect": { "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "moveAttackDamage": { "from": "you", "to": "chosen", "amount": { "if": { "test": { "finalStep": "true" }, "then": 2, "else": 1 } } } } } } } } }
       ]
     },
     {
@@ -3425,7 +3434,7 @@
         {
           "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "enemy" },
           "when": { "wasDefeated": "trigger.target" },
-          "effect": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 2 } } } }
+          "effect": { "chooseCard": { "from": { "query": "thwartableSchemes" }, "effect": { "thwart": { "target": "chosen", "effect": { "removeThreat": { "scheme": "chosen", "amount": 2 } } } } } }
         }
       ]
     },
@@ -3461,7 +3470,7 @@
         {
           "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "enemy", "target": "you" },
           "when": { "heroDefended": "you" },
-          "effect": { "dealDamage": { "cards": "trigger.actor", "amount": { "modified": { "card": "you", "field": "attack" } } } }
+          "effect": { "attack": { "target": "trigger.actor", "effect": { "dealAttackDamage": { "cards": "trigger.actor", "amount": { "modified": { "card": "you", "field": "attack" } } } } } }
         }
       ]
     },
@@ -3540,8 +3549,8 @@
       "abilities": [
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
-          "when": { "canLegalPractice": { "query": "schemes" } },
-          "effect": { "legalPractice": { "schemes": { "query": "schemes" } } }
+          "when": { "canLegalPractice": { "query": "thwartableSchemes" } },
+          "effect": { "legalPractice": { "schemes": { "query": "thwartableSchemes" }, "power": { "thwart": { "target": "chosen", "effect": { "removeThreat": { "scheme": "chosen", "amount": { "powerAmount": "cardsDiscarded" } } } } } } }
         }
       ]
     },

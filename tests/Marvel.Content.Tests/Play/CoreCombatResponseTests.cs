@@ -1,4 +1,5 @@
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
@@ -11,6 +12,33 @@ public sealed class CoreCombatResponseTests
 {
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
+
+    [Rule("rr:attack-player-ability-type")]
+    [Rule("rr:draw-drawing-cards")]
+    [Fact]
+    public void PhotonicBlastsDamageAndEnergyDrawKeepTheTurnActionTrigger()
+    {
+        var world = Board("01010a");
+        var blast = world.CreateCard("01013", world.Seats[0].Hand);
+        var payment = world.CreateCard("01014", world.Seats[0].Hand);
+        var drawn = world.CreateCard("01087", world.Seats[0].Deck);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+
+        var action = runner.Actions(world, 0).Single(ability => ability.Card == blast.ObjectId);
+        var events = runner.Act(world, action, [payment.ObjectId], []).ToList();
+        var prompt = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(villain.ObjectId), events);
+        Sequence.Finish(world, Cards, runner, events);
+
+        var damage = Assert.Single(events.OfType<FieldSet>(), change =>
+            change.Card == villain.ObjectId && change.Verb == BasicPowers.AttackVerb);
+        var draw = Assert.Single(events.OfType<CardsMoved>(), moved =>
+            moved.Cards.Any(card => card.Card == drawn.ObjectId));
+        Assert.Equal(Steps.TurnAction, damage.Trigger);
+        Assert.Equal(Steps.TurnAction, draw.Trigger);
+    }
 
     [Rule("rr:attack-player-ability-type.step.7")]
     [Fact]
@@ -32,6 +60,70 @@ public sealed class CoreCombatResponseTests
 
         Assert.False(DeckTypes.IsInPlay(strength.Area.Type));
         Assert.True(Statuses.Has(world, minion, Statuses.Stunned));
+    }
+
+    [Rule("rr:attack-player-ability-type.step.7")]
+    [Fact]
+    public void AttackEventsExposeTheirHeroActorAndChosenTargetToResponses()
+    {
+        // "After She-Hulk attacks, ... stun the attacked enemy." The response
+        // reads both roles from the attack occurrence made by Uppercut.
+        var world = Board("01019a");
+        var hero = world.Seats[0].IdentityCard;
+        var strength = world.CreateCard(
+            "01028", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var uppercut = world.CreateCard("01054", world.Seats[0].Hand);
+        var genius = world.CreateCard("01089", world.Seats[0].Hand);
+        var energy = world.CreateCard("01088", world.Seats[0].Hand);
+        world.CreateCard("01087", world.Seats[0].Deck);
+        var enemy = world.TheCardIn(DeckType.VillainArea)!;
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+
+        var action = runner.Actions(world, 0).Single(ability => ability.Card == uppercut.ObjectId);
+        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        var target = Sequence.Work(world, Cards, runner, [])!;
+        Sequence.Answer(world, Cards, runner, target, Decision.Take(enemy.ObjectId), []);
+
+        Sequence.Finish(world, Cards, runner, []);
+
+        Assert.Equal(5, enemy.Damage);
+        Assert.Equal(0, hero.Damage);
+        Assert.False(DeckTypes.IsInPlay(strength.Area.Type));
+        Assert.True(Statuses.Has(world, enemy, Statuses.Stunned));
+        Assert.Equal(DeckType.DiscardPile, uppercut.Area.Type);
+    }
+
+    [Rule("rr:ranged.1")]
+    [Fact]
+    public void ACardAttackWithRangedIgnoresRetaliate()
+    {
+        // "An attack with the ranged keyword ignores the retaliate keyword."
+        // The keyword belongs to the attacking identity, not the event source.
+        var world = Board("01019a,01019b");
+        var hero = world.Seats[0].IdentityCard;
+        hero.TurnTo("01019a");
+        var uppercut = world.CreateCard("01054", world.Seats[0].Hand);
+        var genius = world.CreateCard("01089", world.Seats[0].Hand);
+        var energy = world.CreateCard("01088", world.Seats[0].Hand);
+        world.CreateCard("01087", world.Seats[0].Deck);
+        var modok = world.CreateCard(
+            AuthoredCards.Modok,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, Keywords.Ranged, Amount: 1,
+            Card: hero.ObjectId, Affects: hero.ObjectId));
+
+        var action = runner.Actions(world, 0).Single(ability => ability.Card == uppercut.ObjectId);
+        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        var target = Sequence.Work(world, Cards, runner, [])!;
+        Sequence.Answer(world, Cards, runner, target, Decision.Take(modok.ObjectId), []);
+        Sequence.Finish(world, Cards, runner, []);
+
+        Assert.Equal(5, modok.Damage);
+        Assert.Equal(0, hero.Damage);
     }
 
     [Rule("rr:triggering-condition.2")]

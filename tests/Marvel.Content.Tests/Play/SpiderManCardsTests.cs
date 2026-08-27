@@ -1,5 +1,6 @@
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
@@ -55,11 +56,100 @@ public sealed class SpiderManCardsTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var action = Assert.Single(runner.Actions(world, 0));
 
-        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        var events = runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []).ToList();
         Assert.Equal(DeckType.HandsArea, kick.Area.Type);
 
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(world, kick, 0, waiting.Index, Decision.Take(villain.ObjectId), waiting.Tier);
+        var prompt = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(
+            world, Cards, runner, prompt, Decision.Take(villain.ObjectId), events);
+        Sequence.Finish(world, Cards, runner, events);
+
+        Assert.Equal(8, villain.Damage);
+        Assert.Equal(DeckType.DiscardPile, kick.Area.Type);
+        var damage = Assert.Single(events.OfType<FieldSet>(), change =>
+            change.Card == villain.ObjectId && change.Verb == BasicPowers.AttackVerb);
+        Assert.Equal(Steps.TurnAction, damage.Trigger);
+    }
+
+    [Rule("rr:stun-stunned.1")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void StunCancelsSwingingWebKickAfterItsCostsArePaid()
+    {
+        // "As the attack is initiated, remove the stunned status card to
+        // cancel the attack." Initiation is after the event's costs are paid.
+        var world = Deal(hero: true);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        EmptyHand(world);
+        var kick = world.CreateCard(AuthoredCards.SwingingWebKick, world.Seats[0].Hand);
+        var genius = world.CreateCard("01089", world.Seats[0].Hand);
+        var energy = world.CreateCard("01088", world.Seats[0].Hand);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Statuses.Give(world, hero, Statuses.Stunned);
+
+        var action = Assert.Single(runner.Actions(world, 0));
+        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        var prompt = Sequence.Work(world, Cards, runner, [])!;
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(villain.ObjectId), []);
+        Sequence.Finish(world, Cards, runner, []);
+
+        Assert.False(Statuses.Has(world, hero, Statuses.Stunned));
+        Assert.Equal(0, villain.Damage);
+        Assert.Equal(DeckType.DiscardPile, kick.Area.Type);
+    }
+
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void GuardRestrictsSwingingWebKickToMinions()
+    {
+        // "While any minions with this keyword are engaged with a player,
+        // that player cannot attack villains without this keyword."
+        var world = Deal(hero: true);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        EmptyHand(world);
+        var kick = world.CreateCard(AuthoredCards.SwingingWebKick, world.Seats[0].Hand);
+        var genius = world.CreateCard("01089", world.Seats[0].Hand);
+        var energy = world.CreateCard("01088", world.Seats[0].Hand);
+        var guard = world.CreateCard(
+            "01120", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+
+        var action = runner.Actions(world, 0).Single(ability => ability.Card == kick.ObjectId);
+        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        var offers = Sequence.Work(world, Cards, runner, [])!.Affordances;
+
+        Assert.Equal([guard.ObjectId], offers.Select(offer => offer.AnchorId));
+        Assert.DoesNotContain(offers, offer => offer.AnchorId == villain.ObjectId);
+    }
+
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void AQueuedCardAttackCanBeResolvedByAReconstructedRunner()
+    {
+        // The engine chooses a stable authored address for an agenda payload;
+        // an in-memory runner instance is not part of saved game state.
+        var world = Deal(hero: true);
+        var firstRunner = AuthoredCards.Runner();
+        world.Abilities = firstRunner;
+        EmptyHand(world);
+        var kick = world.CreateCard(AuthoredCards.SwingingWebKick, world.Seats[0].Hand);
+        var genius = world.CreateCard("01089", world.Seats[0].Hand);
+        var energy = world.CreateCard("01088", world.Seats[0].Hand);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+
+        var action = Assert.Single(firstRunner.Actions(world, 0));
+        firstRunner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        var prompt = Sequence.Work(world, Cards, firstRunner, [])!;
+        Sequence.Answer(
+            world, Cards, firstRunner, prompt, Decision.Take(villain.ObjectId), []);
+
+        var reconstructed = AuthoredCards.Runner();
+        world.Abilities = reconstructed;
+        Sequence.Finish(world, Cards, reconstructed, []);
 
         Assert.Equal(8, villain.Damage);
         Assert.Equal(DeckType.DiscardPile, kick.Area.Type);

@@ -68,10 +68,10 @@ public sealed class CorePlayerSelectionTests
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, card, 0, choice.Index, choice.Tier)!;
         Assert.Equal(2, Assert.Single(prompt.Affordances).Targets!.Min);
-        runner.Chose(
-            world, card, 0, choice.Index,
-            Decision.Take(card.ObjectId, [side.ObjectId, main.ObjectId], []),
-            choice.Tier);
+        var answer = Sequence.Work(world, Cards, runner, [])!;
+        Sequence.Answer(world, Cards, runner, answer,
+            Decision.Take(card.ObjectId, [side.ObjectId, main.ObjectId], []), []);
+        Sequence.Finish(world, Cards, runner, []);
 
         Assert.Equal(2, main.Tokens["k_threat"]);
         Assert.Equal(1, side.Tokens["k_threat"]);
@@ -131,9 +131,8 @@ public sealed class CorePlayerSelectionTests
         var actions = game.Pending!.Affordances
             .Where(option => option.AnchorId == channel.ObjectId)
             .ToList();
-        Assert.Equal(2, actions.Count);
-        Assert.NotEqual(actions[0].Id, actions[1].Id);
-        var charge = actions.Single(option => option.Label == "Channel Energy");
+        var charge = Assert.Single(actions);
+        Assert.Equal("Channel Energy", charge.Label);
 
         var pending = runner.Actions(world, 0).ToList();
         runner.Act(
@@ -141,15 +140,43 @@ public sealed class CorePlayerSelectionTests
             [first.ObjectId, second.ObjectId], []);
 
         Assert.Equal(6, channel.Tokens["c_energy"]);
-        runner.Act(world, pending.Single(action => action.Ordinal == 1), [], []);
+        var charged = runner.Actions(world, 0)
+            .Where(action => action.Card == channel.ObjectId)
+            .ToList();
+        Assert.Equal(2, charged.Count);
+        Assert.NotEqual(charged[0].Ordinal, charged[1].Ordinal);
+        runner.Act(world, charged.Single(action => action.Ordinal == 1), [], []);
         var step = Assert.Single(world.Agenda.Outstanding);
         var target = runner.Choosing(world, channel, 0, step.Index, step.Tier)!;
         Assert.Equal(Question.Element, target.Asking);
-        runner.Chose(
-            world, channel, 0, step.Index, Decision.Take(villain.ObjectId), step.Tier);
+        var answer = Sequence.Work(world, Cards, runner, [])!;
+        Sequence.Answer(world, Cards, runner, answer, Decision.Take(villain.ObjectId), []);
+        Sequence.Finish(world, Cards, runner, []);
 
         Assert.Equal(10, villain.Damage);
         Assert.False(DeckTypes.IsInPlay(channel.Area.Type));
+    }
+
+    [Rule("rr:target.2")]
+    [Rule("rr:target.3")]
+    [Fact]
+    public void GammaSlamRequiresDamageOnSheHulkBeforeItIsOffered()
+    {
+        var world = Board("01019a,01019b");
+        var hero = world.Seats[0].IdentityCard;
+        hero.TurnTo("01019a");
+        var slam = world.CreateCard("01021", world.Seats[0].Hand);
+        world.CreateCard("01014", world.Seats[0].Hand);
+        world.CreateCard("01088", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 0), ability => ability.Card == slam.ObjectId);
+
+        hero.TakeDamage(1);
+
+        Assert.Contains(
+            runner.Actions(world, 0), ability => ability.Card == slam.ObjectId);
     }
 
     private static World Board(string identity)

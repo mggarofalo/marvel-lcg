@@ -201,6 +201,7 @@ public static class Damage
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="verb">What kind of thing caused it.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="retaliate">Whether to resolve retaliation before returning.</param>
     /// <returns>
     /// Every character this attack <b>actually damaged</b>, which is not every
     /// character it was aimed at. <c>rr:tough.3</c>: a character whose tough
@@ -210,8 +211,9 @@ public static class Damage
     /// </returns>
     public static AttackResult Attack(
         World world, ICardFacts facts, Card attacker, Card target, long amount,
-        string trigger, string verb, List<GameEvent> events)
-        => Attack(world, facts, attacker, attacker, target, amount, trigger, verb, events);
+        string trigger, string verb, List<GameEvent> events, bool retaliate = true)
+        => Attack(
+            world, facts, attacker, attacker, target, amount, trigger, verb, events, retaliate);
 
     /// <summary>
     /// One attack whose acting character and damage source are different cards.
@@ -233,9 +235,10 @@ public static class Damage
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="verb">What kind of thing caused it.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="retaliate">Whether to resolve retaliation before returning.</param>
     public static AttackResult Attack(
         World world, ICardFacts facts, Card attacker, Card source, Card target, long amount,
-        string trigger, string verb, List<GameEvent> events)
+        string trigger, string verb, List<GameEvent> events, bool retaliate = true)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -299,7 +302,7 @@ public static class Damage
         }
 
         // `rr:ranged.1` -- "this attack ignores the retaliate keyword".
-        if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
+        if (retaliate && !Keywords.Has(world, attacker, Keywords.Ranged, facts))
         {
             Retaliate(world, facts, target, attacker, trigger, events);
         }

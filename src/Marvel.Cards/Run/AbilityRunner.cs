@@ -181,6 +181,93 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public void ResolveCardAttack(
+        World world, CharacterAttack attack, Occurrence occurrence, List<GameEvent> events) =>
+        ResolvePower(
+            world, attack.Source, attack.Enemy, attack.Player, attack.AbilityIndex,
+            attack.PowerOrdinal, attack.ResumeFrom, attack.FinalStep,
+            attack.Targets ?? [attack.Enemy], attack.Amount, null,
+            attack.Trigger, occurrence, events, BasicPowers.AttackVerb);
+
+    /// <inheritdoc/>
+    public void ResolveCardThwart(
+        World world, CharacterThwart thwart, Occurrence occurrence, List<GameEvent> events) =>
+        ResolvePower(
+            world, thwart.Source, thwart.Scheme, thwart.Player, thwart.AbilityIndex,
+            thwart.PowerOrdinal, thwart.ResumeFrom, thwart.FinalStep,
+            thwart.Targets ?? [thwart.Scheme], thwart.Amount, thwart.ImminentThreat,
+            thwart.Trigger, occurrence, events, BasicPowers.ThwartVerb);
+
+    private void ResolvePower(
+        World world, int sourceId, int targetId, int player, int abilityIndex,
+        int powerOrdinal, int resumeFrom, bool finalStep, IReadOnlyList<int> targets,
+        long powerAmount, ThreatPlacement? imminentThreat, string eventTrigger,
+        Occurrence occurrence,
+        List<GameEvent> events, string power)
+    {
+        if (sourceId < 0 || sourceId >= world.Cards.Count)
+        {
+            throw new RulesNotImplementedException(
+                $"card {power.ToLowerInvariant()} has no reconstructable source");
+        }
+
+        var source = world.Cards[sourceId];
+        var abilities = book.On(source.FaceId).ToList();
+        var ability = abilities.ElementAtOrDefault(abilityIndex)
+            ?? throw new RulesNotImplementedException(
+                $"'{source.FaceId}' has no ability {abilityIndex} for its "
+                + power.ToLowerInvariant());
+        var wrappers = PowerNodes(ability.Effect, power).ToList();
+        var wrapper = wrappers.ElementAtOrDefault(powerOrdinal)
+            ?? throw new RulesNotImplementedException(
+                $"'{source.FaceId}' ability {abilityIndex} has no {power.ToLowerInvariant()} "
+                + $"wrapper {powerOrdinal}");
+        var effect = Tree(wrapper.Require("effect"));
+        if (Choices(effect).Any())
+        {
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' asks a question inside a {power.ToLowerInvariant()}");
+        }
+
+        var cast = new Cast(
+            world, source, occurrence, player, events, this)
+        {
+            Tier = ability.Trigger.Timing,
+            FinalStep = finalStep,
+            Power = power,
+            PowerAmount = powerAmount,
+            ImminentThreat = imminentThreat,
+            EventTrigger = eventTrigger,
+            PowerTargets = [.. targets.Select(id => world.Cards[id])],
+        };
+        cast.Choose(world.Cards[targetId]);
+        Run(effect, cast);
+
+        if (power == BasicPowers.AttackVerb)
+        {
+            var attacker = world.Seats[player].IdentityCard;
+            if (!Keywords.Has(world, attacker, Keywords.Ranged, world.Facts))
+            {
+                foreach (var target in cast.Attacked.DistinctBy(card => card.ObjectId))
+                {
+                    Damage.Retaliate(world, world.Facts, target, attacker, cast.Trigger, events);
+                }
+            }
+        }
+
+        if (resumeFrom >= 0)
+        {
+            if (ability.Effect.Kind != "seq")
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' resumes a {power.ToLowerInvariant()} outside a sequence");
+            }
+            Sequence(ability.Effect, cast, resumeFrom);
+        }
+        DiscardEvent(source, cast);
+    }
+
+    /// <inheritdoc/>
     public string ResourcesGeneratedBy(World world, Card source, Card? payingFor)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -296,9 +383,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     continue;
                 }
 
-                if (ability.When is not null
-                    && !Test(ability.When, new Cast(
-                        world, card, occurrence, controller, [], this)))
+                var eligibility = new Cast(
+                    world, card, occurrence, controller, [], this);
+                if ((ability.When is not null && !Test(ability.When, eligibility))
+                    || (HasLabelledPower(ability.Effect)
+                        && !CanInitiate(ability.Effect, eligibility)))
                 {
                     continue;
                 }
@@ -523,16 +612,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ?? throw new RulesNotImplementedException(
                 $"card '{card.FaceId}' has no authored Special ability");
         var events = new List<GameEvent>();
-        Run(
-            ability.Effect,
-            new Cast(
-                world, card,
-                new Occurrence(0, [Steps.ResolveSpecial], Subject: card.ObjectId, Player: player),
-                player, events, this)
-            {
-                Tier = AbilityType.Special,
-                FinalStep = finalStep,
-            });
+        var cast = new Cast(
+            world, card,
+            new Occurrence(0, [Steps.ResolveSpecial], Subject: card.ObjectId, Player: player),
+            player, events, this)
+        {
+            Tier = AbilityType.Special,
+            FinalStep = finalStep,
+        };
+        if (CanInitiate(ability.Effect, cast))
+        {
+            Run(ability.Effect, cast);
+        }
         return events;
     }
 
@@ -542,7 +633,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
 
         var sources = new List<ResourceSource>();
-        foreach (var card in Triggerable(world, player))
+        foreach (var card in Triggerable(world, player).ToList())
         {
             foreach (var ability in book.On(card.FaceId))
             {
@@ -1249,21 +1340,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
 
         var found = new List<PendingAbility>();
-        foreach (var card in Triggerable(world, player))
+        foreach (var card in Triggerable(world, player).ToList())
         {
             foreach (var (ability, ordinal) in book.On(card.FaceId)
                          .Where(candidate => candidate.Trigger.Timing == AbilityType.Action)
                          .Select((candidate, ordinal) => (candidate, ordinal)))
             {
+                var eligibility = new Cast(world, card, new Occurrence(
+                    0, [Steps.TurnAction], Subject: card.ObjectId, Player: player),
+                    player, [], this);
                 if (Available(world, card, ability)
                     && InForm(world, player, ability.Trigger.Form)
                     && Payable(world, card, player, ability.Cost)
                     && EventPayable(world, card, player)
-                    && (ability.When is null || Test(
-                        ability.When,
-                        new Cast(world, card, new Occurrence(
-                            0, [Steps.TurnAction], Subject: card.ObjectId, Player: player),
-                            player, [], this))))
+                    && (ability.When is null || Test(ability.When, eligibility))
+                    && CanInitiate(ability.Effect, eligibility))
                 {
                     found.Add(new PendingAbility(
                         card.ObjectId, AbilityType.Action, player, ordinal));
@@ -1989,11 +2080,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer)
         => ChoseCore(
             world, source, player, stoppedAt, input, tier, finalStep,
-            eachPlayerFrame, finalPlayer);
+            eachPlayerFrame, finalPlayer, eventTrigger: null);
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
+        string trigger)
+        => ChoseCore(
+            world, source, player, stoppedAt, input, tier, finalStep,
+            eachPlayerFrame, finalPlayer, trigger);
 
     private List<GameEvent> ChoseCore(
         World world, Card source, int player, int stoppedAt, Decision input,
-        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer)
+        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
+        string? eventTrigger = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
@@ -2004,7 +2105,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
+            EventTrigger = eventTrigger,
         };
+        cast.At(Math.Max(0, stoppedAt - 1));
         cast.SetContinuation(book.On(source.FaceId).Any(ability =>
             (tier is null || ability.Trigger.Timing == tier)
             && ability.Effect.Kind == "seq"
@@ -2142,18 +2245,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 throw new RulesNotImplementedException(
                     $"'{source.FaceId}' requires {expected} different scheme target(s)");
             }
-            foreach (var scheme in selected)
-            {
-                if (scheme.Area.Type == DeckType.MainSchemesArea
-                    && MainScheme.Crisis(world, world.Facts))
-                {
-                    continue;
-                }
-                Threat.Remove(
-                    world, world.Facts, cast.Abilities, scheme, 2,
-                    cast.Trigger, "Remove_Threat", cast.Events, by: player);
-            }
-            return cast.Events;
+            cast.Choose(selected[0]);
+            SchedulePower(
+                Tree(choice.Require("power")), cast, BasicPowers.ThwartVerb,
+                selected[0], selected, -1);
+            return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "makeTheCall")
         {
@@ -2193,8 +2289,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
                 Rules.Play.Discard.Card(world, card, CardPlay.Verb, cast.Events);
             }
-            Threat.Remove(world, world.Facts, cast.Abilities, scheme, input.Targets.Count,
-                cast.Trigger, "Remove_Threat", cast.Events, by: player);
+            cast.Choose(scheme);
+            SchedulePower(
+                Tree(choice.Require("power")), cast, BasicPowers.ThwartVerb,
+                scheme, [scheme], input.Targets.Count);
             return Continue(source, cast, stoppedAt);
         }
 
@@ -2354,6 +2452,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
             + "legality is not implemented"),
     };
+
+    /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
+    private static bool CanInitiate(AbilityNode node, Cast cast) => node.Kind switch
+    {
+        "seq" => Nodes(node.Argument).All(step => CanInitiate(step, cast)),
+        "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+            is not { } branch || CanInitiate(Tree(branch), cast),
+        "chooseCard" => Every(node.Require("from"), cast).Count > 0,
+        "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
+        "thwartDifferentSchemes" => Every(node.Require("schemes"), cast).Count > 0,
+        "legalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
+                card.ObjectId != cast.Source.ObjectId)
+            && Every(node.Require("schemes"), cast).Count > 0,
+        "thwartSchemes" => Every(node.Require("schemes"), cast).Count > 0,
+        "attack" => Find(node.Require("target"), cast) is not { } enemy
+            || cast.World.Abilities.CanTakeDamage(cast.World, enemy, cast.Source),
+        _ => true,
+    };
+
+    private static bool HasLabelledPower(AbilityNode node) =>
+        PowerNodes(node, BasicPowers.AttackVerb).Any()
+        || PowerNodes(node, BasicPowers.ThwartVerb).Any();
 
     /// <summary>Whether a player-card option can change the current state.</summary>
     private static bool CanPartiallyResolve(AbilityNode node, Cast cast)
@@ -2572,6 +2692,51 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         };
 
         foreach (var found in children.SelectMany(Choices))
+        {
+            yield return found;
+        }
+    }
+
+    private static IEnumerable<AbilityNode> PowerNodes(AbilityNode node, string power)
+    {
+        if (string.Equals(node.Kind, power.ToLowerInvariant(), StringComparison.Ordinal))
+        {
+            yield return node;
+        }
+
+        foreach (var found in PowerValues(node.Argument, power))
+        {
+            yield return found;
+        }
+    }
+
+    private static IEnumerable<AbilityNode> PowerValues(AbilityValue value, string power)
+    {
+        if (value is AbilityValue.List list)
+        {
+            foreach (var found in list.Values.SelectMany(item => PowerValues(item, power)))
+            {
+                yield return found;
+            }
+            yield break;
+        }
+
+        if (value is not AbilityValue.Map map)
+        {
+            yield break;
+        }
+
+        if (map.Entries.Count == 1)
+        {
+            var node = AbilityNode.Of(value);
+            foreach (var found in PowerNodes(node, power))
+            {
+                yield return found;
+            }
+            yield break;
+        }
+
+        foreach (var found in map.Entries.Values.SelectMany(item => PowerValues(item, power)))
         {
             yield return found;
         }
@@ -2909,7 +3074,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         Subject: cast.Source.ObjectId,
                         Seat: cast.Player,
                         Tier: cast.Tier,
-                        FinalStep: cast.FinalStep));
+                        FinalStep: cast.FinalStep,
+                        Trigger: cast.Trigger));
                     cast.Suspend();
                 }
 
@@ -2925,7 +3091,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Subject: cast.Source.ObjectId,
                     Seat: cast.Player,
                     Tier: cast.Tier,
-                    FinalStep: cast.FinalStep));
+                    FinalStep: cast.FinalStep,
+                    Trigger: cast.Trigger));
                 cast.Suspend();
                 break;
 
@@ -2941,9 +3108,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.World.Agenda.Current?.Round ?? 0,
                     2,
                     Index: cast.Position + 1,
-                    Subject: cast.Source.ObjectId,
-                    Seat: cast.Player,
-                    Tier: cast.Tier));
+                        Subject: cast.Source.ObjectId,
+                        Seat: cast.Player,
+                        Tier: cast.Tier,
+                        FinalStep: cast.FinalStep,
+                        Trigger: cast.Trigger));
                 cast.Suspend();
                 break;
 
@@ -2958,7 +3127,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Index: cast.Position + 1,
                     Subject: cast.Source.ObjectId,
                     Seat: cast.Player,
-                    Tier: cast.Tier));
+                    Tier: cast.Tier,
+                    FinalStep: cast.FinalStep,
+                    Trigger: cast.Trigger));
                 cast.Suspend();
                 break;
 
@@ -3051,7 +3222,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 for (long dealt = 0; dealt < Number(node.Argument); dealt++)
                 {
                     Deal.EncounterCard(
-                        cast.World, cast.Player, cast.Occurrence.Conditions[0], cast.Events);
+                        cast.World, cast.Player, cast.Trigger, cast.Events);
                 }
 
                 break;
@@ -3074,6 +3245,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "dealAttackDamage":
                 DealAttackDamage(node, cast);
+                break;
+
+            case "moveAttackDamage":
+                MoveAttackDamage(node, cast);
+                break;
+
+            case "attack":
+                ((AbilityRunner)cast.Abilities).SchedulePower(node, cast, BasicPowers.AttackVerb);
+                break;
+
+            case "thwart":
+                ((AbilityRunner)cast.Abilities).SchedulePower(node, cast, BasicPowers.ThwartVerb);
+                break;
+
+            case "thwartSchemes":
+                var schemes = Every(node.Require("schemes"), cast);
+                if (schemes.Count > 0)
+                {
+                    cast.Choose(schemes[0]);
+                    ((AbilityRunner)cast.Abilities).SchedulePower(
+                        Tree(node.Require("power")), cast, BasicPowers.ThwartVerb,
+                        schemes[0], schemes, -1);
+                }
                 break;
 
             case "placeThreat":
@@ -3127,7 +3321,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Draw.Cards(
                         cast.World, player,
                         (int)Number(node.Require("count")),
-                        cast.Occurrence.Conditions[0], cast.Events);
+                        cast.Trigger, cast.Events);
                 }
                 break;
 
@@ -3163,6 +3357,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 card => card.ObjectId != cast.Source.ObjectId)
             && Every(node.Argument, cast).Any(
                 scheme => scheme.Tokens.GetValueOrDefault("k_threat") > 0),
+        "canAutomaticThwart" => Find(node.Argument, cast) is { } scheme
+            && BasicPowers.CanAutomaticallyThwart(
+                cast.World, cast.World.Facts, cast.Player, scheme),
 
         // "If Vulture is in play". `rr:identity.2` makes a title name one
         // card -- "if a card refers to a hero or alter-ego by title, it refers
@@ -4193,7 +4390,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // Which ability stopped. A card can have a choice in two of them,
             // and the card and the position do not say which -- see `Choice`.
             Tier: cast.Tier,
-            FinalStep: cast.FinalStep));
+            FinalStep: cast.FinalStep,
+            Trigger: cast.Trigger));
 
         cast.Suspend();
     }
@@ -4282,7 +4480,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // Which ability stopped. A card can have a choice in two of them,
             // and the card and the position do not say which -- see `Choice`.
             Tier: cast.Tier,
-            FinalStep: cast.FinalStep));
+            FinalStep: cast.FinalStep,
+            Trigger: cast.Trigger));
 
         cast.Suspend();
     }
@@ -4371,9 +4570,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         string verb = node.Field("attack") is null ? "Deal_Damage" : "Attack";
         foreach (var target in Every(node.Require("cards"), cast))
         {
+            long before = target.Damage;
             Damage.Deal(
                 cast.World, cast.World.Facts, cast.Source, target, amount, cast.Trigger, verb,
                 cast.Events);
+            if (cast.Power == BasicPowers.AttackVerb && target.Damage > before)
+            {
+                cast.Occurrence.Also(Steps.DamageDealt);
+            }
         }
     }
 
@@ -4418,15 +4622,118 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         foreach (var target in DamageTargets(node.Require("cards"), cast))
         {
-            Damage.Attack(
-                cast.World, cast.World.Facts, attacker, target,
-                Amount(node.Require("amount"), cast), cast.Trigger, "Attack", cast.Events);
+            var damaged = Damage.Attack(
+                cast.World, cast.World.Facts, attacker, cast.Source, target,
+                Amount(node.Require("amount"), cast), cast.Trigger, "Attack", cast.Events,
+                retaliate: false);
+            cast.Attacked.Add(target);
+            if (damaged.Characters.Count > 0)
+            {
+                cast.Occurrence.Also(Steps.DamageDealt);
+            }
         }
 
         if (temporaryOverkill is not null)
         {
             cast.World.Effects.Use(temporaryOverkill);
         }
+    }
+
+    private static void MoveAttackDamage(AbilityNode node, Cast cast)
+    {
+        var from = Find(node.Require("from"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot find the character damage moves from");
+        var to = Find(node.Require("to"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot find the enemy damage moves to");
+        cast.Attacked.Add(to);
+        long amount = Math.Min(from.Damage, Amount(node.Require("amount"), cast));
+        if (amount <= 0 || !cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
+        {
+            return;
+        }
+
+        Damage.Heal(
+            cast.World, cast.World.Facts, from, amount,
+            cast.Trigger, "Move_Damage", cast.Events);
+        var damaged = Damage.Attack(
+            cast.World,
+            cast.World.Facts,
+            cast.World.Seats[Resolver(cast)].IdentityCard,
+            cast.Source,
+            to,
+            amount,
+            cast.Trigger,
+            BasicPowers.AttackVerb,
+            cast.Events,
+            retaliate: false);
+        if (damaged.Characters.Count > 0)
+        {
+            cast.Occurrence.Also(Steps.DamageDealt);
+        }
+    }
+
+    private void SchedulePower(AbilityNode node, Cast cast, string power)
+    {
+        var target = Find(node.Require("target"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot find the target of its {power}");
+        SchedulePower(node, cast, power, target, [target], -1);
+    }
+
+    private void SchedulePower(
+        AbilityNode node, Cast cast, string power, Card target,
+        IReadOnlyList<Card> targets, long powerAmount)
+    {
+        var effect = Tree(node.Require("effect"));
+        if (Choices(effect).Any())
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' asks a question inside a {power.ToLowerInvariant()}");
+        }
+
+        var abilities = book.On(cast.Source.FaceId).ToList();
+        var addresses = abilities
+            .Select((ability, index) => (Ability: ability, Index: index))
+            .Where(candidate => cast.Tier is null
+                || candidate.Ability.Trigger.Timing == cast.Tier)
+            .SelectMany(candidate => PowerNodes(candidate.Ability.Effect, power)
+                .Select((wrapper, ordinal) =>
+                    (candidate.Index, Ordinal: ordinal, Wrapper: wrapper)))
+            .Where(candidate => candidate.Wrapper == node)
+            .ToList();
+        if (addresses.Count != 1)
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' {power.ToLowerInvariant()} has {addresses.Count} "
+                + "reconstructable authored locations");
+        }
+
+        var address = addresses[0];
+        int resumeFrom = cast.HasContinuation ? cast.Position + 1 : -1;
+        bool scheduled = power == BasicPowers.AttackVerb
+            ? BasicPowers.CardAttack(
+                cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
+                cast.Trigger, cast.Events, abilityIndex: address.Index,
+                powerOrdinal: address.Ordinal, resumeFrom: resumeFrom,
+                finalStep: cast.FinalStep,
+                targets: [.. targets.Select(card => card.ObjectId)], nested: true)
+            : BasicPowers.CardThwart(
+                cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
+                cast.Trigger, cast.Events, abilityIndex: address.Index,
+                powerOrdinal: address.Ordinal, resumeFrom: resumeFrom,
+                finalStep: cast.FinalStep,
+                targets: [.. targets.Select(card => card.ObjectId)],
+                imminentThreat: cast.Occurrence.Threat,
+                automaticTarget: node.Field("automaticTarget") is not null,
+                nested: true);
+        if (!scheduled)
+        {
+            return;
+        }
+
+        cast.Suspend();
     }
 
     /// <summary>"Place N threat on …" — <c>rr:threat</c>.</summary>
@@ -4463,7 +4770,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static void PreventThreat(AbilityNode node, Cast cast)
     {
-        var placement = cast.Occurrence.Threat
+        var placement = cast.ImminentThreat ?? cast.Occurrence.Threat
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would prevent threat that is not imminent");
         placement.Prevent(Amount(node.Argument, cast));
@@ -4486,29 +4793,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static void RemoveThreat(AbilityNode node, Cast cast)
     {
-        var scheme = Find(node.Require("scheme"), cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would remove threat from a scheme that is not there");
-        // `rr:crisis-icon.1`: player cards cannot remove threat from the main
-        // scheme while a crisis icon is in play. Encounter effects are not
-        // player cards and remain able to do so.
-        if (scheme.Area.Type == DeckType.MainSchemesArea
-            && IsPlayerCard(cast)
-            && MainScheme.Crisis(cast.World, cast.World.Facts))
+        var schemes = Every(node.Require("scheme"), cast);
+        if (schemes.Count == 0)
         {
-            return;
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would remove threat from a scheme that is not there");
         }
 
-        Threat.Remove(
-            cast.World,
-            cast.World.Facts,
-            cast.Abilities,
-            scheme,
-            Amount(node.Require("amount"), cast),
-            cast.Trigger,
-            "Remove_Threat",
-            cast.Events,
-            by: Resolver(cast));
+        foreach (var scheme in schemes)
+        {
+            // `rr:crisis-icon.1`: player cards cannot remove threat from the main
+            // scheme while a crisis icon is in play. Encounter effects are not
+            // player cards and remain able to do so.
+            if (scheme.Area.Type == DeckType.MainSchemesArea
+                && IsPlayerCard(cast)
+                && MainScheme.Crisis(cast.World, cast.World.Facts))
+            {
+                continue;
+            }
+
+            Threat.Remove(
+                cast.World,
+                cast.World.Facts,
+                cast.Abilities,
+                scheme,
+                Amount(node.Require("amount"), cast),
+                cast.Trigger,
+                "Remove_Threat",
+                cast.Events,
+                by: Resolver(cast));
+        }
     }
 
     /// <summary>
@@ -5073,6 +5387,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } attackable
+            && attackable.Argument is AbilityValue.Word { Value: "attackableEnemies" })
+        {
+            return
+            [
+                .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
+                    .Where(enemy => cast.World.Abilities.CanTakeDamage(
+                        cast.World, enemy, cast.Source)),
+            ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } attackableMinions
+            && attackableMinions.Argument is AbilityValue.Word { Value: "attackableMinions" })
+        {
+            return
+            [
+                .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
+                    .Where(enemy => cast.World.Facts.Kind(enemy.FaceId) == CardKind.Minion)
+                    .Where(enemy => cast.World.Abilities.CanTakeDamage(
+                        cast.World, enemy, cast.Source)),
+            ];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allSchemes
             && allSchemes.Argument is AbilityValue.Word { Value: "schemes" })
         {
@@ -5081,6 +5418,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .. cast.World.AreaOf(DeckType.MainSchemesArea).Cards,
                 .. cast.World.AreaOf(DeckType.SideSchemesArea).Cards,
             ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } thwartable
+            && thwartable.Argument is AbilityValue.Word { Value: "thwartableSchemes" })
+        {
+            return BasicPowers.Thwartable(cast.World, cast.World.Facts, Resolver(cast));
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } powerTargets
+            && powerTargets.Argument is AbilityValue.Word { Value: "powerTargets" })
+        {
+            return cast.PowerTargets;
         }
 
         if (value is AbilityValue.Map
@@ -5709,6 +6058,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // which `rr:damage.2` puts on an ally or minion and which an
             // attachment can hold when a card puts them there.
             "damageOn" => Find(node.Argument, cast)?.Damage ?? 0,
+            "powerAmount" => cast.PowerAmount,
             "countersOn" => Find(node.Require("card"), cast)?.Tokens.GetValueOrDefault(
                 "c_" + Word(node.Require("counter"))) ?? 0,
             "printedResourceCountDiscarded" => Resources.PrintedCount(
@@ -5783,7 +6133,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// belongs there rather than being restated here, where only one of the
         /// two could stay right after an edit.
         /// </remarks>
-        public string Trigger => Occurrence.Conditions[0];
+        public string Trigger => string.IsNullOrEmpty(EventTrigger)
+            ? Occurrence.Conditions[0]
+            : EventTrigger;
+
+        /// <summary>Event-stream provenance carried across a scheduled power.</summary>
+        public string? EventTrigger { get; init; }
 
         /// <summary>
         /// What the actions in this ability actually did — the <c>result.*</c>
@@ -5850,6 +6205,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public bool EachPlayerFrame { get; init; }
 
         public bool FinalPlayer { get; init; }
+
+        /// <summary>The labelled player power whose occurrence is resolving.</summary>
+        public string? Power { get; init; }
+
+        /// <summary>Every game element selected for this labelled power.</summary>
+        public IReadOnlyList<Card> PowerTargets { get; init; } = [];
+
+        /// <summary>A numeric result carried into this labelled power.</summary>
+        public long PowerAmount { get; init; } = -1;
+
+        /// <summary>The outer threat assignment this interrupt can prevent.</summary>
+        public ThreatPlacement? ImminentThreat { get; init; }
+
+        /// <summary>Targets attacked by damage nodes, for one deferred retaliation each.</summary>
+        public List<Card> Attacked { get; } = [];
 
         /// <summary>How much damage is about to be dealt — <c>rr:damage.step.1</c>.</summary>
         public long Incoming { get; init; }

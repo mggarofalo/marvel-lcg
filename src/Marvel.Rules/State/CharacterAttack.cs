@@ -37,6 +37,11 @@ namespace Marvel.Rules.State;
 /// <param name="MoveFrom">A card damage is moved from, or -1 for ordinary damage.</param>
 /// <param name="Overkill">Whether this attack temporarily has overkill.</param>
 /// <param name="Trigger">Event-stream provenance for the card ability.</param>
+/// <param name="AbilityIndex">The source card's authored ability, or -1 for fixed damage.</param>
+/// <param name="PowerOrdinal">Which attack wrapper inside that ability.</param>
+/// <param name="ResumeFrom">The next top-level sequence step, or -1 when none remains.</param>
+/// <param name="FinalStep">Whether this is the final Special in its parent sequence.</param>
+/// <param name="Targets">Every target selected for this one attack.</param>
 public sealed record CharacterAttack(
     int Attacker,
     int Enemy,
@@ -45,4 +50,9 @@ public sealed record CharacterAttack(
     int Source = -1,
     int MoveFrom = -1,
     bool Overkill = false,
-    string Trigger = "Attack");
+    string Trigger = "Attack",
+    int AbilityIndex = -1,
+    int PowerOrdinal = 0,
+    int ResumeFrom = -1,
+    bool FinalStep = false,
+    IReadOnlyList<int>? Targets = null);

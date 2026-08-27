@@ -227,9 +227,11 @@ public static class BasicPowers
     private static void InitiateAttack(
         World world, Card attacker, Card enemy, int player, long amount = -1,
         Card? source = null, Card? moveFrom = null, bool overkill = false,
-        string trigger = AttackVerb)
+        string trigger = AttackVerb, int abilityIndex = -1, int powerOrdinal = 0,
+        int resumeFrom = -1,
+        bool finalStep = false, IReadOnlyList<int>? targets = null, bool nested = false)
     {
-        world.CharacterAttack = new CharacterAttack(
+        var attack = new CharacterAttack(
             attacker.ObjectId,
             enemy.ObjectId,
             player,
@@ -237,14 +239,29 @@ public static class BasicPowers
             source?.ObjectId ?? -1,
             moveFrom?.ObjectId ?? -1,
             overkill,
-            trigger);
-        world.Agenda.Then(new PhaseStep(
+            trigger,
+            abilityIndex,
+            powerOrdinal,
+            resumeFrom,
+            finalStep,
+            targets);
+        world.CharacterAttack = attack;
+        var step = new PhaseStep(
             Steps.CharacterAttacks,
             world.Agenda.Current?.Round ?? 0,
             2,
             Index: player,
             Subject: enemy.ObjectId,
-            Seat: player));
+            Seat: player,
+            CharacterAttack: attack);
+        if (nested)
+        {
+            world.Agenda.Now(step);
+        }
+        else
+        {
+            world.Agenda.Then(step);
+        }
     }
 
     /// <summary>Initiates a card ability labelled as an attack.</summary>
@@ -255,9 +272,12 @@ public static class BasicPowers
     /// acting hero and damage source remain distinct because retaliate damages
     /// the former while damage prohibitions inspect the latter.
     /// </remarks>
-    public static void CardAttack(
+    public static bool CardAttack(
         World world, ICardFacts facts, int player, Card source, Card enemy, long amount,
-        string trigger, List<GameEvent> events, bool overkill = false, Card? moveFrom = null)
+        string trigger, List<GameEvent> events, bool overkill = false, Card? moveFrom = null,
+        int abilityIndex = -1, int powerOrdinal = 0, int resumeFrom = -1,
+        bool finalStep = false,
+        IReadOnlyList<int>? targets = null, bool nested = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -268,17 +288,20 @@ public static class BasicPowers
         var attacker = world.Seats[player].IdentityCard;
         if (Cancelled(world, facts, attacker, Statuses.Stunned, events))
         {
-            return;
+            return false;
         }
 
-        if (!Attackable(world, facts, player).Any(card => card.ObjectId == enemy.ObjectId))
+        if (!Attackable(world, facts, player).Any(card => card.ObjectId == enemy.ObjectId)
+            || !world.Abilities.CanTakeDamage(world, enemy, source))
         {
             throw new RulesNotImplementedException(
                 $"card {enemy.ObjectId} is not an enemy {world.Seats[player].Name} can attack");
         }
 
         InitiateAttack(
-            world, attacker, enemy, player, amount, source, moveFrom, overkill, trigger);
+            world, attacker, enemy, player, amount, source, moveFrom, overkill, trigger,
+            abilityIndex, powerOrdinal, resumeFrom, finalStep, targets, nested);
+        return true;
     }
 
     /// <summary>
@@ -307,22 +330,41 @@ public static class BasicPowers
     /// </remarks>
     private static void InitiateThwart(
         World world, Card thwarter, Card scheme, int player, long amount = -1,
-        Card? source = null, string trigger = ThwartVerb)
+        Card? source = null, string trigger = ThwartVerb, int abilityIndex = -1,
+        int powerOrdinal = 0, int resumeFrom = -1, bool finalStep = false,
+        IReadOnlyList<int>? targets = null,
+        ThreatPlacement? imminentThreat = null, bool nested = false)
     {
-        world.CharacterThwart = new CharacterThwart(
+        var thwart = new CharacterThwart(
             thwarter.ObjectId,
             scheme.ObjectId,
             player,
             amount,
             source?.ObjectId ?? -1,
-            trigger);
-        world.Agenda.Then(new PhaseStep(
+            trigger,
+            abilityIndex,
+            powerOrdinal,
+            resumeFrom,
+            finalStep,
+            targets,
+            imminentThreat);
+        world.CharacterThwart = thwart;
+        var step = new PhaseStep(
             Steps.CharacterThwarts,
             world.Agenda.Current?.Round ?? 0,
             3,
             Index: player,
             Subject: scheme.ObjectId,
-            Seat: player));
+            Seat: player,
+            CharacterThwart: thwart);
+        if (nested)
+        {
+            world.Agenda.Now(step);
+        }
+        else
+        {
+            world.Agenda.Then(step);
+        }
     }
 
     /// <summary>
@@ -336,17 +378,29 @@ public static class BasicPowers
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="scheduled">The thwart carried by the current agenda step.</param>
     public static void ResolveCharacterThwart(
-        World world, ICardFacts facts, List<GameEvent> events)
+        World world, ICardFacts facts, List<GameEvent> events,
+        CharacterThwart? scheduled = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (world.CharacterThwart is not { } thwart)
+        var thwart = scheduled ?? world.CharacterThwart;
+        if (thwart is null)
         {
             throw new RulesNotImplementedException(
                 "a character thwart is resolving and the board holds none");
+        }
+
+        if (thwart.AbilityIndex >= 0)
+        {
+            var occurrence = world.Agenda.Occurrence
+                ?? throw new RulesNotImplementedException(
+                    "a character thwart resolved without an occurrence for its response window");
+            world.Abilities.ResolveCardThwart(world, thwart, occurrence, events);
+            return;
         }
 
         if (thwart.Amount >= 0)
@@ -380,17 +434,30 @@ public static class BasicPowers
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="scheduled">The attack carried by the current agenda step.</param>
     public static void ResolveCharacterAttack(
-        World world, ICardFacts facts, List<GameEvent> events)
+        World world, ICardFacts facts, List<GameEvent> events,
+        CharacterAttack? scheduled = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (world.CharacterAttack is not { } attack)
+        var attack = scheduled ?? world.CharacterAttack;
+        if (attack is null)
         {
             throw new RulesNotImplementedException(
                 "a character attack is resolving and the board holds none");
+        }
+
+        var occurrence = world.Agenda.Occurrence
+            ?? throw new RulesNotImplementedException(
+                "a character attack resolved without an occurrence for its response window");
+        if (attack.AbilityIndex >= 0)
+        {
+            world.Abilities.ResolveCardAttack(world, attack, occurrence, events);
+            occurrence.Also(Steps.AttackEnds);
+            return;
         }
 
         var attacker = world.Cards[attack.Attacker];
@@ -435,9 +502,6 @@ public static class BasicPowers
             world.Effects.Use(temporaryOverkill);
         }
 
-        var occurrence = world.Agenda.Occurrence
-            ?? throw new RulesNotImplementedException(
-                "a character attack resolved without an occurrence for its response window");
         occurrence.Also(Steps.AttackEnds);
         if (damaged.Characters.Count > 0)
         {
@@ -526,9 +590,13 @@ public static class BasicPowers
     }
 
     /// <summary>Initiates a card ability labelled as a thwart.</summary>
-    public static void CardThwart(
+    public static bool CardThwart(
         World world, ICardFacts facts, int player, Card source, Card scheme, long amount,
-        string trigger, List<GameEvent> events)
+        string trigger, List<GameEvent> events, int abilityIndex = -1,
+        int powerOrdinal = 0, int resumeFrom = -1,
+        bool finalStep = false, IReadOnlyList<int>? targets = null,
+        ThreatPlacement? imminentThreat = null, bool automaticTarget = false,
+        bool nested = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -539,16 +607,41 @@ public static class BasicPowers
         var thwarter = world.Seats[player].IdentityCard;
         if (Cancelled(world, facts, thwarter, Statuses.Confused, events))
         {
-            return;
+            return false;
         }
 
-        if (!Thwartable(world, facts, player).Any(card => card.ObjectId == scheme.ObjectId))
+        if (automaticTarget
+            ? !CanAutomaticallyThwart(world, facts, player, scheme)
+            : !Thwartable(world, facts, player).Any(card => card.ObjectId == scheme.ObjectId))
         {
             throw new RulesNotImplementedException(
                 $"card {scheme.ObjectId} is not a scheme {world.Seats[player].Name} can thwart");
         }
 
-        InitiateThwart(world, thwarter, scheme, player, amount, source, trigger);
+        InitiateThwart(
+            world, thwarter, scheme, player, amount, source, trigger, abilityIndex,
+            powerOrdinal, resumeFrom, finalStep, targets, imminentThreat, nested);
+        return true;
+    }
+
+    /// <summary>Whether a card's already-determined scheme may be thwarted.</summary>
+    /// <remarks>
+    /// Crisis prohibits removing threat, so it does not prohibit Emergency
+    /// from preventing imminent threat. Patrol instead says the engaged player
+    /// cannot thwart the main scheme at all, and therefore still applies.
+    /// </remarks>
+    public static bool CanAutomaticallyThwart(
+        World world, ICardFacts facts, int player, Card scheme)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(scheme);
+
+        bool isScheme = scheme.Area.Type is
+            DeckType.MainSchemesArea or DeckType.SideSchemesArea;
+        return isScheme
+            && (scheme.Area.Type != DeckType.MainSchemesArea
+                || !Patrolled(world, facts, player));
     }
 
     /// <summary>Whether a basic thwart against this scheme uses ATK.</summary>

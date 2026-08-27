@@ -91,11 +91,14 @@ public enum Stage
 /// Event-stream provenance carried by an internal continuation, or empty.
 /// The spelling is an engine choice rather than a Rules Reference term.
 /// </param>
+/// <param name="CharacterAttack">The complete queued player attack, when this step is one.</param>
+/// <param name="CharacterThwart">The complete queued player thwart, when this step is one.</param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
     ThreatPlacement? Placement = null, int ActivationId = -1, bool FinalStep = false,
-    bool FinalPlayer = false, bool EachPlayerFrame = false, string Trigger = "")
+    bool FinalPlayer = false, bool EachPlayerFrame = false, string Trigger = "",
+    CharacterAttack? CharacterAttack = null, CharacterThwart? CharacterThwart = null)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -131,15 +134,16 @@ public readonly record struct PhaseStep(
                 Subject,
                 Character >= 0 ? Character : world.Seats[Seat].IdentityCard.ObjectId,
                 Seat),
-            Steps.CharacterAttacks when world.CharacterAttack is { } attack =>
+            Steps.CharacterAttacks when (CharacterAttack ?? world.CharacterAttack) is { } attack =>
                 Occurrence.ForAttack(
                     id,
                     Conditions,
                     world,
                     facts,
                     attack.Attacker,
-                    attack.Enemy),
-            Steps.CharacterThwarts when world.CharacterThwart is { } thwart =>
+                    attack.Enemy,
+                    attack.Player),
+            Steps.CharacterThwarts when (CharacterThwart ?? world.CharacterThwart) is { } thwart =>
                 Occurrence.ForThwart(
                     id,
                     Conditions,

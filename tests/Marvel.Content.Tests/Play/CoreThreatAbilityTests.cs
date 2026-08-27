@@ -67,6 +67,7 @@ public sealed class CoreThreatAbilityTests
             pending => pending.Card == emergency.ObjectId);
 
         runner.Resolve(world, villainScheme, ability, [], []);
+        Sequence.Finish(world, Cards, runner, []);
 
         Assert.Equal(2, villainScheme.Threat!.Remaining);
 
@@ -75,6 +76,54 @@ public sealed class CoreThreatAbilityTests
         Assert.DoesNotContain(
             runner.Waiting(world, villainPhase, WindowKind.Interrupt),
             pending => pending.Card == another.ObjectId);
+    }
+
+    [Rule("rr:patrol")]
+    [Fact]
+    public void EmergencyIsNotOfferedWhenPatrolProhibitsTheMainSchemeThwart()
+    {
+        // "The engaged player cannot thwart the main scheme." Unlike crisis,
+        // patrol prohibits the thwart itself rather than only threat removal.
+        var world = Board(hero: true);
+        var emergency = world.CreateCard("01085", world.Seats[0].Hand);
+        world.CreateCard(
+            "16119", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var occurrence = ThreatOccurrence(world, ThreatCause.EnemyScheme, amount: 3);
+
+        Assert.DoesNotContain(
+            runner.Waiting(world, occurrence, WindowKind.Interrupt),
+            ability => ability.Card == emergency.ObjectId);
+    }
+
+    [Rule("rr:confuse-confused.1")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void ConfusionCancelsForJusticeAfterItsCostsArePaid()
+    {
+        // "As the thwart is initiated, remove the confused status card to
+        // cancel the thwart." The event and its resources were already paid.
+        var world = Board(hero: true);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 5);
+        var forJustice = world.CreateCard("01060", world.Seats[0].Hand);
+        var genius = world.CreateCard("01089", world.Seats[0].Hand);
+        var hero = world.Seats[0].IdentityCard;
+        Statuses.Give(world, hero, Statuses.Confused);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+
+        var action = runner.Actions(world, 0).Single(ability => ability.Card == forJustice.ObjectId);
+        runner.Act(world, action, [genius.ObjectId], []);
+        var prompt = Sequence.Work(world, Cards, runner, [])!;
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(scheme.ObjectId), []);
+        Sequence.Finish(world, Cards, runner, []);
+
+        Assert.False(Statuses.Has(world, hero, Statuses.Confused));
+        Assert.Equal(5, scheme.Tokens["k_threat"]);
+        Assert.Equal(DeckType.DiscardPile, forJustice.Area.Type);
+        Assert.DoesNotContain(genius, world.Seats[0].Hand.Cards);
     }
 
     private static Occurrence ThreatOccurrence(World world, ThreatCause cause, long amount)

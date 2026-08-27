@@ -40,7 +40,7 @@ public sealed class AttackOccurrenceTests
         world.CharacterAttack = new CharacterAttack(hero.ObjectId, minion.ObjectId, 0);
         var characterAttack = new PhaseStep(Steps.CharacterAttacks, 1, 2)
             .OccurrenceOf(world, facts);
-        Assert.Equal(-1, characterAttack.Player);
+        Assert.Equal(0, characterAttack.Player);
         Assert.Equal(0, characterAttack.ActorFacts!.Controller);
     }
 

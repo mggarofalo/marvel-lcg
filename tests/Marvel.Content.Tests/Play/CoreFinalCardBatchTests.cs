@@ -1,4 +1,5 @@
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -104,8 +105,9 @@ public sealed class CoreFinalCardBatchTests
         var action = runner.Actions(world, 0).Single(ability => ability.Card == blast.ObjectId);
         runner.Act(world, action, [payment.ObjectId], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, blast, 0, choice.Index, Decision.Take(target.ObjectId), choice.Tier);
+        var prompt = Sequence.Work(world, Cards, runner, [])!;
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(target.ObjectId), []);
+        Sequence.Finish(world, Cards, runner, []);
 
         Assert.Equal(7, target.Damage);
     }
@@ -147,16 +149,41 @@ public sealed class CoreFinalCardBatchTests
         world.Abilities = runner;
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == legalPractice.ObjectId);
-        runner.Act(world, action, [], []);
+        var events = runner.Act(world, action, [], []).ToList();
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, legalPractice, 0, choice.Index, choice.Tier)!;
         Assert.Equal(1, Assert.Single(prompt.Affordances).Targets!.Min);
-        runner.Chose(world, legalPractice, 0, choice.Index,
-            Decision.Take(scheme.ObjectId, [first.ObjectId, second.ObjectId], []), choice.Tier);
+        var answer = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, answer,
+            Decision.Take(scheme.ObjectId, [first.ObjectId, second.ObjectId], []), events);
+        Sequence.Finish(world, Cards, runner, events);
 
         Assert.Equal(3, scheme.Tokens["k_threat"]);
         Assert.DoesNotContain(first, world.Seats[0].Hand.Cards);
         Assert.DoesNotContain(second, world.Seats[0].Hand.Cards);
+        var threat = Assert.Single(events.OfType<FieldSet>(), change =>
+            change.Card == scheme.ObjectId && change.Verb == "Remove_Threat");
+        Assert.Equal(Steps.TurnAction, threat.Trigger);
+    }
+
+    [Rule("rr:crisis-icon.1")]
+    [Fact]
+    public void LegalPracticeIsNotOfferedWhenCrisisLeavesNoThwartableScheme()
+    {
+        // "Player cards cannot remove threat from the main scheme." A card
+        // with no legal scheme must not take payment and ask an empty question.
+        var world = Board(players: 1, identity: "01019a,01019b");
+        world.Seats[0].IdentityCard.TurnTo("01019b");
+        var main = world.CreateCard("01116a", world.AreaOf(DeckType.MainSchemesArea));
+        main.PlaceTokens("k_threat", 5);
+        world.CreateCard("01125", world.AreaOf(DeckType.SideSchemesArea));
+        var legalPractice = world.CreateCard("01023", world.Seats[0].Hand);
+        world.CreateCard("01087", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 0), ability => ability.Card == legalPractice.ObjectId);
     }
 
     private static World Board(int players, string identity = "01001a,01001b")
