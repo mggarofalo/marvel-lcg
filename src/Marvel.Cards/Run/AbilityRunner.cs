@@ -186,7 +186,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // nobody can pay for is not an offer that fails at step 5; it
                 // never reaches the window at all.
                 if (!Payable(world, card, controller, ability.Cost)
-                    || !EventPayable(world, card, controller))
+                    || !EventPayable(world, card, controller)
+                    || !Available(world, card, ability))
                 {
                     continue;
                 }
@@ -295,6 +296,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // refuses one that does not.
         PayEvent(card, paying, cast);
         Pay(found[0].Cost, paying, chosen, cast);
+        Use(world, card, found[0]);
         Run(found[0].Effect, cast);
         DiscardEvent(card, cast);
         return events;
@@ -1032,6 +1034,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // before step 6 resolves.
         PayEvent(card, paying, cast);
         Pay(found.Cost, paying, chosen, cast);
+        Use(world, card, found);
         Run(found.Effect, cast);
         DiscardEvent(card, cast);
         return events;
@@ -1048,6 +1051,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             foreach (var ability in book.On(card.FaceId))
             {
                 if (ability.Trigger.Timing == AbilityType.Action
+                    && Available(world, card, ability)
                     && InForm(world, player, ability.Trigger.Form)
                     && Payable(world, card, player, ability.Cost)
                     && EventPayable(world, card, player)
@@ -1526,6 +1530,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var choice = Choice(source, stoppedAt, tier);
         var cast = Resolving(world, source, player, tier);
+        cast.SetContinuation(book.On(source.FaceId).Any(ability =>
+            (tier is null || ability.Trigger.Timing == tier)
+            && ability.Effect.Kind == "seq"
+            && Nodes(ability.Effect.Argument).Count() > stoppedAt));
 
         if (choice.Kind == "indirectDamage")
         {
@@ -1674,7 +1682,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             or "discardAtRandom" or "discardUntil" or "discardTop"
             or "recoverDiscardedByResource" or "shuffleInto" or "search"
             or "gainSurge" or "shuffle" or "draw" or "drawToHandSize"
-            or "drawToPrintedHandSize" => true,
+            or "drawToPrintedHandSize" or "preventThreat"
+            or "replaceThreatWithDamage" => true,
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
             + "legality is not implemented"),
@@ -1723,6 +1732,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.World, cast.World.Seats[Seat(node.Argument, cast)], cast.World.Facts),
             "drawToPrintedHandSize" => CanDrawToPrintedHandSize(node, cast),
             "createDrones" => CanCreateDrones(node, cast),
+            "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
+                && Amount(node.Argument, cast) > 0,
+            "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
@@ -2167,6 +2179,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 PlaceThreat(node, cast);
                 break;
 
+            case "preventThreat":
+                PreventThreat(node, cast);
+                break;
+
+            case "replaceThreatWithDamage":
+                ReplaceThreatWithDamage(node, cast);
+                break;
+
             case "removeThreat":
                 RemoveThreat(node, cast);
                 break;
@@ -2218,6 +2238,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "and" => Nodes(node.Argument).All(each => Test(each, cast)),
         "or" => Nodes(node.Argument).Any(each => Test(each, cast)),
         "not" => !Test(Tree(node.Argument), cast),
+        "threatCause" => cast.Occurrence.Threat?.Cause == (Word(node.Argument) switch
+            {
+                "villainPhase" => ThreatCause.VillainPhase,
+                "enemyScheme" => ThreatCause.EnemyScheme,
+                "incite" => ThreatCause.Incite,
+                "cardAbility" => ThreatCause.CardAbility,
+                var cause => throw new AbilityException($"'{cause}' is not a threat cause"),
+            }),
         // Through `Every` and not `Find`: "is there one" is a question about a
         // set, and a query that names many -- "an upgrade or support you
         // control" -- has to be answerable by it. `Every` falls back to `Find`
@@ -3176,15 +3204,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static void Sequence(AbilityNode node, Cast cast, int from)
     {
         var steps = Nodes(node.Argument).ToList();
+        bool outerContinuation = cast.HasContinuation;
         for (int step = from; step < steps.Count; step++)
         {
             cast.At(step);
+            cast.SetContinuation(outerContinuation || step < steps.Count - 1);
             Run(steps[step], cast);
             if (cast.Suspended)
             {
                 return;
             }
         }
+        cast.SetContinuation(outerContinuation);
     }
 
     private static void Choose(AbilityNode node, Cast cast)
@@ -3421,13 +3452,40 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{cast.Source.FaceId}' would place threat on a scheme that is not there");
         }
 
-        long amount = Amount(node.Require("amount"), cast);
-        foreach (var scheme in schemes)
+        if (cast.HasContinuation)
         {
-            Threat.Place(
-                cast.World, cast.World.Facts, cast.Abilities, scheme, amount,
-                cast.Trigger, cast.Events);
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' places threat before its ability has finished; "
+                + "the continuation must be preserved across the threat interrupt window");
         }
+
+        Threat.Schedule(
+            cast.World, schemes, cast.Source, Amount(node.Require("amount"), cast),
+            ThreatCause.CardAbility, cast.Trigger, cast.Player);
+        cast.Suspend();
+    }
+
+    private static void PreventThreat(AbilityNode node, Cast cast)
+    {
+        var placement = cast.Occurrence.Threat
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would prevent threat that is not imminent");
+        placement.Prevent(Amount(node.Argument, cast));
+    }
+
+    private static void ReplaceThreatWithDamage(AbilityNode node, Cast cast)
+    {
+        var placement = cast.Occurrence.Threat
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would replace threat that is not imminent");
+        long damage = placement.Remaining;
+        placement.Replace();
+        var target = Find(node.Require("card"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' replaces threat with damage to a card that is not there");
+        Damage.Deal(
+            cast.World, cast.World.Facts, cast.Source, target, damage,
+            cast.Trigger, "Deal_Damage", cast.Events);
     }
 
     private static void RemoveThreat(AbilityNode node, Cast cast)
@@ -4555,6 +4613,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         /// <summary>Stops the ability here — <c>rr:choose-option</c>.</summary>
         public void Suspend() => Suspended = true;
+
+        /// <summary>Whether text after the current node still has to resolve.</summary>
+        public bool HasContinuation { get; private set; }
+
+        public void SetContinuation(bool value) => HasContinuation = value;
 
         /// <summary>Which step of the top-level sequence is running.</summary>
         public int Position { get; private set; }

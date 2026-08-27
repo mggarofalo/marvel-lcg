@@ -494,6 +494,42 @@
       ]
     },
     {
+      "card": "01019b",
+      "name": "Jennifer Walters",
+      "note": "I Object! interrupts any imminent threat assignment and prevents 1 before it is placed. The once-per-round limit belongs to this alter-ego face's ability instance.",
+      "abilities": [
+        {
+          "name": "I Object!",
+          "trigger": { "event": "WhenThreatWouldBePlaced", "timing": "Interrupt", "subject": "game" },
+          "limitPerRound": 1,
+          "effect": { "preventThreat": 1 }
+        }
+      ]
+    },
+    {
+      "card": "01061",
+      "name": "Great Responsibility",
+      "note": "Hero Interrupt: replace an imminent threat assignment with the resolving hero taking the remaining amount as damage. The replacement removes the placement and closes its later windows.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenThreatWouldBePlaced", "timing": "Interrupt", "subject": "game", "form": "hero" },
+          "effect": { "replaceThreatWithDamage": { "card": "you" } }
+        }
+      ]
+    },
+    {
+      "card": "01085",
+      "name": "Emergency",
+      "note": "Interrupt (thwart): while the villain's scheme activation is assigning threat, prevent 1 of that assignment. The enemyScheme cause excludes villain-phase threat and the villain actor excludes minion schemes.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenThreatWouldBePlaced", "timing": "Interrupt", "actor": "villain" },
+          "when": { "threatCause": "enemyScheme" },
+          "effect": { "preventThreat": 1 }
+        }
+      ]
+    },
+    {
       "card": "01099",
       "name": "Charge",
       "note": "Attach to Rhino. [star] Forced Interrupt: When Rhino attacks, the attack gains overkill. At the end of this attack, discard Charge. The star sits in this card's ATK field, which rr:star-icon.2 makes a reminder to check the text box whenever the attached enemy uses that value to attack -- so this is an attachment ability while in play, not a 'Boost' ability. The printed ATK+ 3 is not here: rr:attachment.1 makes a printed modifier declarative, and StateFields reads it off the attachment without an ability. 'Rhino' is written as the villain in play because the card belongs to Rhino's encounter set and no other villain can share a table with it; a name query would need a lookup the printed data spells differently.",
@@ -1564,11 +1600,11 @@
     {
       "card": "45062b",
       "name": "Hunting Gene Traitors",
-      "note": "[star] Forced Response: After resolving step one of the villain phase, place 1 threat on Gene Pool. If this scheme is completed, the players lose the game. The second line is rr:main-scheme-main-scheme-deck.2.1 restated and Threat.Completed answers it, the same as 01097b. Step one of the villain phase is rr:villain-phase.step.1, which places threat on the main scheme -- the engine's PlaceThreat step, and the only thing that produces WhenThreatPlaced. The star sits on the main scheme, so this is its ability -- but the subject is 'game' and not 'this': the step places threat on the main scheme without the occurrence naming it, because 'after resolving step one of the villain phase' names a moment and nothing in it. Gene Pool is named by title and rr:identity.2 makes a title name one card.",
+      "note": "[star] Forced Response: after resolving step one of the villain phase, schedule 1 threat on Gene Pool. WhenVillainPhaseStepOneEnds is explicit even when all of the step's threat was prevented; WhenThreatPlaced would incorrectly depend on a positive placement. Gene Pool is named by title, and rr:identity.2 makes a title name one card.",
       "abilities": [
         {
           "trigger": {
-            "event": "WhenThreatPlaced",
+            "event": "WhenVillainPhaseStepOneEnds",
             "timing": "ForcedResponse",
             "subject": "game"
           },
