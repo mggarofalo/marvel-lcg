@@ -569,7 +569,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // The letters this makes, read off the effect rather than the
                 // printed `RES` field: `RES` is what discarding the card
                 // generates, and an ability is a different way to make one.
-                sources.Add(new ResourceSource(card.ObjectId, Generated(ability.Effect)));
+                string generated = Generated(ability.Effect, world, player);
+                if (generated.Length > 0)
+                {
+                    sources.Add(new ResourceSource(card.ObjectId, generated));
+                }
             }
         }
 
@@ -618,11 +622,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static string Spent(CardAbility ability) => "spent:" + ability.Name;
 
     /// <summary>What letters an effect generates, if it only generates.</summary>
-    private static string Generated(AbilityNode effect) => effect.Kind == "generate"
-        ? Word(effect.Argument)
-        : throw new RulesNotImplementedException(
+    private static string Generated(AbilityNode effect, World world, int player)
+    {
+        if (effect.Kind == "generate")
+        {
+            return Word(effect.Argument);
+        }
+
+        if (effect.Kind == "generateTopDiscard")
+        {
+            var cards = world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards;
+            return cards.Count > 0
+                ? Resources.GeneratedBy(cards[^1].FaceId, world.Facts)
+                : string.Empty;
+        }
+
+        throw new RulesNotImplementedException(
             $"a resource ability whose effect is '{effect.Kind}' generates nothing this "
             + "engine can read");
+    }
 
     /// <inheritdoc/>
     public string UseResource(World world, int player, int card, List<GameEvent> events)
@@ -647,7 +666,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         };
         Pay(ability.Cost, [], [], cast);
         Use(world, holder, ability);
-        return Generated(ability.Effect);
+        return Generated(ability.Effect, world, player);
     }
 
     /// <inheritdoc/>
@@ -1661,6 +1680,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Steps.CardRevealed, $"{source.FaceId}: spend or exhaust",
                 Cancellable: false, offers);
         }
+        if (choice.Kind == "chooseTopForHand")
+        {
+            var top = TopCards(
+                world.Seats[player].Deck,
+                (int)Number(choice.Require("count")));
+            return new Prompt(
+                player, Question.Element, TimingPriority.Untimed,
+                Steps.TurnAction, $"{source.FaceId}: choose a top card",
+                Cancellable: false,
+                top.Select(card => new Affordance(
+                    card.ObjectId, ChooseVerb, card.ObjectId, player, card.FaceId)).ToList());
+        }
         var affordances = cards
             ? Every(choice.Require("from"), cast)
                 .Select(card => new Affordance(
@@ -1806,6 +1837,34 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 throw new RulesNotImplementedException(
                     $"'{source.FaceId}' offers spend or exhaust, not option {input.Affordance}");
+            }
+
+            return cast.Events;
+        }
+        if (choice.Kind == "chooseTopForHand")
+        {
+            var deck = world.Seats[player].Deck;
+            var top = TopCards(deck, (int)Number(choice.Require("count")));
+            var selected = top.FirstOrDefault(card => card.ObjectId == input.Affordance)
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' did not offer card {input.Affordance} among its top cards");
+            var hand = world.Seats[player].Hand;
+            foreach (var card in top)
+            {
+                if (card == selected)
+                {
+                    World.MoveToTop(card, hand);
+                    cast.Events.Add(new CardsMoved(
+                        Places.Reference(deck), Places.Reference(hand),
+                        [new Landing(card.ObjectId, hand.Cards.Count - 1)])
+                    {
+                        Trigger = cast.Trigger, Verb = "Add_To_Hand",
+                    });
+                }
+                else
+                {
+                    Rules.Play.Discard.Card(world, card, cast.Trigger, cast.Events);
+                }
             }
 
             return cast.Events;
@@ -2151,7 +2210,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static IEnumerable<AbilityNode> Choices(AbilityNode node)
     {
         if (node.Kind is "choose" or "chooseCard" or "indirectDamage"
-            or "resolveSpecials" or "payOrExhaust")
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand")
         {
             yield return node;
             yield break;
@@ -2405,6 +2464,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 });
                 break;
 
+            case "returnOwnedToHand":
+                var returned = Find(node.Argument, cast)
+                    ?? throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' cannot find the card returned to hand");
+                if (returned.Owner < 0)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' returns a card with no owning player");
+                }
+                var returnedFrom = returned.Area;
+                var ownersHand = cast.World.Seats[returned.Owner].Hand;
+                World.MoveToTop(returned, ownersHand);
+                cast.Events.Add(new CardsMoved(
+                    Places.Reference(returnedFrom), Places.Reference(ownersHand),
+                    [new Landing(returned.ObjectId, ownersHand.Cards.Count - 1)])
+                {
+                    Trigger = cast.Trigger, Verb = "Return",
+                });
+                break;
+
             case "discardAtRandom":
                 DiscardAtRandom(node, cast);
                 break;
@@ -2461,6 +2540,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Seat: cast.Player,
                     Tier: cast.Tier,
                     FinalStep: cast.FinalStep));
+                cast.Suspend();
+                break;
+
+            case "chooseTopForHand":
+                if (TopCards(
+                    cast.World.Seats[cast.Player].Deck,
+                    (int)Number(node.Require("count"))).Count == 0)
+                {
+                    break;
+                }
+                cast.World.Agenda.Then(new PhaseStep(
+                    Steps.ChooseOption,
+                    cast.World.Agenda.Current?.Round ?? 0,
+                    2,
+                    Index: cast.Position + 1,
+                    Subject: cast.Source.ObjectId,
+                    Seat: cast.Player,
+                    Tier: cast.Tier));
                 cast.Suspend();
                 break;
 
@@ -4669,6 +4766,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.World.Seats[player].IdentityCard)];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } eligiblePlayers
+            && eligiblePlayers.Argument is AbilityValue.Word
+                { Value: "identitiesWithTechInDiscard" })
+        {
+            return
+            [
+                .. cast.World.PlayerOrder
+                    .Where(player => cast.World.AreaOf(
+                            DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player)
+                        .Cards.Any(card => Rules.State.Traits.Has(
+                            cast.World, card, "TECH", cast.World.Facts)))
+                    .Select(player => cast.World.Seats[player].IdentityCard),
+            ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } topmost
+            && topmost.Argument is AbilityValue.Word
+                { Value: "topmostTechInChosenDiscard" })
+        {
+            int player = cast.Chosen is { Owner: >= 0 } chosen
+                ? chosen.Owner
+                : throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' asks for a chosen player's discard before choosing one");
+            var card = cast.World.AreaOf(
+                    DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player)
+                .Cards.LastOrDefault(candidate => Rules.State.Traits.Has(
+                    cast.World, candidate, "TECH", cast.World.Facts));
+            return card is null ? [] : [card];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allCharacters
             && allCharacters.Argument is AbilityValue.Word { Value: "characters" })
         {
@@ -4704,6 +4831,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         return Find(value, cast) is { } one ? [one] : [];
     }
+
+    /// <summary>The top cards of a deck, in top-to-bottom order.</summary>
+    private static IReadOnlyList<Card> TopCards(Area deck, int count) =>
+        [.. deck.Cards.TakeLast(count).Reverse()];
 
     /// <summary>
     /// The cards in named areas that match a search's criteria — <c>rr:search</c>.
@@ -4938,6 +5069,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         string what = Word(node.Argument);
+        if (what == "topmostTechInChosenDiscard")
+        {
+            int player = cast.Chosen is { Owner: >= 0 } chosen
+                ? chosen.Owner
+                : throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' asks for a chosen player's discard before choosing one");
+            return cast.World.AreaOf(
+                    DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player)
+                .Cards.LastOrDefault(candidate => Rules.State.Traits.Has(
+                    cast.World, candidate, "TECH", cast.World.Facts));
+        }
+
         return what switch
         {
             // `rr:villain-villain-deck` -- one villain is in the villain area.

@@ -3115,6 +3115,46 @@
       ]
     },
     {
+      "card": "01029b",
+      "name": "Tony Stark",
+      "note": "Futurist looks at the current top three cards in top-to-bottom order. The player chooses one to add to hand and the other looked-at cards are discarded; the action is limited to once per round.",
+      "abilities": [
+        {
+          "name": "Futurist",
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "limitPerRound": 1,
+          "effect": { "chooseTopForHand": { "count": 3 } }
+        }
+      ]
+    },
+    {
+      "card": "01033",
+      "name": "Pepper Potts",
+      "note": "The resource ability exhausts Pepper Potts and dynamically generates the printed resource string of the current top card of her controller's discard pile. With no top card it is not an available generator.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenResourceGenerated", "timing": "Resource", "subject": "this" },
+          "cost": { "exhaust": "this" },
+          "effect": { "generateTopDiscard": "printed" }
+        }
+      ]
+    },
+    {
+      "card": "01034",
+      "name": "Stark Tower",
+      "note": "The alter-ego action exhausts Stark Tower, chooses a player who has a TECH upgrade in their discard pile, and returns the topmost matching upgrade to that card's owner's hand. Cards above it that are not TECH stay where they are.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "cost": { "exhaust": "this" },
+          "effect": { "chooseCard": {
+            "from": { "query": "identitiesWithTechInDiscard" },
+            "effect": { "returnOwnedToHand": { "query": "topmostTechInChosenDiscard" } }
+          } }
+        }
+      ]
+    },
+    {
       "card": "01028",
       "name": "Superhuman Strength",
       "note": "She-Hulk gets +2 ATK. After her attack completes, the forced response discards this upgrade and stuns that attack's target.",
