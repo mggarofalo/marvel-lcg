@@ -52,8 +52,12 @@ public enum WindowKind
 /// that phrase mean the attacked <i>player</i>, whichever character was
 /// targeted.
 /// </param>
-/// <param name="Actor">The attacking card object's id, or <c>-1</c>.</param>
-/// <param name="Target">The attacked character object's id, or <c>-1</c>.</param>
+/// <param name="Actor">
+/// The card performing the occurrence — an attacker or thwarter — or <c>-1</c>.
+/// </param>
+/// <param name="Target">
+/// The game element it acts on — an attacked character or thwarted scheme — or <c>-1</c>.
+/// </param>
 /// <param name="ActorFacts">Stable classifications and relationships for <paramref name="Actor"/>.</param>
 /// <param name="TargetFacts">Stable classifications and relationships for <paramref name="Target"/>.</param>
 public sealed record Occurrence(

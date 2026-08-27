@@ -94,6 +94,24 @@ public sealed class DefeatWindowTests
         Assert.DoesNotContain(Steps.DamageDealt, world.Agenda.Occurrence.Conditions);
     }
 
+    [Rule("rr:interrupt.1")]
+    [Fact]
+    public void AttackCompletionFactsAreAbsentBeforeTheAttackApplies()
+    {
+        // An interrupt resolves before its triggering condition. End, damage,
+        // and defeat facts are learned during Apply and must not be visible in
+        // the occurrence's opening window as predictions about the future.
+        var world = Board(out var printed, out var minion);
+
+        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        var occurrence = world.Agenda.Begin(world, printed);
+
+        Assert.Contains(Steps.AttackInitiated, occurrence.Conditions);
+        Assert.DoesNotContain(Steps.AttackEnds, occurrence.Conditions);
+        Assert.DoesNotContain(Steps.DamageDealt, occurrence.Conditions);
+        Assert.DoesNotContain(Steps.CardDefeated, occurrence.Conditions);
+    }
+
     [Rule("rr:triggering-condition.2")]
     [Fact]
     public void TheProvenanceOutlastsTheCallThatMadeIt()
