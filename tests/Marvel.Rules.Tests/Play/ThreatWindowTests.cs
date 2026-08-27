@@ -128,6 +128,97 @@ public sealed class ThreatWindowTests
         Assert.Equal(3, scheme.Tokens["k_threat"]);
     }
 
+    [Rule("rr:interrupt.3.1")]
+    [Fact]
+    public void AnIdlePlacementWaitsOnTheAgendaForItsWindows()
+    {
+        // An occurrence-tier ability can resolve outside a phase during
+        // scenario setup. "Would" interrupts still happen while the threat is
+        // imminent, so scheduling must not apply it synchronously.
+        var (world, facts, scheme, source) = Board(escalation: 0);
+
+        Threat.Schedule(
+            world, scheme, source, 2, ThreatCause.CardAbility, "setup", player: 0);
+
+        Assert.False(scheme.Tokens.ContainsKey("k_threat"));
+        Assert.Equal(Steps.PlaceThreatEffect, world.Agenda.Current?.What);
+
+        Sequence.Finish(world, facts, new NoCardAbilities(), []);
+
+        Assert.Equal(2, scheme.Tokens["k_threat"]);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Rule("rr:triggering-condition.1")]
+    [Fact]
+    public void IdlePlacementsKeepBoardOrderAndSeparateOccurrences()
+    {
+        var (world, facts, scheme, source) = Board(escalation: 0);
+        var first = world.CreateCard("side", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard("side", world.AreaOf(DeckType.SideSchemesArea));
+        var events = new List<GameEvent>();
+
+        Threat.Schedule(
+            world, [first, second], source, 1, ThreatCause.CardAbility, "setup", player: 0);
+        Sequence.Finish(world, facts, new NoCardAbilities(), events);
+
+        Assert.Equal(
+            [first.ObjectId, second.ObjectId],
+            events.OfType<FieldSet>().Select(happened => happened.Card));
+        Assert.Equal(1, first.Tokens["k_threat"]);
+        Assert.Equal(1, second.Tokens["k_threat"]);
+        Assert.False(scheme.Tokens.ContainsKey("k_threat"));
+    }
+
+    [Rule("rr:ability.6")]
+    [Theory]
+    [InlineData(AbilityType.Interrupt)]
+    [InlineData(AbilityType.ForcedInterrupt)]
+    public void SetupWindowsExcludePlayerCardAbilities(AbilityType type)
+    {
+        // "Player card abilities cannot resolve during game setup, unless
+        // prefaced by a Setup timing trigger." The identity's interrupt is not
+        // such a trigger, so the placement finishes without offering it.
+        var (world, facts, scheme, source) = Board(escalation: 0);
+        bool resolved = false;
+        var cards = new Interrupter(
+            world.Seats[0].IdentityCard.ObjectId, _ => resolved = true, type);
+
+        Threat.Schedule(
+            world, scheme, source, 2, ThreatCause.VillainPhase, "setup", player: 0);
+        Sequence.Finish(
+            world, facts, cards, [], WindowAbilityScope.EncounterCardsOnly);
+
+        Assert.False(resolved);
+        Assert.Equal(2, scheme.Tokens["k_threat"]);
+    }
+
+    [Rule("rr:ability.6")]
+    [Fact]
+    public void SetupWindowsStillResolveEncounterCardAbilities()
+    {
+        // The setup restriction names player cards. Encounter-card text still
+        // resolves, including a forced interrupt that nobody chooses to use.
+        var (world, facts, scheme, source) = Board(escalation: 0);
+        bool resolved = false;
+        var cards = new Interrupter(
+            source.ObjectId,
+            occurrence =>
+            {
+                resolved = true;
+                occurrence.Threat!.Prevent(1);
+            },
+            AbilityType.ForcedInterrupt);
+
+        Threat.Schedule(
+            world, scheme, source, 2, ThreatCause.VillainPhase, "setup", player: 0);
+        Sequence.Finish(
+            world, facts, cards, [], WindowAbilityScope.EncounterCardsOnly);
+
+        Assert.True(resolved);
+        Assert.Equal(1, scheme.Tokens["k_threat"]);
+    }
+
     private static (World World, Facts Facts, Card Scheme, Card Source) Board(
         int escalation, int schemeValue = 0)
     {
@@ -141,7 +232,9 @@ public sealed class ThreatWindowTests
         return (world, facts, scheme, enemy);
     }
 
-    private sealed class Interrupter(int card, Action<Occurrence> resolve) : NoCardAbilities
+    private sealed class Interrupter(
+        int card, Action<Occurrence> resolve, AbilityType type = AbilityType.Interrupt)
+        : NoCardAbilities
     {
         public const int Handle = 91;
 
@@ -150,7 +243,7 @@ public sealed class ThreatWindowTests
             window == WindowKind.Interrupt
             && occurrence.Is(Steps.ThreatWouldBePlaced)
             && occurrence.Threat?.Cause == ThreatCause.VillainPhase
-                ? [new PendingAbility(card, AbilityType.Interrupt, 0)]
+                ? [new PendingAbility(card, type, 0)]
                 : [];
 
         public override Affordance Describe(World world, PendingAbility ability) =>

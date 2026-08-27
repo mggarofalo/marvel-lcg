@@ -32,9 +32,11 @@ public static class Sequence
     /// <param name="facts">The printed card data.</param>
     /// <param name="abilities">What cards do.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="scope">Which cards may contribute window abilities.</param>
     /// <returns>The question the game stopped on, or null if the agenda ran out.</returns>
     public static Prompt? Work(
-        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events,
+        WindowAbilityScope scope = WindowAbilityScope.AllCards)
     {
         ArgumentNullException.ThrowIfNull(world);
 
@@ -67,7 +69,7 @@ public static class Sequence
                 // `rr:triggering-condition.1` is per occurrence, and the
                 // occurrence is what remembers which abilities have used it.
                 var occurrence = world.Agenda.Begin(world, facts);
-                if (Offering.Work(world, abilities, occurrence, kind, events) is { } asked)
+                if (Offering.Work(world, abilities, occurrence, kind, events, scope) is { } asked)
                 {
                     return asked;
                 }
@@ -214,10 +216,12 @@ public static class Sequence
     /// <param name="facts">The printed card data.</param>
     /// <param name="abilities">What cards do.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="scope">Which cards may contribute window abilities.</param>
     public static void Finish(
-        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events,
+        WindowAbilityScope scope = WindowAbilityScope.AllCards)
     {
-        if (Work(world, facts, abilities, events) is { } asked)
+        if (Work(world, facts, abilities, events, scope) is { } asked)
         {
             throw new RulesNotImplementedException(
                 $"'{asked.Label}' must be put to player {asked.Player}, and this caller "

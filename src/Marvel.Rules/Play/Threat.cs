@@ -60,29 +60,41 @@ public static class Threat
             return;
         }
 
-        if (!world.Agenda.IsBusy)
-        {
-            throw new RulesNotImplementedException(
-                "placing threat with optional interrupts requires an agenda occurrence");
-        }
-
-        var current = world.Agenda.Current!.Value;
-        world.Agenda.Now(
+        var current = world.Agenda.Current;
+        int round = current?.Round ?? 0;
+        int number = current?.Number ?? 0;
+        int index = current?.Index ?? 0;
+        PhaseStep[] placements =
         [
             .. schemes.Select((scheme, offset) =>
             {
                 ArgumentNullException.ThrowIfNull(scheme);
                 return new PhaseStep(
                     Steps.PlaceThreatEffect,
-                    current.Round,
-                    current.Number,
-                    Index: current.Index + offset,
+                    round,
+                    number,
+                    Index: index + offset,
                     Subject: scheme.ObjectId,
                     Seat: player,
                     Placement: new ThreatPlacement(
                         scheme.ObjectId, source?.ObjectId ?? -1, amount, cause, trigger, player));
             }),
-        ]);
+        ];
+
+        if (current is not null)
+        {
+            world.Agenda.Now(placements);
+            return;
+        }
+
+        // A mandatory occurrence-tier ability can be called before any phase
+        // is on the agenda -- scenario setup is the production case. It still
+        // creates ordinary interrupt/apply/response occurrences; its caller
+        // drains them through Sequence rather than applying threat inline.
+        foreach (var placement in placements)
+        {
+            world.Agenda.Add(placement);
+        }
     }
 
     /// <summary>Apply the threat assignment on an agenda occurrence.</summary>
