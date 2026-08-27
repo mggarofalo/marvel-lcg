@@ -2105,7 +2105,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             or "recoverDiscardedByResource" or "shuffleInto" or "search"
             or "gainSurge" or "shuffle" or "draw" or "drawToHandSize"
             or "drawToPrintedHandSize" or "preventThreat"
-            or "replaceThreatWithDamage" => true,
+            or "replaceThreatWithDamage" or "grantCharactersControlledBy"
+            or "reduceNextCardCost" => true,
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
             + "legality is not implemented"),
@@ -2160,6 +2161,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
                 && Amount(node.Argument, cast) > 0,
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
+            "grantCharactersControlledBy" or "reduceNextCardCost" => true,
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
@@ -2712,6 +2714,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "grantUntil":
                 GrantUntil(node, cast);
+                break;
+
+            case "grantCharactersControlledBy":
+                foreach (string field in Values(node.Require("fields")).Select(Word))
+                {
+                    cast.World.Effects.GrantToCharactersControlledBy(
+                        cast.Source, Seat(node.Require("player"), cast), field,
+                        Amount(node.Require("amount"), cast),
+                        Word(node.Require("until")));
+                }
+                break;
+
+            case "reduceNextCardCost":
+                CardPlay.ReduceNextCardCost(
+                    cast.World, cast.Source, Seat(node.Require("player"), cast),
+                    Amount(node.Require("amount"), cast));
                 break;
 
             case "delayUntil":

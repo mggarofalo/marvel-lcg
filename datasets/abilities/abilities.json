@@ -2793,6 +2793,29 @@
       ]
     },
     {
+      "card": "01070",
+      "name": "Lead from the Front",
+      "note": "The Hero Action chooses a player through that player's identity. Every character that player controls gets +1 THW and +1 ATK until the end of the player phase; the live lasting-effect scope also reaches a character that enters under that player's control later in the phase, as rr:lasting-effects.4 requires.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "from": { "query": "identities" }, "effect": { "grantCharactersControlledBy": { "player": "chosenPlayer", "fields": [ "thwart", "attack" ], "amount": 1, "until": "EndOfPlayerPhase" } } } }
+        }
+      ]
+    },
+    {
+      "card": "01092",
+      "name": "Helicarrier",
+      "note": "The Action exhausts Helicarrier and chooses a player through that player's identity. A one-use lasting effect reduces the next card that player successfully plays this phase by 1; pricing an offer does not consume it, and an unused reduction expires at the end of the player phase.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "exhaust": "this" },
+          "effect": { "chooseCard": { "from": { "query": "identities" }, "effect": { "reduceNextCardCost": { "player": "chosenPlayer", "amount": 1 } } } }
+        }
+      ]
+    },
+    {
       "card": "01093",
       "name": "Tenacity",
       "note": "The Hero Action spends a physical resource and discards Tenacity as its costs, then readies the player's hero.",
