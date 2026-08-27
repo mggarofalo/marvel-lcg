@@ -219,6 +219,12 @@ public static class Damage
         // Worked out before the damage, because `rr:overkill.1` is "the damage
         // beyond its hit points" and after the defeat the character is gone.
         long beyond = Math.Max(0, amount - Math.Max(0, Health(world, facts, target) - target.Damage));
+        // The same is true of control. A defeated ally moves to its owner's
+        // discard pile, but `rr:overkill.1` sends excess damage to the identity
+        // of the player who **controlled** it while it was defeated.
+        int spillPlayer = facts.Kind(target.FaceId) == CardKind.Ally
+            ? target.Area.PlayArea.Player
+            : -1;
         // `rr:overkill.4`: "if excess damage from an attack with overkill is
         // prevented, that damage is **not** dealt to the identity or villain."
         //
@@ -234,7 +240,7 @@ public static class Damage
             && beyond > 0
             && Keywords.Has(world, attacker, Keywords.Overkill, facts))
         {
-            Spill(world, facts, target, beyond, trigger, events);
+            Spill(world, facts, target, spillPlayer, beyond, trigger, events);
         }
 
         // Measured rather than assumed. A tough status card prevents all of the
@@ -264,12 +270,13 @@ public static class Damage
     /// destinations, decided by what was defeated rather than by who attacked.
     /// </remarks>
     private static void Spill(
-        World world, ICardFacts facts, Card defeated, long beyond,
+        World world, ICardFacts facts, Card defeated, int controllingPlayer, long beyond,
         string trigger, List<GameEvent> events)
     {
         var onto = facts.Kind(defeated.FaceId) switch
         {
-            CardKind.Ally when defeated.Owner >= 0 => world.Seats[defeated.Owner].IdentityCard,
+            CardKind.Ally when controllingPlayer >= 0 =>
+                world.Seats[controllingPlayer].IdentityCard,
             CardKind.Minion => world.TheCardIn(DeckType.VillainArea),
             _ => null,
         };

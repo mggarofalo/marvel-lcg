@@ -390,6 +390,37 @@ public sealed class StatusTests
         Assert.Equal(4, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:overkill.1")]
+    [Rule("rr:ownership-and-control.5")]
+    [Fact]
+    public void OverkillUsesAnAllysControllerRatherThanItsOwner()
+    {
+        // Overkill names "the identity of the player who controls the ally".
+        // A card put into another player's play area is controlled there even
+        // though defeat sends it to its owner's discard pile. The move caused
+        // by defeat must not change the destination already named by overkill.
+        var printed = Cards().With("villain", ("ATK", "7"), ("SCH", "2"), ("HP", "20"))
+            .With("ally", ("HP", "3"));
+        var world = Board(printed, players: 2);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 0));
+        world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
+
+        Grant(world, villain, Marvel.Rules.Timing.Keywords.Overkill);
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 1), []);
+        var asked = Sequence.Work(world, printed, new NoCardAbilities(), []);
+        Sequence.Answer(
+            world, printed, new NoCardAbilities(), asked!, Decision.Take(ally.ObjectId), []);
+        Sequence.Finish(world, printed, new NoCardAbilities(), []);
+
+        Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(4, world.Seats[1].IdentityCard.Damage);
+    }
+
     [Rule("rr:overkill.4")]
     [Fact]
     public void OverkillCarriesNothingWhenAToughCardAteTheDamage()
@@ -420,13 +451,16 @@ public sealed class StatusTests
             Marvel.Rules.Timing.EffectSource.LastingEffect,
             Kind: keyword, Card: card.ObjectId, Affects: card.ObjectId));
 
-    private static World Board(Printed printed)
+    private static World Board(Printed printed, int players = 1)
     {
-        var world = new World(printed, players: 1);
-        world.CreateSeat("p0");
-        var identity = world.CreateCard("alterego,hero", world.Seats[0].Hero);
-        world.Seats[0].IdentityCard = identity;
-        identity.TurnTo("hero");
+        var world = new World(printed, players);
+        for (int seat = 0; seat < players; seat++)
+        {
+            world.CreateSeat($"p{seat}");
+            var identity = world.CreateCard("alterego,hero", world.Seats[seat].Hero);
+            world.Seats[seat].IdentityCard = identity;
+            identity.TurnTo("hero");
+        }
         world.CreateCard("villain", world.AreaOf(DeckType.VillainArea));
         world.CreateCard("scheme", world.AreaOf(DeckType.MainSchemesArea));
         world.CreateCard("filler", world.Seats[0].Deck);

@@ -341,10 +341,11 @@ public static class Steps
     /// arrived too late to count.
     /// </para>
     /// <para>
-    /// The attack activation has had this shape from the start:
-    /// <see cref="FlipBoostCards"/> is step 3 and <see cref="DealAttackDamage"/>
-    /// is step 4, so a boost card's question is answered between them. This is
-    /// the same split one activation over.
+    /// The attack activation has the same shape:
+    /// <see cref="FlipBoostCards"/> is step 3 and
+    /// <see cref="CalculateAttackDamage"/> is step 4, so a boost card's
+    /// question is answered between them. This is the same split one
+    /// activation over.
     /// </para>
     /// <para>
     /// <b>It is also where a scheme activation ends</b>, so it carries
@@ -378,10 +379,14 @@ public static class Steps
     public const string FlipBoostCards = "FlipBoostCards";
 
     /// <summary>
-    /// Steps 4 and 5 of an attack — <c>rr:attack-enemy-activation.step.4</c>
-    /// and <c>.step.5</c>. One step because <c>rr:triggering-condition.2</c>
-    /// makes calculating and dealing one occurrence: nothing can happen between
-    /// the amount being fixed and it being dealt.
+    /// Step 4 of an attack — <c>rr:attack-enemy-activation.step.4</c>.
+    /// The calculated amount is saved on the attack for the next step.
+    /// </summary>
+    public const string CalculateAttackDamage = "CalculateAttackDamage";
+
+    /// <summary>
+    /// Step 5 of an attack — <c>rr:attack-enemy-activation.step.5</c>.
+    /// This deals the amount fixed by <see cref="CalculateAttackDamage"/>.
     /// </summary>
     public const string DealAttackDamage = "DealAttackDamage";
 

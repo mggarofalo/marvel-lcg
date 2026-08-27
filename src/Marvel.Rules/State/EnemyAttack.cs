@@ -49,9 +49,15 @@ namespace Marvel.Rules.State;
 /// come apart in an ordinary game: a character whose tough status card absorbed
 /// the attack "is not considered to have taken damage".
 /// </param>
+/// <param name="CalculatedDamage">
+/// The damage fixed by step 4, or <c>null</c> before that step resolves.
+/// <c>rr:attack-enemy-activation.step.4</c> calculates the amount and
+/// <c>.step.5</c> deals that amount as a separate step, so effects between the
+/// two do not recalculate it.
+/// </param>
 public sealed record EnemyAttack(
     int Enemy, int Player, int Target, int Defender = -1, bool BasicDefense = false,
-    bool Damaged = false)
+    bool Damaged = false, long? CalculatedDamage = null)
 {
     /// <summary>Whether any character was declared the defender.</summary>
     public bool IsDefended => Defender >= 0;

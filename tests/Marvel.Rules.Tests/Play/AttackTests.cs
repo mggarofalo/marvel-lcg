@@ -64,6 +64,33 @@ public sealed class AttackTests
         Assert.Empty(world.Effects.Active());
     }
 
+    [Rule("rr:attack-enemy-activation.step.4")]
+    [Rule("rr:attack-enemy-activation.step.5")]
+    [Fact]
+    public void DamageIsFixedBeforeTheSeparateStepThatDealsIt()
+    {
+        // Step 4 calculates the damage. Step 5 then deals "the amount of
+        // damage calculated in the previous step". Changing the attacker's
+        // ATK between those occurrences therefore does not rewrite the number
+        // that step 5 was told to deal.
+        var printed = Printed(atk: 2, boost: 0);
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+
+        Attack.CalculateDamage(world, printed);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "attack",
+            Amount: 5,
+            Affects: villain.ObjectId));
+        Attack.DealDamage(world, printed, []);
+
+        Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:attack-enemy-activation.step.3.d")]
     [Rule("rr:boost-boost-icon.5")]
     [Fact]

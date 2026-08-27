@@ -327,18 +327,20 @@ it, so the per-player activations, the per-card reveals and the attack's own six
 steps are occurrences with windows of their own. A heading is not an occurrence
 and opens no windows.
 
-An occurrence carries a `Subject` and a `Player` as well as its conditions,
-because two rules make a card ask about them: `rr:attack-enemy-activation.1.4`
-turns "when the villain attacks **you**" into a question about the attacked
-player, and `rr:star-icon.2` turns Charge's ability into a question about which
-enemy is attacking. Without them a window can say *that* something happened and
-not *to whom*.
+An attack occurrence carries explicit `Actor` and `Target` roles beside its
+`Player` and conditions. `rr:attack-enemy-activation.1.4` turns "when the
+villain attacks **you**" into a question about the attacked player, while
+`rr:star-icon.2` makes Charge ask which enemy is the actor. A response such as
+Shocker asks whether it was the target. Without distinct roles a window can say
+that an attack happened but not who acted on whom.
 
-The occurrence is made **once, when the step is scheduled**, and not on every
-read. `rr:triggering-condition.1` lets each ability trigger once per occurrence,
-and the occurrence is what remembers which have — a fresh one per read would
-forget across the answer that suspended the step, and the forced interrupt that
-had just resolved would resolve again, and again.
+The occurrence is made **once, when its window begins**, and not on every read.
+Most steps can create it when scheduled; an attack step waits until it begins
+because declaring a defender may change its target first. The occurrence then
+snapshots both roles and their kind, owner, controller, and friendly/enemy
+classification. `rr:triggering-condition.1` lets each ability trigger once per
+occurrence, and the occurrence is what remembers which have — a fresh one per
+read would forget across the answer that suspended the step.
 
 `Agenda.Then` puts a scheduled step after the current one's *response* window,
 not before it: a step that schedules another has not itself finished happening.

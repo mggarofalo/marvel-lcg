@@ -25,15 +25,6 @@ namespace Marvel.Rules.Play;
 /// given, and that is where Charge grants overkill and Spider-Sense draws a
 /// card.
 /// </para>
-/// <para>
-/// <b>What is not implemented, and why each is named rather than skipped.</b> A
-/// minion attacking; a player other than the attacked one defending
-/// (<c>rr:defend-defense.5</c>); an ally defending (<c>rr:defend-defense.3</c>);
-/// a character being defeated by the damage (<c>rr:defeated</c>); overkill
-/// actually carrying excess damage anywhere (<c>rr:overkill.1</c>, which needs
-/// a defeat first). Each throws, because an attack that quietly skipped the
-/// defence step would produce a board that is plausible and wrong.
-/// </para>
 /// </remarks>
 public static class Attack
 {
@@ -107,7 +98,10 @@ public static class Attack
         world.Agenda.Then(new PhaseStep(
             Steps.FlipBoostCards, step.Round, 3, Index: step.Seat, Subject: step.Subject));
         world.Agenda.Then(new PhaseStep(
-            Steps.DealAttackDamage, step.Round, 4, Index: step.Seat, Subject: step.Subject,
+            Steps.CalculateAttackDamage, step.Round, 4, Index: step.Seat, Subject: step.Subject,
+            Seat: step.Seat));
+        world.Agenda.Then(new PhaseStep(
+            Steps.DealAttackDamage, step.Round, 5, Index: step.Seat, Subject: step.Subject,
             Seat: step.Seat));
         world.Agenda.Then(new PhaseStep(
             Steps.EndAttack, step.Round, 6, Index: step.Seat, Subject: step.Subject,
@@ -378,8 +372,34 @@ public static class Attack
     }
 
     /// <summary>
-    /// Steps 4 and 5. Work out the damage and deal it —
-    /// <c>rr:attack-enemy-activation.step.4</c> and <c>.step.5</c>.
+    /// Step 4. Calculate the attack's damage —
+    /// <c>rr:attack-enemy-activation.step.4</c>.
+    /// </summary>
+    /// <remarks>
+    /// The amount is board state because step 5 is a later occurrence. An
+    /// effect after this step may change ATK or DEF, but step 5 deals "the
+    /// amount of damage calculated in the previous step" rather than asking
+    /// the board to calculate it again.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    public static void CalculateDamage(World world, ICardFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        if (Over(world))
+        {
+            return;
+        }
+
+        var attack = Current(world);
+        world.Attack = attack with { CalculatedDamage = Amount(world, facts, attack) };
+    }
+
+    /// <summary>
+    /// Step 5. Deal the damage calculated in step 4 —
+    /// <c>rr:attack-enemy-activation.step.5</c>.
     /// </summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
@@ -399,7 +419,9 @@ public static class Attack
         }
 
         var attack = Current(world);
-        long amount = Amount(world, facts, attack);
+        long amount = attack.CalculatedDamage
+            ?? throw new RulesNotImplementedException(
+                "attack damage reached step 5 before step 4 calculated it");
         if (amount <= 0)
         {
             return;
