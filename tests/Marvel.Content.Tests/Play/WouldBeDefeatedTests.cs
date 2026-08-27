@@ -258,6 +258,32 @@ public sealed class WouldBeDefeatedTests
         Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
     }
 
+    [Rule("rr:triggering-condition.1")]
+    [Fact]
+    public void OneCardTriggersOnceWhenOneOccurrenceWouldDefeatTwoCharacters()
+    {
+        var world = Empty(
+            """
+            {"cards":[{"card":"01140","abilities":[{
+              "trigger":{"event":"WhenCardWouldBeDefeated","timing":"ForcedInterrupt",
+                         "subject":"game"},
+              "effect":{"placeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}
+            }]}]}
+            """);
+        var scheme = world.CreateCard("01097b", world.AreaOf(DeckType.MainSchemesArea));
+        world.CreateCard("01140", world.AreaOf(DeckType.EnvironmentArea));
+        var first = world.CreateCard(
+            Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var second = world.CreateCard(
+            Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        Agendas.Happening(world);
+
+        Damage.Deal(world, Cards, first, 3, "test", "test", []);
+        Damage.Deal(world, Cards, second, 3, "test", "test", []);
+
+        Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
+    }
+
     private static (World World, Card Minion, Card Upgrade) Board()
     {
         var world = Empty();

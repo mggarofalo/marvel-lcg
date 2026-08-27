@@ -459,9 +459,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var occurrence = new Occurrence(
             0, [Steps.CardWouldBeDefeated], Subject: target.ObjectId, Player: target.Owner);
+        var spent = world.Agenda.Occurrence;
 
         while (AbilityWindow.Tiers(
-            Waiting(world, occurrence, WindowKind.Interrupt),
+            Waiting(world, occurrence, WindowKind.Interrupt)
+                .Where(pending => spent?.MayTrigger(WindowKind.Interrupt, pending.Card) ?? true),
             WindowKind.Interrupt,
             occurrence) is { Count: > 0 } tiers)
         {
@@ -483,6 +485,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
 
             occurrence.Trigger(WindowKind.Interrupt, mandatory[0].Card);
+            spent?.Trigger(WindowKind.Interrupt, mandatory[0].Card);
             events.AddRange(Resolve(world, occurrence, mandatory[0], [], []));
 
             // `rr:would.1`: once the interrupt changes the imminent defeat,
