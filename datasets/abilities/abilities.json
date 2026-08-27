@@ -340,6 +340,160 @@
       ]
     },
     {
+      "card": "01134",
+      "name": "Ultron",
+      "note": "After Ultron I attacks a player, that player chooses either 1 threat on the main scheme or one facedown Drone from the top of their deck. The completed attack occurrence identifies both Ultron as actor and the attacked player.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player" },
+          "effect": { "choose": { "options": [
+            { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } },
+            { "createDrones": { "player": "you", "count": 1 } }
+          ] } }
+        }
+      ]
+    },
+    {
+      "card": "01135",
+      "name": "Ultron",
+      "note": "When Ultron II attacks a player, his forced interrupt first creates one Drone engaged with that player, then grants Ultron +1 ATK per Drone now engaged with them until that attack ends.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player" },
+          "effect": { "seq": [
+            { "createDrones": { "player": "you", "count": 1 } },
+            { "grantUntil": { "card": "this", "keyword": "attack", "amount": { "count": { "query": "dronesEngagedWithYou" } }, "until": "EndOfAttack" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01137b",
+      "name": "The Crimson Cowl",
+      "note": "When revealed, each player in player order creates one facedown Drone from the top of their own deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "createDrones": { "player": "each", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01138a",
+      "name": "Assault on NORAD",
+      "note": "When revealed, each player in player order creates one facedown Drone. Advancing to stage 2B is the generic main-scheme advance, not a second card ability.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "createDrones": { "player": "each", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01139a",
+      "name": "Countdown to Oblivion",
+      "note": "When revealed, each player in player order creates one facedown Drone. Advancing to stage 3B is the generic main-scheme advance.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "createDrones": { "player": "each", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01140",
+      "name": "Ultron Drones",
+      "note": "The environment defines the facedown Drone card type, DRONE trait, and base SCH, ATK, and hit points. FacedownDrones and the defeat primitive apply those runtime semantics and return a defeated Drone to its original owner's discard pile; there is no second independently resolved tree on this face.",
+      "abilities": []
+    },
+    {
+      "card": "01142",
+      "name": "Upgraded Drones",
+      "note": "Attach to the Ultron Drones environment. Every facedown Drone continuously gets +1 ATK and +1 hit point. A Hero Action spends one energy, one mental, and one physical resource to discard the attachment.",
+      "attachTo": { "titled": "Ultron Drones" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "seq": [
+            { "grantEach": { "cards": { "query": "drones" }, "keyword": "attack", "amount": 1 } },
+            { "grantEach": { "cards": { "query": "drones" }, "keyword": "health", "amount": 1 } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "spend": "YBR" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "01143",
+      "name": "Advanced Ultron Drone",
+      "note": "When this minion would be defeated, its forced interrupt creates a facedown Drone from the engaged player's deck. The engaged seat is read while this card is still in its engagement area.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "ForcedInterrupt", "subject": "this" },
+          "effect": { "createDrones": { "player": "engagedPlayer", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01147",
+      "name": "Swarm Attack",
+      "note": "When revealed in hero form, every facedown Drone engaged with the resolving player attacks in board order. If there is no hero or no such Drone, no attack is made and one new Drone is created instead.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "and": [
+                { "inForm": { "player": "you", "form": "hero" } },
+                { "exists": { "query": "dronesEngagedWithYou" } }
+              ] },
+              "then": { "enemyAttacks": { "enemies": { "query": "dronesEngagedWithYou" } } },
+              "else": { "createDrones": { "player": "you", "count": 1 } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "01148",
+      "name": "Drone Factory",
+      "note": "When revealed, each player first creates a facedown Drone, then 1 threat is placed here for every Drone in play, including the ones just created.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "createDrones": { "player": "each", "count": 1 } },
+            { "placeThreat": { "scheme": "this", "amount": { "count": { "query": "drones" } } } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01149",
+      "name": "Invasive AI",
+      "note": "When revealed, each player discards the top three cards of their own deck in player order.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "discardTop": { "from": "yourDeck", "player": "each", "count": 3 } }
+        }
+      ]
+    },
+    {
+      "card": "01150",
+      "name": "Ultron's Imperative",
+      "note": "When revealed, the current first player creates two facedown Drones from the top of their deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "createDrones": { "player": "firstPlayer", "count": 2 } }
+        }
+      ]
+    },
+    {
       "card": "01099",
       "name": "Charge",
       "note": "Attach to Rhino. [star] Forced Interrupt: When Rhino attacks, the attack gains overkill. At the end of this attack, discard Charge. The star sits in this card's ATK field, which rr:star-icon.2 makes a reminder to check the text box whenever the attached enemy uses that value to attack -- so this is an attachment ability while in play, not a 'Boost' ability. The printed ATK+ 3 is not here: rr:attachment.1 makes a printed modifier declarative, and StateFields reads it off the attachment without an ability. 'Rhino' is written as the villain in play because the card belongs to Rhino's encounter set and no other villain can share a table with it; a name query would need a lookup the printed data spells differently.",

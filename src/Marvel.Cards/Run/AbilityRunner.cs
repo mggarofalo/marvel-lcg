@@ -1665,6 +1665,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "enemyAttacks" or "enemySchemes" => Every(node.Require("enemies"), cast).Count > 0,
         "putIntoPlay" => Find(node.Require("card"), cast) is not null,
         "placeAtRandom" => Find(node.Require("on"), cast) is not null,
+        "createDrones" => CanCreateDrones(node, cast),
 
         // These effects select no card target. Some name a player or an area;
         // neither is a target under `rr:target`.
@@ -1721,6 +1722,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 < PhaseEnd.HandSize(
                     cast.World, cast.World.Seats[Seat(node.Argument, cast)], cast.World.Facts),
             "drawToPrintedHandSize" => CanDrawToPrintedHandSize(node, cast),
+            "createDrones" => CanCreateDrones(node, cast),
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
@@ -2181,6 +2183,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 PutIntoPlay(node, cast);
                 break;
 
+            case "createDrones":
+                CreateDrones(node, cast);
+                break;
+
             case "shuffle":
                 // `rr:search.3` -- "if any portion of a deck is searched, upon
                 // completion of that game step, game function, or card ability,
@@ -2358,6 +2364,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
     }
+
+    /// <summary>
+    /// "Put the top card of your deck into play facedown … as a Drone minion."
+    /// </summary>
+    private static void CreateDrones(AbilityNode node, Cast cast)
+    {
+        long count = node.Field("count") is { } amount ? Number(amount) : 1;
+        foreach (int player in Seats(node.Require("player"), cast))
+        {
+            for (long created = 0; created < count; created++)
+            {
+                FacedownDrones.EngageTop(
+                    cast.World, player, cast.Trigger, "Create_Drone", cast.Events);
+            }
+        }
+    }
+
+    private static bool CanCreateDrones(AbilityNode node, Cast cast) =>
+        (node.Field("count") is not { } count || Number(count) > 0)
+        && Seats(node.Require("player"), cast).Any(player =>
+            cast.World.Seats[player].Deck.Cards.Count > 0
+            || cast.World.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards.Count > 0);
 
     /// <summary>
     /// "Put it into play engaged with you" — <c>rr:play-put-into-play</c>.
@@ -3616,13 +3645,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static void DiscardTop(AbilityNode node, Cast cast)
     {
-        var deck = Area(Word(node.Require("from")), cast);
         long count = Amount(node.Require("count"), cast);
-        for (long discarded = 0; discarded < count && deck.Cards.Count > 0; discarded++)
+        IEnumerable<Area> decks = node.Field("player") is { } players
+            ? Seats(players, cast).Select(player => cast.World.Seats[player].Deck)
+            : [Area(Word(node.Require("from")), cast)];
+        foreach (var deck in decks)
         {
-            var card = deck.Cards[^1];
-            Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-            cast.Discarded.Add(card);
+            for (long discarded = 0; discarded < count && deck.Cards.Count > 0; discarded++)
+            {
+                var card = deck.Cards[^1];
+                Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
+                cast.Discarded.Add(card);
+            }
         }
     }
 
@@ -4072,24 +4106,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } drones
             && drones.Argument is AbilityValue.Word { Value: "drones" })
         {
-            return
-            [
-                .. cast.World.Areas
-                    .Where(area => area.Type == DeckType.EngagedEnemiesArea)
-                    .SelectMany(area => area.Cards)
-                    .Where(card => !card.FaceUp),
-            ];
+            return FacedownDrones.InPlay(cast.World);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } engagedDrones
             && engagedDrones.Argument is AbilityValue.Word { Value: "dronesEngagedWithYou" })
         {
-            return
-            [
-                .. cast.World.AreaOf(
-                        DeckType.EngagedEnemiesArea, PlayArea.Of(Resolver(cast)))
-                    .Cards.Where(card => !card.FaceUp),
-            ];
+            return FacedownDrones.EngagedWith(cast.World, Resolver(cast));
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "withTrait" } withTrait)
@@ -4391,6 +4414,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     : throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' asks for its engaged player outside a "
                         + "player's engaged area"),
+                "firstPlayer" => cast.World.FirstPlayer,
                 _ => throw new AbilityException($"'{word.Value}' does not name a player"),
             }
             : throw new AbilityException(
