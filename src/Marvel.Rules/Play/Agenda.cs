@@ -99,8 +99,7 @@ public readonly record struct PhaseStep(
                     world,
                     facts,
                     attack.Attacker,
-                    attack.Enemy,
-                    attack.Player),
+                    attack.Enemy),
             Steps.DealAttackDamage when world.Attack is { } attack => Occurrence.ForAttack(
                 id,
                 Conditions,

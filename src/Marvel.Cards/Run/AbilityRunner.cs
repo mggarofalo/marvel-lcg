@@ -3219,13 +3219,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void Activate(AbilityNode node, Cast cast, string what)
     {
-        // Against the player resolving the card. Every printed card that causes
-        // an activation says "you", and `rr:reveal.2` makes that the revealing
-        // player -- so there is no field here to name somebody else, and a card
-        // that names one grows the vocabulary then rather than leaving an
-        // untaken branch now.
-        int seat = cast.Player;
-
         // The round the activation belongs to is the round the card was
         // revealed in. Nothing else on the agenda can tell it.
         int round = cast.World.Agenda.Current?.Round ?? 0;
@@ -3235,9 +3228,32 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // `rr:attack-enemy-activation.1.1` calls normal: "the attacked
         // character is the player's hero". An ability naming one instead is
         // the exception the same clause allows.
-        int against = node.Field("against") is { } named
+        AbilityValue? namedTarget = node.Field("against");
+        int against = namedTarget is { } named
             ? Find(named, cast)?.ObjectId ?? -1
             : -1;
+
+        // An ordinary "attacks you" activation belongs to the player
+        // resolving the card. An attack against a named occurrence role gets
+        // its attacked player from that role's snapshot instead. Speed Demon's
+        // target can move or change control during this interrupt, but that
+        // must not rewrite who was behind the character that attacked it.
+        int seat = namedTarget switch
+        {
+            AbilityValue.Word { Value: "trigger.actor" } =>
+                cast.Occurrence.ActorFacts?.Controller ?? World.Scenario,
+            AbilityValue.Word { Value: "trigger.target" } =>
+                cast.Occurrence.TargetFacts?.Controller ?? World.Scenario,
+            null => cast.Player,
+            _ => cast.Player,
+        };
+
+        if (seat < 0)
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' initiates an enemy attack against a character "
+                + "with no attacked player");
+        }
 
         // "**(Resolve Speed Demon's attack first.)**" -- the card prints the
         // instruction, so the data records it. Absent, an activation a card

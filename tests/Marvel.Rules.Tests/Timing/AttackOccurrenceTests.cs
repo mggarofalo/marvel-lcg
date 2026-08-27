@@ -23,9 +23,9 @@ public sealed class AttackOccurrenceTests
             Occurrence.ForAttack(2, [Steps.AttackInitiated], world, facts,
                 minion.ObjectId, ally.ObjectId, player: 0),
             Occurrence.ForAttack(3, [Steps.AttackInitiated], world, facts,
-                hero.ObjectId, minion.ObjectId, player: 0),
+                hero.ObjectId, minion.ObjectId),
             Occurrence.ForAttack(4, [Steps.AttackInitiated], world, facts,
-                ally.ObjectId, villain.ObjectId, player: 0),
+                ally.ObjectId, villain.ObjectId),
         };
 
         Assert.True(attacks[0].ActorFacts!.IsVillain);
@@ -34,6 +34,14 @@ public sealed class AttackOccurrenceTests
         Assert.True(attacks[3].ActorFacts!.IsAlly);
         Assert.All(attacks[..2], attack => Assert.True(attack.ActorFacts!.IsEnemy));
         Assert.All(attacks[2..], attack => Assert.True(attack.ActorFacts!.IsFriendly));
+        Assert.Equal(0, attacks[0].Player);
+        Assert.Equal(-1, attacks[2].Player);
+
+        world.CharacterAttack = new CharacterAttack(hero.ObjectId, minion.ObjectId, 0);
+        var characterAttack = new PhaseStep(Steps.CharacterAttacks, 1, 2)
+            .OccurrenceOf(world, facts);
+        Assert.Equal(-1, characterAttack.Player);
+        Assert.Equal(0, characterAttack.ActorFacts!.Controller);
     }
 
     [Rule("rr:friendly")]
