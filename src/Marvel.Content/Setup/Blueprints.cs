@@ -94,6 +94,7 @@ public static class Blueprints
         CreationSource.MainScheme => SetupSlot.MainScheme,
         CreationSource.Villain => SetupSlot.Villain,
         CreationSource.Encounter or CreationSource.EncounterSet => SetupSlot.Encounter,
+        CreationSource.ScenarioSetAside => SetupSlot.SetAside,
         _ => throw new ArgumentOutOfRangeException(nameof(source)),
     };
 }

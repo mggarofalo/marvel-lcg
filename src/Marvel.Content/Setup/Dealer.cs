@@ -37,9 +37,13 @@ public static class Dealer
     /// <param name="catalog">The setup dataset.</param>
     /// <param name="campaignName">The scenario, by dataset name.</param>
     /// <param name="heroNames">The heroes, in seat order.</param>
+    /// <param name="modularSetNames">
+    /// The chosen modular sets, or null to use the scenario's recommended sets.
+    /// </param>
     /// <exception cref="KeyNotFoundException">A name the dataset does not hold.</exception>
     public static IReadOnlyList<Creation> DealOrder(
-        SetupCatalog catalog, string campaignName, IReadOnlyList<string> heroNames)
+        SetupCatalog catalog, string campaignName, IReadOnlyList<string> heroNames,
+        IReadOnlyList<string>? modularSetNames = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(heroNames);
@@ -72,7 +76,13 @@ public static class Dealer
         Add(campaign.Villain, CreationSource.Villain, Creation.Scenario);
         Add(campaign.Encounters, CreationSource.Encounter, Creation.Scenario);
 
-        foreach (var setName in EncounterSetNames(campaign))
+        // The printed contents line says which cards begin set aside, not when
+        // an engine allocates their object ids. This engine chooses one stable
+        // place: after the scenario's own encounter cards and before named
+        // encounter sets.
+        Add(campaign.SetAside, CreationSource.ScenarioSetAside, Creation.Scenario);
+
+        foreach (var setName in EncounterSetNames(campaign, modularSetNames))
         {
             Add(catalog.EncounterSet(setName), CreationSource.EncounterSet, Creation.Scenario);
         }
@@ -90,16 +100,27 @@ public static class Dealer
 
     /// <summary>The named sets that go into the encounter deck, in order.</summary>
     /// <remarks>
-    /// <c>modular_sets</c> is appended to <c>encounter_sets</c> <b>only when the
-    /// caller names no sets of its own</b>. The dataset keeps the two apart so
-    /// that the other case — a scenario played with chosen modulars — stays
-    /// expressible; this joins them for the default.
+    /// <para>
+    /// <c>modular_sets</c> is appended to <c>encounter_sets</c> when the caller
+    /// names no sets of its own. The dataset keeps the two apart so that a
+    /// scenario played with chosen modulars stays expressible.
+    /// </para>
+    /// <para>
+    /// Null and an empty list are different on purpose. Null asks for the
+    /// printed recommendation; an empty list asks for no modular set. The
+    /// rules permit either choice, and the API must not turn one into the
+    /// other.
+    /// </para>
     /// </remarks>
     /// <param name="campaign">The scenario.</param>
-    public static IReadOnlyList<string> EncounterSetNames(CampaignSetup campaign)
+    /// <param name="modularSetNames">
+    /// The chosen modular sets, or null to use the scenario's recommended sets.
+    /// </param>
+    public static IReadOnlyList<string> EncounterSetNames(
+        CampaignSetup campaign, IReadOnlyList<string>? modularSetNames = null)
     {
         ArgumentNullException.ThrowIfNull(campaign);
-        return [.. campaign.EncounterSets, .. campaign.ModularSets];
+        return [.. campaign.EncounterSets, .. (modularSetNames ?? campaign.ModularSets)];
     }
 
     // `player_setup.py:8`, the engine's own name for it.
