@@ -41,6 +41,21 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>Whether the removal is permitted.</returns>
     bool CanRemoveThreat(World world, Card scheme) => true;
 
+    /// <summary>
+    /// The resources a card in hand generates toward the current payment.
+    /// </summary>
+    /// <remarks>
+    /// The rules specify what each card generates; they do not specify an
+    /// engine API. The engine chooses to pass the card being paid for because
+    /// a generator may make a different amount for particular cards.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="source">The card being spent from hand.</param>
+    /// <param name="payingFor">The card being paid for, or null for an ability cost.</param>
+    /// <returns>The resource letters generated.</returns>
+    string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
+        Resources.GeneratedBy(source.FaceId, world.Facts);
+
     /// <summary>Resolves a revealed encounter card's "When Revealed" ability.</summary>
     /// <param name="world">The world.</param>
     /// <param name="card">The card being revealed.</param>
@@ -363,6 +378,10 @@ public class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
     public virtual bool CanRemoveThreat(World world, Card scheme) => true;
+
+    /// <inheritdoc/>
+    public virtual string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
+        Resources.GeneratedBy(source.FaceId, world.Facts);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];

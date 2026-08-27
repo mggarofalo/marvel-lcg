@@ -133,6 +133,43 @@ public sealed class CardPlayTests
         Assert.Equal(DeckType.DiscardPile, spent.Area.Type);
     }
 
+    [Fact]
+    public void AConditionalGeneratorSeesTheCardBeingPaidForInOfferAndResolution()
+    {
+        // The rules describe each card's conditional resource text, but they
+        // do not prescribe the engine API. The engine passes the payment target
+        // both while pricing and while spending so those two answers cannot
+        // disagree.
+        var printed = Cards()
+            .With("power", ("RES", "G"))
+            .With("matching", ("Cost", "2"), ("RES", "B"))
+            .With("other", ("Cost", "2"), ("RES", "B"));
+        var world = Board(printed);
+        Empty(world);
+        var source = InHand(world, "power");
+        var matching = InHand(world, "matching");
+        world.Abilities = new ConditionalResources("matching");
+
+        var price = CardPlay.Price(world, printed, world.Seats[0], matching);
+
+        Assert.Equal("GG", Assert.Single(price!.Generators).Generates);
+        CardPlay.Play(
+            world, printed, new Silent(), world.Seats[0], matching, [source.ObjectId], []);
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+
+        var otherWorld = Board(printed);
+        Empty(otherWorld);
+        var otherSource = InHand(otherWorld, "power");
+        var other = InHand(otherWorld, "other");
+        otherWorld.Abilities = new ConditionalResources("matching");
+
+        Assert.Null(CardPlay.Price(otherWorld, printed, otherWorld.Seats[0], other));
+        Assert.Throws<RulesNotImplementedException>(() => CardPlay.Play(
+            otherWorld, printed, new Silent(), otherWorld.Seats[0], other,
+            [otherSource.ObjectId], []));
+        Assert.Same(otherWorld.Seats[0].Hand, otherSource.Area);
+    }
+
     [Rule("rr:initiating-abilities.step.5")]
     [Fact]
     public void AnUnderpaymentAbortsWithoutPayingAnything()
@@ -733,6 +770,15 @@ public sealed class CardPlayTests
     private sealed class Targets(params int[] targets) : NoCardAbilities
     {
         public override IReadOnlyList<int>? AttachmentTargets(World world, Card card) => targets;
+    }
+
+    private sealed class ConditionalResources(string matching) : NoCardAbilities
+    {
+        public override string ResourcesGeneratedBy(
+            World world, Card source, Card? payingFor) =>
+            payingFor?.FaceId == matching
+                ? Resources.GeneratedBy(source.FaceId, world.Facts) + Resources.Wild
+                : Resources.GeneratedBy(source.FaceId, world.Facts);
     }
 
     private sealed class Printed : ICardFacts

@@ -46,8 +46,9 @@ public static class CardPlay
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="seat">Whose hand.</param>
+    /// <param name="payingFor">The card being paid for, or null for an ability cost.</param>
     public static IReadOnlyList<ResourceSource> Generators(
-        World world, ICardFacts facts, Seat seat)
+        World world, ICardFacts facts, Seat seat, Card? payingFor = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -64,7 +65,7 @@ public static class CardPlay
 
         foreach (var card in seat.Hand.Cards)
         {
-            string generates = Resources.GeneratedBy(card.FaceId, facts);
+            string generates = world.Abilities.ResourcesGeneratedBy(world, card, payingFor);
             if (generates.Length > 0)
             {
                 sources.Add(new ResourceSource(card.ObjectId, generates));
@@ -161,7 +162,7 @@ public static class CardPlay
         // resources "by discarding cards from their hand", and this one is
         // leaving the hand to be played.
         var sources = Paying(world, facts, seat, card)
-            .SelectMany(paying => Generators(world, facts, paying))
+            .SelectMany(paying => Generators(world, facts, paying, card))
             .Where(source => source.Effect != card.ObjectId)
             .ToList();
 
@@ -233,7 +234,7 @@ public static class CardPlay
 
         Spend(
             world, facts, hands, paying, cost, Resources.Required(card.FaceId, facts),
-            card.ObjectId, seat.Index, events);
+            card.ObjectId, seat.Index, events, payingFor: card);
 
         // Steps 6 and 7. The card is played: it enters play, or it is an event
         // and its ability resolves before it is discarded.
@@ -271,9 +272,11 @@ public static class CardPlay
     /// Whose cost it is, for a generator that is an ability rather than a card.
     /// </param>
     /// <param name="events">Where to record what moved.</param>
+    /// <param name="payingFor">The card being paid for, or null for an ability cost.</param>
     public static void Spend(
         World world, ICardFacts facts, IReadOnlyList<Area> hands, IReadOnlyList<int> paying,
-        long cost, string required, int itself, int payer, List<GameEvent> events)
+        long cost, string required, int itself, int payer, List<GameEvent> events,
+        Card? payingFor = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -323,7 +326,7 @@ public static class CardPlay
             }
 
             spent.Add(source);
-            generated.Append(Resources.GeneratedBy(source.FaceId, facts));
+            generated.Append(world.Abilities.ResourcesGeneratedBy(world, source, payingFor));
         }
 
         if (!Resources.Pays(generated.ToString(), cost, required))
