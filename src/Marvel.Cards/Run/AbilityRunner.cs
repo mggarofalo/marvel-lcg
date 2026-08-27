@@ -66,6 +66,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     public IReadOnlySet<string> Authored => book.Authored;
 
     /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> EntersPlay(World world, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+
+        var events = new List<GameEvent>();
+        var occurrence = new Occurrence(
+            0, [Steps.CardEntersPlay], Subject: card.ObjectId,
+            Player: ControllerOf(world, card));
+        foreach (var ability in book.On(card.FaceId).Where(ability =>
+            ability.Trigger.Timing == AbilityType.WhenRevealed
+            && string.Equals(
+                ability.Trigger.Event, Steps.CardEntersPlay,
+                StringComparison.Ordinal)))
+        {
+            Run(
+                ability.Effect,
+                new Cast(world, card, occurrence, ControllerOf(world, card), events, this)
+                {
+                    Tier = ability.Trigger.Timing,
+                });
+        }
+
+        return events;
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -2319,6 +2346,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 RemoveCounters(node, cast);
                 break;
 
+            case "placeCounters":
+                var counter = Word(node.Require("counter"));
+                var counterCard = Find(node.Require("card"), cast)
+                    ?? throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' cannot find the card receiving counters");
+                long beforeCounters = counterCard.Tokens.GetValueOrDefault("c_" + counter);
+                long placedCounters = Number(node.Require("count"));
+                counterCard.PlaceTokens("c_" + counter, placedCounters);
+                cast.Events.Add(new FieldSet(
+                    counterCard.ObjectId, "c_" + counter,
+                    beforeCounters, beforeCounters + placedCounters)
+                {
+                    Trigger = cast.Trigger, Verb = "Place_Counters",
+                });
+                break;
+
             case "preventDamage":
                 PreventDamage(node, cast);
                 break;
@@ -2345,6 +2388,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "returnToHand":
                 ReturnToHand(node, cast);
+                break;
+
+            case "addToHand":
+                var added = Find(node.Argument, cast)
+                    ?? throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' cannot find the card added to hand");
+                var oldArea = added.Area;
+                var newHand = cast.World.Seats[cast.Player].Hand;
+                World.MoveToTop(added, newHand);
+                cast.Events.Add(new CardsMoved(
+                    Places.Reference(oldArea), Places.Reference(newHand),
+                    [new Landing(added.ObjectId, newHand.Cards.Count - 1)])
+                {
+                    Trigger = cast.Trigger, Verb = "Add_To_Hand",
+                });
                 break;
 
             case "discardAtRandom":

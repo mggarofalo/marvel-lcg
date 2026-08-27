@@ -3063,6 +3063,58 @@
       ]
     },
     {
+      "card": "01019a",
+      "name": "She-Hulk",
+      "note": "After the identity changes to this hero face, the optional response chooses an enemy and deals two damage. The FormChanged occurrence is scheduled only after the new face is showing, so the alter-ego face cannot answer it.",
+      "abilities": [
+        {
+          "name": "Do You Even Lift?",
+          "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "this" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 2 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01041",
+      "name": "Shuri",
+      "note": "After Shuri enters play, her optional response searches the controlling player's deck for an Upgrade. The player chooses among every matching card, adds it to hand, then shuffles the searched deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "exists": { "cardsIn": { "area": "yourDeck", "kind": "Upgrade" } } },
+              "then": { "chooseCard": {
+                "from": { "cardsIn": { "area": "yourDeck", "kind": "Upgrade" } },
+                "effect": { "seq": [
+                  { "addToHand": "chosen" },
+                  { "shuffle": "yourDeck" }
+                ] }
+              } },
+              "else": { "shuffle": "yourDeck" }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "01066",
+      "name": "Hawkeye",
+      "note": "Hawkeye enters play with four arrow counters before the entry response window opens. After a minion enters play, his optional response removes one arrow counter as its cost and deals two damage to that entered minion.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeCounters": { "card": "this", "counter": "arrow", "count": 4 } }
+        },
+        {
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "game" },
+          "when": { "isKind": { "card": "trigger.subject", "kind": "minion" } },
+          "cost": { "removeCounters": "arrow" },
+          "effect": { "dealDamage": { "cards": "trigger.subject", "amount": 2 } }
+        }
+      ]
+    },
+    {
       "card": "01028",
       "name": "Superhuman Strength",
       "note": "She-Hulk gets +2 ATK. After her attack completes, the forced response discards this upgrade and stuns that attack's target.",
