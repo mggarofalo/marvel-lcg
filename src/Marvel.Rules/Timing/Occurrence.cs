@@ -114,6 +114,36 @@ public sealed record Occurrence(
             TargetFacts: OccurrenceCard.Capture(world.Cards[target], facts));
     }
 
+    /// <summary>Create a thwart occurrence with explicit actor and scheme roles.</summary>
+    /// <remarks>
+    /// A thwart is not an attack, but cards still distinguish the character
+    /// doing it from the scheme it acts on. <see cref="Subject"/> retains the
+    /// scheme for existing "this scheme" triggers; actor and target add the
+    /// two roles without changing that established meaning.
+    /// </remarks>
+    public static Occurrence ForThwart(
+        int id,
+        IReadOnlyList<string> conditions,
+        State.World world,
+        State.ICardFacts facts,
+        int actor,
+        int scheme,
+        int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        return new Occurrence(
+            id,
+            conditions,
+            Subject: scheme,
+            Player: player,
+            Actor: actor,
+            Target: scheme,
+            ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
+            TargetFacts: OccurrenceCard.Capture(world.Cards[scheme], facts));
+    }
+
     /// <summary>
     /// Every triggering condition this occurrence has created so far.
     /// </summary>

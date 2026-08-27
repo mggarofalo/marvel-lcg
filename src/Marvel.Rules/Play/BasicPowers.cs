@@ -325,10 +325,19 @@ public static class BasicPowers
         }
 
         var attacker = world.Cards[attack.Attacker];
-        Damage.Attack(
+        var damaged = Damage.Attack(
             world, facts, attacker, world.Cards[attack.Enemy],
             StateFields.Modified(world, attacker, "attack", facts, world.Players),
             AttackVerb, AttackVerb, events);
+
+        var occurrence = world.Agenda.Occurrence
+            ?? throw new RulesNotImplementedException(
+                "a character attack resolved without an occurrence for its response window");
+        occurrence.Also(Steps.AttackEnds);
+        if (damaged.Count > 0)
+        {
+            occurrence.Also(Steps.DamageDealt);
+        }
     }
 
     /// <summary>

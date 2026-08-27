@@ -100,6 +100,15 @@ public readonly record struct PhaseStep(
                     facts,
                     attack.Attacker,
                     attack.Enemy),
+            Steps.CharacterThwarts when world.CharacterThwart is { } thwart =>
+                Occurrence.ForThwart(
+                    id,
+                    Conditions,
+                    world,
+                    facts,
+                    thwart.Thwarter,
+                    thwart.Scheme,
+                    thwart.Player),
             Steps.DealAttackDamage when world.Attack is { } attack => Occurrence.ForAttack(
                 id,
                 Conditions,
@@ -122,7 +131,7 @@ public readonly record struct PhaseStep(
 
     /// <summary>An occurrence that needs no live attack roles, or null.</summary>
     public Occurrence? ScheduledOccurrence => What is
-        Steps.Attack or Steps.CharacterAttacks or Steps.EndAttack
+        Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
             ? null
             : new Occurrence(Moment.Id(Round, Number, Index), Conditions, Subject, Seat);
 }
@@ -593,6 +602,9 @@ public static class Steps
     /// </remarks>
     public const string DamageWouldBeDealt = "WhenDamageWouldBeDealt";
 
+    /// <summary>A character was dealt damage.</summary>
+    public const string DamageDealt = "WhenDamageDealt";
+
     /// <summary>
     /// A character whose remaining hit points have reached zero is about to be
     /// defeated — <c>rr:damage.step.6</c>.
@@ -661,7 +673,7 @@ public static class Steps
         // Damage from an attack is imminent before this step applies and dealt
         // after it applies. `rr:triggering-condition.2` gives one occurrence
         // one pair of windows when it creates several conditions.
-        [DealAttackDamage] = [DamageWouldBeDealt, "WhenDamageDealt"],
+        [DealAttackDamage] = [DamageWouldBeDealt, DamageDealt],
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
