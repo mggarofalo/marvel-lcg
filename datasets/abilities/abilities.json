@@ -3018,6 +3018,73 @@
       ]
     },
     {
+      "card": "01043a",
+      "name": "Wakanda Forever!",
+      "note": "Hero Action: choose one permutation of every BLACK PANTHER upgrade you control, then resolve their Special abilities in exactly that order. The queued final member is marked as the final step of the sequence.",
+      "abilities": [
+        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": { "query": "blackPantherUpgrades" } } } }
+      ]
+    },
+    {
+      "card": "01043b",
+      "name": "Wakanda Forever!",
+      "note": "Hero Action: choose one permutation of every BLACK PANTHER upgrade you control, then resolve their Special abilities in exactly that order. The queued final member is marked as the final step of the sequence.",
+      "abilities": [
+        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": { "query": "blackPantherUpgrades" } } } }
+      ]
+    },
+    {
+      "card": "01043c",
+      "name": "Wakanda Forever!",
+      "note": "Hero Action: choose one permutation of every BLACK PANTHER upgrade you control, then resolve their Special abilities in exactly that order. The queued final member is marked as the final step of the sequence.",
+      "abilities": [
+        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": { "query": "blackPantherUpgrades" } } } }
+      ]
+    },
+    {
+      "card": "01043d",
+      "name": "Wakanda Forever!",
+      "note": "Hero Action: choose one permutation of every BLACK PANTHER upgrade you control, then resolve their Special abilities in exactly that order. The queued final member is marked as the final step of the sequence.",
+      "abilities": [
+        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": { "query": "blackPantherUpgrades" } } } }
+      ]
+    },
+    {
+      "card": "01046",
+      "name": "Energy Daggers",
+      "note": "Special: choose a player, then deal the same amount to the villain before each enemy engaged with that player. That order preserves the simultaneous-damage ruling for Ultron III: his Drone prohibition is checked while the Drone is still in play. The amount is two only for the final step.",
+      "abilities": [
+        { "trigger": { "event": "ResolveSpecial", "timing": "Special", "subject": "this" }, "effect": { "chooseCard": { "from": { "query": "identities" }, "effect": { "seq": [
+          { "dealDamage": { "cards": { "query": "villain" }, "amount": { "if": { "test": { "finalStep": "true" }, "then": 2, "else": 1 } } } },
+          { "dealDamage": { "cards": { "query": "enemiesEngagedWithChosenPlayer" }, "amount": { "if": { "test": { "finalStep": "true" }, "then": 2, "else": 1 } } } }
+        ] } } } }
+      ]
+    },
+    {
+      "card": "01047",
+      "name": "Panther Claws",
+      "note": "Special (attack): choose an enemy and deal two damage, or four when this is the final step. The upgrade is the damage source.",
+      "abilities": [
+        { "trigger": { "event": "ResolveSpecial", "timing": "Special", "subject": "this" }, "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": { "if": { "test": { "finalStep": "true" }, "then": 4, "else": 2 } }, "attack": "true" } } } } }
+      ]
+    },
+    {
+      "card": "01048",
+      "name": "Tactical Genius",
+      "note": "Special (thwart): choose a scheme and remove one threat, or two when this is the final step.",
+      "abilities": [
+        { "trigger": { "event": "ResolveSpecial", "timing": "Special", "subject": "this" }, "effect": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": { "if": { "test": { "finalStep": "true" }, "then": 2, "else": 1 } } } } } } }
+      ]
+    },
+    {
+      "card": "01049",
+      "name": "Vibranium Suit",
+      "note": "Special (attack): choose an enemy and move one damage from your hero to it, or two when final. The suit is the damage source, so source-based prohibitions can prevent the move before damage leaves the hero.",
+      "abilities": [
+        { "trigger": { "event": "ResolveSpecial", "timing": "Special", "subject": "this" }, "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "moveDamage": { "from": "you", "to": "chosen", "amount": { "if": { "test": { "finalStep": "true" }, "then": 2, "else": 1 } } } } } } }
+      ]
+    },
+    {
       "card": "01050",
       "name": "Hulk",
       "note": "After Hulk attacks, discard the top player-deck card. Its printed resource independently applies each matching line; a wild resource applies all three.",

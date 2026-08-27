@@ -450,6 +450,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> ResolveSpecial(
+        World world, Card card, int player, bool finalStep)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+
+        var ability = book.On(card.FaceId).SingleOrDefault(candidate =>
+            candidate.Trigger.Timing == AbilityType.Special)
+            ?? throw new RulesNotImplementedException(
+                $"card '{card.FaceId}' has no authored Special ability");
+        var events = new List<GameEvent>();
+        Run(
+            ability.Effect,
+            new Cast(
+                world, card,
+                new Occurrence(0, [Steps.ResolveSpecial], Subject: card.ObjectId, Player: player),
+                player, events, this)
+            {
+                Tier = AbilityType.Special,
+                FinalStep = finalStep,
+            });
+        return events;
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -1488,6 +1513,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <inheritdoc/>
     public Prompt? Choosing(
         World world, Card source, int player, int stoppedAt, AbilityType? tier = null)
+        => Choosing(world, source, player, stoppedAt, tier, finalStep: false);
+
+    /// <inheritdoc/>
+    public Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt, AbilityType? tier, bool finalStep)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
@@ -1505,7 +1535,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // not one: an option is a branch the card lists, an element is a card
         // on the board. `Question` has told them apart since before anything
         // asked either.
-        var cast = Resolving(world, source, player, tier);
+        var cast = Resolving(world, source, player, tier, finalStep);
+        if (choice.Kind == "resolveSpecials")
+        {
+            var upgrades = Every(choice.Require("cards"), cast);
+            return new Prompt(
+                Player: player,
+                Asking: Question.Element,
+                When: TimingPriority.Untimed,
+                Trigger: Steps.ResolveSpecial,
+                Label: $"{source.FaceId}: order Special abilities",
+                Cancellable: false,
+                Affordances:
+                [
+                    new Affordance(
+                        Id: source.ObjectId,
+                        Verb: ChooseVerb,
+                        AnchorId: source.ObjectId,
+                        AnchorPlayer: player,
+                        Label: choice.Kind,
+                        Targets: new TargetRequest(
+                            [.. upgrades.Select(card => card.ObjectId)],
+                            upgrades.Count,
+                            upgrades.Count)),
+                ]);
+        }
         var affordances = cards
             ? Every(choice.Require("from"), cast)
                 .Select(card => new Affordance(
@@ -1593,17 +1647,47 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     public IReadOnlyList<GameEvent> Chose(
         World world, Card source, int player, int stoppedAt, Decision input,
         AbilityType? tier = null)
+        => Chose(world, source, player, stoppedAt, input, tier, finalStep: false);
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        AbilityType? tier, bool finalStep)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(input);
 
         var choice = Choice(source, stoppedAt, tier);
-        var cast = Resolving(world, source, player, tier);
+        var cast = Resolving(world, source, player, tier, finalStep);
         cast.SetContinuation(book.On(source.FaceId).Any(ability =>
             (tier is null || ability.Trigger.Timing == tier)
             && ability.Effect.Kind == "seq"
             && Nodes(ability.Effect.Argument).Count() > stoppedAt));
+
+        if (choice.Kind == "resolveSpecials")
+        {
+            var legal = Every(choice.Require("cards"), cast)
+                .Select(card => card.ObjectId)
+                .ToHashSet();
+            if (input.Targets.Count != legal.Count
+                || input.Targets.Distinct().Count() != legal.Count
+                || input.Targets.Any(id => !legal.Contains(id)))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires one permutation of all {legal.Count} Special abilities");
+            }
+
+            int round = world.Agenda.Current?.Round ?? 0;
+            foreach (var (id, index) in input.Targets.Select((id, index) => (id, index)))
+            {
+                world.Agenda.Then(new PhaseStep(
+                    Steps.ResolveSpecial, round, index + 1, Subject: id, Seat: player,
+                    Plan: true, FinalStep: index == input.Targets.Count - 1));
+            }
+
+            return cast.Events;
+        }
 
         if (choice.Kind == "indirectDamage")
         {
@@ -1874,7 +1958,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <summary>A fresh resolution of one card's ability, by one player.</summary>
-    private Cast Resolving(World world, Card source, int player, AbilityType? tier) =>
+    private Cast Resolving(
+        World world, Card source, int player, AbilityType? tier, bool finalStep = false) =>
         new(world,
             source,
             new Occurrence(0, [Steps.CardRevealed], Subject: source.ObjectId, Player: player),
@@ -1883,6 +1968,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             this)
         {
             Tier = tier,
+            FinalStep = finalStep,
         };
 
     /// <summary>The one choice a card offers, found again from the card.</summary>
@@ -1928,7 +2014,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var steps = Nodes(effect.Argument).ToList();
         return stoppedAt >= 1 && stoppedAt <= steps.Count
             && steps[stoppedAt - 1] is
-                { Kind: "choose" or "chooseCard" or "indirectDamage" } waiting
+                { Kind: "choose" or "chooseCard" or "indirectDamage" or "resolveSpecials" } waiting
             ? waiting
             : throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has no choice at step {stoppedAt - 1} of its sequence");
@@ -1937,7 +2023,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Every <c>choose</c> node in one effect tree.</summary>
     private static IEnumerable<AbilityNode> Choices(AbilityNode node)
     {
-        if (node.Kind is "choose" or "chooseCard" or "indirectDamage")
+        if (node.Kind is "choose" or "chooseCard" or "indirectDamage" or "resolveSpecials")
         {
             yield return node;
             yield break;
@@ -2189,6 +2275,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Choose(node, cast);
                 break;
 
+            case "resolveSpecials":
+                if (Every(node.Require("cards"), cast).Count > 0)
+                {
+                    cast.World.Agenda.Then(new PhaseStep(
+                        Steps.ChooseOption,
+                        cast.World.Agenda.Current?.Round ?? 0,
+                        2,
+                        Index: cast.Position + 1,
+                        Subject: cast.Source.ObjectId,
+                        Seat: cast.Player,
+                        Tier: cast.Tier,
+                        FinalStep: cast.FinalStep));
+                    cast.Suspend();
+                }
+
+                break;
+
             case "if":
                 var branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
                 if (node.Field(branch) is { } taken)
@@ -2258,6 +2361,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 DealDamage(node, cast);
                 break;
 
+            case "moveDamage":
+                MoveDamage(node, cast);
+                break;
+
             case "dealAttackDamage":
                 DealAttackDamage(node, cast);
                 break;
@@ -2325,6 +2432,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "and" => Nodes(node.Argument).All(each => Test(each, cast)),
         "or" => Nodes(node.Argument).Any(each => Test(each, cast)),
         "not" => !Test(Tree(node.Argument), cast),
+        "finalStep" => cast.FinalStep,
         "paidWithResource" => PaidWith(cast, Word(node.Argument)),
         "threatCause" => cast.Occurrence.Threat?.Cause == (Word(node.Argument) switch
             {
@@ -3353,7 +3461,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             // Which ability stopped. A card can have a choice in two of them,
             // and the card and the position do not say which -- see `Choice`.
-            Tier: cast.Tier));
+            Tier: cast.Tier,
+            FinalStep: cast.FinalStep));
 
         cast.Suspend();
     }
@@ -3441,7 +3550,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             // Which ability stopped. A card can have a choice in two of them,
             // and the card and the position do not say which -- see `Choice`.
-            Tier: cast.Tier));
+            Tier: cast.Tier,
+            FinalStep: cast.FinalStep));
 
         cast.Suspend();
     }
@@ -3527,12 +3637,35 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static void DealDamage(AbilityNode node, Cast cast)
     {
         long amount = Amount(node.Require("amount"), cast);
+        string verb = node.Field("attack") is null ? "Deal_Damage" : "Attack";
         foreach (var target in Every(node.Require("cards"), cast))
         {
             Damage.Deal(
-                cast.World, cast.World.Facts, cast.Source, target, amount, cast.Trigger, "Deal_Damage",
+                cast.World, cast.World.Facts, cast.Source, target, amount, cast.Trigger, verb,
                 cast.Events);
         }
+    }
+
+    private static void MoveDamage(AbilityNode node, Cast cast)
+    {
+        var from = Find(node.Require("from"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot find the character damage moves from");
+        var to = Find(node.Require("to"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot find the enemy damage moves to");
+        long amount = Math.Min(from.Damage, Amount(node.Require("amount"), cast));
+        if (amount <= 0 || !cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
+        {
+            return;
+        }
+
+        Damage.Heal(
+            cast.World, cast.World.Facts, from, amount,
+            cast.Trigger, "Move_Damage", cast.Events);
+        Damage.Deal(
+            cast.World, cast.World.Facts, cast.Source, to, amount,
+            cast.Trigger, "Attack", cast.Events);
     }
 
     /// <summary>Damage from an attack event performed by the resolving identity.</summary>
@@ -4276,6 +4409,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [.. cast.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(cast.Player)).Cards];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } panther
+            && panther.Argument is AbilityValue.Word { Value: "blackPantherUpgrades" })
+        {
+            return
+            [
+                .. cast.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(cast.Player)).Cards
+                    .Where(card => Rules.State.Traits.Has(
+                        cast.World, card, "BLACK_PANTHER", cast.World.Facts)),
+            ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } engaged
+            && engaged.Argument is AbilityValue.Word { Value: "enemiesEngagedWithChosenPlayer" })
+        {
+            int player = cast.Chosen is { Owner: >= 0 } chosen
+                ? chosen.Owner
+                : throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' asks for a chosen player's enemies before choosing one");
+            return
+            [
+                .. cast.World.AreaOf(
+                    DeckType.EngagedEnemiesArea, PlayArea.Of(player)).Cards,
+            ];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allies
             && allies.Argument is AbilityValue.Word { Value: "alliesYouControl" })
         {
@@ -4814,6 +4972,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// from the card and a position alone. See <c>Choice</c>.
         /// </remarks>
         public AbilityType? Tier { get; init; }
+
+        /// <summary>Whether this Special is the final step in its parent sequence.</summary>
+        public bool FinalStep { get; init; }
 
         /// <summary>How much damage is about to be dealt — <c>rr:damage.step.1</c>.</summary>
         public long Incoming { get; init; }
