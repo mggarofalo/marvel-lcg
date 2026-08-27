@@ -231,10 +231,13 @@ public sealed class CoreSetupTests
             Assert.True(
                 AtMulligan(game),
                 $"{printed.Source}; rr:appendix-ii-setup.step.15: {name} reaches the mulligan");
-            Assert.True(
-                printed.Cards.All(id => world.AreaOf(DeckType.EncounterDeck).Cards
-                    .Any(card => card.FaceId == id)),
-                $"{printed.Source}; rr:appendix-ii-setup.step.10: {name} is in the encounter deck");
+            SameMultiset(
+                printed.Source,
+                $"{name} in the encounter deck",
+                printed.Cards,
+                world.AreaOf(DeckType.EncounterDeck).Cards
+                    .Select(card => card.FaceId)
+                    .Where(printed.Cards.Contains));
         }
     }
 
