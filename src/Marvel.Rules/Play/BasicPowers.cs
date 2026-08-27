@@ -67,12 +67,12 @@ public static class BasicPowers
 
         var enemies = Enemies(world, facts);
         bool guarded = enemies.Any(enemy =>
-            facts.Kind(enemy.FaceId) == CardKind.Minion
+            FacedownDrones.Kind(enemy, facts) == CardKind.Minion
             && Engaged(world, enemy) == player
             && StateFields.Modified(world, enemy, "guard", facts, world.Players) > 0);
 
         return guarded
-            ? [.. enemies.Where(enemy => facts.Kind(enemy.FaceId) == CardKind.Minion)]
+            ? [.. enemies.Where(enemy => FacedownDrones.Kind(enemy, facts) == CardKind.Minion)]
             : enemies;
     }
 
@@ -649,7 +649,8 @@ public static class BasicPowers
 
             // `rr:enemy`: "an enemy is a minion or villain."
             enemies.AddRange(area.Cards.Where(card =>
-                facts.Kind(card.FaceId) is CardKind.EncounterVillain or CardKind.Minion));
+                FacedownDrones.Kind(card, facts)
+                    is CardKind.EncounterVillain or CardKind.Minion));
         }
 
         return enemies;

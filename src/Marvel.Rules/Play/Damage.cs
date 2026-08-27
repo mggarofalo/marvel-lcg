@@ -159,7 +159,7 @@ public static class Damage
         // `StateFields`' printed-attribute map -- remaining hit points are
         // computed, not printed -- so `Modified` on it returns the modifiers
         // alone, which is exactly the second half of this sum.
-        return facts.PrintedValue(character.FaceId, "HP", world.Players)
+        return FacedownDrones.BaseValue(character, facts, "HP", world.Players)
             + StateFields.Modified(world, character, "health", facts, world.Players);
     }
 
@@ -283,7 +283,7 @@ public static class Damage
         World world, ICardFacts facts, Card source, Card defeated, int controllingPlayer, long beyond,
         string trigger, List<GameEvent> events)
     {
-        var onto = facts.Kind(defeated.FaceId) switch
+        var onto = FacedownDrones.Kind(defeated, facts) switch
         {
             CardKind.Ally when controllingPlayer >= 0 =>
                 world.Seats[controllingPlayer].IdentityCard,

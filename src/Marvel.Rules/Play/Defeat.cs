@@ -122,7 +122,7 @@ public static class Defeat
         // where these belong.
         events.AddRange(world.Abilities.WhenCardDefeated(world, character, defeated));
 
-        switch (facts.Kind(character.FaceId))
+        switch (FacedownDrones.Kind(character, facts))
         {
             case CardKind.Ally:
             case CardKind.Minion:
@@ -149,7 +149,7 @@ public static class Defeat
 
             default:
                 throw new RulesNotImplementedException(
-                    $"a {facts.Kind(character.FaceId)} was defeated, and rr:defeat does not "
+                    $"a {FacedownDrones.Kind(character, facts)} was defeated, and rr:defeat does not "
                     + "say what happens to one");
         }
     }
@@ -340,7 +340,7 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (facts.PrintedValue(card.FaceId, "Victory", world.Players) <= 0)
+        if (FacedownDrones.BaseValue(card, facts, "Victory", world.Players) <= 0)
         {
             return false;
         }

@@ -47,7 +47,7 @@ public static class Traits
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
 
-        var printed = facts.Traits(card.FaceId);
+        var printed = FacedownDrones.InherentTraits(card, facts);
         List<string>? all = null;
 
         foreach (var effect in world.Effects.Active())
