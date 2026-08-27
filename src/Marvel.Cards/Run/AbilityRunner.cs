@@ -1500,6 +1500,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static CostOption? Price(World world, Card card, int player, AbilityNode? cost)
     {
+        if (cost is { Kind: "seq" })
+        {
+            return Nodes(cost.Argument)
+                .Select(step => Price(world, card, player, step))
+                .SingleOrDefault(price => price is not null);
+        }
+
         if (cost is { Kind: "spendEnergyX" })
         {
             return new CostOption(
@@ -3488,7 +3495,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "grant":
-                found.Add(Grant(node, cast));
+                if (Find(node.Require("card"), cast) is { } grantTarget)
+                {
+                    found.Add(Grant(node, cast, grantTarget));
+                }
+                else if (!string.Equals(
+                    Word(node.Require("card")), "yourHero", StringComparison.Ordinal))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' would grant to a card that is not there");
+                }
                 break;
 
             case "grantEach":
