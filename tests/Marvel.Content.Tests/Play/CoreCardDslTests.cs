@@ -82,7 +82,7 @@ public sealed class CoreCardDslTests
         Assert.Equal(7, Modified(world, world.Seats[0].IdentityCard, "hand_size"));
     }
 
-    [Rule("rr:draw")]
+    [Rule("rr:draw-drawing-cards")]
     [Fact]
     public void AvengersMansionDrawsForTheChosenPlayersIdentity()
     {
@@ -127,7 +127,7 @@ public sealed class CoreCardDslTests
     }
 
     [Rule("rr:each-player")]
-    [Rule("rr:draw")]
+    [Rule("rr:draw-drawing-cards")]
     [Fact]
     public void MariaHillHasEachPlayerDraw()
     {

@@ -34,7 +34,7 @@ public sealed class PlayerTurnTests
     public void EveryPlayerTakesATurnBeforeThePhaseEnds()
     {
         var (game, _) = Begin("spider_man", "she_hulk");
-        game.Resolve(Decision.Decline);   // the mulligan
+        ResolveMulligans(game);
 
         Assert.Equal(GamePhase.PlayerTurn, game.Phase);
         Assert.Equal(0, game.Pending!.Player);
@@ -58,9 +58,8 @@ public sealed class PlayerTurnTests
         // "The first player performs their part of the sequence first, followed
         // by the other players in clockwise order." At three players starting
         // from seat 2 that is 2, 0, 1 -- so this is a wrap and not a sort.
-        var (game, world) = Begin("spider_man", "she_hulk", "captain_marvel");
-        world.FirstPlayer = 2;
-        game.Resolve(Decision.Decline);   // the mulligan
+        var (game, _) = BeginFrom(2, "spider_man", "she_hulk", "captain_marvel");
+        ResolveMulligans(game);
 
         var asked = new List<int>();
         while (game.Phase == GamePhase.PlayerTurn)
@@ -79,7 +78,7 @@ public sealed class PlayerTurnTests
         // Step 1 is "in player order", unlike steps 2 and 3, so it is a
         // question per seat rather than one for the table.
         var (game, _) = Begin("spider_man", "she_hulk");
-        game.Resolve(Decision.Decline);
+        ResolveMulligans(game);
         game.Resolve(Decision.Decline);
         game.Resolve(Decision.Decline);
 
@@ -100,7 +99,7 @@ public sealed class PlayerTurnTests
         // "Once each round, **each player** is permitted to change form." One
         // player using theirs does not spend anybody else's.
         var (game, world) = Begin("spider_man", "she_hulk");
-        game.Resolve(Decision.Decline);
+        ResolveMulligans(game);
 
         var change = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm);
         game.Resolve(Decision.Take(change.Id));
@@ -117,12 +116,24 @@ public sealed class PlayerTurnTests
     }
 
     private static (Game Game, World World) Begin(params string[] heroes)
+        => BeginFrom(0, heroes);
+
+    private static (Game Game, World World) BeginFrom(int firstPlayer, params string[] heroes)
     {
         var world = WorldSetup.Deal(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, Campaign, heroes), Cards),
             [.. heroes.Select(hero => Setup.Hero(hero).Name)],
             Seed);
+        world.FirstPlayer = firstPlayer;
         return (Game.Begin(world, Cards), world);
+    }
+
+    private static void ResolveMulligans(Game game)
+    {
+        while (game.Phase == GamePhase.Mulligan)
+        {
+            game.Resolve(Decision.Decline);
+        }
     }
 }

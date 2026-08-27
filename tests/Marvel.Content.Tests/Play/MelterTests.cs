@@ -27,7 +27,7 @@ public sealed class MelterTests
         Assert.Same(controlled, Assert.Single(choice.Candidates));
     }
 
-    [Rule("rr:if-able")]
+    [Rule("rr:defend-defense.3")]
     [Fact]
     public void WithNoReadyControlledAllyOrdinaryDefenseRemainsOptional()
     {

@@ -115,18 +115,17 @@ public sealed class ActivationCardsTests
         world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
-        var first = world.CreateCard(HydraMercenary, engaged);
-        var second = world.CreateCard(Sandman, engaged);
+        world.CreateCard(HydraMercenary, engaged);
+        world.CreateCard(Sandman, engaged);
 
         Reveal(world, AuthoredCards.GangUp);
 
-        // The villain first and the minions after it, in the order the play
-        // area holds them. `rr:minion.3` makes that order the player's choice
-        // and asking is not implemented, so it is taken deterministically and
-        // stated here -- which is exactly how villain phase step 2.b takes it.
-        // Two minions rather than one: with one, any order is the right one.
+        // The activation batch schedules only its first enemy. Completion of
+        // that activation resumes the batch and schedules the next, preserving
+        // the villain-then-minions order without putting overlapping attacks
+        // on the agenda.
         Assert.Equal(
-            [villain.ObjectId, first.ObjectId, second.ObjectId],
+            [villain.ObjectId],
             world.Agenda.Outstanding.Select(step => step.Subject));
         Assert.All(world.Agenda.Outstanding, step => Assert.Equal(Steps.Attack, step.What));
 
@@ -137,15 +136,13 @@ public sealed class ActivationCardsTests
         var occurrences = world.Agenda.Outstanding
             .Select(step => step.OccurrenceOf(world, Cards))
             .ToList();
-        Assert.Equal(3, occurrences.Count);
+        Assert.Single(occurrences);
         Assert.Equal(
-            [villain.ObjectId, first.ObjectId, second.ObjectId],
+            [villain.ObjectId],
             occurrences.Select(occurrence => occurrence.Actor));
         Assert.All(
             occurrences,
             occurrence => Assert.Contains(Steps.AttackInitiated, occurrence.Conditions));
-        Assert.NotSame(occurrences[0], occurrences[1]);
-        Assert.NotSame(occurrences[1], occurrences[2]);
     }
 
     [Rule("rr:engage.1")]
@@ -163,7 +160,7 @@ public sealed class ActivationCardsTests
         var world = Deal("spider_man", "she_hulk");
         world.Seats[1].IdentityCard.TurnTo(SheHulk);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        var mine = world.CreateCard(
+        world.CreateCard(
             HydraMercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
         world.CreateCard(
             HydraMercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
@@ -173,7 +170,7 @@ public sealed class ActivationCardsTests
         // The minion in seat one's area and not the one in seat zero's, and
         // both activations aimed at seat one.
         Assert.Equal(
-            [villain.ObjectId, mine.ObjectId],
+            [villain.ObjectId],
             world.Agenda.Outstanding.Select(step => step.Subject));
         Assert.All(world.Agenda.Outstanding, step => Assert.Equal(1, step.Seat));
     }

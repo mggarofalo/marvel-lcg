@@ -65,13 +65,14 @@ public sealed class BoostAbilityTests
         // to silence is a villain who schemed for two instead of two and an
         // exhausted hero, and nothing anywhere says so.
         var world = Deal();
-        var card = world.CreateCard(SonicBoom, world.AreaOf(DeckType.BoostingArea));
+        const string unauthoredBoost = "02007";
+        var card = world.CreateCard(unauthoredBoost, world.AreaOf(DeckType.BoostingArea));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => AuthoredCards.Runner().Boost(world, card, 0));
 
-        Assert.Contains("'Boost' ability", thrown.Message, StringComparison.Ordinal);
-        Assert.Contains(SonicBoom, thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("no ability data", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains(unauthoredBoost, thrown.Message, StringComparison.Ordinal);
     }
 
     [Fact]

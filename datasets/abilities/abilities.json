@@ -999,14 +999,14 @@
               "test": { "inForm": { "player": "you", "form": "hero" } },
               "then": {
                 "seq": [
-                  { "enemyAttacks": { "enemies": { "query": "villain" } } },
                   {
                     "delayUntil": {
                       "condition": "WhenDamageDealt",
                       "within": "EndOfAttack",
                       "effect": { "giveStatus": { "card": "damaged", "status": "stunned" } }
                     }
-                  }
+                  },
+                  { "enemyAttacks": { "enemies": { "query": "villain" } } }
                 ]
               },
               "else": { "gainSurge": 1 }
