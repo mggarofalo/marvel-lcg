@@ -1692,6 +1692,37 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 top.Select(card => new Affordance(
                     card.ObjectId, ChooseVerb, card.ObjectId, player, card.FaceId)).ToList());
         }
+        if (choice.Kind == "chooseDiscardToShuffle")
+        {
+            var discard = world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player);
+            int max = Math.Min(
+                (int)Number(choice.Require("max")),
+                discard.Cards.Select(card => world.Facts.Title(card.FaceId)).Distinct().Count());
+            return new Prompt(
+                player, Question.Element, TimingPriority.Untimed,
+                Steps.TurnAction, $"{source.FaceId}: choose cards to shuffle",
+                Cancellable: false,
+                [new Affordance(
+                    source.ObjectId, ChooseVerb, source.ObjectId, player, choice.Kind,
+                    new TargetRequest(
+                        [.. discard.Cards.Select(card => card.ObjectId)], 1, max))]);
+        }
+        if (choice.Kind == "thwartDifferentSchemes")
+        {
+            var schemes = Every(choice.Require("schemes"), cast);
+            bool aerial = Rules.State.Traits.Has(
+                world, world.Seats[player].IdentityCard, "AERIAL", world.Facts);
+            int count = aerial && schemes.Count > 1 ? 2 : 1;
+            return new Prompt(
+                player, Question.Element, TimingPriority.Untimed,
+                Steps.TurnAction, $"{source.FaceId}: choose scheme{(count == 1 ? "" : "s")}",
+                Cancellable: false,
+                [new Affordance(
+                    source.ObjectId, ChooseVerb, source.ObjectId, player, choice.Kind,
+                    new TargetRequest(
+                        [.. schemes.Select(card => card.ObjectId)], count, count))]);
+        }
         var affordances = cards
             ? Every(choice.Require("from"), cast)
                 .Select(card => new Affordance(
@@ -1867,6 +1898,60 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
             }
 
+            return cast.Events;
+        }
+        if (choice.Kind == "chooseDiscardToShuffle")
+        {
+            var discard = world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player);
+            var selected = input.Targets.Select(id =>
+                discard.Cards.FirstOrDefault(card => card.ObjectId == id)
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' cannot shuffle card {id} from that discard pile"))
+                .ToList();
+            int max = (int)Number(choice.Require("max"));
+            if (selected.Count is < 1 || selected.Count > 3
+                || selected.Count > max
+                || selected.Select(card => world.Facts.Title(card.FaceId)).Distinct().Count()
+                    != selected.Count)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires one to {max} cards with different titles");
+            }
+            foreach (var card in selected)
+            {
+                World.MoveToTop(card, world.Seats[player].Deck);
+            }
+            world.Shuffle(world.Seats[player].Deck);
+            return cast.Events;
+        }
+        if (choice.Kind == "thwartDifferentSchemes")
+        {
+            var legal = Every(choice.Require("schemes"), cast);
+            var selected = input.Targets.Select(id =>
+                legal.FirstOrDefault(card => card.ObjectId == id)
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' cannot thwart scheme {id}"))
+                .ToList();
+            bool aerial = Rules.State.Traits.Has(
+                world, world.Seats[player].IdentityCard, "AERIAL", world.Facts);
+            int expected = aerial && legal.Count > 1 ? 2 : 1;
+            if (selected.Count != expected || selected.Distinct().Count() != selected.Count)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires {expected} different scheme target(s)");
+            }
+            foreach (var scheme in selected)
+            {
+                if (scheme.Area.Type == DeckType.MainSchemesArea
+                    && MainScheme.Crisis(world, world.Facts))
+                {
+                    continue;
+                }
+                Threat.Remove(
+                    world, world.Facts, cast.Abilities, scheme, 2,
+                    cast.Trigger, "Remove_Threat", cast.Events, by: player);
+            }
             return cast.Events;
         }
 
@@ -2210,7 +2295,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static IEnumerable<AbilityNode> Choices(AbilityNode node)
     {
         if (node.Kind is "choose" or "chooseCard" or "indirectDamage"
-            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand")
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
+            or "chooseDiscardToShuffle" or "thwartDifferentSchemes")
         {
             yield return node;
             yield break;
@@ -2550,6 +2636,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     break;
                 }
+                cast.World.Agenda.Then(new PhaseStep(
+                    Steps.ChooseOption,
+                    cast.World.Agenda.Current?.Round ?? 0,
+                    2,
+                    Index: cast.Position + 1,
+                    Subject: cast.Source.ObjectId,
+                    Seat: cast.Player,
+                    Tier: cast.Tier));
+                cast.Suspend();
+                break;
+
+            case "chooseDiscardToShuffle":
+            case "thwartDifferentSchemes":
                 cast.World.Agenda.Then(new PhaseStep(
                     Steps.ChooseOption,
                     cast.World.Agenda.Current?.Round ?? 0,

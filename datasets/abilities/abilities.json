@@ -3063,6 +3063,28 @@
       ]
     },
     {
+      "card": "01012",
+      "name": "Crisis Interdiction",
+      "note": "The hero action chooses its first scheme and, when Captain Marvel is AERIAL and a different scheme exists, a second different scheme in one ordered target request. It removes two threat from each chosen scheme, preserving which target is first and preventing the second from repeating it.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "thwartDifferentSchemes": { "schemes": { "query": "schemes" } } }
+        }
+      ]
+    },
+    {
+      "card": "01042",
+      "name": "Ancestral Knowledge",
+      "note": "The alter-ego action chooses one to three cards with different titles from the resolving player's discard pile, moves those exact cards into the player deck, and shuffles once after all moves.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseDiscardToShuffle": { "max": 3 } }
+        }
+      ]
+    },
+    {
       "card": "01019a",
       "name": "She-Hulk",
       "note": "After the identity changes to this hero face, the optional response chooses an enemy and deals two damage. The FormChanged occurrence is scheduled only after the new face is showing, so the alter-ego face cannot answer it.",
