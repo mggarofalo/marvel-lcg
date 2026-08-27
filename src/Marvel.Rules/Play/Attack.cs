@@ -324,7 +324,7 @@ public static class Attack
                     Id: card.ObjectId,
                     Verb: DefenseVerb,
                     AnchorId: card.ObjectId,
-                    AnchorPlayer: card.Owner,
+                    AnchorPlayer: card.Area.PlayArea.Player,
                     Label: DefenseVerb)),
             ]);
     }
@@ -774,8 +774,11 @@ public static class Attack
 
         // rr:defend-defense.3 -- "an ally can exhaust to defend against an
         // enemy attack. Damage from the attack is dealt to that ally."
-        var allies = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player), cardOwner: player);
-        candidates.AddRange(allies.Cards.Where(ally => ally.Ready));
+        candidates.AddRange(world.Areas
+            .Where(area => area.Type == DeckType.AlliesArea
+                && area.PlayArea == PlayArea.Of(player))
+            .SelectMany(area => area.Cards)
+            .Where(ally => ally.Ready));
 
         return candidates;
     }

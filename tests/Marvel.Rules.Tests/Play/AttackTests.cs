@@ -145,6 +145,36 @@ public sealed class AttackTests
     }
 
     [Rule("rr:defend-defense.3")]
+    [Rule("rr:ownership-and-control.2.1")]
+    [Fact]
+    public void AControlledAllyCanDefendWhenAnotherPlayerOwnsIt()
+    {
+        // An ally put into play under another player's control remains owned by
+        // its original player. Defense follows control: the ally is in player
+        // zero's play area, so player zero can exhaust it to defend even though
+        // it returns to player one's discard pile when it leaves play.
+        var printed = Printed(atk: 2, boost: 0);
+        var world = Board(printed, players: 2);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 1));
+
+        var asked = Sequence.Work(world, printed, new NoCardAbilities(), []);
+
+        Assert.NotNull(asked);
+        var offered = Assert.Single(
+            asked.Affordances, option => option.AnchorId == ally.ObjectId);
+        Assert.Equal(0, offered.AnchorPlayer);
+
+        Sequence.Answer(
+            world, printed, new NoCardAbilities(), asked,
+            Decision.Take(ally.ObjectId), []);
+
+        Assert.Equal(ally.ObjectId, world.Attack!.Target);
+        Assert.Equal(0, world.Attack.Player);
+        Assert.False(ally.Ready);
+    }
+
+    [Rule("rr:defend-defense.3")]
     [Rule("rr:exhausted.2")]
     [Fact]
     public void AnExhaustedAllyIsNotOfferedAsADefender()
