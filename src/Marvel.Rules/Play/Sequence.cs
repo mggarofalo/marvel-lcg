@@ -47,7 +47,10 @@ public static class Sequence
             {
                 if (world.Agenda.Stage == Stage.Apply)
                 {
-                    VillainPhase.Take(world, facts, abilities, step, events);
+                    if (VillainPhase.Take(world, facts, abilities, step, events) is { } planQuestion)
+                    {
+                        return planQuestion;
+                    }
                 }
 
                 world.Agenda.Advance();

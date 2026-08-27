@@ -278,6 +278,19 @@ public interface ICardAbilities : IWindowAbilities
         throw new RulesNotImplementedException(
             $"card '{card.FaceId}' has no implemented Special ability");
 
+    /// <summary>Resolves one persisted frame of an "each player" effect.</summary>
+    /// <remarks>
+    /// Rules owns the chosen order and the saveable frame. The card interpreter
+    /// owns the effect tree and reconstructs it from the source, ability tier
+    /// and top-level position each time a frame runs. A fresh call per seat is
+    /// what keeps form-dependent choices and effect-local results isolated.
+    /// </remarks>
+    IReadOnlyList<GameEvent> ResolveEachPlayer(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep, bool finalPlayer) =>
+        throw new RulesNotImplementedException(
+            $"card '{source.FaceId}' has no implemented each-player continuation");
+
     /// <summary>
     /// The question a suspended ability is waiting on —
     /// <c>rr:choose-option</c>.
@@ -530,6 +543,13 @@ public class NoCardAbilities : ICardAbilities
             $"card '{card.FaceId}' has no implemented Special ability");
 
     /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> ResolveEachPlayer(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep, bool finalPlayer) =>
+        throw new RulesNotImplementedException(
+            $"card '{source.FaceId}' has no implemented each-player continuation");
+
+    /// <inheritdoc/>
     public virtual int? AttachesTo(World world, Card card) => null;
 
     /// <inheritdoc/>
@@ -756,6 +776,13 @@ public static class VillainPhase
                     world, world.Cards[step.Subject], step.Seat, step.Index, step.Tier,
                     step.FinalStep);
 
+            case Steps.OrderEachPlayer:
+                return EachPlayerEffects.Ordering(world, step);
+
+            case Steps.ResolveEachPlayer:
+                events.AddRange(EachPlayerEffects.Resolve(world, abilities, step));
+                break;
+
             case Steps.PassFirstPlayerToken:
                 PassFirstPlayerToken(world);
                 break;
@@ -862,6 +889,10 @@ public static class VillainPhase
                 events.AddRange(abilities.Chose(
                     world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier,
                     step.FinalStep));
+                break;
+
+            case Steps.OrderEachPlayer:
+                EachPlayerEffects.Ordered(world, step, input);
                 break;
 
             default:

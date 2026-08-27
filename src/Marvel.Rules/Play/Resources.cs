@@ -80,6 +80,24 @@ public static class Resources
             : string.Empty;
     }
 
+    /// <summary>How many printed icons of one resource type these cards have.</summary>
+    /// <remarks>
+    /// The printed <c>RES</c> field is one letter per icon, so a double-resource
+    /// card contributes two. This deliberately reads printed data rather than
+    /// <see cref="ICardAbilities.ResourcesGeneratedBy"/>: an effect that counts
+    /// icons on discarded cards is not paying a cost and does not receive a
+    /// conditional resource-generator bonus.
+    /// </remarks>
+    public static long PrintedCount(
+        IEnumerable<Card> cards, char resource, ICardFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(cards);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        return cards.Sum(card =>
+            GeneratedBy(card.FaceId, facts).LongCount(each => each == resource));
+    }
+
     /// <summary>
     /// The resource types a card's cost <b>must</b> include —
     /// <c>rr:requirement-resources</c>.

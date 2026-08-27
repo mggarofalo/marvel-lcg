@@ -75,10 +75,17 @@ public enum Stage
 /// spelling; it is engine data carried so a suspended Special can resume with
 /// the same answer.
 /// </param>
+/// <param name="FinalPlayer">
+/// Whether this is the last frame of an effect that resolves once for each
+/// player. The chosen order is represented by the frames themselves; this flag
+/// lets the card interpreter resume any outer sequence after the final frame
+/// without retaining a live iterator or effect tree.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
-    ThreatPlacement? Placement = null, int ActivationId = -1, bool FinalStep = false)
+    ThreatPlacement? Placement = null, int ActivationId = -1, bool FinalStep = false,
+    bool FinalPlayer = false)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -787,6 +794,15 @@ public static class Steps
     /// it is the answer to this.
     /// </remarks>
     public const string ChooseOption = "ChooseOption";
+
+    /// <summary>
+    /// The first player orders the frames of an effect that resolves for each
+    /// player — <c>rr:each-player.1</c>.
+    /// </summary>
+    public const string OrderEachPlayer = "OrderEachPlayer";
+
+    /// <summary>One persisted player frame of an each-player card effect.</summary>
+    public const string ResolveEachPlayer = "ResolveEachPlayer";
 
     /// <summary>
     /// A card's explicit instruction to resolve a <b>Special</b> ability —
