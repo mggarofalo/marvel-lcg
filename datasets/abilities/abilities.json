@@ -1386,6 +1386,60 @@
       ]
     },
     {
+      "card": "01183",
+      "name": "The Doomsday Chair",
+      "note": "When Revealed: If M.O.D.O.K. is not in play, search the encounter deck and discard pile for M.O.D.O.K. and put him into play engaged with you, then shuffle the encounter deck. The title check reads only in-play areas, so a copy in either searched out-of-play area does not suppress the effect. rr:search.1 makes a matching card the player's choice if more than one exists; the core set has one M.O.D.O.K., and singular cardsIn refuses rather than guesses if a future board produces several. rr:search.2 leaves every card where it is until putIntoPlay moves the match. rr:search.3 requires the encounter deck shuffle even when no match exists, so both branches say it. And rr:when-revealed-abilities.2 is why the move is putIntoPlay rather than reveal: a When Revealed ability on M.O.D.O.K. would not trigger, while rr:enters-play still applies its printed keywords.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": { "not": { "titleInPlay": "M.O.D.O.K." } },
+              "then": {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "cardsIn": {
+                        "areas": ["encounterDeck", "encounterDiscardPile"],
+                        "title": "M.O.D.O.K."
+                      }
+                    }
+                  },
+                  "then": {
+                    "seq": [
+                      {
+                        "putIntoPlay": {
+                          "card": {
+                            "cardsIn": {
+                              "areas": ["encounterDeck", "encounterDiscardPile"],
+                              "title": "M.O.D.O.K."
+                            }
+                          },
+                          "where": "engagedWithYou"
+                        }
+                      },
+                      { "shuffle": "encounterDeck" }
+                    ]
+                  },
+                  "else": { "shuffle": "encounterDeck" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "01184",
+      "name": "M.O.D.O.K.",
+      "note": "Retaliate 2. The card has no authored ability because Retaliate is a printed keyword read by the rules engine. rr:retaliate-x makes it a Forced Response after this character is attacked, and rr:retaliate-x.2 requires M.O.D.O.K. to remain in play after the attack resolves.",
+      "abilities": []
+    },
+    {
       "card": "01185",
       "name": "Biomechanical Upgrades",
       "note": "Surge. Attach to the minion with the highest printed hit points and without another Biomechanical Upgrades attached. Forced Interrupt: When attached minion would be defeated, heal all damage from it instead, then discard this card. The surge is a printed keyword the reveal rule reads. The attachment selector uses printed HP rather than modified HP; the official ruling in datasets/marvelcdb-faq/faq.json says base stats on a facedown Ultron drone count as printed and '+ stats' do not. rr:first-player.1 gives a tied highest target to the first player, which the engine refuses until attachment selection can ask. rr:damage.step.6 places this interrupt after damage is placed and before defeat, so healing all damage invalidates the imminent defeat under rr:would.1. The final discard then removes this copy from play under rr:attach-to.1.",
