@@ -45,7 +45,12 @@ public static class Agendas
     public static void Happening(World world)
     {
         ArgumentNullException.ThrowIfNull(world);
-        world.Agenda.Add(new PhaseStep(Steps.DealAttackDamage, 1, 4));
+        // Plan keeps the synthetic carrier from trying to deal a second attack
+        // when a test later drains nested work. Begin materialises the lazy
+        // damage occurrence even though a direct unit-test call has no live
+        // EnemyAttack from which to capture actor and target roles.
+        world.Agenda.Add(new PhaseStep(Steps.DealAttackDamage, 1, 4, Plan: true));
+        world.Agenda.Begin(world, world.Facts);
     }
 
     /// <summary>Takes every outstanding step, declining every question.</summary>

@@ -87,11 +87,15 @@ public enum Stage
 /// interpreter whether answering the choice resumes only this player's body or
 /// also the outer sequence. The spelling is an engine save-format choice.
 /// </param>
+/// <param name="Trigger">
+/// Event-stream provenance carried by an internal continuation, or empty.
+/// The spelling is an engine choice rather than a Rules Reference term.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
     ThreatPlacement? Placement = null, int ActivationId = -1, bool FinalStep = false,
-    bool FinalPlayer = false, bool EachPlayerFrame = false)
+    bool FinalPlayer = false, bool EachPlayerFrame = false, string Trigger = "")
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -463,6 +467,25 @@ public sealed class Agenda
         scheduled = 0;
     }
 
+    /// <summary>Insert a plan immediately before the item that owns an occurrence.</summary>
+    /// <remarks>
+    /// A nested occurrence may have been inserted in front of the occurrence
+    /// that caused it. Defeat uses this boundary for damage step 8: every
+    /// nested step-7 effect remains in front, while leaving play remains before
+    /// the original occurrence resumes its response window at step 9.
+    /// </remarks>
+    public void Before(Occurrence occurrence, PhaseStep step)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        int at = items.FindIndex(item => ReferenceEquals(item.Occurrence, occurrence));
+        if (at < 0)
+        {
+            throw new InvalidOperationException("the occurrence is not on the agenda");
+        }
+
+        items.Insert(at, (step, Stage.Interrupts, step.ScheduledOccurrence));
+    }
+
     private void AddActivation(PhaseStep step)
     {
         int id = nextActivationId++;
@@ -639,6 +662,15 @@ public static class Steps
 
     /// <summary>The parallel completion sentinel for a scheme activation.</summary>
     public const string CompleteSchemeActivation = "CompleteSchemeActivation";
+
+    /// <summary>
+    /// Damage step 8, after nested step-7 abilities and before the original
+    /// occurrence's response window.
+    /// </summary>
+    public const string FinalizeCharacterDefeat = "FinalizeCharacterDefeat";
+
+    /// <summary>The parallel step-8 continuation for a defeated side scheme.</summary>
+    public const string FinalizeSchemeDefeat = "FinalizeSchemeDefeat";
 
     /// <summary>
     /// Step 3 of a scheme activation —

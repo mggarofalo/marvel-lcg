@@ -267,7 +267,7 @@ public sealed class WouldBeDefeatedTests
             {"cards":[{"card":"01140","abilities":[{
               "trigger":{"event":"WhenCardWouldBeDefeated","timing":"ForcedInterrupt",
                          "subject":"game"},
-              "effect":{"placeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}
+              "effect":{"placeAccelerationToken":1}
             }]}]}
             """);
         var scheme = world.CreateCard("01097b", world.AreaOf(DeckType.MainSchemesArea));
@@ -281,7 +281,7 @@ public sealed class WouldBeDefeatedTests
         Damage.Deal(world, Cards, first, first, 3, "test", "test", []);
         Damage.Deal(world, Cards, second, second, 3, "test", "test", []);
 
-        Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(1, scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken));
     }
 
     private static (World World, Card Minion, Card Upgrade) Board()

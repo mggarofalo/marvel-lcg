@@ -728,6 +728,16 @@ public static class VillainPhase
                 CompleteActivation(world, abilities, step, events);
                 break;
 
+            case Steps.FinalizeCharacterDefeat:
+                Defeat.FinalizeCharacter(
+                    world, facts, world.Cards[step.Subject], step.Trigger, events);
+                break;
+
+            case Steps.FinalizeSchemeDefeat:
+                Defeat.FinalizeScheme(
+                    world, facts, world.Cards[step.Subject], step.Trigger, events);
+                break;
+
             case Steps.Scheme:
                 Scheme(world, facts, abilities, world.Cards[step.Subject], step.Seat, events);
                 break;
