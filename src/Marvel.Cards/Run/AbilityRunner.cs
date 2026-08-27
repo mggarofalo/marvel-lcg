@@ -466,6 +466,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             occurrence) is { Count: > 0 } tiers)
         {
             var (mandatory, optional) = AbilityWindow.Split(tiers[0]);
+            if (mandatory.Count == 0)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{world.Cards[optional[0].Card].FaceId}' offers an optional interrupt "
+                    + "at rr:damage.step.6, and dealing damage has no suspended window in "
+                    + "which to ask whether to use it");
+            }
+
             if (mandatory.Count > 1)
             {
                 throw new RulesNotImplementedException(
@@ -474,27 +482,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     + "and rr:damage.step.6 has no ordering prompt yet");
             }
 
-            if (mandatory.Count == 1)
+            occurrence.Trigger(WindowKind.Interrupt, mandatory[0].Card);
+            events.AddRange(Resolve(world, occurrence, mandatory[0], [], []));
+
+            // `rr:would.1`: once the interrupt changes the imminent defeat,
+            // no later interrupt to that original condition may be used.
+            if (Damage.Health(world, world.Facts, target) - target.Damage > 0)
             {
-                occurrence.Trigger(WindowKind.Interrupt, mandatory[0].Card);
-                events.AddRange(Resolve(world, occurrence, mandatory[0], [], []));
-
-                // `rr:would.1`: once the interrupt changes the imminent defeat,
-                // no later interrupt to that original condition may be used.
-                if (Damage.Health(world, world.Facts, target) - target.Damage > 0)
-                {
-                    return;
-                }
-
-                continue;
-            }
-
-            if (optional.Count > 0)
-            {
-                throw new RulesNotImplementedException(
-                    $"'{world.Cards[optional[0].Card].FaceId}' offers an optional interrupt "
-                    + "at rr:damage.step.6, and dealing damage has no suspended window in "
-                    + "which to ask whether to use it");
+                return;
             }
         }
     }
