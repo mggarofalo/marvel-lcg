@@ -2355,6 +2355,111 @@
       ]
     },
     {
+      "card": "01118",
+      "name": "Sonic Converter",
+      "note": "It attaches to Klaw. After the attached Klaw attacks and damages a character, the forced response stuns that target. Its Hero Action spends one of each named resource to discard the attachment.",
+      "attachTo": { "titled": "Klaw" },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "attachedTo", "target": "friendly" },
+          "when": { "attackDamaged": "trigger.target" },
+          "effect": { "giveStatus": { "card": "trigger.target", "status": "stunned" } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "spend": "YBR" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "01173",
+      "name": "Electric Whip Attack",
+      "note": "When revealed, choose between damage equal to the controlled upgrade count or discarding a chosen controlled upgrade. Its Boost ability discards a chosen upgrade only during an undefended attack.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "choose": { "options": [
+            { "dealDamage": { "cards": "you", "amount": { "count": { "query": "upgradesYouControl" } } } },
+            { "chooseCard": { "from": { "query": "upgradesYouControl" }, "effect": { "discard": "chosen" } } }
+          ] } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "if": { "test": { "and": [ { "undefendedAttack": "you" }, { "exists": { "query": "upgradesYouControl" } } ] }, "then": { "chooseCard": { "from": { "query": "upgradesYouControl" }, "effect": { "discard": "chosen" } } } } }
+        }
+      ]
+    },
+    {
+      "card": "01180",
+      "name": "Legions of Hydra",
+      "note": "When revealed, it puts Madame Hydra into play from the encounter deck or discard pile if she is absent, shuffles the encounter deck, then places 2 additional threat for each HYDRA enemy in play.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "if": { "test": { "not": { "titleInPlay": "Madame Hydra" } }, "then": { "seq": [
+              { "putIntoPlay": { "card": { "cardsIn": { "areas": [ "encounterDeck", "encounterDiscardPile" ], "title": "Madame Hydra" } }, "engagedWith": "you" } },
+              { "shuffle": "encounterDeck" }
+            ] } } },
+            { "placeThreat": { "scheme": "this", "amount": { "mul": [ 2, { "count": { "enemiesWithTrait": "HYDRA" } } ] } } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01162",
+      "name": "Titania",
+      "note": "Titania's attack value is X, continuously equal to her current remaining hit points: modified maximum health minus damage sustained.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "attack", "amount": { "remainingHealth": "this" } } }
+        }
+      ]
+    },
+    {
+      "card": "01136",
+      "name": "Ultron",
+      "note": "Each facedown Drone minion gets +1 ATK and +1 hit point. Ultron cannot take damage while any Drone is in play. When revealed, this stage searches for Ultron's Imperative by printed id and reveals it, shuffling the encounter deck as search requires.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "seq": [
+            { "grantEach": { "cards": { "query": "drones" }, "keyword": "attack", "amount": 1 } },
+            { "grantEach": { "cards": { "query": "drones" }, "keyword": "health", "amount": 1 } },
+            { "preventDamageWhile": { "card": "this", "condition": { "exists": { "query": "drones" } } } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "search": { "in": [ { "encounterDeck": 1 }, { "encounterDiscardPile": 1 } ], "for": "01150" } }
+        }
+      ]
+    },
+    {
+      "card": "01157",
+      "name": "Killmonger",
+      "note": "Killmonger cannot take damage whose source is an Upgrade carrying the BLACK PANTHER trait. Other sources damage him normally.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventDamageFrom": { "card": "this", "sourceKind": "upgrade", "sourceTrait": "BLACK_PANTHER" } }
+        }
+      ]
+    },
+    {
+      "card": "01181",
+      "name": "Madame Hydra",
+      "note": "Madame Hydra cannot take damage from any source while Legions of Hydra is in play. Her attack-or-scheme forced response is authored separately once activation completion preserves an actor for schemes.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventDamageWhile": { "card": "this", "condition": { "titleInPlay": "Legions of Hydra" } } }
+        }
+      ]
+    },
+    {
       "card": "01028",
       "name": "Superhuman Strength",
       "note": "She-Hulk gets +2 ATK. After her attack completes, the forced response discards this upgrade and stuns that attack's target.",

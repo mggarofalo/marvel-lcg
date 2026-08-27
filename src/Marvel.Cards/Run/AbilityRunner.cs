@@ -503,7 +503,44 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public bool CanTakeDamage(World world, Card target, Card source) => true;
+    public bool CanTakeDamage(World world, Card target, Card source)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(source);
+
+        if (!DeckTypes.IsInPlay(target.Area.Type))
+        {
+            return true;
+        }
+
+        foreach (var ability in book.On(target.FaceId).Where(ability =>
+            ability.Trigger.Timing == AbilityType.Constant))
+        {
+            var cast = new Cast(
+                world, target, new Occurrence(0, []), ControllerOf(world, target), [], this);
+            if (ProhibitsDamage(ability.Effect, cast, source))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool ProhibitsDamage(AbilityNode node, Cast cast, Card source) =>
+        node.Kind switch
+        {
+            "seq" => Nodes(node.Argument).Any(step => ProhibitsDamage(step, cast, source)),
+            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+                is { } branch && ProhibitsDamage(Tree(branch), cast, source),
+            "preventDamageFrom" => cast.World.Facts.Kind(source.FaceId)
+                    == Kind(Word(node.Require("sourceKind")))
+                && Rules.State.Traits.Has(
+                    cast.World, source, Word(node.Require("sourceTrait")), cast.World.Facts),
+            "preventDamageWhile" => Test(Tree(node.Require("condition")), cast),
+            _ => false,
+        };
 
     /// <inheritdoc/>
     public long WouldBeDealt(
@@ -1602,7 +1639,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "heal" => Find(node.Require("card"), cast) is not null,
         "indirectDamage" => Amount(node.Require("amount"), cast) <= 0
             || Assignable(node.Require("among"), cast).Count > 0,
-        "dealDamage" => Every(node.Require("cards"), cast).Count > 0,
+        "dealDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
         "placeThreat" => Every(node.Require("scheme"), cast).Count > 0,
         "removeThreat" => Find(node.Require("scheme"), cast) is not null,
         "enemyAttacks" or "enemySchemes" => Every(node.Require("enemies"), cast).Count > 0,
@@ -2458,6 +2495,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 found.Add(Grant(node, cast));
                 break;
 
+            case "grantEach":
+                foreach (var target in Every(node.Require("cards"), cast))
+                {
+                    found.Add(Grant(node, cast, target));
+                }
+                break;
+
             case "preventThreatRemoval":
                 // A prohibition is answered by `CanRemoveThreat`; it is not a
                 // numeric modifier and therefore contributes no effect here.
@@ -2473,6 +2517,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             case "requireAllyDefender":
                 // Defender declaration carries the attack and its engaged
                 // player; `Defenders` reads this constraint in that context.
+                break;
+
+            case "preventDamageFrom":
+            case "preventDamageWhile":
+                // Damage carries both source and target. `CanTakeDamage`
+                // evaluates these prohibitions in that complete context.
                 break;
 
             default:
@@ -2516,6 +2566,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var target = Find(node.Require("card"), cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would grant to a card that is not there");
+
+        return Grant(node, cast, target);
+    }
+
+    private static ContinuousEffect Grant(AbilityNode node, Cast cast, Card target)
+    {
 
         // `rr:traits.1` -- "traits have no inherent effects on the game.
         // Instead, some card abilities reference cards that possess or lack
@@ -3183,8 +3239,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static List<Card> Assignable(AbilityValue among, Cast cast) =>
     [
-        .. Every(among, cast).Where(card => Room(cast, card) > 0),
+        .. Every(among, cast).Where(card =>
+            Room(cast, card) > 0
+            && cast.Abilities.CanTakeDamage(cast.World, card, cast.Source)),
     ];
+
+    private static IReadOnlyList<Card> DamageTargets(AbilityValue targets, Cast cast) =>
+        [.. Every(targets, cast).Where(target =>
+            cast.Abilities.CanTakeDamage(cast.World, target, cast.Source))];
 
     /// <summary>How much indirect damage one character may be assigned.</summary>
     private static long Room(Cast cast, Card card) =>
@@ -3535,6 +3597,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "sideScheme" => CardKind.EncounterSideScheme,
         "minion" => CardKind.Minion,
         "ally" => CardKind.Ally,
+        "upgrade" => CardKind.Upgrade,
         "treachery" => CardKind.Treachery,
         _ => throw new RulesNotImplementedException(
             $"'{named}' is not a card type this engine can name"),
@@ -3952,6 +4015,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } drones
+            && drones.Argument is AbilityValue.Word { Value: "drones" })
+        {
+            return
+            [
+                .. cast.World.Areas
+                    .Where(area => area.Type == DeckType.EngagedEnemiesArea)
+                    .SelectMany(area => area.Cards)
+                    .Where(card => !card.FaceUp),
+            ];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "withTrait" } withTrait)
         {
             string wanted = Word(withTrait.Require("trait"));
@@ -4302,6 +4377,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // which `rr:damage.2` puts on an ally or minion and which an
             // attachment can hold when a card puts them there.
             "damageOn" => Find(node.Argument, cast)?.Damage ?? 0,
+            "remainingHealth" => Find(node.Argument, cast) is { } remaining
+                ? Math.Max(
+                    0,
+                    Damage.Health(cast.World, cast.World.Facts, remaining) - remaining.Damage)
+                : 0,
             "if" => Test(Tree(node.Require("test")), cast)
                 ? Amount(node.Require("then"), cast)
                 : node.Field("else") is { } otherwise

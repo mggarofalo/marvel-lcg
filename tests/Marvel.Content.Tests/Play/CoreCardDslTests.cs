@@ -107,6 +107,49 @@ public sealed class CoreCardDslTests
         Assert.False(mansion.Ready);
     }
 
+    [Rule("rr:remaining-hit-points")]
+    [Fact]
+    public void TitaniasAttackTracksHerRemainingHitPoints()
+    {
+        // "X is equal to Titania's remaining hit points." The value falls as
+        // damage is sustained and reads the same modified maximum health that
+        // the damage rules use.
+        var world = Hero("01029a");
+        var titania = world.CreateCard(
+            "01162", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Abilities = AuthoredCards.Runner();
+
+        Assert.Equal(6, Modified(world, titania, "attack"));
+
+        titania.TakeDamage(4);
+
+        Assert.Equal(2, Modified(world, titania, "attack"));
+    }
+
+    [Rule("rr:each-player")]
+    [Rule("rr:draw")]
+    [Fact]
+    public void MariaHillHasEachPlayerDraw()
+    {
+        // "Each player draws 1 card" is one resolution in player order, not
+        // another copy of the resolving player's draw.
+        var world = Hero("01029a", players: 2);
+        var maria = world.CreateCard(
+            "01067", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var first = world.CreateCard("01087", world.Seats[0].Deck);
+        var second = world.CreateCard("01087", world.Seats[1].Deck);
+        var runner = AuthoredCards.Runner();
+        var occurrence = new Occurrence(
+            1, [Steps.CardPlayed], Subject: maria.ObjectId, Player: 0);
+
+        runner.Resolve(
+            world, occurrence,
+            new PendingAbility(maria.ObjectId, AbilityType.Response, 0), [], []);
+
+        Assert.Equal(DeckType.HandsArea, first.Area.Type);
+        Assert.Equal(DeckType.HandsArea, second.Area.Type);
+    }
+
     private static long Modified(World world, Card card, string field) =>
         StateFields.Modified(world, card, field, Cards, world.Players);
 
