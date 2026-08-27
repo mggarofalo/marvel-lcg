@@ -1288,20 +1288,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // not one: an option is a branch the card lists, an element is a card
         // on the board. `Question` has told them apart since before anything
         // asked either.
+        var cast = Resolving(world, source, player, tier);
         var affordances = cards
-            ? Every(choice.Require("from"), Resolving(world, source, player, tier))
+            ? Every(choice.Require("from"), cast)
                 .Select(card => new Affordance(
                     Id: card.ObjectId,
                     Verb: ChooseVerb,
                     AnchorId: card.ObjectId,
                     AnchorPlayer: card.Owner,
                     Label: card.FaceId))
-            : Nodes(choice.Require("options")).Select((option, index) => new Affordance(
-                Id: index,
-                Verb: ChooseVerb,
-                AnchorId: source.ObjectId,
-                AnchorPlayer: World.Scenario,
-                Label: option.Kind));
+            : Nodes(choice.Require("options"))
+                .Select((option, index) => (Option: option, Index: index))
+                .Where(candidate => OptionIsLegal(candidate.Option, cast))
+                .Select(candidate => new Affordance(
+                    Id: candidate.Index,
+                    Verb: ChooseVerb,
+                    AnchorId: source.ObjectId,
+                    AnchorPlayer: World.Scenario,
+                    Label: candidate.Option.Kind));
+
+        var offered = affordances.ToList();
+        if (offered.Count == 0)
+        {
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' requires a choice and has no legal option");
+        }
 
         return new Prompt(
             Player: player,
@@ -1313,7 +1324,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // Neither rule gives a way out. The ability is resolving, and one
             // of the things it offers is going to happen.
             Cancellable: false,
-            Affordances: [.. affordances]);
+            Affordances: offered);
     }
 
     /// <summary>
@@ -1421,8 +1432,139 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + $"number {input.Affordance}");
         }
 
+        if (!OptionIsLegal(options[input.Affordance], cast))
+        {
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' cannot choose illegal option {input.Affordance}");
+        }
+
         Run(options[input.Affordance], cast);
         return Continue(source, cast, stoppedAt);
+    }
+
+    /// <summary>Whether one listed option may be chosen right now.</summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:choose-option.1</c>: an encounter-card option that requires a
+    /// target is unavailable when it has no valid target. Printed card kind
+    /// tells which half of the rule applies; ownership cannot, because a
+    /// scenario-specific player card can begin the game owned by the scenario.
+    /// </para>
+    /// <para>
+    /// <c>rr:choose-option.2</c>: a player-card option must be able to resolve
+    /// at least partially. A sequence therefore needs one resolvable effect;
+    /// an encounter-card sequence needs every target it requires. The empty
+    /// sequence is the explicit decline branch used to express “may”.
+    /// </para>
+    /// </remarks>
+    private static bool OptionIsLegal(AbilityNode option, Cast cast) =>
+        IsPlayerCard(cast)
+            ? CanPartiallyResolve(option, cast)
+            : HasRequiredTargets(option, cast);
+
+    /// <summary>Whether the source has a player-card face.</summary>
+    private static bool IsPlayerCard(Cast cast) => cast.World.Facts.Kind(cast.Source.FaceId) is
+        CardKind.AlterEgo or CardKind.Hero or CardKind.Ally or CardKind.Event
+            or CardKind.Resource or CardKind.Support or CardKind.Upgrade
+
+        // Player side schemes are not yet a modelled kind and answer Unknown.
+        // Unlike an unknown encounter card, one created in a player's deck has
+        // that player as its owner, which preserves the rule's distinction.
+        || (cast.World.Facts.Kind(cast.Source.FaceId) == CardKind.Unknown
+            && cast.Source.Owner != World.Scenario);
+
+    /// <summary>Whether every card target required by an effect exists.</summary>
+    private static bool HasRequiredTargets(AbilityNode node, Cast cast) => node.Kind switch
+    {
+        "seq" => Nodes(node.Argument).All(step => HasRequiredTargets(step, cast)),
+        "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+            is not { } branch || HasRequiredTargets(Tree(branch), cast),
+        "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
+        "chooseCard" => Every(node.Require("from"), cast).Count > 0,
+        "removeFromGame" or "exhaust" or "reveal" or "returnToHand" =>
+            Every(node.Argument, cast).Count > 0,
+        "soakDamage" => Find(node.Require("onto"), cast) is not null,
+        "giveStatus" => Every(node.Require("card"), cast).Count > 0,
+        "attachTo" => Find(node.Argument, cast) is not null,
+        "grantUntil" => Find(node.Require("card"), cast) is not null,
+        "delayUntil" => HasRequiredTargets(Tree(node.Require("effect")), cast),
+        "discard" => Find(node.Field("card") ?? node.Argument, cast) is not null,
+        "heal" => Find(node.Require("card"), cast) is not null,
+        "indirectDamage" => Amount(node.Require("amount"), cast) <= 0
+            || Assignable(node.Require("among"), cast).Count > 0,
+        "dealDamage" => Every(node.Require("cards"), cast).Count > 0,
+        "placeThreat" => Every(node.Require("scheme"), cast).Count > 0,
+        "removeThreat" => Find(node.Require("scheme"), cast) is not null,
+        "enemyAttacks" or "enemySchemes" => Every(node.Require("enemies"), cast).Count > 0,
+        "putIntoPlay" => Find(node.Require("card"), cast) is not null,
+        "placeAtRandom" => Find(node.Require("on"), cast) is not null,
+
+        // These effects select no card target. Some name a player or an area;
+        // neither is a target under `rr:target`.
+        "generate" or "changeForm" or "removeCounters" or "preventDamage"
+            or "cancelWhenRevealed" or "dealEncounterCards" or "revealTop"
+            or "discardAtRandom" or "discardUntil" or "discardTop"
+            or "recoverDiscardedByResource" or "shuffleInto" or "search"
+            or "gainSurge" or "shuffle" or "draw" => true,
+        _ => throw new RulesNotImplementedException(
+            $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
+            + "legality is not implemented"),
+    };
+
+    /// <summary>Whether a player-card option can change the current state.</summary>
+    private static bool CanPartiallyResolve(AbilityNode node, Cast cast)
+    {
+        return node.Kind switch
+        {
+            "seq" => !Nodes(node.Argument).Any()
+                || Nodes(node.Argument).Any(step => CanPartiallyResolve(step, cast)),
+            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+                is { } branch && CanPartiallyResolve(Tree(branch), cast),
+            "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
+            "chooseCard" => Every(node.Require("from"), cast).Count > 0,
+            "changeForm" => !Forms.In(
+                cast.World,
+                cast.World.Seats[Seat(node.Require("player"), cast)],
+                cast.World.Facts,
+                Word(node.Require("to"))),
+            "removeFromGame" => Find(node.Argument, cast) is { } card
+                && card.Area.Type != DeckType.RemovedArea,
+            "exhaust" => Find(node.Argument, cast)?.Ready == true,
+            "removeCounters" => cast.Source.Tokens.GetValueOrDefault(
+                "c_" + Word(node.Argument)) > 0,
+            "discardAtRandom" => Amount(node.Require("count"), cast) > 0
+                && Seats(node.Require("player"), cast)
+                    .Any(seat => cast.World.Seats[seat].Hand.Cards.Count > 0),
+            "discardTop" => Amount(node.Require("count"), cast) > 0
+                && Area(Word(node.Require("from")), cast).Cards.Count > 0,
+            "heal" => Find(node.Require("card"), cast) is { Damage: > 0 }
+                && Amount(node.Require("amount"), cast) > 0,
+            "indirectDamage" => HasRequiredTargets(node, cast)
+                && Amount(node.Require("amount"), cast) > 0,
+            "dealDamage" => HasRequiredTargets(node, cast)
+                && Amount(node.Require("amount"), cast) > 0,
+            "placeThreat" => HasRequiredTargets(node, cast)
+                && Amount(node.Require("amount"), cast) > 0,
+            "removeThreat" => Find(node.Require("scheme"), cast) is { } scheme
+                && scheme.Tokens.GetValueOrDefault("k_threat") > 0
+                && Amount(node.Require("amount"), cast) > 0,
+            "gainSurge" => Number(node.Argument) > 0,
+            "draw" => Number(node.Require("count")) > 0,
+
+            // Target availability is the only state-dependent precondition
+            // these currently expressible effects carry. Their own resolver
+            // performs any further rule-specific work.
+            "generate" or "soakDamage" or "preventDamage" or "cancelWhenRevealed"
+                or "dealEncounterCards" or "revealTop" or "reveal" or "placeAtRandom"
+                or "returnToHand" or "discardUntil" or "recoverDiscardedByResource"
+                or "shuffleInto" or "search" or "giveStatus" or "attachTo"
+                or "grantUntil" or "delayUntil" or "discard" or "enemyAttacks"
+                or "enemySchemes" or "putIntoPlay" or "shuffle" =>
+                    HasRequiredTargets(node, cast),
+            _ => throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose partial "
+                + "resolution is not implemented"),
+        };
     }
 
     /// <summary>

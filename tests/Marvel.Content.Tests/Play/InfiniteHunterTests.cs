@@ -125,6 +125,8 @@ public sealed class InfiniteHunterTests
     public void TheBoostOffersTheTwoOptionsTheCardPrints()
     {
         var (world, runner) = Board();
+        var unus = world.TheCardIn(DeckType.VillainArea)!;
+        world.Activation = new EnemyActivation(unus.ObjectId, Player: 0, Attacking: false);
         var card = world.CreateCard(AuthoredCards.InfiniteHunter, world.AreaOf(DeckType.RevealingArea));
 
         runner.Boost(world, card, 0);
