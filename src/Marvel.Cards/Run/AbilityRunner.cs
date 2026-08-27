@@ -1319,6 +1319,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
 
+        var selected = paying.ToHashSet();
+        string generated = string.Concat(
+            CardPlay.Generators(
+                    cast.World, cast.World.Facts, cast.World.Seats[cast.Player], card)
+                .Where(source => selected.Contains(source.Effect))
+                .Select(source => source.Generates));
+        cast.PaidWith(generated);
+        foreach (char resource in generated.Distinct())
+        {
+            cast.World.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: "paid:" + resource,
+                Card: card.ObjectId,
+                Affects: card.ObjectId,
+                Lasts: new Duration(Uses: 1)));
+        }
+
         CardPlay.Spend(
             cast.World, cast.World.Facts, [cast.World.Seats[cast.Player].Hand], paying,
             Resources.Cost(card.FaceId, cast.World.Facts) ?? 0,
@@ -1333,6 +1350,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             && card.Area == cast.World.Seats[card.Owner].Hand)
         {
             Rules.Play.Discard.Card(cast.World, card, CardPlay.Verb, cast.Events);
+            foreach (var payment in cast.World.Effects.Active().Where(effect =>
+                effect.Card == card.ObjectId
+                && effect.Kind.StartsWith("paid:", StringComparison.Ordinal)).ToList())
+            {
+                cast.World.Effects.Use(payment);
+            }
         }
     }
 
@@ -1668,6 +1691,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "indirectDamage" => Amount(node.Require("amount"), cast) <= 0
             || Assignable(node.Require("among"), cast).Count > 0,
         "dealDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
+        "dealAttackDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
         "placeThreat" => Every(node.Require("scheme"), cast).Count > 0,
         "removeThreat" => Find(node.Require("scheme"), cast) is not null,
         "enemyAttacks" or "enemySchemes" => Every(node.Require("enemies"), cast).Count > 0,
@@ -1721,6 +1745,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "indirectDamage" => HasRequiredTargets(node, cast)
                 && Amount(node.Require("amount"), cast) > 0,
             "dealDamage" => HasRequiredTargets(node, cast)
+                && Amount(node.Require("amount"), cast) > 0,
+            "dealAttackDamage" => HasRequiredTargets(node, cast)
                 && Amount(node.Require("amount"), cast) > 0,
             "placeThreat" => HasRequiredTargets(node, cast)
                 && Amount(node.Require("amount"), cast) > 0,
@@ -2175,6 +2201,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 DealDamage(node, cast);
                 break;
 
+            case "dealAttackDamage":
+                DealAttackDamage(node, cast);
+                break;
+
             case "placeThreat":
                 PlaceThreat(node, cast);
                 break;
@@ -2238,6 +2268,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "and" => Nodes(node.Argument).All(each => Test(each, cast)),
         "or" => Nodes(node.Argument).Any(each => Test(each, cast)),
         "not" => !Test(Tree(node.Argument), cast),
+        "paidWithResource" => PaidWith(cast, Word(node.Argument)),
         "threatCause" => cast.Occurrence.Threat?.Cause == (Word(node.Argument) switch
             {
                 "villainPhase" => ThreatCause.VillainPhase,
@@ -2356,6 +2387,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             $"'{cast.Source.FaceId}' uses the test node '{node.Kind}', "
             + "which is not implemented"),
     };
+
+    private static bool PaidWith(Cast cast, string resource) =>
+        cast.Payment.Contains(resource[0])
+        || cast.Payment.Contains('G')
+        || cast.World.Effects.Active().Any(effect =>
+            effect.Card == cast.Source.ObjectId
+            && (string.Equals(effect.Kind, "paid:" + resource, StringComparison.Ordinal)
+                || string.Equals(effect.Kind, "paid:G", StringComparison.Ordinal)));
 
     /// <summary>
     /// "Deal each player a facedown encounter card" — <c>rr:deal</c>.
@@ -3430,6 +3469,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Damage.Deal(
                 cast.World, cast.World.Facts, cast.Source, target, amount, cast.Trigger, "Deal_Damage",
                 cast.Events);
+        }
+    }
+
+    /// <summary>Damage from an attack event performed by the resolving identity.</summary>
+    private static void DealAttackDamage(AbilityNode node, Cast cast)
+    {
+        var attacker = cast.World.Seats[Resolver(cast)].IdentityCard;
+        ContinuousEffect? temporaryOverkill = null;
+        if (node.Field("overkill") is not null)
+        {
+            temporaryOverkill = new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: Keywords.Overkill,
+                Amount: 1,
+                Card: cast.Source.ObjectId,
+                Affects: attacker.ObjectId,
+                Lasts: new Duration(Uses: 1));
+            cast.World.Effects.Register(temporaryOverkill);
+        }
+
+        foreach (var target in DamageTargets(node.Require("cards"), cast))
+        {
+            Damage.Attack(
+                cast.World, cast.World.Facts, attacker, target,
+                Amount(node.Require("amount"), cast), cast.Trigger, "Attack", cast.Events);
+        }
+
+        if (temporaryOverkill is not null)
+        {
+            cast.World.Effects.Use(temporaryOverkill);
         }
     }
 
@@ -4604,6 +4673,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// this sentence and not about the game.
         /// </remarks>
         public Dictionary<string, long> Results { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>The resource letters generated to pay for this event.</summary>
+        public string Payment { get; private set; } = string.Empty;
+
+        public void PaidWith(string resources) => Payment = resources;
 
         /// <summary>Cards discarded earlier in this resolution, in order.</summary>
         public List<Card> Discarded { get; } = [];
