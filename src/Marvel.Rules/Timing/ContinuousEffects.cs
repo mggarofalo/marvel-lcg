@@ -113,8 +113,10 @@ public sealed class ContinuousEffects(World world)
 {
     private readonly List<Entry> entries = [];
 
-    // Guards `Constant` against re-entering itself. See its remarks.
+    // While constants are settling, a nested read sees the previous complete
+    // pass. See `Constant` -- this is iteration state, not cached game state.
     private bool deriving;
+    private IReadOnlyList<ContinuousEffect> assumedConstants = [];
 
     /// <summary>Everything registered, in force or not.</summary>
     /// <remarks>
@@ -163,48 +165,77 @@ public sealed class ContinuousEffects(World world)
     /// missing.
     /// </para>
     /// </remarks>
-    public IReadOnlyList<ContinuousEffect> Active() =>
-        [.. entries.Select(entry => entry.Effect).Where(InForce), .. Constant()];
+    public IReadOnlyList<ContinuousEffect> Active()
+    {
+        var registered = entries.Select(entry => entry.Effect).Where(InForce).ToList();
+        return deriving
+            ? [.. registered, .. assumedConstants]
+            : [.. registered, .. Constant()];
+    }
 
     /// <summary>What every constant ability in play is doing right now.</summary>
     /// <remarks>
     /// <para>
-    /// <b>A constant ability may not read the effect list.</b> Working out what
-    /// is in force is what called this, so a card asking the question back
-    /// would be asking what it is itself part of the answer to. The rules leave
-    /// room for it — <c>rr:ability.10</c> has instances of one ability
-    /// affecting the game independently — but nothing in the pool needs it, and
-    /// an engine that cannot settle the question must say so rather than answer
-    /// with the half of the list it happens to have.
+    /// <b>Constants settle together.</b> <c>rr:modifiers.2</c> treats all
+    /// modifiers as simultaneous, and one constant may depend on an attribute
+    /// another constant grants. Each pass therefore reads the previous complete
+    /// pass until two answers agree. An answer that cycles or keeps changing is
+    /// refused rather than taken from an arbitrary intermediate pass.
     /// </para>
     /// </remarks>
     private List<ContinuousEffect> Constant()
     {
-        if (deriving)
-        {
-            throw new RulesNotImplementedException(
-                "a constant ability read the continuous effects while they were being "
-                + "worked out, which would need the list to settle on itself");
-        }
+        var seen = new List<IReadOnlyList<ContinuousEffect>>();
+        assumedConstants = [];
 
-        var found = new List<ContinuousEffect>();
-        deriving = true;
         try
         {
-            foreach (var card in world.Cards)
+            // The card vocabulary is finite, but a malformed dependency can change
+            // a numeric modifier forever without repeating a prior list. Sixty-four
+            // full passes is the engine's chosen guard against that non-game state;
+            // ordinary dependency chains settle in one pass per link.
+            for (int pass = 0; pass < 64; pass++)
             {
-                if (DeckTypes.IsInPlay(card.Area.Type))
+                var found = new List<ContinuousEffect>();
+                deriving = true;
+                try
                 {
-                    found.AddRange(world.Abilities.Constant(world, card));
+                    foreach (var card in world.Cards)
+                    {
+                        if (DeckTypes.IsInPlay(card.Area.Type))
+                        {
+                            found.AddRange(world.Abilities.Constant(world, card));
+                        }
+                    }
                 }
+                finally
+                {
+                    deriving = false;
+                }
+
+                if (found.SequenceEqual(assumedConstants))
+                {
+                    return found;
+                }
+
+                if (seen.Any(previous => previous.SequenceEqual(found)))
+                {
+                    throw new RulesNotImplementedException(
+                        "the constant abilities do not settle on one simultaneous effect list");
+                }
+
+                seen.Add([.. assumedConstants]);
+                assumedConstants = found;
             }
+
+            throw new RulesNotImplementedException(
+                "the constant abilities did not settle after 64 simultaneous passes");
         }
         finally
         {
             deriving = false;
+            assumedConstants = [];
         }
-
-        return found;
     }
 
     /// <summary>
