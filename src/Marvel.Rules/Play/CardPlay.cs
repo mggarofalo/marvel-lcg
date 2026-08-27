@@ -227,7 +227,7 @@ public static class CardPlay
         ArgumentNullException.ThrowIfNull(seat);
         ArgumentNullException.ThrowIfNull(card);
 
-        if (!Permitted(world, facts, seat, card))
+        if (!Permitted(world, facts, seat, card, abilities: world.Abilities))
         {
             return null;
         }
@@ -306,7 +306,7 @@ public static class CardPlay
         // fails step 2 has to still be in hand, which it is.
         //
         // Step 2. Play restrictions.
-        if (!Permitted(world, facts, seat, card))
+        if (!Permitted(world, facts, seat, card, targets, abilities))
         {
             throw new RulesNotImplementedException(
                 $"card {card.ObjectId} cannot be played by {seat.Name} right now");
@@ -615,7 +615,9 @@ public static class CardPlay
         string.Equals(facts.Title(faceId), name, StringComparison.Ordinal)
         || string.Equals(facts.Subtitle(faceId), name, StringComparison.Ordinal);
 
-    private static bool Permitted(World world, ICardFacts facts, Seat seat, Card card)
+    private static bool Permitted(
+        World world, ICardFacts facts, Seat seat, Card card,
+        IReadOnlyList<int>? targets = null, ICardAbilities? abilities = null)
     {
         if (card.Area != seat.Hand)
         {
@@ -640,6 +642,12 @@ public static class CardPlay
             return false;
         }
 
+        if (!WithinPerPlayerLimit(
+                world, facts, seat, card, targets, abilities ?? world.Abilities))
+        {
+            return false;
+        }
+
         // `rr:player-turn.2` lists what may be played from hand as a turn
         // option: "an ally, upgrade, support, or player side scheme card".
         // **A resource card is not among them** -- `rr:resource-card` says its
@@ -652,6 +660,43 @@ public static class CardPlay
         // `Price`.
         return facts.Kind(card.FaceId) is CardKind.Ally or CardKind.Upgrade
             or CardKind.Support or CardKind.Event;
+    }
+
+    /// <summary>Checks a printed “Max N per player” against the destination controller.</summary>
+    private static bool WithinPerPlayerLimit(
+        World world, ICardFacts facts, Seat seat, Card card, IReadOnlyList<int>? targets,
+        ICardAbilities abilities)
+    {
+        long maximum = facts.PrintedValue(card.FaceId, "MaxPerUnit", world.Players);
+        if (maximum <= 0)
+        {
+            return true;
+        }
+
+        IReadOnlyList<int>? eligible = facts.Kind(card.FaceId) == CardKind.Upgrade
+            ? abilities.AttachmentTargets(world, card)
+            : null;
+        if (eligible is null)
+        {
+            return CountControlled(world, facts, card, seat.Index) < maximum;
+        }
+
+        IEnumerable<int> hosts = targets is { Count: > 0 } ? targets : eligible;
+        return hosts.Any(host =>
+            eligible.Contains(host)
+            && world.Cards[host].Area.PlayArea is { IsPlayers: true } area
+            && CountControlled(world, facts, card, area.Player) < maximum);
+    }
+
+    private static int CountControlled(
+        World world, ICardFacts facts, Card card, int controller)
+    {
+        string title = facts.Title(card.FaceId);
+        return world.Areas
+            .Where(area => area.PlayArea == PlayArea.Of(controller))
+            .SelectMany(area => area.Cards)
+            .Count(inPlay => DeckTypes.IsInPlay(inPlay.Area.Type)
+                && string.Equals(facts.Title(inPlay.FaceId), title, StringComparison.Ordinal));
     }
 
     /// <summary>Where a played card goes — <c>rr:enters-play</c>.</summary>

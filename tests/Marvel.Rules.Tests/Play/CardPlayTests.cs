@@ -800,6 +800,46 @@ public sealed class CardPlayTests
         Assert.Equal(villain.ObjectId, upgrade.Area.Host);
     }
 
+    [Fact]
+    public void MaxPerPlayerRemovesTheCardFromOffersAndRejectsForgedPlay()
+    {
+        var printed = Cards().With("limited", ("Cost", "0"), ("MaxPerUnit", "1"));
+        var world = Board(printed);
+        var inPlay = world.CreateCard(
+            "limited", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var copy = InHand(world, "limited");
+
+        Assert.NotNull(inPlay);
+        Assert.Null(CardPlay.Price(world, printed, world.Seats[0], copy));
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.Play(world, printed, new Silent(), world.Seats[0], copy, [], []));
+    }
+
+    [Fact]
+    public void MaxPerPlayerUsesTheChosenUpgradeController()
+    {
+        var printed = Cards().With("limited", ("Cost", "0"), ("MaxPerUnit", "1"));
+        var world = Table(printed);
+        var copy = InHand(world, "limited");
+        var first = world.Seats[0].IdentityCard;
+        var second = world.Seats[1].IdentityCard;
+        world.CreateCard(
+            "limited",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), first.ObjectId, cardOwner: 0));
+        var abilities = new Targets(first.ObjectId, second.ObjectId);
+        world.Abilities = abilities;
+
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], copy));
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.Play(
+                world, printed, abilities, world.Seats[0], copy, [], [], [first.ObjectId]));
+
+        CardPlay.Play(
+            world, printed, abilities, world.Seats[0], copy, [], [], [second.ObjectId]);
+        Assert.Equal(1, copy.Area.PlayArea.Player);
+    }
+
     /// <summary>One object id of a card in hand with the given face.</summary>
     private static int Pay(World world, string faceId) =>
         world.Seats[0].Hand.Cards.First(card => card.FaceId == faceId).ObjectId;
