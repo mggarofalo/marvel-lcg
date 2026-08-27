@@ -589,7 +589,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 
 | | |
 |---|---|
-| Envelope | `trigger { event, alsoHappened, timing, subject, form, player }`, `name`, `cost`, `limitPerRound`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. Not `when`, `target` or `limit` — no authored card carries one yet. |
+| Envelope | `trigger { event, alsoHappened, timing, subject, actor, target, form, player }`, `name`, `cost`, `limitPerRound`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. `actor` and `target` match explicit attack roles. |
 | Costs | `spend` (resource letters), `exhaust`, `discardFromHand` (a count) |
 | Control | `seq`, `if`, `choose`, `chooseCard` |
 | Tests | `and`, `or`, `not`, `exists`, `hasStatus`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `inExpertMode`, `isKind`, `defeatedBy` |
@@ -598,7 +598,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Queries | `query: villain`, `query: mainScheme`, `query: minions`, `query: minionsEngagedWithYou`, `query: heroes`, `query: heroesAndAllies`, `query: charactersYouControl`, `query: alliesYouControl`, `query: upgradesYouControl`, `query: supportsYouControl`, `query: upgradesAndSupportsYouControl`, `query: attachedToThis`, `query: identitySpecificInYourHand`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes` |
 | Card sources | `cardsIn { area | areas, kind, trait, title }` over `encounterDeck` and `encounterDiscardPile`; `enemiesWithTrait`; `titled`; `withoutAnotherCopyAttached`; `minBy` / `maxBy` over a query, `by` `cost`, `attack`, or `printedHealth` |
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
-| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`, `defeated`, `activatingEnemy`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game` |
+| Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`, `trigger.actor`, `trigger.target`, `defeated`, `activatingEnemy`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game`; attack roles `this`, `attachedTo`, `you`, `villain`, `minion`, `hero`, `ally`, `friendly`, `enemy` |
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
@@ -809,7 +809,7 @@ a reader that guessed would need the node list — making every new node a chang
 to the reader as well as to the interpreter.
 
 **A trigger names a triggering condition, spelled as the engine spells it** —
-`WhenEnemyAttacks`, not a DSL word translated into one. `rr:triggering-condition`
+`WhenAttackInitiated`, not a DSL word translated into one. `rr:triggering-condition`
 is a rules vocabulary, and a second vocabulary beside it is a table that drifts.
 `Steps.EveryCondition` is derived from the engine's own step table and every
 authored trigger is held against it, so a card naming a condition nothing fires
@@ -1205,7 +1205,7 @@ Two bindings and one test read it:
 
 | | |
 |---|---|
-| `defeated` | the card that was defeated — not `trigger.subject`, which for an attack is the *enemy attacked* |
+| `defeated` | the card that was defeated — separate from an attack's `trigger.actor` and `trigger.target` |
 | `defeater` | the identity of the player whose character did it, for "the player who defeated this scheme" |
 | `defeatedBy` | what kind of thing did it |
 
@@ -1287,9 +1287,8 @@ After you make a basic attack against Unus, spend [mental] [physical] resources
 → discard this card."
 
 ```json
-{ "trigger": { "event": "WhenCharacterAttacks", "timing": "Response",
-               "subject": "attachedTo", "form": "hero",
-               "player": "trigger.player" },
+{ "trigger": { "event": "WhenAttackInitiated", "timing": "Response",
+               "actor": "you", "target": "attachedTo", "form": "hero" },
   "cost": { "spend": "BR" },
   "effect": { "discard": "this" } }
 ```
@@ -1361,23 +1360,24 @@ attack and the defeat are one occurrence with one window pair between them, so
 by the time the card answers the defeat, the attack is still the thing that is
 happening. Nothing has to remember a moment ago.
 
-But a trigger names *one* condition, and the subject narrows it to one card. The
-two together are not the sentence:
+But a trigger names one condition, and its roles say who did what. The condition
+and one ambiguous subject are not enough:
 
-| the occurrence | subject | conditions |
-|---|---|---|
-| Unus attacks, and kills the defending ally | Unus | `WhenDamageDealt`, `WhenCardDefeated` |
-| an ally attacks Unus, and his **retaliate** kills it | Unus | `WhenCharacterAttacks`, `WhenCardDefeated` |
-| a **minion** attacks, and kills the defending ally | the minion | `WhenDamageDealt`, `WhenCardDefeated` |
+| the occurrence | actor | target | conditions |
+|---|---|---|---|
+| Unus attacks, and kills the defending ally | Unus | the ally | `WhenDamageDealt`, `WhenCardDefeated` |
+| an ally attacks Unus, and his **retaliate** kills it | the ally | Unus | `WhenAttackInitiated`, `WhenCardDefeated` |
+| a **minion** attacks, and kills the defending ally | the minion | the ally | `WhenDamageDealt`, `WhenCardDefeated` |
 
-The subject tells the third apart from the first. Only the other condition tells
-apart the second — `rr:retaliate-x.1` is "after **this character is attacked**,
-deal X damage to the attacker", and Unus being attacked is not Unus attacking.
-So the trigger carries both:
+The actor tells the third apart from the first. It also tells the second apart:
+`rr:retaliate-x.1` is "after **this character is attacked**, deal X damage to
+the attacker", and Unus being the target is not Unus being the actor. The
+trigger still requires the damage condition because the printed sentence says
+"attacks and defeats":
 
 ```json
 { "event": "WhenCardDefeated", "alsoHappened": "WhenDamageDealt",
-  "timing": "ForcedResponse", "subject": "attachedTo" }
+  "timing": "ForcedResponse", "actor": "attachedTo" }
 ```
 
 **It gates the trigger and not the effect**, which is the part worth arguing

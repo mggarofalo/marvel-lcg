@@ -283,9 +283,9 @@ public sealed class PrelateArmorTests
     [Fact]
     public void AttackingSomethingOtherThanUnusOffersNothing()
     {
-        // The trigger's subject is `attachedTo` and not `game`: "a basic attack
-        // against **Unus**" is not a basic attack, and a minion on the same
-        // board is the case that tells them apart.
+        // The trigger's target is `attachedTo`: "a basic attack against
+        // **Unus**" is not every basic attack, and a minion on the same board
+        // is the case that tells them apart.
         var board = Attacking();
         Hand(board, Mental, Physical);
 
@@ -331,15 +331,15 @@ public sealed class PrelateArmorTests
         var board = Attacking();
         var runner = Runner(
             """
-            "trigger": { "event": "WhenCharacterAttacks", "timing": "ForcedResponse",
-                         "subject": "this" },
+            "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedResponse",
+                         "target": "this" },
             "cost": { "spend": "BR" },
             "effect": { "discard": "this" }
             """);
 
         var refused = Assert.Throws<RulesNotImplementedException>(() => runner.Resolve(
             board.World,
-            new Occurrence(0, [Steps.CharacterAttacksEnemy], Subject: board.Unus.ObjectId),
+            AttackOccurrence(board),
             new PendingAbility(board.Unus.ObjectId, AbilityType.ForcedResponse, 0),
             [],
             []));
@@ -359,15 +359,15 @@ public sealed class PrelateArmorTests
         var board = Attacking();
         var runner = Runner(
             """
-            "trigger": { "event": "WhenCharacterAttacks", "timing": "Response",
-                         "subject": "this" },
+            "trigger": { "event": "WhenAttackInitiated", "timing": "Response",
+                         "target": "this" },
             "cost": { "spend": "BR" },
             "effect": { "discard": "this" }
             """);
 
         var refused = Assert.Throws<RulesNotImplementedException>(() => runner.Waiting(
             board.World,
-            new Occurrence(0, [Steps.CharacterAttacksEnemy], Subject: board.Unus.ObjectId),
+            AttackOccurrence(board),
             WindowKind.Response));
 
         Assert.Contains("offered to every player", refused.Message, StringComparison.Ordinal);
@@ -382,14 +382,14 @@ public sealed class PrelateArmorTests
         var board = Attacking();
         var runner = Runner(
             """
-            "trigger": { "event": "WhenCharacterAttacks", "timing": "Response",
-                         "subject": "this", "form": "hero" },
+            "trigger": { "event": "WhenAttackInitiated", "timing": "Response",
+                         "target": "this", "form": "hero" },
             "effect": { "discard": "this" }
             """);
 
         var refused = Assert.Throws<RulesNotImplementedException>(() => runner.Waiting(
             board.World,
-            new Occurrence(0, [Steps.CharacterAttacksEnemy], Subject: board.Unus.ObjectId),
+            AttackOccurrence(board),
             WindowKind.Response));
 
         Assert.Contains("no identity whose form to read", refused.Message, StringComparison.Ordinal);
@@ -405,8 +405,8 @@ public sealed class PrelateArmorTests
         // predicate.
         var refused = Assert.Throws<AbilityException>(() => Runner(
             """
-            "trigger": { "event": "WhenCharacterAttacks", "timing": "Response",
-                         "subject": "this", "player": "firstPlayer" },
+            "trigger": { "event": "WhenAttackInitiated", "timing": "Response",
+                         "target": "this", "player": "firstPlayer" },
             "effect": { "discard": "this" }
             """));
 
@@ -419,6 +419,15 @@ public sealed class PrelateArmorTests
             $$"""
             { "cards": [ { "card": "45059", "abilities": [ { {{ability}} } ] } ] }
             """));
+
+    /// <summary>A player character attacking Unus.</summary>
+    private static Occurrence AttackOccurrence(Board board) => Occurrence.ForAttack(
+        0,
+        [Steps.AttackInitiated],
+        board.World,
+        Cards,
+        board.World.Seats[0].IdentityCard.ObjectId,
+        board.Unus.ObjectId);
 
     /// <summary>The dealt Unus board, in hero form, with the armour on Unus.</summary>
     private static Board Attacking(bool hero = true)

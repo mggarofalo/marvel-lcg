@@ -129,6 +129,23 @@ public sealed class ActivationCardsTests
             [villain.ObjectId, first.ObjectId, second.ObjectId],
             world.Agenda.Outstanding.Select(step => step.Subject));
         Assert.All(world.Agenda.Outstanding, step => Assert.Equal(Steps.Attack, step.What));
+
+        // Each scheduled attack constructs its own occurrence, with the same
+        // source-neutral condition and a different actor. A single occurrence
+        // over all three would share once-per-occurrence bookkeeping and let a
+        // card answer the group only once.
+        var occurrences = world.Agenda.Outstanding
+            .Select(step => step.OccurrenceOf(world, Cards))
+            .ToList();
+        Assert.Equal(3, occurrences.Count);
+        Assert.Equal(
+            [villain.ObjectId, first.ObjectId, second.ObjectId],
+            occurrences.Select(occurrence => occurrence.Actor));
+        Assert.All(
+            occurrences,
+            occurrence => Assert.Contains(Steps.AttackInitiated, occurrence.Conditions));
+        Assert.NotSame(occurrences[0], occurrences[1]);
+        Assert.NotSame(occurrences[1], occurrences[2]);
     }
 
     [Rule("rr:engage.1")]

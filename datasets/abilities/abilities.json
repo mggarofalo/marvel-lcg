@@ -10,7 +10,12 @@
       "abilities": [
         {
           "name": "Spider-Sense",
-          "trigger": { "event": "WhenEnemyAttacks", "timing": "Interrupt", "subject": "you" },
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "Interrupt",
+            "actor": "villain",
+            "player": "you"
+          },
           "effect": { "draw": { "player": "trigger.player", "count": 1 } }
         }
       ]
@@ -48,9 +53,9 @@
       "note": "Interrupt (defense): When you would take any amount of damage from an attack, prevent all of that damage. The attack-damage step carries rr:damage.step.1's imminent-damage condition, and the one-use replacement is consumed by that damage only.",
       "abilities": [
         {
-          "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "subject": "you" },
-          "when": { "isYourIdentity": "trigger.subject" },
-          "effect": { "preventDamage": "trigger.subject" }
+          "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "target": "you" },
+          "when": { "isYourIdentity": "trigger.target" },
+          "effect": { "preventDamage": "trigger.target" }
         }
       ]
     },
@@ -110,14 +115,18 @@
     {
       "card": "01009",
       "name": "Webbed Up",
-      "note": "Hero form only. Attach to an enemy. Max 1 per enemy. Forced Interrupt: When attached enemy would attack, discard Webbed Up instead. Then, stun that enemy. The WhenEnemyAttacks interrupt precedes attack application, so the newly stunned enemy's attack is cancelled by rr:stun.",
+      "note": "Hero form only. Attach to an enemy. Max 1 per enemy. Forced Interrupt: When attached enemy would attack, discard Webbed Up instead. Then, stun that enemy. The WhenAttackInitiated interrupt precedes attack application, so the newly stunned actor's attack is cancelled by rr:stun.",
       "attachTo": { "withoutAnotherCopyAttached": { "query": "enemies" } },
       "abilities": [
         {
-          "trigger": { "event": "WhenEnemyAttacks", "timing": "ForcedInterrupt", "subject": "attachedTo" },
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "actor": "attachedTo"
+          },
           "effect": { "seq": [
             { "discard": "this" },
-            { "giveStatus": { "card": "trigger.subject", "status": "stunned" } }
+            { "giveStatus": { "card": "trigger.actor", "status": "stunned" } }
           ] }
         }
       ]
@@ -130,10 +139,14 @@
       "abilities": [
         {
           "name": "Charge",
-          "trigger": { "event": "WhenEnemyAttacks", "timing": "ForcedInterrupt", "subject": "attachedTo" },
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "actor": "attachedTo"
+          },
           "effect": {
             "seq": [
-              { "grantUntil": { "keyword": "overkill", "card": "trigger.subject", "until": "EndOfAttack" } },
+              { "grantUntil": { "keyword": "overkill", "card": "trigger.actor", "until": "EndOfAttack" } },
               { "delayUntil": { "condition": "WhenAttackEnds", "effect": { "discard": "this" } } }
             ]
           }
@@ -703,13 +716,13 @@
     {
       "card": "24044",
       "name": "Boomerang",
-      "note": "Forced Response: After Boomerang attacks you, deal 1 damage to each ally you control. [star] Boost: Deal 2 damage to an ally you control. The response is on rr:attack-enemy-activation.step.6.a -- 'the attack finishes resolving and the following types of abilities trigger in order: forced abilities with the following triggers ... after [character] attacks [and damages/defeats] [you/an ally]' -- so it waits for the whole attack rather than firing at the damage step. Subject 'this' because the occurrence is Boomerang's own attack; who 'you' is comes from the occurrence rather than from the trigger, which is rr:you-your.7 -- 'for abilities that trigger after [enemy] attacks you, you refers to the attacked player, even if that player defended with an ally' -- and rr:attack-enemy-activation.1.4 says the same thing about which character was targeted. The boost half is guarded by exists: rr:choose-game-element has nothing to choose when the player controls no ally, and a card that asks anyway would stop the game on a board where the answer is 'nothing happens'.",
+      "note": "Forced Response: After Boomerang attacks you, deal 1 damage to each ally you control. [star] Boost: Deal 2 damage to an ally you control. The response is on rr:attack-enemy-activation.step.6.a -- 'the attack finishes resolving and the following types of abilities trigger in order: forced abilities with the following triggers ... after [character] attacks [and damages/defeats] [you/an ally]' -- so it waits for the whole attack rather than firing at the damage step. Actor 'this' says Boomerang made the attack; who 'you' is comes from the occurrence rather than from the trigger, which is rr:you-your.7 -- 'for abilities that trigger after [enemy] attacks you, you refers to the attacked player, even if that player defended with an ally' -- and rr:attack-enemy-activation.1.4 says the same thing about which character was targeted. The boost half is guarded by exists: rr:choose-game-element has nothing to choose when the player controls no ally, and a card that asks anyway would stop the game on a board where the answer is 'nothing happens'.",
       "abilities": [
         {
           "trigger": {
             "event": "WhenAttackEnds",
             "timing": "ForcedResponse",
-            "subject": "this"
+            "actor": "this"
           },
           "effect": {
             "dealDamage": {
@@ -747,7 +760,7 @@
           "trigger": {
             "event": "WhenAttackEnds",
             "timing": "ForcedResponse",
-            "subject": "this"
+            "actor": "this"
           },
           "effect": {
             "if": {
@@ -795,9 +808,9 @@
       "abilities": [
         {
           "trigger": {
-            "event": "WhenEnemyAttacks",
+            "event": "WhenAttackInitiated",
             "timing": "ForcedInterrupt",
-            "subject": "this"
+            "actor": "this"
           },
           "effect": { "discardAtRandom": { "player": "you", "count": 1 } }
         },
@@ -901,15 +914,15 @@
     {
       "card": "24045",
       "name": "Shocker",
-      "note": "Forced Response: After Shocker is attacked, stun the attacking character. [star] Boost: Stun the character you control with the highest ATK value. The response is rr:attack-player-ability-type.step.7, which lists 'after [character] is attacked' among the forced abilities an attack's resolution triggers -- and it is the reason a character's basic attack is a step of the agenda at all rather than a call that returns. Subject 'this' because the occurrence is about the enemy being attacked. 'The attacking character' is the character and not the player: rr:ally.2 lets a player attack with an ally and rr:you-your.15 says an ally's attack is not performed by that player's identity, so Shocker stuns whichever character swung. The boost half goes through chooseCard because maxBy keeps ties and the Rules Reference gives no tie-break for 'the highest X'; an alter-ego prints no ATK and rr:dash-value.3 makes that an unmodifiable 0, so a table in alter-ego form still has a highest.",
+      "note": "Forced Response: After Shocker is attacked, stun the attacking character. [star] Boost: Stun the character you control with the highest ATK value. The response is rr:attack-player-ability-type.step.7, which lists 'after [character] is attacked' among the forced abilities an attack's resolution triggers -- and it is the reason a character's basic attack is a step of the agenda at all rather than a call that returns. The target is Shocker and the actor is the attacking character. That actor is a character and not a player: rr:ally.2 lets a player attack with an ally and rr:you-your.15 says an ally's attack is not performed by that player's identity. The boost half goes through chooseCard because maxBy keeps ties and the Rules Reference gives no tie-break for 'the highest X'; an alter-ego prints no ATK and rr:dash-value.3 makes that an unmodifiable 0, so a table in alter-ego form still has a highest.",
       "abilities": [
         {
           "trigger": {
-            "event": "WhenCharacterAttacks",
+            "event": "WhenAttackInitiated",
             "timing": "ForcedResponse",
-            "subject": "this"
+            "target": "this"
           },
-          "effect": { "giveStatus": { "card": "attacker", "status": "stunned" } }
+          "effect": { "giveStatus": { "card": "trigger.actor", "status": "stunned" } }
         },
         {
           "trigger": {
@@ -935,14 +948,14 @@
       "abilities": [
         {
           "trigger": {
-            "event": "WhenCharacterAttacks",
+            "event": "WhenAttackInitiated",
             "timing": "ForcedInterrupt",
-            "subject": "this"
+            "target": "this"
           },
           "effect": {
             "enemyAttacks": {
               "enemies": "this",
-              "against": "attacker",
+              "against": "trigger.actor",
               "first": "true"
             }
           }
@@ -1420,7 +1433,7 @@
     {
       "card": "45063",
       "name": "Prelate Sidearm",
-      "note": "Attach to Unus. [star] Forced Response: After Unus attacks and defeats an ally, place 1 threat on Gene Pool. Hero Response: After you make a basic attack against Unus, spend [energy] [physical] resources -> discard this card. The second half is 45064 Prelate Armor's, two letters different. The first is the sentence rr:triggering-condition.2 makes writable: 'attacks and defeats' is one occurrence carrying two conditions -- 'a single attack causing a character to both take damage and be defeated' -- so the card answers the defeat and reads the attack off the same occurrence rather than needing the two to be joined up. The subject is attachedTo because Occurrence.Subject through an enemy attack is the attacking enemy, which is what 'Unus attacks' means; 'an ally' is the defeated card's kind. An ally killed by its own consequential damage is a different occurrence with a different subject, and one killed by Unus's retaliate is the same subject and a different verb -- retaliate is damage dealt to whoever attacked him, and being attacked is not attacking. So the subject alone is not the sentence: alsoHappened names the other triggering condition rr:triggering-condition.2 gives the same window to, which for an enemy's attack is WhenDamageDealt and for a character attacking him is not. Gene Pool is named by title -- rr:identity.2 makes a title name one card. The [star] ATK+1 and Boost 3 are printed fields rather than abilities.",
+      "note": "Attach to Unus. [star] Forced Response: After Unus attacks and defeats an ally, place 1 threat on Gene Pool. Hero Response: After you make a basic attack against Unus, spend [energy] [physical] resources -> discard this card. The second half is 45064 Prelate Armor's, two letters different. The first is the sentence rr:triggering-condition.2 makes writable: 'attacks and defeats' is one occurrence carrying two conditions -- 'a single attack causing a character to both take damage and be defeated' -- so the card answers the defeat and reads the attack actor from the same occurrence. Actor attachedTo says Unus made the attack; an ally killed by its own consequential damage has no attack actor, and one killed by Unus's retaliate has Unus as the target rather than the actor. alsoHappened requires the attack's damage condition as well as the defeat. Gene Pool is named by title -- rr:identity.2 makes a title name one card. The [star] ATK+1 and Boost 3 are printed fields rather than abilities.",
       "attachTo": { "query": "villain" },
       "abilities": [
         {
@@ -1428,7 +1441,7 @@
             "event": "WhenCardDefeated",
             "alsoHappened": "WhenDamageDealt",
             "timing": "ForcedResponse",
-            "subject": "attachedTo"
+            "actor": "attachedTo"
           },
           "effect": {
             "if": {
@@ -1441,11 +1454,11 @@
         },
         {
           "trigger": {
-            "event": "WhenCharacterAttacks",
+            "event": "WhenAttackInitiated",
             "timing": "Response",
-            "subject": "attachedTo",
-            "form": "hero",
-            "player": "trigger.player"
+            "actor": "you",
+            "target": "attachedTo",
+            "form": "hero"
           },
           "cost": { "spend": "YR" },
           "effect": { "discard": "this" }
@@ -1468,11 +1481,11 @@
         },
         {
           "trigger": {
-            "event": "WhenCharacterAttacks",
+            "event": "WhenAttackInitiated",
             "timing": "Response",
-            "subject": "attachedTo",
-            "form": "hero",
-            "player": "trigger.player"
+            "actor": "you",
+            "target": "attachedTo",
+            "form": "hero"
           },
           "cost": { "spend": "BR" },
           "effect": { "discard": "this" }

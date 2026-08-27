@@ -36,7 +36,10 @@ public static class AbilityCatalog
         };
 
     private static readonly HashSet<string> TriggerKeys =
-        new(StringComparer.Ordinal) { "event", "timing", "subject", "form", "alsoHappened", "player" };
+        new(StringComparer.Ordinal)
+        {
+            "event", "timing", "subject", "actor", "target", "form", "alsoHappened", "player",
+        };
 
     /// <summary>Parses the canonical ability dataset.</summary>
     /// <param name="json">The dataset text.</param>
@@ -118,9 +121,12 @@ public static class AbilityCatalog
 
         Refuse(trigger, TriggerKeys, $"a trigger on '{card}'");
 
-        string subject = Text(trigger, "subject") ?? AbilitySubjects.This;
+        string? actor = Role(trigger, "actor", card);
+        string? target = Role(trigger, "target", card);
+        string? subject = Text(trigger, "subject");
+        subject ??= actor is null && target is null ? AbilitySubjects.This : null;
 
-        if (!AbilitySubjects.All.Contains(subject))
+        if (subject is not null && !AbilitySubjects.All.Contains(subject))
         {
             throw new AbilityException(
                 $"'{card}' triggers on subject '{subject}', which is not one of "
@@ -149,6 +155,8 @@ public static class AbilityCatalog
                 when,
                 type,
                 subject,
+                actor,
+                target,
                 Form(trigger, card),
                 Also(trigger, card),
                 Whose(trigger, card)),
@@ -156,6 +164,20 @@ public static class AbilityCatalog
             element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
             element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null,
             element.TryGetProperty("when", out var condition) ? Node(condition, card) : null);
+    }
+
+    /// <summary>One explicit occurrence role matcher, or null.</summary>
+    private static string? Role(JsonElement trigger, string name, string card)
+    {
+        string? role = Text(trigger, name);
+        if (role is null || AbilityRoles.All.Contains(role))
+        {
+            return role;
+        }
+
+        throw new AbilityException(
+            $"'{card}' matches {name} '{role}', which is not one of "
+            + string.Join(", ", AbilityRoles.All.Order(StringComparer.Ordinal)));
     }
 
     /// <summary>
@@ -260,14 +282,17 @@ public static class AbilityCatalog
     private static string? Whose(JsonElement trigger, string card)
     {
         string? whose = Text(trigger, "player");
-        if (whose is null || whose == AbilityPlayers.TriggerPlayer)
+        if (whose is null
+            || whose == AbilityPlayers.TriggerPlayer
+            || whose == AbilityPlayers.You)
         {
             return whose;
         }
 
         throw new AbilityException(
             $"'{card}' offers its ability to '{whose}', and an ability may be offered to "
-            + $"'{AbilityPlayers.TriggerPlayer}' or to whoever controls its card");
+            + $"'{AbilityPlayers.TriggerPlayer}', '{AbilityPlayers.You}', "
+            + "or to whoever controls its card");
     }
 
     /// <summary>One node: a value with exactly one named operation in it.</summary>

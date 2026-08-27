@@ -91,14 +91,26 @@ Data, first of all — this, in the ability dataset:
 
 ```json
 { "name": "Charge",
-  "trigger": { "event": "WhenEnemyAttacks",
-               "timing": "ForcedInterrupt", "subject": "attachedTo" },
+  "trigger": { "event": "WhenAttackInitiated",
+               "timing": "ForcedInterrupt", "actor": "attachedTo" },
   "effect": { "seq": [
-    { "grantUntil": { "keyword": "overkill", "card": "trigger.subject",
+    { "grantUntil": { "keyword": "overkill", "card": "trigger.actor",
                       "until": "EndOfAttack" } },
     { "delayUntil": { "condition": "WhenAttackEnds",
                       "effect": { "discard": "this" } } } ] } }
 ```
+
+`WhenAttackInitiated` is source-neutral. The occurrence names the attacking
+card as `actor`, the attacked character as `target`, and the attacked seat as
+`player`. Spider-Sense matches a villain actor and its controller as the
+attacked player. Charge and Webbed Up match the card they are attached to as
+the actor. A character attacking an enemy uses the same event: Shocker matches
+itself as the target and acts on `trigger.actor`.
+
+The occurrence also captures each participant's kind, owner, controller, and
+friendly or enemy classification. It captures them when the interrupt window
+opens. Moving a card or changing control during that window does not change the
+attack that opened it.
 
 
 The star on Charge is in its **ATK field**, not its boost field, and

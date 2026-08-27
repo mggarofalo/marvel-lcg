@@ -63,7 +63,7 @@ public static class Sequence
                 // The agenda's occurrence and not a fresh one per read:
                 // `rr:triggering-condition.1` is per occurrence, and the
                 // occurrence is what remembers which abilities have used it.
-                var occurrence = world.Agenda.Occurrence!;
+                var occurrence = world.Agenda.Begin(world, facts);
                 if (Offering.Work(world, abilities, occurrence, kind, events) is { } asked)
                 {
                     return asked;

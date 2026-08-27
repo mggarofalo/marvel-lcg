@@ -113,10 +113,15 @@ public sealed class CardsInWindowsTests
         var world = Deal("spider_man", "she_hulk");
         var abilities = AuthoredCards.Runner();
         world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
-        int rhino = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
+        var rhino = world.TheCardIn(DeckType.VillainArea)!;
+        var spiderMan = world.Seats[0].IdentityCard;
 
-        var mine = new Occurrence(1, [Steps.EnemyAttacks], Subject: rhino, Player: 0);
-        var theirs = new Occurrence(2, [Steps.EnemyAttacks], Subject: rhino, Player: 1);
+        var mine = Occurrence.ForAttack(
+            1, [Steps.AttackInitiated], world, Cards,
+            rhino.ObjectId, spiderMan.ObjectId, player: 0);
+        var theirs = Occurrence.ForAttack(
+            2, [Steps.AttackInitiated], world, Cards,
+            rhino.ObjectId, world.Seats[1].IdentityCard.ObjectId, player: 1);
 
         Assert.Contains(
             abilities.Waiting(world, mine, WindowKind.Interrupt),
@@ -136,13 +141,15 @@ public sealed class CardsInWindowsTests
         // that field is modifying to attack". A minion attacking is not the
         // attached enemy attacking, and Charge adds nothing to its ATK.
         var (world, abilities, _) = Attacking();
-        int rhino = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
+        var rhino = world.TheCardIn(DeckType.VillainArea)!;
         var minion = world.CreateCard(
             "01101", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
-        var byRhino = new Occurrence(1, [Steps.EnemyAttacks], Subject: rhino, Player: 0);
-        var byMinion = new Occurrence(
-            2, [Steps.EnemyAttacks], Subject: minion.ObjectId, Player: 0);
+        int target = world.Seats[0].IdentityCard.ObjectId;
+        var byRhino = Occurrence.ForAttack(
+            1, [Steps.AttackInitiated], world, Cards, rhino.ObjectId, target, player: 0);
+        var byMinion = Occurrence.ForAttack(
+            2, [Steps.AttackInitiated], world, Cards, minion.ObjectId, target, player: 0);
 
         Assert.Contains(
             abilities.Waiting(world, byRhino, WindowKind.Interrupt),
@@ -168,8 +175,9 @@ public sealed class CardsInWindowsTests
             spare,
             world.AreaOf(DeckType.StatusArea, rhino.Area.PlayArea, rhino.ObjectId));
 
-        var attacking = new Occurrence(
-            1, [Steps.EnemyAttacks], Subject: rhino.ObjectId, Player: 0);
+        var attacking = Occurrence.ForAttack(
+            1, [Steps.AttackInitiated], world, Cards,
+            rhino.ObjectId, world.Seats[0].IdentityCard.ObjectId, player: 0);
 
         Assert.Single(
             abilities.Waiting(world, attacking, WindowKind.Interrupt),

@@ -199,8 +199,8 @@ public sealed class HuntedTests
         var abilities = new Marvel.Cards.Run.AbilityRunner(Marvel.Cards.Dsl.AbilityCatalog.Parse(
             $$"""
             { "cards": [ { "card": "{{villain.FaceId}}", "abilities": [ {
-                "trigger": { "event": "WhenCharacterAttacks", "timing": "Response",
-                             "subject": "this", "player": "trigger.player" },
+                "trigger": { "event": "WhenAttackInitiated", "timing": "Response",
+                             "actor": "you", "target": "this" },
                 "cost": { "discardFromHand": 1 },
                 "effect": { "placeThreat": { "scheme": { "titled": "Gene Pool" },
                                              "amount": 1 } }
