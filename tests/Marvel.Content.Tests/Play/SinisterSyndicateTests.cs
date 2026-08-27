@@ -681,9 +681,9 @@ public sealed class SinisterSyndicateTests
             """
             { "cards": [ { "card": "24045", "name": "test", "abilities": [ {
                 "name": "test",
-                "trigger": { "event": "WhenCharacterAttacks", "timing": "Response",
-                             "subject": "this" },
-                "effect": { "giveStatus": { "card": "attacker", "status": "confused" } }
+                "trigger": { "event": "WhenAttackInitiated", "timing": "Response",
+                             "target": "this" },
+                "effect": { "giveStatus": { "card": "trigger.actor", "status": "confused" } }
             } ] } ] }
             """);
 

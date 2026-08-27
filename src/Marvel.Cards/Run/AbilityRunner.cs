@@ -563,7 +563,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool Answers(CardAbility ability, Card card, Occurrence what) =>
         ability.Trigger.Event is { } condition
         && what.Conditions.Contains(condition, StringComparer.Ordinal)
-        && Subject(ability.Trigger.Subject, card, what);
+        && Subject(ability.Trigger.Subject, card, what)
+        && Role(ability.Trigger.Actor, card, what.ActorFacts)
+        && Role(ability.Trigger.Target, card, what.TargetFacts)
+        && Player(ability.Trigger.Player, card, what);
 
     /// <inheritdoc/>
     public int? AttachesTo(World world, Card card)
@@ -735,12 +738,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         // **Two occurrences, and each is asked what only it can answer.**
         //
-        // This one is built here because the matching needs a *subject*: "when
-        // **attached minion** is defeated" is a claim about which card died,
-        // and the occurrence the defeat joined is about whatever caused it --
-        // an attack's subject is the enemy attacked. It carries the provenance
-        // for the same reason, because "the player who defeated this scheme" is
-        // on the card and not on the board.
+        // This one is built here because the matching needs the defeated card:
+        // "when **attached minion** is defeated" is a claim about which card
+        // died, while the occurrence the defeat joined keeps the cause. An
+        // attack carries its actor and target separately. This occurrence also
+        // carries the provenance because "the player who defeated this scheme"
+        // is on the card and not on the board.
         //
         // What it cannot answer is `rr:triggering-condition.1`, "each
         // **Interrupt** ability can only be triggered once per occurrence of
@@ -1570,7 +1573,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             _ => false,
         };
 
-        return belongs && Subject(ability.Trigger.Subject, card, occurrence);
+        return belongs
+            && Subject(ability.Trigger.Subject, card, occurrence)
+            && Role(ability.Trigger.Actor, card, occurrence.ActorFacts)
+            && Role(ability.Trigger.Target, card, occurrence.TargetFacts)
+            && Player(ability.Trigger.Player, card, occurrence);
     }
 
     /// <summary>
@@ -1601,10 +1608,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </para>
     /// </remarks>
     private static int Controller(CardAbility ability, Card card, Occurrence occurrence) =>
-        ability.Trigger.Player is null ? card.Owner : occurrence.Player;
+        ability.Trigger.Player is not null
+            ? occurrence.Player
+            : ability.Trigger.Actor == AbilityRoles.You
+                ? occurrence.ActorFacts?.Controller ?? card.Owner
+                : card.Owner;
 
-    private static bool Subject(string subject, Card card, Occurrence occurrence) => subject switch
+    private static bool Subject(string? subject, Card card, Occurrence occurrence) => subject switch
     {
+        null => true,
         AbilitySubjects.This => occurrence.Subject == card.ObjectId,
         AbilitySubjects.AttachedTo => card.Area.Host >= 0 && occurrence.Subject == card.Area.Host,
         AbilitySubjects.You => occurrence.Player >= 0 && occurrence.Player == card.Owner,
@@ -1614,6 +1626,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // condition, which is the whole of what such a card asks for.
         AbilitySubjects.Game => true,
         _ => throw new AbilityException($"'{subject}' is not a subject anything matches"),
+    };
+
+    /// <summary>Whether a captured card fills one named occurrence role.</summary>
+    private static bool Role(string? match, Card card, OccurrenceCard? role) => match switch
+    {
+        null => true,
+        _ when role is null => false,
+        AbilityRoles.This => role.Card == card.ObjectId,
+        AbilityRoles.AttachedTo => card.Area.Host >= 0 && role.Card == card.Area.Host,
+        AbilityRoles.You => role.Controller >= 0
+            && (card.Owner == World.Scenario || role.Controller == card.Owner),
+        AbilityRoles.Villain => role.IsVillain,
+        AbilityRoles.Minion => role.IsMinion,
+        AbilityRoles.Hero => role.IsHero,
+        AbilityRoles.Ally => role.IsAlly,
+        AbilityRoles.Friendly => role.IsFriendly,
+        AbilityRoles.Enemy => role.IsEnemy,
+        _ => throw new AbilityException($"'{match}' is not an occurrence role matcher"),
+    };
+
+    /// <summary>Whether the occurrence's player fills the trigger's player role.</summary>
+    private static bool Player(string? match, Card card, Occurrence occurrence) => match switch
+    {
+        null or AbilityPlayers.TriggerPlayer => true,
+        AbilityPlayers.You =>
+            occurrence.Player >= 0 && occurrence.Player == card.Owner,
+        _ => throw new AbilityException($"'{match}' is not an occurrence player matcher"),
     };
 
     // ---- the effect tree ---------------------------------------------------
@@ -2407,7 +2446,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static void PreventDamage(Cast cast)
     {
-        int target = cast.World.Attack?.Target ?? cast.Occurrence.Subject;
+        int target = cast.Occurrence.Target >= 0
+            ? cast.Occurrence.Target
+            : cast.Occurrence.Subject;
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: "preventDamage",
@@ -3178,13 +3219,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void Activate(AbilityNode node, Cast cast, string what)
     {
-        // Against the player resolving the card. Every printed card that causes
-        // an activation says "you", and `rr:reveal.2` makes that the revealing
-        // player -- so there is no field here to name somebody else, and a card
-        // that names one grows the vocabulary then rather than leaving an
-        // untaken branch now.
-        int seat = cast.Player;
-
         // The round the activation belongs to is the round the card was
         // revealed in. Nothing else on the agenda can tell it.
         int round = cast.World.Agenda.Current?.Round ?? 0;
@@ -3194,9 +3228,32 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // `rr:attack-enemy-activation.1.1` calls normal: "the attacked
         // character is the player's hero". An ability naming one instead is
         // the exception the same clause allows.
-        int against = node.Field("against") is { } named
+        AbilityValue? namedTarget = node.Field("against");
+        int against = namedTarget is { } named
             ? Find(named, cast)?.ObjectId ?? -1
             : -1;
+
+        // An ordinary "attacks you" activation belongs to the player
+        // resolving the card. An attack against a named occurrence role gets
+        // its attacked player from that role's snapshot instead. Speed Demon's
+        // target can move or change control during this interrupt, but that
+        // must not rewrite who was behind the character that attacked it.
+        int seat = namedTarget switch
+        {
+            AbilityValue.Word { Value: "trigger.actor" } =>
+                cast.Occurrence.ActorFacts?.Controller ?? World.Scenario,
+            AbilityValue.Word { Value: "trigger.target" } =>
+                cast.Occurrence.TargetFacts?.Controller ?? World.Scenario,
+            null => cast.Player,
+            _ => cast.Player,
+        };
+
+        if (seat < 0)
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' initiates an enemy attack against a character "
+                + "with no attacked player");
+        }
 
         // "**(Resolve Speed Demon's attack first.)**" -- the card prints the
         // instruction, so the data records it. Absent, an activation a card
@@ -3644,11 +3701,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // is emphatic that an ally's attack is *not* performed by that player's
         // identity -- so Shocker stuns whichever character swung, and the
         // player standing behind it is untouched.
-        "attacker" => cast.World.CharacterAttack is { } attacking
-            ? cast.World.Cards[attacking.Attacker]
-            : throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' names the attacking character and no character "
-                + "is attacking"),
+        "trigger.actor" => cast.Occurrence.Actor >= 0
+            ? cast.World.Cards[cast.Occurrence.Actor]
+            : null,
+
+        "trigger.target" => cast.Occurrence.Target >= 0
+            ? cast.World.Cards[cast.Occurrence.Target]
+            : null,
 
         // The card a `chooseCard` was answered with. Null while the ability is
         // still asking, which is why nothing before the answer can read it.
@@ -3693,8 +3752,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         // "After **an ally** is defeated by anything other than consequential
         // damage." The card the occurrence defeated, which is not its subject:
-        // an attack's occurrence is about the enemy attacked, and the ally that
-        // died is a second thing the same moment did.
+        // an attack keeps its participants in actor and target roles, and the
+        // ally that died is a second thing the same moment did.
         "defeated" => cast.Occurrence.Defeat is { } killed
             ? cast.World.Cards[killed.Card]
             : throw new RulesNotImplementedException(

@@ -333,9 +333,9 @@ public sealed class AbilityDataTests
     [InlineData("""{"cards":[{"card":"01099"},{"card":"01099"}]}""", "twice")]
     [InlineData("""{"nope":[]}""", "no 'cards' array")]
     [InlineData("""{"cards":[{"card":"01099","abilities":[{"effect":{"seq":[]}}]}]}""", "no 'trigger'")]
-    [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenEnemyAttacks","timing":"Interrupt","subject":"nobody"},"effect":{"seq":[]}}]}]}""", "nobody")]
-    [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenEnemyAttacks","timing":"Shouting","subject":"this"},"effect":{"seq":[]}}]}]}""", "Shouting")]
-    [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenEnemyAttacks","timing":"Interrupt","subject":"this"}}]}]}""", "no 'effect'")]
+    [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenAttackInitiated","timing":"Interrupt","actor":"nobody"},"effect":{"seq":[]}}]}]}""", "nobody")]
+    [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenAttackInitiated","timing":"Shouting","actor":"this"},"effect":{"seq":[]}}]}]}""", "Shouting")]
+    [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenAttackInitiated","timing":"Interrupt","actor":"this"}}]}]}""", "no 'effect'")]
     public void TheReaderRefusesWhatItDoesNotUnderstand(string json, string says)
     {
         var thrown = Assert.Throws<AbilityException>(() => AbilityCatalog.Parse(json));
@@ -351,7 +351,7 @@ public sealed class AbilityDataTests
         var thrown = Assert.Throws<AbilityException>(() => AbilityCatalog.Parse(
             """
             {"cards":[{"card":"01099","abilities":[{
-              "trigger":{"event":"WhenEnemyAttacks","timing":"Interrupt","subject":"this"},
+              "trigger":{"event":"WhenAttackInitiated","timing":"Interrupt","actor":"this"},
               "effect":{"discard":"this","draw":1}}]}]}
             """));
         Assert.Contains("is not a node", thrown.Message, StringComparison.Ordinal);
@@ -426,17 +426,19 @@ public sealed class AbilityDataTests
         var book = AbilityCatalog.Parse(
             """
             {"cards":[
-              {"card":"01094","abilities":[{"trigger":{"event":"WhenEnemyAttacks",
-                "timing":"Interrupt","subject":"this"},"effect":{"seq":[]}}]},
-              {"card":"01001a","abilities":[{"trigger":{"event":"WhenEnemyAttacks",
-                "timing":"Interrupt","subject":"this"},"effect":{"seq":[]}}]}]}
+              {"card":"01094","abilities":[{"trigger":{"event":"WhenAttackInitiated",
+                "timing":"Interrupt","actor":"this"},"effect":{"seq":[]}}]},
+              {"card":"01001a","abilities":[{"trigger":{"event":"WhenAttackInitiated",
+                "timing":"Interrupt","actor":"this"},"effect":{"seq":[]}}]}]}
             """);
         var runner = new Marvel.Cards.Run.AbilityRunner(book);
 
-        var onEncounter = new Occurrence(
-            1, [Steps.EnemyAttacks], Subject: villain.ObjectId, Player: 0);
-        var onPlayerCard = new Occurrence(
-            2, [Steps.EnemyAttacks], Subject: identity.ObjectId, Player: 0);
+        var onEncounter = Occurrence.ForAttack(
+            1, [Steps.AttackInitiated], world, Printed,
+            villain.ObjectId, identity.ObjectId, player: 0);
+        var onPlayerCard = Occurrence.ForAttack(
+            2, [Steps.AttackInitiated], world, Printed,
+            identity.ObjectId, villain.ObjectId);
 
         Assert.Equal(
             World.Scenario,
@@ -444,6 +446,48 @@ public sealed class AbilityDataTests
         Assert.Equal(
             1,
             Assert.Single(runner.Waiting(world, onPlayerCard, WindowKind.Interrupt)).Player);
+    }
+
+    [Rule("rr:friendly")]
+    [Fact]
+    public void TriggersMatchNamedRolesWithoutSourceSpecificEvents()
+    {
+        var world = new World(Printed, players: 1);
+        world.CreateSeat("p0");
+        var hero = world.CreateCard("01001a", world.Seats[0].Hero);
+        var ally = world.CreateCard(
+            "01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var villain = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
+        var minion = world.CreateCard(
+            "01101", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        var runner = new Marvel.Cards.Run.AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [
+              { "card": "01001a", "abilities": [ {
+                "trigger": { "event": "WhenAttackInitiated", "timing": "Interrupt",
+                             "actor": "friendly", "target": "friendly" },
+                "effect": { "seq": [] }
+              } ] },
+              { "card": "01094", "abilities": [ {
+                "trigger": { "event": "WhenAttackInitiated", "timing": "Interrupt",
+                             "actor": "enemy", "target": "enemy" },
+                "effect": { "seq": [] }
+              } ] }
+            ] }
+            """));
+
+        var friendly = Occurrence.ForAttack(
+            1, [Steps.AttackInitiated], world, Printed, hero.ObjectId, ally.ObjectId);
+        var enemy = Occurrence.ForAttack(
+            2, [Steps.AttackInitiated], world, Printed, villain.ObjectId, minion.ObjectId);
+
+        Assert.Equal(
+            hero.ObjectId,
+            Assert.Single(runner.Waiting(world, friendly, WindowKind.Interrupt)).Card);
+        Assert.Equal(
+            villain.ObjectId,
+            Assert.Single(runner.Waiting(world, enemy, WindowKind.Interrupt)).Card);
     }
 
     [Fact]

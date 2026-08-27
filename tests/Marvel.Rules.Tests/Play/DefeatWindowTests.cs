@@ -66,7 +66,7 @@ public sealed class DefeatWindowTests
         Assert.Equal(Stage.Responses, world.Agenda.Stage);
 
         var occurrence = world.Agenda.Occurrence!;
-        Assert.Contains(Steps.CharacterAttacksEnemy, occurrence.Conditions);
+        Assert.Contains(Steps.AttackInitiated, occurrence.Conditions);
         Assert.Contains(Steps.CardDefeated, occurrence.Conditions);
     }
 

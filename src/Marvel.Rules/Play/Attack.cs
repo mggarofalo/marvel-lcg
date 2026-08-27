@@ -212,7 +212,7 @@ public static class Attack
             Player: attack.Player,
             Asking: Question.Defender,
             When: TimingPriority.Untimed,
-            Trigger: Steps.EnemyAttacks,
+            Trigger: Steps.AttackInitiated,
             Label: $"{seat.Name} declares a defender",
 
             // rr:attack-enemy-activation.4 -- an attack with no defender is
@@ -261,7 +261,7 @@ public static class Attack
         defender.Exhaust();
         events.Add(new FieldSet(defender.ObjectId, "is_exhaust", 0, 1)
         {
-            Trigger = Steps.EnemyAttacks, Verb = DefenseVerb,
+            Trigger = Steps.AttackInitiated, Verb = DefenseVerb,
         });
 
         // **The defender becomes the target, whoever they are.**
@@ -413,7 +413,7 @@ public static class Attack
         // properties of the attack rather than of either character.
         var damaged = Damage.Attack(
             world, facts, world.Cards[attack.Enemy], world.Cards[attack.Target], amount,
-            Steps.EnemyAttacks, "Deal_Damage", events);
+            Steps.AttackInitiated, "Deal_Damage", events);
 
         // `rr:delayed-effect.1` -- a delayed effect resolves "immediately after
         // [its] future condition occurs or becomes true, and **before responses
@@ -561,13 +561,13 @@ public static class Attack
 
     /// <summary>Which condition this activation's boost cards are recorded under.</summary>
     /// <remarks>
-    /// The two kinds keep their own names on the wire. <c>Steps.EnemyAttacks</c>
+    /// The two kinds keep their own names on the wire. <c>Steps.AttackInitiated</c>
     /// and <c>Steps.EnemySchemes</c> are separate conditions because a card can
     /// name either one, and a boost card taken off the encounter deck during a
     /// scheme was not taken during an attack.
     /// </remarks>
     private static string Activated(EnemyActivation activation) =>
-        activation.Attacking ? Steps.EnemyAttacks : Steps.EnemySchemes;
+        activation.Attacking ? Steps.AttackInitiated : Steps.EnemySchemes;
 
     /// <summary>Where an enemy's facedown boost cards wait.</summary>
     private static Area BoostCards(World world, int enemy) =>

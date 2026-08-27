@@ -15,13 +15,13 @@ namespace Marvel.Cards.Dsl;
 /// <b><see cref="Event"/> is a triggering condition, spelled as the engine
 /// spells it.</b> <c>rr:triggering-condition</c> calls one "a specific
 /// occurrence that takes place in the game", and that is a rules vocabulary
-/// rather than an implementation detail — so a card names <c>WhenEnemyAttacks</c>
+/// rather than an implementation detail — so a card names <c>WhenAttackInitiated</c>
 /// rather than a DSL word that has to be translated into it. A translation table
 /// is a second vocabulary, and a second vocabulary drifts.
 /// </para>
 /// </remarks>
 /// <param name="Event">
-/// The triggering condition, e.g. <c>WhenEnemyAttacks</c>. Held against the
+/// The triggering condition, e.g. <c>WhenAttackInitiated</c>. Held against the
 /// conditions the engine's steps actually produce, so an event nothing fires is
 /// a failing test rather than a card that never triggers.
 /// <para>
@@ -43,7 +43,9 @@ namespace Marvel.Cards.Dsl;
 /// by <see cref="AbilityTypes.PriorityOf"/>, which is the direction the rules
 /// read: <c>rr:ability</c> lists types and gives them an order.
 /// </param>
-/// <param name="Subject">One of <see cref="AbilitySubjects"/>.</param>
+/// <param name="Subject">One of <see cref="AbilitySubjects"/>, or null.</param>
+/// <param name="Actor">Which attacking card may fill the actor role, or null.</param>
+/// <param name="Target">Which attacked card may fill the target role, or null.</param>
 /// <param name="Form">
 /// The form the player must be in, or null. <c>rr:player-turn.5.1</c>: "if the
 /// action ability is preceded by <b>Hero</b> or <b>Alter-Ego</b>, the player
@@ -81,10 +83,53 @@ namespace Marvel.Cards.Dsl;
 public sealed record AbilityTrigger(
     string? Event,
     AbilityType Timing,
-    string Subject,
+    string? Subject,
+    string? Actor = null,
+    string? Target = null,
     string? Form = null,
     string? Also = null,
     string? Player = null);
+
+/// <summary>Which card may fill an occurrence's actor or target role.</summary>
+public static class AbilityRoles
+{
+    /// <summary>The card carrying the ability.</summary>
+    public const string This = "this";
+
+    /// <summary>The card this ability's card is attached to.</summary>
+    public const string AttachedTo = "attachedTo";
+
+    /// <summary>
+    /// A player-controlled card. A player card also requires the same
+    /// controller; an encounter card binds its resolver to this role's
+    /// controller.
+    /// </summary>
+    public const string You = "you";
+
+    /// <summary>A villain.</summary>
+    public const string Villain = "villain";
+
+    /// <summary>A minion.</summary>
+    public const string Minion = "minion";
+
+    /// <summary>A hero.</summary>
+    public const string Hero = "hero";
+
+    /// <summary>An ally.</summary>
+    public const string Ally = "ally";
+
+    /// <summary>Any card controlled by a player — <c>rr:friendly</c>.</summary>
+    public const string Friendly = "friendly";
+
+    /// <summary>A villain or minion.</summary>
+    public const string Enemy = "enemy";
+
+    /// <summary>Every role matcher this vocabulary has.</summary>
+    public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        This, AttachedTo, You, Villain, Minion, Hero, Ally, Friendly, Enemy,
+    };
+}
 
 /// <summary>
 /// Which occurrences an ability answers, out of all those with its condition.

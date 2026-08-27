@@ -52,8 +52,19 @@ public enum WindowKind
 /// that phrase mean the attacked <i>player</i>, whichever character was
 /// targeted.
 /// </param>
+/// <param name="Actor">The attacking card object's id, or <c>-1</c>.</param>
+/// <param name="Target">The attacked character object's id, or <c>-1</c>.</param>
+/// <param name="ActorFacts">Stable classifications and relationships for <paramref name="Actor"/>.</param>
+/// <param name="TargetFacts">Stable classifications and relationships for <paramref name="Target"/>.</param>
 public sealed record Occurrence(
-    int Id, IReadOnlyList<string> Conditions, int Subject = -1, int Player = -1)
+    int Id,
+    IReadOnlyList<string> Conditions,
+    int Subject = -1,
+    int Player = -1,
+    int Actor = -1,
+    int Target = -1,
+    OccurrenceCard? ActorFacts = null,
+    OccurrenceCard? TargetFacts = null)
 {
     private readonly HashSet<(WindowKind Window, int Card)> spent = [];
 
@@ -71,6 +82,36 @@ public sealed record Occurrence(
     public Occurrence(int id, string condition)
         : this(id, [condition])
     {
+    }
+
+    /// <summary>Create an occurrence with explicit attack roles.</summary>
+    /// <remarks>
+    /// The actor and target ids identify the participants. Their companion
+    /// values freeze every derived fact that trigger matching may use. The
+    /// occurrence deliberately leaves <see cref="Subject"/> empty: an attack
+    /// has two card roles, and choosing either one as "the subject" loses the
+    /// other.
+    /// </remarks>
+    public static Occurrence ForAttack(
+        int id,
+        IReadOnlyList<string> conditions,
+        State.World world,
+        State.ICardFacts facts,
+        int actor,
+        int target,
+        int player = -1)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        return new Occurrence(
+            id,
+            conditions,
+            Player: player,
+            Actor: actor,
+            Target: target,
+            ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
+            TargetFacts: OccurrenceCard.Capture(world.Cards[target], facts));
     }
 
     /// <summary>

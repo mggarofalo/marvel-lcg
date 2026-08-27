@@ -74,8 +74,14 @@ public sealed class SpiderManCardsTests
         world.Abilities = runner;
         var backflip = world.CreateCard(AuthoredCards.Backflip, world.Seats[0].Hand);
         var hero = world.Seats[0].IdentityCard;
-        var occurrence = new Occurrence(
-            1, [Steps.DamageWouldBeDealt], Subject: hero.ObjectId, Player: 0);
+        var occurrence = Occurrence.ForAttack(
+            1,
+            [Steps.DamageWouldBeDealt],
+            world,
+            Cards,
+            world.TheCardIn(DeckType.VillainArea)!.ObjectId,
+            hero.ObjectId,
+            player: 0);
         var ability = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             pending => pending.Card == backflip.ObjectId);
@@ -170,8 +176,9 @@ public sealed class SpiderManCardsTests
         var webbed = world.CreateCard(
             AuthoredCards.WebbedUp,
             world.AreaOf(DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId, 0));
-        var occurrence = new Occurrence(
-            1, [Steps.EnemyAttacks], Subject: villain.ObjectId, Player: 0);
+        var occurrence = Occurrence.ForAttack(
+            1, [Steps.AttackInitiated], world, Cards,
+            villain.ObjectId, world.Seats[0].IdentityCard.ObjectId, player: 0);
         var ability = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             pending => pending.Card == webbed.ObjectId);

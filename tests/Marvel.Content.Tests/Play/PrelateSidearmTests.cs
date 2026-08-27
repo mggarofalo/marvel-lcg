@@ -116,9 +116,8 @@ public sealed class PrelateSidearmTests
         // "After Unus **attacks** and defeats an ally." Retaliate is the
         // triggered ability "after **this character is attacked**, deal X damage
         // to the attacker" -- so the attacker is the ally, and Unus being
-        // attacked is not Unus attacking. This is the case that tells "the
-        // occurrence's subject is Unus" apart from "Unus attacked": both are
-        // true here, and only the second is what the card says.
+        // attacked is not Unus attacking. The role snapshot tells them apart:
+        // Unus is the target here, while Sidearm requires him to be the actor.
         //
         // Gene Pool still eats: an ally died and not by consequential damage.
         var board = Dealt();
@@ -143,7 +142,7 @@ public sealed class PrelateSidearmTests
         // ally." The star is `rr:star-icon.2` -- the ability is about the
         // attached enemy -- and a minion's attack is the case that says so.
         // Every triggering condition of the occurrence is the same as Unus's
-        // own attack; only the subject differs.
+        // own attack; only the actor differs.
         var board = Dealt();
         long before = board.GenePool.Tokens.GetValueOrDefault("k_threat");
         var soldier = board.World.CreateCard(

@@ -1,4 +1,5 @@
 using Marvel.Rules.Timing;
+using Marvel.Rules.State;
 
 namespace Marvel.Rules.Play;
 
@@ -77,8 +78,53 @@ public readonly record struct PhaseStep(
     /// placements in the same game must not share an id — the second would find
     /// every interrupt already spent.
     /// </remarks>
-    public Occurrence Occurrence =>
-        new(Moment.Id(Round, Number, Index), Conditions, Subject, Seat);
+    public Occurrence OccurrenceOf(World world, ICardFacts facts)
+    {
+        int id = Moment.Id(Round, Number, Index);
+
+        return What switch
+        {
+            Steps.Attack => Occurrence.ForAttack(
+                id,
+                Conditions,
+                world,
+                facts,
+                Subject,
+                Character >= 0 ? Character : world.Seats[Seat].IdentityCard.ObjectId,
+                Seat),
+            Steps.CharacterAttacks when world.CharacterAttack is { } attack =>
+                Occurrence.ForAttack(
+                    id,
+                    Conditions,
+                    world,
+                    facts,
+                    attack.Attacker,
+                    attack.Enemy),
+            Steps.DealAttackDamage when world.Attack is { } attack => Occurrence.ForAttack(
+                id,
+                Conditions,
+                world,
+                facts,
+                attack.Enemy,
+                attack.Target,
+                attack.Player),
+            Steps.EndAttack when world.Attack is { } attack => Occurrence.ForAttack(
+                id,
+                Conditions,
+                world,
+                facts,
+                attack.Enemy,
+                attack.Target,
+                attack.Player),
+            _ => new Occurrence(id, Conditions, Subject, Seat),
+        };
+    }
+
+    /// <summary>An occurrence that needs no live attack roles, or null.</summary>
+    public Occurrence? ScheduledOccurrence => What is
+        Steps.Attack or Steps.CharacterAttacks or Steps.EndAttack
+            ? null
+            : new Occurrence(Moment.Id(Round, Number, Index), Conditions, Subject, Seat);
 }
 
 /// <summary>
@@ -106,7 +152,7 @@ public readonly record struct PhaseStep(
 /// </remarks>
 public sealed class Agenda
 {
-    private readonly List<(PhaseStep Step, Stage Stage, Occurrence Occurrence)> items = [];
+    private readonly List<(PhaseStep Step, Stage Stage, Occurrence? Occurrence)> items = [];
     private int scheduled;
 
     /// <summary>Whether the game is part-way through anything.</summary>
@@ -133,12 +179,39 @@ public sealed class Agenda
     /// </remarks>
     public Occurrence? Occurrence => items.Count > 0 ? items[0].Occurrence : null;
 
+    /// <summary>Create the current occurrence once, from the board it begins on.</summary>
+    /// <remarks>
+    /// Scheduling can precede an occurrence by several questions. In
+    /// particular, declaring a defender changes an attack's target before its
+    /// damage occurrence begins. Capturing here gets the target at the start of
+    /// the interrupt window and keeps it stable for the rest of that window.
+    /// </remarks>
+    public Occurrence Begin(World world, ICardFacts facts)
+    {
+        if (items.Count == 0)
+        {
+            throw new InvalidOperationException("the agenda has no current occurrence");
+        }
+
+        var (step, stage, occurrence) = items[0];
+        if (occurrence is null
+            || (step.What == Steps.DealAttackDamage
+                && occurrence.Actor < 0
+                && world.Attack is not null))
+        {
+            occurrence = step.OccurrenceOf(world, facts);
+        }
+        items[0] = (step, stage, occurrence);
+        return occurrence;
+    }
+
     /// <summary>Every outstanding step, in the order they will be taken.</summary>
     public IReadOnlyList<PhaseStep> Outstanding => [.. items.Select(item => item.Step)];
 
     /// <summary>Put a step at the end of the list.</summary>
     /// <param name="step">What to do.</param>
-    public void Add(PhaseStep step) => items.Add((step, Stage.Interrupts, step.Occurrence));
+    public void Add(PhaseStep step) =>
+        items.Add((step, Stage.Interrupts, step.ScheduledOccurrence));
 
     /// <summary>
     /// Schedule a step to be taken as soon as the current one is finished with.
@@ -153,7 +226,9 @@ public sealed class Agenda
     public void Then(PhaseStep step)
     {
         scheduled += 1;
-        items.Insert(Math.Min(scheduled, items.Count), (step, Stage.Interrupts, step.Occurrence));
+        items.Insert(
+            Math.Min(scheduled, items.Count),
+            (step, Stage.Interrupts, step.ScheduledOccurrence));
     }
 
     /// <summary>
@@ -179,7 +254,7 @@ public sealed class Agenda
     /// <param name="step">What to do first.</param>
     public void Now(PhaseStep step)
     {
-        items.Insert(0, (step, Stage.Interrupts, step.Occurrence));
+        items.Insert(0, (step, Stage.Interrupts, step.ScheduledOccurrence));
 
         // The inserted step is where `Then` now counts from, and it has
         // scheduled nothing of its own yet.
@@ -430,11 +505,15 @@ public static class Steps
     public const string EnemyActivates = "WhenEnemyActivates";
 
     /// <summary>
-    /// "When the villain initiates an attack" — <c>rr:attack-enemy-activation.5</c>,
-    /// which says an interrupt triggering "when [enemy name] attacks" has this
-    /// same timing.
+    /// An attack begins, whoever its actor and target are.
     /// </summary>
-    public const string EnemyAttacks = "WhenEnemyAttacks";
+    /// <remarks>
+    /// Enemy attacks use the timing in <c>rr:attack-enemy-activation.5</c>.
+    /// Character attacks use <c>rr:attack-player-ability-type.step.7</c> and
+    /// <c>.step.8</c>. The occurrence's actor and target roles distinguish the
+    /// printed cases without source-specific condition names.
+    /// </remarks>
+    public const string AttackInitiated = "WhenAttackInitiated";
 
     /// <summary>
     /// "When an enemy schemes" — <c>rr:scheme-enemy-activation</c>. The
@@ -550,24 +629,9 @@ public static class Steps
     public const string CardDefeated = "WhenCardDefeated";
 
     /// <summary>
-    /// A character attacking an enemy —
-    /// <c>rr:attack-player-ability-type.step.7</c>.
-    /// </summary>
-    /// <remarks>
-    /// One condition for both printed shapes, because the occurrence carries
-    /// both ends: <see cref="Occurrence.Subject"/> is the enemy being attacked,
-    /// so a card on that enemy answers with <c>this</c> — Shocker's "after
-    /// Shocker is attacked" — and <see cref="Occurrence.Player"/> is the seat
-    /// attacking, so a player card answers with <c>you</c>. Two conditions
-    /// would need two subjects and there is only one subject field.
-    /// </remarks>
-    public const string CharacterAttacksEnemy = "WhenCharacterAttacks";
-
-    /// <summary>
     /// A character thwarting a scheme — <c>rr:thwart.1</c>.
     /// </summary>
     /// <remarks>
-    /// The same two-ended shape <see cref="CharacterAttacksEnemy"/> has:
     /// <see cref="Occurrence.Subject"/> is the scheme, so a card on it answers
     /// with <c>this</c>, and <see cref="Occurrence.Player"/> is the seat
     /// thwarting, so a player card answers with <c>you</c>.
@@ -583,7 +647,7 @@ public static class Steps
         // considered to have activated"), so both are true of the same
         // occurrence and `rr:triggering-condition.2` gives them one window
         // pair between them.
-        [Attack] = [EnemyActivates, EnemyAttacks],
+        [Attack] = [EnemyActivates, AttackInitiated],
         [Scheme] = [EnemyActivates, EnemySchemes],
         [SchemeThreat] = [SchemeEnds],
         [GiveBoostCard] = ["WhenBoostCardGiven"],
@@ -598,7 +662,7 @@ public static class Steps
         [RevealEncounterCard] = [CardRevealed],
         [TurnAction] = [TurnAction],
         [CardDefeated] = [CardDefeated],
-        [CharacterAttacks] = [CharacterAttacksEnemy],
+        [CharacterAttacks] = [AttackInitiated],
         [CharacterThwarts] = [CharacterThwartsScheme],
         [DamageWouldBeDealt] = [DamageWouldBeDealt],
         [CardWouldBeDefeated] = [CardWouldBeDefeated],
