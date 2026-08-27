@@ -354,6 +354,21 @@ public interface ICardAbilities : IWindowAbilities
     IReadOnlyList<int>? AttachmentTargets(World world, Card card);
 
     /// <summary>
+    /// The in-play player cards whose <b>Setup</b> abilities are due at setup
+    /// step 16.
+    /// </summary>
+    /// <remarks>
+    /// The rules layer cannot infer this from printed words, so the card layer
+    /// identifies the cards and the game orders them by player and object id.
+    /// Returning cards rather than resolving them here lets the ordinary agenda
+    /// suspend one ability for a choice before the next Setup ability begins.
+    /// </remarks>
+    /// <param name="world">The board after opening hands and mulligans.</param>
+    /// <param name="player">The player whose cards are being considered.</param>
+    /// <returns>Setup-bearing cards controlled by that player and in play.</returns>
+    IReadOnlyList<Card> PlayerSetupCards(World world, int player) => [];
+
+    /// <summary>
     /// Resolves a card's "<b>Setup</b>" abilities —
     /// <c>rr:setup-triggered-ability</c>.
     /// </summary>
@@ -519,6 +534,9 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<int>? AttachmentTargets(World world, Card card) => null;
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<Card> PlayerSetupCards(World world, int player) => [];
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Setup(World world, Card card) => [];
