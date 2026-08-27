@@ -106,6 +106,12 @@ printed cards at all. The generic minions and allies are the same shape —
 card is named — and the 26 Challenge cards and two rule inserts are the campaign
 expansions' own components.
 
+The core set adds no engine-only face. Its three Android Efficiency cards are
+`01144a`, `01144b` and `01144c`; there is no base `01144` card. A player card
+dealt facedown as an Ultron drone also remains that card. The Ultron Drones
+environment supplies its minion values, so there is no separate Drone Minion
+face to add.
+
 **Printed facts it does not record.** The small `ATK +1` in an attachment's
 stat box, which it carries for most of the 170 cards that have one and not for
 these. A keyword missing from a transcription. Four villain stages whose hit
@@ -116,8 +122,10 @@ It is **grouped by reason**, and every group says why. That is the discipline: a
 supplement nobody can audit is a place for a made-up number to live, and the
 reason is what tells a reader whether an entry is a transcription or a guess.
 
-All of it is carried from the dataset this replaced and **none of it has been
-checked against a printed card** — MARVEL-256.
+The core-set supplement has 2 corrections. Concussion Blasters prints `ATK +1`,
+and Whiplash prints the `CRIMINAL` trait. Each entry names its English Core Set
+card as its authority. Expansion entries remain unchecked until expansion work
+begins.
 
 ## What is not here
 
