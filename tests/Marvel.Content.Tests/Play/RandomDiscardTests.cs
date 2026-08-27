@@ -163,7 +163,15 @@ public sealed class RandomDiscardTests
     private static void Reveal(World world, string faceId)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+        var abilities = AuthoredCards.Runner();
+        abilities.WhenRevealed(world, card, 0);
+        var asked = Sequence.Work(world, Cards, abilities, []);
+        while (asked is not null)
+        {
+            Sequence.Answer(
+                world, Cards, abilities, asked, Decision.Decline, []);
+            asked = Sequence.Work(world, Cards, abilities, []);
+        }
     }
 
     private static World Deal(params string[] heroes)

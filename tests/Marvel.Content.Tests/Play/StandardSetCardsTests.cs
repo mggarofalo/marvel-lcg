@@ -199,6 +199,7 @@ public sealed class StandardSetCardsTests
         var players = world.CreateCard("01108", area);
 
         Reveal(world, AuthoredCards.Masterplan);
+        Finish(world, AuthoredCards.Runner(), []);
 
         Assert.Equal(4, scenarios.Tokens.GetValueOrDefault("k_threat"));
         Assert.Equal(4, players.Tokens.GetValueOrDefault("k_threat"));
@@ -260,6 +261,18 @@ public sealed class StandardSetCardsTests
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
         return AuthoredCards.Runner().WhenRevealed(world, card, player);
+    }
+
+    private static void Finish(
+        World world, ICardAbilities abilities, List<Marvel.Rules.Events.GameEvent> events)
+    {
+        var asked = Sequence.Work(world, Cards, abilities, events);
+        while (asked is not null)
+        {
+            Sequence.Answer(
+                world, Cards, abilities, asked, Decision.Decline, events);
+            asked = Sequence.Work(world, Cards, abilities, events);
+        }
     }
 
     private static World Deal(params string[] heroes)

@@ -157,7 +157,15 @@ public sealed class DamageAndThreatCardsTests
         // card has to be resolved into play first or "additional" has nothing
         // to be additional to.
         Reveal.Resolve(world, world.Facts, card, 0, landing);
-        events = [.. AuthoredCards.Runner().WhenRevealed(world, card, 0)];
+        var abilities = AuthoredCards.Runner();
+        events = [.. abilities.WhenRevealed(world, card, 0)];
+        var asked = Sequence.Work(world, Cards, abilities, events);
+        while (asked is not null)
+        {
+            Sequence.Answer(
+                world, Cards, abilities, asked, Decision.Decline, events);
+            asked = Sequence.Work(world, Cards, abilities, events);
+        }
         return card;
     }
 
