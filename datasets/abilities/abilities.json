@@ -1571,6 +1571,513 @@
           }
         }
       ]
+    },
+    {
+      "card": "01014",
+      "name": "Energy Absorption",
+      "note": "This resource card has no ability. Its three printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "01040a",
+      "name": "Black Panther",
+      "note": "Retaliate 1 is a printed keyword read by the rules engine, so this face has no authored ability.",
+      "abilities": []
+    },
+    {
+      "card": "01044",
+      "name": "Vibranium",
+      "note": "This resource card has no ability. Its two printed wild resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "01076",
+      "name": "Luke Cage",
+      "note": "Toughness is a printed keyword read when this ally enters play, so this card has no authored ability.",
+      "abilities": []
+    },
+    {
+      "card": "01088",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "01089",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "01090",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "01117b",
+      "name": "Secret Rendezvous",
+      "note": "This final main-scheme stage has no card ability. Completing the final stage makes the villain win under rr:main-scheme-main-scheme-deck.2.1, which the main-scheme rule applies generically.",
+      "abilities": []
+    },
+    {
+      "card": "01120",
+      "name": "Armored Guard",
+      "note": "Guard and Toughness are printed keywords read by the rules engine, so this minion has no authored ability.",
+      "abilities": []
+    },
+    {
+      "card": "01156",
+      "name": "Usurp The Throne",
+      "note": "The card prints only a hazard icon and no ability. The icon is read from datasets/cards.",
+      "abilities": []
+    },
+    {
+      "card": "01172",
+      "name": "Whiplash",
+      "note": "Retaliate 1 is a printed keyword read by the rules engine, so this minion has no authored ability.",
+      "abilities": []
+    },
+    {
+      "card": "01011",
+      "name": "Spider-Woman",
+      "note": "Response: after Spider-Woman enters play, confuse the villain. Playing the ally produces WhenCardPlayed after it enters play; the response remains optional under rr:response.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardPlayed", "timing": "Response", "subject": "this" },
+          "effect": { "giveStatus": { "card": { "query": "villain" }, "status": "confused" } }
+        }
+      ]
+    },
+    {
+      "card": "01020",
+      "name": "Hellcat",
+      "note": "Action: return Hellcat to your hand. The card moves from its controller's ally area to its owner's hand.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "effect": { "returnToHand": "this" }
+        }
+      ]
+    },
+    {
+      "card": "01022",
+      "name": "Ground Stomp",
+      "note": "Hero Action: deal 1 damage to each enemy. rr:enemy includes the villain and every minion in play, and each damage instance goes through the damage rule.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "dealDamage": { "cards": { "query": "enemies" }, "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01026",
+      "name": "Superhuman Law Division",
+      "note": "Alter-Ego Action: exhaust this support and spend a mental resource to remove 2 threat from a scheme. The two costs are paid before the chosen scheme is changed under rr:initiating-abilities.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "cost": { "seq": [ { "exhaust": "this" }, { "spend": "B" } ] },
+          "effect": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 2 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01028",
+      "name": "Superhuman Strength",
+      "note": "She-Hulk gets +2 ATK. After She-Hulk attacks, discard this upgrade and stun the attacked enemy. The attack occurrence's actor and target preserve those two roles explicitly.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "you", "keyword": "attack", "amount": 2 } }
+        },
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "you", "target": "enemy" },
+          "effect": { "seq": [ { "discard": "this" }, { "giveStatus": { "card": "trigger.target", "status": "stunned" } } ] }
+        }
+      ]
+    },
+    {
+      "card": "01036",
+      "name": "Mark V Armor",
+      "note": "You get +6 hit points. The constant modifies the controlling identity's maximum hit points through the same field Damage.Health reads.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "you", "keyword": "health", "amount": 6 } }
+        }
+      ]
+    },
+    {
+      "card": "01039",
+      "name": "Rocket Boots",
+      "note": "You get +1 hit point. Its Hero Action exhausts the boots and spends a mental resource to give the controlling identity AERIAL until the end of the phase.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "you", "keyword": "health", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "seq": [ { "exhaust": "this" }, { "spend": "B" } ] },
+          "effect": { "grantUntil": { "card": "you", "trait": "AERIAL", "until": "EndOfPlayerPhase" } }
+        }
+      ]
+    },
+    {
+      "card": "01045",
+      "name": "The Golden City",
+      "note": "Alter-Ego Action: exhaust The Golden City to draw 2 cards.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "cost": { "exhaust": "this" },
+          "effect": { "draw": { "player": "you", "count": 2 } }
+        }
+      ]
+    },
+    {
+      "card": "01054",
+      "name": "Uppercut",
+      "note": "Hero Action: deal 5 damage to an enemy.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 5 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01056",
+      "name": "Tac Team",
+      "note": "Uses 3 attack counters is a printed keyword. Its Action exhausts the support and removes one counter to deal 2 damage to an enemy.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "seq": [ { "exhaust": "this" }, { "removeCounters": "attack" } ] },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 2 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01057",
+      "name": "Combat Training",
+      "note": "The controlling player's hero gets +1 ATK. The play-under-control instruction is handled by card play; this constant reads the current controller's hero.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "yourHero", "keyword": "attack", "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01064",
+      "name": "Surveillance Team",
+      "note": "Uses 3 snoop counters is a printed keyword. Its Action exhausts the support and removes one counter to remove 1 threat from a scheme.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "seq": [ { "exhaust": "this" }, { "removeCounters": "snoop" } ] },
+          "effect": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01065",
+      "name": "Heroic Intuition",
+      "note": "The controlling player's hero gets +1 THW. The play-under-control instruction is handled by card play.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "yourHero", "keyword": "thwart", "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01068",
+      "name": "Vision",
+      "note": "Spend an energy resource to choose THW or ATK; Vision gets +2 to that power until the end of the phase, once per round.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "spend": "Y" },
+          "limitPerRound": 1,
+          "effect": { "choose": { "options": [ { "grantUntil": { "card": "this", "keyword": "thwart", "amount": 2, "until": "EndOfPlayerPhase" } }, { "grantUntil": { "card": "this", "keyword": "attack", "amount": 2, "until": "EndOfPlayerPhase" } } ] } }
+        }
+      ]
+    },
+    {
+      "card": "01074",
+      "name": "Inspired",
+      "note": "Attach to an ally. The attached ally gets +1 THW and +1 ATK while this upgrade remains attached.",
+      "attachTo": { "query": "alliesYouControl" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "seq": [ { "grant": { "card": "attachedTo", "keyword": "thwart", "amount": 1 } }, { "grant": { "card": "attachedTo", "keyword": "attack", "amount": 1 } } ] }
+        }
+      ]
+    },
+    {
+      "card": "01078",
+      "name": "Get Behind Me!",
+      "note": "Hero Interrupt: cancel a revealed treachery's When Revealed effects, then make the villain attack the resolving player instead. The revealed card itself remains revealed under rr:cancel.4.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero", "player": "trigger.player" },
+          "when": { "isKind": { "card": "trigger.subject", "kind": "treachery" } },
+          "effect": { "seq": [ { "cancelWhenRevealed": "trigger.subject" }, { "enemyAttacks": { "enemies": { "query": "villain" } } } ] }
+        }
+      ]
+    },
+    {
+      "card": "01080",
+      "name": "Med Team",
+      "note": "Uses 3 medical counters is a printed keyword. Its Action exhausts the support and removes one counter to heal 2 damage from a friendly character.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "seq": [ { "exhaust": "this" }, { "removeCounters": "medical" } ] },
+          "effect": { "chooseCard": { "from": { "query": "heroesAndAllies" }, "effect": { "heal": { "card": "chosen", "amount": 2 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01081",
+      "name": "Armored Vest",
+      "note": "The controlling player's hero gets +1 DEF. The play-under-control instruction is handled by card play.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "yourHero", "keyword": "defense", "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01083",
+      "name": "Mockingbird",
+      "note": "Response: after Mockingbird enters play, stun an enemy. The response asks the resolving player which enemy receives the status.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardPlayed", "timing": "Response", "subject": "this" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "giveStatus": { "card": "chosen", "status": "stunned" } } } }
+        }
+      ]
+    },
+    {
+      "card": "01087",
+      "name": "Haymaker",
+      "note": "Hero Action: deal 3 damage to an enemy.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 3 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01119",
+      "name": "Solid-Sound Body",
+      "note": "Attach to Klaw. Klaw gains retaliate 1 while attached. A Hero Action spends one resource of each type to discard the attachment.",
+      "attachTo": { "query": "villain" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "retaliate", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "spend": "YBR" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "01121",
+      "name": "Weapons Runner",
+      "note": "Surge is a printed keyword resolved by reveal. Its Boost ability puts this card into play engaged with the attacked player rather than discarding it with the other boost cards.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "putIntoPlay": { "card": "this", "where": "engagedWithYou" } }
+        }
+      ]
+    },
+    {
+      "card": "01124",
+      "name": "Sound Manipulation",
+      "note": "The alter-ego branch heals Klaw for 4 and gains surge when nothing was healed. The hero branch deals 2 damage to the resolving identity and heals Klaw for 2.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "if": { "test": { "inForm": { "player": "you", "form": "alter-ego" } }, "then": { "seq": [ { "heal": { "card": { "query": "villain" }, "amount": 4 } }, { "if": { "test": { "not": { "atLeast": { "value": { "result": "healed" }, "count": 1 } } }, "then": { "gainSurge": 1 } } } ] }, "else": { "seq": [ { "dealDamage": { "cards": "you", "amount": 2 } }, { "heal": { "card": { "query": "villain" }, "amount": 2 } } ] } } }
+        }
+      ]
+    },
+    {
+      "card": "01125",
+      "name": "Defense Network",
+      "note": "When revealed, place 1 additional threat per player here. The card's printed starting threat is applied separately when it enters play.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": "this", "amount": { "perPlayer": 1 } } }
+        }
+      ]
+    },
+    {
+      "card": "01126",
+      "name": "Illegal Arms Factory",
+      "note": "When revealed, place 1 additional threat per player here. The card's printed starting threat is applied separately when it enters play.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": "this", "amount": { "perPlayer": 1 } } }
+        }
+      ]
+    },
+    {
+      "card": "01127",
+      "name": "The \"Immortal\" Klaw",
+      "note": "Klaw gets +10 hit points while this side scheme remains in play. Defeating the scheme removes the constant modifier automatically.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": { "query": "villain" }, "keyword": "health", "amount": 10 } }
+        }
+      ]
+    },
+    {
+      "card": "01129",
+      "name": "Radioactive Man",
+      "note": "After Radioactive Man attacks the resolving player, discard one card at random from that player's hand. Its Boost ability does the same immediately.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player" },
+          "effect": { "discardAtRandom": { "player": "trigger.player", "count": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "discardAtRandom": { "player": "you", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01131",
+      "name": "Tiger Shark",
+      "note": "After Tiger Shark attacks, give him tough. Its Boost ability gives the activating villain tough.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this" },
+          "effect": { "giveStatus": { "card": "this", "status": "tough" } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }
+        }
+      ]
+    },
+    {
+      "card": "01154",
+      "name": "Concussive Blast",
+      "note": "When revealed, deal 1 damage to each friendly character. Its Boost ability deals 1 damage to each character controlled by the attacked player.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "dealDamage": { "cards": { "query": "heroesAndAllies" }, "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "dealDamage": { "cards": { "query": "charactersYouControl" }, "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01158",
+      "name": "Heart-Shaped Herb",
+      "note": "Surge is a printed keyword. When revealed, give the villain and every minion engaged with the resolving player tough; its Boost ability gives the villain tough.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [ { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }, { "giveStatus": { "card": { "query": "minionsEngagedWithYou" }, "status": "tough" } } ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }
+        }
+      ]
+    },
+    {
+      "card": "01161",
+      "name": "Personal Challenge",
+      "note": "When revealed, place 1 additional threat per player here.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": "this", "amount": { "perPlayer": 1 } } }
+        }
+      ]
+    },
+    {
+      "card": "01163",
+      "name": "Genetically Enhanced",
+      "note": "Attach to a minion with the highest printed hit points. If none is in play, gain surge. The attached minion gets +3 hit points while this attachment remains.",
+      "attachTo": { "maxBy": { "of": { "query": "minions" }, "by": "printedHealth" } },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "if": { "test": { "not": { "exists": { "query": "minions" } } }, "then": { "gainSurge": 1 } } }
+        },
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "health", "amount": 3 } }
+        }
+      ]
+    },
+    {
+      "card": "01171",
+      "name": "Imminent Overload",
+      "note": "When revealed, place 1 additional threat per player here.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": "this", "amount": { "perPlayer": 1 } } }
+        }
+      ]
+    },
+    {
+      "card": "01176",
+      "name": "The Psyche-Magnitron",
+      "note": "When revealed, place 1 additional threat per player here.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": "this", "amount": { "perPlayer": 1 } } }
+        }
+      ]
+    },
+    {
+      "card": "01177",
+      "name": "Yon-Rogg",
+      "note": "After Yon-Rogg attacks, place 1 threat on The Psyche-Magnitron if that side scheme is in play.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this" },
+          "effect": { "if": { "test": { "titleInPlay": "The Psyche-Magnitron" }, "then": { "placeThreat": { "scheme": { "titled": "The Psyche-Magnitron" }, "amount": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01139b",
+      "name": "Countdown to Oblivion",
+      "note": "Threat cannot be removed from this scheme. rr:cannot makes the prohibition absolute, so both basic thwarts and card effects ask it before removing threat. Completing this final stage is handled generically by rr:main-scheme-main-scheme-deck.2.1.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventThreatRemoval": "this" }
+        }
+      ]
     }
   ]
 }

@@ -60,6 +60,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     public IReadOnlySet<string> Authored => book.Authored;
 
     /// <inheritdoc/>
+    public bool CanRemoveThreat(World world, Card scheme)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(scheme);
+
+        foreach (var card in world.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)))
+        {
+            foreach (var ability in book.On(card.FaceId).Where(ability =>
+                ability.Trigger.Timing == AbilityType.Constant))
+            {
+                if (ProhibitsThreatRemoval(
+                        ability.Effect,
+                        new Cast(world, card, new Occurrence(0, []),
+                            ControllerOf(world, card), [], this),
+                        scheme))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<PendingAbility> Waiting(
         World world, Occurrence occurrence, WindowKind window)
     {
@@ -2334,11 +2359,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 found.Add(Grant(node, cast));
                 break;
 
+            case "preventThreatRemoval":
+                // A prohibition is answered by `CanRemoveThreat`; it is not a
+                // numeric modifier and therefore contributes no effect here.
+                break;
+
             default:
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' has a constant ability using the node "
                     + $"'{node.Kind}', which a constant ability cannot be written with");
         }
+    }
+
+    private static bool ProhibitsThreatRemoval(AbilityNode node, Cast cast, Card scheme)
+    {
+        return node.Kind switch
+        {
+            "seq" => Nodes(node.Argument).Any(step =>
+                ProhibitsThreatRemoval(step, cast, scheme)),
+            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+                is { } branch && ProhibitsThreatRemoval(Tree(branch), cast, scheme),
+            "preventThreatRemoval" => Find(node.Argument, cast)?.ObjectId == scheme.ObjectId,
+            _ => false,
+        };
     }
 
     /// <summary>One keyword a constant ability gives something.</summary>
@@ -2402,6 +2445,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var target = Find(node.Require("card"), cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would grant to a card that is not there");
+
+        if (node.Field("trait") is { } gained)
+        {
+            cast.World.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: Rules.State.Traits.Granted + Word(gained),
+                Amount: 1,
+                Card: cast.Source.ObjectId,
+                Affects: target.ObjectId,
+                Lasts: Duration.UntilEndOf(Word(node.Require("until")))));
+            return;
+        }
 
         // Held against the fields the engine actually reads, exactly as a
         // constant ability's grant is: an unrecognised name would register
@@ -3119,18 +3174,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
 
-        long before = scheme.Tokens.GetValueOrDefault("k_threat");
-        long removed = Math.Min(before, Amount(node.Require("amount"), cast));
-        if (removed <= 0)
-        {
-            return;
-        }
-
-        scheme.PlaceTokens("k_threat", -removed);
-        cast.Events.Add(new FieldSet(scheme.ObjectId, "k_threat", before, before - removed)
-        {
-            Trigger = cast.Trigger, Verb = "Remove_Threat",
-        });
+        Threat.Remove(
+            cast.World,
+            cast.World.Facts,
+            cast.Abilities,
+            scheme,
+            Amount(node.Require("amount"), cast),
+            cast.Trigger,
+            "Remove_Threat",
+            cast.Events,
+            by: Resolver(cast));
     }
 
     /// <summary>
