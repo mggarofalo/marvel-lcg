@@ -251,6 +251,49 @@ public sealed class CoreActivationAbilityTests
         Assert.False(world.Seats[0].IdentityCard.Ready);
     }
 
+    [Rule("rr:attack-enemy-activation")]
+    [Fact]
+    public void WhirlwindAddsBothOtherHeroesToOneThreePlayerAttack()
+    {
+        var world = new World(Cards, players: 3);
+        for (int player = 0; player < 3; player++)
+        {
+            var seat = world.CreateSeat($"p{player}");
+            seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
+        }
+        var whirlwind = world.CreateCard(
+            "01130", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: whirlwind.ObjectId, Seat: 0));
+        var runner = AuthoredCards.Runner();
+        var occurrence = Occurrence.ForAttack(
+            1, [Steps.AttackInitiated], world, Cards,
+            whirlwind.ObjectId, world.Seats[0].IdentityCard.ObjectId, 0);
+
+        var response = Assert.Single(
+            runner.Waiting(world, occurrence, WindowKind.Interrupt));
+        runner.Resolve(world, occurrence, response, [], []);
+
+        Assert.Equal([1, 2], world.PendingAdditionalAttackPlayers);
+    }
+
+    [Rule("rr:boost-boost-icon.2")]
+    [Fact]
+    public void WhirlwindBoostDamagesBothHeroes()
+    {
+        var world = new World(Cards, players: 2);
+        for (int player = 0; player < 2; player++)
+        {
+            var seat = world.CreateSeat($"p{player}");
+            seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
+        }
+        var card = world.CreateCard("01130", world.AreaOf(DeckType.BoostingArea));
+
+        AuthoredCards.Runner().Boost(world, card, 0);
+
+        Assert.Equal([1L, 1L], world.Seats.Select(seat => seat.IdentityCard.Damage));
+    }
+
     private static World Board(string identity, string villain)
     {
         var world = new World(Cards, players: 1);

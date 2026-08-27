@@ -2601,6 +2601,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.Events);
                 break;
 
+            case "alsoAttackEachOtherHero":
+                Attack.AlsoResolveAgainstEachOtherHero(cast.World);
+                break;
+
             case "attachTo":
                 AttachTo(node, cast);
                 break;

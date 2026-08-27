@@ -3325,6 +3325,21 @@
       ]
     },
     {
+      "card": "01130",
+      "name": "Whirlwind",
+      "note": "When Whirlwind attacks, his forced interrupt adds every other non-eliminated hero as a target of this same attack in seat order; it does not initiate additional attacks or deal additional boost cards. As a boost card, deal one damage to each hero.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this" },
+          "effect": { "alsoAttackEachOtherHero": "this" }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "dealDamage": { "cards": { "query": "heroes" }, "amount": 1 } }
+        }
+      ]
+    },
+    {
       "card": "01133",
       "name": "Masters of Mayhem",
       "note": "Each MASTERS_OF_EVIL minion engaged with a hero attacks that own engaged hero, so the batch can span seats. The sentence resumes after every activation and, if none actually attacked, the resolving player chooses a matching minion from the encounter deck or discard pile, puts it into play engaged with them, and shuffles the searched encounter deck.",
