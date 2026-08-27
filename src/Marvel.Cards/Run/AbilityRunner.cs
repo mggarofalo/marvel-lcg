@@ -2155,6 +2155,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 GiveStatus(node, cast);
                 break;
 
+            case "giveAdditionalBoost":
+                Attack.GiveAdditionalBoostCard(
+                    cast.World,
+                    Find(node.Require("enemy"), cast)
+                        ?? throw new AbilityException(
+                            $"'{cast.Source.FaceId}' cannot find the enemy receiving an additional boost card"),
+                    cast.Trigger,
+                    cast.Events);
+                break;
+
             case "attachTo":
                 AttachTo(node, cast);
                 break;

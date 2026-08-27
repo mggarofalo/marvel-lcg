@@ -760,6 +760,43 @@
       ]
     },
     {
+      "card": "01113",
+      "name": "Klaw",
+      "note": "Forced Interrupt: when Klaw attacks, give him one additional boost card. The interrupt resolves while Klaw is the attack actor, before the ordinary boost-card step, and additional boost cards are cumulative.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this" },
+          "effect": { "giveAdditionalBoost": { "enemy": "this" } }
+        }
+      ]
+    },
+    {
+      "card": "01114",
+      "name": "Klaw",
+      "note": "Forced Interrupt: when Klaw attacks, give him one additional boost card. When revealed, search the encounter deck and discard pile for The Immortal Klaw and reveal it; the search primitive shuffles the searched encounter deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this" },
+          "effect": { "giveAdditionalBoost": { "enemy": "this" } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "search": { "in": [ { "encounterDeck": 1 }, { "encounterDiscardPile": 1 } ], "for": "01116a" } }
+        }
+      ]
+    },
+    {
+      "card": "01115",
+      "name": "Klaw",
+      "note": "Forced Interrupt: when Klaw attacks, give him one additional boost card. Toughness is a printed keyword handled by the generic enters-play keyword rules.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this" },
+          "effect": { "giveAdditionalBoost": { "enemy": "this" } }
+        }
+      ]
+    },
+    {
       "card": "01110",
       "name": "Hydra Bomber",
       "note": "When Revealed: Choose to either take 2 damage or place 1 threat on the main scheme. rr:choose-game-element.1 asks the player resolving the ability, which for a revealed encounter card is the player it was dealt to. rr:you-your.2 makes 'take 2 damage' damage to that player's identity. Neither option needs a target beyond one that is always there, so rr:choose-option.1 -- an encounter card cannot offer an option with no valid target -- never bites here.",
