@@ -1444,9 +1444,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return true;
         }
 
-        long cost = Resources.Cost(card.FaceId, world.Facts) ?? 0;
+        long cost = CardPlay.CostOf(
+            world, world.Facts, world.Seats[player], card).Amount;
         string pool = string.Concat(CardPlay.Generators(
-                world, world.Facts, world.Seats[player])
+                world, world.Facts, world.Seats[player], card)
             .Where(source => source.Effect != card.ObjectId)
             .SelectMany(source => source.Generates));
         return Resources.Pays(pool, cost, Resources.Required(card.FaceId, world.Facts));
@@ -1534,14 +1535,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return null;
         }
 
-        long cost = Resources.Cost(card.FaceId, world.Facts) ?? 0;
+        long cost = CardPlay.CostOf(
+            world, world.Facts, world.Seats[player], card).Amount;
         return new CostOption(
             Target: card.ObjectId,
             Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Rule: Resources.Required(card.FaceId, world.Facts) is { Length: > 0 } required
                 ? [required]
                 : null,
-            Sources: [.. CardPlay.Generators(world, world.Facts, world.Seats[player])
+            Sources: [.. CardPlay.Generators(
+                    world, world.Facts, world.Seats[player], card)
                 .Where(source => source.Effect != card.ObjectId)]);
     }
 
@@ -1552,6 +1555,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
 
+        var adjusted = CardPlay.CostOf(
+            cast.World, cast.World.Facts, cast.World.Seats[cast.Player], card);
         var selected = paying.ToHashSet();
         string generated = string.Concat(
             CardPlay.Generators(
@@ -1571,9 +1576,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         CardPlay.Spend(
             cast.World, cast.World.Facts, [cast.World.Seats[cast.Player].Hand], paying,
-            Resources.Cost(card.FaceId, cast.World.Facts) ?? 0,
+            adjusted.Amount,
             Resources.Required(card.FaceId, cast.World.Facts), card.ObjectId,
-            cast.Player, cast.Events);
+            cast.Player, cast.Events, payingFor: card);
+        CardPlay.UseCostModifiers(cast.World, adjusted);
     }
 
     private static void DiscardEvent(Card card, Cast cast)

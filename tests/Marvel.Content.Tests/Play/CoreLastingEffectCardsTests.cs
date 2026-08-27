@@ -65,6 +65,66 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Equal(2, CardPlay.CostOf(world, Cards, world.Seats[1], theirs).Amount);
     }
 
+    [Rule("rr:initiating-abilities.step.3")]
+    [Rule("rr:initiating-abilities.step.4")]
+    [Rule("rr:lasting-effects.1")]
+    [Fact]
+    public void HelicarrierReducesAnEventsPriceAndPayment()
+    {
+        // Step 3 determines a card's cost "taking modifiers into account", and
+        // step 4 says to "apply any modifiers to the cost(s)." An event uses
+        // those same play-card steps even though its action owns the prompt.
+        var world = Board();
+        var support = world.CreateCard(
+            "01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var eventCard = world.CreateCard("01070", world.Seats[0].Hand);
+        var payment = world.CreateCard("01003", world.Seats[0].Hand);
+        var next = world.CreateCard("01083", world.Seats[0].Hand);
+        world.CreateCard("01005", world.Seats[0].Deck);
+        var runner = AuthoredCards.Runner();
+
+        runner.Act(
+            world, new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []);
+        AnswerCardChoice(world, runner, support, world.Seats[0].IdentityCard);
+
+        var action = Assert.Single(
+            runner.Actions(world, 0), candidate => candidate.Card == eventCard.ObjectId);
+        var price = Assert.Single(runner.Describe(world, action).CostOptions);
+        Assert.Equal("1", price.Cost);
+        Assert.Contains(price.Generators, source => source.Effect == payment.ObjectId);
+
+        runner.Act(world, action, [payment.ObjectId], []);
+
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+        Assert.Equal(3, CardPlay.CostOf(world, Cards, world.Seats[0], next).Amount);
+    }
+
+    [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:lasting-effects.1")]
+    [Fact]
+    public void AFailedEventPaymentDoesNotSpendHelicarriersReduction()
+    {
+        // Step 5 says a failed payment must "abort this process without paying
+        // any costs," so attempting the event is not the next card played.
+        var world = Board();
+        var support = world.CreateCard(
+            "01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var eventCard = world.CreateCard("01070", world.Seats[0].Hand);
+        world.CreateCard("01003", world.Seats[0].Hand);
+        var next = world.CreateCard("01083", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+
+        runner.Act(
+            world, new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []);
+        AnswerCardChoice(world, runner, support, world.Seats[0].IdentityCard);
+        var action = Assert.Single(
+            runner.Actions(world, 0), candidate => candidate.Card == eventCard.ObjectId);
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [], []));
+
+        Assert.Equal(2, CardPlay.CostOf(world, Cards, world.Seats[0], next).Amount);
+    }
+
     [Rule("rr:play-put-into-play")]
     [Rule("rr:ownership-and-control.7.2")]
     [Fact]
