@@ -32,4 +32,13 @@ namespace Marvel.Rules.State;
 /// the thwarter: an ability triggering "after <b>you</b> thwart" is about the
 /// player, and a card in their play area reads it.
 /// </param>
-public sealed record CharacterThwart(int Thwarter, int Scheme, int Player);
+/// <param name="Amount">Fixed card-ability threat removal, or -1 for the thwart statistic.</param>
+/// <param name="Source">The ability card, or -1 when it is the thwarter.</param>
+/// <param name="Trigger">Event-stream provenance for the card ability.</param>
+public sealed record CharacterThwart(
+    int Thwarter,
+    int Scheme,
+    int Player,
+    long Amount = -1,
+    int Source = -1,
+    string Trigger = "Thwart");

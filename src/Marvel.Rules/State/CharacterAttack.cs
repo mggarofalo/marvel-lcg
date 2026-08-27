@@ -32,4 +32,17 @@ namespace Marvel.Rules.State;
 /// the attacker: an ability that triggers "after <b>you</b> attack" is about
 /// the player, and a card in their play area reads it.
 /// </param>
-public sealed record CharacterAttack(int Attacker, int Enemy, int Player);
+/// <param name="Amount">Fixed card-ability damage, or -1 for the attack statistic.</param>
+/// <param name="Source">The damage-source card, or -1 when it is the attacker.</param>
+/// <param name="MoveFrom">A card damage is moved from, or -1 for ordinary damage.</param>
+/// <param name="Overkill">Whether this attack temporarily has overkill.</param>
+/// <param name="Trigger">Event-stream provenance for the card ability.</param>
+public sealed record CharacterAttack(
+    int Attacker,
+    int Enemy,
+    int Player,
+    long Amount = -1,
+    int Source = -1,
+    int MoveFrom = -1,
+    bool Overkill = false,
+    string Trigger = "Attack");

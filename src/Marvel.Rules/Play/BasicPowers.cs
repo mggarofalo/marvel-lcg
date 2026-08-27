@@ -1,6 +1,7 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
@@ -223,9 +224,20 @@ public static class BasicPowers
     /// exhausting is the cost of a basic power.
     /// </para>
     /// </remarks>
-    private static void InitiateAttack(World world, Card attacker, Card enemy, int player)
+    private static void InitiateAttack(
+        World world, Card attacker, Card enemy, int player, long amount = -1,
+        Card? source = null, Card? moveFrom = null, bool overkill = false,
+        string trigger = AttackVerb)
     {
-        world.CharacterAttack = new CharacterAttack(attacker.ObjectId, enemy.ObjectId, player);
+        world.CharacterAttack = new CharacterAttack(
+            attacker.ObjectId,
+            enemy.ObjectId,
+            player,
+            amount,
+            source?.ObjectId ?? -1,
+            moveFrom?.ObjectId ?? -1,
+            overkill,
+            trigger);
         world.Agenda.Then(new PhaseStep(
             Steps.CharacterAttacks,
             world.Agenda.Current?.Round ?? 0,
@@ -233,6 +245,40 @@ public static class BasicPowers
             Index: player,
             Subject: enemy.ObjectId,
             Seat: player));
+    }
+
+    /// <summary>Initiates a card ability labelled as an attack.</summary>
+    /// <remarks>
+    /// The card has already paid its ability costs. A stun therefore replaces
+    /// the attack without refunding those costs, and an attack that proceeds
+    /// uses the same interrupt/response occurrence as a basic attack. The
+    /// acting hero and damage source remain distinct because retaliate damages
+    /// the former while damage prohibitions inspect the latter.
+    /// </remarks>
+    public static void CardAttack(
+        World world, ICardFacts facts, int player, Card source, Card enemy, long amount,
+        string trigger, List<GameEvent> events, bool overkill = false, Card? moveFrom = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(enemy);
+        ArgumentNullException.ThrowIfNull(events);
+
+        var attacker = world.Seats[player].IdentityCard;
+        if (Cancelled(world, facts, attacker, Statuses.Stunned, events))
+        {
+            return;
+        }
+
+        if (!Attackable(world, facts, player).Any(card => card.ObjectId == enemy.ObjectId))
+        {
+            throw new RulesNotImplementedException(
+                $"card {enemy.ObjectId} is not an enemy {world.Seats[player].Name} can attack");
+        }
+
+        InitiateAttack(
+            world, attacker, enemy, player, amount, source, moveFrom, overkill, trigger);
     }
 
     /// <summary>
@@ -259,9 +305,17 @@ public static class BasicPowers
     /// nothing read it would be wrong on the day something did.
     /// </para>
     /// </remarks>
-    private static void InitiateThwart(World world, Card thwarter, Card scheme, int player)
+    private static void InitiateThwart(
+        World world, Card thwarter, Card scheme, int player, long amount = -1,
+        Card? source = null, string trigger = ThwartVerb)
     {
-        world.CharacterThwart = new CharacterThwart(thwarter.ObjectId, scheme.ObjectId, player);
+        world.CharacterThwart = new CharacterThwart(
+            thwarter.ObjectId,
+            scheme.ObjectId,
+            player,
+            amount,
+            source?.ObjectId ?? -1,
+            trigger);
         world.Agenda.Then(new PhaseStep(
             Steps.CharacterThwarts,
             world.Agenda.Current?.Round ?? 0,
@@ -295,6 +349,21 @@ public static class BasicPowers
                 "a character thwart is resolving and the board holds none");
         }
 
+        if (thwart.Amount >= 0)
+        {
+            Threat.Remove(
+                world,
+                facts,
+                world.Abilities,
+                world.Cards[thwart.Scheme],
+                thwart.Amount,
+                thwart.Trigger,
+                ThwartVerb,
+                events,
+                thwart.Player);
+            return;
+        }
+
         RemoveThreat(
             world, facts, world.Cards[thwart.Thwarter], world.Cards[thwart.Scheme], events);
     }
@@ -325,10 +394,46 @@ public static class BasicPowers
         }
 
         var attacker = world.Cards[attack.Attacker];
+        var source = attack.Source >= 0 ? world.Cards[attack.Source] : attacker;
+        long amount = attack.Amount >= 0
+            ? attack.Amount
+            : StateFields.Modified(world, attacker, "attack", facts, world.Players);
+
+        ContinuousEffect? temporaryOverkill = null;
+        if (attack.Overkill)
+        {
+            temporaryOverkill = new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: Keywords.Overkill,
+                Amount: 1,
+                Card: source.ObjectId,
+                Affects: attacker.ObjectId,
+                Lasts: new Duration(Uses: 1));
+            world.Effects.Register(temporaryOverkill);
+        }
+
+        if (attack.MoveFrom >= 0)
+        {
+            var from = world.Cards[attack.MoveFrom];
+            amount = Math.Min(amount, from.Damage);
+            if (amount > 0 && world.Abilities.CanTakeDamage(world, world.Cards[attack.Enemy], source))
+            {
+                Damage.Heal(world, facts, from, amount, attack.Trigger, "Move_Damage", events);
+            }
+            else
+            {
+                amount = 0;
+            }
+        }
+
         var damaged = Damage.Attack(
-            world, facts, attacker, world.Cards[attack.Enemy],
-            StateFields.Modified(world, attacker, "attack", facts, world.Players),
-            AttackVerb, AttackVerb, events);
+            world, facts, attacker, source, world.Cards[attack.Enemy], amount,
+            attack.Trigger, AttackVerb, events);
+
+        if (temporaryOverkill is not null)
+        {
+            world.Effects.Use(temporaryOverkill);
+        }
 
         var occurrence = world.Agenda.Occurrence
             ?? throw new RulesNotImplementedException(
@@ -418,6 +523,32 @@ public static class BasicPowers
         }
 
         InitiateThwart(world, character, scheme, player);
+    }
+
+    /// <summary>Initiates a card ability labelled as a thwart.</summary>
+    public static void CardThwart(
+        World world, ICardFacts facts, int player, Card source, Card scheme, long amount,
+        string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(scheme);
+        ArgumentNullException.ThrowIfNull(events);
+
+        var thwarter = world.Seats[player].IdentityCard;
+        if (Cancelled(world, facts, thwarter, Statuses.Confused, events))
+        {
+            return;
+        }
+
+        if (!Thwartable(world, facts, player).Any(card => card.ObjectId == scheme.ObjectId))
+        {
+            throw new RulesNotImplementedException(
+                $"card {scheme.ObjectId} is not a scheme {world.Seats[player].Name} can thwart");
+        }
+
+        InitiateThwart(world, thwarter, scheme, player, amount, source, trigger);
     }
 
     /// <summary>Whether a basic thwart against this scheme uses ATK.</summary>
