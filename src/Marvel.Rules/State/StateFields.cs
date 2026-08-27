@@ -423,7 +423,7 @@ public static class StateFields
         foreach (var effect in world.Effects.Active())
         {
             if (string.Equals(effect.Kind, field, StringComparison.Ordinal)
-                && effect.Affects == card.ObjectId)
+                && effect.AppliesTo(world, card))
             {
                 total += effect.Amount;
             }

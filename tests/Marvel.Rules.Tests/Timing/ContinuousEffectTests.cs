@@ -107,6 +107,45 @@ public sealed class ContinuousEffectTests
         Assert.Null(effects.Active()[0].Affects);
     }
 
+    [Rule("rr:lasting-effects.1")]
+    [Rule("rr:lasting-effects.3")]
+    [Rule("rr:lasting-effects.4")]
+    [Rule("rr:lasting-effects.5")]
+    [Fact]
+    public void APlayersCharactersRemainALiveLastingEffectSet()
+    {
+        var world = new World(new Facts(), players: 2);
+        world.CreateSeat("p0");
+        world.CreateSeat("p1");
+        world.Seats[0].IdentityCard = world.CreateCard("identity", world.Seats[0].Hero);
+        world.Seats[1].IdentityCard = world.CreateCard("identity", world.Seats[1].Hero);
+        var source = world.CreateCard(
+            "event", world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        var first = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var theirs = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+
+        world.Effects.GrantToCharactersControlledBy(
+            source, player: 0, field: "attack", amount: 1,
+            until: TimingPoints.EndOfPlayerPhase);
+
+        Assert.Equal(1, StateFields.Modified(
+            world, world.Seats[0].IdentityCard, "attack", world.Facts, world.Players));
+        Assert.Equal(1, StateFields.Modified(world, first, "attack", world.Facts, world.Players));
+        Assert.Equal(0, StateFields.Modified(world, theirs, "attack", world.Facts, world.Players));
+
+        // Created after registration: the affected set is a predicate, not a
+        // snapshot of the cards that happened to exist at resolution time.
+        var later = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        Assert.Equal(1, StateFields.Modified(world, later, "attack", world.Facts, world.Players));
+
+        world.Effects.Expire(TimingPoints.EndOfPlayerPhase);
+        Assert.Equal(0, StateFields.Modified(world, first, "attack", world.Facts, world.Players));
+        Assert.Equal(0, StateFields.Modified(world, later, "attack", world.Facts, world.Players));
+    }
+
     [Rule("rr:lasting-effects.5")]
     [Rule("rr:villain-phase.step.6.a")]
     [Fact]

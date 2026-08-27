@@ -238,4 +238,28 @@ public sealed class AffordanceTests
         Assert.False(request.Allows([]));
         Assert.False(request.Allows([9]));
     }
+
+    [Rule("rr:choose-game-element.3.1")]
+    [Fact]
+    public void OneLegalTargetCannotBeChosenTwice()
+    {
+        // The count is two and the id is legal, but the rule says the same
+        // target cannot be chosen multiple times. Checking only count and
+        // membership would accept this forged answer.
+        var request = new TargetRequest(Legal: [1, 2], Min: 2, Max: 2);
+
+        Assert.False(request.Allows([1, 1]));
+        Assert.True(request.Allows([1, 2]));
+    }
+
+    [Rule("rr:choose-game-element.3.1")]
+    [Fact]
+    public void AGroupedSelectionCannotRepeatOneMember()
+    {
+        var request = new TargetRequest(
+            Legal: [1, 2], Min: 2, Max: 2, Groups: [[1, 2]], Rule: "Together");
+
+        Assert.False(request.Allows([1, 1]));
+        Assert.True(request.Allows([1, 2]));
+    }
 }

@@ -133,6 +133,159 @@ public sealed class CardPlayTests
         Assert.Equal(DeckType.DiscardPile, spent.Area.Type);
     }
 
+    [Rule("rr:initiating-abilities.step.3")]
+    [Rule("rr:initiating-abilities.step.4")]
+    [Rule("rr:lasting-effects.1")]
+    [Fact]
+    public void TheNextCardCostReductionIsPricedAndSpentOnlyByAPlay()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var seat = world.Seats[0];
+        var source = world.CreateCard(
+            "free", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var ally = InHand(world, "ally");
+        CardPlay.ReduceNextCardCost(world, source, player: 0, amount: 1);
+
+        // Looking at the price is not playing the card and does not spend the
+        // one use. Repricing gives the same answer.
+        Assert.Equal("0", CardPlay.Price(world, printed, seat, ally)!.Cost);
+        Assert.Equal("0", CardPlay.Price(world, printed, seat, ally)!.Cost);
+        Assert.Single(world.Effects.Active());
+
+        CardPlay.Play(world, printed, new Silent(), seat, ally, [], []);
+
+        Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.Empty(world.Effects.Active());
+    }
+
+    [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:lasting-effects.1")]
+    [Fact]
+    public void AFailedPaymentDoesNotSpendTheNextCardReduction()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var seat = world.Seats[0];
+        var source = world.CreateCard(
+            "free", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var expensive = InHand(world, "expensive");
+        CardPlay.ReduceNextCardCost(world, source, player: 0, amount: 1);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.Play(world, printed, new Silent(), seat, expensive, [], []));
+
+        Assert.Single(world.Effects.Active());
+        Assert.Equal("8", CardPlay.Price(world, printed, seat, expensive)!.Cost);
+    }
+
+    [Rule("rr:target.5")]
+    [Rule("rr:lasting-effects.1")]
+    [Fact]
+    public void ACostReductionBelongsOnlyToTheChosenPlayer()
+    {
+        var printed = Cards();
+        var world = Table(printed);
+        var source = world.CreateCard(
+            "free", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var mine = world.CreateCard("ally", world.Seats[0].Hand);
+        var theirs = world.CreateCard("ally", world.Seats[1].Hand);
+        CardPlay.ReduceNextCardCost(world, source, player: 1, amount: 1);
+
+        Assert.Equal(1, CardPlay.CostOf(world, printed, world.Seats[0], mine).Amount);
+        Assert.Equal(0, CardPlay.CostOf(world, printed, world.Seats[1], theirs).Amount);
+    }
+
+    [Rule("rr:initiating-abilities.step.7")]
+    [Rule("rr:lasting-effects.1")]
+    [Fact]
+    public void ACardThatDoesNotFinishBeingPlayedDoesNotSpendTheReduction()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var seat = world.Seats[0];
+        var source = world.CreateCard(
+            "free", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var upgrade = InHand(world, "upgrade");
+        var payment = world.Cards[Pay(world, "res")];
+        CardPlay.ReduceNextCardCost(world, source, player: 0, amount: 1);
+
+        // This upgrade requires one specific host, and the forged play names
+        // none. Its payment succeeds, but step 7 never says the card was
+        // played, so "the next card you play" has not happened.
+        Assert.Throws<RulesNotImplementedException>(() => CardPlay.Play(
+            world, printed, new Targets(seat.IdentityCard.ObjectId), seat, upgrade,
+            [payment.ObjectId], [], targets: []));
+
+        Assert.Single(world.Effects.Active());
+        Assert.Same(seat.Hand, upgrade.Area);
+    }
+
+    [Rule("rr:modifiers.2")]
+    [Rule("rr:lasting-effects.1")]
+    [Fact]
+    public void CostReductionsStackAtZeroAndEachUseIsSpent()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var seat = world.Seats[0];
+        var source = world.CreateCard(
+            "free", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var ally = InHand(world, "ally");
+        CardPlay.ReduceNextCardCost(world, source, player: 0, amount: 2);
+        CardPlay.ReduceNextCardCost(world, source, player: 0, amount: 2);
+
+        Assert.Equal("0", CardPlay.Price(world, printed, seat, ally)!.Cost);
+
+        CardPlay.Play(world, printed, new Silent(), seat, ally, [], []);
+
+        Assert.Empty(world.Effects.Active());
+    }
+
+    [Rule("rr:lasting-effects.5")]
+    [Fact]
+    public void AnUnusedCardCostReductionExpiresWithThePlayerPhase()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "free", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var ally = InHand(world, "ally");
+        CardPlay.ReduceNextCardCost(world, source, player: 0, amount: 1);
+
+        Assert.Equal(1, world.Effects.Expire(TimingPoints.EndOfPlayerPhase));
+
+        Assert.Equal("1", CardPlay.Price(world, printed, world.Seats[0], ally)!.Cost);
+    }
+
+    [Rule("rr:play-put-into-play")]
+    [Rule("rr:play-put-into-play.3")]
+    [Rule("rr:ownership-and-control.3")]
+    [Rule("rr:ownership-and-control.7.2")]
+    [Fact]
+    public void AnOwnedAllyCanEnterPlayUnderAnotherPlayersControl()
+    {
+        var printed = Cards();
+        var world = Table(printed);
+        var owner = world.Seats[1];
+        var discard = world.AreaOf(
+            DeckType.DiscardPile, PlayArea.Of(owner.Index), cardOwner: owner.Index);
+        var ally = world.CreateCard("bruiser", discard);
+        var events = new List<GameEvent>();
+
+        CardPlay.PutAllyIntoPlay(
+            world, printed, new Silent(), ally, controller: 0,
+            trigger: "Make_The_Call", events);
+
+        Assert.Equal(1, ally.Owner);
+        Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.Equal(PlayArea.Of(0), ally.Area.PlayArea);
+        Assert.True(Statuses.Has(world, ally, Statuses.Tough));
+        Assert.Contains(events.OfType<ControlChanged>(), changed =>
+            changed.Card == ally.ObjectId && changed.From == 1 && changed.To == 0);
+        Assert.DoesNotContain(world.Agenda.Outstanding, step => step.What == Steps.CardPlayed);
+    }
+
     [Fact]
     public void AConditionalGeneratorSeesTheCardBeingPaidForInOfferAndResolution()
     {
@@ -711,6 +864,7 @@ public sealed class CardPlayTests
     private static Printed Cards() => new Printed()
         .With("res", ("RES", "GG"))
         .With("ally", ("Cost", "1"), ("RES", "R"))
+        .With("bruiser", ("Cost", "3"), ("HP", "3"), ("Toughness", "1"))
         .With("upgrade", ("Cost", "2"), ("RES", "B"))
         .With("event", ("Cost", "0"), ("RES", "Y"))
         .With("free", ("Cost", "0"), ("RES", "Y"))

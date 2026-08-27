@@ -47,6 +47,11 @@ public enum EffectSource
 /// card that has already gone to the discard.
 /// </param>
 /// <param name="Affects">The object id this applies to, or <c>null</c> for a board-wide effect.</param>
+/// <param name="Scope">
+/// A live affected-set rule, or empty when <paramref name="Affects"/> names
+/// the affected object directly. Kept as data so the rule can be re-evaluated
+/// after a save and when another card enters play.
+/// </param>
 /// <param name="Lasts">
 /// How long, as the card states it. <see cref="Duration.WhileInPlay"/> for a
 /// constant ability, which states no duration of its own.
@@ -57,8 +62,12 @@ public sealed record ContinuousEffect(
     long Amount = 0,
     int? Card = null,
     int? Affects = null,
-    Duration? Lasts = null)
+    Duration? Lasts = null,
+    string Scope = "")
 {
+    /// <summary>A live set containing the characters one player controls.</summary>
+    public const string CharactersControlledBy = "charactersControlledBy";
+
     /// <summary>
     /// Always <see cref="TimingPriority.Continuous"/>.
     /// </summary>
@@ -71,6 +80,38 @@ public sealed record ContinuousEffect(
     /// same timing priority".
     /// </remarks>
     public static TimingPriority Priority => TimingPriority.Continuous;
+
+    /// <summary>Whether this effect modifies the named card right now.</summary>
+    public bool AppliesTo(World world, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+
+        if (Scope.Length == 0)
+        {
+            return Affects == card.ObjectId;
+        }
+
+        if (!string.Equals(Scope, CharactersControlledBy, StringComparison.Ordinal))
+        {
+            throw new RulesNotImplementedException(
+                $"continuous-effect scope '{Scope}' is not implemented");
+        }
+
+        if (Affects is not int identity
+            || identity < 0
+            || identity >= world.Cards.Count)
+        {
+            return false;
+        }
+
+        var player = world.Seats.FirstOrDefault(seat => seat.IdentityCard.ObjectId == identity);
+        return player is not null
+            && (card.ObjectId == identity
+                || (world.Facts.Kind(card.FaceId) == CardKind.Ally
+                    && card.Area.Type == DeckType.AlliesArea
+                    && card.Area.PlayArea == PlayArea.Of(player.Index)));
+    }
 }
 
 /// <summary>
@@ -143,6 +184,41 @@ public sealed class ContinuousEffects(World world)
         var entry = new Entry(effect);
         entries.Add(entry);
         return new Registration(this, entry);
+    }
+
+    /// <summary>
+    /// Grants a modified field to every character one player controls for a
+    /// stated duration.
+    /// </summary>
+    /// <remarks>
+    /// The player is anchored by their identity and the affected set is read
+    /// live. <c>rr:lasting-effects.4</c> therefore includes an ally that enters
+    /// play after this effect was registered instead of freezing the set at
+    /// resolution time.
+    /// </remarks>
+    public Registration GrantToCharactersControlledBy(
+        Card source, int player, string field, long amount, string until)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(field);
+        ArgumentNullException.ThrowIfNull(until);
+        ArgumentOutOfRangeException.ThrowIfNegative(player);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(player, world.Players);
+
+        if (!StateFields.IsModifiable(field))
+        {
+            throw new RulesNotImplementedException(
+                $"'{field}' is not a field the engine can modify");
+        }
+
+        return Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            field,
+            Amount: amount,
+            Card: source.ObjectId,
+            Affects: world.Seats[player].IdentityCard.ObjectId,
+            Lasts: Duration.UntilEndOf(until),
+            Scope: ContinuousEffect.CharactersControlledBy));
     }
 
     /// <summary>Everything actually in force on this board, right now.</summary>
