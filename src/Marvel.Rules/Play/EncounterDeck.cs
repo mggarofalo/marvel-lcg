@@ -57,6 +57,86 @@ public static class EncounterDeck
     }
 
     /// <summary>
+    /// Discards from the current encounter deck until a card of the requested
+    /// kind and optional printed trait is discarded.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:encounter-deck.2</c> gives this discard its boundary: it stops when
+    /// the condition is met or when the encounter deck is emptied, and an
+    /// empty deck fulfills the effect without continuing through the newly
+    /// shuffled deck. The reset is still immediate under
+    /// <c>rr:encounter-deck.1</c>; this method performs it, then returns without
+    /// taking a card from the replacement deck.
+    /// </para>
+    /// <para>
+    /// The matching card is returned by object identity. It has already been
+    /// discarded, and if it emptied the deck it may already have been shuffled
+    /// back into the replacement deck. A following instruction such as "put
+    /// that minion into play" can therefore move the exact card that satisfied
+    /// the condition rather than searching for another copy.
+    /// </para>
+    /// <para>
+    /// The trait is printed because cards in the encounter deck are out of
+    /// play. <c>rr:ability</c> leaves constant abilities inactive there, so a
+    /// granted in-play trait cannot change which facedown deck card satisfies
+    /// this instruction.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">Printed card facts.</param>
+    /// <param name="kind">The printed card kind that ends the discard.</param>
+    /// <param name="trait">An optional printed trait that must also match.</param>
+    /// <param name="trigger">What caused the discard, for the event stream.</param>
+    /// <param name="events">Where to record the discard and any reset.</param>
+    /// <returns>The exact matching card, or null when the current deck ran out.</returns>
+    public static Card? DiscardUntil(
+        World world,
+        ICardFacts facts,
+        CardKind kind,
+        string trigger,
+        List<GameEvent> events,
+        string? trait = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(events);
+
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        if (deck.Cards.Count == 0 && !Reset(world, trigger, events))
+        {
+            return null;
+        }
+
+        int remaining = deck.Cards.Count;
+        for (int discarded = 0; discarded < remaining; discarded++)
+        {
+            var card = deck.TakeTop()
+                ?? throw new InvalidOperationException(
+                    "the encounter deck changed while one discard effect was resolving");
+            Discard.Card(world, card, trigger, events);
+
+            bool matches = facts.Kind(card.FaceId) == kind
+                && (trait is null
+                    || facts.Traits(card.FaceId).Contains(trait, StringComparer.Ordinal));
+
+            if (deck.Cards.Count == 0)
+            {
+                Reset(world, trigger, events);
+                return matches ? card : null;
+            }
+
+            if (matches)
+            {
+                return card;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "the encounter discard ended without a match or an empty deck");
+    }
+
+    /// <summary>
     /// Shuffles the encounter discard pile into a new encounter deck.
     /// </summary>
     /// <remarks>
@@ -116,20 +196,39 @@ public static class EncounterDeck
             Trigger = trigger, Verb = "Shuffle",
         });
 
-        // The price, and it is permanent: `rr:acceleration-token.2.1` says
-        // "acceleration tokens on the main scheme cannot be removed from play",
-        // and `rr:main-scheme-main-scheme-deck.5` carries them to the next
-        // stage. Every reshuffle makes every later villain phase worse.
-        if (world.TheCardIn(DeckType.MainSchemesArea) is { } scheme)
+        PlaceAccelerationToken(world, trigger, events);
+
+        return true;
+    }
+
+    /// <summary>Places one acceleration token next to the main scheme.</summary>
+    /// <remarks>
+    /// <c>rr:acceleration-token.2</c> permits card effects to add one, and
+    /// <c>.2.1</c> makes a token beside the main scheme permanent across its
+    /// stages. Encounter-deck resets use this same operation, so a token from a
+    /// card and one from an empty deck have identical state and event spelling.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="trigger">What placed it, for the event stream.</param>
+    /// <param name="events">Where to record the placement.</param>
+    /// <returns>Whether a main scheme was present to receive it.</returns>
+    public static bool PlaceAccelerationToken(
+        World world, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (world.TheCardIn(DeckType.MainSchemesArea) is not { } scheme)
         {
-            long before = scheme.Tokens.GetValueOrDefault(AccelerationToken);
-            scheme.PlaceTokens(AccelerationToken, 1);
-            events.Add(new FieldSet(scheme.ObjectId, AccelerationToken, before, before + 1)
-            {
-                Trigger = trigger, Verb = "Accelerate",
-            });
+            return false;
         }
 
+        long before = scheme.Tokens.GetValueOrDefault(AccelerationToken);
+        scheme.PlaceTokens(AccelerationToken, 1);
+        events.Add(new FieldSet(scheme.ObjectId, AccelerationToken, before, before + 1)
+        {
+            Trigger = trigger, Verb = "Accelerate",
+        });
         return true;
     }
 }
