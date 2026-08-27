@@ -33,6 +33,9 @@ public enum CreationSource
     /// <summary>The scenario's own encounter cards.</summary>
     Encounter,
 
+    /// <summary>A scenario card its main scheme says to set aside.</summary>
+    ScenarioSetAside,
+
     /// <summary>A named encounter set.</summary>
     EncounterSet,
 }
