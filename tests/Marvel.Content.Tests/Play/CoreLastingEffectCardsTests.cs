@@ -163,6 +163,47 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Equal(DeckType.DiscardPile, singleResource.Area.Type);
     }
 
+    [Fact]
+    public void PowerOfLeadershipGeneratesTwoForMakeTheCallsLeadershipAlly()
+    {
+        // The official FAQ for 01071 says Make the Call pays the ally's own
+        // cost. A matching Power of Aspect card therefore generates two
+        // resources even though Make the Call, rather than the ally, is played.
+        var world = Board();
+        var source = world.CreateCard("01071", world.Seats[0].Hand);
+        var power = world.CreateCard("01072", world.Seats[0].Hand);
+        world.CreateCard("01005", world.Seats[0].Deck);
+        var theirDiscard = world.AreaOf(
+            DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1);
+        var maria = world.CreateCard("01067", theirDiscard);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+
+        runner.Act(
+            world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        var step = Assert.Single(world.Agenda.Outstanding);
+        var prompt = runner.Choosing(world, source, 0, step.Index, step.Tier)!;
+        var offer = Assert.Single(prompt.Affordances);
+        var price = Assert.Single(offer.CostOptions);
+
+        Assert.Equal(maria.ObjectId, offer.AnchorId);
+        Assert.Equal("2", price.Cost);
+        Assert.Equal("GG", Assert.Single(price.Generators).Generates);
+
+        runner.Chose(
+            world,
+            source,
+            0,
+            step.Index,
+            Decision.Take(maria.ObjectId, [], [power.ObjectId]),
+            step.Tier);
+
+        Assert.Equal(DeckType.AlliesArea, maria.Area.Type);
+        Assert.Equal(PlayArea.Of(0), maria.Area.PlayArea);
+        Assert.Equal(DeckType.DiscardPile, power.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+    }
+
     private static void AnswerCardChoice(
         World world, Marvel.Cards.Run.AbilityRunner runner, Card source, Card chosen)
     {

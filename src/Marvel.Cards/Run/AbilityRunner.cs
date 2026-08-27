@@ -1836,27 +1836,30 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         if (choice.Kind == "makeTheCall")
         {
-            var sources = CardPlay.Generators(world, world.Facts, world.Seats[player])
-                .Where(generator => generator.Effect != source.ObjectId)
-                .ToList();
-            string pool = string.Concat(sources.Select(generator => generator.Generates));
             var offers = AlliesInPlayerDiscards(world)
-                .Where(ally => Resources.Pays(
-                    pool,
-                    Resources.Cost(ally.FaceId, world.Facts) ?? 0,
-                    Resources.Required(ally.FaceId, world.Facts)))
-                .Select(ally => new Affordance(
-                    ally.ObjectId, ChooseVerb, ally.ObjectId, ally.Owner, ally.FaceId,
+                .Select(ally => (Ally: ally, Sources: MakeTheCallSources(
+                    world, player, source, ally)))
+                .Where(candidate => Resources.Pays(
+                    string.Concat(candidate.Sources.Select(generator => generator.Generates)),
+                    Resources.Cost(candidate.Ally.FaceId, world.Facts) ?? 0,
+                    Resources.Required(candidate.Ally.FaceId, world.Facts)))
+                .Select(candidate => new Affordance(
+                    candidate.Ally.ObjectId,
+                    ChooseVerb,
+                    candidate.Ally.ObjectId,
+                    candidate.Ally.Owner,
+                    candidate.Ally.FaceId,
                     Costs:
                     [
                         new CostOption(
-                            ally.ObjectId,
-                            (Resources.Cost(ally.FaceId, world.Facts) ?? 0).ToString(
+                            candidate.Ally.ObjectId,
+                            (Resources.Cost(candidate.Ally.FaceId, world.Facts) ?? 0).ToString(
                                 System.Globalization.CultureInfo.InvariantCulture),
-                            Resources.Required(ally.FaceId, world.Facts) is { Length: > 0 } rule
+                            Resources.Required(candidate.Ally.FaceId, world.Facts)
+                                is { Length: > 0 } rule
                                 ? [rule]
                                 : null,
-                            Sources: sources),
+                            Sources: candidate.Sources),
                     ]))
                 .ToList();
             return new Prompt(
@@ -2162,7 +2165,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             CardPlay.Spend(
                 world, world.Facts, [world.Seats[player].Hand], input.Spent,
                 cost, Resources.Required(ally.FaceId, world.Facts),
-                source.ObjectId, player, cast.Events);
+                source.ObjectId, player, cast.Events, payingFor: ally);
             CardPlay.PutAllyIntoPlay(
                 world, world.Facts, cast.Abilities, ally, player, cast.Trigger, cast.Events);
             return Continue(source, cast, stoppedAt);
@@ -4937,17 +4940,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     ];
 
     private static bool CanMakeTheCall(Cast cast)
-    {
-        var sources = CardPlay.Generators(
-                cast.World, cast.World.Facts, cast.World.Seats[cast.Player])
-            .Where(source => source.Effect != cast.Source.ObjectId)
-            .ToList();
-        string pool = string.Concat(sources.Select(source => source.Generates));
-        return AlliesInPlayerDiscards(cast.World).Any(ally => Resources.Pays(
-            pool,
+        => AlliesInPlayerDiscards(cast.World).Any(ally => Resources.Pays(
+            string.Concat(MakeTheCallSources(
+                    cast.World, cast.Player, cast.Source, ally)
+                .Select(source => source.Generates)),
             Resources.Cost(ally.FaceId, cast.World.Facts) ?? 0,
             Resources.Required(ally.FaceId, cast.World.Facts)));
-    }
+
+    /// <summary>The resources available while paying one Make the Call candidate's cost.</summary>
+    private static IReadOnlyList<ResourceSource> MakeTheCallSources(
+        World world, int player, Card source, Card ally) =>
+    [
+        .. CardPlay.Generators(world, world.Facts, world.Seats[player], payingFor: ally)
+            .Where(generator => generator.Effect != source.ObjectId),
+    ];
 
     /// <summary>Every card a value names, which may be none.</summary>
     /// <remarks>
