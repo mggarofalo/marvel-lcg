@@ -502,6 +502,75 @@ public sealed class AttackTests
         Assert.Equal(deck, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
     }
 
+    [Rule("rr:attack-enemy-activation")]
+    [Rule("rr:attack-enemy-activation.step.1")]
+    [Fact]
+    public void OneAttackCanResolveAgainstBothHeroesWithOneBoostAndOneCompletion()
+    {
+        // Whirlwind 01130: "also resolve his attack against each other hero."
+        // "His attack" is the attack already initiating, not another attack:
+        // its one boost card is reused and its activation completes once.
+        var facts = Printed(atk: 2, boost: 1);
+        var world = Board(facts, players: 2);
+        var abilities = new CompletionRecorder();
+
+        Attack.AlsoResolveAgainstEachOtherHero(world);
+        Assert.Equal(2, world.Agenda.Count); // one attack root and its sentinel
+
+        var events = new List<GameEvent>();
+        var asked = Sequence.Work(world, facts, abilities, events);
+        while (asked is not null)
+        {
+            Sequence.Answer(world, facts, abilities, asked, Decision.Decline, events);
+            asked = Sequence.Work(world, facts, abilities, events);
+        }
+
+        Assert.Equal([3L, 3L], world.Seats.Select(seat => seat.IdentityCard.Damage));
+        Assert.Single(world.AreaOf(DeckType.EncounterDiscardPile).Cards);
+        var result = Assert.Single(abilities.Results);
+        Assert.True(result.Made);
+        Assert.Equal(6, result.DamageDealt);
+    }
+
+    [Rule("rr:defend-defense.2")]
+    [Rule("rr:attack-enemy-activation.step.4")]
+    [Fact]
+    public void AdditionalHeroesResolveInSeatOrderWithTheirOwnDefenderWindows()
+    {
+        // The engine chooses seat order as its deterministic player order.
+        // Each hero gets step 2 and a fresh damage calculation, while the
+        // already-flipped boost remains bounded to the one attack.
+        var facts = Printed(atk: 2, boost: 1, def: 1);
+        var world = Board(facts, players: 3);
+        var abilities = new CompletionRecorder();
+        Attack.AlsoResolveAgainstEachOtherHero(world);
+        var events = new List<GameEvent>();
+
+        var first = Sequence.Work(world, facts, abilities, events)!;
+        Assert.Equal(0, first.Player);
+        Sequence.Answer(world, facts, abilities, first, Decision.Decline, events);
+
+        var second = Sequence.Work(world, facts, abilities, events)!;
+        Assert.Equal(1, second.Player);
+        Sequence.Answer(
+            world, facts, abilities, second,
+            Decision.Take(world.Seats[1].IdentityCard.ObjectId), events);
+
+        var third = Sequence.Work(world, facts, abilities, events)!;
+        Assert.Equal(2, third.Player);
+        Sequence.Answer(world, facts, abilities, third, Decision.Decline, events);
+        Sequence.Finish(world, facts, abilities, events);
+
+        Assert.Equal([3L, 2L, 3L], world.Seats.Select(seat => seat.IdentityCard.Damage));
+        Assert.False(world.Seats[1].IdentityCard.Ready);
+        Assert.Equal(
+            world.Seats.Select(seat => seat.IdentityCard.ObjectId),
+            events.OfType<FieldSet>()
+                .Where(change => change.Field == "health")
+                .Select(change => change.Card));
+        Assert.Equal(8, Assert.Single(abilities.Results).DamageDealt);
+    }
+
     /// <summary>A villain, one hero-form identity per seat, one boost card.</summary>
     private static World Board(ICardFacts facts, int players = 1)
     {
@@ -533,6 +602,18 @@ public sealed class AttackTests
             return allies.Count > 0
                 ? new DefenderChoice(allies, Required: true)
                 : new DefenderChoice(candidates, Required: false);
+        }
+    }
+
+    private sealed class CompletionRecorder : NoCardAbilities
+    {
+        public List<EnemyActivation> Results { get; } = [];
+
+        public override IReadOnlyList<GameEvent> ActivationCompleted(
+            World world, EnemyActivation result)
+        {
+            Results.Add(result);
+            return [];
         }
     }
 

@@ -692,6 +692,12 @@ public static class Steps
     public const string DealAttackDamage = "DealAttackDamage";
 
     /// <summary>
+    /// Move the same attack to another hero before that hero's defender window.
+    /// This is an engine plan and therefore opens no timing windows of its own.
+    /// </summary>
+    public const string NextAttackTarget = "NextAttackTarget";
+
+    /// <summary>
     /// Step 6 of an attack — <c>rr:attack-enemy-activation.step.6</c>.
     /// </summary>
     public const string EndAttack = "EndAttack";

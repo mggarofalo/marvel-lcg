@@ -48,6 +48,29 @@ public static class Attack
     public const string DefenseVerb = "Defense";
 
     /// <summary>
+    /// During an attack's initiation interrupt, make that same attack resolve
+    /// against every other hero in deterministic seat order.
+    /// </summary>
+    public static void AlsoResolveAgainstEachOtherHero(World world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        var step = world.Agenda.Current;
+        if (step is not { What: Steps.Attack } || world.Agenda.Stage != Stage.Interrupts)
+        {
+            throw new RulesNotImplementedException(
+                "additional attack targets were requested outside an attack initiation");
+        }
+
+        world.PendingAdditionalAttackPlayers = Enumerable.Range(0, world.Players)
+            .Where(player => player != step.Value.Seat)
+            .Where(player => !world.Seats[player].Eliminated)
+            .Where(player => world.Facts.Kind(world.Seats[player].IdentityCard.FaceId)
+                == CardKind.Hero)
+            .ToList();
+    }
+
+    /// <summary>
     /// The attack initiates: it targets a player, and its steps go on the
     /// agenda.
     /// </summary>
@@ -75,6 +98,7 @@ public static class Attack
         if (BasicPowers.Cancelled(
             world, facts, world.Cards[step.Subject], Statuses.Stunned, events))
         {
+            world.PendingAdditionalAttackPlayers = [];
             return;
         }
 
@@ -87,7 +111,10 @@ public static class Attack
         var target = step.Character >= 0
             ? world.Cards[step.Character]
             : world.Seats[step.Seat].IdentityCard;
-        world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId);
+        var additional = world.PendingAdditionalAttackPlayers;
+        world.PendingAdditionalAttackPlayers = [];
+        world.Attack = new EnemyAttack(
+            step.Subject, step.Seat, target.ObjectId, AdditionalPlayers: additional);
 
         // `rr:activation` -- "whenever an enemy attacks or schemes, it is
         // considered to have activated". The umbrella, which a scheme sets too;
@@ -113,9 +140,46 @@ public static class Attack
         world.Agenda.Then(new PhaseStep(
             Steps.DealAttackDamage, step.Round, 5, Index: step.Seat, Subject: step.Subject,
             Seat: step.Seat, ActivationId: step.ActivationId));
+        foreach (int player in additional)
+        {
+            world.Agenda.Then(new PhaseStep(
+                Steps.NextAttackTarget, step.Round, 5, Index: player, Subject: step.Subject,
+                Seat: player, Plan: true, ActivationId: step.ActivationId));
+            world.Agenda.Then(new PhaseStep(
+                Steps.DeclareDefender, step.Round, 2, Index: player, Subject: step.Subject,
+                Seat: player, ActivationId: step.ActivationId));
+            world.Agenda.Then(new PhaseStep(
+                Steps.CalculateAttackDamage, step.Round, 4, Index: player, Subject: step.Subject,
+                Seat: player, ActivationId: step.ActivationId));
+            world.Agenda.Then(new PhaseStep(
+                Steps.DealAttackDamage, step.Round, 5, Index: player, Subject: step.Subject,
+                Seat: player, ActivationId: step.ActivationId));
+        }
         world.Agenda.Then(new PhaseStep(
             Steps.EndAttack, step.Round, 6, Index: step.Seat, Subject: step.Subject,
             Seat: step.Seat, ActivationId: step.ActivationId));
+    }
+
+    /// <summary>Move a multi-hero attack to its next printed hero target.</summary>
+    public static void NextTarget(World world, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        var attack = Current(world);
+        if (!attack.RemainingPlayers.Contains(player))
+        {
+            throw new RulesNotImplementedException(
+                $"player {player} is not a remaining target of this attack");
+        }
+
+        world.Attack = attack with
+        {
+            Player = player,
+            Target = world.Seats[player].IdentityCard.ObjectId,
+            Defender = -1,
+            BasicDefense = false,
+            CalculatedDamage = null,
+            AdditionalPlayers = attack.RemainingPlayers.Where(seat => seat != player).ToList(),
+        };
     }
 
     /// <summary>
@@ -513,7 +577,10 @@ public static class Attack
 
         if (world.Activation is { } activation)
         {
-            world.Activation = activation with { DamageDealt = damage.Amount };
+            world.Activation = activation with
+            {
+                DamageDealt = activation.DamageDealt + damage.Amount,
+            };
         }
     }
 

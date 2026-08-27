@@ -139,6 +139,12 @@ public sealed class World
     public EnemyAttack? Attack { get; set; }
 
     /// <summary>
+    /// Extra hero seats added while the current attack's initiation interrupt
+    /// window is open, before its attack state exists.
+    /// </summary>
+    public IReadOnlyList<int> PendingAdditionalAttackPlayers { get; set; } = [];
+
+    /// <summary>
     /// The enemy attack that just finished, or <c>null</c> outside the window
     /// that follows one.
     /// </summary>

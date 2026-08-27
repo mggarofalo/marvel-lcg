@@ -55,10 +55,17 @@ namespace Marvel.Rules.State;
 /// <c>.step.5</c> deals that amount as a separate step, so effects between the
 /// two do not recalculate it.
 /// </param>
+/// <param name="AdditionalPlayers">
+/// Hero seats still to resolve this same attack against, in player order.
+/// </param>
 public sealed record EnemyAttack(
     int Enemy, int Player, int Target, int Defender = -1, bool BasicDefense = false,
-    bool Damaged = false, long? CalculatedDamage = null)
+    bool Damaged = false, long? CalculatedDamage = null,
+    IReadOnlyList<int>? AdditionalPlayers = null)
 {
     /// <summary>Whether any character was declared the defender.</summary>
     public bool IsDefended => Defender >= 0;
+
+    /// <summary>The other heroes against whom this same attack must resolve.</summary>
+    public IReadOnlyList<int> RemainingPlayers => AdditionalPlayers ?? [];
 }

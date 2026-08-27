@@ -693,6 +693,10 @@ public static class VillainPhase
                 Attack.DealDamage(world, facts, events);
                 break;
 
+            case Steps.NextAttackTarget:
+                Attack.NextTarget(world, step.Seat);
+                break;
+
             case Steps.CharacterAttacks:
                 BasicPowers.ResolveCharacterAttack(world, facts, events);
                 break;
