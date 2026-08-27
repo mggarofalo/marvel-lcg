@@ -289,6 +289,29 @@
       ]
     },
     {
+      "card": "01145",
+      "name": "Rage of Ultron",
+      "note": "Ultron activates and the sentence resumes after that activation fully resolves. In alter-ego form, discard one player-deck card for each threat that activation placed; in hero form, discard one for each damage dealt by the attack's damage step.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "seq": [
+                { "enemyAttacks": { "enemies": { "titled": "Ultron" } } },
+                { "discardTop": { "from": "yourDeck", "count": { "result": "activationDamage" } } }
+              ] },
+              "else": { "seq": [
+                { "enemySchemes": { "enemies": { "titled": "Ultron" } } },
+                { "discardTop": { "from": "yourDeck", "count": { "result": "activationThreat" } } }
+              ] }
+            }
+          }
+        }
+      ]
+    },
+    {
       "card": "01152",
       "name": "Vibranium Armor",
       "note": "Attach to the villain. After the attached villain takes damage, its Forced Response gives it tough. The Hero Action exhausts the resolving player's hero and spends two physical resources to discard this attachment.",
@@ -2397,6 +2420,26 @@
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
           "effect": { "if": { "test": { "inForm": { "player": "you", "form": "alter-ego" } }, "then": { "seq": [ { "heal": { "card": { "query": "villain" }, "amount": 4 } }, { "if": { "test": { "not": { "atLeast": { "value": { "result": "healed" }, "count": 1 } } }, "then": { "gainSurge": 1 } } } ] }, "else": { "seq": [ { "dealDamage": { "cards": "you", "amount": 2 } }, { "heal": { "card": { "query": "villain" }, "amount": 2 } } ] } } }
+        }
+      ]
+    },
+    {
+      "card": "01122",
+      "name": "Klaw's Vengeance",
+      "note": "In alter-ego form, discard one random card from your hand. In hero form, Klaw attacks you; the sentence resumes only after that activation fully resolves, and places one threat on the main scheme only if the attack's damage step dealt damage.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "seq": [
+                { "enemyAttacks": { "enemies": { "titled": "Klaw" } } },
+                { "if": { "test": { "atLeast": { "value": { "result": "activationDamage" }, "count": 1 } }, "then": { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } } } }
+              ] },
+              "else": { "discardAtRandom": { "player": "you", "count": 1 } }
+            }
+          }
         }
       ]
     },

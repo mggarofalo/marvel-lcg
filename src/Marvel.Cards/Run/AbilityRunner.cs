@@ -34,6 +34,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 {
     private readonly AbilityBook book = book;
 
+    // An activation is an agenda operation, while the sentence that initiated
+    // it is a card operation. The stable agenda id is the join between them.
+    // Entries live only until that activation's completion sentinel calls back.
+    private readonly Dictionary<int, ActivationContinuation> activations = [];
+
     // Which printed faces carry a constant ability. `Constant` is asked about
     // every card in play every time anything reads the effect list, and all but
     // a handful of cards answer nothing -- so the common answer is a set lookup
@@ -58,6 +63,48 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <summary>The authored cards, whether or not they do anything.</summary>
     public IReadOnlySet<string> Authored => book.Authored;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        if (!activations.Remove(result.Id, out var continuation))
+        {
+            return [];
+        }
+
+        continuation.Made += result.Made ? 1 : 0;
+        continuation.Damage += result.DamageDealt;
+        continuation.Threat += result.ThreatPlaced;
+        continuation.Remaining -= 1;
+        if (continuation.Remaining > 0)
+        {
+            return [];
+        }
+
+        var events = new List<GameEvent>();
+        var cast = new Cast(
+            world,
+            world.Cards[continuation.Source],
+            continuation.Occurrence,
+            continuation.Player,
+            events,
+            this)
+        {
+            Tier = continuation.Tier,
+        };
+        foreach (var (name, value) in continuation.Results)
+        {
+            cast.Results[name] = value;
+        }
+
+        cast.Results["activationMade"] = continuation.Made;
+        cast.Results["activationDamage"] = continuation.Damage;
+        cast.Results["activationThreat"] = continuation.Threat;
+        Sequence(continuation.Sequence, cast, continuation.Next);
+        return events;
+    }
 
     /// <inheritdoc/>
     public string ResourcesGeneratedBy(World world, Card source, Card? payingFor)
@@ -3261,6 +3308,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Run(steps[step], cast);
             if (cast.Suspended)
             {
+                if (cast.ActivationIds.Count > 0)
+                {
+                    ((AbilityRunner)cast.Abilities).RegisterActivationContinuation(
+                        cast, node, step + 1);
+                }
+
                 return;
             }
         }
@@ -3930,6 +3983,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // parenthesis is the card saying it.
         bool first = node.Field("first") is AbilityValue.Word { Value: "true" };
 
+        var activationIds = new List<int>();
         foreach (var enemy in Every(node.Require("enemies"), cast))
         {
             var activation = new PhaseStep(
@@ -3938,12 +3992,41 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             if (first)
             {
+                if (cast.HasContinuation)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' resolves an activation first and then continues");
+                }
+
                 cast.World.Agenda.Now(activation);
             }
             else
             {
-                cast.World.Agenda.Then(activation);
+                activationIds.Add(cast.World.Agenda.ThenActivation(activation));
             }
+        }
+
+        if (cast.HasContinuation && activationIds.Count > 0)
+        {
+            cast.WaitFor(activationIds);
+            cast.Suspend();
+        }
+    }
+
+    private void RegisterActivationContinuation(Cast cast, AbilityNode sequence, int next)
+    {
+        var continuation = new ActivationContinuation(
+            cast.Source.ObjectId,
+            cast.Occurrence,
+            cast.Player,
+            cast.Tier,
+            sequence,
+            next,
+            cast.ActivationIds.Count,
+            new Dictionary<string, long>(cast.Results, StringComparer.Ordinal));
+        foreach (int id in cast.ActivationIds)
+        {
+            activations.Add(id, continuation);
         }
     }
 
@@ -4698,6 +4781,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <summary>Stops the ability here — <c>rr:choose-option</c>.</summary>
         public void Suspend() => Suspended = true;
 
+        /// <summary>The scheduled activations this sentence must wait for.</summary>
+        public List<int> ActivationIds { get; } = [];
+
+        public void WaitFor(IEnumerable<int> ids) => ActivationIds.AddRange(ids);
+
         /// <summary>Whether text after the current node still has to resolve.</summary>
         public bool HasContinuation { get; private set; }
 
@@ -4736,5 +4824,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <summary>Replaces the damage with this much.</summary>
         /// <param name="amount">What is left.</param>
         public void Replace(long amount) => Remaining = amount;
+    }
+
+    private sealed class ActivationContinuation(
+        int source,
+        Occurrence occurrence,
+        int player,
+        AbilityType? tier,
+        AbilityNode sequence,
+        int next,
+        int remaining,
+        Dictionary<string, long> results)
+    {
+        public int Source { get; } = source;
+        public Occurrence Occurrence { get; } = occurrence;
+        public int Player { get; } = player;
+        public AbilityType? Tier { get; } = tier;
+        public AbilityNode Sequence { get; } = sequence;
+        public int Next { get; } = next;
+        public int Remaining { get; set; } = remaining;
+        public Dictionary<string, long> Results { get; } = results;
+        public long Made { get; set; }
+        public long Damage { get; set; }
+        public long Threat { get; set; }
     }
 }
