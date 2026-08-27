@@ -32,6 +32,64 @@ namespace Marvel.Rules.Play;
 public static class Threat
 {
     /// <summary>
+    /// Removes threat from a scheme, respecting constant prohibitions and
+    /// defeating a side scheme reduced to zero.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:cannot</c>: "The word 'cannot' is absolute, and cannot be
+    /// countermanded by other abilities." The question is asked here so a
+    /// basic thwart and a card effect cannot disagree about the same scheme.
+    /// </para>
+    /// <para>
+    /// <c>rr:defeat</c>: "if a side scheme has no threat on it, it is
+    /// defeated." Reaching zero is therefore part of removing the threat,
+    /// however the removal arrived.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">What cards continuously permit or prohibit.</param>
+    /// <param name="scheme">Which scheme.</param>
+    /// <param name="amount">How much to remove.</param>
+    /// <param name="trigger">What caused it, for the event stream.</param>
+    /// <param name="verb">What kind of change the event stream records.</param>
+    /// <param name="events">Where to record what happened.</param>
+    /// <param name="by">The seat whose character did it, or -1.</param>
+    /// <returns>How much threat was removed.</returns>
+    public static long Remove(
+        World world, ICardFacts facts, ICardAbilities abilities, Card scheme, long amount,
+        string trigger, string verb, List<GameEvent> events, int by = -1)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(scheme);
+        ArgumentNullException.ThrowIfNull(events);
+
+        long held = scheme.Tokens.GetValueOrDefault("k_threat");
+        long removed = Math.Min(held, Math.Max(0, amount));
+        if (removed == 0 || !abilities.CanRemoveThreat(world, scheme))
+        {
+            return 0;
+        }
+
+        scheme.PlaceTokens("k_threat", -removed);
+        events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
+        {
+            Trigger = trigger, Verb = verb,
+        });
+
+        if (scheme.Area.Type == DeckType.SideSchemesArea
+            && scheme.Tokens.GetValueOrDefault("k_threat") == 0)
+        {
+            Defeat.Scheme(world, facts, scheme, trigger, events, by);
+        }
+
+        return removed;
+    }
+
+    /// <summary>
     /// Places threat on a scheme, and resolves the scheme if that completed it.
     /// </summary>
     /// <param name="world">The board.</param>

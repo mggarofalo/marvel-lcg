@@ -27,6 +27,20 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public interface ICardAbilities : IWindowAbilities
 {
+    /// <summary>
+    /// Whether threat may currently be removed from a scheme.
+    /// </summary>
+    /// <remarks>
+    /// A constant prohibition is a question the rules layer must ask before
+    /// either a basic thwart or a card effect removes tokens. The default is
+    /// the engine's choice for an ability source that has no such prohibition;
+    /// a card interpreter overrides it when a card in play says otherwise.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="scheme">The scheme threat would be removed from.</param>
+    /// <returns>Whether the removal is permitted.</returns>
+    bool CanRemoveThreat(World world, Card scheme) => true;
+
     /// <summary>Resolves a revealed encounter card's "When Revealed" ability.</summary>
     /// <param name="world">The world.</param>
     /// <param name="card">The card being revealed.</param>
@@ -347,6 +361,9 @@ public interface ICardAbilities : IWindowAbilities
 /// </remarks>
 public class NoCardAbilities : ICardAbilities
 {
+    /// <inheritdoc/>
+    public virtual bool CanRemoveThreat(World world, Card scheme) => true;
+
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
 

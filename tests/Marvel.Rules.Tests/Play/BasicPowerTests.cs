@@ -194,6 +194,50 @@ public sealed class BasicPowerTests
         Assert.Equal(0, reported.To);
     }
 
+    [Rule("rr:cannot")]
+    [Rule("rr:thwart.1.1")]
+    [Fact]
+    public void ACharacterCannotInitiateAThwartAgainstAProtectedScheme()
+    {
+        // "Cannot" is absolute. A scheme whose threat cannot be removed is
+        // not one with threat "for the character to remove", so it is absent
+        // from the legal targets rather than offered as a no-op.
+        var printed = new Printed().With("hero", ("THW", "2"));
+        var world = Board(printed);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 3);
+        world.Abilities = new ProtectedScheme(scheme.ObjectId);
+
+        Assert.Empty(BasicPowers.Thwartable(world, printed, 0));
+        Assert.Throws<RulesNotImplementedException>(
+            () => BasicPowers.BasicThwart(world, printed, 0, scheme, []));
+        Assert.True(world.Seats[0].IdentityCard.Ready);
+        Assert.Equal(3, scheme.Tokens["k_threat"]);
+    }
+
+    [Rule("rr:cannot")]
+    [Fact]
+    public void AProtectedSchemeAlsoRefusesThreatRemovalFromAnEffect()
+    {
+        // The prohibition is checked by the shared primitive, not only by the
+        // basic-power affordance. A card effect therefore cannot walk around
+        // the word "cannot" by calling the token mutation directly.
+        var printed = new Printed();
+        var world = Board(printed);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 3);
+        var abilities = new ProtectedScheme(scheme.ObjectId);
+        world.Abilities = abilities;
+        var events = new List<GameEvent>();
+
+        long removed = Threat.Remove(
+            world, printed, abilities, scheme, 2, "test", "Remove_Threat", events);
+
+        Assert.Equal(0, removed);
+        Assert.Equal(3, scheme.Tokens["k_threat"]);
+        Assert.Empty(events);
+    }
+
     [Rule("rr:recover-recovery")]
     [Rule("rr:recover-recovery.1")]
     [Fact]
@@ -499,6 +543,12 @@ public sealed class BasicPowerTests
 
     private static int[] Ids(IReadOnlyList<Card> cards) =>
         [.. cards.Select(card => card.ObjectId).Order()];
+
+    private sealed class ProtectedScheme(int scheme) : NoCardAbilities
+    {
+        public override bool CanRemoveThreat(World world, Card candidate) =>
+            candidate.ObjectId != scheme;
+    }
 
     /// <summary>A villain, a main scheme, and one identity per seat.</summary>
     private static World Board(Printed printed, int players = 1, bool hero = true)

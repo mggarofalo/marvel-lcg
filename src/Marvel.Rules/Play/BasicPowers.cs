@@ -123,8 +123,9 @@ public static class BasicPowers
                 continue;
             }
 
-            schemes.AddRange(area.Cards.Where(
-                scheme => scheme.Tokens.GetValueOrDefault("k_threat") > 0));
+            schemes.AddRange(area.Cards.Where(scheme =>
+                scheme.Tokens.GetValueOrDefault("k_threat") > 0
+                && world.Abilities.CanRemoveThreat(world, scheme)));
         }
 
         return schemes;
@@ -677,35 +678,15 @@ public static class BasicPowers
     private static void RemoveThreat(
         World world, ICardFacts facts, Card character, Card scheme, List<GameEvent> events)
     {
-        long held = scheme.Tokens.GetValueOrDefault("k_threat");
         string power = Assaulted(world, facts, scheme) ? "attack" : "thwart";
-        long removed = Math.Min(
-            held, StateFields.Modified(world, character, power, facts, world.Players));
-
-        scheme.PlaceTokens("k_threat", -removed);
-        events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
-        {
-            Trigger = ThwartVerb, Verb = ThwartVerb,
-        });
-
-        // `rr:defeat`: "if a character has zero or fewer remaining hit points,
-        // **or if a side scheme has no threat on it**, it is defeated", and
-        // `rr:side-scheme.2` says the same from the other side -- a side scheme
-        // "remains in play until there is no threat on it *(which causes it to
-        // be defeated and discarded)*".
-        //
-        // The main scheme is not a side scheme and stays: `rr:main-scheme.6`
-        // says main scheme cards cannot be discarded from play, and a main
-        // scheme at zero threat is simply one the players are winning.
-        if (scheme.Area.Type == DeckType.SideSchemesArea
-            && scheme.Tokens.GetValueOrDefault("k_threat") == 0)
-        {
-            // Who did it, for the cards that ask. `rr:ownership-and-control.2`
-            // puts a card under its owner's control, so an ally's thwart is
-            // still its owner's doing -- `rr:you-your.15` keeps it off that
-            // player's *identity*, which is a different question.
-            Defeat.Scheme(world, facts, scheme, ThwartVerb, events, by: character.Owner);
-        }
+        // Who did it, for the cards that ask. `rr:ownership-and-control.2`
+        // puts a card under its owner's control, so an ally's thwart is still
+        // its owner's doing -- `rr:you-your.15` keeps it off that player's
+        // identity, which is a different question.
+        Threat.Remove(
+            world, facts, world.Abilities, scheme,
+            StateFields.Modified(world, character, power, facts, world.Players),
+            ThwartVerb, ThwartVerb, events, by: character.Owner);
     }
 
     private static void Exhaust(Card character, string verb, List<GameEvent> events)
