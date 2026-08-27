@@ -78,6 +78,39 @@ public sealed class CorePlayerSelectionTests
         Assert.True(DeckTypes.IsInPlay(aerial.Area.Type));
     }
 
+    [Rule("rr:appendix-ii-setup.step.16")]
+    [Rule("rr:search.1")]
+    [Rule("rr:search.3")]
+    [Fact]
+    public void ForesightChoosesABlackPantherUpgradeAfterTheMulligan()
+    {
+        var world = Board("01040a,01040b");
+        world.Seats[0].IdentityCard.TurnTo("01040b");
+        var chosen = world.CreateCard("01046", world.Seats[0].Deck);
+        var other = world.CreateCard("01047", world.Seats[0].Deck);
+        for (int card = 0; card < 6; card++)
+        {
+            world.CreateCard("01044", world.Seats[0].Deck);
+        }
+        var runner = AuthoredCards.Runner();
+        Assert.Single(runner.PlayerSetupCards(world, 0));
+        var game = Game.Begin(world, Cards, runner);
+
+        var setup = game.Resolve(Decision.Decline);
+
+        Assert.Equal(GamePhase.PlayerSetup, game.Phase);
+        Assert.Equal(Question.Element, setup.Prompt!.Asking);
+        Assert.Equal(
+            [chosen.ObjectId, other.ObjectId],
+            setup.Prompt.Affordances.Select(option => option.AnchorId).Order());
+
+        game.Resolve(Decision.Take(chosen.ObjectId));
+
+        Assert.Equal(GamePhase.PlayerTurn, game.Phase);
+        Assert.Contains(chosen, world.Seats[0].Hand.Cards);
+        Assert.Contains(other, world.Seats[0].Deck.Cards);
+    }
+
     private static World Board(string identity)
     {
         var world = new World(Cards, players: 1);

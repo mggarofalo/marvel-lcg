@@ -945,6 +945,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public IReadOnlyList<Card> PlayerSetupCards(World world, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentOutOfRangeException.ThrowIfNegative(player);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(player, world.Players);
+
+        return
+        [
+            .. world.Areas
+                .Where(area => DeckTypes.IsInPlay(area.Type)
+                    && area.PlayArea == PlayArea.Of(player))
+                .SelectMany(area => area.Cards)
+                .Where(card => ControllerOf(world, card) == player
+                    && book.On(card.FaceId).Any(
+                        ability => ability.Trigger.Timing == AbilityType.Setup)),
+        ];
+    }
+
+    /// <inheritdoc/>
     /// <remarks>
     /// <para>
     /// <b>A reader, not a runner.</b> Everything else on this class resolves an

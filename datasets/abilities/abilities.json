@@ -3182,6 +3182,30 @@
       ]
     },
     {
+      "card": "01040b",
+      "name": "T'Challa",
+      "note": "Foresight resolves at setup step 16 after mulligans and before round one. It searches the resolving player's deck for a BLACK_PANTHER upgrade, lets that player choose the exact match to add to hand, and shuffles the searched deck even when no match remains.",
+      "abilities": [
+        {
+          "name": "Foresight",
+          "trigger": { "timing": "Setup", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "exists": { "withTrait": { "cards": { "cardsIn": { "area": "yourDeck", "kind": "Upgrade" } }, "trait": "BLACK_PANTHER" } } },
+              "then": { "chooseCard": {
+                "from": { "withTrait": { "cards": { "cardsIn": { "area": "yourDeck", "kind": "Upgrade" } }, "trait": "BLACK_PANTHER" } },
+                "effect": { "seq": [
+                  { "addToHand": "chosen" },
+                  { "shuffle": "yourDeck" }
+                ] }
+              } },
+              "else": { "shuffle": "yourDeck" }
+            }
+          }
+        }
+      ]
+    },
+    {
       "card": "01041",
       "name": "Shuri",
       "note": "After Shuri enters play, her optional response searches the controlling player's deck for an Upgrade. The player chooses among every matching card, adds it to hand, then shuffles the searched deck.",
