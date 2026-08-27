@@ -2804,6 +2804,18 @@
       ]
     },
     {
+      "card": "01071",
+      "name": "Make the Call",
+      "note": "The Action offers each affordable ally in every player's discard pile, priced at that ally's printed resource cost from the resolving player's generators. The chosen exact card keeps its owner but enters the resolving player's ally area under their control; putting it into play is not playing it and therefore does not spend next-card cost reductions or produce a Card Played response.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "when": { "canMakeTheCall": "game" },
+          "effect": { "makeTheCall": "game" }
+        }
+      ]
+    },
+    {
       "card": "01092",
       "name": "Helicarrier",
       "note": "The Action exhausts Helicarrier and chooses a player through that player's identity. A one-use lasting effect reduces the next card that player successfully plays this phase by 1; pricing an offer does not consume it, and an unused reduction expires at the end of the player phase.",

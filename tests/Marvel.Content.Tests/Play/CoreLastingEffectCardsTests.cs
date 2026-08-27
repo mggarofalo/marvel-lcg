@@ -65,6 +65,44 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Equal(2, CardPlay.CostOf(world, Cards, world.Seats[1], theirs).Amount);
     }
 
+    [Rule("rr:play-put-into-play")]
+    [Rule("rr:ownership-and-control.7.2")]
+    [Fact]
+    public void MakeTheCallPricesTheChosenAllyAndPutsItUnderYourControl()
+    {
+        var world = Board();
+        var source = world.CreateCard("01071", world.Seats[0].Hand);
+        world.CreateCard("01005", world.Seats[0].Deck);
+        var doubleResource = world.CreateCard("01088", world.Seats[0].Hand);
+        var singleResource = world.CreateCard("01003", world.Seats[0].Hand);
+        var theirDiscard = world.AreaOf(
+            DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1);
+        var chosen = world.CreateCard("01083", theirDiscard);
+        world.CreateCard("01076", theirDiscard);
+        var runner = AuthoredCards.Runner();
+
+        runner.Act(
+            world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        var step = Assert.Single(world.Agenda.Outstanding);
+        var prompt = runner.Choosing(world, source, 0, step.Index, step.Tier)!;
+        var offer = Assert.Single(prompt.Affordances);
+        Assert.Equal(chosen.ObjectId, offer.AnchorId);
+        Assert.Equal("3", Assert.Single(offer.CostOptions).Cost);
+
+        runner.Chose(
+            world, source, 0, step.Index,
+            Decision.Take(
+                chosen.ObjectId, [], [doubleResource.ObjectId, singleResource.ObjectId]),
+            step.Tier);
+
+        Assert.Equal(1, chosen.Owner);
+        Assert.Equal(PlayArea.Of(0), chosen.Area.PlayArea);
+        Assert.Equal(DeckType.AlliesArea, chosen.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, doubleResource.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, singleResource.Area.Type);
+    }
+
     private static void AnswerCardChoice(
         World world, Marvel.Cards.Run.AbilityRunner runner, Card source, Card chosen)
     {

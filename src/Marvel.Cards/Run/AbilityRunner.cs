@@ -1723,6 +1723,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     new TargetRequest(
                         [.. schemes.Select(card => card.ObjectId)], count, count))]);
         }
+        if (choice.Kind == "makeTheCall")
+        {
+            var sources = CardPlay.Generators(world, world.Facts, world.Seats[player])
+                .Where(generator => generator.Effect != source.ObjectId)
+                .ToList();
+            string pool = string.Concat(sources.Select(generator => generator.Generates));
+            var offers = AlliesInPlayerDiscards(world)
+                .Where(ally => Resources.Pays(
+                    pool,
+                    Resources.Cost(ally.FaceId, world.Facts) ?? 0,
+                    Resources.Required(ally.FaceId, world.Facts)))
+                .Select(ally => new Affordance(
+                    ally.ObjectId, ChooseVerb, ally.ObjectId, ally.Owner, ally.FaceId,
+                    Costs:
+                    [
+                        new CostOption(
+                            ally.ObjectId,
+                            (Resources.Cost(ally.FaceId, world.Facts) ?? 0).ToString(
+                                System.Globalization.CultureInfo.InvariantCulture),
+                            Resources.Required(ally.FaceId, world.Facts) is { Length: > 0 } rule
+                                ? [rule]
+                                : null,
+                            Sources: sources),
+                    ]))
+                .ToList();
+            return new Prompt(
+                player, Question.Element, TimingPriority.Untimed,
+                Steps.TurnAction, $"{source.FaceId}: choose an ally",
+                Cancellable: false, offers);
+        }
         var affordances = cards
             ? Every(choice.Require("from"), cast)
                 .Select(card => new Affordance(
@@ -1953,6 +1983,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.Trigger, "Remove_Threat", cast.Events, by: player);
             }
             return cast.Events;
+        }
+        if (choice.Kind == "makeTheCall")
+        {
+            var ally = AlliesInPlayerDiscards(world)
+                .FirstOrDefault(card => card.ObjectId == input.Affordance)
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' did not offer ally {input.Affordance}");
+            long cost = Resources.Cost(ally.FaceId, world.Facts) ?? 0;
+            CardPlay.Spend(
+                world, world.Facts, [world.Seats[player].Hand], input.Spent,
+                cost, Resources.Required(ally.FaceId, world.Facts),
+                source.ObjectId, player, cast.Events);
+            CardPlay.PutAllyIntoPlay(
+                world, world.Facts, cast.Abilities, ally, player, cast.Trigger, cast.Events);
+            return Continue(source, cast, stoppedAt);
         }
 
         if (choice.Kind == "indirectDamage")
@@ -2300,7 +2345,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         if (node.Kind is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
-            or "chooseDiscardToShuffle" or "thwartDifferentSchemes")
+            or "chooseDiscardToShuffle" or "thwartDifferentSchemes" or "makeTheCall")
         {
             yield return node;
             yield break;
@@ -2653,6 +2698,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "chooseDiscardToShuffle":
             case "thwartDifferentSchemes":
+            case "makeTheCall":
                 cast.World.Agenda.Then(new PhaseStep(
                     Steps.ChooseOption,
                     cast.World.Agenda.Current?.Round ?? 0,
@@ -2860,6 +2906,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // control" -- has to be answerable by it. `Every` falls back to `Find`
         // for the queries that name one, so both shapes go through here.
         "exists" => Every(node.Argument, cast).Count > 0,
+        "canMakeTheCall" => CanMakeTheCall(cast),
 
         // "If Vulture is in play". `rr:identity.2` makes a title name one
         // card -- "if a card refers to a hero or alter-ego by title, it refers
@@ -4602,6 +4649,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             activations.Add(id, continuation);
         }
+    }
+
+    /// <summary>All allies in player discard piles, in player and pile order.</summary>
+    private static IReadOnlyList<Card> AlliesInPlayerDiscards(World world) =>
+    [
+        .. world.PlayerOrder.SelectMany(player => world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards)
+            .Where(card => world.Facts.Kind(card.FaceId) == CardKind.Ally),
+    ];
+
+    private static bool CanMakeTheCall(Cast cast)
+    {
+        var sources = CardPlay.Generators(
+                cast.World, cast.World.Facts, cast.World.Seats[cast.Player])
+            .Where(source => source.Effect != cast.Source.ObjectId)
+            .ToList();
+        string pool = string.Concat(sources.Select(source => source.Generates));
+        return AlliesInPlayerDiscards(cast.World).Any(ally => Resources.Pays(
+            pool,
+            Resources.Cost(ally.FaceId, cast.World.Facts) ?? 0,
+            Resources.Required(ally.FaceId, cast.World.Facts)));
     }
 
     /// <summary>Every card a value names, which may be none.</summary>
