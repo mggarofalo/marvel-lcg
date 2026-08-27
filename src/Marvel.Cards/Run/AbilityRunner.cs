@@ -5665,6 +5665,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.Discarded, Word(node.Argument)[0], cast.World.Facts),
             "printedBoostIconsDiscarded" => cast.Discarded.Sum(card =>
                 cast.World.Facts.PrintedValue(card.FaceId, "Boost", cast.World.Players)),
+            "topEncounterDiscardBoostPlusOne" => 1 + cast.World.AreaOf(
+                DeckType.EncounterDiscardPile).Cards
+                .Select(card => cast.World.Facts.PrintedValue(
+                    card.FaceId, "Boost", cast.World.Players))
+                .LastOrDefault(),
             "remainingHealth" => Find(node.Argument, cast) is { } remaining
                 ? Math.Max(
                     0,

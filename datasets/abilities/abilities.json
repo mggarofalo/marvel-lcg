@@ -3531,6 +3531,136 @@
       ]
     },
     {
+      "card": "01023",
+      "name": "Legal Practice",
+      "note": "Alter-Ego Action (thwart): choose a threatened scheme and one to five other cards in hand, discard those cards, and remove one threat per card actually discarded. The event itself is being played and is not one of the cards in hand available to choose.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "when": { "canLegalPractice": { "query": "schemes" } },
+          "effect": { "legalPractice": { "schemes": { "query": "schemes" } } }
+        }
+      ]
+    },
+    {
+      "card": "01138b",
+      "name": "Assault on NORAD",
+      "note": "After villain phase step one finishes placing threat, each player in player order independently chooses either two more threat here or one facedown Drone from the top of their own deck. Each player's choice resolves in a fresh frame so 'their deck' remains that player's deck through the question.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenVillainPhaseStepOneEnds", "timing": "ForcedResponse", "subject": "game" },
+          "effect": { "eachPlayer": { "effect": { "choose": { "options": [
+            { "placeThreat": { "scheme": "this", "amount": 2 } },
+            { "createDrones": { "player": "you", "count": 1 } }
+          ] } } } }
+        }
+      ]
+    },
+    {
+      "card": "01144a",
+      "name": "Android Efficiency",
+      "note": "When revealed, each player in player order creates a Drone from their own deck. Its boost ability makes the attacked player either spend one energy resource or create a Drone from that player's deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "eachPlayer": { "effect": { "createDrones": { "player": "you", "count": 1 } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "payOrEffect": { "resources": "Y", "otherwise": { "createDrones": { "player": "you", "count": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01144b",
+      "name": "Android Efficiency",
+      "note": "When revealed, each player in player order creates a Drone from their own deck. Its boost ability makes the attacked player either spend one mental resource or create a Drone from that player's deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "eachPlayer": { "effect": { "createDrones": { "player": "you", "count": 1 } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "payOrEffect": { "resources": "B", "otherwise": { "createDrones": { "player": "you", "count": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01144c",
+      "name": "Android Efficiency",
+      "note": "When revealed, each player in player order creates a Drone from their own deck. Its boost ability makes the attacked player either spend one physical resource or create a Drone from that player's deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "eachPlayer": { "effect": { "createDrones": { "player": "you", "count": 1 } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "payOrEffect": { "resources": "R", "otherwise": { "createDrones": { "player": "you", "count": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01151",
+      "name": "Under Attack",
+      "note": "When revealed, each player in player order independently chooses either two threat here or three damage to their own hero. Fresh per-player frames keep both 'their hero' and the chosen branch bound to the player answering.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "eachPlayer": { "effect": { "choose": { "options": [
+            { "placeThreat": { "scheme": "this", "amount": 2 } },
+            { "dealDamage": { "cards": "you", "amount": 3 } }
+          ] } } } }
+        }
+      ]
+    },
+    {
+      "card": "01159",
+      "name": "Ritual Combat",
+      "note": "When revealed, discard exactly the top encounter card, then choose damage to the resolving hero or threat on the main scheme. X is read from that immediately discarded card as one plus its printed boost value.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "discardTop": { "from": "encounterDeck", "count": 1 } },
+            { "choose": { "options": [
+              { "dealDamage": { "cards": "you", "amount": { "topEncounterDiscardBoostPlusOne": "game" } } },
+              { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": { "topEncounterDiscardBoostPlusOne": "game" } } }
+            ] } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01174",
+      "name": "Electromagnetic Backlash",
+      "note": "Each player in player order discards the top five cards of their own deck and takes one damage per printed energy resource among their own discarded cards. Printed double-resource cards therefore count twice.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "eachPlayer": { "effect": { "seq": [
+            { "discardTop": { "from": "yourDeck", "player": "you", "count": 5 } },
+            { "dealDamage": { "cards": "you", "amount": { "printedResourceCountDiscarded": "Y" } } }
+          ] } } }
+        }
+      ]
+    },
+    {
+      "card": "01179",
+      "name": "Yon-Rogg's Treason",
+      "note": "Discard every card with a printed energy resource from the resolving player's hand. If that discarded no cards, the treachery gains surge; a double-energy card is still one discarded card for this condition.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "discardHandWithResource": "Y" },
+            { "if": { "test": { "not": { "atLeast": { "value": { "result": "discarded" }, "count": 1 } } }, "then": { "gainSurge": "this" } } }
+          ] }
+        }
+      ]
+    },
+    {
       "card": "01055",
       "name": "The Power of Aggression",
       "note": "This card generates one wild resource normally and doubles that output while paying for an Aggression card. The card being paid for is payment context supplied by the engine, not inferred from the hand.",
