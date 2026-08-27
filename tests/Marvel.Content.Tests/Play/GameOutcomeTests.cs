@@ -23,8 +23,8 @@ public sealed class GameOutcomeTests
     [Fact]
     public void APlayerCanDefeatEveryVillainStageAndWin()
     {
-        var first = Play(66);
-        var replay = Play(66);
+        var first = Play(2794);
+        var replay = Play(2794);
 
         Assert.Equal(Outcome.PlayersWin, first.World.Result);
         Assert.Contains(RhinoOne, first.Policy.VillainStages);

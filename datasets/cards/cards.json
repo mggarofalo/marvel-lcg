@@ -194,6 +194,7 @@
         "Class": "Hero",
         "Cost": "4",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "enemy",
         "RES": "R"
       },
       "text": "Hero form only. Attach to an enemy. Max 1 per enemy.\n<b>Forced Interrupt</b>: When attached enemy would attack, discard Webbed Up instead. Then, stun that enemy.",
@@ -383,6 +384,7 @@
         "Class": "Hero",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Spend X [energy] resources → put X energy counters here.\n<b>Hero Action</b> <i>(attack)</i>: Discard Energy Channel → deal 2 damage to an enemy (to a maximum of 10) for each energy counter here.",
@@ -1227,6 +1229,7 @@
         "Class": "Aggression",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 ATK.",
@@ -1338,6 +1341,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After you defeat a minion, exhaust Interrogation Room → remove 1 threat from a scheme.",
@@ -1376,6 +1380,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 THW.",
@@ -1544,6 +1549,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "R"
       },
       "text": "Attach to an ally. Max 1 per ally.\nAttached ally gets +1 THW and +1 ATK.",
@@ -1676,6 +1682,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 DEF.",
@@ -1858,6 +1865,7 @@
         "Class": "Basic",
         "Cost": "4",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Avengers Mansion → choose a player. That player draws 1 card.",
@@ -1878,6 +1886,7 @@
         "Class": "Basic",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Helicarrier → choose a player. Reduce the resource cost of the next card that player plays this phase by 1.",
@@ -5051,6 +5060,7 @@
         "Class": "Basic",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "character",
         "RES": "R"
       },
       "text": "Play only if your identity has the [[Avenger]] trait.\nMax 1 per character.\nAttach to a friendly character.\nAttached character gets +1 hit point and gains the [[Avenger]] trait.",
@@ -5160,6 +5170,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "R"
       },
       "text": "Attach to an ally. Max 1 per ally.\nAttached ally gets +2 ATK and takes +1 consequential damage after it attacks.",
@@ -5177,6 +5188,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "scheme",
         "RES": "Y"
       },
       "text": "Attach to a side scheme. Max 1 per scheme.\n<b>Interrupt</b>: When attached scheme is defeated, deal 4 damage to an enemy.",
@@ -5527,6 +5539,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "Y"
       },
       "text": "Attach to an [[Avenger]] ally. Max 1 per ally.\nAttached ally gains [[Aerial]].\n<b>Action</b>: Exhaust Sky Cycle → ready attached ally.",
@@ -5546,6 +5559,7 @@
         "Class": "Leadership",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nEach ally you control gets +1 hit point.",
@@ -6018,6 +6032,7 @@
         "Class": "Aggression",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 ATK.",
@@ -6113,6 +6128,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 THW.",
@@ -6132,6 +6148,7 @@
         "Class": "Justice",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Hero Response</b>: After a side scheme is defeated, exhaust Skilled Investigator → draw 1 card.",
@@ -6151,6 +6168,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After you defeat a minion, exhaust Interrogation Room → remove 1 threat from a scheme.",
@@ -8774,6 +8792,7 @@
         "Class": "Basic",
         "Cost": "4",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Avengers Mansion → choose a player. That player draws 1 card.",
@@ -8793,6 +8812,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\nYou get +3 hit points.",
@@ -8971,6 +8991,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour alter-ego gets +2 REC.",
@@ -9331,6 +9352,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control.\nMax 1 per player.\n<b>Response:</b> After your hero attacks and defeats a minion, deal 1 damage to your hero and discard Battle Fury → ready your hero.",
@@ -9458,6 +9480,7 @@
         "Class": "Basic",
         "Cost": "4",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Avengers Mansion → choose a player. That player draws 1 card.",
@@ -9565,6 +9588,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "scheme",
         "RES": "Y"
       },
       "text": "Attach to the main scheme. Max 1 per scheme.\nIncrease the target threat value of attached scheme by 4.",
@@ -10844,6 +10868,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After you defeat a minion, exhaust Interrogation Room → remove 1 threat from a scheme.",
@@ -10883,6 +10908,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Interrupt</b>: When any amount of threat would be placed on the main scheme, discard Counterintelligence → prevent 3 of that threat.",
@@ -11011,6 +11037,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\n<b>Hero Response</b>: After a boost card is turned faceup, discard Target Acquired → cancel that card's boost ability.",
@@ -11119,6 +11146,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\n<b>Hero Response</b> <i>(attack)</i>: After you take damage from an enemy attack, discard Counterattack → deal an equal amount of damage to that enemy.",
@@ -11139,6 +11167,7 @@
         "Class": "Leadership",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Hero Response</b>: After an ally you control is defeated, discard Rapid Response → put that ally into play from your discard pile and deal 1 damage to it.",
@@ -11159,6 +11188,7 @@
         "Class": "Protection",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Hero Interrupt</b>: When you would take any amount of damage, discard Defensive Stance → prevent 3 of that damage.",
@@ -11574,6 +11604,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Response</b>: After you defend against an attack and take no damage, exhaust Unflappable → draw 1 card.",
@@ -11658,6 +11689,7 @@
         "Class": "Basic",
         "Cost": "4",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Avengers Mansion → choose a player. That player draws 1 card.",
@@ -12255,6 +12287,7 @@
         "Class": "Aggression",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control.\nMax 1 per player.\n<b>Resource</b>: Exhaust Martial Prowess → generate a [physical] resource for an [[Attack]] event.",
@@ -12341,6 +12374,7 @@
         "Class": "Basic",
         "Cost": "4",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Avengers Mansion → choose a player. That player draws 1 card.",
@@ -12361,6 +12395,7 @@
         "Class": "Basic",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Helicarrier → choose a player. Reduce the resource cost of the next card that player plays this phase by 1.",
@@ -12483,6 +12518,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Player under any player's control.\nMax 1 per player.\n<b>Response</b>: After you defend against an attack, deal 1 damage to the attacking character.",
@@ -13873,6 +13909,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "B"
       },
       "text": "Attach to an [[Avenger]] ally. Max 1 per ally.\n<b>Response:</b> After attached ally attacks or thwarts, deal 1 damage to an enemy.",
@@ -13893,6 +13930,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "Y"
       },
       "text": "Attach to an ally. Max 1 per ally.\nAttached ally gets +2 hit points.",
@@ -14487,6 +14525,7 @@
         "Class": "Aggression",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\nEach ally you control gets +1 ATK.",
@@ -14506,6 +14545,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Hero Response</b> <i>(attack)</i>: After a minion engages you, discard Lie in Wait → deal 3 damage to that minion.",
@@ -15129,6 +15169,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 DEF.",
@@ -15148,6 +15189,7 @@
         "Class": "Protection",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control.\nMax 1 per player.\n<b>Resource</b>: Exhaust Nerves of Steel → generate a [energy] resource for a [[Defense]] event.",
@@ -15373,6 +15415,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control.\nMax 1 per player.\n<b>Resource:</b> Exhaust Sense of Justice → generate a [mental] resource for a [[Thwart]] event.",
@@ -15746,6 +15789,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 THW.",
@@ -16297,6 +16341,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control.\nMax 1 per player.\nWhile your hero's remaining hit points are equal to or greater than your hero's starting hit points, your hero gains retaliate 1.",
@@ -16439,6 +16484,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Hero Action</b>: Exhaust Deft Focus → reduce the resource cost of the next [[superpower]] card you play this turn by 1.",
@@ -16966,6 +17012,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play only if your identity has the [[guardian]] trait. Max 1 per player.\n<b>Hero Interrupt</b>: When you would take any amount of damage from an attack, exhaust Booster Boots and discard the top card of your deck → prevent 1 of that damage.",
@@ -19954,6 +20001,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "R"
       },
       "text": "Attach to a [[guardian]] ally. Max 1 per ally.\nAttached ally gets +1 ATK and its attacks gain overkill.",
@@ -20512,6 +20560,7 @@
         "Class": "Aggression",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 ATK.",
@@ -20743,6 +20792,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "B"
       },
       "text": "Attach to a [[guardian]] ally. Max 1 per ally.\nAttached ally gets +1 THW and +1 hit point.",
@@ -21789,6 +21839,7 @@
         "Class": "Basic",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control.\nMax 1 per player.\nYou can control 1 additional [[weapon]] upgrade that has the restricted keyword.",
@@ -21935,6 +21986,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Alter-Ego Action</b>: Exhaust Crew Quarters → heal 1 damage from an alter-ego.",
@@ -22353,6 +22405,7 @@
         "Class": "Basic",
         "Cost": "4",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Avengers Mansion → choose a player. That player draws 1 card.",
@@ -22372,6 +22425,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Hero Response</b>: After you change form, discard this card → ready your hero.",
@@ -22808,6 +22862,7 @@
         "Class": "Aggression",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 ATK.",
@@ -22921,6 +22976,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 THW.",
@@ -23030,6 +23086,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "R"
       },
       "text": "Attach to an ally. Max 1 per ally.\nAttached ally gets +1 THW and +1 ATK.",
@@ -23144,6 +23201,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 DEF.",
@@ -25964,6 +26022,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Hero Response</b>: After you thwart and remove the last threat from a scheme, discard Justice Served → ready your hero.",
@@ -26049,6 +26108,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 THW.",
@@ -26274,6 +26334,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "Y"
       },
       "text": "Attach to a [[guardian]] ally. Max 1 per ally.\nAttached ally gets +2 ATK and gains piercing.",
@@ -26331,6 +26392,7 @@
         "Class": "Basic",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "character",
         "RES": "Y"
       },
       "text": "Play only if your identity has the [[guardian]] trait.\nAttach to a friendly character. Max 1 per character.\nAttached character gets +1 hit point and gains the [[guardian]] trait.",
@@ -27005,6 +27067,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "R"
       },
       "text": "Attach to an ally. Max 1 per ally.\nAttached ally gets +1 ATK and its attacks gain ranged.",
@@ -28894,6 +28957,7 @@
         "Class": "Aggression",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour hero gets +1 ATK.",
@@ -29209,6 +29273,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\n<b>Hero Interrupt</b>: When you engage a minion, discard this card → ready your hero.",
@@ -29573,6 +29638,7 @@
         "Class": "Protection",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Response:</b> After you play a [[Defense]] card, deal 1 damage to the attacking enemy.",
@@ -29700,6 +29766,7 @@
         "Class": "Basic",
         "Cost": "4",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Avengers Mansion → choose a player. That player draws 1 card.",
@@ -29886,6 +29953,7 @@
         "Class": "Justice",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "scheme",
         "RES": "Y"
       },
       "text": "Attach to a side scheme. Max 1 per scheme.\n<b>Interrupt:</b> When attached side scheme is defeated, search your deck and discard pile for an ally and add it to your hand. Shuffle your deck.",
@@ -30377,6 +30445,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Hero Action</b>: Exhaust Plan B and discard 1 random card from your hand → deal 2 damage to an enemy.",
@@ -33970,6 +34039,7 @@
         "Class": "Aggression",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B",
         "Requirement": ""
       },
@@ -34785,6 +34855,7 @@
         "Class": "Basic",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Helicarrier → choose a player. Reduce the resource cost of the next card that player plays this phase by 1.",
@@ -34804,6 +34875,7 @@
         "Class": "Basic",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play only if your identity has the [[Genius]] trait. Max 1 per player.\n<b>Resource</b>: Exhaust Ingenuity → generate a [mental] resource.",
@@ -35387,6 +35459,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "scheme",
         "RES": "Y"
       },
       "text": "Attach to a side scheme. Max 1 per scheme.\n<b>Interrupt</b>: When attached scheme is defeated, deal 4 damage to an enemy.",
@@ -35404,6 +35477,7 @@
         "Class": "Justice",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "scheme",
         "RES": "R"
       },
       "text": "Attach to a scheme. Max 1 per scheme.\n<b>Hero Interrupt</b>: When any amount of threat is removed from attached scheme by a thwart, discard this card → remove an equal amount of threat from a different scheme.",
@@ -35586,6 +35660,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "character",
         "RES": "Y"
       },
       "text": "Attach to a character with \"Spider\" in its title. Max 1 per character.\nAttached character gains the [[Web-Warrior]] trait.\n<b>Response</b>: After a [[Web-Warrior]] ally leaves play, attached character gets +1 ATK until the end of the phase.",
@@ -36148,6 +36223,7 @@
         "Class": "Protection",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y",
         "Uses": "6,energy"
       },
@@ -36333,6 +36409,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "character",
         "RES": "B"
       },
       "text": "Attach to a friendly character. Max 1 per character.\n<b>Hero Resource</b>: Exhaust this card and deal 1 damage to attached character → generate a [wild] resource.",
@@ -37198,6 +37275,7 @@
         "Class": "Hero",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "enemy",
         "RES": "B"
       },
       "text": "Hero form only. Attach to an enemy. Max 1 per enemy.\n<b>Forced Interrupt</b>: When attached enemy would attack, discard this card instead. Then, confuse that enemy.",
@@ -37486,6 +37564,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Hero Response</b>: After you change form, discard this card → ready your hero.",
@@ -39538,7 +39617,8 @@
       ],
       "attributes": {
         "Boost": "2",
-        "MaxPerUnit": "1"
+        "MaxPerUnit": "1",
+        "MaxPerUnitKind": "identity"
       },
       "text": "Attach to your identity. Max 1 per identity.\nAttached identity cannot thwart, attack, defend, or recover.\n<b>Action</b>: Exhaust your identity and spend a [physical] resource → discard this card. ",
       "text_plain": "Attach to your identity. Max 1 per identity.\nAttached identity cannot thwart, attack, defend, or recover.\nAction: Exhaust your identity and spend a physical resource → discard this card. ",
@@ -40540,6 +40620,7 @@
         "Class": "Hero",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "enemy",
         "RES": "R",
         "Temporary": "1"
       },
@@ -40560,6 +40641,7 @@
         "Class": "Hero",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "enemy",
         "RES": "Y",
         "Temporary": "1"
       },
@@ -40580,6 +40662,7 @@
         "Class": "Hero",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "enemy",
         "RES": "B",
         "Temporary": "1"
       },
@@ -40760,6 +40843,7 @@
         "Class": "Leadership",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "minion",
         "RES": "R"
       },
       "text": "Attach to a minion. Max 1 per minion.\nEach ally takes -1 consequential damage ([cost]) when attacking attached minion.",
@@ -41044,6 +41128,7 @@
         "Class": "Aggression",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "minion",
         "RES": "R"
       },
       "text": "Attach to a minion. Max 1 per minion.\nAttacks against attached minion gain overkill.",
@@ -41063,6 +41148,7 @@
         "Class": "Justice",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "minion",
         "RES": "R"
       },
       "text": "Attach to a minion. Max 1 per minion.\n<b>Interrupt</b>: When a character makes a basic attack against attached minion, that character uses their THW instead of their ATK.",
@@ -41082,6 +41168,7 @@
         "Class": "Protection",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "minion",
         "RES": "R"
       },
       "text": "Attach to a minion. Max 1 per minion.\nAttached minion gets -2 ATK.",
@@ -41101,6 +41188,7 @@
         "Class": "Basic",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "character",
         "RES": "R"
       },
       "text": "Play only if your identity has the [[X-MEN]] trait.\nAttach to a friendly character. Max 1 per character.\nAttached character gets +1 hit point and gains the [[X-MEN]] trait.",
@@ -41593,6 +41681,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nYour alter-ego gets +2 REC.",
@@ -42088,6 +42177,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control.\nMax 1 per player.\n<b>Response:</b> After your hero attacks and defeats a minion, deal 1 damage to your hero and discard Battle Fury → ready your hero.",
@@ -42107,6 +42197,7 @@
         "Class": "Aggression",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B",
         "Uses": "3,warrior"
       },
@@ -42390,6 +42481,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After an ally thwarts and defeats a side scheme, exhaust Command Center → deal 2 damage to an enemy.",
@@ -42857,6 +42949,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R",
         "Uses": "3,leadership"
       },
@@ -42989,6 +43082,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\nYou get +3 hit points.",
@@ -43141,6 +43235,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After an ally defends against an attack and is not defeated, exhaust this card → ready that ally.",
@@ -43474,6 +43569,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y",
         "Uses": "3,operative"
       },
@@ -43783,6 +43879,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After an ally attacks and defeats a minion, exhaust War Room → remove 1 threat from a scheme.",
@@ -44139,6 +44236,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Response</b>: After you defend against an attack and take no damage, exhaust Unflappable → draw 1 card.",
@@ -44158,6 +44256,7 @@
         "Class": "Protection",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R",
         "Uses": "3,judo"
       },
@@ -44246,6 +44345,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "G"
       },
       "text": "Play only if your identity has the [[MUTANT]] trait. Max 1 per player\n<b>Resource</b>: Exhaust X-Gene → generate a [wild] resource for an identity-specific event.",
@@ -44406,6 +44506,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After an ally is defeated by consequential damage, exhaust Med Lab → place it here. (Limit 1 ally at a time.)\n<b>Alter-Ego Action</b>: Exhaust Med Lab → play the ally here as if it was in your hand. It enters play exhausted.",
@@ -46474,6 +46575,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "R"
       },
       "text": "Attach to an ally. Max 1 per ally.\nAttached ally gets +1 ATK and its attacks gain ranged.",
@@ -46953,6 +47055,7 @@
         "Class": "Justice",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "scheme",
         "RES": "R"
       },
       "text": "Attach to a scheme. Max 1 per scheme.\n<b>Hero Interrupt</b>: When any amount of threat is removed from attached scheme by a thwart, discard this card → remove an equal amount of threat from a different scheme.",
@@ -47115,6 +47218,7 @@
         "Class": "Basic",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player. <b>Hero Interrupt</b>: When you make a ranged attack, discard the top card of your deck → this attack deals 1 additional damage for each resource icon discarded this way.",
@@ -50329,6 +50433,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control.\nMax 1 per player.\n<b>Interrupt</b>: When a character you control attacks a confused enemy, increase the amount of damage that attack deals to that enemy by 1.",
@@ -50462,6 +50567,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play only if your identity has the [[PSIONIC]] trait. Max 1 per player.\n<b>Hero Action</b> <i>(thwart)</i>: Exhaust Telepathy and spend [mental][mental] resources → remove 2 threat from a scheme.",
@@ -50626,6 +50732,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play only if your hero has the [[PSIONIC]] trait. Max 1 per player.\n<b>Hero Action</b> <i>(attack)</i>: Exhaust Telekinesis and spend [mental][mental] resources → deal 3 damage to an enemy.",
@@ -51032,6 +51139,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "side scheme",
         "RES": "B"
       },
       "text": "Attach to a non-permanent side scheme. Max 1 per side scheme.\n<b>Response</b>: After a hero defends against an attack, remove 1 threat from attached scheme (2 threat instead if that hero took no damage from that attack).",
@@ -51109,6 +51217,7 @@
         "Class": "Basic",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Hero Interrupt</b>: When an [[AERIAL]] character you control uses a basic power, exhaust Soaring Acrobatics → that character gets +1 to that power for this use.",
@@ -51269,6 +51378,7 @@
         "Class": "Basic",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "character",
         "RES": "R"
       },
       "text": "Play only if your identity has the [[X-FORCE]] trait.\nAttach to a friendly character. Max 1 per character.\nAttached character gets +1 hit point and gains the [[X-FORCE]] trait.",
@@ -51639,6 +51749,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nWhile your hero's remaining hit points are less than half your hero's starting hit points, your hero gets +1 ATK and -1 THW.",
@@ -51781,6 +51892,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\nYou get +3 hit points.",
@@ -52562,6 +52674,7 @@
         "Class": "'Pool",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After the player phase begins, exhaust Healing Factor → heal 2 damage from your identity.",
@@ -52956,6 +53069,7 @@
         "Cost": "1",
         "Crisis": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "side scheme",
         "RES": "B"
       },
       "text": "Attach to a side scheme. Max 1 per side scheme.\n<b>Interrupt</b>: When attached side scheme is defeated, discard a non-[[ELITE]] minion.",
@@ -53012,6 +53126,7 @@
         "Cost": "0",
         "Crisis": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "minion",
         "RES": "R"
       },
       "text": "Attach to a non-[[ELITE]] minion. Max 1 per minion.\nAttached minion cannot activate.",
@@ -53361,6 +53476,7 @@
         "Class": "Leadership",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nEach ally you control gets +1 hit point.",
@@ -53381,6 +53497,7 @@
         "Class": "Leadership",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "B"
       },
       "text": "Attach to an [[X-FORCE]] or [[X-MEN]] ally. Max 1 per ally.\n<b>Response</b>: After attached ally defeats a minion or side scheme, discard 1 card from your hand → heal 1 damage from attached ally for each resource on that card.",
@@ -53937,6 +54054,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After you defeat an enemy with a basic attack, exhaust Blood Rage and take 1 damage → draw 1 card.",
@@ -53956,6 +54074,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After you play an [[ATTACK]] event, place 1 test counter here. If there are 5 test counters here, discard this card to deal 5 damage to an enemy.",
@@ -57132,6 +57251,7 @@
         "Class": "Hero",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "enemy",
         "RES": "B"
       },
       "text": "Hero form only. Attach to an enemy. Max 1 per enemy.\n<b>Forced Interrupt</b>: When attached enemy would activate, discard Frozen Solid instead. Then, attach a set-aside copy of Frostbite to that enemy.",
@@ -57270,6 +57390,7 @@
         "Class": "Aggression",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "minion",
         "RES": "B"
       },
       "text": "Attach to a minion. Max 1 per minion.\n<b>Hero Interrupt</b>: When you attack and defeat attached minion, heal 2 damage from your hero.",
@@ -57951,6 +58072,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Action</b> <i>(thwart)</i>: Exhaust Disguise and your identity → remove 2 threat from a scheme.",
@@ -58078,6 +58200,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "G"
       },
       "text": "Play only if your identity has the [[MUTANT]] trait. Max 1 per player\n<b>Resource</b>: Exhaust X-Gene → generate a [wild] resource for an identity-specific event.",
@@ -58460,6 +58583,7 @@
         "Class": "Hero",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "enemy",
         "RES": "R"
       },
       "text": "Attach to an enemy. Max 1 per enemy.\n<b>Hero Interrupt</b> <i>(defense)</i>: When attached enemy attacks, discard this card → declare Nightcrawler as the defender without exhausting him.",
@@ -58613,6 +58737,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Response</b>: After you defeat an enemy during the villain phase, exhaust this card → draw 2 cards.",
@@ -58632,6 +58757,7 @@
         "Class": "Protection",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "minion",
         "RES": "Y"
       },
       "text": "Attach to a minion. Max 1 per minion.\n<b>Response</b>: After a hero defends against attached minion's attack and takes no damage, deal 4 damage to attached minion.",
@@ -59373,6 +59499,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play only if your identity has the [[X-Force]] or [[X-Men]] trait. Max 1 per player.\n<b>Alter-Ego Action</b>: Discard this card → return an [[X-Force]] or [[X-Men]] ally from your discard pile to your hand.",
@@ -59503,6 +59630,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Hero Action</b>: Exhaust Deft Focus → reduce the resource cost of the next [[superpower]] card you play this turn by 1.",
@@ -59772,6 +59900,7 @@
         "Class": "Basic",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\nEach [[X-Factor]], [[X-Force]], and [[X-Men]] character you control gains the [[X-Factor]], [[X-Force]], and [[X-Men]] traits.",
@@ -60406,6 +60535,7 @@
         "Class": "Basic",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Interrupt</b>: When an encounter card effect would discard a card you control, discard Front Organization instead of discarding that card.",
@@ -60861,6 +60991,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\n<b>Interrupt</b>: When a minion schemes, discard Informant → this activation removes threat instead of placing it.",
@@ -60880,6 +61011,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After a player is dealt an encounter card, discard Intelligence → look at each encounter card dealt to each player and the top card of the encounter deck. You may swap any number of those cards.",
@@ -60900,6 +61032,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\n<b>Hero Response</b> <i>(attack)</i>: After a minion enters play, discard Prism Dust → confuse that minion and deal 2 damage to it.",
@@ -60919,6 +61052,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "scheme",
         "RES": "Y"
       },
       "text": "Attach to the main scheme. Max 1 per scheme.\nIncrease the target threat value of attached scheme by 4.",
@@ -61017,6 +61151,7 @@
         "Class": "Basic",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After you discard a [[Preparation]] card you control, discard Practiced Plan → return that card to your hand from your discard pile.",
@@ -64043,6 +64178,7 @@
         "Class": "Justice",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Interrupt</b>: When an enemy would attack you, discard Invisibility Gear → that enemy schemes instead.",
@@ -64084,6 +64220,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\n<b>Response</b>: After a non-[[Elite]] minion schemes, discard Sting Operation → discard that minion.",
@@ -64828,6 +64965,7 @@
         "Class": "Protection",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "character",
         "RES": "Y"
       },
       "text": "Attach to a character. Max 1 per character.\n<b>Interrupt</b>: When attached character would take any amount of damage, spend X [energy] resources → prevent X of that damage.",
@@ -64847,6 +64985,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R",
         "Requirement": "R"
       },
@@ -65630,6 +65769,7 @@
         "Class": "Leadership",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\nAny player may spend the resource card tucked here as if it were in their hand.\n<b>Action</b>: Exhaust Resource Reserve → tuck 1 resource card from your hand under here (to a maximum of 1).",
@@ -65686,6 +65826,7 @@
         "Class": "Leadership",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "B"
       },
       "text": "Attach to an [[Aerial]] ally. Max 1 per ally.\n<b>Interrupt</b>: When another [[Aerial]] ally would take any amount of consequential damage, exhaust attached ally → prevent 1 of that damage.",
@@ -66354,6 +66495,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "B"
       },
       "text": "Max 1 per player.\n<b>Hero Response</b>: After you engage a minion, discard this card → search your deck for an [[Attack]] event and add it to your hand. <i>(Shuffle.)</i>",
@@ -68392,6 +68534,7 @@
         "Class": "Aggression",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y",
         "Uses": "2,fuel"
       },
@@ -68412,6 +68555,7 @@
         "Class": "Aggression",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nYou get +3 hit points and your hero gets +1 ATK.",
@@ -68431,6 +68575,7 @@
         "Class": "Aggression",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "minion",
         "RES": "B"
       },
       "text": "Attach to a minion. Max 1 per minion.\n<b>Hero Interrupt</b>: When you attack and defeat attached minion, heal 2 damage from your hero.",
@@ -69047,6 +69192,7 @@
         "Class": "Protection",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nYou get +3 hit points and your hero gets +1 DEF.",
@@ -73951,6 +74097,7 @@
         "Class": "Justice",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\nYou get +3 hit points and your hero gets +1 THW.",
@@ -74108,6 +74255,7 @@
         "Class": "Aggression",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "minion",
         "RES": "Y"
       },
       "text": "Attach to a non-[[Elite]] minion. Max 1 per minion.\n<b>Interrupt</b>: When a friendly character attacks, deal 1 damage to attached minion.",
@@ -74650,6 +74798,7 @@
         "Class": "Leadership",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "ally",
         "RES": "R"
       },
       "text": "Play only if your identity has the [[Avenger]] trait.\nAttach to an ally. Max 1 per ally.\n<b>Interrupt</b>: When attached ally is defeated, draw 2 cards.",
@@ -74816,6 +74965,7 @@
         "Class": "Basic",
         "Cost": "3",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\n<b>Action</b>: Exhaust Helicarrier → choose a player. Reduce the resource cost of the next card that player plays this phase by 1.",
@@ -75538,6 +75688,7 @@
         "Class": "Justice",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "scheme",
         "RES": "Y"
       },
       "text": "Attach to a side scheme. Max 1 per scheme.\n<b>Interrupt:</b> When attached side scheme is defeated, search your deck and discard pile for an ally and add it to your hand. Shuffle your deck.",
@@ -75557,6 +75708,7 @@
         "Class": "Justice",
         "Cost": "1*",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "minion",
         "RES": "B"
       },
       "text": "[star] Discount 1 ([[Attorney]] or [[Police]]).\nAttach to a minion. Max 1 per minion.\nAttached minion gets -2 SCH.",
@@ -75576,6 +75728,7 @@
         "Class": "Justice",
         "Cost": "2*",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "[star] Discount 1 ([[Martial Artist]] or [[Spy]]).\nTemporary. Max 1 per player.\n<b>Response</b> <i>(thwart)</i>: After you play a card <i>(including this one)</i>, remove 1 threat from a scheme.",
@@ -75595,6 +75748,7 @@
         "Class": "Justice",
         "Cost": "2",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Play under any player's control. Max 1 per player.\n<b>Response</b>: After you thwart and exactly defeat a side scheme, exhaust Stealth Training → stun an enemy.",
@@ -75633,6 +75787,7 @@
         "Class": "Basic",
         "Cost": "0",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "R"
       },
       "text": "Max 1 per player.\nYou may play the upgrade tucked here as if it were in your hand.\n<b>Action</b>: Choose 1 upgrade in your hand that can attach to a minion or side scheme. Tuck that upgrade under here (to a maximum of 1).",
@@ -76121,6 +76276,7 @@
         "Class": "Protection",
         "Cost": "1",
         "MaxPerUnit": "1",
+        "MaxPerUnitKind": "player",
         "RES": "Y"
       },
       "text": "Max 1 per player.\n<b>Hero Interrupt</b>: When an enemy attacks you <i>(before any defender is declared)</i>, if you do not control any allies, exhaust Stand Alone → ready your hero.",

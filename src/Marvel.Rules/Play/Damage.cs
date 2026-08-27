@@ -23,11 +23,15 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Damage
 {
+    /// <summary>The characters and amount actually damaged by one attack.</summary>
+    public sealed record AttackResult(IReadOnlyList<Card> Characters, long Amount);
+
     /// <summary>
     /// Deals damage to a character, and defeats it if that was enough.
     /// </summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
+    /// <param name="source">The card dealing it.</param>
     /// <param name="target">Who takes it.</param>
     /// <param name="amount">How much. Zero or less does nothing.</param>
     /// <param name="trigger">What caused it, for the event stream.</param>
@@ -47,15 +51,24 @@ public static class Damage
     /// </param>
     /// <returns>Whether the target was defeated.</returns>
     public static bool Deal(
-        World world, ICardFacts facts, Card target, long amount,
+        World world, ICardFacts facts, Card source, Card target, long amount,
         string trigger, string verb, List<GameEvent> events, int by = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(events);
 
         if (amount <= 0)
+        {
+            return false;
+        }
+
+        // `rr:cannot` -- "cannot" is absolute. A character forbidden from
+        // taking damage from this source never reaches the damage sequence:
+        // there is no imminent damage to replace and no tough card to spend.
+        if (!world.Abilities.CanTakeDamage(world, target, source))
         {
             return false;
         }
@@ -65,7 +78,7 @@ public static class Damage
         // sits. It comes before the tough card, which is step 2, and a card
         // that replaces all of the damage leaves nothing for the rest of the
         // nine steps to do.
-        amount = world.Abilities.WouldBeDealt(world, target, amount, events);
+        amount = world.Abilities.WouldBeDealt(world, target, source, amount, events);
         if (amount <= 0)
         {
             return false;
@@ -149,7 +162,7 @@ public static class Damage
         // `StateFields`' printed-attribute map -- remaining hit points are
         // computed, not printed -- so `Modified` on it returns the modifiers
         // alone, which is exactly the second half of this sum.
-        return facts.PrintedValue(character.FaceId, "HP", world.Players)
+        return FacedownDrones.BaseValue(character, facts, "HP", world.Players)
             + StateFields.Modified(world, character, "health", facts, world.Players);
     }
 
@@ -188,6 +201,7 @@ public static class Damage
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="verb">What kind of thing caused it.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="retaliate">Whether to resolve retaliation before returning.</param>
     /// <returns>
     /// Every character this attack <b>actually damaged</b>, which is not every
     /// character it was aimed at. <c>rr:tough.3</c>: a character whose tough
@@ -195,13 +209,41 @@ public static class Damage
     /// cards are written against that — "if a character is damaged by this
     /// attack, that character is stunned".
     /// </returns>
-    public static IReadOnlyList<Card> Attack(
+    public static AttackResult Attack(
         World world, ICardFacts facts, Card attacker, Card target, long amount,
-        string trigger, string verb, List<GameEvent> events)
+        string trigger, string verb, List<GameEvent> events, bool retaliate = true)
+        => Attack(
+            world, facts, attacker, attacker, target, amount, trigger, verb, events, retaliate);
+
+    /// <summary>
+    /// One attack whose acting character and damage source are different cards.
+    /// </summary>
+    /// <remarks>
+    /// A card ability labelled as an attack is performed by the resolving
+    /// character, but its damage still comes from the card carrying the
+    /// ability. Keeping those roles separate lets retaliation hit the actor
+    /// while a prohibition such as “cannot take damage from [trait] upgrades”
+    /// inspect the actual source. The ordinary character-attack overload uses
+    /// the attacker for both roles.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="attacker">The character performing the attack.</param>
+    /// <param name="source">The card the damage comes from.</param>
+    /// <param name="target">Who is being attacked.</param>
+    /// <param name="amount">How much damage.</param>
+    /// <param name="trigger">What caused it, for the event stream.</param>
+    /// <param name="verb">What kind of thing caused it.</param>
+    /// <param name="events">Where to record what happened.</param>
+    /// <param name="retaliate">Whether to resolve retaliation before returning.</param>
+    public static AttackResult Attack(
+        World world, ICardFacts facts, Card attacker, Card source, Card target, long amount,
+        string trigger, string verb, List<GameEvent> events, bool retaliate = true)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(attacker);
+        ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(events);
 
@@ -235,13 +277,21 @@ public static class Damage
         // damage". A separate check here would be a second statement of the
         // same rule, and only one of them could be right after an edit.
         var damaged = new List<Card>();
+        int firstDamageEvent = events.Count;
         long before = target.Damage;
-        if (Deal(world, facts, target, amount, trigger, verb, events, by: attacker.Owner)
+        if (Deal(world, facts, source, target, amount, trigger, verb, events, by: attacker.Owner)
             && beyond > 0
             && Keywords.Has(world, attacker, Keywords.Overkill, facts))
         {
-            Spill(world, facts, target, spillPlayer, beyond, trigger, events);
+            Spill(world, facts, source, target, spillPlayer, beyond, trigger, events);
         }
+
+        long dealt = events
+            .Skip(firstDamageEvent)
+            .OfType<FieldSet>()
+            .Where(change => change.Field == "health"
+                && change.From is { } from && change.To is { } to && from > to)
+            .Sum(change => change.From!.Value - change.To!.Value);
 
         // Measured rather than assumed. A tough status card prevents all of the
         // damage, so the number on the dial is the only honest answer to
@@ -252,12 +302,12 @@ public static class Damage
         }
 
         // `rr:ranged.1` -- "this attack ignores the retaliate keyword".
-        if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
+        if (retaliate && !Keywords.Has(world, attacker, Keywords.Ranged, facts))
         {
             Retaliate(world, facts, target, attacker, trigger, events);
         }
 
-        return damaged;
+        return new AttackResult(damaged, dealt);
     }
 
     /// <summary>
@@ -270,10 +320,10 @@ public static class Damage
     /// destinations, decided by what was defeated rather than by who attacked.
     /// </remarks>
     private static void Spill(
-        World world, ICardFacts facts, Card defeated, int controllingPlayer, long beyond,
+        World world, ICardFacts facts, Card source, Card defeated, int controllingPlayer, long beyond,
         string trigger, List<GameEvent> events)
     {
-        var onto = facts.Kind(defeated.FaceId) switch
+        var onto = FacedownDrones.Kind(defeated, facts) switch
         {
             CardKind.Ally when controllingPlayer >= 0 =>
                 world.Seats[controllingPlayer].IdentityCard,
@@ -287,7 +337,7 @@ public static class Damage
             // villain is considered damage from an attack, but **does not
             // constitute an attack against that character**" -- so this deals
             // damage and does not retaliate.
-            Deal(world, facts, onto, beyond, trigger, Keywords.Overkill, events);
+            Deal(world, facts, source, onto, beyond, trigger, Keywords.Overkill, events);
         }
     }
 
@@ -330,7 +380,7 @@ public static class Damage
         long retaliate = StateFields.Modified(
             world, attacked, "retaliate", facts, world.Players);
 
-        Deal(world, facts, attacker, retaliate, trigger, "Retaliate", events);
+        Deal(world, facts, attacked, attacker, retaliate, trigger, "Retaliate", events);
     }
 
     /// <summary>
@@ -389,6 +439,47 @@ public static class Damage
             Trigger = trigger, Verb = verb,
         });
 
+        return healed;
+    }
+
+    /// <summary>Moves damage from one character to another — <c>rr:move</c>.</summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:move.2</c> requires both a valid source and destination. A
+    /// destination forbidden from taking this source's damage invalidates the
+    /// move, so no damage is healed from the origin as a side effect.
+    /// </para>
+    /// <para>
+    /// <c>rr:move.3.1</c> moves the same amount off the origin and onto the
+    /// destination, bounded by the damage actually present. <c>rr:move.4</c>
+    /// considers the first half healing, and <c>rr:move.5</c> considers the
+    /// second half dealt damage, so both halves use the ordinary rule paths.
+    /// Prevention at the destination changes damage taken, not the amount
+    /// dealt (<c>rr:damage.3.2</c>), and therefore does not undo the healing.
+    /// </para>
+    /// </remarks>
+    /// <returns>The amount moved off <paramref name="from"/>.</returns>
+    public static long MoveDamage(
+        World world, ICardFacts facts, Card source, Card from, Card to, long amount,
+        string trigger, string verb, List<GameEvent> events, int by = -1)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(from);
+        ArgumentNullException.ThrowIfNull(to);
+        ArgumentNullException.ThrowIfNull(events);
+
+        long moved = Math.Min(Math.Max(0, amount), from.Damage);
+        if (moved <= 0
+            || ReferenceEquals(from, to)
+            || !world.Abilities.CanTakeDamage(world, to, source))
+        {
+            return 0;
+        }
+
+        long healed = Heal(world, facts, from, moved, trigger, verb, events);
+        Deal(world, facts, source, to, healed, trigger, verb, events, by);
         return healed;
     }
 }

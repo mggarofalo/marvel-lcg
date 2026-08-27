@@ -369,9 +369,12 @@ public sealed class ChoosingCardsTests
         // branch *not* taken: an interpreter that ran both would pass every
         // test above.
         var world = Deal();
-        var (card, _) = Reveal(world, AuthoredCards.HydraBomber);
+        Reveal(world, AuthoredCards.HydraBomber);
+        var abilities = AuthoredCards.Runner();
+        var asked = Sequence.Work(world, Cards, abilities, [])!;
 
-        AuthoredCards.Runner().Chose(world, card, 0, 1, Decision.Take(1));
+        Sequence.Answer(world, Cards, abilities, asked, Decision.Take(1), []);
+        Sequence.Finish(world, Cards, abilities, []);
 
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(

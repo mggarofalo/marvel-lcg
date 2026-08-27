@@ -27,6 +27,66 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public interface ICardAbilities : IWindowAbilities
 {
+    /// <summary>Applies card text that determines the state a card enters play with.</summary>
+    /// <remarks>
+    /// Some cards print a constant such as "enters play with 4 arrow counters"
+    /// without using the Uses keyword. The rules layer owns the transition and
+    /// asks the card layer for that printed state before any response to the
+    /// transition is offered. The default is silence for cards with no such
+    /// text.
+    /// </remarks>
+    IReadOnlyList<GameEvent> EntersPlay(World world, Card card) => [];
+
+    /// <summary>
+    /// Resumes card effects that initiated an activation after it has fully resolved.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:activation.7</c>: an effect that initiates an activation is
+    /// considered resolved only after that activation has fully resolved. The
+    /// result names that activation rather than whichever activation happened
+    /// most recently.
+    /// </remarks>
+    IReadOnlyList<GameEvent> ActivationCompleted(
+        World world, EnemyActivation result) => [];
+
+    /// <summary>
+    /// Whether threat may currently be removed from a scheme.
+    /// </summary>
+    /// <remarks>
+    /// A constant prohibition is a question the rules layer must ask before
+    /// either a basic thwart or a card effect removes tokens. The default is
+    /// the engine's choice for an ability source that has no such prohibition;
+    /// a card interpreter overrides it when a card in play says otherwise.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="scheme">The scheme threat would be removed from.</param>
+    /// <returns>Whether the removal is permitted.</returns>
+    bool CanRemoveThreat(World world, Card scheme) => true;
+
+    /// <summary>
+    /// The resources a card in hand generates toward the current payment.
+    /// </summary>
+    /// <remarks>
+    /// The rules specify what each card generates; they do not specify an
+    /// engine API. The engine chooses to pass the card being paid for because
+    /// a generator may make a different amount for particular cards.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="source">The card being spent from hand.</param>
+    /// <param name="payingFor">The card being paid for, or null for an ability cost.</param>
+    /// <returns>The resource letters generated.</returns>
+    string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
+        Resources.GeneratedBy(source.FaceId, world.Facts);
+
+    /// <summary>Applies card-specific restrictions to an attack's defenders.</summary>
+    /// <param name="world">The board.</param>
+    /// <param name="attack">The attack whose defender is being declared.</param>
+    /// <param name="candidates">Every character the defense rules permit.</param>
+    /// <returns>The candidates the card permits and whether one is required.</returns>
+    DefenderChoice Defenders(
+        World world, EnemyAttack attack, IReadOnlyList<Card> candidates) =>
+        new(candidates, Required: false);
+
     /// <summary>Resolves a revealed encounter card's "When Revealed" ability.</summary>
     /// <param name="world">The world.</param>
     /// <param name="card">The card being revealed.</param>
@@ -98,30 +158,42 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated);
 
+    /// <summary>Resolves the body of a card ability labelled as an attack.</summary>
+    void ResolveCardAttack(
+        World world, CharacterAttack attack, Timing.Occurrence occurrence,
+        List<GameEvent> events);
+
+    /// <summary>Resolves the body of a card ability labelled as a thwart.</summary>
+    void ResolveCardThwart(
+        World world, CharacterThwart thwart, Timing.Occurrence occurrence,
+        List<GameEvent> events);
+
+    /// <summary>Whether the target can take damage from this source.</summary>
+    /// <remarks>
+    /// <c>rr:cannot</c>: "cannot" is absolute. This is a constant prohibition,
+    /// not a triggered replacement effect in the damage window.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="target">Who would take the damage.</param>
+    /// <param name="source">The card the damage comes from.</param>
+    bool CanTakeDamage(World world, Card target, Card source);
+
     /// <summary>
     /// Step 1 of dealing damage — <c>rr:damage.step.1</c>.
     /// </summary>
     /// <remarks>
-    /// <para>
     /// "Abilities that trigger <i>when [character] would be dealt any amount of
-    /// damage</i>", which is where a replacement effect sits:
-    /// <c>rr:replacement-effect</c> — "when [triggering condition] would happen,
-    /// do [replacement effect] instead".
-    /// </para>
-    /// <para>
-    /// It answers with how much damage is <b>left</b>, because that is what the
-    /// rest of the steps act on. A card that replaces all of it answers zero,
-    /// and <c>rr:replacement-effect.1</c> is then satisfied for free: the
-    /// damage is no longer imminent, so nothing later in the order can respond
-    /// to it.
-    /// </para>
+    /// damage</i>", which is where a replacement effect sits. It answers with
+    /// how much damage is left for the rest of the sequence.
     /// </remarks>
     /// <param name="world">The world.</param>
     /// <param name="target">Who the damage is aimed at.</param>
+    /// <param name="source">The card dealing the damage.</param>
     /// <param name="amount">How much is about to be dealt.</param>
     /// <param name="events">Where to record what any replacement did.</param>
     /// <returns>How much damage is still to be dealt.</returns>
-    long WouldBeDealt(World world, Card target, long amount, List<GameEvent> events);
+    long WouldBeDealt(
+        World world, Card target, Card source, long amount, List<GameEvent> events);
 
     /// <summary>
     /// Step 6 of dealing damage — <c>rr:damage.step.6</c>.
@@ -203,6 +275,33 @@ public interface ICardAbilities : IWindowAbilities
         IReadOnlyList<int> chosen);
 
     /// <summary>
+    /// Resolves the <b>Special</b> ability on a card named by another ability —
+    /// <c>rr:special</c>.
+    /// </summary>
+    /// <param name="world">The world.</param>
+    /// <param name="card">The card carrying the Special ability.</param>
+    /// <param name="player">The player resolving it.</param>
+    /// <param name="finalStep">Whether it is the final step of its parent sequence.</param>
+    /// <returns>What changed.</returns>
+    IReadOnlyList<GameEvent> ResolveSpecial(
+        World world, Card card, int player, bool finalStep) =>
+        throw new RulesNotImplementedException(
+            $"card '{card.FaceId}' has no implemented Special ability");
+
+    /// <summary>Resolves one persisted frame of an "each player" effect.</summary>
+    /// <remarks>
+    /// Rules owns the chosen order and the saveable frame. The card interpreter
+    /// owns the effect tree and reconstructs it from the source, ability tier
+    /// and top-level position each time a frame runs. A fresh call per seat is
+    /// what keeps form-dependent choices and effect-local results isolated.
+    /// </remarks>
+    IReadOnlyList<GameEvent> ResolveEachPlayer(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep, bool finalPlayer) =>
+        throw new RulesNotImplementedException(
+            $"card '{source.FaceId}' has no implemented each-player continuation");
+
+    /// <summary>
     /// The question a suspended ability is waiting on —
     /// <c>rr:choose-option</c>.
     /// </summary>
@@ -229,6 +328,28 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>The question, or null when there is nothing to ask.</returns>
     Prompts.Prompt? Choosing(
         World world, Card source, int player, int stoppedAt, Timing.AbilityType? tier = null);
+
+    /// <summary>
+    /// The question a suspended ability is waiting on, with its parent
+    /// sequence position preserved.
+    /// </summary>
+    /// <remarks>
+    /// The default keeps existing interpreters source-compatible. An
+    /// interpreter whose effect reads the flag implements this overload and
+    /// carries it into its resumed resolution.
+    /// </remarks>
+    Prompts.Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep) =>
+        Choosing(world, source, player, stoppedAt, tier);
+
+    /// <summary>
+    /// Reconstructs a choice with its each-player continuation context.
+    /// </summary>
+    Prompts.Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
+        Choosing(world, source, player, stoppedAt, tier, finalStep);
 
     /// <summary>
     /// The game element this card's "attach to" phrase names —
@@ -262,6 +383,21 @@ public interface ICardAbilities : IWindowAbilities
 
     /// <summary>Legal hosts a player may choose while playing an attachment.</summary>
     IReadOnlyList<int>? AttachmentTargets(World world, Card card);
+
+    /// <summary>
+    /// The in-play player cards whose <b>Setup</b> abilities are due at setup
+    /// step 16.
+    /// </summary>
+    /// <remarks>
+    /// The rules layer cannot infer this from printed words, so the card layer
+    /// identifies the cards and the game orders them by player and object id.
+    /// Returning cards rather than resolving them here lets the ordinary agenda
+    /// suspend one ability for a choice before the next Setup ability begins.
+    /// </remarks>
+    /// <param name="world">The board after opening hands and mulligans.</param>
+    /// <param name="player">The player whose cards are being considered.</param>
+    /// <returns>Setup-bearing cards controlled by that player and in play.</returns>
+    IReadOnlyList<Card> PlayerSetupCards(World world, int player) => [];
 
     /// <summary>
     /// Resolves a card's "<b>Setup</b>" abilities —
@@ -334,6 +470,30 @@ public interface ICardAbilities : IWindowAbilities
         World world, Card source, int player, int stoppedAt, Decision input,
         Timing.AbilityType? tier = null);
 
+    /// <summary>
+    /// Resolves an answered ability choice with its parent sequence position
+    /// preserved.
+    /// </summary>
+    IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep) =>
+        Chose(world, source, player, stoppedAt, input, tier);
+
+    /// <summary>
+    /// Resumes a choice with the persisted each-player frame it belongs to.
+    /// </summary>
+    IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
+        Chose(world, source, player, stoppedAt, input, tier, finalStep);
+
+    /// <summary>Resumes a choice with its persisted event-stream provenance.</summary>
+    IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
+        string trigger) =>
+        Chose(world, source, player, stoppedAt, input, tier, finalStep, eachPlayerFrame, finalPlayer);
+
 
 }
 
@@ -348,6 +508,25 @@ public interface ICardAbilities : IWindowAbilities
 public class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> EntersPlay(World world, Card card) => [];
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> ActivationCompleted(
+        World world, EnemyActivation result) => [];
+
+    /// <inheritdoc/>
+    public virtual bool CanRemoveThreat(World world, Card scheme) => true;
+
+    /// <inheritdoc/>
+    public virtual string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
+        Resources.GeneratedBy(source.FaceId, world.Facts);
+
+    /// <inheritdoc/>
+    public virtual DefenderChoice Defenders(
+        World world, EnemyAttack attack, IReadOnlyList<Card> candidates) =>
+        new(candidates, Required: false);
+
+    /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
 
     /// <inheritdoc/>
@@ -358,8 +537,23 @@ public class NoCardAbilities : ICardAbilities
         World world, Card card, Defeated defeated) => [];
 
     /// <inheritdoc/>
+    public virtual void ResolveCardAttack(
+        World world, CharacterAttack attack, Timing.Occurrence occurrence,
+        List<GameEvent> events) =>
+        throw new RulesNotImplementedException("no card attack effect is registered");
+
+    /// <inheritdoc/>
+    public virtual void ResolveCardThwart(
+        World world, CharacterThwart thwart, Timing.Occurrence occurrence,
+        List<GameEvent> events) =>
+        throw new RulesNotImplementedException("no card thwart effect is registered");
+
+    /// <inheritdoc/>
+    public virtual bool CanTakeDamage(World world, Card target, Card source) => true;
+
+    /// <inheritdoc/>
     public virtual long WouldBeDealt(
-        World world, Card target, long amount, List<GameEvent> events) => amount;
+        World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
 
     /// <inheritdoc/>
     public virtual void WouldBeDefeated(
@@ -388,10 +582,26 @@ public class NoCardAbilities : ICardAbilities
             "no card has an action, so none of them can be triggered");
 
     /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> ResolveSpecial(
+        World world, Card card, int player, bool finalStep) =>
+        throw new RulesNotImplementedException(
+            $"card '{card.FaceId}' has no implemented Special ability");
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> ResolveEachPlayer(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep, bool finalPlayer) =>
+        throw new RulesNotImplementedException(
+            $"card '{source.FaceId}' has no implemented each-player continuation");
+
+    /// <inheritdoc/>
     public virtual int? AttachesTo(World world, Card card) => null;
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<int>? AttachmentTargets(World world, Card card) => null;
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<Card> PlayerSetupCards(World world, int player) => [];
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Setup(World world, Card card) => [];
@@ -405,11 +615,42 @@ public class NoCardAbilities : ICardAbilities
         Timing.AbilityType? tier = null) => null;
 
     /// <inheritdoc/>
+    public virtual Prompts.Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep) =>
+        Choosing(world, source, player, stoppedAt, tier);
+
+    /// <inheritdoc/>
+    public virtual Prompts.Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
+        Choosing(world, source, player, stoppedAt, tier, finalStep);
+
+    /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Chose(
         World world, Card source, int player, int stoppedAt, Decision input,
         Timing.AbilityType? tier = null) =>
         throw new RulesNotImplementedException(
             "no card has an ability, so none of them is waiting on a choice");
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep) =>
+        Chose(world, source, player, stoppedAt, input, tier);
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
+        Chose(world, source, player, stoppedAt, input, tier, finalStep);
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
+        string trigger) =>
+        Chose(world, source, player, stoppedAt, input, tier, finalStep, eachPlayerFrame, finalPlayer);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<PendingAbility> Waiting(
@@ -510,8 +751,27 @@ public static class VillainPhase
                 PlaceThreat(world, facts, abilities, events);
                 break;
 
+            case Steps.PlaceThreatEffect:
+                ApplyThreat(world, facts, abilities, events);
+                break;
+
             case Steps.EnemiesActivate:
                 PlanActivations(world, facts, step);
+                break;
+
+            case Steps.CompleteAttackActivation:
+            case Steps.CompleteSchemeActivation:
+                CompleteActivation(world, abilities, step, events);
+                break;
+
+            case Steps.FinalizeCharacterDefeat:
+                Defeat.FinalizeCharacter(
+                    world, facts, world.Cards[step.Subject], step.Trigger, events);
+                break;
+
+            case Steps.FinalizeSchemeDefeat:
+                Defeat.FinalizeScheme(
+                    world, facts, world.Cards[step.Subject], step.Trigger, events);
                 break;
 
             case Steps.Scheme:
@@ -531,7 +791,7 @@ public static class VillainPhase
                 break;
 
             case Steps.DeclareDefender:
-                return Attack.DeclareDefender(world, facts);
+                return Attack.DeclareDefender(world, facts, abilities);
 
             case Steps.FlipBoostCards:
                 Attack.FlipBoostCards(world, facts, abilities, events);
@@ -545,12 +805,16 @@ public static class VillainPhase
                 Attack.DealDamage(world, facts, events);
                 break;
 
+            case Steps.NextAttackTarget:
+                Attack.NextTarget(world, step.Seat);
+                break;
+
             case Steps.CharacterAttacks:
-                BasicPowers.ResolveCharacterAttack(world, facts, events);
+                BasicPowers.ResolveCharacterAttack(world, facts, events, step.CharacterAttack);
                 break;
 
             case Steps.CharacterThwarts:
-                BasicPowers.ResolveCharacterThwart(world, facts, events);
+                BasicPowers.ResolveCharacterThwart(world, facts, events, step.CharacterThwart);
                 break;
 
             case Steps.AllyConsequentialDamage:
@@ -576,9 +840,22 @@ public static class VillainPhase
                     step.Round, events);
                 break;
 
+            case Steps.ResolveSpecial:
+                events.AddRange(abilities.ResolveSpecial(
+                    world, world.Cards[step.Subject], step.Seat, step.FinalStep));
+                break;
+
             case Steps.ChooseOption:
                 return abilities.Choosing(
-                    world, world.Cards[step.Subject], step.Seat, step.Index, step.Tier);
+                    world, world.Cards[step.Subject], step.Seat, step.Index, step.Tier,
+                    step.FinalStep, step.EachPlayerFrame, step.FinalPlayer);
+
+            case Steps.OrderEachPlayer:
+                return EachPlayerEffects.Ordering(world, step);
+
+            case Steps.ResolveEachPlayer:
+                events.AddRange(EachPlayerEffects.Resolve(world, abilities, step));
+                break;
 
             case Steps.PassFirstPlayerToken:
                 PassFirstPlayerToken(world);
@@ -600,12 +877,37 @@ public static class VillainPhase
                 PhaseEnd.EndPlayerPhase(world, events);
                 break;
 
+            // Lifecycle steps exist to put their interrupt and response
+            // windows on the agenda. The transition itself was applied before
+            // the step was scheduled, so occurrence tier has nothing further
+            // to mutate.
+            case Steps.CardPlayed:
+            case Steps.CardEntersPlay:
+            case Steps.FormChanged:
+                break;
+
             default:
                 throw new RulesNotImplementedException(
                     $"the villain phase has no step '{step.What}'");
         }
 
         return null;
+    }
+
+    private static void CompleteActivation(
+        World world, ICardAbilities abilities, PhaseStep step, List<GameEvent> events)
+    {
+        bool attacking = step.What == Steps.CompleteAttackActivation;
+        var result = world.FinishedActivation is { } finished
+            && finished.Id == step.ActivationId
+            ? finished
+            : new EnemyActivation(
+                step.Subject, step.Seat, attacking, step.ActivationId, Made: false);
+
+        world.FinishedActivation = result;
+        events.AddRange(abilities.ActivationCompleted(world, result));
+        world.FinishedActivation = null;
+        world.Activation = null;
     }
 
     /// <summary>
@@ -654,12 +956,17 @@ public static class VillainPhase
         switch (step.What)
         {
             case Steps.DeclareDefender:
-                Attack.Defend(world, facts, input, events);
+                Attack.Defend(world, facts, abilities, input, events);
                 break;
 
             case Steps.ChooseOption:
                 events.AddRange(abilities.Chose(
-                    world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier));
+                    world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier,
+                    step.FinalStep, step.EachPlayerFrame, step.FinalPlayer, step.Trigger));
+                break;
+
+            case Steps.OrderEachPlayer:
+                EachPlayerEffects.Ordered(world, step, input);
                 break;
 
             default:
@@ -726,20 +1033,19 @@ public static class VillainPhase
     private static void PlaceThreat(
         World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
     {
-        var scheme = world.TheCardIn(DeckType.MainSchemesArea);
-        if (scheme is null)
+        if (world.Agenda.Occurrence is { } occurrence)
         {
-            return;
+            Threat.Apply(world, facts, abilities, occurrence, events);
+            occurrence.Also(Steps.VillainPhaseStepOneEnds);
         }
+    }
 
-        // `rr:villain-phase.step.1`: "place the amount of threat indicated in
-        // the main scheme's acceleration field. **If any acceleration icons or
-        // tokens are active, additional threat equal to the number of such
-        // icons and tokens is also placed at this time.**"
-        long amount = facts.PrintedValue(scheme.FaceId, "EscalationThreat", world.Players)
-            + MainScheme.Acceleration(world, facts);
-        Threat.Place(
-            world, facts, abilities, scheme, amount, "villain phase, place threat", events);
+    private static void ApplyThreat(
+        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
+    {
+        var occurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException("a threat step has no occurrence");
+        Threat.Apply(world, facts, abilities, occurrence, events);
     }
 
     /// <summary>An enemy schemes. <c>rr:scheme-enemy-activation</c>.</summary>
@@ -774,7 +1080,8 @@ public static class VillainPhase
         // `rr:activation` -- the other kind, and the one that had no value on
         // the board until now. Set after `rr:stun-stunned`'s cancellation
         // above, because a cancelled activation is not one.
-        world.Activation = new EnemyActivation(villain.ObjectId, seat, Attacking: false);
+        world.Activation = new EnemyActivation(
+            villain.ObjectId, seat, Attacking: false, Id: world.Agenda.Current?.ActivationId ?? -1);
 
         // **A scheming enemy holds boost cards, plural.**
         // `rr:scheme-enemy-activation.step.1` gives the card to the enemy --
@@ -792,9 +1099,11 @@ public static class VillainPhase
         // sub-step, differing only in naming SCH where the attack names ATK.
         int round = world.Agenda.Current?.Round ?? 0;
         world.Agenda.Then(new PhaseStep(
-            Steps.GiveBoostCard, round, 1, Index: seat, Subject: villain.ObjectId));
+            Steps.GiveBoostCard, round, 1, Index: seat, Subject: villain.ObjectId,
+            ActivationId: world.Activation.Id));
         world.Agenda.Then(new PhaseStep(
-            Steps.FlipBoostCards, round, 2, Index: seat, Subject: villain.ObjectId));
+            Steps.FlipBoostCards, round, 2, Index: seat, Subject: villain.ObjectId,
+            ActivationId: world.Activation.Id));
 
         // **Step 3 is a step, because step 2 can stop and ask.** A `Boost`
         // ability that offers the player a choice suspends, and the threat used
@@ -808,7 +1117,8 @@ public static class VillainPhase
             3,
             Index: seat,
             Subject: villain.ObjectId,
-            Seat: seat));
+            Seat: seat,
+            ActivationId: world.Activation.Id));
     }
 
     /// <summary>
@@ -830,19 +1140,11 @@ public static class VillainPhase
         World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
         List<GameEvent> events)
     {
-        var villain = world.Cards[step.Subject];
-        var target = world.TheCardIn(DeckType.MainSchemesArea);
-
-        if (target is not null)
+        long placed = 0;
+        if (world.Agenda.Occurrence is { } occurrence)
         {
-            Threat.Place(
-                world,
-                facts,
-                abilities,
-                target,
-                StateFields.Modified(world, villain, "scheme", facts, world.Players),
-                "scheme",
-                events);
+            placed = Threat.Apply(world, facts, abilities, occurrence, events);
+            occurrence.Also(Steps.SchemeEnds);
         }
 
         // The other kind of activation ends here. A boost card's ability that
@@ -850,7 +1152,11 @@ public static class VillainPhase
         // survive into somebody's attack -- `rr:activation` makes a scheme an
         // activation, and `rr:activation.6` gives an activation an end.
         world.Effects.Expire(TimingPoints.EndOfActivation);
-        world.Activation = null;
+        if (world.Activation is { } activation)
+        {
+            world.FinishedActivation = activation with { ThreatPlaced = placed };
+            world.Activation = null;
+        }
     }
 
     /// <summary>Step 3. One encounter card to each player, in player order.</summary>
@@ -977,7 +1283,7 @@ public static class VillainPhase
         // `rr:reveal.step.2` -- **where the card goes is decided by its type**,
         // and it happens before step 3's "When Revealed" abilities. A minion
         // that entered play is already engaged when its own ability resolves.
-        Reveal.Resolve(world, facts, card, player, events);
+        Reveal.Resolve(world, facts, card, player, events, world.Agenda.Occurrence);
 
         // Step 3. "Resolve each **When Revealed** ability on that card
         // *(including those provided by keywords)*."

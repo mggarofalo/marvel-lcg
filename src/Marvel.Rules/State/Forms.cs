@@ -186,4 +186,25 @@ public static class Forms
         identity.TurnTo(identity.Faces[identity.FaceIndex == 0 ? 1 : 0]);
         return was;
     }
+
+    /// <summary>Change form and schedule the occurrence that follows the flip.</summary>
+    /// <remarks>
+    /// <c>rr:after</c> makes a response wait until the form change has
+    /// concluded. The flip is applied first and the agenda step supplies the
+    /// interrupt and response windows, so an ability on the newly showing face
+    /// is active when the response window is read.
+    /// </remarks>
+    public static string ChangeAndSchedule(World world, Seat seat, ICardFacts facts, int round)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        string was = Change(seat, facts);
+        world.Agenda.Then(new PhaseStep(
+            Steps.FormChanged,
+            round,
+            0,
+            Index: seat.Index,
+            Subject: seat.IdentityCard.ObjectId,
+            Seat: seat.Index));
+        return was;
+    }
 }

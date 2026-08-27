@@ -207,6 +207,7 @@ public static class WorldSetup
         //     so where each card goes is the ordinary question of a card
         //     entering play, which `Play.Reveal` already answers.
         SetupCards(world, facts, happened);
+        FinishSetupAgenda(world, facts, happened);
 
         // 12. `rr:appendix-ii-setup.step.12`, "Resolve Scenario Setup and When
         //     Revealed Abilities", which is three sub-steps in a stated order.
@@ -216,6 +217,7 @@ public static class WorldSetup
         {
             // 12a. "Resolve any 'Setup' abilities on main scheme card 1A."
             happened.AddRange(world.Abilities.Setup(world, scheme));
+            FinishSetupAgenda(world, facts, happened);
 
             // 12b. "Flip the main scheme card to side 1B and resolve any 'When
             //      Revealed' abilities on that side."
@@ -230,6 +232,7 @@ public static class WorldSetup
                 facts.PrintedValue(scheme.FaceId, "StartingThreat", players));
 
             happened.AddRange(world.Abilities.WhenRevealed(world, scheme, world.FirstPlayer));
+            FinishSetupAgenda(world, facts, happened);
         }
 
         // 12c. "Resolve any 'Setup' and 'When Revealed' abilities on the
@@ -239,27 +242,9 @@ public static class WorldSetup
         if (world.TheCardIn(DeckType.VillainArea) is { } villain)
         {
             happened.AddRange(world.Abilities.Setup(world, villain));
+            FinishSetupAgenda(world, facts, happened);
             happened.AddRange(world.Abilities.WhenRevealed(world, villain, world.FirstPlayer));
-        }
-
-        // Setup's abilities schedule as well as act. Rhino II searches for a
-        // side scheme and **reveals** it, and a reveal is a step with windows
-        // around it rather than a card moving -- so it goes on the agenda, and
-        // an agenda nobody drains is an ability that did half of what it said.
-        // The encounter deck would have been shuffled by the search and the
-        // scheme left in it, which is worse than not running the card at all.
-        //
-        // `rr:appendix-ii-setup` ends "the game is now ready to begin", so
-        // there is no later moment for this: it drains here or never.
-        if (Play.Sequence.Work(world, facts, world.Abilities, happened) is { } asked)
-        {
-            // `rr:ability.6` -- "player card abilities cannot resolve during
-            // game setup, unless prefaced by a 'Setup' timing trigger" -- and
-            // `rr:setup-triggered-ability.1` makes the setup abilities
-            // themselves mandatory. So nothing should have a question, and a
-            // scenario that does needs somebody to ask rather than a default.
-            throw new Play.RulesNotImplementedException(
-                $"setup asked '{asked.Label}', and rr:appendix-ii-setup has nobody to ask");
+            FinishSetupAgenda(world, facts, happened);
         }
 
         // 14. "Draw Cards." Opening hands, off the top of an already-shuffled
@@ -281,6 +266,27 @@ public static class WorldSetup
         }
 
         return world;
+    }
+
+    /// <summary>Resolve everything one scenario setup ability scheduled.</summary>
+    private static void FinishSetupAgenda(
+        World world, ICardFacts facts, List<Events.GameEvent> happened)
+    {
+        // `rr:ability.6` excludes player-card abilities during game setup.
+        // The Setup ability itself has already resolved above; nested windows
+        // may therefore read encounter cards only. A question from one of
+        // those cards is still refused rather than answered on a player's
+        // behalf, because setup has no prompt channel.
+        if (Play.Sequence.Work(
+                world,
+                facts,
+                world.Abilities,
+                happened,
+                Timing.WindowAbilityScope.EncounterCardsOnly) is { } asked)
+        {
+            throw new Play.RulesNotImplementedException(
+                $"setup asked '{asked.Label}', and rr:appendix-ii-setup has nobody to ask");
+        }
     }
 
     /// <summary>

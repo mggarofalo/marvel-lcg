@@ -191,6 +191,7 @@ public sealed class WhenDefeatedTests
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
 
         world.Abilities.WhenCardDefeated(world, villain, Killed(villain));
+        Agendas.Finish(world, Cards, world.Abilities);
 
         Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
     }

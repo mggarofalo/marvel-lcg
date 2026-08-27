@@ -119,7 +119,7 @@ public static class Keywords
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
 
-        return facts.Kind(card.FaceId) != State.CardKind.Minion
-            || facts.PrintedValue(card.FaceId, "Villainous", players) > 0;
+        return State.FacedownDrones.Kind(card, facts) != State.CardKind.Minion
+            || State.FacedownDrones.BaseValue(card, facts, "Villainous", players) > 0;
     }
 }

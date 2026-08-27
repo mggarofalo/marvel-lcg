@@ -89,19 +89,8 @@ public sealed class HuntedTests
         // nothing — it has no printed `RES` — so a resource cost of one could
         // not be paid with it and this one can, because what is spent is the
         // card and not what the card would have made.
-        var (game, world) = Playing(out var hunted, prepare: board =>
-        {
-            foreach (var held in board.Seats[0].Hand.Cards.ToList())
-            {
-                World.MoveToTop(
-                    held,
-                    board.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
-            }
-
-            board.CreateCard(NoResource, board.Seats[0].Hand);
-        });
-
-        var paid = Assert.Single(world.Seats[0].Hand.Cards);
+        var (game, world) = Playing(out var hunted);
+        var paid = world.CreateCard(NoResource, world.Seats[0].Hand);
         Assert.Equal(string.Empty, Resources.GeneratedBy(paid.FaceId, Cards));
 
         var action = Assert.Single(
@@ -118,18 +107,16 @@ public sealed class HuntedTests
         // Step 3 asks the cost and the player's ability to pay it together, and
         // only "if both conditions are met" do the later steps happen. A player
         // holding nothing has no way out of this card until they draw one.
-        var (game, _) = Playing(out _, prepare: board =>
+        var (_, world) = Playing(out var hunted);
+        foreach (var held in world.Seats[0].Hand.Cards.ToList())
         {
-            foreach (var held in board.Seats[0].Hand.Cards.ToList())
-            {
-                World.MoveToTop(
-                    held,
-                    board.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
-            }
-        });
+            World.MoveToTop(
+                held,
+                world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        }
 
         Assert.DoesNotContain(
-            game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);
+            AuthoredCards.Runner().Actions(world, 0), ability => ability.Card == hunted.ObjectId);
     }
 
     [Rule("rr:player-turn.5.1")]
@@ -222,6 +209,7 @@ public sealed class HuntedTests
 
         Sequence.Answer(
             world, Cards, abilities, asked, Decision.Take(offer.Id, [paid.ObjectId], []), events);
+        Sequence.Finish(world, Cards, abilities, events);
 
         Assert.Equal(DeckType.DiscardPile, paid.Area.Type);
         Assert.Equal(before + 1, pool.Tokens.GetValueOrDefault("k_threat"));

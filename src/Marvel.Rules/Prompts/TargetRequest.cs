@@ -78,6 +78,16 @@ public sealed record TargetRequest(
     {
         ArgumentNullException.ThrowIfNull(selection);
 
+        // `rr:choose-game-element.3.1`: "The same target cannot be chosen
+        // multiple times this way." This applies before either representation
+        // below: a grouped selection does not make two references to one
+        // object into two targets, and a flat request's count must not be met
+        // by repeating one legal id.
+        if (selection.Distinct().Count() != selection.Count)
+        {
+            return false;
+        }
+
         if (IsGrouped)
         {
             return Groups!.Any(group => selection.All(group.Contains));

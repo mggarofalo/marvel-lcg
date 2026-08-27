@@ -265,7 +265,7 @@ public static class StateFields
         ArgumentNullException.ThrowIfNull(facts);
 
         string faceId = card.FaceId;
-        var kind = facts.Kind(faceId);
+        var kind = FacedownDrones.Kind(card, facts);
         var fields = new Dictionary<string, long>(StringComparer.Ordinal)
         {
             // Three namespaces merged through one guard, as the engine does:
@@ -278,7 +278,7 @@ public static class StateFields
         // Strength has the BRUTE trait, and a digest that emitted only the
         // printed list would describe a board nobody is playing.
         foreach (string trait in world is null
-            ? facts.Traits(faceId)
+            ? FacedownDrones.InherentTraits(card, facts)
             : Traits.Of(world, card, facts))
         {
             Merge(fields, "t_" + trait, 1);
@@ -381,7 +381,7 @@ public static class StateFields
         ArgumentNullException.ThrowIfNull(facts);
 
         long value = PrintedFrom.TryGetValue(field, out string? attribute)
-            ? facts.PrintedValue(card.FaceId, attribute, players)
+            ? FacedownDrones.BaseValue(card, facts, attribute, players)
             : 0;
         return value + Adjustments(world, card, field, facts, players);
     }
@@ -398,7 +398,7 @@ public static class StateFields
                 continue;
             }
 
-            long value = facts.PrintedValue(faceId, attribute, players);
+            long value = FacedownDrones.BaseValue(card, facts, attribute, players);
             if (world is not null)
             {
                 value += Adjustments(world, card, field, facts, players);
@@ -409,8 +409,8 @@ public static class StateFields
     }
 
     /// <summary>Remaining hit points: printed, less the damage on the card.</summary>
-    private static long Remaining(Card card, string faceId, ICardFacts facts, int players) =>
-        Math.Max(0, facts.PrintedValue(faceId, "HP", players) - card.Damage);
+    private static long Remaining(Card card, ICardFacts facts, int players) =>
+        Math.Max(0, FacedownDrones.BaseValue(card, facts, "HP", players) - card.Damage);
 
     /// <summary>Everything modifying one of a card's printed values.</summary>
     private static long Adjustments(
@@ -423,7 +423,7 @@ public static class StateFields
         foreach (var effect in world.Effects.Active())
         {
             if (string.Equals(effect.Kind, field, StringComparison.Ordinal)
-                && effect.Affects == card.ObjectId)
+                && effect.AppliesTo(world, card))
             {
                 total += effect.Amount;
             }
@@ -477,7 +477,7 @@ public static class StateFields
                 // of its hit points, it is defeated" -- so what the field means
                 // is what is left. On an undamaged board the two are equal,
                 // which is why the distinction is easy to lose.
-                fields["health"] = Remaining(card, faceId, facts, players);
+                fields["health"] = Remaining(card, facts, players);
                 fields["ally_limit"] = AllyLimit;
                 fields["restricted_limit"] = RestrictedLimit;
                 if (hasFirstPlayerToken)
@@ -488,7 +488,8 @@ public static class StateFields
                 break;
 
             case CardKind.EncounterVillain:
-                fields["health"] = Remaining(card, faceId, facts, players);
+            case CardKind.Minion:
+                fields["health"] = Remaining(card, facts, players);
                 break;
 
             case CardKind.MainScheme:

@@ -29,7 +29,7 @@ public sealed class WouldBeDefeatedTests
     {
         var (world, minion, upgrade) = Board();
 
-        bool defeated = Damage.Deal(world, Cards, minion, 3, "test", "test", []);
+        bool defeated = Damage.Deal(world, Cards, minion, minion, 3, "test", "test", []);
 
         Assert.False(defeated);
         Assert.Equal(0, minion.Damage);
@@ -43,7 +43,7 @@ public sealed class WouldBeDefeatedTests
     {
         var (world, minion, upgrade) = Board();
 
-        bool defeated = Damage.Deal(world, Cards, minion, 2, "test", "test", []);
+        bool defeated = Damage.Deal(world, Cards, minion, minion, 2, "test", "test", []);
 
         Assert.False(defeated);
         Assert.Equal(2, minion.Damage);
@@ -58,7 +58,7 @@ public sealed class WouldBeDefeatedTests
         var (world, minion, upgrade) = Board();
         Statuses.Give(world, minion, Statuses.Tough);
 
-        Damage.Deal(world, Cards, minion, 3, "test", "test", []);
+        Damage.Deal(world, Cards, minion, minion, 3, "test", "test", []);
 
         Assert.Equal(0, minion.Damage);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
@@ -74,7 +74,7 @@ public sealed class WouldBeDefeatedTests
             Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Agendas.Happening(world);
 
-        bool defeated = Damage.Deal(world, Cards, other, 3, "test", "test", []);
+        bool defeated = Damage.Deal(world, Cards, other, other, 3, "test", "test", []);
 
         Assert.True(defeated);
         Assert.Equal(DeckType.EncounterDiscardPile, other.Area.Type);
@@ -160,7 +160,7 @@ public sealed class WouldBeDefeatedTests
             world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Damage.Deal(world, Cards, minion, 3, "test", "test", []));
+            () => Damage.Deal(world, Cards, minion, minion, 3, "test", "test", []));
 
         Assert.Contains("optional interrupt", thrown.Message, StringComparison.Ordinal);
         Assert.Contains("rr:damage.step.6", thrown.Message, StringComparison.Ordinal);
@@ -192,7 +192,7 @@ public sealed class WouldBeDefeatedTests
             AuthoredCards.BiomechanicalUpgrades,
             world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
 
-        bool defeated = Damage.Deal(world, Cards, minion, 3, "test", "test", []);
+        bool defeated = Damage.Deal(world, Cards, minion, minion, 3, "test", "test", []);
 
         Assert.False(defeated);
         Assert.Equal(0, minion.Damage);
@@ -218,7 +218,7 @@ public sealed class WouldBeDefeatedTests
             world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
         Agendas.Happening(world);
 
-        bool defeated = Damage.Deal(world, Cards, minion, 3, "test", "test", []);
+        bool defeated = Damage.Deal(world, Cards, minion, minion, 3, "test", "test", []);
 
         Assert.True(defeated);
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
@@ -251,7 +251,7 @@ public sealed class WouldBeDefeatedTests
             world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Damage.Deal(world, Cards, minion, 3, "test", "test", []));
+            () => Damage.Deal(world, Cards, minion, minion, 3, "test", "test", []));
 
         Assert.Contains("rr:forced.5", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(3, minion.Damage);
@@ -267,7 +267,7 @@ public sealed class WouldBeDefeatedTests
             {"cards":[{"card":"01140","abilities":[{
               "trigger":{"event":"WhenCardWouldBeDefeated","timing":"ForcedInterrupt",
                          "subject":"game"},
-              "effect":{"placeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}
+              "effect":{"placeAccelerationToken":1}
             }]}]}
             """);
         var scheme = world.CreateCard("01097b", world.AreaOf(DeckType.MainSchemesArea));
@@ -278,10 +278,10 @@ public sealed class WouldBeDefeatedTests
             Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Agendas.Happening(world);
 
-        Damage.Deal(world, Cards, first, 3, "test", "test", []);
-        Damage.Deal(world, Cards, second, 3, "test", "test", []);
+        Damage.Deal(world, Cards, first, first, 3, "test", "test", []);
+        Damage.Deal(world, Cards, second, second, 3, "test", "test", []);
 
-        Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(1, scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken));
     }
 
     private static (World World, Card Minion, Card Upgrade) Board()

@@ -348,6 +348,15 @@ not before it: a step that schedules another has not itself finished happening.
 order and not interleaved — and the recorded discard pile is what catches it if
 they are.
 
+Threat placement carries its assignment on the occurrence: scheme, source,
+assigned and remaining amount, player and cause. `rr:prevent.2` changes the
+remaining amount in the interrupt window before any token is placed. The
+`WhenThreatPlaced` condition joins the occurrence only when a positive amount
+actually lands; a replacement removes the step and both of its remaining
+windows under `rr:replacement-effect.1`. The villain phase and an enemy scheme
+derive and freeze their assignments when their interrupt window begins, after
+the preceding steps have updated the board.
+
 The villain winning abandons the rest — `rr:main-scheme-main-scheme-deck.2.1`,
 the villain wins the game, and the encounter cards are not dealt.
 

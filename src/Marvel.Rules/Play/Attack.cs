@@ -6,6 +6,13 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>
+/// The legal defenders for one attack and whether a defender is mandatory.
+/// </summary>
+/// <param name="Candidates">The characters that may defend.</param>
+/// <param name="Required">Whether declining to defend is illegal.</param>
+public sealed record DefenderChoice(IReadOnlyList<Card> Candidates, bool Required);
+
+/// <summary>
 /// An enemy attack, as <c>rr:attack-enemy-activation</c> lists its steps.
 /// </summary>
 /// <remarks>
@@ -41,6 +48,29 @@ public static class Attack
     public const string DefenseVerb = "Defense";
 
     /// <summary>
+    /// During an attack's initiation interrupt, make that same attack resolve
+    /// against every other hero in deterministic seat order.
+    /// </summary>
+    public static void AlsoResolveAgainstEachOtherHero(World world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        var step = world.Agenda.Current;
+        if (step is not { What: Steps.Attack } || world.Agenda.Stage != Stage.Interrupts)
+        {
+            throw new RulesNotImplementedException(
+                "additional attack targets were requested outside an attack initiation");
+        }
+
+        world.PendingAdditionalAttackPlayers = Enumerable.Range(0, world.Players)
+            .Where(player => player != step.Value.Seat)
+            .Where(player => !world.Seats[player].Eliminated)
+            .Where(player => world.Facts.Kind(world.Seats[player].IdentityCard.FaceId)
+                == CardKind.Hero)
+            .ToList();
+    }
+
+    /// <summary>
     /// The attack initiates: it targets a player, and its steps go on the
     /// agenda.
     /// </summary>
@@ -68,6 +98,7 @@ public static class Attack
         if (BasicPowers.Cancelled(
             world, facts, world.Cards[step.Subject], Statuses.Stunned, events))
         {
+            world.PendingAdditionalAttackPlayers = [];
             return;
         }
 
@@ -80,32 +111,75 @@ public static class Attack
         var target = step.Character >= 0
             ? world.Cards[step.Character]
             : world.Seats[step.Seat].IdentityCard;
-        world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId);
+        var additional = world.PendingAdditionalAttackPlayers;
+        world.PendingAdditionalAttackPlayers = [];
+        world.Attack = new EnemyAttack(
+            step.Subject, step.Seat, target.ObjectId, AdditionalPlayers: additional);
 
         // `rr:activation` -- "whenever an enemy attacks or schemes, it is
         // considered to have activated". The umbrella, which a scheme sets too;
         // `world.Attack` is the six steps below it.
-        world.Activation = new EnemyActivation(step.Subject, step.Seat, Attacking: true);
+        world.Activation = new EnemyActivation(
+            step.Subject, step.Seat, Attacking: true, Id: step.ActivationId);
 
         // One attack's facts do not outlive the start of the next.
         world.FinishedAttack = null;
 
         world.Agenda.Then(new PhaseStep(
-            Steps.GiveBoostCard, step.Round, 1, Index: step.Seat, Subject: step.Subject));
+            Steps.GiveBoostCard, step.Round, 1, Index: step.Seat, Subject: step.Subject,
+            ActivationId: step.ActivationId));
         world.Agenda.Then(new PhaseStep(
             Steps.DeclareDefender, step.Round, 2, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat));
+            Seat: step.Seat, ActivationId: step.ActivationId));
         world.Agenda.Then(new PhaseStep(
-            Steps.FlipBoostCards, step.Round, 3, Index: step.Seat, Subject: step.Subject));
+            Steps.FlipBoostCards, step.Round, 3, Index: step.Seat, Subject: step.Subject,
+            ActivationId: step.ActivationId));
         world.Agenda.Then(new PhaseStep(
             Steps.CalculateAttackDamage, step.Round, 4, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat));
+            Seat: step.Seat, ActivationId: step.ActivationId));
         world.Agenda.Then(new PhaseStep(
             Steps.DealAttackDamage, step.Round, 5, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat));
+            Seat: step.Seat, ActivationId: step.ActivationId));
+        foreach (int player in additional)
+        {
+            world.Agenda.Then(new PhaseStep(
+                Steps.NextAttackTarget, step.Round, 5, Index: player, Subject: step.Subject,
+                Seat: player, Plan: true, ActivationId: step.ActivationId));
+            world.Agenda.Then(new PhaseStep(
+                Steps.DeclareDefender, step.Round, 2, Index: player, Subject: step.Subject,
+                Seat: player, ActivationId: step.ActivationId));
+            world.Agenda.Then(new PhaseStep(
+                Steps.CalculateAttackDamage, step.Round, 4, Index: player, Subject: step.Subject,
+                Seat: player, ActivationId: step.ActivationId));
+            world.Agenda.Then(new PhaseStep(
+                Steps.DealAttackDamage, step.Round, 5, Index: player, Subject: step.Subject,
+                Seat: player, ActivationId: step.ActivationId));
+        }
         world.Agenda.Then(new PhaseStep(
             Steps.EndAttack, step.Round, 6, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat));
+            Seat: step.Seat, ActivationId: step.ActivationId));
+    }
+
+    /// <summary>Move a multi-hero attack to its next printed hero target.</summary>
+    public static void NextTarget(World world, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        var attack = Current(world);
+        if (!attack.RemainingPlayers.Contains(player))
+        {
+            throw new RulesNotImplementedException(
+                $"player {player} is not a remaining target of this attack");
+        }
+
+        world.Attack = attack with
+        {
+            Player = player,
+            Target = world.Seats[player].IdentityCard.ObjectId,
+            Defender = -1,
+            BasicDefense = false,
+            CalculatedDamage = null,
+            AdditionalPlayers = attack.RemainingPlayers.Where(seat => seat != player).ToList(),
+        };
     }
 
     /// <summary>
@@ -149,7 +223,31 @@ public static class Attack
             return;
         }
 
-        string trigger = Activated(activation);
+        DealBoostCard(world, enemy, Activated(activation), events);
+    }
+
+    /// <summary>Give an enemy one additional boost card for its activation.</summary>
+    /// <remarks>
+    /// <c>rr:boost-boost-icon.4</c> makes additional cards cumulative, and
+    /// <c>.6</c> leaves a card given before the activation facedown on the
+    /// enemy until it activates. The primitive is immediate so a Boost ability
+    /// reached while <see cref="FlipBoostCards"/> is walking the hosted queue
+    /// adds the next card that same loop resolves.
+    /// </remarks>
+    public static void GiveAdditionalBoostCard(
+        World world, Card enemy, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(enemy);
+        ArgumentException.ThrowIfNullOrWhiteSpace(trigger);
+        ArgumentNullException.ThrowIfNull(events);
+
+        DealBoostCard(world, enemy, trigger, events);
+    }
+
+    private static void DealBoostCard(
+        World world, Card enemy, string trigger, List<GameEvent> events)
+    {
         var deck = world.AreaOf(DeckType.EncounterDeck);
         var boost = EncounterDeck.TakeTop(world, trigger, events);
         if (boost is null)
@@ -157,7 +255,7 @@ public static class Attack
             return;
         }
 
-        var onto = BoostCards(world, activation.Enemy);
+        var onto = BoostCards(world, enemy.ObjectId);
         onto.Append(boost);
         events.Add(new CardsMoved(
             Places.Reference(deck), Places.Reference(onto),
@@ -180,11 +278,14 @@ public static class Attack
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">Card-specific defender restrictions.</param>
     /// <returns>The question, or null when nobody could defend.</returns>
-    public static Prompt? DeclareDefender(World world, ICardFacts facts)
+    public static Prompt? DeclareDefender(
+        World world, ICardFacts facts, ICardAbilities abilities)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
 
         // `rr:activation.6` -- "if an activating minion leaves play, that
         // minion's activation ends immediately and no further steps of that
@@ -195,8 +296,8 @@ public static class Attack
         }
 
         var attack = Current(world);
-        var candidates = Defenders(world, facts);
-        if (candidates.Count == 0)
+        var choice = Choice(world, facts, abilities, attack);
+        if (choice.Candidates.Count == 0)
         {
             return null;
         }
@@ -209,20 +310,21 @@ public static class Attack
             Trigger: Steps.AttackInitiated,
             Label: $"{seat.Name} declares a defender",
 
-            // rr:attack-enemy-activation.4 -- an attack with no defender is
-            // undefended and resolves, so not defending is always an answer.
-            Cancellable: true,
+            // `rr:attack-enemy-activation.4` ordinarily permits no defender.
+            // A card instruction can make defending mandatory when its stated
+            // kind of defender is able, which is why this is card-provided.
+            Cancellable: !choice.Required,
             Affordances:
             [
                 // `AnchorPlayer` is whose character it is, which is not
                 // always the player being asked: `rr:defend-defense.5` lets
                 // somebody else's hero or ally defend, and taking over makes
                 // them the attack's new target.
-                .. candidates.Select(card => new Affordance(
+                .. choice.Candidates.Select(card => new Affordance(
                     Id: card.ObjectId,
                     Verb: DefenseVerb,
                     AnchorId: card.ObjectId,
-                    AnchorPlayer: card.Owner,
+                    AnchorPlayer: card.Area.PlayArea.Player,
                     Label: DefenseVerb)),
             ]);
     }
@@ -230,23 +332,34 @@ public static class Attack
     /// <summary>The character that answer names becomes the defender.</summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">Card-specific defender restrictions.</param>
     /// <param name="input">The player's answer.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void Defend(
-        World world, ICardFacts facts, Decision input, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, Decision input,
+        List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(events);
 
         var attack = Current(world);
+        var choice = Choice(world, facts, abilities, attack);
         if (input.IsDecline)
         {
+            if (choice.Required)
+            {
+                throw new RulesNotImplementedException(
+                    $"the attack by card {attack.Enemy} requires a defender and cannot be "
+                    + "declined");
+            }
+
             return;
         }
 
-        var defender = Defenders(world, facts)
+        var defender = choice.Candidates
             .FirstOrDefault(card => card.ObjectId == input.Affordance)
             ?? throw new RulesNotImplementedException(
                 $"card {input.Affordance} was not offered as a defender");
@@ -433,7 +546,7 @@ public static class Attack
         // a second place for the defeat rules to be wrong.
         // One call, because `rr:piercing`, `rr:overkill` and `rr:ranged` are all
         // properties of the attack rather than of either character.
-        var damaged = Damage.Attack(
+        var damage = Damage.Attack(
             world, facts, world.Cards[attack.Enemy], world.Cards[attack.Target], amount,
             Steps.AttackInitiated, "Deal_Damage", events);
 
@@ -446,7 +559,7 @@ public static class Attack
         // that list shorter than "who was attacked": a character whose tough
         // status card ate the damage "is not considered to have taken damage",
         // so "if a character is damaged by this attack" is false for them.
-        foreach (var card in damaged)
+        foreach (var card in damage.Characters)
         {
             DelayedEffects.Occur(world, "WhenDamageDealt", card.ObjectId, events);
         }
@@ -457,9 +570,17 @@ public static class Attack
         // `rr:tough.3` shortens -- a character whose tough card absorbed the
         // attack "is not considered to have taken damage" -- so an attack that
         // hit a tough card did not damage anybody.
-        if (damaged.Count > 0)
+        if (damage.Characters.Count > 0)
         {
             world.Attack = attack with { Damaged = true };
+        }
+
+        if (world.Activation is { } activation)
+        {
+            world.Activation = activation with
+            {
+                DamageDealt = activation.DamageDealt + damage.Amount,
+            };
         }
     }
 
@@ -524,6 +645,7 @@ public static class Attack
         // so anything bounded by "this activation" ends here too, and there is
         // no longer an activating enemy for a card to name.
         world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.FinishedActivation = world.Activation;
         world.Activation = null;
         DelayedEffects.Occur(world, Steps.AttackEnds, events);
 
@@ -612,6 +734,28 @@ public static class Attack
         return candidates;
     }
 
+    /// <summary>Applies card-specific defender constraints to the rules candidates.</summary>
+    private static DefenderChoice Choice(
+        World world, ICardFacts facts, ICardAbilities abilities, EnemyAttack attack)
+    {
+        var legal = Defenders(world, facts);
+        var choice = abilities.Defenders(world, attack, legal);
+        if (choice.Required && choice.Candidates.Count == 0)
+        {
+            throw new RulesNotImplementedException(
+                $"card {attack.Enemy} requires a defender but offers no legal candidate");
+        }
+
+        var legalIds = legal.Select(card => card.ObjectId).ToHashSet();
+        if (choice.Candidates.Any(card => !legalIds.Contains(card.ObjectId)))
+        {
+            throw new RulesNotImplementedException(
+                $"card {attack.Enemy} offered a character that cannot defend");
+        }
+
+        return choice;
+    }
+
     /// <summary>One player's characters that could defend.</summary>
     private static List<Card> For(World world, ICardFacts facts, int player)
     {
@@ -630,8 +774,11 @@ public static class Attack
 
         // rr:defend-defense.3 -- "an ally can exhaust to defend against an
         // enemy attack. Damage from the attack is dealt to that ally."
-        var allies = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player), cardOwner: player);
-        candidates.AddRange(allies.Cards.Where(ally => ally.Ready));
+        candidates.AddRange(world.Areas
+            .Where(area => area.Type == DeckType.AlliesArea
+                && area.PlayArea == PlayArea.Of(player))
+            .SelectMany(area => area.Cards)
+            .Where(ally => ally.Ready));
 
         return candidates;
     }

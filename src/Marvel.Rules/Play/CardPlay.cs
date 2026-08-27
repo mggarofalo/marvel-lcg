@@ -6,6 +6,21 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>
+/// A card's cost after modifiers, together with the one-use effects that
+/// produced it.
+/// </summary>
+/// <remarks>
+/// Kept as data because determining a cost and paying it are separate steps of
+/// <c>rr:initiating-abilities</c>. The effects are consumed only after the card
+/// has successfully been played; merely describing an affordance does not use
+/// them.
+/// </remarks>
+/// <param name="Amount">The cost after modifiers, never less than zero.</param>
+/// <param name="Modifiers">The effects applied while determining it.</param>
+public sealed record AdjustedCardCost(
+    long Amount, IReadOnlyList<ContinuousEffect> Modifiers);
+
+/// <summary>
 /// Playing a card from hand — <c>rr:play-put-into-play</c>,
 /// <c>rr:initiating-abilities</c>.
 /// </summary>
@@ -33,6 +48,82 @@ public static class CardPlay
     /// </remarks>
     public const string Verb = "Play";
 
+    /// <summary>The lasting-effect kind for reducing a player's next card cost.</summary>
+    public const string CardCostReduction = "cardCostReduction";
+
+    /// <summary>
+    /// Makes the next card one player plays this phase cost less.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:lasting-effects.1</c> keeps the effect after the creating ability
+    /// resolves. Its two bounds are independent: playing a card spends its one
+    /// use, while <c>rr:lasting-effects.5</c> expires it at the end of the
+    /// player phase if no card was played. The affected identity names the
+    /// player without introducing another seat-shaped field on
+    /// <see cref="ContinuousEffect"/>.
+    /// </remarks>
+    public static ContinuousEffects.Registration ReduceNextCardCost(
+        World world, Card source, int player, long amount)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentOutOfRangeException.ThrowIfNegative(player);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(player, world.Players);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+
+        return world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            CardCostReduction,
+            Amount: amount,
+            Card: source.ObjectId,
+            Affects: world.Seats[player].IdentityCard.ObjectId,
+            Lasts: new Duration(Until: TimingPoints.EndOfPlayerPhase, Uses: 1)));
+    }
+
+    /// <summary>
+    /// Determines one card's modified resource cost and remembers the effects
+    /// that supplied the adjustment.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:initiating-abilities.step.3</c> determines the cost and step 4
+    /// applies modifiers before step 5 pays it. Cost cannot become negative;
+    /// each reduction stops at zero. This method does not consume anything,
+    /// because pricing a card is not playing it.
+    /// </remarks>
+    public static AdjustedCardCost CostOf(
+        World world, ICardFacts facts, Seat seat, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(seat);
+        ArgumentNullException.ThrowIfNull(card);
+
+        long amount = Resources.Cost(card.FaceId, facts) ?? 0;
+        var modifiers = world.Effects.Active().Where(effect =>
+            string.Equals(effect.Kind, CardCostReduction, StringComparison.Ordinal)
+            && effect.Affects == seat.IdentityCard.ObjectId
+            && effect.Amount > 0).ToList();
+
+        foreach (var modifier in modifiers)
+        {
+            amount = Math.Max(0, amount - modifier.Amount);
+        }
+
+        return new AdjustedCardCost(amount, modifiers);
+    }
+
+    /// <summary>Consumes the one-use effects applied to a successfully played card.</summary>
+    public static void UseCostModifiers(World world, AdjustedCardCost cost)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(cost);
+
+        foreach (var modifier in cost.Modifiers)
+        {
+            world.Effects.Use(modifier);
+        }
+    }
+
     /// <summary>
     /// Every card in a hand that can be spent for resources.
     /// </summary>
@@ -46,8 +137,9 @@ public static class CardPlay
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="seat">Whose hand.</param>
+    /// <param name="payingFor">The card being paid for, or null for an ability cost.</param>
     public static IReadOnlyList<ResourceSource> Generators(
-        World world, ICardFacts facts, Seat seat)
+        World world, ICardFacts facts, Seat seat, Card? payingFor = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -64,7 +156,7 @@ public static class CardPlay
 
         foreach (var card in seat.Hand.Cards)
         {
-            string generates = Resources.GeneratedBy(card.FaceId, facts);
+            string generates = world.Abilities.ResourcesGeneratedBy(world, card, payingFor);
             if (generates.Length > 0)
             {
                 sources.Add(new ResourceSource(card.ObjectId, generates));
@@ -135,7 +227,7 @@ public static class CardPlay
         ArgumentNullException.ThrowIfNull(seat);
         ArgumentNullException.ThrowIfNull(card);
 
-        if (!Permitted(world, facts, seat, card))
+        if (!Permitted(world, facts, seat, card, abilities: world.Abilities))
         {
             return null;
         }
@@ -155,13 +247,13 @@ public static class CardPlay
             return null;
         }
 
-        long cost = Resources.Cost(card.FaceId, facts) ?? 0;
+        long cost = CostOf(world, facts, seat, card).Amount;
 
         // The card being played cannot also pay for itself: `rr:cost.3` spends
         // resources "by discarding cards from their hand", and this one is
         // leaving the hand to be played.
         var sources = Paying(world, facts, seat, card)
-            .SelectMany(paying => Generators(world, facts, paying))
+            .SelectMany(paying => Generators(world, facts, paying, card))
             .Where(source => source.Effect != card.ObjectId)
             .ToList();
 
@@ -214,15 +306,17 @@ public static class CardPlay
         // fails step 2 has to still be in hand, which it is.
         //
         // Step 2. Play restrictions.
-        if (!Permitted(world, facts, seat, card))
+        if (!Permitted(world, facts, seat, card, targets, abilities))
         {
             throw new RulesNotImplementedException(
-                $"card {card.ObjectId} cannot be played by {seat.Name} right now");
+                $"card {card.ObjectId} ('{card.FaceId}') in {card.Area.Type} cannot be played "
+                + $"by {seat.Name} right now");
         }
 
-        // Steps 3 and 4. Determine the cost, with modifiers. Nothing modifies a
-        // cost yet, so this is the printed number.
-        long cost = Resources.Cost(card.FaceId, facts) ?? 0;
+        // Steps 3 and 4. Determine the cost and apply modifiers. The same
+        // operation prices the affordance, so what was offered and what is
+        // charged cannot disagree.
+        var adjusted = CostOf(world, facts, seat, card);
 
         // Step 5. Pay it -- "if this step is reached and the cost(s) cannot be
         // paid, **abort this process without paying any costs**", so the whole
@@ -232,12 +326,92 @@ public static class CardPlay
         var hands = Paying(world, facts, seat, card).Select(player => player.Hand).ToList();
 
         Spend(
-            world, facts, hands, paying, cost, Resources.Required(card.FaceId, facts),
-            card.ObjectId, seat.Index, events);
+            world, facts, hands, paying, adjusted.Amount, Resources.Required(card.FaceId, facts),
+            card.ObjectId, seat.Index, events, payingFor: card);
 
         // Steps 6 and 7. The card is played: it enters play, or it is an event
         // and its ability resolves before it is discarded.
         Enter(world, facts, abilities, seat, card, events, targets ?? []);
+
+        // Playing, not pricing or attempting to pay, spends "the next card"
+        // effect. The snapshot excludes a discount the played card itself may
+        // have created while entering play.
+        UseCostModifiers(world, adjusted);
+    }
+
+    /// <summary>
+    /// Puts an ally into play under the named player's control.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:play-put-into-play</c> ignores the ally's resource cost and the
+    /// ordinary restrictions on playing it, then places it in its controller's
+    /// play area. The card's <see cref="Card.Owner"/> does not change; if it
+    /// later leaves play, <c>rr:ownership-and-control.7.2</c> sends it to its
+    /// owner's corresponding out-of-play area.
+    /// </para>
+    /// <para>
+    /// <c>rr:play-put-into-play.3</c> says this is not playing the card, so no
+    /// <c>CardPlayed</c> step is scheduled. It still enters play, and therefore
+    /// uses the same entry lifecycle as a card played from hand.
+    /// </para>
+    /// </remarks>
+    public static void PutAllyIntoPlay(
+        World world, ICardFacts facts, ICardAbilities abilities, Card ally,
+        int controller, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(ally);
+        ArgumentNullException.ThrowIfNull(trigger);
+        ArgumentNullException.ThrowIfNull(events);
+        ArgumentOutOfRangeException.ThrowIfNegative(controller);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(controller, world.Players);
+
+        if (facts.Kind(ally.FaceId) != CardKind.Ally)
+        {
+            throw new RulesNotImplementedException(
+                $"card {ally.ObjectId} is not an ally and cannot enter an allies area");
+        }
+
+        if (DeckTypes.IsInPlay(ally.Area.Type))
+        {
+            throw new RulesNotImplementedException(
+                $"ally {ally.ObjectId} is already in play and cannot be put into play again");
+        }
+
+        if (facts.FormKeyword(ally.FaceId) is { } form
+            && !Forms.In(world, world.Seats[controller], facts, form))
+        {
+            throw new RulesNotImplementedException(
+                $"ally {ally.ObjectId} can only be put into play in {form} form");
+        }
+
+        var from = ally.Area;
+        int previousController = from.PlayArea.IsPlayers
+            ? from.PlayArea.Player
+            : ally.Owner;
+        var into = world.AreaOf(
+            DeckType.AlliesArea, PlayArea.Of(controller), cardOwner: ally.Owner);
+
+        World.MoveToTop(ally, into);
+        events.Add(new CardsMoved(
+            Places.Reference(from), Places.Reference(into),
+            [new Landing(ally.ObjectId, into.Cards.Count - 1)])
+        {
+            Trigger = trigger, Verb = "Put_Into_Play",
+        });
+
+        if (previousController != controller)
+        {
+            events.Add(new ControlChanged(ally.ObjectId, previousController, controller)
+            {
+                Trigger = trigger, Verb = "Put_Into_Play",
+            });
+        }
+
+        Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
     }
 
     /// <summary>
@@ -271,9 +445,11 @@ public static class CardPlay
     /// Whose cost it is, for a generator that is an ability rather than a card.
     /// </param>
     /// <param name="events">Where to record what moved.</param>
+    /// <param name="payingFor">The card being paid for, or null for an ability cost.</param>
     public static void Spend(
         World world, ICardFacts facts, IReadOnlyList<Area> hands, IReadOnlyList<int> paying,
-        long cost, string required, int itself, int payer, List<GameEvent> events)
+        long cost, string required, int itself, int payer, List<GameEvent> events,
+        Card? payingFor = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -323,7 +499,7 @@ public static class CardPlay
             }
 
             spent.Add(source);
-            generated.Append(Resources.GeneratedBy(source.FaceId, facts));
+            generated.Append(world.Abilities.ResourcesGeneratedBy(world, source, payingFor));
         }
 
         if (!Resources.Pays(generated.ToString(), cost, required))
@@ -440,7 +616,9 @@ public static class CardPlay
         string.Equals(facts.Title(faceId), name, StringComparison.Ordinal)
         || string.Equals(facts.Subtitle(faceId), name, StringComparison.Ordinal);
 
-    private static bool Permitted(World world, ICardFacts facts, Seat seat, Card card)
+    private static bool Permitted(
+        World world, ICardFacts facts, Seat seat, Card card,
+        IReadOnlyList<int>? targets = null, ICardAbilities? abilities = null)
     {
         if (card.Area != seat.Hand)
         {
@@ -465,6 +643,12 @@ public static class CardPlay
             return false;
         }
 
+        if (!WithinPerPlayerLimit(
+                world, facts, seat, card, targets, abilities ?? world.Abilities))
+        {
+            return false;
+        }
+
         // `rr:player-turn.2` lists what may be played from hand as a turn
         // option: "an ally, upgrade, support, or player side scheme card".
         // **A resource card is not among them** -- `rr:resource-card` says its
@@ -477,6 +661,53 @@ public static class CardPlay
         // `Price`.
         return facts.Kind(card.FaceId) is CardKind.Ally or CardKind.Upgrade
             or CardKind.Support or CardKind.Event;
+    }
+
+    /// <summary>Checks a printed “Max N per player” against the destination controller.</summary>
+    private static bool WithinPerPlayerLimit(
+        World world, ICardFacts facts, Seat seat, Card card, IReadOnlyList<int>? targets,
+        ICardAbilities abilities)
+    {
+        long maximum = facts.PrintedValue(card.FaceId, "MaxPerUnit", world.Players);
+        if (maximum <= 0)
+        {
+            return true;
+        }
+
+        // The extractor preserves which printed unit the maximum names.
+        // Synthetic facts written before that field existed mean "per player";
+        // this is an engine compatibility choice, not a Rules Reference term.
+        string unit = facts.Attributes(card.FaceId)
+            .GetValueOrDefault("MaxPerUnitKind", "player");
+        if (!string.Equals(unit, "player", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        IReadOnlyList<int>? eligible = facts.Kind(card.FaceId) == CardKind.Upgrade
+            ? abilities.AttachmentTargets(world, card)
+            : null;
+        if (eligible is null)
+        {
+            return CountControlled(world, facts, card, seat.Index) < maximum;
+        }
+
+        IEnumerable<int> hosts = targets is { Count: > 0 } ? targets : eligible;
+        return hosts.Any(host =>
+            eligible.Contains(host)
+            && world.Cards[host].Area.PlayArea is { IsPlayers: true } area
+            && CountControlled(world, facts, card, area.Player) < maximum);
+    }
+
+    private static int CountControlled(
+        World world, ICardFacts facts, Card card, int controller)
+    {
+        string title = facts.Title(card.FaceId);
+        return world.Areas
+            .Where(area => area.PlayArea == PlayArea.Of(controller))
+            .SelectMany(area => area.Cards)
+            .Count(inPlay => DeckTypes.IsInPlay(inPlay.Area.Type)
+                && string.Equals(facts.Title(inPlay.FaceId), title, StringComparison.Ordinal));
     }
 
     /// <summary>Where a played card goes — <c>rr:enters-play</c>.</summary>
@@ -560,28 +791,24 @@ public static class CardPlay
         // not care how it got there. Eighteen allies in the pool print
         // `rr:toughness`, and before this a played one got no tough status card
         // -- only a *revealed* card ran them.
-        Reveal.EnterPlay(world, facts, card, events);
-        Played(world, abilities, seat, card, events);
+        Reveal.EnterPlay(world, facts, card, events, abilities: abilities);
+        Played(world, seat, card);
         Restricted(world, facts, seat, card, events);
     }
 
-    private static void Played(
-        World world, ICardAbilities abilities, Seat seat, Card card, List<GameEvent> events)
+    private static void Played(World world, Seat seat, Card card)
     {
-        var occurrence = new Occurrence(
-            0, [Steps.CardPlayed], Subject: card.ObjectId, Player: seat.Index);
-        var waiting = abilities.Waiting(world, occurrence, WindowKind.Response);
-        foreach (var ability in waiting)
-        {
-            if (ability.Type != AbilityType.ForcedResponse)
-            {
-                throw new RulesNotImplementedException(
-                    $"card {ability.Card} offers an optional response after a card is played, "
-                    + "and playing outside the agenda has no response prompt");
-            }
-
-            events.AddRange(abilities.Resolve(world, occurrence, ability, [], []));
-        }
+        // The card has moved and all state it enters with has been applied.
+        // The agenda supplies the ordinary response window, including the
+        // optional responses `rr:ability.11` says must be chosen rather than
+        // silently resolved or refused.
+        world.Agenda.Then(new PhaseStep(
+            Steps.CardPlayed,
+            world.Agenda.Current?.Round ?? 0,
+            0,
+            Index: seat.Index,
+            Subject: card.ObjectId,
+            Seat: seat.Index));
     }
 
     /// <summary>

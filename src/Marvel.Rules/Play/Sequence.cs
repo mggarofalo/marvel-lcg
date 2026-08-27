@@ -32,9 +32,11 @@ public static class Sequence
     /// <param name="facts">The printed card data.</param>
     /// <param name="abilities">What cards do.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="scope">Which cards may contribute window abilities.</param>
     /// <returns>The question the game stopped on, or null if the agenda ran out.</returns>
     public static Prompt? Work(
-        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events,
+        WindowAbilityScope scope = WindowAbilityScope.AllCards)
     {
         ArgumentNullException.ThrowIfNull(world);
 
@@ -47,7 +49,10 @@ public static class Sequence
             {
                 if (world.Agenda.Stage == Stage.Apply)
                 {
-                    VillainPhase.Take(world, facts, abilities, step, events);
+                    if (VillainPhase.Take(world, facts, abilities, step, events) is { } planQuestion)
+                    {
+                        return planQuestion;
+                    }
                 }
 
                 world.Agenda.Advance();
@@ -64,24 +69,26 @@ public static class Sequence
                 // `rr:triggering-condition.1` is per occurrence, and the
                 // occurrence is what remembers which abilities have used it.
                 var occurrence = world.Agenda.Begin(world, facts);
-                if (Offering.Work(world, abilities, occurrence, kind, events) is { } asked)
+                if (Offering.Work(world, abilities, occurrence, kind, events, scope) is { } asked)
                 {
                     return asked;
                 }
 
-                world.Agenda.Advance();
+                world.Agenda.Advance(occurrence);
                 continue;
             }
 
             // A step may itself have a question -- declaring a defender is one
             // -- and until it is answered the step has not happened, so the
             // agenda stays where it is.
+            var applying = world.Agenda.Occurrence
+                ?? throw new InvalidOperationException("an applying agenda step has no occurrence");
             if (VillainPhase.Take(world, facts, abilities, step, events) is { } asking)
             {
                 return asking;
             }
 
-            world.Agenda.Advance();
+            world.Agenda.Advance(applying);
 
             if (world.IsOver)
             {
@@ -131,8 +138,10 @@ public static class Sequence
                     $"'{asked.Label}' was answered with nothing outstanding");
             }
 
+            var occurrence = world.Agenda.Occurrence
+                ?? throw new InvalidOperationException("an asking agenda step has no occurrence");
             VillainPhase.Answered(world, facts, abilities, step, input, events);
-            world.Agenda.Advance();
+            world.Agenda.Advance(occurrence);
             return;
         }
 
@@ -145,7 +154,7 @@ public static class Sequence
                 throw new RulesNotImplementedException($"'{asked.Label}' cannot be declined");
             }
 
-            Passed(world, world.Windows.Pass());
+            Passed(world, window.Occurrence, world.Windows.Pass());
             return;
         }
 
@@ -170,6 +179,15 @@ public static class Sequence
         events.AddRange(abilities.Resolve(
             world, window.Occurrence, ability, input.Spent, input.Targets));
 
+        if (window.Occurrence.Threat is { Replaced: true })
+        {
+            // `rr:replacement-effect.1`: the original effect is no longer
+            // imminent, so it has neither further interrupts nor responses.
+            world.Windows.Close();
+            world.Agenda.Cancel(window.Occurrence);
+            return;
+        }
+
         // Not a close: rr:interrupt.5 is about *further* abilities, so using one
         // gives everybody another opportunity and the step stays where it is.
         world.Windows.Used();
@@ -178,11 +196,11 @@ public static class Sequence
     // Answering the last question of a window finishes that part of the step.
     // Without this the walk would find no window open, take that for "not yet
     // opened", and ask the same question again.
-    private static void Passed(World world, bool closed)
+    private static void Passed(World world, Occurrence occurrence, bool closed)
     {
         if (closed && world.Agenda.IsBusy)
         {
-            world.Agenda.Advance();
+            world.Agenda.Advance(occurrence);
         }
     }
 
@@ -198,10 +216,12 @@ public static class Sequence
     /// <param name="facts">The printed card data.</param>
     /// <param name="abilities">What cards do.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="scope">Which cards may contribute window abilities.</param>
     public static void Finish(
-        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
+        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events,
+        WindowAbilityScope scope = WindowAbilityScope.AllCards)
     {
-        if (Work(world, facts, abilities, events) is { } asked)
+        if (Work(world, facts, abilities, events, scope) is { } asked)
         {
             throw new RulesNotImplementedException(
                 $"'{asked.Label}' must be put to player {asked.Player}, and this caller "

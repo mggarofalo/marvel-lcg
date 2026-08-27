@@ -40,7 +40,7 @@ public sealed record OccurrenceCard(int Card, CardKind Kind, int Owner, int Cont
     /// <summary>Capture one card's occurrence facts from the board.</summary>
     internal static OccurrenceCard Capture(Card card, ICardFacts facts)
     {
-        CardKind kind = facts.Kind(card.FaceId);
+        CardKind kind = FacedownDrones.Kind(card, facts);
 
         // `rr:ownership-and-control.1` and `.2`: identities and player cards
         // are controlled by players; encounter cards are controlled by the

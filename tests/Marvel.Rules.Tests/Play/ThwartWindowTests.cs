@@ -88,10 +88,14 @@ public sealed class ThwartWindowTests
         scheme.PlaceTokens("k_threat", 5);
 
         BasicPowers.BasicThwart(world, printed, 1, scheme, []);
-        var occurrence = world.Agenda.Occurrence!;
+        var occurrence = world.Agenda.Begin(world, printed);
 
         Assert.Equal(scheme.ObjectId, occurrence.Subject);
         Assert.Equal(1, occurrence.Player);
+        Assert.Equal(world.Seats[1].IdentityCard.ObjectId, occurrence.Actor);
+        Assert.Equal(scheme.ObjectId, occurrence.Target);
+        Assert.True(occurrence.ActorFacts!.IsHero);
+        Assert.Equal(CardKind.MainScheme, occurrence.TargetFacts!.Kind);
     }
 
     [Rule("rr:consequential-damage.1")]

@@ -68,6 +68,7 @@ public sealed class DefeatStepSevenTests
 
         Agendas.Happening(world);
         Defeat.Character(world, Cards, minion, "test", []);
+        Agendas.Finish(world, Cards, world.Abilities);
 
         Assert.Equal(2, scheme.Tokens.GetValueOrDefault("k_threat") - before);
     }
@@ -87,6 +88,7 @@ public sealed class DefeatStepSevenTests
 
         Agendas.Happening(world);
         Defeat.Character(world, Cards, minion, "test", events);
+        events.AddRange(Agendas.Finish(world, Cards, world.Abilities));
 
         int placed = events.FindIndex(happened => happened.Verb == "Place_Threat");
         int left = events.FindIndex(
@@ -131,17 +133,26 @@ public sealed class DefeatStepSevenTests
         // is made fresh on every defeat. If the bookkeeping lived there, this
         // would fire twice.
         var world = Board(
-            Book((Attachment, "ForcedInterrupt", "game", 2)), out var minion, out _);
+            """
+            {"cards":[{"card":"@card","abilities":[{
+              "trigger":{"event":"WhenCardDefeated","timing":"ForcedInterrupt",
+                         "subject":"game"},
+              "effect":{"placeAccelerationToken":1}}]}]}
+            """.Replace("@card", Attachment, StringComparison.Ordinal),
+            out var minion,
+            out _);
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         var other = world.CreateCard(
             Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-        long before = scheme.Tokens.GetValueOrDefault("k_threat");
+        long before = scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
 
         Agendas.Happening(world);
         Defeat.Character(world, Cards, other, "test", []);
         Defeat.Character(world, Cards, minion, "test", []);
 
-        Assert.Equal(2, scheme.Tokens.GetValueOrDefault("k_threat") - before);
+        Assert.Equal(
+            1,
+            scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken) - before);
     }
 
     [Rule("rr:damage.step.7")]
@@ -205,6 +216,7 @@ public sealed class DefeatStepSevenTests
 
         Agendas.Happening(world);
         Defeat.Character(world, Cards, minion, "test", []);
+        Agendas.Finish(world, Cards, world.Abilities);
 
         Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat") - before);
     }
@@ -246,6 +258,7 @@ public sealed class DefeatStepSevenTests
 
         Agendas.Happening(world);
         Defeat.Scheme(world, Cards, side, "test", []);
+        Agendas.Finish(world, Cards, world.Abilities);
 
         Assert.Equal(2, main.Tokens.GetValueOrDefault("k_threat") - before);
     }

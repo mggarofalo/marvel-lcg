@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
@@ -31,6 +32,168 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Threat
 {
+    /// <summary>Schedule one imminent placement with its own windows.</summary>
+    /// <remarks>
+    /// This is a suspension point. A card interpreter may call it only after
+    /// preserving any continuation that follows the placement; silently
+    /// continuing the effect tree would resolve later text before interrupts to
+    /// this assignment. The current card corpus places threat only at the end
+    /// of its branch, so the integration can refuse every other shape loudly.
+    /// </remarks>
+    public static void Schedule(
+        World world, Card scheme, Card? source, long amount, ThreatCause cause,
+        string trigger, int player = -1) =>
+        Schedule(world, [scheme], source, amount, cause, trigger, player);
+
+    /// <summary>Schedule the same assignment on several schemes in board order.</summary>
+    public static void Schedule(
+        World world, IReadOnlyList<Card> schemes, Card? source, long amount,
+        ThreatCause cause, string trigger, int player = -1)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(schemes);
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        ArgumentException.ThrowIfNullOrWhiteSpace(trigger);
+
+        if (amount == 0)
+        {
+            return;
+        }
+
+        var current = world.Agenda.Current;
+        int round = current?.Round ?? 0;
+        int number = current?.Number ?? 0;
+        int index = current?.Index ?? 0;
+        PhaseStep[] placements =
+        [
+            .. schemes.Select((scheme, offset) =>
+            {
+                ArgumentNullException.ThrowIfNull(scheme);
+                return new PhaseStep(
+                    Steps.PlaceThreatEffect,
+                    round,
+                    number,
+                    Index: index + offset,
+                    Subject: scheme.ObjectId,
+                    Seat: player,
+                    Placement: new ThreatPlacement(
+                        scheme.ObjectId, source?.ObjectId ?? -1, amount, cause, trigger, player));
+            }),
+        ];
+
+        if (current is not null)
+        {
+            world.Agenda.Now(placements);
+            return;
+        }
+
+        // A mandatory occurrence-tier ability can be called before any phase
+        // is on the agenda -- scenario setup is the production case. It still
+        // creates ordinary interrupt/apply/response occurrences; its caller
+        // drains them through Sequence rather than applying threat inline.
+        foreach (var placement in placements)
+        {
+            world.Agenda.Add(placement);
+        }
+    }
+
+    /// <summary>Apply the threat assignment on an agenda occurrence.</summary>
+    /// <returns>The amount actually placed.</returns>
+    public static long Apply(
+        World world, ICardFacts facts, ICardAbilities abilities, Occurrence occurrence,
+        List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(occurrence);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (occurrence.Threat is not { } placement || placement.Replaced
+            || placement.Remaining <= 0)
+        {
+            return 0;
+        }
+
+        if (placement.Scheme < 0 || placement.Scheme >= world.Cards.Count)
+        {
+            throw new RulesNotImplementedException(
+                "an imminent threat placement no longer names a scheme on the board");
+        }
+
+        var scheme = world.Cards[placement.Scheme];
+        long before = scheme.Tokens.GetValueOrDefault("k_threat");
+        scheme.PlaceTokens("k_threat", placement.Remaining);
+        events.Add(new FieldSet(
+            scheme.ObjectId, "k_threat", before, before + placement.Remaining)
+        {
+            Trigger = placement.Trigger,
+            Verb = "Place_Threat",
+        });
+
+        occurrence.Also(Steps.ThreatPlaced);
+        Completed(world, facts, abilities, scheme, events);
+        return placement.Remaining;
+    }
+
+    /// <summary>
+    /// Removes threat from a scheme, respecting constant prohibitions and
+    /// defeating a side scheme reduced to zero.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:cannot</c>: "The word 'cannot' is absolute, and cannot be
+    /// countermanded by other abilities." The question is asked here so a
+    /// basic thwart and a card effect cannot disagree about the same scheme.
+    /// </para>
+    /// <para>
+    /// <c>rr:defeat</c>: "if a side scheme has no threat on it, it is
+    /// defeated." Reaching zero is therefore part of removing the threat,
+    /// however the removal arrived.
+    /// </para>
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="abilities">What cards continuously permit or prohibit.</param>
+    /// <param name="scheme">Which scheme.</param>
+    /// <param name="amount">How much to remove.</param>
+    /// <param name="trigger">What caused it, for the event stream.</param>
+    /// <param name="verb">What kind of change the event stream records.</param>
+    /// <param name="events">Where to record what happened.</param>
+    /// <param name="by">The seat whose character did it, or -1.</param>
+    /// <returns>How much threat was removed.</returns>
+    public static long Remove(
+        World world, ICardFacts facts, ICardAbilities abilities, Card scheme, long amount,
+        string trigger, string verb, List<GameEvent> events, int by = -1)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(scheme);
+        ArgumentNullException.ThrowIfNull(events);
+
+        long held = scheme.Tokens.GetValueOrDefault("k_threat");
+        long removed = Math.Min(held, Math.Max(0, amount));
+        if (removed == 0 || !abilities.CanRemoveThreat(world, scheme))
+        {
+            return 0;
+        }
+
+        scheme.PlaceTokens("k_threat", -removed);
+        events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
+        {
+            Trigger = trigger, Verb = verb,
+        });
+
+        if (scheme.Area.Type == DeckType.SideSchemesArea
+            && scheme.Tokens.GetValueOrDefault("k_threat") == 0)
+        {
+            Defeat.Scheme(world, facts, scheme, trigger, events, by);
+        }
+
+        return removed;
+    }
+
     /// <summary>
     /// Places threat on a scheme, and resolves the scheme if that completed it.
     /// </summary>

@@ -107,6 +107,45 @@ public sealed class ContinuousEffectTests
         Assert.Null(effects.Active()[0].Affects);
     }
 
+    [Rule("rr:lasting-effects.1")]
+    [Rule("rr:lasting-effects.3")]
+    [Rule("rr:lasting-effects.4")]
+    [Rule("rr:lasting-effects.5")]
+    [Fact]
+    public void APlayersCharactersRemainALiveLastingEffectSet()
+    {
+        var world = new World(new Facts(), players: 2);
+        world.CreateSeat("p0");
+        world.CreateSeat("p1");
+        world.Seats[0].IdentityCard = world.CreateCard("identity", world.Seats[0].Hero);
+        world.Seats[1].IdentityCard = world.CreateCard("identity", world.Seats[1].Hero);
+        var source = world.CreateCard(
+            "event", world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        var first = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var theirs = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+
+        world.Effects.GrantToCharactersControlledBy(
+            source, player: 0, field: "attack", amount: 1,
+            until: TimingPoints.EndOfPlayerPhase);
+
+        Assert.Equal(1, StateFields.Modified(
+            world, world.Seats[0].IdentityCard, "attack", world.Facts, world.Players));
+        Assert.Equal(1, StateFields.Modified(world, first, "attack", world.Facts, world.Players));
+        Assert.Equal(0, StateFields.Modified(world, theirs, "attack", world.Facts, world.Players));
+
+        // Created after registration: the affected set is a predicate, not a
+        // snapshot of the cards that happened to exist at resolution time.
+        var later = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        Assert.Equal(1, StateFields.Modified(world, later, "attack", world.Facts, world.Players));
+
+        world.Effects.Expire(TimingPoints.EndOfPlayerPhase);
+        Assert.Equal(0, StateFields.Modified(world, first, "attack", world.Facts, world.Players));
+        Assert.Equal(0, StateFields.Modified(world, later, "attack", world.Facts, world.Players));
+    }
+
     [Rule("rr:lasting-effects.5")]
     [Rule("rr:villain-phase.step.6.a")]
     [Fact]
@@ -170,6 +209,49 @@ public sealed class ContinuousEffectTests
         Assert.Single(effects.Active());
         World.MoveToTop(ally, world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0)));
         Assert.Empty(effects.Active());
+    }
+
+    [Rule("rr:modifiers.2")]
+    [Rule("rr:traits.1")]
+    [Fact]
+    public void AConstantCanDependOnATraitGrantedByAnotherConstant()
+    {
+        // Modifiers are simultaneous, and traits are game attributes other
+        // abilities may reference. The hand-size effect must therefore see the
+        // granted TECH trait, even when neither constant appeared in the first
+        // pass through the other one's condition.
+        var world = Board();
+        var identity = world.CreateCard("identity", world.Seats[0].Hero);
+        world.Seats[0].IdentityCard = identity;
+        var upgrade = world.CreateCard(
+            "upgrade", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        world.Abilities = new TraitDependentConstants(identity.ObjectId, upgrade.ObjectId);
+
+        var active = world.Effects.Active();
+
+        Assert.Contains(active, effect =>
+            effect.Kind == Traits.Granted + "TECH" && effect.Affects == upgrade.ObjectId);
+        Assert.Contains(active, effect =>
+            effect.Kind == "hand_size" && effect.Affects == identity.ObjectId
+            && effect.Amount == 1);
+    }
+
+    [Fact]
+    public void AConstantDependencyThatOscillatesIsRefusedAndDoesNotPoisonLaterReads()
+    {
+        // There is no stable simultaneous answer to "gain TECH exactly while
+        // you do not have TECH". Choosing either intermediate pass would make
+        // a plausible, wrong board, so the engine names the non-game state.
+        var world = Board();
+        var card = world.CreateCard(
+            "upgrade", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        world.Abilities = new OscillatingConstant(card.ObjectId);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => world.Effects.Active());
+        Assert.Contains("do not settle", thrown.Message, StringComparison.Ordinal);
+
+        world.Abilities = new NoCardAbilities();
+        Assert.Empty(world.Effects.Active());
     }
 
     [Rule("rr:lasting-effects.1")]
@@ -302,12 +384,60 @@ public sealed class ContinuousEffectTests
         return world;
     }
 
+    private sealed class TraitDependentConstants(int identity, int upgrade) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == upgrade)
+            {
+                return [new ContinuousEffect(
+                    EffectSource.ConstantAbility,
+                    Traits.Granted + "TECH",
+                    Card: upgrade,
+                    Affects: upgrade,
+                    Lasts: Duration.WhileInPlay)];
+            }
+
+            if (card.ObjectId != identity)
+            {
+                return [];
+            }
+
+            long tech = world.Cards.Count(candidate =>
+                candidate.Area.Type == DeckType.UpgradesArea
+                && Traits.Has(world, candidate, "TECH", world.Facts));
+            return [new ContinuousEffect(
+                EffectSource.ConstantAbility,
+                "hand_size",
+                Amount: tech,
+                Card: identity,
+                Affects: identity,
+                Lasts: Duration.WhileInPlay)];
+        }
+    }
+
+    private sealed class OscillatingConstant(int card) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card candidate) =>
+            candidate.ObjectId == card
+            && !Traits.Has(world, candidate, "TECH", world.Facts)
+                ? [new ContinuousEffect(
+                    EffectSource.ConstantAbility,
+                    Traits.Granted + "TECH",
+                    Card: card,
+                    Affects: card,
+                    Lasts: Duration.WhileInPlay)]
+                : [];
+    }
+
     private sealed class Facts : ICardFacts
     {
         public CardKind Kind(string faceId) => faceId switch
         {
             "ally" => CardKind.Ally,
             "event" => CardKind.Event,
+            "identity" => CardKind.Hero,
+            "upgrade" => CardKind.Upgrade,
             _ => CardKind.Unknown,
         };
 

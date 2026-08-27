@@ -67,7 +67,49 @@ public sealed class DefeatWindowTests
 
         var occurrence = world.Agenda.Occurrence!;
         Assert.Contains(Steps.AttackInitiated, occurrence.Conditions);
+        Assert.Contains(Steps.AttackEnds, occurrence.Conditions);
+        Assert.Contains(Steps.DamageDealt, occurrence.Conditions);
         Assert.Contains(Steps.CardDefeated, occurrence.Conditions);
+    }
+
+    [Rule("rr:attack-player-ability-type.step.7")]
+    [Rule("rr:damage.step.9")]
+    [Fact]
+    public void ACompletedAttackReportsItsEndWithoutInventingDamage()
+    {
+        // The end condition is learned after the attack applies, so it is
+        // visible to responses and was absent from the interrupt window. The
+        // damage condition is different: an attack for zero dealt no damage
+        // and must not trigger "attacks and damages" text.
+        var world = Board(out var printed, out var minion);
+        printed.With("hero", ("ATK", "0"));
+        var cards = new Responder(Steps.AttackEnds);
+
+        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        var asked = Sequence.Work(world, printed, cards, []);
+
+        Assert.NotNull(asked);
+        Assert.Equal(Stage.Responses, world.Agenda.Stage);
+        Assert.Contains(Steps.AttackEnds, world.Agenda.Occurrence!.Conditions);
+        Assert.DoesNotContain(Steps.DamageDealt, world.Agenda.Occurrence.Conditions);
+    }
+
+    [Rule("rr:interrupt.1")]
+    [Fact]
+    public void AttackCompletionFactsAreAbsentBeforeTheAttackApplies()
+    {
+        // An interrupt resolves before its triggering condition. End, damage,
+        // and defeat facts are learned during Apply and must not be visible in
+        // the occurrence's opening window as predictions about the future.
+        var world = Board(out var printed, out var minion);
+
+        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        var occurrence = world.Agenda.Begin(world, printed);
+
+        Assert.Contains(Steps.AttackInitiated, occurrence.Conditions);
+        Assert.DoesNotContain(Steps.AttackEnds, occurrence.Conditions);
+        Assert.DoesNotContain(Steps.DamageDealt, occurrence.Conditions);
+        Assert.DoesNotContain(Steps.CardDefeated, occurrence.Conditions);
     }
 
     [Rule("rr:triggering-condition.2")]
@@ -133,7 +175,7 @@ public sealed class DefeatWindowTests
         var world = Board(out var printed, out var minion);
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Damage.Deal(world, printed, minion, 5, "test", "test", []));
+            () => Damage.Deal(world, printed, minion, minion, 5, "test", "test", []));
 
         Assert.Contains(
             "nothing is happening on the agenda", thrown.Message, StringComparison.Ordinal);

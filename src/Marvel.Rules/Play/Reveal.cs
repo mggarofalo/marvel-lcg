@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
@@ -189,8 +190,10 @@ public static class Reveal
     /// <param name="card">The card being revealed.</param>
     /// <param name="player">The seat revealing it.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="occurrence">The reveal occurrence, when this move is part of one.</param>
     public static void Resolve(
-        World world, ICardFacts facts, Card card, int player, List<GameEvent> events)
+        World world, ICardFacts facts, Card card, int player, List<GameEvent> events,
+        Occurrence? occurrence = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -260,7 +263,7 @@ public static class Reveal
             Trigger = "villain phase", Verb = "Reveal",
         });
 
-        EnterPlay(world, facts, card, events);
+        EnterPlay(world, facts, card, events, occurrence);
     }
 
     /// <summary>
@@ -420,7 +423,8 @@ public static class Reveal
     /// out as exactly that.
     /// </remarks>
     public static void EnterPlay(
-        World world, ICardFacts facts, Card card, List<GameEvent> events)
+        World world, ICardFacts facts, Card card, List<GameEvent> events,
+        Occurrence? occurrence = null, ICardAbilities? abilities = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -485,5 +489,10 @@ public static class Reveal
                 Trigger = "starting threat", Verb = "Enter_Play",
             });
         }
+
+        // Card-specific entry state is still part of the transition and must
+        // exist before an "after this card enters play" response is read.
+        events.AddRange((abilities ?? world.Abilities).EntersPlay(world, card));
+        occurrence?.Also(Steps.CardEntersPlay);
     }
 }

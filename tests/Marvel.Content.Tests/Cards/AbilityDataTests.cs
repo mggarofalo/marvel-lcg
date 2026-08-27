@@ -54,6 +54,20 @@ public sealed class AbilityDataTests
                 continue;
             }
 
+            // Resource and Special abilities are invoked by their dedicated
+            // payment and Special-resolution APIs. Activation completion is
+            // likewise delivered as the result of a suspended activation.
+            // Their event labels identify those direct calls; none is an
+            // occurrence-window condition in Steps.EveryCondition.
+            if (ability.Trigger.Timing is AbilityType.Resource or AbilityType.Special
+                || string.Equals(
+                    ability.Trigger.Event, "WhenActivationCompleted",
+                    StringComparison.Ordinal))
+            {
+                Assert.NotNull(ability.Trigger.Event);
+                continue;
+            }
+
             Assert.NotNull(ability.Trigger.Event);
             Assert.True(
                 Steps.EveryCondition.Contains(ability.Trigger.Event),
@@ -302,7 +316,12 @@ public sealed class AbilityDataTests
                 // card enters play"; nothing triggers it, so it reaches the
                 // board by being read off it -- `ICardAbilities.Constant`,
                 // asked whenever anything looks at the continuous effects.
-                || timing == AbilityType.Constant,
+                || timing == AbilityType.Constant
+
+                // Wakanda Forever explicitly schedules each printed Special
+                // ability through ResolveSpecial. It is neither an occurrence
+                // window nor a general player-turn action.
+                || timing == AbilityType.Special,
                 $"'{ability.Card}' has timing '{timing}', which nothing would offer");
         }
     }
@@ -315,10 +334,11 @@ public sealed class AbilityDataTests
         // card produces a board that is plausible and wrong.
         var world = new World(Printed, players: 1);
         world.CreateSeat("p0");
-        // `01130` Whirlwind, a Masters of Evil minion: no scenario these tests
-        // build reaches it, so it stays unauthored. Authoring it means picking
-        // another unreached card here -- the test needs one to exist.
-        var card = world.CreateCard("01130", world.AreaOf(DeckType.RevealingArea));
+        // Every core face is now authored. Norman Osborn is printed in the
+        // Green Goblin pack and deliberately remains outside this slice, so he
+        // keeps the fail-closed contract observable without making a core game
+        // stop on missing data.
+        var card = world.CreateCard("02001a", world.AreaOf(DeckType.RevealingArea));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => AuthoredCards.Runner().WhenRevealed(world, card, 0));
@@ -558,40 +578,26 @@ public sealed class AbilityDataTests
     [Fact]
     public void TheAuthoredCardsAreTheOnesTheTestsName()
     {
-        // Stated as a set so that a card added to the dataset is a deliberate
-        // act with a test behind it, not something that accumulates. The rule
-        // this file is under: a card is authored when something reaches it.
-        string[] named =
+        // All 209 printed core faces are the completed slice. The explicit
+        // non-core list preserves the scenarios authored before that slice;
+        // anything else still has to be a deliberate test change.
+        using var cards = JsonDocument.Parse(
+            File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
+        var core = cards.RootElement.GetProperty("cards").EnumerateArray()
+            .Where(card => string.Equals(
+                card.GetProperty("pack").GetString(), "core", StringComparison.Ordinal))
+            .Select(card => card.GetProperty("card_id").GetString()!)
+            .ToList();
+        string[] nonCore =
         [
-            AuthoredCards.SpiderMan, AuthoredCards.PeterParker,
-            AuthoredCards.BlackCat, AuthoredCards.Backflip,
-            AuthoredCards.EnhancedSpiderSense, AuthoredCards.SwingingWebKick,
-            AuthoredCards.AuntMay, AuthoredCards.SpiderTracer,
-            AuthoredCards.WebShooter, AuthoredCards.WebbedUp,
-            AuthoredCards.ArmoredSuit, AuthoredCards.Charge, AuthoredCards.IvoryHorn,
-            AuthoredCards.Shocker,
-            AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,
-            AuthoredCards.BreakinAndTakin, AuthoredCards.BombScare,
-            AuthoredCards.DoomsdayChair, AuthoredCards.Modok,
-            AuthoredCards.BiomechanicalUpgrades,
-            AuthoredCards.Explosion, AuthoredCards.HydraBomber, AuthoredCards.FalseAlarm,
-            AuthoredCards.CaughtOffGuard, AuthoredCards.RhinoTwo,
-            AuthoredCards.Stampede, AuthoredCards.EvictionNotice, AuthoredCards.HighwayRobbery,
-            AuthoredCards.SweepingSwoop, AuthoredCards.VulturesPlans,
-            AuthoredCards.Advance, AuthoredCards.Assault, AuthoredCards.GangUp,
-            AuthoredCards.ShadowOfThePast, AuthoredCards.Exhaustion,
-            AuthoredCards.Masterplan, AuthoredCards.UnderFire, AuthoredCards.RhinoThree,
-            AuthoredCards.Boomerang, AuthoredCards.Beetle, AuthoredCards.WhiteRabbit, AuthoredCards.SinisterOnslaught, AuthoredCards.CrimePays, AuthoredCards.SyndicateShocker, AuthoredCards.SpeedDemon,
-            .. AuthoredCards.Unus,
-            .. AuthoredCards.Superpowers,
-            .. AuthoredCards.HuntingGeneTraitors,
-            .. AuthoredCards.UnusEncounters,
-            AuthoredCards.GenePool,
-            .. AuthoredCards.ReadAndSilent,
+            "24042", "24043", "24044", "24045", "24046", "24047", "24048",
+            "40151", "40155", "40159",
+            "45059", "45060", "45061", "45062a", "45062b", "45063", "45064",
+            "45065", "45068", "45069", "45070", "45071", "45072", "45073", "45074",
         ];
 
         Assert.Equal(
-            named.Order(StringComparer.Ordinal),
+            core.Concat(nonCore).Order(StringComparer.Ordinal),
             AuthoredCards.Book.Authored.Order(StringComparer.Ordinal));
     }
 

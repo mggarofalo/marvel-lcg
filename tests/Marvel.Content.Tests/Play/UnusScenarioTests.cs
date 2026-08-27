@@ -62,6 +62,7 @@ public sealed class UnusScenarioTests
         {
             runner.WhenRevealed(world, card, 0);
         }
+        Finish(world, runner);
 
         Assert.Equal(before + placed, pool.Tokens.GetValueOrDefault("k_threat"));
     }
@@ -77,8 +78,10 @@ public sealed class UnusScenarioTests
         var ranks = world.CreateCard("45068", world.AreaOf(DeckType.SideSchemesArea));
         long before = pool.Tokens.GetValueOrDefault("k_threat");
 
-        AuthoredCards.Runner().WhenCardDefeated(
+        var runner = AuthoredCards.Runner();
+        runner.WhenCardDefeated(
             world, ranks, new Defeated(ranks.ObjectId, -1, BasicPowers.ThwartVerb));
+        Finish(world, runner);
 
         Assert.Equal(before + 3, pool.Tokens.GetValueOrDefault("k_threat"));
     }
@@ -338,6 +341,16 @@ public sealed class UnusScenarioTests
 
     private static long Modified(World world, Card card, string field) =>
         StateFields.Modified(world, card, field, Cards, world.Players);
+
+    private static void Finish(World world, ICardAbilities abilities)
+    {
+        var asked = Sequence.Work(world, Cards, abilities, []);
+        while (asked is not null)
+        {
+            Sequence.Answer(world, Cards, abilities, asked, Decision.Decline, []);
+            asked = Sequence.Work(world, Cards, abilities, []);
+        }
+    }
 
     /// <summary>The Unus board, and the side scheme every card on it reads.</summary>
     private static (World World, Card GenePool) Board()

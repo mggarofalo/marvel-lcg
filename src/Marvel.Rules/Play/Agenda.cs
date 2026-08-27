@@ -60,9 +60,45 @@ public enum Stage
 /// chooses an ally and a "Boost" that chooses between two effects.
 /// </para>
 /// </param>
+/// <param name="Placement">
+/// A threat assignment already known when the step was scheduled, or null for
+/// a step whose assignment is derived when its interrupt window begins.
+/// </param>
+/// <param name="ActivationId">
+/// The stable identity of the enemy activation this step belongs to, or -1.
+/// The spelling and allocation are engine choices; the rules require only that
+/// a nested activation wait for the current one to finish.
+/// </param>
+/// <param name="FinalStep">
+/// Whether this ability is the final step of the card-defined sequence that
+/// scheduled it. The rulebook defines sequences but does not choose this field's
+/// spelling; it is engine data carried so a suspended Special can resume with
+/// the same answer.
+/// </param>
+/// <param name="FinalPlayer">
+/// Whether this is the last frame of an effect that resolves once for each
+/// player. The chosen order is represented by the frames themselves; this flag
+/// lets the card interpreter resume any outer sequence after the final frame
+/// without retaining a live iterator or effect tree.
+/// </param>
+/// <param name="EachPlayerFrame">
+/// Whether a suspended choice belongs to one player's frame of an each-player
+/// effect. Together with <paramref name="FinalPlayer"/>, this tells the card
+/// interpreter whether answering the choice resumes only this player's body or
+/// also the outer sequence. The spelling is an engine save-format choice.
+/// </param>
+/// <param name="Trigger">
+/// Event-stream provenance carried by an internal continuation, or empty.
+/// The spelling is an engine choice rather than a Rules Reference term.
+/// </param>
+/// <param name="CharacterAttack">The complete queued player attack, when this step is one.</param>
+/// <param name="CharacterThwart">The complete queued player thwart, when this step is one.</param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
-    bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null)
+    bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
+    ThreatPlacement? Placement = null, int ActivationId = -1, bool FinalStep = false,
+    bool FinalPlayer = false, bool EachPlayerFrame = false, string Trigger = "",
+    CharacterAttack? CharacterAttack = null, CharacterThwart? CharacterThwart = null)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -84,6 +120,12 @@ public readonly record struct PhaseStep(
 
         return What switch
         {
+            Steps.PlaceThreat => VillainPhaseThreat(id, world, facts),
+            Steps.SchemeThreat => SchemeThreat(id, world, facts),
+            Steps.PlaceThreatEffect when Placement is { } placement =>
+                Occurrence.ForThreat(id, Conditions, world, facts, placement),
+            Steps.PlaceThreatEffect => throw new RulesNotImplementedException(
+                "a scheduled threat placement has no placement payload"),
             Steps.Attack => Occurrence.ForAttack(
                 id,
                 Conditions,
@@ -92,14 +134,24 @@ public readonly record struct PhaseStep(
                 Subject,
                 Character >= 0 ? Character : world.Seats[Seat].IdentityCard.ObjectId,
                 Seat),
-            Steps.CharacterAttacks when world.CharacterAttack is { } attack =>
+            Steps.CharacterAttacks when (CharacterAttack ?? world.CharacterAttack) is { } attack =>
                 Occurrence.ForAttack(
                     id,
                     Conditions,
                     world,
                     facts,
                     attack.Attacker,
-                    attack.Enemy),
+                    attack.Enemy,
+                    attack.Player),
+            Steps.CharacterThwarts when (CharacterThwart ?? world.CharacterThwart) is { } thwart =>
+                Occurrence.ForThwart(
+                    id,
+                    Conditions,
+                    world,
+                    facts,
+                    thwart.Thwarter,
+                    thwart.Scheme,
+                    thwart.Player),
             Steps.DealAttackDamage when world.Attack is { } attack => Occurrence.ForAttack(
                 id,
                 Conditions,
@@ -120,9 +172,69 @@ public readonly record struct PhaseStep(
         };
     }
 
+    private Occurrence VillainPhaseThreat(int id, World world, ICardFacts facts)
+    {
+        if (world.TheCardIn(DeckType.MainSchemesArea) is not { } scheme)
+        {
+            return new Occurrence(id, Conditions);
+        }
+
+        long amount = facts.PrintedValue(scheme.FaceId, "EscalationThreat", world.Players)
+            + MainScheme.Acceleration(world, facts);
+        if (amount <= 0)
+        {
+            return new Occurrence(id, Conditions, Subject: scheme.ObjectId);
+        }
+
+        return Occurrence.ForThreat(
+            id,
+            Conditions,
+            world,
+            facts,
+            new ThreatPlacement(
+                scheme.ObjectId, scheme.ObjectId, amount, ThreatCause.VillainPhase,
+                "villain phase, place threat"));
+    }
+
+    private Occurrence SchemeThreat(int id, World world, ICardFacts facts)
+    {
+        if (world.TheCardIn(DeckType.MainSchemesArea) is not { } scheme
+            || Subject < 0 || Subject >= world.Cards.Count)
+        {
+            return new Occurrence(id, []);
+        }
+
+        var enemy = world.Cards[Subject];
+        long amount = StateFields.Modified(
+            world, enemy, "scheme", facts, world.Players);
+        if (amount <= 0)
+        {
+            return Occurrence.ForThreat(
+                id,
+                [Steps.SchemeEnds],
+                world,
+                facts,
+                new ThreatPlacement(
+                    scheme.ObjectId, enemy.ObjectId, 0, ThreatCause.EnemyScheme,
+                    "scheme", Seat),
+                subject: enemy.ObjectId);
+        }
+
+        return Occurrence.ForThreat(
+            id,
+            Conditions,
+            world,
+            facts,
+            new ThreatPlacement(
+                scheme.ObjectId, enemy.ObjectId, amount, ThreatCause.EnemyScheme,
+                "scheme", Seat),
+            subject: enemy.ObjectId);
+    }
+
     /// <summary>An occurrence that needs no live attack roles, or null.</summary>
     public Occurrence? ScheduledOccurrence => What is
-        Steps.Attack or Steps.CharacterAttacks or Steps.EndAttack
+        Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
+            or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
             ? null
             : new Occurrence(Moment.Id(Round, Number, Index), Conditions, Subject, Seat);
 }
@@ -153,7 +265,9 @@ public readonly record struct PhaseStep(
 public sealed class Agenda
 {
     private readonly List<(PhaseStep Step, Stage Stage, Occurrence? Occurrence)> items = [];
+    private readonly Dictionary<int, List<int>> queuedAfterActivation = [];
     private int scheduled;
+    private int nextActivationId;
 
     /// <summary>Whether the game is part-way through anything.</summary>
     public bool IsBusy => items.Count > 0;
@@ -205,13 +319,31 @@ public sealed class Agenda
         return occurrence;
     }
 
-    /// <summary>Every outstanding step, in the order they will be taken.</summary>
-    public IReadOnlyList<PhaseStep> Outstanding => [.. items.Select(item => item.Step)];
+    /// <summary>Every player-visible outstanding step, in resolution order.</summary>
+    /// <remarks>
+    /// Activation completion sentinels are internal suspension boundaries, not
+    /// game occurrences or decisions, so they are intentionally absent here.
+    /// </remarks>
+    public IReadOnlyList<PhaseStep> Outstanding =>
+    [
+        .. items
+            .Select(item => item.Step)
+            .Where(step => step.What is not Steps.CompleteAttackActivation
+                and not Steps.CompleteSchemeActivation),
+    ];
 
     /// <summary>Put a step at the end of the list.</summary>
     /// <param name="step">What to do.</param>
-    public void Add(PhaseStep step) =>
+    public void Add(PhaseStep step)
+    {
+        if (IsActivation(step))
+        {
+            AddActivation(step);
+            return;
+        }
+
         items.Add((step, Stage.Interrupts, step.ScheduledOccurrence));
+    }
 
     /// <summary>
     /// Schedule a step to be taken as soon as the current one is finished with.
@@ -225,10 +357,73 @@ public sealed class Agenda
     /// <param name="step">What to do next.</param>
     public void Then(PhaseStep step)
     {
+        if (IsActivation(step))
+        {
+            ThenActivation(step);
+            return;
+        }
+
         scheduled += 1;
         items.Insert(
             Math.Min(scheduled, items.Count),
             (step, Stage.Interrupts, step.ScheduledOccurrence));
+    }
+
+    /// <summary>Schedule one complete enemy activation and return its stable id.</summary>
+    /// <remarks>
+    /// The completion sentinel is present before the activation starts, so an
+    /// activation initiated during one of its substeps can be placed after the
+    /// whole activation rather than merely after that substep. This is
+    /// <c>rr:activation.8</c>. The id is allocated monotonically; it is an
+    /// engine wire choice rather than a Rules Reference value.
+    /// </remarks>
+    public int ThenActivation(PhaseStep step)
+    {
+        if (!IsActivation(step))
+        {
+            throw new ArgumentException("the step is not an enemy activation", nameof(step));
+        }
+
+        int id = nextActivationId++;
+        var root = step with { ActivationId = id };
+        var completion = Completion(root);
+        var pair = new[]
+        {
+            (root, Stage.Interrupts, root.ScheduledOccurrence),
+            (completion, Stage.Interrupts, completion.ScheduledOccurrence),
+        };
+
+        if (items.Count == 0)
+        {
+            items.AddRange(pair);
+            scheduled = 0;
+            return id;
+        }
+
+        int currentActivation = Current?.ActivationId ?? -1;
+        if (currentActivation >= 0)
+        {
+            int at = CompletionIndex(currentActivation) + 1;
+            if (queuedAfterActivation.TryGetValue(currentActivation, out var queued))
+            {
+                foreach (int queuedId in queued)
+                {
+                    at = Math.Max(at, CompletionIndex(queuedId) + 1);
+                }
+            }
+            else
+            {
+                queuedAfterActivation[currentActivation] = queued = [];
+            }
+
+            items.InsertRange(at, pair);
+            queued.Add(id);
+            return id;
+        }
+
+        scheduled += pair.Length;
+        items.InsertRange(Math.Min(scheduled - pair.Length + 1, items.Count), pair);
+        return id;
     }
 
     /// <summary>
@@ -254,12 +449,95 @@ public sealed class Agenda
     /// <param name="step">What to do first.</param>
     public void Now(PhaseStep step)
     {
-        items.Insert(0, (step, Stage.Interrupts, step.ScheduledOccurrence));
+        if (IsActivation(step))
+        {
+            NowActivation(step);
+            return;
+        }
+
+        Now([step]);
+    }
+
+    /// <summary>Schedule several steps now without reversing their order.</summary>
+    public void Now(IReadOnlyList<PhaseStep> steps)
+    {
+        ArgumentNullException.ThrowIfNull(steps);
+        items.InsertRange(
+            0,
+            steps.Select(step => (step, Stage.Interrupts, step.ScheduledOccurrence)));
 
         // The inserted step is where `Then` now counts from, and it has
         // scheduled nothing of its own yet.
         scheduled = 0;
     }
+
+    /// <summary>Insert a plan immediately before the item that owns an occurrence.</summary>
+    /// <remarks>
+    /// A nested occurrence may have been inserted in front of the occurrence
+    /// that caused it. Defeat uses this boundary for damage step 8: every
+    /// nested step-7 effect remains in front, while leaving play remains before
+    /// the original occurrence resumes its response window at step 9.
+    /// </remarks>
+    public void Before(Occurrence occurrence, PhaseStep step)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        int at = items.FindIndex(item => ReferenceEquals(item.Occurrence, occurrence));
+        if (at < 0)
+        {
+            throw new InvalidOperationException("the occurrence is not on the agenda");
+        }
+
+        items.Insert(at, (step, Stage.Interrupts, step.ScheduledOccurrence));
+    }
+
+    private void AddActivation(PhaseStep step)
+    {
+        int id = nextActivationId++;
+        var root = step with { ActivationId = id };
+        var completion = Completion(root);
+        items.Add((root, Stage.Interrupts, root.ScheduledOccurrence));
+        items.Add((completion, Stage.Interrupts, completion.ScheduledOccurrence));
+    }
+
+    private void NowActivation(PhaseStep step)
+    {
+        int id = nextActivationId++;
+        var root = step with { ActivationId = id };
+        var completion = Completion(root);
+        items.InsertRange(0,
+        [
+            (root, Stage.Interrupts, root.ScheduledOccurrence),
+            (completion, Stage.Interrupts, completion.ScheduledOccurrence),
+        ]);
+        scheduled = 0;
+    }
+
+    private int CompletionIndex(int activationId)
+    {
+        int found = items.FindIndex(item =>
+            item.Step.ActivationId == activationId
+            && item.Step.What is Steps.CompleteAttackActivation
+                or Steps.CompleteSchemeActivation);
+        return found >= 0
+            ? found
+            : throw new InvalidOperationException(
+                $"activation {activationId} has no completion sentinel");
+    }
+
+    private static bool IsActivation(PhaseStep step) =>
+        step.What is Steps.Attack or Steps.Scheme && step.ActivationId < 0;
+
+    private static PhaseStep Completion(PhaseStep root) => new(
+        root.What == Steps.Attack
+            ? Steps.CompleteAttackActivation
+            : Steps.CompleteSchemeActivation,
+        root.Round,
+        root.Number,
+        Index: root.Index,
+        Subject: root.Subject,
+        Seat: root.Seat,
+        Plan: true,
+        ActivationId: root.ActivationId);
 
     /// <summary>Move the current step on to its next part.</summary>
     /// <returns>False when the step is finished and has been taken off the list.</returns>
@@ -280,6 +558,57 @@ public sealed class Agenda
                 items.RemoveAt(0);
                 scheduled = 0;
                 return false;
+        }
+    }
+
+    /// <summary>Advance the item that owns <paramref name="occurrence"/>.</summary>
+    /// <remarks>
+    /// An applying card ability may put a nested occurrence in front of itself.
+    /// Advancing by identity keeps the outer item moving to its response window
+    /// without accidentally skipping the newly inserted interrupt window.
+    /// </remarks>
+    public bool Advance(Occurrence occurrence)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        int at = items.FindIndex(item => ReferenceEquals(item.Occurrence, occurrence));
+        if (at < 0)
+        {
+            throw new InvalidOperationException("the occurrence is not on the agenda");
+        }
+
+        var (step, stage, found) = items[at];
+        switch (stage)
+        {
+            case Stage.Interrupts:
+                items[at] = (step, Stage.Apply, found);
+                return true;
+            case Stage.Apply:
+                items[at] = (step, Stage.Responses, found);
+                return true;
+            default:
+                items.RemoveAt(at);
+                if (at == 0)
+                {
+                    scheduled = 0;
+                }
+                return false;
+        }
+    }
+
+    /// <summary>Remove a replaced occurrence and both of its remaining windows.</summary>
+    public void Cancel(Occurrence occurrence)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        int at = items.FindIndex(item => ReferenceEquals(item.Occurrence, occurrence));
+        if (at < 0)
+        {
+            throw new InvalidOperationException("the occurrence is not on the agenda");
+        }
+
+        items.RemoveAt(at);
+        if (at == 0)
+        {
+            scheduled = 0;
         }
     }
 
@@ -311,6 +640,9 @@ public static class Steps
     /// <summary>Step 1 — <c>rr:villain-phase.step.1</c>.</summary>
     public const string PlaceThreat = "PlaceThreat";
 
+    /// <summary>Threat placed by a card ability or keyword.</summary>
+    public const string PlaceThreatEffect = "PlaceThreatEffect";
+
     /// <summary>Step 2, a heading — <c>rr:villain-phase.step.2</c>.</summary>
     public const string EnemiesActivate = "EnemiesActivate";
 
@@ -325,6 +657,24 @@ public static class Steps
     /// <c>rr:scheme-enemy-activation</c>. Steps 1 and 2: the boost card.
     /// </summary>
     public const string Scheme = "Scheme";
+
+    /// <summary>
+    /// The initiating effect resumes after an attack activation fully resolves —
+    /// <c>rr:activation.7</c>.
+    /// </summary>
+    public const string CompleteAttackActivation = "CompleteAttackActivation";
+
+    /// <summary>The parallel completion sentinel for a scheme activation.</summary>
+    public const string CompleteSchemeActivation = "CompleteSchemeActivation";
+
+    /// <summary>
+    /// Damage step 8, after nested step-7 abilities and before the original
+    /// occurrence's response window.
+    /// </summary>
+    public const string FinalizeCharacterDefeat = "FinalizeCharacterDefeat";
+
+    /// <summary>The parallel step-8 continuation for a defeated side scheme.</summary>
+    public const string FinalizeSchemeDefeat = "FinalizeSchemeDefeat";
 
     /// <summary>
     /// Step 3 of a scheme activation —
@@ -389,6 +739,12 @@ public static class Steps
     /// This deals the amount fixed by <see cref="CalculateAttackDamage"/>.
     /// </summary>
     public const string DealAttackDamage = "DealAttackDamage";
+
+    /// <summary>
+    /// Move the same attack to another hero before that hero's defender window.
+    /// This is an engine plan and therefore opens no timing windows of its own.
+    /// </summary>
+    public const string NextAttackTarget = "NextAttackTarget";
 
     /// <summary>
     /// Step 6 of an attack — <c>rr:attack-enemy-activation.step.6</c>.
@@ -480,6 +836,27 @@ public static class Steps
     /// it is the answer to this.
     /// </remarks>
     public const string ChooseOption = "ChooseOption";
+
+    /// <summary>
+    /// The first player orders the frames of an effect that resolves for each
+    /// player — <c>rr:each-player.1</c>.
+    /// </summary>
+    public const string OrderEachPlayer = "OrderEachPlayer";
+
+    /// <summary>One persisted player frame of an each-player card effect.</summary>
+    public const string ResolveEachPlayer = "ResolveEachPlayer";
+
+    /// <summary>
+    /// A card's explicit instruction to resolve a <b>Special</b> ability —
+    /// <c>rr:special</c>.
+    /// </summary>
+    /// <remarks>
+    /// Scheduled as a plan step: resolving the Special is the work, not a new
+    /// triggering condition around it. Putting it on the agenda instead of a
+    /// call stack lets a choice inside the Special suspend before the next
+    /// Special in the parent sequence begins.
+    /// </remarks>
+    public const string ResolveSpecial = "ResolveSpecial";
 
     /// <summary>Step 5 — <c>rr:villain-phase.step.5</c>.</summary>
     public const string PassFirstPlayerToken = "PassFirstPlayerToken";
@@ -593,6 +970,9 @@ public static class Steps
     /// </remarks>
     public const string DamageWouldBeDealt = "WhenDamageWouldBeDealt";
 
+    /// <summary>A character was dealt damage.</summary>
+    public const string DamageDealt = "WhenDamageDealt";
+
     /// <summary>
     /// A character whose remaining hit points have reached zero is about to be
     /// defeated — <c>rr:damage.step.6</c>.
@@ -606,6 +986,12 @@ public static class Steps
 
     /// <summary>A player card has finished entering play.</summary>
     public const string CardPlayed = "WhenCardPlayed";
+
+    /// <summary>A card finished entering play, however it got there.</summary>
+    public const string CardEntersPlay = "WhenCardEntersPlay";
+
+    /// <summary>An identity finished changing form.</summary>
+    public const string FormChanged = "WhenFormChanged";
 
     /// <summary>A card being defeated — <c>rr:defeat</c>.</summary>
     /// <remarks>
@@ -643,9 +1029,19 @@ public static class Steps
     /// </remarks>
     public const string CharacterThwartsScheme = "WhenCharacterThwarts";
 
+    /// <summary>Threat is imminent, before prevention or replacement.</summary>
+    public const string ThreatWouldBePlaced = "WhenThreatWouldBePlaced";
+
+    /// <summary>A positive amount of threat was placed.</summary>
+    public const string ThreatPlaced = "WhenThreatPlaced";
+
+    /// <summary>Step one of the villain phase finished resolving.</summary>
+    public const string VillainPhaseStepOneEnds = "WhenVillainPhaseStepOneEnds";
+
     private static readonly Dictionary<string, string[]> Conditions = new(StringComparer.Ordinal)
     {
-        [PlaceThreat] = ["WhenThreatPlaced"],
+        [PlaceThreat] = [ThreatWouldBePlaced],
+        [PlaceThreatEffect] = [ThreatWouldBePlaced],
 
         // Two conditions at one moment again: an attack *is* an activation
         // (`rr:activation`, "whenever an enemy attacks or schemes, it is
@@ -654,14 +1050,14 @@ public static class Steps
         // pair between them.
         [Attack] = [EnemyActivates, AttackInitiated],
         [Scheme] = [EnemyActivates, EnemySchemes],
-        [SchemeThreat] = [SchemeEnds],
+        [SchemeThreat] = [ThreatWouldBePlaced],
         [GiveBoostCard] = ["WhenBoostCardGiven"],
         [DeclareDefender] = ["WhenDefenderDeclared"],
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],
         // Damage from an attack is imminent before this step applies and dealt
         // after it applies. `rr:triggering-condition.2` gives one occurrence
         // one pair of windows when it creates several conditions.
-        [DealAttackDamage] = [DamageWouldBeDealt, "WhenDamageDealt"],
+        [DealAttackDamage] = [DamageWouldBeDealt, DamageDealt],
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
@@ -671,7 +1067,13 @@ public static class Steps
         [CharacterThwarts] = [CharacterThwartsScheme],
         [DamageWouldBeDealt] = [DamageWouldBeDealt],
         [CardWouldBeDefeated] = [CardWouldBeDefeated],
-        [CardPlayed] = [CardPlayed],
+        // Playing a non-event card is one occurrence that both plays the card
+        // and makes it enter play. `rr:triggering-condition.2` gives a single
+        // occurrence that creates several triggering conditions one pair of
+        // windows rather than one pair per description of the moment.
+        [CardPlayed] = [CardPlayed, CardEntersPlay],
+        [CardEntersPlay] = [CardEntersPlay],
+        [FormChanged] = [FormChanged],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 
@@ -699,5 +1101,8 @@ public static class Steps
     /// each other turns that into a failing test.
     /// </remarks>
     public static IReadOnlySet<string> EveryCondition { get; } =
-        new HashSet<string>(Conditions.Values.SelectMany(each => each), StringComparer.Ordinal);
+        new HashSet<string>(
+            Conditions.Values.SelectMany(each => each).Concat(
+                [ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds]),
+            StringComparer.Ordinal);
 }

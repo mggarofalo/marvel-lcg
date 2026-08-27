@@ -32,4 +32,25 @@ namespace Marvel.Rules.State;
 /// the thwarter: an ability triggering "after <b>you</b> thwart" is about the
 /// player, and a card in their play area reads it.
 /// </param>
-public sealed record CharacterThwart(int Thwarter, int Scheme, int Player);
+/// <param name="Amount">Fixed card-ability threat removal, or -1 for the thwart statistic.</param>
+/// <param name="Source">The ability card, or -1 when it is the thwarter.</param>
+/// <param name="Trigger">Event-stream provenance for the card ability.</param>
+/// <param name="AbilityIndex">The source card's authored ability, or -1 for fixed removal.</param>
+/// <param name="PowerOrdinal">Which thwart wrapper inside that ability.</param>
+/// <param name="ResumeFrom">The next top-level sequence step, or -1 when none remains.</param>
+/// <param name="FinalStep">Whether this is the final Special in its parent sequence.</param>
+/// <param name="Targets">Every scheme selected for this one thwart.</param>
+/// <param name="ImminentThreat">The outer assignment an interrupt can prevent.</param>
+public sealed record CharacterThwart(
+    int Thwarter,
+    int Scheme,
+    int Player,
+    long Amount = -1,
+    int Source = -1,
+    string Trigger = "Thwart",
+    int AbilityIndex = -1,
+    int PowerOrdinal = 0,
+    int ResumeFrom = -1,
+    bool FinalStep = false,
+    IReadOnlyList<int>? Targets = null,
+    ThreatPlacement? ImminentThreat = null);

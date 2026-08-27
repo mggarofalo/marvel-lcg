@@ -52,10 +52,15 @@ public enum WindowKind
 /// that phrase mean the attacked <i>player</i>, whichever character was
 /// targeted.
 /// </param>
-/// <param name="Actor">The attacking card object's id, or <c>-1</c>.</param>
-/// <param name="Target">The attacked character object's id, or <c>-1</c>.</param>
+/// <param name="Actor">
+/// The card performing the occurrence — an attacker or thwarter — or <c>-1</c>.
+/// </param>
+/// <param name="Target">
+/// The game element it acts on — an attacked character or thwarted scheme — or <c>-1</c>.
+/// </param>
 /// <param name="ActorFacts">Stable classifications and relationships for <paramref name="Actor"/>.</param>
 /// <param name="TargetFacts">Stable classifications and relationships for <paramref name="Target"/>.</param>
+/// <param name="Threat">The imminent threat assignment, when this is one.</param>
 public sealed record Occurrence(
     int Id,
     IReadOnlyList<string> Conditions,
@@ -64,7 +69,8 @@ public sealed record Occurrence(
     int Actor = -1,
     int Target = -1,
     OccurrenceCard? ActorFacts = null,
-    OccurrenceCard? TargetFacts = null)
+    OccurrenceCard? TargetFacts = null,
+    State.ThreatPlacement? Threat = null)
 {
     private readonly HashSet<(WindowKind Window, int Card)> spent = [];
 
@@ -112,6 +118,64 @@ public sealed record Occurrence(
             Target: target,
             ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
             TargetFacts: OccurrenceCard.Capture(world.Cards[target], facts));
+    }
+
+    /// <summary>Create a thwart occurrence with explicit actor and scheme roles.</summary>
+    /// <remarks>
+    /// A thwart is not an attack, but cards still distinguish the character
+    /// doing it from the scheme it acts on. <see cref="Subject"/> retains the
+    /// scheme for existing "this scheme" triggers; actor and target add the
+    /// two roles without changing that established meaning.
+    /// </remarks>
+    public static Occurrence ForThwart(
+        int id,
+        IReadOnlyList<string> conditions,
+        State.World world,
+        State.ICardFacts facts,
+        int actor,
+        int scheme,
+        int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        return new Occurrence(
+            id,
+            conditions,
+            Subject: scheme,
+            Player: player,
+            Actor: actor,
+            Target: scheme,
+            ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
+            TargetFacts: OccurrenceCard.Capture(world.Cards[scheme], facts));
+    }
+
+    /// <summary>Create an occurrence for one imminent threat assignment.</summary>
+    public static Occurrence ForThreat(
+        int id, IReadOnlyList<string> conditions, State.World world,
+        State.ICardFacts facts, State.ThreatPlacement placement, int? subject = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(placement);
+
+        OccurrenceCard? source = placement.Source >= 0
+            ? OccurrenceCard.Capture(world.Cards[placement.Source], facts)
+            : null;
+        OccurrenceCard? target = placement.Scheme >= 0
+            ? OccurrenceCard.Capture(world.Cards[placement.Scheme], facts)
+            : null;
+
+        return new Occurrence(
+            id,
+            conditions,
+            Subject: subject ?? placement.Scheme,
+            Player: placement.Player,
+            Actor: placement.Source,
+            Target: placement.Scheme,
+            ActorFacts: source,
+            TargetFacts: target,
+            Threat: placement);
     }
 
     /// <summary>

@@ -88,6 +88,47 @@ public sealed class StatusTests
 
     [Rule("rr:stun-stunned.1")]
     [Fact]
+    public void AStunReplacesACardAbilityAttackAfterItsCostsArePaid()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var eventCard = world.CreateCard(
+            "event", world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        Statuses.Give(world, hero, Statuses.Stunned);
+
+        BasicPowers.CardAttack(world, printed, 0, eventCard, villain, 8, "event", []);
+        Agendas.Finish(world, printed);
+
+        Assert.Equal(0, villain.Damage);
+        Assert.True(hero.Ready);
+        Assert.False(Statuses.Has(world, hero, Statuses.Stunned));
+    }
+
+    [Rule("rr:confuse-confused.1")]
+    [Fact]
+    public void AConfusionReplacesACardAbilityThwartAfterItsCostsArePaid()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        var eventCard = world.CreateCard(
+            "event", world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        scheme.PlaceTokens("k_threat", 5);
+        Statuses.Give(world, hero, Statuses.Confused);
+
+        BasicPowers.CardThwart(world, printed, 0, eventCard, scheme, 4, "event", []);
+        Agendas.Finish(world, printed);
+
+        Assert.Equal(5, scheme.Tokens["k_threat"]);
+        Assert.True(hero.Ready);
+        Assert.False(Statuses.Has(world, hero, Statuses.Confused));
+    }
+
+    [Rule("rr:stun-stunned.1")]
+    [Fact]
     public void AStunnedEnemyDoesNotAttackAtAll()
     {
         // "Remove each stunned status card from it **instead**." Instead of

@@ -34,6 +34,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 {
     private readonly AbilityBook book = book;
 
+    // An activation is an agenda operation, while the sentence that initiated
+    // it is a card operation. The stable agenda id is the join between them.
+    // Entries live only until that activation's completion sentinel calls back.
+    private readonly Dictionary<int, ActivationContinuation> activations = [];
+    private readonly Dictionary<int, List<ActivationEffect>> activationEffects = [];
+
     // Which printed faces carry a constant ability. `Constant` is asked about
     // every card in play every time anything reads the effect list, and all but
     // a handful of cards answer nothing -- so the common answer is a set lookup
@@ -60,6 +66,281 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     public IReadOnlySet<string> Authored => book.Authored;
 
     /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> EntersPlay(World world, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+
+        var events = new List<GameEvent>();
+        var occurrence = new Occurrence(
+            0, [Steps.CardEntersPlay], Subject: card.ObjectId,
+            Player: ControllerOf(world, card));
+        foreach (var ability in book.On(card.FaceId).Where(ability =>
+            ability.Trigger.Timing == AbilityType.WhenRevealed
+            && string.Equals(
+                ability.Trigger.Event, Steps.CardEntersPlay,
+                StringComparison.Ordinal)))
+        {
+            Run(
+                ability.Effect,
+                new Cast(world, card, occurrence, ControllerOf(world, card), events, this)
+                {
+                    Tier = ability.Trigger.Timing,
+                });
+        }
+
+        return events;
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        var events = new List<GameEvent>();
+        var enemy = world.Cards[result.Enemy];
+        if (result.Made)
+        {
+            foreach (var ability in book.On(enemy.FaceId).Where(ability =>
+                ability.Trigger.Timing == AbilityType.ForcedResponse
+                && string.Equals(
+                    ability.Trigger.Event, "WhenActivationCompleted",
+                    StringComparison.Ordinal)))
+            {
+                Run(
+                    ability.Effect,
+                    new Cast(
+                        world, enemy,
+                        new Occurrence(
+                            0, ["WhenActivationCompleted"],
+                            Actor: enemy.ObjectId, Player: result.Player),
+                        result.Player, events, this)
+                    {
+                        Tier = ability.Trigger.Timing,
+                    });
+            }
+        }
+
+        if (activationEffects.Remove(result.Id, out var delayed))
+        {
+            foreach (var effect in delayed)
+            {
+                var delayedCast = new Cast(
+                    world,
+                    world.Cards[effect.Source],
+                    new Occurrence(
+                        0, ["WhenActivationCompleted"],
+                        Actor: result.Enemy, Player: effect.Player),
+                    effect.Player,
+                    events,
+                    this)
+                {
+                    Tier = effect.Tier,
+                };
+                delayedCast.Results["activationDamage"] = result.DamageDealt;
+                delayedCast.Results["activationThreat"] = result.ThreatPlaced;
+                delayedCast.Results["activationMade"] = result.Made ? 1 : 0;
+                Run(effect.Effect, delayedCast);
+            }
+        }
+
+        if (!activations.Remove(result.Id, out var continuation))
+        {
+            return events;
+        }
+
+        continuation.Made += result.Made ? 1 : 0;
+        continuation.Damage += result.DamageDealt;
+        continuation.Threat += result.ThreatPlaced;
+        continuation.Remaining -= 1;
+        if (continuation.Remaining > 0)
+        {
+            return events;
+        }
+
+        var cast = new Cast(
+            world,
+            world.Cards[continuation.Source],
+            continuation.Occurrence,
+            continuation.Player,
+            events,
+            this)
+        {
+            Tier = continuation.Tier,
+        };
+        foreach (var (name, value) in continuation.Results)
+        {
+            cast.Results[name] = value;
+        }
+
+        cast.Results["activationMade"] = continuation.Made;
+        cast.Results["activationDamage"] = continuation.Damage;
+        cast.Results["activationThreat"] = continuation.Threat;
+        Sequence(continuation.Sequence, cast, continuation.Next);
+        return events;
+    }
+
+    /// <inheritdoc/>
+    public void ResolveCardAttack(
+        World world, CharacterAttack attack, Occurrence occurrence, List<GameEvent> events) =>
+        ResolvePower(
+            world, attack.Source, attack.Enemy, attack.Player, attack.AbilityIndex,
+            attack.PowerOrdinal, attack.ResumeFrom, attack.FinalStep,
+            attack.Targets ?? [attack.Enemy], attack.Amount, null,
+            attack.Trigger, occurrence, events, BasicPowers.AttackVerb);
+
+    /// <inheritdoc/>
+    public void ResolveCardThwart(
+        World world, CharacterThwart thwart, Occurrence occurrence, List<GameEvent> events) =>
+        ResolvePower(
+            world, thwart.Source, thwart.Scheme, thwart.Player, thwart.AbilityIndex,
+            thwart.PowerOrdinal, thwart.ResumeFrom, thwart.FinalStep,
+            thwart.Targets ?? [thwart.Scheme], thwart.Amount, thwart.ImminentThreat,
+            thwart.Trigger, occurrence, events, BasicPowers.ThwartVerb);
+
+    private void ResolvePower(
+        World world, int sourceId, int targetId, int player, int abilityIndex,
+        int powerOrdinal, int resumeFrom, bool finalStep, IReadOnlyList<int> targets,
+        long powerAmount, ThreatPlacement? imminentThreat, string eventTrigger,
+        Occurrence occurrence,
+        List<GameEvent> events, string power)
+    {
+        if (sourceId < 0 || sourceId >= world.Cards.Count)
+        {
+            throw new RulesNotImplementedException(
+                $"card {power.ToLowerInvariant()} has no reconstructable source");
+        }
+
+        var source = world.Cards[sourceId];
+        var abilities = book.On(source.FaceId).ToList();
+        var ability = abilities.ElementAtOrDefault(abilityIndex)
+            ?? throw new RulesNotImplementedException(
+                $"'{source.FaceId}' has no ability {abilityIndex} for its "
+                + power.ToLowerInvariant());
+        var wrappers = PowerNodes(ability.Effect, power).ToList();
+        var wrapper = wrappers.ElementAtOrDefault(powerOrdinal)
+            ?? throw new RulesNotImplementedException(
+                $"'{source.FaceId}' ability {abilityIndex} has no {power.ToLowerInvariant()} "
+                + $"wrapper {powerOrdinal}");
+        var effect = Tree(wrapper.Require("effect"));
+        if (Choices(effect).Any())
+        {
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' asks a question inside a {power.ToLowerInvariant()}");
+        }
+
+        var cast = new Cast(
+            world, source, occurrence, player, events, this)
+        {
+            Tier = ability.Trigger.Timing,
+            FinalStep = finalStep,
+            Power = power,
+            PowerAmount = powerAmount,
+            ImminentThreat = imminentThreat,
+            EventTrigger = eventTrigger,
+            PowerTargets = [.. targets.Select(id => world.Cards[id])],
+        };
+        cast.Choose(world.Cards[targetId]);
+        Run(effect, cast);
+
+        if (power == BasicPowers.AttackVerb)
+        {
+            var attacker = world.Seats[player].IdentityCard;
+            if (!Keywords.Has(world, attacker, Keywords.Ranged, world.Facts))
+            {
+                foreach (var target in cast.Attacked.DistinctBy(card => card.ObjectId))
+                {
+                    Damage.Retaliate(world, world.Facts, target, attacker, cast.Trigger, events);
+                }
+            }
+        }
+
+        if (resumeFrom >= 0)
+        {
+            if (ability.Effect.Kind != "seq")
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' resumes a {power.ToLowerInvariant()} outside a sequence");
+            }
+            Sequence(ability.Effect, cast, resumeFrom);
+        }
+        DiscardEvent(source, cast);
+    }
+
+    /// <inheritdoc/>
+    public string ResourcesGeneratedBy(World world, Card source, Card? payingFor)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(source);
+
+        string printed = Resources.GeneratedBy(source.FaceId, world.Facts);
+        if (payingFor is null)
+        {
+            return printed;
+        }
+
+        string classes = world.Facts.Attributes(payingFor.FaceId)
+            .GetValueOrDefault("Class", string.Empty);
+        bool doubles = book.On(source.FaceId).Any(ability =>
+            ability.Trigger.Timing == AbilityType.Constant
+            && ability.Effect.Kind == "doubleResourceFor"
+            && classes.Split(';').Contains(
+                Word(ability.Effect.Argument), StringComparer.Ordinal));
+
+        return doubles ? printed + printed : printed;
+    }
+
+    /// <inheritdoc/>
+    public DefenderChoice Defenders(
+        World world, EnemyAttack attack, IReadOnlyList<Card> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(candidates);
+
+        var enemy = world.Cards[attack.Enemy];
+        bool requiresControlledAlly = book.On(enemy.FaceId).Any(ability =>
+            ability.Trigger.Timing == AbilityType.Constant
+            && ability.Effect.Kind == "requireAllyDefender");
+        if (!requiresControlledAlly)
+        {
+            return new DefenderChoice(candidates, Required: false);
+        }
+
+        var allies = candidates.Where(card =>
+            card.Ready
+            && card.Area.PlayArea == PlayArea.Of(attack.Player)
+            && world.Facts.Kind(card.FaceId) == CardKind.Ally).ToList();
+        return allies.Count > 0
+            ? new DefenderChoice(allies, Required: true)
+            : new DefenderChoice(candidates, Required: false);
+    }
+
+    /// <inheritdoc/>
+    public bool CanRemoveThreat(World world, Card scheme)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(scheme);
+
+        foreach (var card in world.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)))
+        {
+            foreach (var ability in book.On(card.FaceId).Where(ability =>
+                ability.Trigger.Timing == AbilityType.Constant))
+            {
+                if (ProhibitsThreatRemoval(
+                        ability.Effect,
+                        new Cast(world, card, new Occurrence(0, []),
+                            ControllerOf(world, card), [], this),
+                        scheme))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<PendingAbility> Waiting(
         World world, Occurrence occurrence, WindowKind window)
     {
@@ -80,8 +361,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 continue;
             }
 
-            foreach (var ability in book.On(card.FaceId))
+            var written = book.On(card.FaceId).ToList();
+            for (int index = 0; index < written.Count; index++)
             {
+                var ability = written[index];
                 if (!Answers(world, ability, card, occurrence, window))
                 {
                     continue;
@@ -100,9 +383,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     continue;
                 }
 
-                if (ability.When is not null
-                    && !Test(ability.When, new Cast(
-                        world, card, occurrence, controller, [], this)))
+                var eligibility = new Cast(
+                    world, card, occurrence, controller, [], this);
+                if ((ability.When is not null && !Test(ability.When, eligibility))
+                    || (HasLabelledPower(ability.Effect)
+                        && !CanInitiate(ability.Effect, eligibility)))
                 {
                     continue;
                 }
@@ -113,13 +398,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // nobody can pay for is not an offer that fails at step 5; it
                 // never reaches the window at all.
                 if (!Payable(world, card, controller, ability.Cost)
-                    || !EventPayable(world, card, controller))
+                    || !EventPayable(world, card, controller)
+                    || !Available(world, card, ability))
                 {
                     continue;
                 }
 
+                int ordinal = written.Take(index).Count(candidate =>
+                    candidate.Trigger.Timing == ability.Trigger.Timing);
                 waiting.Add(new PendingAbility(
-                    card.ObjectId, ability.Trigger.Timing, controller));
+                    card.ObjectId, ability.Trigger.Timing, controller, ordinal));
             }
         }
 
@@ -132,10 +420,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
 
         var card = world.Cards[ability.Card];
-        var found = book.On(card.FaceId)
-            .FirstOrDefault(candidate => candidate.Trigger.Timing == ability.Type)
-            ?? throw new AbilityException(
-                $"card '{card.FaceId}' has no '{ability.Type}' ability to describe");
+        var found = Pending(card, ability);
 
         // The ability's own name is the verb: an affordance for Foresight is
         // offered as `Foresight`, so a client has something to render without
@@ -164,20 +449,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(chosen);
 
         var card = world.Cards[ability.Card];
-        var found = book.On(card.FaceId)
-            .Where(candidate => candidate.Trigger.Timing == ability.Type)
-            .ToList();
-
-        if (found.Count != 1)
-        {
-            // Two abilities of one type on one card cannot be told apart by a
-            // `PendingAbility`, which names a card and a tier. A card that needs
-            // it needs the pending ability to carry which one, and that is a
-            // change to make when a card demands it rather than now.
-            throw new AbilityException(
-                $"card '{card.FaceId}' has {found.Count} '{ability.Type}' abilities, "
-                + "and exactly one can be resolved from a window");
-        }
+        var found = Pending(card, ability);
 
         var events = new List<GameEvent>();
 
@@ -198,7 +470,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         int resolving = ability.Player >= 0 ? ability.Player : occurrence.Player;
         var cast = new Cast(world, card, occurrence, resolving, events, this)
         {
-            Tier = found[0].Trigger.Timing,
+            Tier = found.Trigger.Timing,
         };
 
         // **A forced ability is resolved, never offered, and so never priced.**
@@ -207,7 +479,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // payment is an answer to a question. `rr:initiating-abilities.step.5`
         // would still have to be paid, out of a hand nobody chose from. No card
         // in the pool prints one; the day one does, the window has to ask.
-        if (AbilityTypes.IsMandatory(found[0].Trigger.Timing) && found[0].Cost is not null)
+        if (AbilityTypes.IsMandatory(found.Trigger.Timing) && found.Cost is not null)
         {
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' has a mandatory ability with a cost, and a mandatory ability "
@@ -221,8 +493,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // that the player named a payment that works, and `CardPlay.Spend`
         // refuses one that does not.
         PayEvent(card, paying, cast);
-        Pay(found[0].Cost, paying, chosen, cast);
-        Run(found[0].Effect, cast);
+        Pay(found.Cost, paying, chosen, cast);
+        Use(world, card, found);
+        Run(found.Effect, cast);
         DiscardEvent(card, cast);
         return events;
     }
@@ -328,12 +601,39 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> ResolveSpecial(
+        World world, Card card, int player, bool finalStep)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+
+        var ability = book.On(card.FaceId).SingleOrDefault(candidate =>
+            candidate.Trigger.Timing == AbilityType.Special)
+            ?? throw new RulesNotImplementedException(
+                $"card '{card.FaceId}' has no authored Special ability");
+        var events = new List<GameEvent>();
+        var cast = new Cast(
+            world, card,
+            new Occurrence(0, [Steps.ResolveSpecial], Subject: card.ObjectId, Player: player),
+            player, events, this)
+        {
+            Tier = AbilityType.Special,
+            FinalStep = finalStep,
+        };
+        if (CanInitiate(ability.Effect, cast))
+        {
+            Run(ability.Effect, cast);
+        }
+        return events;
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player)
     {
         ArgumentNullException.ThrowIfNull(world);
 
         var sources = new List<ResourceSource>();
-        foreach (var card in Triggerable(world, player))
+        foreach (var card in Triggerable(world, player).ToList())
         {
             foreach (var ability in book.On(card.FaceId))
             {
@@ -348,7 +648,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // The letters this makes, read off the effect rather than the
                 // printed `RES` field: `RES` is what discarding the card
                 // generates, and an ability is a different way to make one.
-                sources.Add(new ResourceSource(card.ObjectId, Generated(ability.Effect)));
+                string generated = Generated(ability.Effect, world, player);
+                if (generated.Length > 0)
+                {
+                    sources.Add(new ResourceSource(card.ObjectId, generated));
+                }
             }
         }
 
@@ -397,11 +701,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static string Spent(CardAbility ability) => "spent:" + ability.Name;
 
     /// <summary>What letters an effect generates, if it only generates.</summary>
-    private static string Generated(AbilityNode effect) => effect.Kind == "generate"
-        ? Word(effect.Argument)
-        : throw new RulesNotImplementedException(
+    private static string Generated(AbilityNode effect, World world, int player)
+    {
+        if (effect.Kind == "generate")
+        {
+            return Word(effect.Argument);
+        }
+
+        if (effect.Kind == "generateTopDiscard")
+        {
+            var cards = world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards;
+            return cards.Count > 0
+                ? Resources.GeneratedBy(cards[^1].FaceId, world.Facts)
+                : string.Empty;
+        }
+
+        throw new RulesNotImplementedException(
             $"a resource ability whose effect is '{effect.Kind}' generates nothing this "
             + "engine can read");
+    }
 
     /// <inheritdoc/>
     public string UseResource(World world, int player, int card, List<GameEvent> events)
@@ -426,11 +745,52 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         };
         Pay(ability.Cost, [], [], cast);
         Use(world, holder, ability);
-        return Generated(ability.Effect);
+        return Generated(ability.Effect, world, player);
     }
 
     /// <inheritdoc/>
-    public long WouldBeDealt(World world, Card target, long amount, List<GameEvent> events)
+    public bool CanTakeDamage(World world, Card target, Card source)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(source);
+
+        if (!DeckTypes.IsInPlay(target.Area.Type))
+        {
+            return true;
+        }
+
+        foreach (var ability in book.On(target.FaceId).Where(ability =>
+            ability.Trigger.Timing == AbilityType.Constant))
+        {
+            var cast = new Cast(
+                world, target, new Occurrence(0, []), ControllerOf(world, target), [], this);
+            if (ProhibitsDamage(ability.Effect, cast, source))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool ProhibitsDamage(AbilityNode node, Cast cast, Card source) =>
+        node.Kind switch
+        {
+            "seq" => Nodes(node.Argument).Any(step => ProhibitsDamage(step, cast, source)),
+            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+                is { } branch && ProhibitsDamage(Tree(branch), cast, source),
+            "preventDamageFrom" => cast.World.Facts.Kind(source.FaceId)
+                    == Kind(Word(node.Require("sourceKind")))
+                && Rules.State.Traits.Has(
+                    cast.World, source, Word(node.Require("sourceTrait")), cast.World.Facts),
+            "preventDamageWhile" => Test(Tree(node.Require("condition")), cast),
+            _ => false,
+        };
+
+    /// <inheritdoc/>
+    public long WouldBeDealt(
+        World world, Card target, Card source, long amount, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(target);
@@ -446,7 +806,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             && effect.Affects == target.ObjectId);
         if (prevention is not null && world.Effects.Use(prevention))
         {
-            return 0;
+            long prevented = prevention.Amount <= 0 ? amount : prevention.Amount;
+            return Math.Max(0, amount - prevented);
         }
 
         var occurrence = new Occurrence(
@@ -660,6 +1021,59 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         return events;
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<Card> PlayerSetupCards(World world, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentOutOfRangeException.ThrowIfNegative(player);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(player, world.Players);
+
+        return
+        [
+            .. world.Areas
+                .Where(area => DeckTypes.IsInPlay(area.Type)
+                    && area.PlayArea == PlayArea.Of(player))
+                .SelectMany(area => area.Cards)
+                .Where(card => ControllerOf(world, card) == player
+                    && book.On(card.FaceId).Any(
+                        ability => ability.Trigger.Timing == AbilityType.Setup)),
+        ];
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> ResolveEachPlayer(
+        World world, Card source, int player, int stoppedAt,
+        AbilityType? tier, bool finalStep, bool finalPlayer)
+    {
+        var outer = book.On(source.FaceId)
+            .Where(ability => tier is null || ability.Trigger.Timing == tier)
+            .Select(ability => ability.Effect)
+            .Single(effect => EachPlayers(effect).Any());
+        var each = outer.Kind == "seq"
+            ? Nodes(outer.Argument).ElementAt(stoppedAt - 1)
+            : outer;
+        if (each.Kind != "eachPlayer")
+        {
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' has no each-player frame at step {stoppedAt - 1}");
+        }
+
+        var cast = Resolving(world, source, player, tier, finalStep) with
+        {
+            EachPlayerFrame = true,
+            FinalPlayer = finalPlayer,
+        };
+        cast.At(stoppedAt - 1);
+        cast.SetContinuation(finalPlayer && outer.Kind == "seq"
+            && stoppedAt < Nodes(outer.Argument).Count());
+        Run(Tree(each.Require("effect")), cast);
+        if (!cast.Suspended && finalPlayer && outer.Kind == "seq")
+        {
+            Sequence(outer, cast, stoppedAt);
+        }
+        return cast.Events;
     }
 
     /// <inheritdoc/>
@@ -896,10 +1310,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(chosen);
 
         var card = world.Cards[ability.Card];
-        var found = book.On(card.FaceId)
-            .SingleOrDefault(candidate => candidate.Trigger.Timing == ability.Type)
-            ?? throw new AbilityException(
-                $"card '{card.FaceId}' has no single '{ability.Type}' ability to trigger");
+        var found = Pending(card, ability);
 
         var events = new List<GameEvent>();
         var cast = new Cast(
@@ -917,6 +1328,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // before step 6 resolves.
         PayEvent(card, paying, cast);
         Pay(found.Cost, paying, chosen, cast);
+        Use(world, card, found);
         Run(found.Effect, cast);
         DiscardEvent(card, cast);
         return events;
@@ -928,27 +1340,39 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
 
         var found = new List<PendingAbility>();
-        foreach (var card in Triggerable(world, player))
+        foreach (var card in Triggerable(world, player).ToList())
         {
-            foreach (var ability in book.On(card.FaceId))
+            foreach (var (ability, ordinal) in book.On(card.FaceId)
+                         .Where(candidate => candidate.Trigger.Timing == AbilityType.Action)
+                         .Select((candidate, ordinal) => (candidate, ordinal)))
             {
-                if (ability.Trigger.Timing == AbilityType.Action
+                var eligibility = new Cast(world, card, new Occurrence(
+                    0, [Steps.TurnAction], Subject: card.ObjectId, Player: player),
+                    player, [], this);
+                if (Available(world, card, ability)
                     && InForm(world, player, ability.Trigger.Form)
                     && Payable(world, card, player, ability.Cost)
                     && EventPayable(world, card, player)
-                    && (ability.When is null || Test(
-                        ability.When,
-                        new Cast(world, card, new Occurrence(
-                            0, [Steps.TurnAction], Subject: card.ObjectId, Player: player),
-                            player, [], this))))
+                    && (ability.When is null || Test(ability.When, eligibility))
+                    && CanInitiate(ability.Effect, eligibility))
                 {
-                    found.Add(new PendingAbility(card.ObjectId, AbilityType.Action, player));
+                    found.Add(new PendingAbility(
+                        card.ObjectId, AbilityType.Action, player, ordinal));
                 }
             }
         }
 
         return found;
     }
+
+    /// <summary>The exact same-timing ability named by a pending ordinal.</summary>
+    private CardAbility Pending(Card card, PendingAbility pending) =>
+        book.On(card.FaceId)
+            .Where(candidate => candidate.Trigger.Timing == pending.Type)
+            .ElementAtOrDefault(pending.Ordinal)
+        ?? throw new AbilityException(
+            $"card '{card.FaceId}' has no '{pending.Type}' ability at ordinal "
+            + pending.Ordinal);
 
     /// <summary>
     /// The cards one player may trigger an action on —
@@ -1047,7 +1471,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             null => true,
             { Kind: "seq" } => Nodes(cost.Argument).All(each =>
                 Payable(world, card, player, each)),
-            { Kind: "exhaust" } => card.Ready,
+            { Kind: "exhaust" } => CostTarget(world, card, player, cost.Argument)?.Ready == true,
+            { Kind: "discard" } => CostTarget(world, card, player,
+                cost.Field("card") ?? cost.Argument) is not null,
             { Kind: "removeCounters" } => card.Tokens.GetValueOrDefault(
                 "c_" + Word(cost.Argument)) > 0,
 
@@ -1067,6 +1493,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     .SelectMany(source => source.Generates)),
                 Word(cost.Argument).Length,
                 Word(cost.Argument)),
+            { Kind: "spendEnergyX" } => Resources.Pays(
+                string.Concat(CardPlay.Generators(world, world.Facts, world.Seats[player])
+                    .SelectMany(source => source.Generates)),
+                1,
+                "Y"),
 
             // "Discard **a card** from your hand" -- `rr:cost.3` spends
             // resources by discarding cards, and this is the other thing a
@@ -1076,8 +1507,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             { Kind: "discardFromHand" } =>
                 world.Seats[player].Hand.Cards.Count >= Number(cost.Argument),
 
+            { Kind: "heal" } => CostTarget(
+                    world, card, player, cost.Require("card")) is { Damage: > 0 }
+                && Number(cost.Require("amount")) > 0,
+
+            { Kind: "dealDamage" } => CostTarget(
+                    world, card, player, cost.Require("cards")) is { } damageTarget
+                && Number(cost.Require("amount")) > 0
+                && world.Abilities.CanTakeDamage(world, damageTarget, card),
+
             _ => throw new RulesNotImplementedException(
                 $"'{card.FaceId}' has a cost of '{cost.Kind}', which is not implemented"),
+        };
+
+    private static Card? CostTarget(World world, Card source, int player, AbilityValue value) =>
+        Word(value) switch
+        {
+            "this" => source,
+            "you" => player >= 0 ? world.Seats[player].IdentityCard : null,
+            _ => null,
         };
 
     private static bool EventPayable(World world, Card card, int player)
@@ -1087,9 +1535,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return true;
         }
 
-        long cost = Resources.Cost(card.FaceId, world.Facts) ?? 0;
+        long cost = CardPlay.CostOf(
+            world, world.Facts, world.Seats[player], card).Amount;
         string pool = string.Concat(CardPlay.Generators(
-                world, world.Facts, world.Seats[player])
+                world, world.Facts, world.Seats[player], card)
             .Where(source => source.Effect != card.ObjectId)
             .SelectMany(source => source.Generates));
         return Resources.Pays(pool, cost, Resources.Required(card.FaceId, world.Facts));
@@ -1116,6 +1565,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static TargetRequest? Asking(World world, int player, AbilityNode? cost)
     {
+        if (cost is { Kind: "seq" })
+        {
+            return Nodes(cost.Argument)
+                .Select(step => Asking(world, player, step))
+                .SingleOrDefault(request => request is not null);
+        }
+
         if (cost is not { Kind: "discardFromHand" })
         {
             return null;
@@ -1136,6 +1592,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static CostOption? Price(World world, Card card, int player, AbilityNode? cost)
     {
+        if (cost is { Kind: "seq" })
+        {
+            return Nodes(cost.Argument)
+                .Select(step => Price(world, card, player, step))
+                .SingleOrDefault(price => price is not null);
+        }
+
+        if (cost is { Kind: "spendEnergyX" })
+        {
+            return new CostOption(
+                card.ObjectId, "1", ["Y"],
+                Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]));
+        }
+
         if (cost is not { Kind: "spend" })
         {
             return null;
@@ -1156,14 +1626,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return null;
         }
 
-        long cost = Resources.Cost(card.FaceId, world.Facts) ?? 0;
+        long cost = CardPlay.CostOf(
+            world, world.Facts, world.Seats[player], card).Amount;
         return new CostOption(
             Target: card.ObjectId,
             Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Rule: Resources.Required(card.FaceId, world.Facts) is { Length: > 0 } required
                 ? [required]
                 : null,
-            Sources: [.. CardPlay.Generators(world, world.Facts, world.Seats[player])
+            Sources: [.. CardPlay.Generators(
+                    world, world.Facts, world.Seats[player], card)
                 .Where(source => source.Effect != card.ObjectId)]);
     }
 
@@ -1174,11 +1646,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
 
+        var adjusted = CardPlay.CostOf(
+            cast.World, cast.World.Facts, cast.World.Seats[cast.Player], card);
+        var selected = paying.ToHashSet();
+        string generated = string.Concat(
+            CardPlay.Generators(
+                    cast.World, cast.World.Facts, cast.World.Seats[cast.Player], card)
+                .Where(source => selected.Contains(source.Effect))
+                .Select(source => source.Generates));
+        cast.PaidWith(generated);
+        foreach (char resource in generated.Distinct())
+        {
+            cast.World.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: "paid:" + resource,
+                Card: card.ObjectId,
+                Affects: card.ObjectId,
+                Lasts: new Duration(Uses: 1)));
+        }
+
         CardPlay.Spend(
             cast.World, cast.World.Facts, [cast.World.Seats[cast.Player].Hand], paying,
-            Resources.Cost(card.FaceId, cast.World.Facts) ?? 0,
+            adjusted.Amount,
             Resources.Required(card.FaceId, cast.World.Facts), card.ObjectId,
-            cast.Player, cast.Events);
+            cast.Player, cast.Events, payingFor: card);
+        CardPlay.UseCostModifiers(cast.World, adjusted);
     }
 
     private static void DiscardEvent(Card card, Cast cast)
@@ -1188,6 +1680,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             && card.Area == cast.World.Seats[card.Owner].Hand)
         {
             Rules.Play.Discard.Card(cast.World, card, CardPlay.Verb, cast.Events);
+            foreach (var payment in cast.World.Effects.Active().Where(effect =>
+                effect.Card == card.ObjectId
+                && effect.Kind.StartsWith("paid:", StringComparison.Ordinal)).ToList())
+            {
+                cast.World.Effects.Use(payment);
+            }
         }
     }
 
@@ -1228,6 +1726,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 itself: -1,
                 cast.Player,
                 cast.Events);
+            return;
+        }
+
+        if (cost.Kind == "spendEnergyX")
+        {
+            if (paying.Count == 0 || paying.Distinct().Count() != paying.Count)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' requires one or more distinct generators for X");
+            }
+
+            var selected = paying.ToHashSet();
+            string generated = string.Concat(CardPlay.Generators(
+                    cast.World, cast.World.Facts, cast.World.Seats[cast.Player])
+                .Where(source => selected.Contains(source.Effect))
+                .Select(source => source.Generates));
+            CardPlay.Spend(
+                cast.World, cast.World.Facts, [cast.World.Seats[cast.Player].Hand], paying,
+                generated.Length, new string('Y', generated.Length), itself: -1,
+                cast.Player, cast.Events);
+            cast.Results["energy"] = generated.Length;
             return;
         }
 
@@ -1273,6 +1792,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <inheritdoc/>
     public Prompt? Choosing(
         World world, Card source, int player, int stoppedAt, AbilityType? tier = null)
+        => Choosing(world, source, player, stoppedAt, tier, finalStep: false);
+
+    /// <inheritdoc/>
+    public Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt, AbilityType? tier, bool finalStep)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
@@ -1290,7 +1814,163 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // not one: an option is a branch the card lists, an element is a card
         // on the board. `Question` has told them apart since before anything
         // asked either.
-        var cast = Resolving(world, source, player, tier);
+        var cast = Resolving(world, source, player, tier, finalStep);
+        if (choice.Kind == "resolveSpecials")
+        {
+            var upgrades = Every(choice.Require("cards"), cast);
+            return new Prompt(
+                Player: player,
+                Asking: Question.Element,
+                When: TimingPriority.Untimed,
+                Trigger: Steps.ResolveSpecial,
+                Label: $"{source.FaceId}: order Special abilities",
+                Cancellable: false,
+                Affordances:
+                [
+                    new Affordance(
+                        Id: source.ObjectId,
+                        Verb: ChooseVerb,
+                        AnchorId: source.ObjectId,
+                        AnchorPlayer: player,
+                        Label: choice.Kind,
+                        Targets: new TargetRequest(
+                            [.. upgrades.Select(card => card.ObjectId)],
+                            upgrades.Count,
+                            upgrades.Count)),
+                ]);
+        }
+        if (choice.Kind == "payOrExhaust")
+        {
+            string required = Word(choice.Require("resources"));
+            var sources = CardPlay.Generators(world, world.Facts, world.Seats[player]);
+            string pool = string.Concat(sources.SelectMany(source => source.Generates));
+            var offers = new List<Affordance>();
+            if (Resources.Pays(pool, required.Length, required))
+            {
+                offers.Add(new Affordance(
+                    0, ChooseVerb, source.ObjectId, World.Scenario, "spend",
+                    Costs:
+                    [
+                        new CostOption(
+                            source.ObjectId,
+                            required.Length.ToString(
+                                System.Globalization.CultureInfo.InvariantCulture),
+                            [required],
+                            Sources: sources),
+                    ]));
+            }
+            offers.Add(new Affordance(
+                1, ChooseVerb, source.ObjectId, World.Scenario, "exhaust"));
+            return new Prompt(
+                player, Question.Option, TimingPriority.Untimed,
+                Steps.CardRevealed, $"{source.FaceId}: spend or exhaust",
+                Cancellable: false, offers);
+        }
+        if (choice.Kind == "payOrEffect")
+        {
+            string required = Word(choice.Require("resources"));
+            var sources = CardPlay.Generators(world, world.Facts, world.Seats[player]);
+            var offers = new List<Affordance>();
+            if (Resources.Pays(string.Concat(sources.SelectMany(s => s.Generates)),
+                required.Length, required))
+            {
+                offers.Add(new Affordance(0, ChooseVerb, source.ObjectId, World.Scenario,
+                    "spend", Costs: [new CostOption(source.ObjectId,
+                        required.Length.ToString(), [required], Sources: sources)]));
+            }
+            offers.Add(new Affordance(1, ChooseVerb, source.ObjectId, World.Scenario, "effect"));
+            return new Prompt(player, Question.Option, TimingPriority.Untimed,
+                Steps.CardRevealed, $"{source.FaceId}: spend or resolve", false, offers);
+        }
+        if (choice.Kind == "chooseTopForHand")
+        {
+            var top = TopCards(
+                world.Seats[player].Deck,
+                (int)Number(choice.Require("count")));
+            return new Prompt(
+                player, Question.Element, TimingPriority.Untimed,
+                Steps.TurnAction, $"{source.FaceId}: choose a top card",
+                Cancellable: false,
+                top.Select(card => new Affordance(
+                    card.ObjectId, ChooseVerb, card.ObjectId, player, card.FaceId)).ToList());
+        }
+        if (choice.Kind == "chooseDiscardToShuffle")
+        {
+            var discard = world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player);
+            int max = Math.Min(
+                (int)Number(choice.Require("max")),
+                discard.Cards.Select(card => world.Facts.Title(card.FaceId)).Distinct().Count());
+            return new Prompt(
+                player, Question.Element, TimingPriority.Untimed,
+                Steps.TurnAction, $"{source.FaceId}: choose cards to shuffle",
+                Cancellable: false,
+                [new Affordance(
+                    source.ObjectId, ChooseVerb, source.ObjectId, player, choice.Kind,
+                    new TargetRequest(
+                        [.. discard.Cards.Select(card => card.ObjectId)], 1, max))]);
+        }
+        if (choice.Kind == "thwartDifferentSchemes")
+        {
+            var schemes = Every(choice.Require("schemes"), cast);
+            bool aerial = Rules.State.Traits.Has(
+                world, world.Seats[player].IdentityCard, "AERIAL", world.Facts);
+            int count = aerial && schemes.Count > 1 ? 2 : 1;
+            return new Prompt(
+                player, Question.Element, TimingPriority.Untimed,
+                Steps.TurnAction, $"{source.FaceId}: choose scheme{(count == 1 ? "" : "s")}",
+                Cancellable: false,
+                [new Affordance(
+                    source.ObjectId, ChooseVerb, source.ObjectId, player, choice.Kind,
+                    new TargetRequest(
+                        [.. schemes.Select(card => card.ObjectId)], count, count))]);
+        }
+        if (choice.Kind == "makeTheCall")
+        {
+            var offers = AlliesInPlayerDiscards(world)
+                .Select(ally => (Ally: ally, Sources: MakeTheCallSources(
+                    world, player, source, ally)))
+                .Where(candidate => Resources.Pays(
+                    string.Concat(candidate.Sources.Select(generator => generator.Generates)),
+                    Resources.Cost(candidate.Ally.FaceId, world.Facts) ?? 0,
+                    Resources.Required(candidate.Ally.FaceId, world.Facts)))
+                .Select(candidate => new Affordance(
+                    candidate.Ally.ObjectId,
+                    ChooseVerb,
+                    candidate.Ally.ObjectId,
+                    candidate.Ally.Owner,
+                    candidate.Ally.FaceId,
+                    Costs:
+                    [
+                        new CostOption(
+                            candidate.Ally.ObjectId,
+                            (Resources.Cost(candidate.Ally.FaceId, world.Facts) ?? 0).ToString(
+                                System.Globalization.CultureInfo.InvariantCulture),
+                            Resources.Required(candidate.Ally.FaceId, world.Facts)
+                                is { Length: > 0 } rule
+                                ? [rule]
+                                : null,
+                            Sources: candidate.Sources),
+                    ]))
+                .ToList();
+            return new Prompt(
+                player, Question.Element, TimingPriority.Untimed,
+                Steps.TurnAction, $"{source.FaceId}: choose an ally",
+                Cancellable: false, offers);
+        }
+        if (choice.Kind == "legalPractice")
+        {
+            var hand = world.Seats[player].Hand.Cards
+                .Where(card => card.ObjectId != source.ObjectId).ToList();
+            var schemes = Every(choice.Require("schemes"), cast)
+                .Where(card => card.Tokens.GetValueOrDefault("k_threat") > 0).ToList();
+            return new Prompt(player, Question.Element, TimingPriority.Untimed,
+                Steps.TurnAction, $"{source.FaceId}: choose cards and a scheme", false,
+                schemes.Select(scheme => new Affordance(
+                    scheme.ObjectId, ChooseVerb, scheme.ObjectId, World.Scenario, scheme.FaceId,
+                    new TargetRequest([.. hand.Select(card => card.ObjectId)], 1,
+                        Math.Min(5, hand.Count)))).ToList());
+        }
         var affordances = cards
             ? Every(choice.Require("from"), cast)
                 .Select(card => new Affordance(
@@ -1328,6 +2008,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Cancellable: false,
             Affordances: offered);
     }
+
+    /// <inheritdoc/>
+    public Prompt? Choosing(
+        World world, Card source, int player, int stoppedAt, AbilityType? tier,
+        bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
+        Choosing(world, source, player, stoppedAt, tier, finalStep);
 
     /// <summary>
     /// The question an assignment asks — <c>rr:indirect-damage.1</c>.
@@ -1378,13 +2064,237 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     public IReadOnlyList<GameEvent> Chose(
         World world, Card source, int player, int stoppedAt, Decision input,
         AbilityType? tier = null)
+        => Chose(world, source, player, stoppedAt, input, tier, finalStep: false);
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        AbilityType? tier, bool finalStep)
+        => ChoseCore(
+            world, source, player, stoppedAt, input, tier, finalStep,
+            eachPlayerFrame: false, finalPlayer: false);
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer)
+        => ChoseCore(
+            world, source, player, stoppedAt, input, tier, finalStep,
+            eachPlayerFrame, finalPlayer, eventTrigger: null);
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Chose(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
+        string trigger)
+        => ChoseCore(
+            world, source, player, stoppedAt, input, tier, finalStep,
+            eachPlayerFrame, finalPlayer, trigger);
+
+    private List<GameEvent> ChoseCore(
+        World world, Card source, int player, int stoppedAt, Decision input,
+        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
+        string? eventTrigger = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(input);
 
         var choice = Choice(source, stoppedAt, tier);
-        var cast = Resolving(world, source, player, tier);
+        var cast = Resolving(world, source, player, tier, finalStep) with
+        {
+            EachPlayerFrame = eachPlayerFrame,
+            FinalPlayer = finalPlayer,
+            EventTrigger = eventTrigger,
+        };
+        cast.At(Math.Max(0, stoppedAt - 1));
+        cast.SetContinuation(book.On(source.FaceId).Any(ability =>
+            (tier is null || ability.Trigger.Timing == tier)
+            && ability.Effect.Kind == "seq"
+            && Nodes(ability.Effect.Argument).Count() > stoppedAt));
+
+        if (choice.Kind == "resolveSpecials")
+        {
+            var legal = Every(choice.Require("cards"), cast)
+                .Select(card => card.ObjectId)
+                .ToHashSet();
+            if (input.Targets.Count != legal.Count
+                || input.Targets.Distinct().Count() != legal.Count
+                || input.Targets.Any(id => !legal.Contains(id)))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires one permutation of all {legal.Count} Special abilities");
+            }
+
+            int round = world.Agenda.Current?.Round ?? 0;
+            foreach (var (id, index) in input.Targets.Select((id, index) => (id, index)))
+            {
+                world.Agenda.Then(new PhaseStep(
+                    Steps.ResolveSpecial, round, index + 1, Subject: id, Seat: player,
+                    Plan: true, FinalStep: index == input.Targets.Count - 1));
+            }
+
+            return cast.Events;
+        }
+        if (choice.Kind == "payOrEffect")
+        {
+            if (input.Affordance == 0)
+            {
+                string required = Word(choice.Require("resources"));
+                CardPlay.Spend(world, world.Facts, [world.Seats[player].Hand], input.Spent,
+                    required.Length, required, -1, player, cast.Events);
+            }
+            else if (input.Affordance == 1)
+            {
+                Run(Tree(choice.Require("otherwise")), cast);
+            }
+            else
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' did not offer option {input.Affordance}");
+            }
+            return Continue(source, cast, stoppedAt);
+        }
+        if (choice.Kind == "payOrExhaust")
+        {
+            if (input.Affordance == 0)
+            {
+                string required = Word(choice.Require("resources"));
+                CardPlay.Spend(
+                    world, world.Facts, [world.Seats[player].Hand], input.Spent,
+                    required.Length, required, itself: -1, player, cast.Events);
+            }
+            else if (input.Affordance == 1)
+            {
+                Run(Tree(choice.Require("otherwise")), cast);
+            }
+            else
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' offers spend or exhaust, not option {input.Affordance}");
+            }
+
+            return cast.Events;
+        }
+        if (choice.Kind == "chooseTopForHand")
+        {
+            var deck = world.Seats[player].Deck;
+            var top = TopCards(deck, (int)Number(choice.Require("count")));
+            var selected = top.FirstOrDefault(card => card.ObjectId == input.Affordance)
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' did not offer card {input.Affordance} among its top cards");
+            var hand = world.Seats[player].Hand;
+            foreach (var card in top)
+            {
+                if (card == selected)
+                {
+                    World.MoveToTop(card, hand);
+                    cast.Events.Add(new CardsMoved(
+                        Places.Reference(deck), Places.Reference(hand),
+                        [new Landing(card.ObjectId, hand.Cards.Count - 1)])
+                    {
+                        Trigger = cast.Trigger, Verb = "Add_To_Hand",
+                    });
+                }
+                else
+                {
+                    Rules.Play.Discard.Card(world, card, cast.Trigger, cast.Events);
+                }
+            }
+
+            return cast.Events;
+        }
+        if (choice.Kind == "chooseDiscardToShuffle")
+        {
+            var discard = world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player);
+            var selected = input.Targets.Select(id =>
+                discard.Cards.FirstOrDefault(card => card.ObjectId == id)
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' cannot shuffle card {id} from that discard pile"))
+                .ToList();
+            int max = (int)Number(choice.Require("max"));
+            if (selected.Count is < 1 || selected.Count > 3
+                || selected.Count > max
+                || selected.Select(card => world.Facts.Title(card.FaceId)).Distinct().Count()
+                    != selected.Count)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires one to {max} cards with different titles");
+            }
+            foreach (var card in selected)
+            {
+                World.MoveToTop(card, world.Seats[player].Deck);
+            }
+            world.Shuffle(world.Seats[player].Deck);
+            return cast.Events;
+        }
+        if (choice.Kind == "thwartDifferentSchemes")
+        {
+            var legal = Every(choice.Require("schemes"), cast);
+            var selected = input.Targets.Select(id =>
+                legal.FirstOrDefault(card => card.ObjectId == id)
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' cannot thwart scheme {id}"))
+                .ToList();
+            bool aerial = Rules.State.Traits.Has(
+                world, world.Seats[player].IdentityCard, "AERIAL", world.Facts);
+            int expected = aerial && legal.Count > 1 ? 2 : 1;
+            if (selected.Count != expected || selected.Distinct().Count() != selected.Count)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires {expected} different scheme target(s)");
+            }
+            cast.Choose(selected[0]);
+            SchedulePower(
+                Tree(choice.Require("power")), cast, BasicPowers.ThwartVerb,
+                selected[0], selected, -1);
+            return Continue(source, cast, stoppedAt);
+        }
+        if (choice.Kind == "makeTheCall")
+        {
+            var ally = AlliesInPlayerDiscards(world)
+                .FirstOrDefault(card => card.ObjectId == input.Affordance)
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' did not offer ally {input.Affordance}");
+            long cost = Resources.Cost(ally.FaceId, world.Facts) ?? 0;
+            CardPlay.Spend(
+                world, world.Facts, [world.Seats[player].Hand], input.Spent,
+                cost, Resources.Required(ally.FaceId, world.Facts),
+                source.ObjectId, player, cast.Events, payingFor: ally);
+            CardPlay.PutAllyIntoPlay(
+                world, world.Facts, cast.Abilities, ally, player, cast.Trigger, cast.Events);
+            return Continue(source, cast, stoppedAt);
+        }
+        if (choice.Kind == "legalPractice")
+        {
+            var scheme = Every(choice.Require("schemes"), cast)
+                .FirstOrDefault(card => card.ObjectId == input.Affordance)
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' did not offer scheme {input.Affordance}");
+            var hand = world.Seats[player].Hand;
+            if (input.Targets.Count is < 1 or > 5
+                || input.Targets.Distinct().Count() != input.Targets.Count)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires one to five distinct hand cards");
+            }
+            foreach (int id in input.Targets)
+            {
+                var card = world.Cards[id];
+                if (card.Area != hand || card.ObjectId == source.ObjectId)
+                {
+                    throw new RulesNotImplementedException(
+                        $"card {id} cannot be discarded for '{source.FaceId}'");
+                }
+                Rules.Play.Discard.Card(world, card, CardPlay.Verb, cast.Events);
+            }
+            cast.Choose(scheme);
+            SchedulePower(
+                Tree(choice.Require("power")), cast, BasicPowers.ThwartVerb,
+                scheme, [scheme], input.Targets.Count);
+            return Continue(source, cast, stoppedAt);
+        }
 
         if (choice.Kind == "indirectDamage")
         {
@@ -1507,7 +2417,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             is not { } branch || HasRequiredTargets(Tree(branch), cast),
         "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
         "chooseCard" => Every(node.Require("from"), cast).Count > 0,
-        "removeFromGame" or "exhaust" or "reveal" or "returnToHand" =>
+        "removeFromGame" or "exhaust" or "ready" or "reveal" or "returnToHand" =>
             Every(node.Argument, cast).Count > 0,
         "soakDamage" => Find(node.Require("onto"), cast) is not null,
         "giveStatus" => Every(node.Require("card"), cast).Count > 0,
@@ -1518,12 +2428,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "heal" => Find(node.Require("card"), cast) is not null,
         "indirectDamage" => Amount(node.Require("amount"), cast) <= 0
             || Assignable(node.Require("among"), cast).Count > 0,
-        "dealDamage" => Every(node.Require("cards"), cast).Count > 0,
+        "dealDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
+        "dealAttackDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
         "placeThreat" => Every(node.Require("scheme"), cast).Count > 0,
+        "placeAccelerationToken" => cast.World.TheCardIn(DeckType.MainSchemesArea) is not null,
         "removeThreat" => Find(node.Require("scheme"), cast) is not null,
         "enemyAttacks" or "enemySchemes" => Every(node.Require("enemies"), cast).Count > 0,
         "putIntoPlay" => Find(node.Require("card"), cast) is not null,
         "placeAtRandom" => Find(node.Require("on"), cast) is not null,
+        "createDrones" => CanCreateDrones(node, cast),
 
         // These effects select no card target. Some name a player or an area;
         // neither is a target under `rr:target`.
@@ -1531,11 +2444,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             or "cancelWhenRevealed" or "dealEncounterCards" or "revealTop"
             or "discardAtRandom" or "discardUntil" or "discardTop"
             or "recoverDiscardedByResource" or "shuffleInto" or "search"
-            or "gainSurge" or "shuffle" or "draw" => true,
+            or "gainSurge" or "shuffle" or "draw" or "drawToHandSize"
+            or "drawToPrintedHandSize" or "preventThreat"
+            or "replaceThreatWithDamage" or "grantCharactersControlledBy"
+            or "reduceNextCardCost" => true,
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
             + "legality is not implemented"),
     };
+
+    /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
+    private static bool CanInitiate(AbilityNode node, Cast cast) => node.Kind switch
+    {
+        "seq" => Nodes(node.Argument).All(step => CanInitiate(step, cast)),
+        "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+            is not { } branch || CanInitiate(Tree(branch), cast),
+        "chooseCard" => Every(node.Require("from"), cast).Count > 0,
+        "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
+        "thwartDifferentSchemes" => Every(node.Require("schemes"), cast).Count > 0,
+        "legalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
+                card.ObjectId != cast.Source.ObjectId)
+            && Every(node.Require("schemes"), cast).Count > 0,
+        "thwartSchemes" => Every(node.Require("schemes"), cast).Count > 0,
+        "attack" => Find(node.Require("target"), cast) is not { } enemy
+            || cast.World.Abilities.CanTakeDamage(cast.World, enemy, cast.Source),
+        _ => true,
+    };
+
+    private static bool HasLabelledPower(AbilityNode node) =>
+        PowerNodes(node, BasicPowers.AttackVerb).Any()
+        || PowerNodes(node, BasicPowers.ThwartVerb).Any();
 
     /// <summary>Whether a player-card option can change the current state.</summary>
     private static bool CanPartiallyResolve(AbilityNode node, Cast cast)
@@ -1556,6 +2494,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "removeFromGame" => Find(node.Argument, cast) is { } card
                 && card.Area.Type != DeckType.RemovedArea,
             "exhaust" => Find(node.Argument, cast)?.Ready == true,
+            "ready" => Every(node.Argument, cast).Any(card => !card.Ready),
             "removeCounters" => cast.Source.Tokens.GetValueOrDefault(
                 "c_" + Word(node.Argument)) > 0,
             "discardAtRandom" => Amount(node.Require("count"), cast) > 0
@@ -1569,11 +2508,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 && Amount(node.Require("amount"), cast) > 0,
             "dealDamage" => HasRequiredTargets(node, cast)
                 && Amount(node.Require("amount"), cast) > 0,
+            "dealAttackDamage" => HasRequiredTargets(node, cast)
+                && Amount(node.Require("amount"), cast) > 0,
             "placeThreat" => HasRequiredTargets(node, cast)
                 && Amount(node.Require("amount"), cast) > 0,
             "removeThreat" => CanRemoveThreat(node, cast),
             "gainSurge" => Number(node.Argument) > 0,
             "draw" => CanDraw(node, cast),
+            "drawToHandSize" => cast.World.Seats[Seat(node.Argument, cast)].Hand.Cards.Count
+                < PhaseEnd.HandSize(
+                    cast.World, cast.World.Seats[Seat(node.Argument, cast)], cast.World.Facts),
+            "drawToPrintedHandSize" => CanDrawToPrintedHandSize(node, cast),
+            "createDrones" => CanCreateDrones(node, cast),
+            "placeAccelerationToken" => HasRequiredTargets(node, cast),
+            "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
+                && Amount(node.Argument, cast) > 0,
+            "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
+            "grantCharactersControlledBy" or "reduceNextCardCost" => true,
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
@@ -1629,6 +2580,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // else.** Carried on the `Cast` it would leak into any `seq` the chosen
         // option itself contains -- an option of three effects resumed at two
         // would run only the third.
+        if (cast.EachPlayerFrame)
+        {
+            if (cast.FinalPlayer && effect is { Kind: "seq" } && !cast.Suspended)
+            {
+                Sequence(effect, cast, from);
+            }
+            DiscardEvent(source, cast);
+            return cast.Events;
+        }
+
         if (effect is { Kind: "seq" } && !cast.Suspended)
         {
             Sequence(effect, cast, from);
@@ -1640,7 +2601,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <summary>A fresh resolution of one card's ability, by one player.</summary>
-    private Cast Resolving(World world, Card source, int player, AbilityType? tier) =>
+    private Cast Resolving(
+        World world, Card source, int player, AbilityType? tier, bool finalStep = false) =>
         new(world,
             source,
             new Occurrence(0, [Steps.CardRevealed], Subject: source.ObjectId, Player: player),
@@ -1649,6 +2611,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             this)
         {
             Tier = tier,
+            FinalStep = finalStep,
         };
 
     /// <summary>The one choice a card offers, found again from the card.</summary>
@@ -1692,18 +2655,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var steps = Nodes(effect.Argument).ToList();
-        return stoppedAt >= 1 && stoppedAt <= steps.Count
-            && steps[stoppedAt - 1] is
-                { Kind: "choose" or "chooseCard" or "indirectDamage" } waiting
-            ? waiting
-            : throw new RulesNotImplementedException(
-                $"'{source.FaceId}' has no choice at step {stoppedAt - 1} of its sequence");
+        if (stoppedAt >= 1 && stoppedAt <= steps.Count)
+        {
+            var nested = Choices(steps[stoppedAt - 1]).ToList();
+            if (nested.Count == 1)
+            {
+                return nested[0];
+            }
+        }
+
+        throw new RulesNotImplementedException(
+            $"'{source.FaceId}' has no single choice at step {stoppedAt - 1} of its sequence");
     }
 
     /// <summary>Every <c>choose</c> node in one effect tree.</summary>
     private static IEnumerable<AbilityNode> Choices(AbilityNode node)
     {
-        if (node.Kind is "choose" or "chooseCard" or "indirectDamage")
+        if (node.Kind is "choose" or "chooseCard" or "indirectDamage"
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
+            or "chooseDiscardToShuffle" or "thwartDifferentSchemes" or "makeTheCall"
+            or "legalPractice" or "payOrEffect")
         {
             yield return node;
             yield break;
@@ -1716,10 +2687,76 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Select(node.Field)
                 .Where(branch => branch is not null)
                 .Select(branch => Tree(branch!)),
+            "eachPlayer" => [Tree(node.Require("effect"))],
             _ => [],
         };
 
         foreach (var found in children.SelectMany(Choices))
+        {
+            yield return found;
+        }
+    }
+
+    private static IEnumerable<AbilityNode> PowerNodes(AbilityNode node, string power)
+    {
+        if (string.Equals(node.Kind, power.ToLowerInvariant(), StringComparison.Ordinal))
+        {
+            yield return node;
+        }
+
+        foreach (var found in PowerValues(node.Argument, power))
+        {
+            yield return found;
+        }
+    }
+
+    private static IEnumerable<AbilityNode> PowerValues(AbilityValue value, string power)
+    {
+        if (value is AbilityValue.List list)
+        {
+            foreach (var found in list.Values.SelectMany(item => PowerValues(item, power)))
+            {
+                yield return found;
+            }
+            yield break;
+        }
+
+        if (value is not AbilityValue.Map map)
+        {
+            yield break;
+        }
+
+        if (map.Entries.Count == 1)
+        {
+            var node = AbilityNode.Of(value);
+            foreach (var found in PowerNodes(node, power))
+            {
+                yield return found;
+            }
+            yield break;
+        }
+
+        foreach (var found in map.Entries.Values.SelectMany(item => PowerValues(item, power)))
+        {
+            yield return found;
+        }
+    }
+
+    private static IEnumerable<AbilityNode> EachPlayers(AbilityNode node)
+    {
+        if (node.Kind == "eachPlayer")
+        {
+            yield return node;
+            yield break;
+        }
+        IEnumerable<AbilityNode> children = node.Kind switch
+        {
+            "seq" => Nodes(node.Argument),
+            "if" => Branches.Select(node.Field).Where(value => value is not null)
+                .Select(value => Tree(value!)),
+            _ => [],
+        };
+        foreach (var found in children.SelectMany(EachPlayers))
         {
             yield return found;
         }
@@ -1856,6 +2893,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Sequence(node, cast, from: 0);
                 break;
 
+            case "eachPlayer":
+                EachPlayerEffects.Schedule(
+                    cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep);
+                cast.Suspend();
+                break;
+
             case "generate":
                 // `rr:resource-ability` -- a resource ability is *read* while a
                 // cost is being paid rather than run like an effect, so nothing
@@ -1882,12 +2925,40 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Exhaust(node, cast);
                 break;
 
+            case "ready":
+                Ready(node, cast);
+                break;
+
+            case "drawToHandSize":
+                DrawToHandSize(node, cast);
+                break;
+
+            case "drawToPrintedHandSize":
+                DrawToPrintedHandSize(node, cast);
+                break;
+
             case "removeCounters":
                 RemoveCounters(node, cast);
                 break;
 
+            case "placeCounters":
+                var counter = Word(node.Require("counter"));
+                var counterCard = Find(node.Require("card"), cast)
+                    ?? throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' cannot find the card receiving counters");
+                long beforeCounters = counterCard.Tokens.GetValueOrDefault("c_" + counter);
+                long placedCounters = Amount(node.Require("count"), cast);
+                counterCard.PlaceTokens("c_" + counter, placedCounters);
+                cast.Events.Add(new FieldSet(
+                    counterCard.ObjectId, "c_" + counter,
+                    beforeCounters, beforeCounters + placedCounters)
+                {
+                    Trigger = cast.Trigger, Verb = "Place_Counters",
+                });
+                break;
+
             case "preventDamage":
-                PreventDamage(cast);
+                PreventDamage(node, cast);
                 break;
 
             case "cancelWhenRevealed":
@@ -1914,8 +2985,57 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 ReturnToHand(node, cast);
                 break;
 
+            case "addToHand":
+                var added = Find(node.Argument, cast)
+                    ?? throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' cannot find the card added to hand");
+                var oldArea = added.Area;
+                var newHand = cast.World.Seats[cast.Player].Hand;
+                World.MoveToTop(added, newHand);
+                cast.Events.Add(new CardsMoved(
+                    Places.Reference(oldArea), Places.Reference(newHand),
+                    [new Landing(added.ObjectId, newHand.Cards.Count - 1)])
+                {
+                    Trigger = cast.Trigger, Verb = "Add_To_Hand",
+                });
+                break;
+
+            case "returnOwnedToHand":
+                var returned = Find(node.Argument, cast)
+                    ?? throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' cannot find the card returned to hand");
+                if (returned.Owner < 0)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' returns a card with no owning player");
+                }
+                var returnedFrom = returned.Area;
+                var ownersHand = cast.World.Seats[returned.Owner].Hand;
+                World.MoveToTop(returned, ownersHand);
+                cast.Events.Add(new CardsMoved(
+                    Places.Reference(returnedFrom), Places.Reference(ownersHand),
+                    [new Landing(returned.ObjectId, ownersHand.Cards.Count - 1)])
+                {
+                    Trigger = cast.Trigger, Verb = "Return",
+                });
+                break;
+
             case "discardAtRandom":
                 DiscardAtRandom(node, cast);
+                break;
+
+            case "discardHandWithResource":
+                string wantedResource = Word(node.Argument);
+                foreach (var card in cast.World.Seats[cast.Player].Hand.Cards
+                             .Where(card => Resources.GeneratedBy(
+                                 card.FaceId, cast.World.Facts).Contains(
+                                     wantedResource, StringComparison.Ordinal))
+                             .ToList())
+                {
+                    Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
+                    cast.Discarded.Add(card);
+                }
+                cast.Results["discarded"] = cast.Discarded.Count;
                 break;
 
             case "discardUntil":
@@ -1943,6 +3063,93 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Choose(node, cast);
                 break;
 
+            case "resolveSpecials":
+                if (Every(node.Require("cards"), cast).Count > 0)
+                {
+                    cast.World.Agenda.Then(new PhaseStep(
+                        Steps.ChooseOption,
+                        cast.World.Agenda.Current?.Round ?? 0,
+                        2,
+                        Index: cast.Position + 1,
+                        Subject: cast.Source.ObjectId,
+                        Seat: cast.Player,
+                        Tier: cast.Tier,
+                        FinalStep: cast.FinalStep,
+                        Trigger: cast.Trigger));
+                    cast.Suspend();
+                }
+
+                break;
+
+            case "payOrExhaust":
+            case "payOrEffect":
+                cast.World.Agenda.Then(new PhaseStep(
+                    Steps.ChooseOption,
+                    cast.World.Agenda.Current?.Round ?? 0,
+                    2,
+                    Index: cast.Position + 1,
+                    Subject: cast.Source.ObjectId,
+                    Seat: cast.Player,
+                    Tier: cast.Tier,
+                    FinalStep: cast.FinalStep,
+                    Trigger: cast.Trigger));
+                cast.Suspend();
+                break;
+
+            case "chooseTopForHand":
+                if (TopCards(
+                    cast.World.Seats[cast.Player].Deck,
+                    (int)Number(node.Require("count"))).Count == 0)
+                {
+                    break;
+                }
+                cast.World.Agenda.Then(new PhaseStep(
+                    Steps.ChooseOption,
+                    cast.World.Agenda.Current?.Round ?? 0,
+                    2,
+                    Index: cast.Position + 1,
+                        Subject: cast.Source.ObjectId,
+                        Seat: cast.Player,
+                        Tier: cast.Tier,
+                        FinalStep: cast.FinalStep,
+                        Trigger: cast.Trigger));
+                cast.Suspend();
+                break;
+
+            case "chooseDiscardToShuffle":
+            case "thwartDifferentSchemes":
+            case "makeTheCall":
+            case "legalPractice":
+                cast.World.Agenda.Then(new PhaseStep(
+                    Steps.ChooseOption,
+                    cast.World.Agenda.Current?.Round ?? 0,
+                    2,
+                    Index: cast.Position + 1,
+                    Subject: cast.Source.ObjectId,
+                    Seat: cast.Player,
+                    Tier: cast.Tier,
+                    FinalStep: cast.FinalStep,
+                    Trigger: cast.Trigger));
+                cast.Suspend();
+                break;
+
+            case "afterActivation":
+                if (cast.World.Activation is not { } current)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' delays an effect and no enemy is activating");
+                }
+
+                if (!((AbilityRunner)cast.Abilities).activationEffects.TryGetValue(
+                    current.Id, out var waiting))
+                {
+                    ((AbilityRunner)cast.Abilities).activationEffects[current.Id] = waiting = [];
+                }
+                waiting.Add(new ActivationEffect(
+                    cast.Source.ObjectId, cast.Player, cast.Tier,
+                    Tree(node.Require("effect"))));
+                break;
+
             case "if":
                 var branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
                 if (node.Field(branch) is { } taken)
@@ -1956,12 +3163,42 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 GiveStatus(node, cast);
                 break;
 
+            case "giveAdditionalBoost":
+                Attack.GiveAdditionalBoostCard(
+                    cast.World,
+                    Find(node.Require("enemy"), cast)
+                        ?? throw new AbilityException(
+                            $"'{cast.Source.FaceId}' cannot find the enemy receiving an additional boost card"),
+                    cast.Trigger,
+                    cast.Events);
+                break;
+
+            case "alsoAttackEachOtherHero":
+                Attack.AlsoResolveAgainstEachOtherHero(cast.World);
+                break;
+
             case "attachTo":
                 AttachTo(node, cast);
                 break;
 
             case "grantUntil":
                 GrantUntil(node, cast);
+                break;
+
+            case "grantCharactersControlledBy":
+                foreach (string field in Values(node.Require("fields")).Select(Word))
+                {
+                    cast.World.Effects.GrantToCharactersControlledBy(
+                        cast.Source, Seat(node.Require("player"), cast), field,
+                        Amount(node.Require("amount"), cast),
+                        Word(node.Require("until")));
+                }
+                break;
+
+            case "reduceNextCardCost":
+                CardPlay.ReduceNextCardCost(
+                    cast.World, cast.Source, Seat(node.Require("player"), cast),
+                    Amount(node.Require("amount"), cast));
                 break;
 
             case "delayUntil":
@@ -1985,7 +3222,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 for (long dealt = 0; dealt < Number(node.Argument); dealt++)
                 {
                     Deal.EncounterCard(
-                        cast.World, cast.Player, cast.Occurrence.Conditions[0], cast.Events);
+                        cast.World, cast.Player, cast.Trigger, cast.Events);
                 }
 
                 break;
@@ -2002,8 +3239,51 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 DealDamage(node, cast);
                 break;
 
+            case "moveDamage":
+                MoveDamage(node, cast);
+                break;
+
+            case "dealAttackDamage":
+                DealAttackDamage(node, cast);
+                break;
+
+            case "moveAttackDamage":
+                MoveAttackDamage(node, cast);
+                break;
+
+            case "attack":
+                ((AbilityRunner)cast.Abilities).SchedulePower(node, cast, BasicPowers.AttackVerb);
+                break;
+
+            case "thwart":
+                ((AbilityRunner)cast.Abilities).SchedulePower(node, cast, BasicPowers.ThwartVerb);
+                break;
+
+            case "thwartSchemes":
+                var schemes = Every(node.Require("schemes"), cast);
+                if (schemes.Count > 0)
+                {
+                    cast.Choose(schemes[0]);
+                    ((AbilityRunner)cast.Abilities).SchedulePower(
+                        Tree(node.Require("power")), cast, BasicPowers.ThwartVerb,
+                        schemes[0], schemes, -1);
+                }
+                break;
+
             case "placeThreat":
                 PlaceThreat(node, cast);
+                break;
+
+            case "placeAccelerationToken":
+                EncounterDeck.PlaceAccelerationToken(cast.World, cast.Trigger, cast.Events);
+                break;
+
+            case "preventThreat":
+                PreventThreat(node, cast);
+                break;
+
+            case "replaceThreatWithDamage":
+                ReplaceThreatWithDamage(node, cast);
                 break;
 
             case "removeThreat":
@@ -2022,6 +3302,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 PutIntoPlay(node, cast);
                 break;
 
+            case "createDrones":
+                CreateDrones(node, cast);
+                break;
+
             case "shuffle":
                 // `rr:search.3` -- "if any portion of a deck is searched, upon
                 // completion of that game step, game function, or card ability,
@@ -2032,10 +3316,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "draw":
-                Draw.Cards(
-                    cast.World, Seat(node.Require("player"), cast),
-                    (int)Number(node.Require("count")),
-                    cast.Occurrence.Conditions[0], cast.Events);
+                foreach (int player in Seats(node.Require("player"), cast))
+                {
+                    Draw.Cards(
+                        cast.World, player,
+                        (int)Number(node.Require("count")),
+                        cast.Trigger, cast.Events);
+                }
                 break;
 
             default:
@@ -2050,11 +3337,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "and" => Nodes(node.Argument).All(each => Test(each, cast)),
         "or" => Nodes(node.Argument).Any(each => Test(each, cast)),
         "not" => !Test(Tree(node.Argument), cast),
+        "finalStep" => cast.FinalStep,
+        "paidWithResource" => PaidWith(cast, Word(node.Argument)),
+        "threatCause" => cast.Occurrence.Threat?.Cause == (Word(node.Argument) switch
+            {
+                "villainPhase" => ThreatCause.VillainPhase,
+                "enemyScheme" => ThreatCause.EnemyScheme,
+                "incite" => ThreatCause.Incite,
+                "cardAbility" => ThreatCause.CardAbility,
+                var cause => throw new AbilityException($"'{cause}' is not a threat cause"),
+            }),
         // Through `Every` and not `Find`: "is there one" is a question about a
         // set, and a query that names many -- "an upgrade or support you
         // control" -- has to be answerable by it. `Every` falls back to `Find`
         // for the queries that name one, so both shapes go through here.
         "exists" => Every(node.Argument, cast).Count > 0,
+        "canMakeTheCall" => CanMakeTheCall(cast),
+        "canLegalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(
+                card => card.ObjectId != cast.Source.ObjectId)
+            && Every(node.Argument, cast).Any(
+                scheme => scheme.Tokens.GetValueOrDefault("k_threat") > 0),
+        "canAutomaticThwart" => Find(node.Argument, cast) is { } scheme
+            && BasicPowers.CanAutomaticallyThwart(
+                cast.World, cast.World.Facts, cast.Player, scheme),
 
         // "If Vulture is in play". `rr:identity.2` makes a title name one
         // card -- "if a card refers to a hero or alter-ego by title, it refers
@@ -2111,6 +3416,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "hasStatus" => Find(node.Require("card"), cast) is { } host
             && Statuses.Has(cast.World, host, Word(node.Require("status"))),
 
+        "hasTrait" => Find(node.Require("card"), cast) is { } traitHolder
+            && Rules.State.Traits.Has(
+                cast.World, traitHolder, Word(node.Require("trait")), cast.World.Facts),
+
+        "isTitle" => Find(node.Require("card"), cast) is { } titled
+            && string.Equals(
+                cast.World.Facts.Title(titled.FaceId), Word(node.Require("title")),
+                StringComparison.Ordinal),
+
+        "discardedWithResource" => cast.Discarded.Any(card =>
+            Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(
+                Word(node.Argument), StringComparison.Ordinal)),
+
+        "defeatedByYou" => cast.Occurrence.Defeat is { By: >= 0 } defeatedByYou
+            && defeatedByYou.By < cast.World.Cards.Count
+            && ControllerOf(cast.World, cast.World.Cards[defeatedByYou.By]) == Resolver(cast),
+
+        "wasDefeated" => Find(node.Argument, cast) is { } defeatedCard
+            && cast.Occurrence.Defeats.Any(defeat => defeat.Card == defeatedCard.ObjectId),
+
+        "heroDefended" => cast.World.FinishedAttack is { BasicDefense: true } defended
+            && defended.Defender == cast.World.Seats[Resolver(cast)].IdentityCard.ObjectId,
+
+        "undefendedAttack" => cast.World.Attack is { IsDefended: false },
+
         // "After **an ally** is defeated". A card type, asked of a card the
         // ability has already named -- `rr:defeat` is one rule for every kind
         // of card and the cards are the ones that narrow it.
@@ -2136,6 +3466,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             + "which is not implemented"),
     };
 
+    private static bool PaidWith(Cast cast, string resource) =>
+        cast.Payment.Contains(resource[0])
+        || cast.Payment.Contains('G')
+        || cast.World.Effects.Active().Any(effect =>
+            effect.Card == cast.Source.ObjectId
+            && (string.Equals(effect.Kind, "paid:" + resource, StringComparison.Ordinal)
+                || string.Equals(effect.Kind, "paid:G", StringComparison.Ordinal)));
+
     /// <summary>
     /// "Deal each player a facedown encounter card" — <c>rr:deal</c>.
     /// </summary>
@@ -2156,9 +3494,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static void DealEncounterCards(AbilityNode node, Cast cast)
     {
         long each = node.Field("count") is { } count ? Number(count) : 1;
+        IReadOnlyList<int> players = node.Field("player") is { } player
+            ? [Seat(player, cast)]
+            : [.. cast.World.PlayerOrder];
         for (long dealt = 0; dealt < each; dealt++)
         {
-            foreach (int seat in cast.World.PlayerOrder)
+            foreach (int seat in players)
             {
                 if (Rules.Play.Deal.EncounterCard(
                         cast.World, seat, cast.Trigger, cast.Events) is null)
@@ -2168,6 +3509,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
     }
+
+    /// <summary>
+    /// "Put the top card of your deck into play facedown … as a Drone minion."
+    /// </summary>
+    private static void CreateDrones(AbilityNode node, Cast cast)
+    {
+        long count = node.Field("count") is { } amount ? Number(amount) : 1;
+        foreach (int player in Seats(node.Require("player"), cast))
+        {
+            for (long created = 0; created < count; created++)
+            {
+                FacedownDrones.EngageTop(
+                    cast.World, player, cast.Trigger, "Create_Drone", cast.Events);
+            }
+        }
+    }
+
+    private static bool CanCreateDrones(AbilityNode node, Cast cast) =>
+        (node.Field("count") is not { } count || Number(count) > 0)
+        && Seats(node.Require("player"), cast).Any(player =>
+            cast.World.Seats[player].Deck.Cards.Count > 0
+            || cast.World.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards.Count > 0);
 
     /// <summary>
     /// "Put it into play engaged with you" — <c>rr:play-put-into-play</c>.
@@ -2209,7 +3573,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "which is not implemented");
         }
 
-        var into = cast.World.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player));
+        PutIntoPlay(card, cast.Player, cast);
+    }
+
+    /// <summary>Puts one exact minion into play engaged with a named player.</summary>
+    private static void PutIntoPlay(Card card, int player, Cast cast)
+    {
+        var into = cast.World.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player));
         var from = card.Area;
 
         // Moving into an in-play area turns the card faceup in `Card.MovedTo`;
@@ -2331,7 +3701,46 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "grant":
-                found.Add(Grant(node, cast));
+                if (Find(node.Require("card"), cast) is { } grantTarget)
+                {
+                    found.Add(Grant(node, cast, grantTarget));
+                }
+                else if (!string.Equals(
+                    Word(node.Require("card")), "yourHero", StringComparison.Ordinal))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' would grant to a card that is not there");
+                }
+                break;
+
+            case "grantEach":
+                foreach (var target in Every(node.Require("cards"), cast))
+                {
+                    found.Add(Grant(node, cast, target));
+                }
+                break;
+
+            case "preventThreatRemoval":
+                // A prohibition is answered by `CanRemoveThreat`; it is not a
+                // numeric modifier and therefore contributes no effect here.
+                break;
+
+            case "doubleResourceFor":
+                // This constant acts while its resource card is spent from
+                // hand. `ResourcesGeneratedBy` reads it with the payment's
+                // target card, which is context this general effect list does
+                // not carry.
+                break;
+
+            case "requireAllyDefender":
+                // Defender declaration carries the attack and its engaged
+                // player; `Defenders` reads this constraint in that context.
+                break;
+
+            case "preventDamageFrom":
+            case "preventDamageWhile":
+                // Damage carries both source and target. `CanTakeDamage`
+                // evaluates these prohibitions in that complete context.
                 break;
 
             default:
@@ -2339,6 +3748,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     $"'{cast.Source.FaceId}' has a constant ability using the node "
                     + $"'{node.Kind}', which a constant ability cannot be written with");
         }
+    }
+
+    private static bool ProhibitsThreatRemoval(AbilityNode node, Cast cast, Card scheme)
+    {
+        return node.Kind switch
+        {
+            "seq" => Nodes(node.Argument).Any(step =>
+                ProhibitsThreatRemoval(step, cast, scheme)),
+            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+                is { } branch && ProhibitsThreatRemoval(Tree(branch), cast, scheme),
+            "preventThreatRemoval" => Find(node.Argument, cast)?.ObjectId == scheme.ObjectId,
+            _ => false,
+        };
     }
 
     /// <summary>One keyword a constant ability gives something.</summary>
@@ -2362,6 +3784,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var target = Find(node.Require("card"), cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would grant to a card that is not there");
+
+        return Grant(node, cast, target);
+    }
+
+    private static ContinuousEffect Grant(AbilityNode node, Cast cast, Card target)
+    {
 
         // `rr:traits.1` -- "traits have no inherent effects on the game.
         // Instead, some card abilities reference cards that possess or lack
@@ -2389,7 +3817,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return new ContinuousEffect(
             EffectSource.ConstantAbility,
             Kind: keyword,
-            Amount: node.Field("amount") is { } amount ? Number(amount) : 1,
+            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : 1,
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
             Lasts: Duration.WhileInPlay);
@@ -2402,6 +3830,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var target = Find(node.Require("card"), cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would grant to a card that is not there");
+
+        if (node.Field("trait") is { } gained)
+        {
+            cast.World.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: Rules.State.Traits.Granted + Word(gained),
+                Amount: 1,
+                Card: cast.Source.ObjectId,
+                Affects: target.ObjectId,
+                Lasts: Duration.UntilEndOf(Word(node.Require("until")))));
+            return;
+        }
 
         // Held against the fields the engine actually reads, exactly as a
         // constant ability's grant is: an unrecognised name would register
@@ -2420,7 +3860,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: keyword,
-            Amount: node.Field("amount") is { } amount ? Number(amount) : 0,
+            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : 0,
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
             Lasts: Duration.UntilEndOf(Word(node.Require("until")))));
@@ -2595,21 +4035,60 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void Exhaust(AbilityNode node, Cast cast)
     {
-        var target = Find(node.Argument, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would exhaust a card that is not there");
-
-        if (!target.Ready)
+        foreach (var target in Every(node.Argument, cast).Where(target => target.Ready))
         {
-            return;
+            target.Exhaust();
+            cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
+            {
+                Trigger = cast.Trigger, Verb = "Exhaust",
+            });
         }
-
-        target.Exhaust();
-        cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
-        {
-            Trigger = cast.Trigger, Verb = "Exhaust",
-        });
     }
+
+    private static void Ready(AbilityNode node, Cast cast)
+    {
+        foreach (var target in Every(node.Argument, cast).Where(target => !target.Ready))
+        {
+            target.Refresh();
+            cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 1, 0)
+            {
+                Trigger = cast.Trigger, Verb = "Ready",
+            });
+        }
+    }
+
+    private static void DrawToHandSize(AbilityNode node, Cast cast)
+    {
+        int player = Seat(node.Argument, cast);
+        var seat = cast.World.Seats[player];
+        int count = (int)Math.Max(
+            0, PhaseEnd.HandSize(cast.World, seat, cast.World.Facts)
+                - HandCountDuringEvent(cast, seat));
+        Draw.Cards(cast.World, player, count, cast.Trigger, cast.Events);
+    }
+
+    /// <summary>"Draw up to your printed hand size" — <c>rr:printed</c>.</summary>
+    private static void DrawToPrintedHandSize(AbilityNode node, Cast cast)
+    {
+        int player = Seat(node.Argument, cast);
+        var seat = cast.World.Seats[player];
+        long printed = cast.World.Facts.PrintedValue(
+            seat.IdentityCard.FaceId, "HS", cast.World.Players);
+        int count = (int)Math.Max(0, printed - HandCountDuringEvent(cast, seat));
+        Draw.Cards(cast.World, player, count, cast.Trigger, cast.Events);
+    }
+
+    private static bool CanDrawToPrintedHandSize(AbilityNode node, Cast cast)
+    {
+        int player = Seat(node.Argument, cast);
+        var seat = cast.World.Seats[player];
+        return HandCountDuringEvent(cast, seat) < cast.World.Facts.PrintedValue(
+            seat.IdentityCard.FaceId, "HS", cast.World.Players);
+    }
+
+    private static int HandCountDuringEvent(Cast cast, Seat seat) =>
+        seat.Hand.Cards.Count - (cast.Source.Area == seat.Hand
+            && cast.World.Facts.Kind(cast.Source.FaceId) == CardKind.Event ? 1 : 0);
 
     private static void RemoveCounters(AbilityNode node, Cast cast)
     {
@@ -2635,7 +4114,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
     }
 
-    private static void PreventDamage(Cast cast)
+    private static void PreventDamage(AbilityNode node, Cast cast)
     {
         int target = cast.Occurrence.Target >= 0
             ? cast.Occurrence.Target
@@ -2643,6 +4122,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: "preventDamage",
+            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : long.MaxValue,
             Card: cast.Source.ObjectId,
             Affects: target,
             Lasts: new Duration(Uses: 1)));
@@ -2856,15 +4336,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static void Sequence(AbilityNode node, Cast cast, int from)
     {
         var steps = Nodes(node.Argument).ToList();
+        bool outerContinuation = cast.HasContinuation;
         for (int step = from; step < steps.Count; step++)
         {
             cast.At(step);
+            cast.SetContinuation(outerContinuation || step < steps.Count - 1);
             Run(steps[step], cast);
             if (cast.Suspended)
             {
+                if (cast.ActivationIds.Count > 0)
+                {
+                    ((AbilityRunner)cast.Abilities).RegisterActivationContinuation(
+                        cast, node, step + 1);
+                }
+
                 return;
             }
         }
+        cast.SetContinuation(outerContinuation);
     }
 
     private static void Choose(AbilityNode node, Cast cast)
@@ -2900,7 +4389,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             // Which ability stopped. A card can have a choice in two of them,
             // and the card and the position do not say which -- see `Choice`.
-            Tier: cast.Tier));
+            Tier: cast.Tier,
+            FinalStep: cast.FinalStep,
+            Trigger: cast.Trigger));
 
         cast.Suspend();
     }
@@ -2988,7 +4479,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             // Which ability stopped. A card can have a choice in two of them,
             // and the card and the position do not say which -- see `Choice`.
-            Tier: cast.Tier));
+            Tier: cast.Tier,
+            FinalStep: cast.FinalStep,
+            Trigger: cast.Trigger));
 
         cast.Suspend();
     }
@@ -3002,8 +4495,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static List<Card> Assignable(AbilityValue among, Cast cast) =>
     [
-        .. Every(among, cast).Where(card => Room(cast, card) > 0),
+        .. Every(among, cast).Where(card =>
+            Room(cast, card) > 0
+            && cast.Abilities.CanTakeDamage(cast.World, card, cast.Source)),
     ];
+
+    private static IReadOnlyList<Card> DamageTargets(AbilityValue targets, Cast cast) =>
+        [.. Every(targets, cast).Where(target =>
+            cast.Abilities.CanTakeDamage(cast.World, target, cast.Source))];
 
     /// <summary>How much indirect damage one character may be assigned.</summary>
     private static long Room(Cast cast, Card card) =>
@@ -3052,7 +4551,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         foreach (var (card, damage) in assigned.OrderBy(each => each.Key))
         {
             Damage.Deal(
-                cast.World, cast.World.Facts, cast.World.Cards[card], damage,
+                cast.World, cast.World.Facts, cast.Source, cast.World.Cards[card], damage,
                 cast.Trigger, "Indirect_Damage", cast.Events);
         }
     }
@@ -3068,12 +4567,173 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static void DealDamage(AbilityNode node, Cast cast)
     {
         long amount = Amount(node.Require("amount"), cast);
+        string verb = node.Field("attack") is null ? "Deal_Damage" : "Attack";
         foreach (var target in Every(node.Require("cards"), cast))
         {
+            long before = target.Damage;
             Damage.Deal(
-                cast.World, cast.World.Facts, target, amount, cast.Trigger, "Deal_Damage",
+                cast.World, cast.World.Facts, cast.Source, target, amount, cast.Trigger, verb,
                 cast.Events);
+            if (cast.Power == BasicPowers.AttackVerb && target.Damage > before)
+            {
+                cast.Occurrence.Also(Steps.DamageDealt);
+            }
         }
+    }
+
+    private static void MoveDamage(AbilityNode node, Cast cast)
+    {
+        var from = Find(node.Require("from"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot find the character damage moves from");
+        var to = Find(node.Require("to"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot find the enemy damage moves to");
+        long amount = Math.Min(from.Damage, Amount(node.Require("amount"), cast));
+        if (amount <= 0 || !cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
+        {
+            return;
+        }
+
+        Damage.Heal(
+            cast.World, cast.World.Facts, from, amount,
+            cast.Trigger, "Move_Damage", cast.Events);
+        Damage.Deal(
+            cast.World, cast.World.Facts, cast.Source, to, amount,
+            cast.Trigger, "Attack", cast.Events);
+    }
+
+    /// <summary>Damage from an attack event performed by the resolving identity.</summary>
+    private static void DealAttackDamage(AbilityNode node, Cast cast)
+    {
+        var attacker = cast.World.Seats[Resolver(cast)].IdentityCard;
+        ContinuousEffect? temporaryOverkill = null;
+        if (node.Field("overkill") is not null)
+        {
+            temporaryOverkill = new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: Keywords.Overkill,
+                Amount: 1,
+                Card: cast.Source.ObjectId,
+                Affects: attacker.ObjectId,
+                Lasts: new Duration(Uses: 1));
+            cast.World.Effects.Register(temporaryOverkill);
+        }
+
+        foreach (var target in DamageTargets(node.Require("cards"), cast))
+        {
+            var damaged = Damage.Attack(
+                cast.World, cast.World.Facts, attacker, cast.Source, target,
+                Amount(node.Require("amount"), cast), cast.Trigger, "Attack", cast.Events,
+                retaliate: false);
+            cast.Attacked.Add(target);
+            if (damaged.Characters.Count > 0)
+            {
+                cast.Occurrence.Also(Steps.DamageDealt);
+            }
+        }
+
+        if (temporaryOverkill is not null)
+        {
+            cast.World.Effects.Use(temporaryOverkill);
+        }
+    }
+
+    private static void MoveAttackDamage(AbilityNode node, Cast cast)
+    {
+        var from = Find(node.Require("from"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot find the character damage moves from");
+        var to = Find(node.Require("to"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot find the enemy damage moves to");
+        cast.Attacked.Add(to);
+        long amount = Math.Min(from.Damage, Amount(node.Require("amount"), cast));
+        if (amount <= 0 || !cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
+        {
+            return;
+        }
+
+        Damage.Heal(
+            cast.World, cast.World.Facts, from, amount,
+            cast.Trigger, "Move_Damage", cast.Events);
+        var damaged = Damage.Attack(
+            cast.World,
+            cast.World.Facts,
+            cast.World.Seats[Resolver(cast)].IdentityCard,
+            cast.Source,
+            to,
+            amount,
+            cast.Trigger,
+            BasicPowers.AttackVerb,
+            cast.Events,
+            retaliate: false);
+        if (damaged.Characters.Count > 0)
+        {
+            cast.Occurrence.Also(Steps.DamageDealt);
+        }
+    }
+
+    private void SchedulePower(AbilityNode node, Cast cast, string power)
+    {
+        var target = Find(node.Require("target"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot find the target of its {power}");
+        SchedulePower(node, cast, power, target, [target], -1);
+    }
+
+    private void SchedulePower(
+        AbilityNode node, Cast cast, string power, Card target,
+        IReadOnlyList<Card> targets, long powerAmount)
+    {
+        var effect = Tree(node.Require("effect"));
+        if (Choices(effect).Any())
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' asks a question inside a {power.ToLowerInvariant()}");
+        }
+
+        var abilities = book.On(cast.Source.FaceId).ToList();
+        var addresses = abilities
+            .Select((ability, index) => (Ability: ability, Index: index))
+            .Where(candidate => cast.Tier is null
+                || candidate.Ability.Trigger.Timing == cast.Tier)
+            .SelectMany(candidate => PowerNodes(candidate.Ability.Effect, power)
+                .Select((wrapper, ordinal) =>
+                    (candidate.Index, Ordinal: ordinal, Wrapper: wrapper)))
+            .Where(candidate => candidate.Wrapper == node)
+            .ToList();
+        if (addresses.Count != 1)
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' {power.ToLowerInvariant()} has {addresses.Count} "
+                + "reconstructable authored locations");
+        }
+
+        var address = addresses[0];
+        int resumeFrom = cast.HasContinuation ? cast.Position + 1 : -1;
+        bool scheduled = power == BasicPowers.AttackVerb
+            ? BasicPowers.CardAttack(
+                cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
+                cast.Trigger, cast.Events, abilityIndex: address.Index,
+                powerOrdinal: address.Ordinal, resumeFrom: resumeFrom,
+                finalStep: cast.FinalStep,
+                targets: [.. targets.Select(card => card.ObjectId)], nested: true)
+            : BasicPowers.CardThwart(
+                cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
+                cast.Trigger, cast.Events, abilityIndex: address.Index,
+                powerOrdinal: address.Ordinal, resumeFrom: resumeFrom,
+                finalStep: cast.FinalStep,
+                targets: [.. targets.Select(card => card.ObjectId)],
+                imminentThreat: cast.Occurrence.Threat,
+                automaticTarget: node.Field("automaticTarget") is not null,
+                nested: true);
+        if (!scheduled)
+        {
+            return;
+        }
+
+        cast.Suspend();
     }
 
     /// <summary>"Place N threat on …" — <c>rr:threat</c>.</summary>
@@ -3095,42 +4755,74 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{cast.Source.FaceId}' would place threat on a scheme that is not there");
         }
 
-        long amount = Amount(node.Require("amount"), cast);
-        foreach (var scheme in schemes)
+        if (cast.HasContinuation)
         {
-            Threat.Place(
-                cast.World, cast.World.Facts, cast.Abilities, scheme, amount,
-                cast.Trigger, cast.Events);
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' places threat before its ability has finished; "
+                + "the continuation must be preserved across the threat interrupt window");
         }
+
+        Threat.Schedule(
+            cast.World, schemes, cast.Source, Amount(node.Require("amount"), cast),
+            ThreatCause.CardAbility, cast.Trigger, cast.Player);
+        cast.Suspend();
+    }
+
+    private static void PreventThreat(AbilityNode node, Cast cast)
+    {
+        var placement = cast.ImminentThreat ?? cast.Occurrence.Threat
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would prevent threat that is not imminent");
+        placement.Prevent(Amount(node.Argument, cast));
+    }
+
+    private static void ReplaceThreatWithDamage(AbilityNode node, Cast cast)
+    {
+        var placement = cast.Occurrence.Threat
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' would replace threat that is not imminent");
+        long damage = placement.Remaining;
+        placement.Replace();
+        var target = Find(node.Require("card"), cast)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' replaces threat with damage to a card that is not there");
+        Damage.Deal(
+            cast.World, cast.World.Facts, cast.Source, target, damage,
+            cast.Trigger, "Deal_Damage", cast.Events);
     }
 
     private static void RemoveThreat(AbilityNode node, Cast cast)
     {
-        var scheme = Find(node.Require("scheme"), cast)
-            ?? throw new RulesNotImplementedException(
+        var schemes = Every(node.Require("scheme"), cast);
+        if (schemes.Count == 0)
+        {
+            throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would remove threat from a scheme that is not there");
-        // `rr:crisis-icon.1`: player cards cannot remove threat from the main
-        // scheme while a crisis icon is in play. Encounter effects are not
-        // player cards and remain able to do so.
-        if (scheme.Area.Type == DeckType.MainSchemesArea
-            && IsPlayerCard(cast)
-            && MainScheme.Crisis(cast.World, cast.World.Facts))
-        {
-            return;
         }
 
-        long before = scheme.Tokens.GetValueOrDefault("k_threat");
-        long removed = Math.Min(before, Amount(node.Require("amount"), cast));
-        if (removed <= 0)
+        foreach (var scheme in schemes)
         {
-            return;
-        }
+            // `rr:crisis-icon.1`: player cards cannot remove threat from the main
+            // scheme while a crisis icon is in play. Encounter effects are not
+            // player cards and remain able to do so.
+            if (scheme.Area.Type == DeckType.MainSchemesArea
+                && IsPlayerCard(cast)
+                && MainScheme.Crisis(cast.World, cast.World.Facts))
+            {
+                continue;
+            }
 
-        scheme.PlaceTokens("k_threat", -removed);
-        cast.Events.Add(new FieldSet(scheme.ObjectId, "k_threat", before, before - removed)
-        {
-            Trigger = cast.Trigger, Verb = "Remove_Threat",
-        });
+            Threat.Remove(
+                cast.World,
+                cast.World.Facts,
+                cast.Abilities,
+                scheme,
+                Amount(node.Require("amount"), cast),
+                cast.Trigger,
+                "Remove_Threat",
+                cast.Events,
+                by: Resolver(cast));
+        }
     }
 
     /// <summary>
@@ -3269,10 +4961,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static IEnumerable<int> Seats(AbilityValue value, Cast cast) =>
         Word(value) switch
         {
-            "you" => [cast.Player],
             "each" => cast.World.PlayerOrder,
-            _ => throw new AbilityException(
-                $"'{Word(value)}' does not name a set of players"),
+            _ => [Seat(value, cast)],
         };
 
     /// <summary>
@@ -3298,38 +4988,67 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void DiscardUntil(AbilityNode node, Cast cast)
     {
-        var deck = Area(Word(node.Require("from")), cast);
-        var wanted = Kind(Word(node.Require("kind")));
-
-        long bound = deck.Cards.Count
-            + cast.World.AreaOf(DeckType.EncounterDiscardPile).Cards.Count;
-
-        for (long looked = 0; looked < bound; looked++)
+        if (!string.Equals(
+            Word(node.Require("from")), "encounterDeck", StringComparison.Ordinal))
         {
-            var card = EncounterDeck.TakeTop(cast.World, cast.Trigger, cast.Events);
-            if (card is null)
-            {
-                return;
-            }
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' discards until a match from an unsupported area");
+        }
 
-            Marvel.Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-            if (cast.World.Facts.Kind(card.FaceId) == wanted)
-            {
-                RevealCard(card, cast);
-                return;
-            }
+        var wanted = Kind(Word(node.Require("kind")));
+        string? trait = node.Field("trait") is { } requiredTrait
+            ? Word(requiredTrait)
+            : null;
+        var found = EncounterDeck.DiscardUntil(
+            cast.World, cast.World.Facts, wanted, cast.Trigger, cast.Events, trait);
+        if (found is null)
+        {
+            return;
+        }
+
+        switch (Word(node.Require("then")))
+        {
+            case "reveal":
+                RevealCard(found, cast);
+                break;
+            case "putIntoPlayFirstPlayer":
+                PutIntoPlay(found, cast.World.FirstPlayer, cast);
+                break;
+            default:
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has an unsupported discard-until result");
         }
     }
 
     private static void DiscardTop(AbilityNode node, Cast cast)
     {
-        var deck = Area(Word(node.Require("from")), cast);
         long count = Amount(node.Require("count"), cast);
-        for (long discarded = 0; discarded < count && deck.Cards.Count > 0; discarded++)
+        if (node.Field("player") is null
+            && string.Equals(Word(node.Require("from")), "encounterDeck", StringComparison.Ordinal))
         {
-            var card = deck.Cards[^1];
-            Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-            cast.Discarded.Add(card);
+            for (long discarded = 0; discarded < count; discarded++)
+            {
+                var card = EncounterDeck.TakeTop(cast.World, cast.Trigger, cast.Events);
+                if (card is null)
+                {
+                    break;
+                }
+                Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
+                cast.Discarded.Add(card);
+            }
+            return;
+        }
+        IEnumerable<Area> decks = node.Field("player") is { } players
+            ? Seats(players, cast).Select(player => cast.World.Seats[player].Deck)
+            : [Area(Word(node.Require("from")), cast)];
+        foreach (var deck in decks)
+        {
+            for (long discarded = 0; discarded < count && deck.Cards.Count > 0; discarded++)
+            {
+                var card = deck.Cards[^1];
+                Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
+                cast.Discarded.Add(card);
+            }
         }
     }
 
@@ -3358,6 +5077,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "sideScheme" => CardKind.EncounterSideScheme,
         "minion" => CardKind.Minion,
         "ally" => CardKind.Ally,
+        "upgrade" => CardKind.Upgrade,
         "treachery" => CardKind.Treachery,
         _ => throw new RulesNotImplementedException(
             $"'{named}' is not a card type this engine can name"),
@@ -3430,7 +5150,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // character is the player's hero". An ability naming one instead is
         // the exception the same clause allows.
         AbilityValue? namedTarget = node.Field("against");
-        int against = namedTarget is { } named
+        bool engagedHero = namedTarget is AbilityValue.Word { Value: "engagedHero" };
+        int against = namedTarget is { } named && !engagedHero
             ? Find(named, cast)?.ObjectId ?? -1
             : -1;
 
@@ -3465,22 +5186,88 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // parenthesis is the card saying it.
         bool first = node.Field("first") is AbilityValue.Word { Value: "true" };
 
+        var activationIds = new List<int>();
         foreach (var enemy in Every(node.Require("enemies"), cast))
         {
+            int activationSeat = engagedHero ? enemy.Area.PlayArea.Player : seat;
+            if (activationSeat < 0
+                || (engagedHero && !Forms.In(
+                    cast.World,
+                    cast.World.Seats[activationSeat],
+                    cast.World.Facts,
+                    Forms.Hero)))
+            {
+                continue;
+            }
+
             var activation = new PhaseStep(
-                what, round, 2, Index: seat, Subject: enemy.ObjectId, Seat: seat,
+                what, round, 2, Index: activationSeat, Subject: enemy.ObjectId,
+                Seat: activationSeat,
                 Character: against);
 
             if (first)
             {
+                if (cast.HasContinuation)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' resolves an activation first and then continues");
+                }
+
                 cast.World.Agenda.Now(activation);
             }
             else
             {
-                cast.World.Agenda.Then(activation);
+                activationIds.Add(cast.World.Agenda.ThenActivation(activation));
             }
         }
+
+        if (cast.HasContinuation && activationIds.Count > 0)
+        {
+            cast.WaitFor(activationIds);
+            cast.Suspend();
+        }
     }
+
+    private void RegisterActivationContinuation(Cast cast, AbilityNode sequence, int next)
+    {
+        var continuation = new ActivationContinuation(
+            cast.Source.ObjectId,
+            cast.Occurrence,
+            cast.Player,
+            cast.Tier,
+            sequence,
+            next,
+            cast.ActivationIds.Count,
+            new Dictionary<string, long>(cast.Results, StringComparer.Ordinal));
+        foreach (int id in cast.ActivationIds)
+        {
+            activations.Add(id, continuation);
+        }
+    }
+
+    /// <summary>All allies in player discard piles, in player and pile order.</summary>
+    private static IReadOnlyList<Card> AlliesInPlayerDiscards(World world) =>
+    [
+        .. world.PlayerOrder.SelectMany(player => world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards)
+            .Where(card => world.Facts.Kind(card.FaceId) == CardKind.Ally),
+    ];
+
+    private static bool CanMakeTheCall(Cast cast)
+        => AlliesInPlayerDiscards(cast.World).Any(ally => Resources.Pays(
+            string.Concat(MakeTheCallSources(
+                    cast.World, cast.Player, cast.Source, ally)
+                .Select(source => source.Generates)),
+            Resources.Cost(ally.FaceId, cast.World.Facts) ?? 0,
+            Resources.Required(ally.FaceId, cast.World.Facts)));
+
+    /// <summary>The resources available while paying one Make the Call candidate's cost.</summary>
+    private static IReadOnlyList<ResourceSource> MakeTheCallSources(
+        World world, int player, Card source, Card ally) =>
+    [
+        .. CardPlay.Generators(world, world.Facts, world.Seats[player], payingFor: ally)
+            .Where(generator => generator.Effect != source.ObjectId),
+    ];
 
     /// <summary>Every card a value names, which may be none.</summary>
     /// <remarks>
@@ -3502,6 +5289,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [.. cast.World
                 .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player))
                 .Cards];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } eligibleIdentities
+            && eligibleIdentities.Argument is AbilityValue.Word
+                { Value: "identitiesWithinPerPlayerLimit" })
+        {
+            long maximum = cast.World.Facts.PrintedValue(
+                cast.Source.FaceId, "MaxPerUnit", cast.World.Players);
+            string title = cast.World.Facts.Title(cast.Source.FaceId);
+            return
+            [
+                .. cast.World.PlayerOrder
+                    .Where(player => maximum <= 0 || cast.World.Areas
+                        .Where(area => area.PlayArea == PlayArea.Of(player))
+                        .SelectMany(area => area.Cards)
+                        .Count(card => DeckTypes.IsInPlay(card.Area.Type)
+                            && string.Equals(
+                                cast.World.Facts.Title(card.FaceId),
+                                title,
+                                StringComparison.Ordinal)) < maximum)
+                    .Select(player => cast.World.Seats[player].IdentityCard),
+            ];
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } attached
@@ -3578,6 +5387,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } attackable
+            && attackable.Argument is AbilityValue.Word { Value: "attackableEnemies" })
+        {
+            return
+            [
+                .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
+                    .Where(enemy => cast.World.Abilities.CanTakeDamage(
+                        cast.World, enemy, cast.Source)),
+            ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } attackableMinions
+            && attackableMinions.Argument is AbilityValue.Word { Value: "attackableMinions" })
+        {
+            return
+            [
+                .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
+                    .Where(enemy => cast.World.Facts.Kind(enemy.FaceId) == CardKind.Minion)
+                    .Where(enemy => cast.World.Abilities.CanTakeDamage(
+                        cast.World, enemy, cast.Source)),
+            ];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allSchemes
             && allSchemes.Argument is AbilityValue.Word { Value: "schemes" })
         {
@@ -3586,6 +5418,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .. cast.World.AreaOf(DeckType.MainSchemesArea).Cards,
                 .. cast.World.AreaOf(DeckType.SideSchemesArea).Cards,
             ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } thwartable
+            && thwartable.Argument is AbilityValue.Word { Value: "thwartableSchemes" })
+        {
+            return BasicPowers.Thwartable(cast.World, cast.World.Facts, Resolver(cast));
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } powerTargets
+            && powerTargets.Argument is AbilityValue.Word { Value: "powerTargets" })
+        {
+            return cast.PowerTargets;
         }
 
         if (value is AbilityValue.Map
@@ -3728,6 +5572,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [.. cast.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(cast.Player)).Cards];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } panther
+            && panther.Argument is AbilityValue.Word { Value: "blackPantherUpgrades" })
+        {
+            return
+            [
+                .. cast.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(cast.Player)).Cards
+                    .Where(card => Rules.State.Traits.Has(
+                        cast.World, card, "BLACK_PANTHER", cast.World.Facts)),
+            ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } engaged
+            && engaged.Argument is AbilityValue.Word { Value: "enemiesEngagedWithChosenPlayer" })
+        {
+            int player = cast.Chosen is { Owner: >= 0 } chosen
+                ? chosen.Owner
+                : throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' asks for a chosen player's enemies before choosing one");
+            return
+            [
+                .. cast.World.AreaOf(
+                    DeckType.EngagedEnemiesArea, PlayArea.Of(player)).Cards,
+            ];
+        }
+
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allies
             && allies.Argument is AbilityValue.Word { Value: "alliesYouControl" })
         {
@@ -3754,8 +5623,82 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Select(seat => seat.IdentityCard)];
         }
 
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } identities
+            && identities.Argument is AbilityValue.Word { Value: "identities" })
+        {
+            return [.. cast.World.PlayerOrder.Select(player =>
+                cast.World.Seats[player].IdentityCard)];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } eligiblePlayers
+            && eligiblePlayers.Argument is AbilityValue.Word
+                { Value: "identitiesWithTechInDiscard" })
+        {
+            return
+            [
+                .. cast.World.PlayerOrder
+                    .Where(player => cast.World.AreaOf(
+                            DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player)
+                        .Cards.Any(card => Rules.State.Traits.Has(
+                            cast.World, card, "TECH", cast.World.Facts)))
+                    .Select(player => cast.World.Seats[player].IdentityCard),
+            ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } topmost
+            && topmost.Argument is AbilityValue.Word
+                { Value: "topmostTechInChosenDiscard" })
+        {
+            int player = cast.Chosen is { Owner: >= 0 } chosen
+                ? chosen.Owner
+                : throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' asks for a chosen player's discard before choosing one");
+            var card = cast.World.AreaOf(
+                    DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player)
+                .Cards.LastOrDefault(candidate => Rules.State.Traits.Has(
+                    cast.World, candidate, "TECH", cast.World.Facts));
+            return card is null ? [] : [card];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allCharacters
+            && allCharacters.Argument is AbilityValue.Word { Value: "characters" })
+        {
+            return
+            [
+                .. cast.World.PlayerOrder.Select(player =>
+                    cast.World.Seats[player].IdentityCard),
+                .. cast.World.Areas
+                    .Where(area => area.Type is DeckType.AlliesArea
+                        or DeckType.VillainArea or DeckType.EngagedEnemiesArea)
+                    .SelectMany(area => area.Cards),
+            ];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } drones
+            && drones.Argument is AbilityValue.Word { Value: "drones" })
+        {
+            return FacedownDrones.InPlay(cast.World);
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } engagedDrones
+            && engagedDrones.Argument is AbilityValue.Word { Value: "dronesEngagedWithYou" })
+        {
+            return FacedownDrones.EngagedWith(cast.World, Resolver(cast));
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "withTrait" } withTrait)
+        {
+            string wanted = Word(withTrait.Require("trait"));
+            return [.. Every(withTrait.Require("cards"), cast).Where(card =>
+                Rules.State.Traits.Has(cast.World, card, wanted, cast.World.Facts))];
+        }
+
         return Find(value, cast) is { } one ? [one] : [];
     }
+
+    /// <summary>The top cards of a deck, in top-to-bottom order.</summary>
+    private static IReadOnlyList<Card> TopCards(Area deck, int count) =>
+        [.. deck.Cards.TakeLast(count).Reverse()];
 
     /// <summary>
     /// The cards in named areas that match a search's criteria — <c>rr:search</c>.
@@ -3990,6 +5933,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         string what = Word(node.Argument);
+        if (what == "topmostTechInChosenDiscard")
+        {
+            int player = cast.Chosen is { Owner: >= 0 } chosen
+                ? chosen.Owner
+                : throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' asks for a chosen player's discard before choosing one");
+            return cast.World.AreaOf(
+                    DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player)
+                .Cards.LastOrDefault(candidate => Rules.State.Traits.Has(
+                    cast.World, candidate, "TECH", cast.World.Facts));
+        }
+
         return what switch
         {
             // `rr:villain-villain-deck` -- one villain is in the villain area.
@@ -4036,6 +5991,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 AbilityPlayers.TriggerPlayer => cast.Occurrence.Player,
                 AbilityPlayers.You => Resolver(cast),
                 AbilityPlayers.Controller => ControllerOf(cast.World, cast.Source),
+                "chosenPlayer" => cast.Chosen is { Owner: >= 0 } chosen
+                    ? chosen.Owner
+                    : throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' asks for the chosen player before one "
+                        + "was chosen"),
+                "engagedPlayer" => cast.Source.Area.PlayArea.Player >= 0
+                    ? cast.Source.Area.PlayArea.Player
+                    : throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' asks for its engaged player outside a "
+                        + "player's engaged area"),
+                "firstPlayer" => cast.World.FirstPlayer,
                 _ => throw new AbilityException($"'{word.Value}' does not name a player"),
             }
             : throw new AbilityException(
@@ -4092,6 +6058,41 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // which `rr:damage.2` puts on an ally or minion and which an
             // attachment can hold when a card puts them there.
             "damageOn" => Find(node.Argument, cast)?.Damage ?? 0,
+            "powerAmount" => cast.PowerAmount,
+            "countersOn" => Find(node.Require("card"), cast)?.Tokens.GetValueOrDefault(
+                "c_" + Word(node.Require("counter"))) ?? 0,
+            "printedResourceCountDiscarded" => Resources.PrintedCount(
+                cast.Discarded, Word(node.Argument)[0], cast.World.Facts),
+            "printedBoostIconsDiscarded" => cast.Discarded.Sum(card =>
+                cast.World.Facts.PrintedValue(card.FaceId, "Boost", cast.World.Players)),
+            "topEncounterDiscardBoostPlusOne" => 1 + cast.World.AreaOf(
+                DeckType.EncounterDiscardPile).Cards
+                .Select(card => cast.World.Facts.PrintedValue(
+                    card.FaceId, "Boost", cast.World.Players))
+                .LastOrDefault(),
+            "remainingHealth" => Find(node.Argument, cast) is { } remaining
+                ? Math.Max(
+                    0,
+                    Damage.Health(cast.World, cast.World.Facts, remaining) - remaining.Damage)
+                : 0,
+            "if" => Test(Tree(node.Require("test")), cast)
+                ? Amount(node.Require("then"), cast)
+                : node.Field("else") is { } otherwise
+                    ? Amount(otherwise, cast)
+                    : 0,
+            "count" => Every(node.Argument, cast).Count,
+            "discardedWithResource" => cast.Discarded.Count(card =>
+                Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(
+                    Word(node.Argument), StringComparison.Ordinal)),
+            "modified" => Find(node.Require("card"), cast) is { } modified
+                ? StateFields.Modified(
+                    cast.World, modified, Word(node.Require("field")),
+                    cast.World.Facts, cast.World.Players)
+                : 0,
+            "min" => Values(node.Argument).Select(each => Amount(each, cast)).Min(),
+            "add" => Values(node.Argument).Sum(each => Amount(each, cast)),
+            "mul" => Values(node.Argument).Aggregate(1L, (product, each) =>
+                product * Amount(each, cast)),
             _ => throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' asks for the amount '{node.Kind}', "
                 + "which is not implemented"),
@@ -4102,6 +6103,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         value is AbilityValue.Number number
             ? number.Value
             : throw new AbilityException($"{AbilityNode.Describe(value)} is not a number");
+
+    private static IReadOnlyList<AbilityValue> Values(AbilityValue value) =>
+        value is AbilityValue.List list
+            ? list.Values
+            : throw new AbilityException($"{AbilityNode.Describe(value)} is not a list");
 
     /// <summary>What one ability is resolving against.</summary>
     /// <param name="World">The board.</param>
@@ -4127,7 +6133,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// belongs there rather than being restated here, where only one of the
         /// two could stay right after an edit.
         /// </remarks>
-        public string Trigger => Occurrence.Conditions[0];
+        public string Trigger => string.IsNullOrEmpty(EventTrigger)
+            ? Occurrence.Conditions[0]
+            : EventTrigger;
+
+        /// <summary>Event-stream provenance carried across a scheduled power.</summary>
+        public string? EventTrigger { get; init; }
 
         /// <summary>
         /// What the actions in this ability actually did — the <c>result.*</c>
@@ -4140,6 +6151,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// </remarks>
         public Dictionary<string, long> Results { get; } = new(StringComparer.Ordinal);
 
+        /// <summary>The resource letters generated to pay for this event.</summary>
+        public string Payment { get; private set; } = string.Empty;
+
+        public void PaidWith(string resources) => Payment = resources;
+
         /// <summary>Cards discarded earlier in this resolution, in order.</summary>
         public List<Card> Discarded { get; } = [];
 
@@ -4148,6 +6164,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         /// <summary>Stops the ability here — <c>rr:choose-option</c>.</summary>
         public void Suspend() => Suspended = true;
+
+        /// <summary>The scheduled activations this sentence must wait for.</summary>
+        public List<int> ActivationIds { get; } = [];
+
+        public void WaitFor(IEnumerable<int> ids) => ActivationIds.AddRange(ids);
+
+        /// <summary>Whether text after the current node still has to resolve.</summary>
+        public bool HasContinuation { get; private set; }
+
+        public void SetContinuation(bool value) => HasContinuation = value;
 
         /// <summary>Which step of the top-level sequence is running.</summary>
         public int Position { get; private set; }
@@ -4173,6 +6199,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// </remarks>
         public AbilityType? Tier { get; init; }
 
+        /// <summary>Whether this Special is the final step in its parent sequence.</summary>
+        public bool FinalStep { get; init; }
+
+        public bool EachPlayerFrame { get; init; }
+
+        public bool FinalPlayer { get; init; }
+
+        /// <summary>The labelled player power whose occurrence is resolving.</summary>
+        public string? Power { get; init; }
+
+        /// <summary>Every game element selected for this labelled power.</summary>
+        public IReadOnlyList<Card> PowerTargets { get; init; } = [];
+
+        /// <summary>A numeric result carried into this labelled power.</summary>
+        public long PowerAmount { get; init; } = -1;
+
+        /// <summary>The outer threat assignment this interrupt can prevent.</summary>
+        public ThreatPlacement? ImminentThreat { get; init; }
+
+        /// <summary>Targets attacked by damage nodes, for one deferred retaliation each.</summary>
+        public List<Card> Attacked { get; } = [];
+
         /// <summary>How much damage is about to be dealt — <c>rr:damage.step.1</c>.</summary>
         public long Incoming { get; init; }
 
@@ -4183,4 +6231,30 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <param name="amount">What is left.</param>
         public void Replace(long amount) => Remaining = amount;
     }
+
+    private sealed class ActivationContinuation(
+        int source,
+        Occurrence occurrence,
+        int player,
+        AbilityType? tier,
+        AbilityNode sequence,
+        int next,
+        int remaining,
+        Dictionary<string, long> results)
+    {
+        public int Source { get; } = source;
+        public Occurrence Occurrence { get; } = occurrence;
+        public int Player { get; } = player;
+        public AbilityType? Tier { get; } = tier;
+        public AbilityNode Sequence { get; } = sequence;
+        public int Next { get; } = next;
+        public int Remaining { get; set; } = remaining;
+        public Dictionary<string, long> Results { get; } = results;
+        public long Made { get; set; }
+        public long Damage { get; set; }
+        public long Threat { get; set; }
+    }
+
+    private sealed record ActivationEffect(
+        int Source, int Player, AbilityType? Tier, AbilityNode Effect);
 }

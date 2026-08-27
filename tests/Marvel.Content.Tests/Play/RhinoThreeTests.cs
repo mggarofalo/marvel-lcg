@@ -93,7 +93,8 @@ public sealed class RhinoThreeTests
         Agendas.Happening(world);
 
         Damage.Deal(
-            world, Cards, villain, Cards.PrintedValue(villain.FaceId, "HP", world.Players),
+            world, Cards, villain, villain,
+            Cards.PrintedValue(villain.FaceId, "HP", world.Players),
             "test", "Attack", []);
 
         Assert.Equal(DeckType.VillainArea, next.Area.Type);

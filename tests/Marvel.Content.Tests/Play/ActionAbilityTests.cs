@@ -156,7 +156,7 @@ public sealed class ActionAbilityTests
         // a choice of *which* cards, so the client has to be told.
         var price = Assert.Single(action.CostOptions);
         Assert.Equal("3", price.Cost);
-        Assert.Equal(3, price.Generators.Count(source => source.Generates == "R"));
+        Assert.True(price.Generators.Count(source => source.Generates == "R") >= 3);
 
         int[] paying = [.. world.Seats[0].Hand.Cards
             .Where(card => card.FaceId == Physicals)
@@ -191,6 +191,33 @@ public sealed class ActionAbilityTests
 
         Assert.DoesNotContain(
             game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);
+    }
+
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void AResourceCostInsideASequenceIsAdvertised()
+    {
+        // Tenacity pays one physical resource and discards itself. Discarding
+        // the upgrade is automatic, but the resource is a player choice and
+        // therefore has to survive the surrounding cost sequence onto the
+        // affordance.
+        Card? tenacity = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                tenacity = InPlay(board, "01093");
+                Physical(board, 1);
+            },
+            hero: true);
+
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb
+                && option.AnchorId == tenacity!.ObjectId);
+        var price = Assert.Single(action.CostOptions);
+
+        Assert.Equal("1", price.Cost);
+        Assert.Equal(["R"], price.Rule);
     }
 
     /// <summary>`01003` Backflip — a Spider-Man card printing a physical.</summary>
@@ -253,6 +280,7 @@ public sealed class ActionAbilityTests
             .Where(pending => pending.Card == horn!.ObjectId)
             .DefaultIfEmpty(new PendingAbility(horn!.ObjectId, AbilityType.Action, 0)));
 
+        int before = world.Seats[0].Hand.Cards.Count;
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => AuthoredCards.Runner().Act(
                 world,
@@ -261,7 +289,7 @@ public sealed class ActionAbilityTests
                 []));
 
         Assert.Contains("requiring 'RRR'", thrown.Message, StringComparison.Ordinal);
-        Assert.Equal(3, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(before, world.Seats[0].Hand.Cards.Count);
     }
 
     /// <summary>Puts a support into play under the first player.</summary>

@@ -107,6 +107,34 @@ public sealed class ObligationTests
             queued, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count);
     }
 
+    [Rule("rr:acceleration-token.2")]
+    [Rule("rr:choose-option")]
+    [Fact]
+    public void LegalWorkCanGiveTheMainSchemeAnAccelerationToken()
+    {
+        var world = Deal("she_hulk");
+        var card = Dealt(world, LegalWork, to: 0);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        var runner = AuthoredCards.Runner();
+        var events = new List<GameEvent>();
+
+        var flip = Sequence.Work(world, Cards, runner, events)!;
+        Assert.Equal(2, flip.Affordances.Count);
+        Sequence.Answer(
+            world, Cards, runner, flip,
+            Decision.Take(flip.Affordances[1].Id), events);
+
+        var consequence = Sequence.Work(world, Cards, runner, events)!;
+        Assert.Equal(2, consequence.Affordances.Count);
+        Sequence.Answer(
+            world, Cards, runner, consequence,
+            Decision.Take(consequence.Affordances[1].Id), events);
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
+
+        Assert.Equal(1, scheme.Tokens[EncounterDeck.AccelerationToken]);
+        Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
+    }
+
     /// <summary>Puts a card in a seat's dealt queue and schedules its reveal.</summary>
     private static Card Dealt(World world, string faceId, int to)
     {

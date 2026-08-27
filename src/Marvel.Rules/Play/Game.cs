@@ -16,6 +16,9 @@ public enum GamePhase
     /// <summary>Before round one. Each player may mulligan their opening hand.</summary>
     Mulligan,
 
+    /// <summary>Player-card Setup abilities resolve before round one.</summary>
+    PlayerSetup,
+
     /// <summary>A player is taking their turn.</summary>
     PlayerTurn,
 
@@ -116,6 +119,7 @@ public sealed class Game
     private readonly World world;
     private readonly ICardFacts facts;
     private readonly ICardAbilities abilities;
+    private readonly Queue<Card> playerSetup = [];
 
     private int nextHandle;
 
@@ -208,11 +212,14 @@ public sealed class Game
         // 'Defense' is not implemented, which was true only in the sense that
         // it had nowhere to go: `Sequence.Answer` has handled a step's own
         // question since it was written. MARVEL-246.
-        if (Phase == GamePhase.PlayerTurn && asking == Asker.Sequence)
+        if (Phase is GamePhase.PlayerSetup or GamePhase.PlayerTurn
+            && asking == Asker.Sequence)
         {
             var during = new List<GameEvent>();
             Sequence.Answer(world, facts, abilities, Pending, input, during);
-            return Turn(during);
+            return Phase == GamePhase.PlayerSetup
+                ? ContinuePlayerSetup(during)
+                : Turn(during);
         }
 
         if (!input.IsDecline && Phase != GamePhase.VillainPhase)
@@ -282,12 +289,11 @@ public sealed class Game
                 // when the phase starts, and a scenario or a card can move it
                 // between the deal and the first turn. Every later round does
                 // the same in `Work`.
-                Round = 1;
-                Active = world.FirstPlayer;
-                Phase = GamePhase.PlayerTurn;
-                Pending = TurnPrompt();
-        asking = Asker.Game;
-                return new Resolution(world, Pending, []);
+                return Mulligan(input);
+
+            case GamePhase.PlayerSetup:
+                throw new RulesNotImplementedException(
+                    "a player Setup ability can only be answered through its agenda question");
 
             case GamePhase.PlayerTurn:
                 // Declining the main turn ends it. Progress in the game's terms
@@ -359,7 +365,7 @@ public sealed class Game
                 + "rr:form-change-form.1 permits one voluntary change each round");
         }
 
-        string was = Forms.Change(seat, facts);
+        string was = Forms.ChangeAndSchedule(world, seat, facts, Round);
         seat.FormChangedInRound = Round;
 
         var happened = new List<GameEvent>
@@ -375,9 +381,7 @@ public sealed class Game
             },
         };
 
-        Pending = TurnPrompt();
-        asking = Asker.Game;
-        return new Resolution(world, Pending, happened);
+        return Turn(happened);
     }
 
     /// <summary>
@@ -465,7 +469,8 @@ public sealed class Game
     {
         var taken = Pending!.Affordances.First(option => option.Id == input.Affordance);
         var ability = abilities.Actions(world, Active)
-            .FirstOrDefault(pending => pending.Card == taken.AnchorId);
+            .FirstOrDefault(pending => pending.Card == taken.AnchorId
+                && Handle($"{ActionVerb}:{pending.Ordinal}", pending.Card) == taken.Id);
 
         if (ability.Card != taken.AnchorId)
         {
@@ -636,12 +641,72 @@ public sealed class Game
             }
         }
 
-        Round = 1;
-        Active = world.FirstPlayer;
-        Phase = GamePhase.PlayerTurn;
-        Pending = TurnPrompt();
-        asking = Asker.Game;
-        return new Resolution(world, Pending, happened);
+        if (Next(Active) is { } player)
+        {
+            Active = player;
+            Pending = MulliganPrompt();
+            asking = Asker.Game;
+            return new Resolution(world, Pending, happened);
+        }
+
+        return BeginPlayerSetup(happened);
+    }
+
+    /// <summary>
+    /// Resolves player-card Setup abilities after every mulligan and before the
+    /// first player phase — setup step 16.
+    /// </summary>
+    private Resolution BeginPlayerSetup(List<GameEvent> happened)
+    {
+        Phase = GamePhase.PlayerSetup;
+
+        foreach (int player in world.PlayerOrder)
+        {
+            foreach (var card in abilities.PlayerSetupCards(world, player)
+                         .DistinctBy(card => card.ObjectId)
+                         .OrderBy(card => card.ObjectId))
+            {
+                if (!DeckTypes.IsInPlay(card.Area.Type)
+                    || card.Area.PlayArea != PlayArea.Of(player))
+                {
+                    throw new InvalidOperationException(
+                        $"card {card.ObjectId} was returned as a Setup card for player "
+                        + $"{player}, but it is not in that player's play area");
+                }
+
+                playerSetup.Enqueue(card);
+            }
+        }
+
+        return ContinuePlayerSetup(happened);
+    }
+
+    /// <summary>Drains setup work until it needs an answer or round one begins.</summary>
+    private Resolution ContinuePlayerSetup(List<GameEvent> happened)
+    {
+        while (true)
+        {
+            if (Sequence.Work(world, facts, abilities, happened) is { } asked)
+            {
+                Active = asked.Player;
+                Pending = asked;
+                asking = Asker.Sequence;
+                return new Resolution(world, Pending, happened);
+            }
+
+            if (playerSetup.TryDequeue(out var card))
+            {
+                happened.AddRange(abilities.Setup(world, card));
+                continue;
+            }
+
+            Round = 1;
+            Active = world.FirstPlayer;
+            Phase = GamePhase.PlayerTurn;
+            Pending = TurnPrompt();
+            asking = Asker.Game;
+            return new Resolution(world, Pending, happened);
+        }
     }
 
     private Prompt MulliganPrompt()
@@ -839,7 +904,7 @@ public sealed class Game
             options.Add(described with
             {
                 Verb = ActionVerb,
-                Id = Handle(ActionVerb, described.AnchorId),
+                Id = Handle($"{ActionVerb}:{action.Ordinal}", described.AnchorId),
             });
         }
 

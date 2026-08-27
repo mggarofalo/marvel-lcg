@@ -51,6 +51,20 @@ public interface IWindowAbilities
     Affordance Describe(World world, PendingAbility ability);
 }
 
+/// <summary>Which cards may contribute abilities while a window is worked.</summary>
+public enum WindowAbilityScope
+{
+    /// <summary>Every otherwise eligible card.</summary>
+    AllCards,
+
+    /// <summary>
+    /// Encounter cards only. During game setup, player-card abilities cannot
+    /// resolve unless they are Setup abilities, which resolve as the setup
+    /// step itself rather than from an interrupt or response window.
+    /// </summary>
+    EncounterCardsOnly,
+}
+
 /// <summary>
 /// Working a window: resolving what is forced, and asking only where there is
 /// something to ask.
@@ -106,12 +120,14 @@ public static class Offering
     /// <param name="occurrence">What is happening.</param>
     /// <param name="kind">Which window.</param>
     /// <param name="events">Where to record what resolved.</param>
+    /// <param name="scope">Which cards may contribute abilities.</param>
     public static Prompt? Work(
         World world,
         IWindowAbilities abilities,
         Occurrence occurrence,
         WindowKind kind,
-        List<GameEvent> events)
+        List<GameEvent> events,
+        WindowAbilityScope scope = WindowAbilityScope.AllCards)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(abilities);
@@ -129,8 +145,23 @@ public static class Offering
         // *further* abilities.
         while (true)
         {
-            var tiers = AbilityWindow.Tiers(
-                abilities.Waiting(world, occurrence, kind), kind, occurrence);
+            var waiting = abilities.Waiting(world, occurrence, kind);
+            if (scope == WindowAbilityScope.EncounterCardsOnly)
+            {
+                // `rr:ability.6`: "Player card abilities cannot resolve during
+                // game setup, unless prefaced by a 'Setup' timing trigger."
+                // Setup abilities are the setup step itself; anything waiting
+                // in one of its nested windows is therefore encounter-card text.
+                waiting =
+                [
+                    .. waiting.Where(ability =>
+                        ability.Card >= 0
+                        && ability.Card < world.Cards.Count
+                        && world.Cards[ability.Card].Owner == World.Scenario),
+                ];
+            }
+
+            var tiers = AbilityWindow.Tiers(waiting, kind, occurrence);
 
             var forced = Forced(tiers);
             if (forced.Count == 1)

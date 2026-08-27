@@ -310,14 +310,14 @@ public sealed class ConstantAbilityTests
         Assert.Contains("'dealDamage'", refused.Message, StringComparison.Ordinal);
     }
 
+    [Rule("rr:modifiers.2")]
     [Fact]
-    public void AConstantAbilityReadingTheEffectListSaysSoRatherThanGuessing()
+    public void AConstantAbilityReadingTheEffectListSettlesWithTheOtherConstants()
     {
-        // The one thing the derivation cannot do. Working out what is in force
-        // is what called the card, so a card asking back would need the list to
-        // settle on itself. `minBy` drops permanents, which it learns by
-        // reading the effects -- so this is a real route and not a contrived
-        // one.
+        // Modifiers are calculated simultaneously. `minBy` drops permanents,
+        // which it learns by reading the effects, so deriving this condition
+        // must re-read complete passes until the answer is stable rather than
+        // exposing whichever half of the list happened to be built first.
         var world = Bare();
         world.CreateCard(
             AuthoredCards.AuntMay,
@@ -333,16 +333,9 @@ public sealed class ConstantAbilityTests
             } ] } ] }
             """));
 
-        var refused = Assert.Throws<RulesNotImplementedException>(
-            () => world.Effects.Active());
-
-        Assert.Contains("while they were being worked out", refused.Message, StringComparison.Ordinal);
-
-        // And the board is still answerable. One card the engine cannot settle
-        // must not leave every later question throwing the same complaint about
-        // a card that is no longer being asked.
-        world.Abilities = new NoCardAbilities();
-        Assert.Empty(world.Effects.Active());
+        var granted = Assert.Single(world.Effects.Active());
+        Assert.Equal("stalwart", granted.Kind);
+        Assert.Equal(world.Seats[0].IdentityCard.ObjectId, granted.Affects);
     }
 
     [Rule("rr:ability.5")]
@@ -472,6 +465,36 @@ public sealed class ConstantAbilityTests
         Assert.Equal(0, controlled.Owner);
         Assert.Equal(2, Modified(world, world.Seats[0].IdentityCard, "attack"));
         Assert.Equal(3, Modified(world, world.Seats[1].IdentityCard, "attack"));
+    }
+
+    [Rule("rr:ownership-and-control.2.1")]
+    [Fact]
+    public void CombatTrainingCanBePlayedUnderAnotherPlayersControl()
+    {
+        var world = new World(Cards, players: 2);
+        for (int player = 0; player < 2; player++)
+        {
+            var seat = world.CreateSeat($"p{player}");
+            seat.IdentityCard = world.CreateCard(AuthoredCards.SpiderMan, seat.Hero);
+            world.CreateCard("01003", seat.Deck);
+        }
+        var training = world.CreateCard("01057", world.Seats[0].Hand);
+        var energy = world.CreateCard("01088", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var otherHero = world.Seats[1].IdentityCard;
+
+        Assert.Contains(otherHero.ObjectId, runner.AttachmentTargets(world, training)!);
+        CardPlay.Play(
+            world, Cards, runner, world.Seats[0], training, [energy.ObjectId], [],
+            [otherHero.ObjectId]);
+
+        Assert.Equal(0, training.Owner);
+        Assert.Equal(1, training.Area.PlayArea.Player);
+        Assert.Equal(otherHero.ObjectId, training.Area.Host);
+
+        var second = world.CreateCard("01057", world.Seats[0].Hand);
+        Assert.DoesNotContain(otherHero.ObjectId, runner.AttachmentTargets(world, second)!);
     }
 
     private static long Modified(World world, Card card, string field) =>

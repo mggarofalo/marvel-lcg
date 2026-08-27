@@ -102,6 +102,7 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(events);
 
         var defeated = Record(world, character, by, how);
+        var occurrence = world.Agenda.Occurrence!;
 
         // `rr:damage.step.7` -- "abilities that trigger *when [character] is
         // defeated…* *(including **When Defeated** abilities)*". The card's own
@@ -122,34 +123,60 @@ public static class Defeat
         // where these belong.
         events.AddRange(world.Abilities.WhenCardDefeated(world, character, defeated));
 
-        switch (facts.Kind(character.FaceId))
+        if (!ReferenceEquals(world.Agenda.Occurrence, occurrence))
+        {
+            Defer(world, occurrence, character, trigger, Steps.FinalizeCharacterDefeat);
+            return true;
+        }
+
+        FinalizeCharacter(world, facts, character, trigger, events);
+        return true;
+    }
+
+    /// <summary>Damage step 8: move or eliminate a defeated card.</summary>
+    /// <remarks>
+    /// This remains a separate operation because a step-7 ability may insert
+    /// an occurrence that can ask a player a question. In that case
+    /// <see cref="Character"/> or <see cref="Scheme"/> schedules this as a
+    /// plan after the nested work. With no suspension it is called inline, so
+    /// ordinary defeat retains its existing synchronous result.
+    /// </remarks>
+    public static void FinalizeCharacter(
+        World world, ICardFacts facts, Card card, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(events);
+
+        switch (FacedownDrones.Kind(card, facts))
         {
             case CardKind.Ally:
             case CardKind.Minion:
                 // `rr:defeat.1` -- discarded, to its owner's pile, which for a
                 // minion is the encounter discard. Unless it is worth points.
-                if (!ToVictoryDisplay(world, facts, character, trigger, events))
+                if (!ToVictoryDisplay(world, facts, card, trigger, events))
                 {
-                    Discard.Card(world, character, trigger, events);
+                    Discard.Card(world, card, trigger, events);
                 }
 
-                return true;
+                return;
 
             case CardKind.EncounterVillain:
-                VillainStage(world, facts, character, trigger, events);
-                return true;
+                VillainStage(world, facts, card, trigger, events);
+                return;
 
             case CardKind.Hero:
             case CardKind.AlterEgo:
                 // `rr:hit-points.2.1` -- "if a player's hit point dial is
                 // reduced to zero, that player is defeated and eliminated from
                 // the game." What that costs is `rr:player-elimination`.
-                Elimination.Eliminate(world, facts, character.Owner, trigger, events);
-                return true;
+                Elimination.Eliminate(world, facts, card.Owner, trigger, events);
+                return;
 
             default:
                 throw new RulesNotImplementedException(
-                    $"a {facts.Kind(character.FaceId)} was defeated, and rr:defeat does not "
+                    $"a {FacedownDrones.Kind(card, facts)} was defeated, and rr:defeat does not "
                     + "say what happens to one");
         }
     }
@@ -181,15 +208,52 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(facts);
 
         var defeated = Record(world, scheme, by, BasicPowers.ThwartVerb);
+        var occurrence = world.Agenda.Occurrence!;
 
         // `rr:when-defeated-abilities.2` lists a side scheme among the cards
         // this happens to, and `.2.1` puts it before the card goes.
         events.AddRange(world.Abilities.WhenCardDefeated(world, scheme, defeated));
 
+        if (!ReferenceEquals(world.Agenda.Occurrence, occurrence))
+        {
+            Defer(world, occurrence, scheme, trigger, Steps.FinalizeSchemeDefeat);
+            return;
+        }
+
+        FinalizeScheme(world, facts, scheme, trigger, events);
+    }
+
+    /// <summary>Move a defeated side scheme after its step-7 abilities resolve.</summary>
+    public static void FinalizeScheme(
+        World world, ICardFacts facts, Card scheme, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(scheme);
+        ArgumentNullException.ThrowIfNull(events);
+
         if (!ToVictoryDisplay(world, facts, scheme, trigger, events))
         {
             Discard.Card(world, scheme, trigger, events);
         }
+    }
+
+    /// <summary>Put damage step 8 after nested step-7 agenda work.</summary>
+    private static void Defer(
+        World world, Timing.Occurrence occurrence, Card card, string trigger, string step)
+    {
+        var current = world.Agenda.Current
+            ?? throw new InvalidOperationException("nested defeat work has no agenda step");
+        world.Agenda.Before(
+            occurrence,
+            new PhaseStep(
+                step,
+                current.Round,
+                current.Number,
+                Index: current.Index,
+                Subject: card.ObjectId,
+                Plan: true,
+                Trigger: trigger));
     }
 
     /// <summary>
@@ -340,7 +404,7 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (facts.PrintedValue(card.FaceId, "Victory", world.Players) <= 0)
+        if (FacedownDrones.BaseValue(card, facts, "Victory", world.Players) <= 0)
         {
             return false;
         }
