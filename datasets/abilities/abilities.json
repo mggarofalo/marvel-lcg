@@ -2214,6 +2214,124 @@
       ]
     },
     {
+      "card": "01028",
+      "name": "Superhuman Strength",
+      "note": "She-Hulk gets +2 ATK. After her attack completes, the forced response discards this upgrade and stuns that attack's target.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "you", "keyword": "attack", "amount": 2 } }
+        },
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "you", "target": "enemy" },
+          "effect": { "seq": [ { "discard": "this" }, { "giveStatus": { "card": "trigger.target", "status": "stunned" } } ] }
+        }
+      ]
+    },
+    {
+      "card": "01050",
+      "name": "Hulk",
+      "note": "After Hulk attacks, discard the top player-deck card. Its printed resource independently applies each matching line; a wild resource applies all three.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this" },
+          "effect": { "seq": [
+            { "discardTop": { "from": "yourDeck", "count": 1 } },
+            { "if": { "test": { "or": [ { "discardedWithResource": "R" }, { "discardedWithResource": "G" } ] }, "then": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 2 } } } } } },
+            { "if": { "test": { "or": [ { "discardedWithResource": "Y" }, { "discardedWithResource": "G" } ] }, "then": { "dealDamage": { "cards": { "query": "characters" }, "amount": 1 } } } },
+            { "if": { "test": { "or": [ { "discardedWithResource": "B" }, { "discardedWithResource": "G" } ] }, "then": { "discard": "this" } } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01051",
+      "name": "Tigra",
+      "note": "After Tigra attacks and that same attack defeats its minion target, the optional response heals 1 damage from her before consequential damage is applied.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "this", "target": "enemy" },
+          "when": { "and": [ { "isKind": { "card": "trigger.target", "kind": "minion" } }, { "wasDefeated": "trigger.target" } ] },
+          "effect": { "heal": { "card": "this", "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "01052",
+      "name": "Chase Them Down",
+      "note": "After the player's hero attacks and that attack defeats its enemy target, the response chooses a scheme and removes 2 threat.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "enemy" },
+          "when": { "wasDefeated": "trigger.target" },
+          "effect": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 2 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01058",
+      "name": "Daredevil",
+      "note": "After Daredevil thwarts a scheme, his response chooses an enemy and deals 1 damage before consequential damage is applied.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCharacterThwarts", "timing": "Response", "actor": "this" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01063",
+      "name": "Interrogation Room",
+      "note": "After a character controlled by this support's controller defeats a minion, its response exhausts the support and removes 1 threat from a chosen scheme.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "Response", "subject": "game" },
+          "when": { "and": [ { "isKind": { "card": "defeated", "kind": "minion" } }, { "defeatedByYou": "you" } ] },
+          "cost": { "exhaust": "this" },
+          "effect": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "01077",
+      "name": "Counter-Punch",
+      "note": "After the player's hero uses its basic defense against an enemy attack, this attack response deals that hero's modified ATK damage to the attacking enemy.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "enemy", "target": "you" },
+          "when": { "heroDefended": "you" },
+          "effect": { "dealDamage": { "cards": "trigger.actor", "amount": { "modified": { "card": "you", "field": "attack" } } } }
+        }
+      ]
+    },
+    {
+      "card": "01082",
+      "name": "Indomitable",
+      "note": "After the player's hero uses its basic defense, the optional response discards this upgrade and readies that hero.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "enemy", "target": "you" },
+          "when": { "heroDefended": "you" },
+          "effect": { "seq": [ { "discard": "this" }, { "ready": "you" } ] }
+        }
+      ]
+    },
+    {
+      "card": "01132",
+      "name": "Melter",
+      "note": "The engaged player must defend Melter's attacks with a ready ally they control if one can legally defend; otherwise the ordinary defender choices remain optional. The Boost ability exhausts every ally controlled by the resolving player.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "requireAllyDefender": "engagedPlayer" }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "exhaust": { "query": "alliesYouControl" } }
+        }
+      ]
+    },
+    {
       "card": "01055",
       "name": "The Power of Aggression",
       "note": "This card generates one wild resource normally and doubles that output while paying for an Aggression card. The card being paid for is payment context supplied by the engine, not inferred from the hand.",

@@ -83,6 +83,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public DefenderChoice Defenders(
+        World world, EnemyAttack attack, IReadOnlyList<Card> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(candidates);
+
+        var enemy = world.Cards[attack.Enemy];
+        bool requiresControlledAlly = book.On(enemy.FaceId).Any(ability =>
+            ability.Trigger.Timing == AbilityType.Constant
+            && ability.Effect.Kind == "requireAllyDefender");
+        if (!requiresControlledAlly)
+        {
+            return new DefenderChoice(candidates, Required: false);
+        }
+
+        var allies = candidates.Where(card =>
+            card.Ready
+            && card.Owner == attack.Player
+            && world.Facts.Kind(card.FaceId) == CardKind.Ally).ToList();
+        return allies.Count > 0
+            ? new DefenderChoice(allies, Required: true)
+            : new DefenderChoice(candidates, Required: false);
+    }
+
+    /// <inheritdoc/>
     public bool CanRemoveThreat(World world, Card scheme)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -2187,6 +2212,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.World.Facts.Title(titled.FaceId), Word(node.Require("title")),
                 StringComparison.Ordinal),
 
+        "discardedWithResource" => cast.Discarded.Any(card =>
+            Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(
+                Word(node.Argument), StringComparison.Ordinal)),
+
+        "defeatedByYou" => cast.Occurrence.Defeat is { By: >= 0 } defeatedByYou
+            && defeatedByYou.By < cast.World.Cards.Count
+            && ControllerOf(cast.World, cast.World.Cards[defeatedByYou.By]) == Resolver(cast),
+
+        "wasDefeated" => Find(node.Argument, cast) is { } defeatedCard
+            && cast.Occurrence.Defeats.Any(defeat => defeat.Card == defeatedCard.ObjectId),
+
+        "heroDefended" => cast.World.FinishedAttack is { BasicDefense: true } defended
+            && defended.Defender == cast.World.Seats[Resolver(cast)].IdentityCard.ObjectId,
+
         // "After **an ally** is defeated". A card type, asked of a card the
         // ability has already named -- `rr:defeat` is one rule for every kind
         // of card and the cards are the ones that narrow it.
@@ -2420,6 +2459,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // hand. `ResourcesGeneratedBy` reads it with the payment's
                 // target card, which is context this general effect list does
                 // not carry.
+                break;
+
+            case "requireAllyDefender":
+                // Defender declaration carries the attack and its engaged
+                // player; `Defenders` reads this constraint in that context.
                 break;
 
             default:
