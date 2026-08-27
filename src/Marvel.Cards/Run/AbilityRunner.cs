@@ -82,12 +82,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             foreach (var ability in book.On(card.FaceId))
             {
-                if (!Answers(ability, card, occurrence, window))
+                if (!Answers(world, ability, card, occurrence, window))
                 {
                     continue;
                 }
 
-                int controller = Controller(ability, card, occurrence);
+                int controller = Controller(world, ability, card, occurrence);
 
                 // `rr:initiating-abilities.step.2` -- "if the card or ability
                 // has a form requirement (for example, 'Hero form only' or
@@ -554,19 +554,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             .SelectMany(area => area.Cards)
             .ToList()
             .SelectMany(card => book.On(card.FaceId)
-                .Where(ability => Answers(ability, card, what))
+                .Where(ability => Answers(world, ability, card, what))
                 .Select(ability => (Card: card, Ability: ability)))
             .ToList(),
     ];
 
     /// <summary>Whether one ability answers this occurrence at all.</summary>
-    private static bool Answers(CardAbility ability, Card card, Occurrence what) =>
+    private static bool Answers(
+        World world, CardAbility ability, Card card, Occurrence what) =>
         ability.Trigger.Event is { } condition
         && what.Conditions.Contains(condition, StringComparer.Ordinal)
-        && Subject(ability.Trigger.Subject, card, what)
-        && Role(ability.Trigger.Actor, card, what.ActorFacts)
-        && Role(ability.Trigger.Target, card, what.TargetFacts)
-        && Player(ability.Trigger.Player, card, what);
+        && Subject(world, ability.Trigger.Subject, card, what)
+        && Role(world, ability.Trigger.Actor, card, what.ActorFacts)
+        && Role(world, ability.Trigger.Target, card, what.TargetFacts)
+        && Player(world, ability.Trigger.Player, card, what);
 
     /// <inheritdoc/>
     public int? AttachesTo(World world, Card card)
@@ -700,12 +701,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             // No occurrence, because there is none: a constant ability is not
             // timed to anything. The empty event list is never written to --
-            // nothing `Grants` reaches records anything -- and the card's owner
-            // stands in for the resolving player, which for an encounter card
-            // is the scenario.
+            // nothing `Grants` reaches records anything -- and the card's
+            // current controller stands in for the resolving player, which for
+            // an encounter card is the scenario.
             Grants(
                 ability.Effect,
-                new Cast(world, card, new Occurrence(0, []), card.Owner, [], this),
+                new Cast(
+                    world, card, new Occurrence(0, []), ControllerOf(world, card), [], this),
                 found);
         }
 
@@ -981,7 +983,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // `.a` and `.b`: yours, or nobody's. A card another player
                 // controls is theirs to trigger -- `rr:player-turn.6` is how
                 // you ask them.
-                if (card.Owner == player || card.Owner == World.Scenario)
+                if (ControllerOf(world, card) == player || card.Owner == World.Scenario)
                 {
                     yield return card;
                 }
@@ -1288,20 +1290,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // not one: an option is a branch the card lists, an element is a card
         // on the board. `Question` has told them apart since before anything
         // asked either.
+        var cast = Resolving(world, source, player, tier);
         var affordances = cards
-            ? Every(choice.Require("from"), Resolving(world, source, player, tier))
+            ? Every(choice.Require("from"), cast)
                 .Select(card => new Affordance(
                     Id: card.ObjectId,
                     Verb: ChooseVerb,
                     AnchorId: card.ObjectId,
                     AnchorPlayer: card.Owner,
                     Label: card.FaceId))
-            : Nodes(choice.Require("options")).Select((option, index) => new Affordance(
-                Id: index,
-                Verb: ChooseVerb,
-                AnchorId: source.ObjectId,
-                AnchorPlayer: World.Scenario,
-                Label: option.Kind));
+            : Nodes(choice.Require("options"))
+                .Select((option, index) => (Option: option, Index: index))
+                .Where(candidate => OptionIsLegal(candidate.Option, cast))
+                .Select(candidate => new Affordance(
+                    Id: candidate.Index,
+                    Verb: ChooseVerb,
+                    AnchorId: source.ObjectId,
+                    AnchorPlayer: World.Scenario,
+                    Label: candidate.Option.Kind));
+
+        var offered = affordances.ToList();
+        if (offered.Count == 0)
+        {
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' requires a choice and has no legal option");
+        }
 
         return new Prompt(
             Player: player,
@@ -1313,7 +1326,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // Neither rule gives a way out. The ability is resolving, and one
             // of the things it offers is going to happen.
             Cancellable: false,
-            Affordances: [.. affordances]);
+            Affordances: offered);
     }
 
     /// <summary>
@@ -1421,9 +1434,182 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + $"number {input.Affordance}");
         }
 
+        if (!OptionIsLegal(options[input.Affordance], cast))
+        {
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' cannot choose illegal option {input.Affordance}");
+        }
+
         Run(options[input.Affordance], cast);
         return Continue(source, cast, stoppedAt);
     }
+
+    /// <summary>Whether one listed option may be chosen right now.</summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:choose-option.1</c>: an encounter-card option that requires a
+    /// target is unavailable when it has no valid target. Printed card kind
+    /// tells which half of the rule applies; ownership cannot, because a
+    /// scenario-specific player card can begin the game owned by the scenario.
+    /// </para>
+    /// <para>
+    /// <c>rr:choose-option.2</c>: a player-card option must be able to resolve
+    /// at least partially. A sequence therefore needs one resolvable effect;
+    /// an encounter-card sequence needs every target it requires. The empty
+    /// sequence is the explicit decline branch used to express “may”.
+    /// </para>
+    /// </remarks>
+    private static bool OptionIsLegal(AbilityNode option, Cast cast) =>
+        IsPlayerCard(cast)
+            ? CanPartiallyResolve(option, cast)
+            : HasRequiredTargets(option, cast);
+
+    /// <summary>Whether the source has a player-card face.</summary>
+    private static bool IsPlayerCard(Cast cast) =>
+        IsPlayerCard(cast.World.Facts, cast.Source);
+
+    /// <summary>Whether a card face belongs to a player rather than the scenario.</summary>
+    private static bool IsPlayerCard(ICardFacts facts, Card card)
+    {
+        var kind = facts.Kind(card.FaceId);
+
+        // Player side schemes are not yet a modelled kind and answer Unknown.
+        // Unlike an unknown encounter card, one created in a player's deck has
+        // that player as its owner, which preserves the rule's distinction.
+        return kind is CardKind.AlterEgo
+                or CardKind.Hero
+                or CardKind.Ally
+                or CardKind.Event
+                or CardKind.Resource
+                or CardKind.Support
+                or CardKind.Upgrade
+            || (kind == CardKind.Unknown && card.Owner != World.Scenario);
+    }
+
+    /// <summary>The card's current controller, falling back to its owner out of play.</summary>
+    /// <remarks>
+    /// <c>rr:ownership-and-control.5</c> moves a changed-control player card to
+    /// its controller's play area. Ownership remains on <see cref="Card.Owner"/>,
+    /// so the two facts must not be read from the same field.
+    /// </remarks>
+    private static int ControllerOf(World world, Card card) =>
+        IsPlayerCard(world.Facts, card)
+        && DeckTypes.IsInPlay(card.Area.Type)
+        && card.Area.PlayArea.IsPlayers
+            ? card.Area.PlayArea.Player
+            : card.Owner;
+
+    /// <summary>Whether every card target required by an effect exists.</summary>
+    private static bool HasRequiredTargets(AbilityNode node, Cast cast) => node.Kind switch
+    {
+        "seq" => Nodes(node.Argument).All(step => HasRequiredTargets(step, cast)),
+        "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+            is not { } branch || HasRequiredTargets(Tree(branch), cast),
+        "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
+        "chooseCard" => Every(node.Require("from"), cast).Count > 0,
+        "removeFromGame" or "exhaust" or "reveal" or "returnToHand" =>
+            Every(node.Argument, cast).Count > 0,
+        "soakDamage" => Find(node.Require("onto"), cast) is not null,
+        "giveStatus" => Every(node.Require("card"), cast).Count > 0,
+        "attachTo" => Find(node.Argument, cast) is not null,
+        "grantUntil" => Find(node.Require("card"), cast) is not null,
+        "delayUntil" => HasRequiredTargets(Tree(node.Require("effect")), cast),
+        "discard" => Find(node.Field("card") ?? node.Argument, cast) is not null,
+        "heal" => Find(node.Require("card"), cast) is not null,
+        "indirectDamage" => Amount(node.Require("amount"), cast) <= 0
+            || Assignable(node.Require("among"), cast).Count > 0,
+        "dealDamage" => Every(node.Require("cards"), cast).Count > 0,
+        "placeThreat" => Every(node.Require("scheme"), cast).Count > 0,
+        "removeThreat" => Find(node.Require("scheme"), cast) is not null,
+        "enemyAttacks" or "enemySchemes" => Every(node.Require("enemies"), cast).Count > 0,
+        "putIntoPlay" => Find(node.Require("card"), cast) is not null,
+        "placeAtRandom" => Find(node.Require("on"), cast) is not null,
+
+        // These effects select no card target. Some name a player or an area;
+        // neither is a target under `rr:target`.
+        "generate" or "changeForm" or "removeCounters" or "preventDamage"
+            or "cancelWhenRevealed" or "dealEncounterCards" or "revealTop"
+            or "discardAtRandom" or "discardUntil" or "discardTop"
+            or "recoverDiscardedByResource" or "shuffleInto" or "search"
+            or "gainSurge" or "shuffle" or "draw" => true,
+        _ => throw new RulesNotImplementedException(
+            $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
+            + "legality is not implemented"),
+    };
+
+    /// <summary>Whether a player-card option can change the current state.</summary>
+    private static bool CanPartiallyResolve(AbilityNode node, Cast cast)
+    {
+        return node.Kind switch
+        {
+            "seq" => !Nodes(node.Argument).Any()
+                || Nodes(node.Argument).Any(step => CanPartiallyResolve(step, cast)),
+            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+                is { } branch && CanPartiallyResolve(Tree(branch), cast),
+            "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
+            "chooseCard" => Every(node.Require("from"), cast).Count > 0,
+            "changeForm" => !Forms.In(
+                cast.World,
+                cast.World.Seats[Seat(node.Require("player"), cast)],
+                cast.World.Facts,
+                Word(node.Require("to"))),
+            "removeFromGame" => Find(node.Argument, cast) is { } card
+                && card.Area.Type != DeckType.RemovedArea,
+            "exhaust" => Find(node.Argument, cast)?.Ready == true,
+            "removeCounters" => cast.Source.Tokens.GetValueOrDefault(
+                "c_" + Word(node.Argument)) > 0,
+            "discardAtRandom" => Amount(node.Require("count"), cast) > 0
+                && Seats(node.Require("player"), cast)
+                    .Any(seat => cast.World.Seats[seat].Hand.Cards.Count > 0),
+            "discardTop" => Amount(node.Require("count"), cast) > 0
+                && Area(Word(node.Require("from")), cast).Cards.Count > 0,
+            "heal" => Find(node.Require("card"), cast) is { Damage: > 0 }
+                && Amount(node.Require("amount"), cast) > 0,
+            "indirectDamage" => HasRequiredTargets(node, cast)
+                && Amount(node.Require("amount"), cast) > 0,
+            "dealDamage" => HasRequiredTargets(node, cast)
+                && Amount(node.Require("amount"), cast) > 0,
+            "placeThreat" => HasRequiredTargets(node, cast)
+                && Amount(node.Require("amount"), cast) > 0,
+            "removeThreat" => CanRemoveThreat(node, cast),
+            "gainSurge" => Number(node.Argument) > 0,
+            "draw" => CanDraw(node, cast),
+
+            // Target availability is the only state-dependent precondition
+            // these currently expressible effects carry. Their own resolver
+            // performs any further rule-specific work.
+            "generate" or "soakDamage" or "preventDamage" or "cancelWhenRevealed"
+                or "dealEncounterCards" or "revealTop" or "reveal" or "placeAtRandom"
+                or "returnToHand" or "discardUntil" or "recoverDiscardedByResource"
+                or "shuffleInto" or "search" or "giveStatus" or "attachTo"
+                or "grantUntil" or "delayUntil" or "discard" or "enemyAttacks"
+                or "enemySchemes" or "putIntoPlay" or "shuffle" =>
+                    HasRequiredTargets(node, cast),
+            _ => throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose partial "
+                + "resolution is not implemented"),
+        };
+    }
+
+    /// <summary>Whether this player-card effect can remove any threat.</summary>
+    private static bool CanRemoveThreat(AbilityNode node, Cast cast)
+    {
+        var scheme = Find(node.Require("scheme"), cast);
+        return scheme is not null
+            && scheme.Tokens.GetValueOrDefault("k_threat") > 0
+            && Amount(node.Require("amount"), cast) > 0
+            && !(scheme.Area.Type == DeckType.MainSchemesArea
+                && IsPlayerCard(cast)
+                && MainScheme.Crisis(cast.World, cast.World.Facts));
+    }
+
+    /// <summary>Whether at least one named player can draw a card.</summary>
+    private static bool CanDraw(AbilityNode node, Cast cast) =>
+        Number(node.Require("count")) > 0
+        && Seats(node.Require("player"), cast).Any(player =>
+            cast.World.Seats[player].Deck.Cards.Count > 0
+            || cast.World.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(player)).Cards.Count > 0);
 
     /// <summary>
     /// Runs what is left of the ability after the answered choice.
@@ -1541,7 +1727,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <summary>Whether one ability answers this occurrence, in this window.</summary>
     private static bool Answers(
-        CardAbility ability, Card card, Occurrence occurrence, WindowKind window)
+        World world, CardAbility ability, Card card, Occurrence occurrence, WindowKind window)
     {
         // A constant ability names no condition at all -- `rr:ability.5` -- so
         // it answers no occurrence and appears in no window. What it does is
@@ -1574,10 +1760,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         };
 
         return belongs
-            && Subject(ability.Trigger.Subject, card, occurrence)
-            && Role(ability.Trigger.Actor, card, occurrence.ActorFacts)
-            && Role(ability.Trigger.Target, card, occurrence.TargetFacts)
-            && Player(ability.Trigger.Player, card, occurrence);
+            && Subject(world, ability.Trigger.Subject, card, occurrence)
+            && Role(world, ability.Trigger.Actor, card, occurrence.ActorFacts)
+            && Role(world, ability.Trigger.Target, card, occurrence.TargetFacts)
+            && Player(world, ability.Trigger.Player, card, occurrence);
     }
 
     /// <summary>
@@ -1586,14 +1772,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The card's owner, unless the trigger names somebody. "Players can only
+    /// The card's controller, unless the trigger names somebody. "Players can only
     /// trigger interrupt / response abilities on cards they control or on
     /// encounter cards", and an encounter card is one the scenario owns, so
     /// <c>-1</c> here means <i>anyone</i> rather than nobody.
     /// </para>
     /// <para>
-    /// <b>A card that says "you" has named one seat, and it is not its
-    /// owner's.</b> <c>rr:you-your.7</c> — "for abilities that trigger
+    /// <b>A card that says "you" may name the occurrence's player rather than
+    /// its controller.</b> <c>rr:you-your.7</c> — "for abilities that trigger
     /// 'after [enemy] attacks you,' 'you' refers to the attacked player, even
     /// if that player defended with an ally." Prelate Armor's "after
     /// <i>you</i> make a basic attack against Unus" is no opportunity at all
@@ -1607,19 +1793,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// which it said.
     /// </para>
     /// </remarks>
-    private static int Controller(CardAbility ability, Card card, Occurrence occurrence) =>
+    private static int Controller(
+        World world, CardAbility ability, Card card, Occurrence occurrence) =>
         ability.Trigger.Player is not null
             ? occurrence.Player
             : ability.Trigger.Actor == AbilityRoles.You
-                ? occurrence.ActorFacts?.Controller ?? card.Owner
-                : card.Owner;
+                ? occurrence.ActorFacts?.Controller ?? ControllerOf(world, card)
+                : ControllerOf(world, card);
 
-    private static bool Subject(string? subject, Card card, Occurrence occurrence) => subject switch
+    private static bool Subject(
+        World world, string? subject, Card card, Occurrence occurrence) => subject switch
     {
         null => true,
         AbilitySubjects.This => occurrence.Subject == card.ObjectId,
         AbilitySubjects.AttachedTo => card.Area.Host >= 0 && occurrence.Subject == card.Area.Host,
-        AbilitySubjects.You => occurrence.Player >= 0 && occurrence.Player == card.Owner,
+        AbilitySubjects.You =>
+            occurrence.Player >= 0 && occurrence.Player == ControllerOf(world, card),
 
         // Nothing to match: the condition alone decides. `Waiting` has already
         // checked that the card is in play and that the occurrence carries the
@@ -1629,14 +1818,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     };
 
     /// <summary>Whether a captured card fills one named occurrence role.</summary>
-    private static bool Role(string? match, Card card, OccurrenceCard? role) => match switch
+    private static bool Role(
+        World world, string? match, Card card, OccurrenceCard? role) => match switch
     {
         null => true,
         _ when role is null => false,
         AbilityRoles.This => role.Card == card.ObjectId,
         AbilityRoles.AttachedTo => card.Area.Host >= 0 && role.Card == card.Area.Host,
         AbilityRoles.You => role.Controller >= 0
-            && (card.Owner == World.Scenario || role.Controller == card.Owner),
+            && (card.Owner == World.Scenario || role.Controller == ControllerOf(world, card)),
         AbilityRoles.Villain => role.IsVillain,
         AbilityRoles.Minion => role.IsMinion,
         AbilityRoles.Hero => role.IsHero,
@@ -1647,11 +1837,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     };
 
     /// <summary>Whether the occurrence's player fills the trigger's player role.</summary>
-    private static bool Player(string? match, Card card, Occurrence occurrence) => match switch
+    private static bool Player(
+        World world, string? match, Card card, Occurrence occurrence) => match switch
     {
         null or AbilityPlayers.TriggerPlayer => true,
         AbilityPlayers.You =>
-            occurrence.Player >= 0 && occurrence.Player == card.Owner,
+            occurrence.Player >= 0 && occurrence.Player == ControllerOf(world, card),
         _ => throw new AbilityException($"'{match}' is not an occurrence player matcher"),
     };
 
@@ -2918,6 +3109,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var scheme = Find(node.Require("scheme"), cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would remove threat from a scheme that is not there");
+        // `rr:crisis-icon.1`: player cards cannot remove threat from the main
+        // scheme while a crisis icon is in play. Encounter effects are not
+        // player cards and remain able to do so.
+        if (scheme.Area.Type == DeckType.MainSchemesArea
+            && IsPlayerCard(cast)
+            && MainScheme.Crisis(cast.World, cast.World.Facts))
+        {
+            return;
+        }
+
         long before = scheme.Tokens.GetValueOrDefault("k_threat");
         long removed = Math.Min(before, Amount(node.Require("amount"), cast));
         if (removed <= 0)
@@ -3834,7 +4035,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 AbilityPlayers.TriggerPlayer => cast.Occurrence.Player,
                 AbilityPlayers.You => Resolver(cast),
-                AbilityPlayers.Controller => cast.Source.Owner,
+                AbilityPlayers.Controller => ControllerOf(cast.World, cast.Source),
                 _ => throw new AbilityException($"'{word.Value}' does not name a player"),
             }
             : throw new AbilityException(

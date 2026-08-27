@@ -23,10 +23,10 @@ namespace Marvel.Content.Tests.Play;
 /// number it was meant to change.
 /// </para>
 /// <para>
-/// The attack activation has had the right shape from the start.
-/// <c>Steps.FlipBoostCards</c> is step 3 and <c>Steps.DealAttackDamage</c> is
-/// step 4, so a boost card's question is answered between them. This is the
-/// same split one activation over.
+/// The attack activation has the same shape. <c>Steps.FlipBoostCards</c> is
+/// step 3 and <c>Steps.CalculateAttackDamage</c> is step 4, so a boost card's
+/// question is answered between them. This is the same split one activation
+/// over.
 /// </para>
 /// </remarks>
 public sealed class SchemeActivationTests

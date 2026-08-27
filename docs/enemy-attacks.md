@@ -41,13 +41,15 @@ Attack                 rr:activation.1              ← the window both cards wa
   GiveBoostCard        rr:attack-enemy-activation.step.1
   DeclareDefender      rr:attack-enemy-activation.step.2   ← asks
   FlipBoostCards       rr:attack-enemy-activation.step.3
-  DealAttackDamage     rr:attack-enemy-activation.step.4, .step.5
+  CalculateAttackDamage rr:attack-enemy-activation.step.4
+  DealAttackDamage     rr:attack-enemy-activation.step.5
   EndAttack            rr:attack-enemy-activation.step.6
 ```
 
-Steps 4 and 5 are one entry, not two: `rr:triggering-condition.2` makes
-calculating the damage and dealing it one occurrence, and nothing can happen
-between the amount being fixed and it landing.
+Step 4 fixes the number on `World.Attack`; step 5 deals that saved amount.
+The v1.8 procedure makes them separate occurrences and says step 5 deals "the
+amount of damage calculated in the previous step." Effects between the two
+therefore do not recalculate the attack.
 
 **The boost card waits facedown on the enemy across step 2.**
 `rr:boost-boost-icon` puts the flip *"after any defenders are declared if the
@@ -142,29 +144,10 @@ from printed hit points rather than something counted beside them. On every
 recorded board it is zero everywhere, which is exactly why the recording cannot
 tell a subtraction from a printed constant.
 
-## What is named rather than skipped
-
-Each of these throws. An attack that quietly skipped one would produce a board
-that is plausible and wrong.
-
-| | Cited |
-|---|---|
-| an ally defending | `rr:defend-defense.3` |
-| a player defending an attack aimed at somebody else | `rr:defend-defense.5` |
-| the target being defeated by the damage | `rr:damage.1` |
-| a minion attacking | `rr:activation.2` |
-| drawing from an empty deck | `rr:player-deck` |
-
-**Overkill is granted and never applied.** `rr:overkill.1` only does anything
-when an attack defeats an ally or a minion, and defeat is on the list above. The
-keyword is registered, expires correctly, and carries no damage anywhere yet.
-
-**A hero in hero form registers no digest fields.** `StateFields.Registered` has
-an entry for `AlterEgo` and none for `Hero`, because the recorded game never
-flips and there was nothing to measure. That was invisible while nothing could
-attack a hero; now a hero can take damage and the digest will not show it. It is
-a measurement gap, not a guess to be filled in — see
-[state-digest-v2.md](state-digest-v2.md).
+Overkill snapshots an ally's controller before defeat moves the ally to its
+owner's discard pile. The excess goes to that controller's identity, as
+`rr:overkill.1` requires; owner and controller are deliberately different on a
+card played under another player's control.
 
 ## Reproducing
 
@@ -199,9 +182,9 @@ start. The **scheme** was one call that did all three of
 A boost ability that offers the player a choice suspends. Resolved inline, the
 threat went onto the scheme while the question was still on the table, and
 whatever the player chose arrived after the number it was meant to change. So
-step 3 is `Steps.SchemeThreat`, exactly as `DealAttackDamage` is step 4 of the
-attack — and the boost icons became a registered modifier rather than a local
-number, because a number cannot cross a step boundary.
+step 3 is `Steps.SchemeThreat`, exactly as `CalculateAttackDamage` is step 4 of
+the attack — and the boost icons became a registered modifier rather than a
+local number, because a number cannot cross a step boundary.
 
 **And a scheme now has an ending.** `Steps.SchemeThreat` carries
 `WhenSchemeEnds`, the parallel of `AttackEnds`. The attack has always kept its

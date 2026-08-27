@@ -537,6 +537,10 @@ public static class VillainPhase
                 Attack.FlipBoostCards(world, facts, abilities, events);
                 break;
 
+            case Steps.CalculateAttackDamage:
+                Attack.CalculateDamage(world, facts);
+                break;
+
             case Steps.DealAttackDamage:
                 Attack.DealDamage(world, facts, events);
                 break;
@@ -796,8 +800,8 @@ public static class VillainPhase
         // ability that offers the player a choice suspends, and the threat used
         // to go onto the scheme while the question was still on the table --
         // so whatever they chose arrived after the number it was meant to
-        // change. The attack activation has had this shape from the start:
-        // `FlipBoostCards` is step 3 and `DealAttackDamage` is step 4.
+        // change. The attack activation has the same shape:
+        // `FlipBoostCards` is step 3 and `CalculateAttackDamage` is step 4.
         world.Agenda.Then(new PhaseStep(
             Steps.SchemeThreat,
             round,

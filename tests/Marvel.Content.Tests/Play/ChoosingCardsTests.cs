@@ -159,6 +159,191 @@ public sealed class ChoosingCardsTests
         Assert.Equal(["dealDamage", "placeThreat"], asked.Affordances.Select(a => a.Label));
     }
 
+    [Rule("rr:choose-option.1")]
+    [Fact]
+    public void AnEncounterCardDoesNotOfferAnOptionWithNoValidTarget()
+    {
+        // "When an encounter card requires a player to choose an option, they
+        // cannot choose an option that requires one or more targets if there
+        // are no valid targets for that option." Electric Whip Attack's core
+        // shape is damage or choose and discard an upgrade. With no upgrades,
+        // only the damage branch is a legal answer.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01173", "abilities": [ {
+              "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                           "subject": "this" },
+              "effect": { "choose": { "options": [
+                { "dealDamage": { "cards": "yourHero", "amount": 1 } },
+                { "chooseCard": {
+                    "from": { "query": "upgradesYouControl" },
+                    "effect": { "discard": "chosen" } } }
+              ] } }
+            } ] } ] }
+            """));
+        var world = Deal();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var card = world.CreateCard("01173", world.AreaOf(DeckType.RevealingArea));
+
+        runner.WhenRevealed(world, card, 0);
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        var asked = runner.Choosing(world, card, 0, waiting.Index, waiting.Tier)!;
+
+        var damage = Assert.Single(asked.Affordances);
+        Assert.Equal(0, damage.Id);
+        Assert.Equal("dealDamage", damage.Label);
+    }
+
+    [Rule("rr:choose-option.2")]
+    [Fact]
+    public void APlayerCardDoesNotOfferAnOptionThatCannotPartiallyResolve()
+    {
+        // A player-card option "cannot be chosen if it cannot be at least
+        // partially resolved." Nick Fury's core choice includes removing 2
+        // threat. At zero threat the scheme is a target, but that option still
+        // cannot resolve at all; drawing cards remains legal.
+        var runner = NickFuryRunner();
+        var world = Deal();
+        var fury = world.CreateCard(
+            "01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+
+        runner.WhenRevealed(world, fury, 0);
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        var asked = runner.Choosing(world, fury, 0, waiting.Index, waiting.Tier)!;
+
+        var draw = Assert.Single(asked.Affordances);
+        Assert.Equal(1, draw.Id);
+        Assert.Equal("draw", draw.Label);
+
+        // Prompt filtering is not the authority boundary: a forged answer for
+        // the unavailable original index is refused too.
+        Assert.Throws<RulesNotImplementedException>(() =>
+            runner.Chose(world, fury, 0, waiting.Index, Decision.Take(0), waiting.Tier));
+    }
+
+    [Rule("rr:choose-option.2")]
+    [Rule("rr:crisis-icon.1")]
+    [Fact]
+    public void APlayerCardCannotChooseMainSchemeThreatThroughCrisis()
+    {
+        // A crisis icon makes the main scheme an invalid target for threat
+        // removal by a player card. Threat being present is not enough to make
+        // Nick Fury's branch partially resolvable.
+        var runner = NickFuryRunner();
+        var world = Deal();
+        world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 2);
+        world.CreateCard("01108", world.AreaOf(DeckType.SideSchemesArea));
+        var fury = world.CreateCard(
+            "01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+
+        runner.WhenRevealed(world, fury, 0);
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        var asked = runner.Choosing(world, fury, 0, waiting.Index, waiting.Tier)!;
+
+        Assert.Equal([1], asked.Affordances.Select(option => option.Id));
+        Assert.Throws<RulesNotImplementedException>(() =>
+            runner.Chose(world, fury, 0, waiting.Index, Decision.Take(0), waiting.Tier));
+    }
+
+    [Rule("rr:crisis-icon.1")]
+    [Fact]
+    public void APlayerCardEffectRemovesNoMainSchemeThreatThroughCrisis()
+    {
+        // The choice gate and the effect resolver state the same restriction.
+        // A player-card effect reached without a choice must not bypass crisis.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01084", "abilities": [ {
+              "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                           "subject": "this" },
+              "effect": { "removeThreat": {
+                "scheme": { "query": "mainScheme" }, "amount": 2 } }
+            } ] } ] }
+            """));
+        var world = Deal();
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 2);
+        world.CreateCard("01108", world.AreaOf(DeckType.SideSchemesArea));
+        var fury = world.CreateCard(
+            "01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+
+        runner.WhenRevealed(world, fury, 0);
+
+        Assert.Equal(2, scheme.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:choose-option.2")]
+    [Rule("rr:draw-drawing-cards")]
+    [Fact]
+    public void APlayerCardCannotChooseToDrawFromNoCards()
+    {
+        // With both deck and discard empty, drawing changes nothing. The draw
+        // branch cannot be partially resolved, while damaging the villain can.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01084", "abilities": [ {
+              "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                           "subject": "this" },
+              "effect": { "choose": { "options": [
+                { "draw": { "player": "you", "count": 3 } },
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 4 } }
+              ] } }
+            } ] } ] }
+            """));
+        var world = Deal();
+        var removed = world.AreaOf(DeckType.RemovedArea);
+        foreach (var card in world.Seats[0].Deck.Cards.ToList())
+        {
+            World.MoveToTop(card, removed);
+        }
+        foreach (var card in world.AreaOf(
+                     DeckType.DiscardPile, PlayArea.Of(0)).Cards.ToList())
+        {
+            World.MoveToTop(card, removed);
+        }
+        var fury = world.CreateCard(
+            "01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+
+        runner.WhenRevealed(world, fury, 0);
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        var asked = runner.Choosing(world, fury, 0, waiting.Index, waiting.Tier)!;
+
+        Assert.Equal([1], asked.Affordances.Select(option => option.Id));
+    }
+
+    [Rule("rr:choose-option.2")]
+    [Fact]
+    public void APlayerCardCanChooseASequenceThatPartiallyResolves()
+    {
+        // "At least partially resolved" is deliberately weaker than "every
+        // effect resolves." The scheme has no threat, so the first step does
+        // nothing, but drawing one card makes the option legal as a whole.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01084", "abilities": [ {
+              "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                           "subject": "this" },
+              "effect": { "choose": { "options": [
+                { "seq": [
+                    { "removeThreat": {
+                        "scheme": { "query": "mainScheme" }, "amount": 2 } },
+                    { "draw": { "player": "you", "count": 1 } }
+                ] },
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }
+              ] } }
+            } ] } ] }
+            """));
+        var world = Deal();
+        var fury = world.CreateCard(
+            "01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+
+        runner.WhenRevealed(world, fury, 0);
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        var asked = runner.Choosing(world, fury, 0, waiting.Index, waiting.Tier)!;
+
+        Assert.Equal([0, 1], asked.Affordances.Select(option => option.Id));
+    }
+
     [Rule("rr:you-your.2")]
     [Fact]
     public void TakingTheDamageDamagesTheResolvingPlayersIdentity()
@@ -342,6 +527,20 @@ public sealed class ChoosingCardsTests
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
         return (card, AuthoredCards.Runner().WhenRevealed(world, card, player));
     }
+
+    /// <summary>Nick Fury's core choice, isolated from the rest of his card.</summary>
+    private static AbilityRunner NickFuryRunner() => new(AbilityCatalog.Parse(
+        """
+        { "cards": [ { "card": "01084", "abilities": [ {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                       "subject": "this" },
+          "effect": { "choose": { "options": [
+            { "removeThreat": {
+                "scheme": { "query": "mainScheme" }, "amount": 2 } },
+            { "draw": { "player": "you", "count": 3 } }
+          ] } }
+        } ] } ] }
+        """));
 
     private static World Deal(params string[] heroes)
     {
