@@ -60,6 +60,7 @@ public enum WindowKind
 /// </param>
 /// <param name="ActorFacts">Stable classifications and relationships for <paramref name="Actor"/>.</param>
 /// <param name="TargetFacts">Stable classifications and relationships for <paramref name="Target"/>.</param>
+/// <param name="Threat">The imminent threat assignment, when this is one.</param>
 public sealed record Occurrence(
     int Id,
     IReadOnlyList<string> Conditions,
@@ -68,7 +69,8 @@ public sealed record Occurrence(
     int Actor = -1,
     int Target = -1,
     OccurrenceCard? ActorFacts = null,
-    OccurrenceCard? TargetFacts = null)
+    OccurrenceCard? TargetFacts = null,
+    State.ThreatPlacement? Threat = null)
 {
     private readonly HashSet<(WindowKind Window, int Card)> spent = [];
 
@@ -146,6 +148,34 @@ public sealed record Occurrence(
             Target: scheme,
             ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
             TargetFacts: OccurrenceCard.Capture(world.Cards[scheme], facts));
+    }
+
+    /// <summary>Create an occurrence for one imminent threat assignment.</summary>
+    public static Occurrence ForThreat(
+        int id, IReadOnlyList<string> conditions, State.World world,
+        State.ICardFacts facts, State.ThreatPlacement placement, int? subject = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(placement);
+
+        OccurrenceCard? source = placement.Source >= 0
+            ? OccurrenceCard.Capture(world.Cards[placement.Source], facts)
+            : null;
+        OccurrenceCard? target = placement.Scheme >= 0
+            ? OccurrenceCard.Capture(world.Cards[placement.Scheme], facts)
+            : null;
+
+        return new Occurrence(
+            id,
+            conditions,
+            Subject: subject ?? placement.Scheme,
+            Player: placement.Player,
+            Actor: placement.Source,
+            Target: placement.Scheme,
+            ActorFacts: source,
+            TargetFacts: target,
+            Threat: placement);
     }
 
     /// <summary>

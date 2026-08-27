@@ -69,19 +69,21 @@ public static class Sequence
                     return asked;
                 }
 
-                world.Agenda.Advance();
+                world.Agenda.Advance(occurrence);
                 continue;
             }
 
             // A step may itself have a question -- declaring a defender is one
             // -- and until it is answered the step has not happened, so the
             // agenda stays where it is.
+            var applying = world.Agenda.Occurrence
+                ?? throw new InvalidOperationException("an applying agenda step has no occurrence");
             if (VillainPhase.Take(world, facts, abilities, step, events) is { } asking)
             {
                 return asking;
             }
 
-            world.Agenda.Advance();
+            world.Agenda.Advance(applying);
 
             if (world.IsOver)
             {
@@ -131,8 +133,10 @@ public static class Sequence
                     $"'{asked.Label}' was answered with nothing outstanding");
             }
 
+            var occurrence = world.Agenda.Occurrence
+                ?? throw new InvalidOperationException("an asking agenda step has no occurrence");
             VillainPhase.Answered(world, facts, abilities, step, input, events);
-            world.Agenda.Advance();
+            world.Agenda.Advance(occurrence);
             return;
         }
 
@@ -145,7 +149,7 @@ public static class Sequence
                 throw new RulesNotImplementedException($"'{asked.Label}' cannot be declined");
             }
 
-            Passed(world, world.Windows.Pass());
+            Passed(world, window.Occurrence, world.Windows.Pass());
             return;
         }
 
@@ -170,6 +174,15 @@ public static class Sequence
         events.AddRange(abilities.Resolve(
             world, window.Occurrence, ability, input.Spent, input.Targets));
 
+        if (window.Occurrence.Threat is { Replaced: true })
+        {
+            // `rr:replacement-effect.1`: the original effect is no longer
+            // imminent, so it has neither further interrupts nor responses.
+            world.Windows.Close();
+            world.Agenda.Cancel(window.Occurrence);
+            return;
+        }
+
         // Not a close: rr:interrupt.5 is about *further* abilities, so using one
         // gives everybody another opportunity and the step stays where it is.
         world.Windows.Used();
@@ -178,11 +191,11 @@ public static class Sequence
     // Answering the last question of a window finishes that part of the step.
     // Without this the walk would find no window open, take that for "not yet
     // opened", and ask the same question again.
-    private static void Passed(World world, bool closed)
+    private static void Passed(World world, Occurrence occurrence, bool closed)
     {
         if (closed && world.Agenda.IsBusy)
         {
-            world.Agenda.Advance();
+            world.Agenda.Advance(occurrence);
         }
     }
 

@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
@@ -31,6 +32,98 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Threat
 {
+    /// <summary>Schedule one imminent placement with its own windows.</summary>
+    /// <remarks>
+    /// This is a suspension point. A card interpreter may call it only after
+    /// preserving any continuation that follows the placement; silently
+    /// continuing the effect tree would resolve later text before interrupts to
+    /// this assignment. The current card corpus places threat only at the end
+    /// of its branch, so the integration can refuse every other shape loudly.
+    /// </remarks>
+    public static void Schedule(
+        World world, Card scheme, Card? source, long amount, ThreatCause cause,
+        string trigger, int player = -1) =>
+        Schedule(world, [scheme], source, amount, cause, trigger, player);
+
+    /// <summary>Schedule the same assignment on several schemes in board order.</summary>
+    public static void Schedule(
+        World world, IReadOnlyList<Card> schemes, Card? source, long amount,
+        ThreatCause cause, string trigger, int player = -1)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(schemes);
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        ArgumentException.ThrowIfNullOrWhiteSpace(trigger);
+
+        if (amount == 0)
+        {
+            return;
+        }
+
+        if (!world.Agenda.IsBusy)
+        {
+            throw new RulesNotImplementedException(
+                "placing threat with optional interrupts requires an agenda occurrence");
+        }
+
+        var current = world.Agenda.Current!.Value;
+        world.Agenda.Now(
+        [
+            .. schemes.Select((scheme, offset) =>
+            {
+                ArgumentNullException.ThrowIfNull(scheme);
+                return new PhaseStep(
+                    Steps.PlaceThreatEffect,
+                    current.Round,
+                    current.Number,
+                    Index: current.Index + offset,
+                    Subject: scheme.ObjectId,
+                    Seat: player,
+                    Placement: new ThreatPlacement(
+                        scheme.ObjectId, source?.ObjectId ?? -1, amount, cause, trigger, player));
+            }),
+        ]);
+    }
+
+    /// <summary>Apply the threat assignment on an agenda occurrence.</summary>
+    /// <returns>The amount actually placed.</returns>
+    public static long Apply(
+        World world, ICardFacts facts, ICardAbilities abilities, Occurrence occurrence,
+        List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(occurrence);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (occurrence.Threat is not { } placement || placement.Replaced
+            || placement.Remaining <= 0)
+        {
+            return 0;
+        }
+
+        if (placement.Scheme < 0 || placement.Scheme >= world.Cards.Count)
+        {
+            throw new RulesNotImplementedException(
+                "an imminent threat placement no longer names a scheme on the board");
+        }
+
+        var scheme = world.Cards[placement.Scheme];
+        long before = scheme.Tokens.GetValueOrDefault("k_threat");
+        scheme.PlaceTokens("k_threat", placement.Remaining);
+        events.Add(new FieldSet(
+            scheme.ObjectId, "k_threat", before, before + placement.Remaining)
+        {
+            Trigger = placement.Trigger,
+            Verb = "Place_Threat",
+        });
+
+        occurrence.Also(Steps.ThreatPlaced);
+        Completed(world, facts, abilities, scheme, events);
+        return placement.Remaining;
+    }
+
     /// <summary>
     /// Removes threat from a scheme, respecting constant prohibitions and
     /// defeating a side scheme reduced to zero.

@@ -565,6 +565,10 @@ public static class VillainPhase
                 PlaceThreat(world, facts, abilities, events);
                 break;
 
+            case Steps.PlaceThreatEffect:
+                ApplyThreat(world, facts, abilities, events);
+                break;
+
             case Steps.EnemiesActivate:
                 PlanActivations(world, facts, step);
                 break;
@@ -781,20 +785,19 @@ public static class VillainPhase
     private static void PlaceThreat(
         World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
     {
-        var scheme = world.TheCardIn(DeckType.MainSchemesArea);
-        if (scheme is null)
+        if (world.Agenda.Occurrence is { } occurrence)
         {
-            return;
+            Threat.Apply(world, facts, abilities, occurrence, events);
+            occurrence.Also(Steps.VillainPhaseStepOneEnds);
         }
+    }
 
-        // `rr:villain-phase.step.1`: "place the amount of threat indicated in
-        // the main scheme's acceleration field. **If any acceleration icons or
-        // tokens are active, additional threat equal to the number of such
-        // icons and tokens is also placed at this time.**"
-        long amount = facts.PrintedValue(scheme.FaceId, "EscalationThreat", world.Players)
-            + MainScheme.Acceleration(world, facts);
-        Threat.Place(
-            world, facts, abilities, scheme, amount, "villain phase, place threat", events);
+    private static void ApplyThreat(
+        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
+    {
+        var occurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException("a threat step has no occurrence");
+        Threat.Apply(world, facts, abilities, occurrence, events);
     }
 
     /// <summary>An enemy schemes. <c>rr:scheme-enemy-activation</c>.</summary>
@@ -885,19 +888,10 @@ public static class VillainPhase
         World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
         List<GameEvent> events)
     {
-        var villain = world.Cards[step.Subject];
-        var target = world.TheCardIn(DeckType.MainSchemesArea);
-
-        if (target is not null)
+        if (world.Agenda.Occurrence is { } occurrence)
         {
-            Threat.Place(
-                world,
-                facts,
-                abilities,
-                target,
-                StateFields.Modified(world, villain, "scheme", facts, world.Players),
-                "scheme",
-                events);
+            Threat.Apply(world, facts, abilities, occurrence, events);
+            occurrence.Also(Steps.SchemeEnds);
         }
 
         // The other kind of activation ends here. A boost card's ability that
