@@ -558,6 +558,37 @@ public sealed class CardPlayTests
         Assert.Equal(DeckType.UpgradesArea, second.Area.Type);
     }
 
+    [Rule("rr:ownership-and-control.2.1")]
+    [Rule("rr:ownership-and-control.7.2")]
+    [Fact]
+    public void AnUpgradeAttachedToAnotherPlayersCardIsTheirsUntilItLeavesPlay()
+    {
+        // An upgrade on another player's card is controlled by that player,
+        // but leaving play still sends it to its owner's equivalent out-of-play
+        // area. The two play areas make control visible; the discard piles make
+        // ownership visible.
+        var printed = Cards().With("shared", ("Cost", "0"), ("RES", "R"));
+        var world = Table(printed);
+        var owner = world.Seats[0];
+        var controller = world.Seats[1];
+        var upgrade = world.CreateCard("shared", owner.Hand);
+        var abilities = new Targets(controller.IdentityCard.ObjectId);
+
+        CardPlay.Play(
+            world, printed, abilities, owner, upgrade, [], [],
+            [controller.IdentityCard.ObjectId]);
+
+        Assert.Equal(0, upgrade.Owner);
+        Assert.Equal(1, upgrade.Area.PlayArea.Player);
+        Assert.Equal(controller.IdentityCard.ObjectId, upgrade.Area.Host);
+
+        Discard.Card(world, upgrade, "test", []);
+
+        Assert.Same(
+            world.AreaOf(DeckType.DiscardPile, PlayArea.Of(owner.Index)),
+            upgrade.Area);
+    }
+
     /// <summary>One object id of a card in hand with the given face.</summary>
     private static int Pay(World world, string faceId) =>
         world.Seats[0].Hand.Cards.First(card => card.FaceId == faceId).ObjectId;
@@ -676,6 +707,11 @@ public sealed class CardPlayTests
             World world, Occurrence occurrence, PendingAbility ability,
             IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
 
+    }
+
+    private sealed class Targets(params int[] targets) : NoCardAbilities
+    {
+        public override IReadOnlyList<int>? AttachmentTargets(World world, Card card) => targets;
     }
 
     private sealed class Printed : ICardFacts

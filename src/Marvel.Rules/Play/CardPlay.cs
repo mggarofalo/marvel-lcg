@@ -511,6 +511,15 @@ public static class CardPlay
             upgradeHost = targets[0];
         }
 
+        int controller = kind == CardKind.Upgrade
+            ? world.Cards[upgradeHost].Area.PlayArea.Player
+            : seat.Index;
+        if (controller < 0)
+        {
+            throw new RulesNotImplementedException(
+                $"upgrade {card.ObjectId} would enter play attached outside a player's play area");
+        }
+
         var into = kind switch
         {
             CardKind.Ally => world.AreaOf(
@@ -520,8 +529,11 @@ public static class CardPlay
 
             // `rr:upgrade`: an upgrade attaches to a card, and with no ability
             // saying otherwise that card is the identity playing it.
+            // `rr:ownership-and-control.2.1`: when it attaches to another
+            // player's card, that player controls the upgrade, so it enters
+            // that player's play area while retaining its original owner.
             CardKind.Upgrade => world.AreaOf(
-                DeckType.UpgradesArea, PlayArea.Of(seat.Index),
+                DeckType.UpgradesArea, PlayArea.Of(controller),
                 host: upgradeHost, cardOwner: seat.Index),
             _ => throw new RulesNotImplementedException(
                 $"a {kind} played from hand has nowhere to enter play"),
