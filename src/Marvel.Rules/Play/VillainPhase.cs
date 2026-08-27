@@ -159,8 +159,9 @@ public interface ICardAbilities : IWindowAbilities
     /// <param name="world">The world.</param>
     /// <param name="player">Whose cost is being paid.</param>
     /// <param name="card">The card whose ability it is.</param>
+    /// <param name="events">Where to record costs paid to use it.</param>
     /// <returns>The resource letters it generated.</returns>
-    string UseResource(World world, int player, int card);
+    string UseResource(World world, int player, int card, List<GameEvent> events);
 
     /// <summary>
     /// The "<b>Action</b>" abilities one player may trigger on their turn —
@@ -258,6 +259,9 @@ public interface ICardAbilities : IWindowAbilities
     /// <param name="card">The card entering play.</param>
     /// <returns>The object id it attaches to, or null.</returns>
     int? AttachesTo(World world, Card card);
+
+    /// <summary>Legal hosts a player may choose while playing an attachment.</summary>
+    IReadOnlyList<int>? AttachmentTargets(World world, Card card);
 
     /// <summary>
     /// Resolves a card's "<b>Setup</b>" abilities —
@@ -368,7 +372,8 @@ public class NoCardAbilities : ICardAbilities
         World world, int player) => [];
 
     /// <inheritdoc/>
-    public virtual string UseResource(World world, int player, int card) =>
+    public virtual string UseResource(
+        World world, int player, int card, List<GameEvent> events) =>
         throw new RulesNotImplementedException(
             "no card has a resource ability, so none of them can be used");
 
@@ -384,6 +389,9 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual int? AttachesTo(World world, Card card) => null;
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<int>? AttachmentTargets(World world, Card card) => null;
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Setup(World world, Card card) => [];

@@ -519,7 +519,11 @@ public sealed class AbilityDataTests
         // this file is under: a card is authored when something reaches it.
         string[] named =
         [
-            AuthoredCards.SpiderMan, AuthoredCards.PeterParker, AuthoredCards.AuntMay,
+            AuthoredCards.SpiderMan, AuthoredCards.PeterParker,
+            AuthoredCards.BlackCat, AuthoredCards.Backflip,
+            AuthoredCards.EnhancedSpiderSense, AuthoredCards.SwingingWebKick,
+            AuthoredCards.AuntMay, AuthoredCards.SpiderTracer,
+            AuthoredCards.WebShooter, AuthoredCards.WebbedUp,
             AuthoredCards.ArmoredSuit, AuthoredCards.Charge, AuthoredCards.IvoryHorn,
             AuthoredCards.Shocker,
             AuthoredCards.HardToKeepDown, AuthoredCards.ImTough,

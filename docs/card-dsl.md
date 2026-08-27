@@ -1479,3 +1479,21 @@ in between.
 
 The two grants are one printed sentence and two nodes, because the engine reads
 two fields.
+
+### Core Spider-Man primitives
+
+The first complete identity set adds four reusable effect words. `discardTop`
+remembers cards discarded by this resolution and
+`recoverDiscardedByResource` returns the remembered cards that print a named
+resource. `preventDamage` installs a one-use replacement for the imminent
+attack damage. `cancelWhenRevealed` suppresses only the revealed treachery's
+When Revealed effects; the card remains revealed and is discarded normally.
+
+The same slice adds `removeCounters` as a payable cost, `removeThreat` as an
+action, and the board queries `enemies` and `schemes`. An event action or
+interrupt is played from hand: its printed cost is paid before its tree runs,
+and it is discarded after that tree finishes, including after a suspended
+`chooseCard` answer.
+
+`isYourIdentity` distinguishes damage the resolving player's identity would
+take from damage aimed at an ally defending for that player.

@@ -164,12 +164,9 @@ public static class AbilityPlayers
 /// <param name="Trigger">When it fires.</param>
 /// <param name="Effect">What it does.</param>
 /// <remarks>
-/// <c>docs/card-dsl.md</c>'s envelope has four more fields — <c>when</c>,
-/// <c>cost</c>, <c>target</c> and <c>limit</c>. None is here, because none of
-/// the cards authored so far carries one, and a field with no card behind it is
-/// a guess at a shape. They are the next things to add and each is additive:
-/// the deserialiser refuses an ability carrying a field it does not know, so a
-/// card that needs one fails rather than silently losing it.
+/// The implemented envelope carries the trigger, an optional live condition,
+/// a cost and a per-round limit. Target selection remains an effect-tree
+/// question until a printed card requires a target in the envelope itself.
 /// </remarks>
 /// <param name="Cost">
 /// What must be paid to use it, or null. <c>rr:cost</c> — "a cost is anything a
@@ -185,9 +182,10 @@ public static class AbilityPlayers
 /// times per the specified period, <b>per instance of that ability</b>", so the
 /// count is per card in play rather than per printed id.
 /// </param>
+/// <param name="When">An additional printed condition that must currently be true.</param>
 public sealed record CardAbility(
     string Card, string Name, AbilityTrigger Trigger, AbilityNode Effect,
-    AbilityNode? Cost = null, long? Limit = null);
+    AbilityNode? Cost = null, long? Limit = null, AbilityNode? When = null);
 
 /// <summary>
 /// Every authored card, and every ability on them.

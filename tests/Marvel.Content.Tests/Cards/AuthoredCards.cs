@@ -61,6 +61,14 @@ internal static class AuthoredCards
     /// <summary>The printed id of Peter Parker, his alter-ego side.</summary>
     public const string PeterParker = "01001b";
 
+    public const string BlackCat = "01002";
+    public const string Backflip = "01003";
+    public const string EnhancedSpiderSense = "01004";
+    public const string SwingingWebKick = "01005";
+    public const string SpiderTracer = "01007";
+    public const string WebShooter = "01008";
+    public const string WebbedUp = "01009";
+
     /// <summary>The printed id of "Armored Rhino Suit".</summary>
     public const string ArmoredSuit = "01098";
 

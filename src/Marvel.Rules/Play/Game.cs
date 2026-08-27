@@ -502,7 +502,7 @@ public sealed class Game
         var happened = new List<GameEvent>();
         CardPlay.Play(
             world, facts, abilities, seat, world.Cards[affordance.AnchorId],
-            input.Spent, happened);
+            input.Spent, happened, input.Targets);
 
         return Turn(happened);
     }
@@ -796,7 +796,11 @@ public sealed class Game
         {
             if (CardPlay.Price(world, facts, seat, card) is { } price)
             {
-                options.Add(Priced(seat, card, price));
+                var hosts = abilities.AttachmentTargets(world, card);
+                if (hosts is not { Count: 0 })
+                {
+                    options.Add(Priced(seat, card, price, hosts));
+                }
             }
         }
 
@@ -873,7 +877,8 @@ public sealed class Game
     /// handle is cached on <c>(verb, anchor)</c> like any other, which gives a
     /// card in hand a stable id across the re-offers of one turn.
     /// </remarks>
-    private Affordance Priced(Seat seat, Card card, CostOption price)
+    private Affordance Priced(
+        Seat seat, Card card, CostOption price, IReadOnlyList<int>? attachmentTargets)
     {
         int anchor = card.ObjectId;
 
@@ -889,7 +894,9 @@ public sealed class Game
             // `targets: {legal: [1], min: 1, max: 1}` where 1 is the identity
             // card. It reads as "into whose play area", which is a real choice
             // at more than one player even though the card is the anchor.
-            Targets: new TargetRequest([seat.IdentityCard.ObjectId], Min: 1, Max: 1),
+            Targets: attachmentTargets is not null
+                ? new TargetRequest(attachmentTargets, Min: 1, Max: 1)
+                : new TargetRequest([seat.IdentityCard.ObjectId], Min: 1, Max: 1),
             Costs: [price]);
     }
 

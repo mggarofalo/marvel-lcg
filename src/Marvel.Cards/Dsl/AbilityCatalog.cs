@@ -32,7 +32,7 @@ public static class AbilityCatalog
     private static readonly HashSet<string> AbilityKeys =
         new(StringComparer.Ordinal)
         {
-            "name", "note", "trigger", "effect", "cost", "limitPerRound",
+            "name", "note", "trigger", "effect", "cost", "limitPerRound", "when",
         };
 
     private static readonly HashSet<string> TriggerKeys =
@@ -154,7 +154,8 @@ public static class AbilityCatalog
                 Whose(trigger, card)),
             Node(effect, card),
             element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
-            element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null);
+            element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null,
+            element.TryGetProperty("when", out var condition) ? Node(condition, card) : null);
     }
 
     /// <summary>

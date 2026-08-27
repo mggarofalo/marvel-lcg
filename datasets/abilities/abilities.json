@@ -29,6 +29,100 @@
       ]
     },
     {
+      "card": "01002",
+      "name": "Black Cat",
+      "note": "Forced Response: After you play Black Cat, discard the top 2 cards of your deck. Add each card with a printed mental resource discarded this way to your hand. The remembered set belongs to this one resolution; rr:printed requires the resource printed on the card, not a modifier.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardPlayed", "timing": "ForcedResponse", "subject": "this" },
+          "effect": { "seq": [
+            { "discardTop": { "from": "yourDeck", "count": 2 } },
+            { "recoverDiscardedByResource": "B" }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "01003",
+      "name": "Backflip",
+      "note": "Interrupt (defense): When you would take any amount of damage from an attack, prevent all of that damage. The attack-damage step carries rr:damage.step.1's imminent-damage condition, and the one-use replacement is consumed by that damage only.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "subject": "you" },
+          "when": { "isYourIdentity": "trigger.subject" },
+          "effect": { "preventDamage": "trigger.subject" }
+        }
+      ]
+    },
+    {
+      "card": "01004",
+      "name": "Enhanced Spider-Sense",
+      "note": "Hero Interrupt: When a treachery card is revealed from the encounter deck, cancel its When Revealed effects. rr:cancel.4 leaves the treachery revealed and discarded; only its When Revealed effects are skipped.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero", "player": "trigger.player" },
+          "when": { "isKind": { "card": "trigger.subject", "kind": "treachery" } },
+          "effect": { "cancelWhenRevealed": "trigger.subject" }
+        }
+      ]
+    },
+    {
+      "card": "01005",
+      "name": "Swinging Web Kick",
+      "note": "Hero Action (attack): Deal 8 damage to an enemy. Triggering the Action plays this event under rr:player-turn.5.d, paying its printed cost and discarding it after the chosen enemy is damaged.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": {
+            "from": { "query": "enemies" },
+            "effect": { "dealDamage": { "cards": "chosen", "amount": 8 } }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "01007",
+      "name": "Spider-Tracer",
+      "note": "Attach to a minion. Forced Interrupt: When attached minion is defeated, remove 3 threat from a scheme. The chosen scheme is resolved after the defeat interrupt and may be either the main scheme or a side scheme.",
+      "attachTo": { "query": "minions" },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "ForcedInterrupt", "subject": "attachedTo" },
+          "effect": { "chooseCard": {
+            "from": { "query": "schemes" },
+            "effect": { "removeThreat": { "scheme": "chosen", "amount": 3 } }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "01008",
+      "name": "Web-Shooter",
+      "note": "Uses (3 web counters). Hero Resource: Exhaust Web-Shooter and remove 1 web counter from it to generate a wild resource. rr:uses-x-type discards the card when its last all-purpose counter is removed.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Resource", "subject": "this", "form": "hero" },
+          "cost": { "seq": [ { "exhaust": "this" }, { "removeCounters": "web" } ] },
+          "effect": { "generate": "W" }
+        }
+      ]
+    },
+    {
+      "card": "01009",
+      "name": "Webbed Up",
+      "note": "Hero form only. Attach to an enemy. Max 1 per enemy. Forced Interrupt: When attached enemy would attack, discard Webbed Up instead. Then, stun that enemy. The WhenEnemyAttacks interrupt precedes attack application, so the newly stunned enemy's attack is cancelled by rr:stun.",
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "enemies" } },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenEnemyAttacks", "timing": "ForcedInterrupt", "subject": "attachedTo" },
+          "effect": { "seq": [
+            { "discard": "this" },
+            { "giveStatus": { "card": "trigger.subject", "status": "stunned" } }
+          ] }
+        }
+      ]
+    },
+    {
       "card": "01099",
       "name": "Charge",
       "note": "Attach to Rhino. [star] Forced Interrupt: When Rhino attacks, the attack gains overkill. At the end of this attack, discard Charge. The star sits in this card's ATK field, which rr:star-icon.2 makes a reminder to check the text box whenever the attached enemy uses that value to attack -- so this is an attachment ability while in play, not a 'Boost' ability. The printed ATK+ 3 is not here: rr:attachment.1 makes a printed modifier declarative, and StateFields reads it off the attachment without an ability. 'Rhino' is written as the villain in play because the card belongs to Rhino's encounter set and no other villain can share a table with it; a name query would need a lookup the printed data spells differently.",
