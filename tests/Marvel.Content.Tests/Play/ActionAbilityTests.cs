@@ -470,6 +470,702 @@ public sealed class ActionAbilityTests
         Assert.Equal(2, actions.Select(action => action.Id).Distinct().Count());
     }
 
+    [Rule("rr:ability.8.2")]
+    [Rule("rr:action.1.1")]
+    [Fact]
+    public void OnlyThePlayerHoldingAnObligationMayTriggerItsAction()
+    {
+        // An obligation remains an encounter card, but these clauses are the
+        // exception to the general permission to use encounter-card actions.
+        // The second player's turn can request another player's ordinary
+        // action; it cannot request the obligation sitting in player zero's
+        // play area.
+        var runner = Runner(
+            AuthoredCards.Hunted,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""");
+        Card? obligation = null;
+        var (_, world) = Playing(
+            board => obligation = board.CreateCard(
+                AuthoredCards.Hunted,
+                board.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0))),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == obligation!.ObjectId);
+        Assert.DoesNotContain(runner.Actions(world, 1), action => action.Card == obligation!.ObjectId);
+    }
+
+    [Rule("rr:ability.8.1")]
+    [Fact]
+    public void OnlyTheHostControllerMayUseAnAttachmentAbilityThatSaysYou()
+    {
+        // The attachment belongs to the scenario. Its host is a player card,
+        // and “you” makes that host's controller the only permitted player.
+        var runner = Runner(
+            AuthoredCards.PrelateArmor,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""");
+        Card? attachment = null;
+        var (_, world) = Playing(
+            board => attachment = board.CreateCard(
+                AuthoredCards.PrelateArmor,
+                board.AreaOf(
+                    DeckType.UpgradesArea,
+                    PlayArea.Of(0),
+                    host: board.Seats[0].IdentityCard.ObjectId)),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == attachment!.ObjectId);
+        Assert.DoesNotContain(runner.Actions(world, 1), action => action.Card == attachment!.ObjectId);
+    }
+
+    [Rule("rr:ability.8.1")]
+    [Fact]
+    public void YourInTheAttachmentInstructionRestrictsEveryAbilityOnTheCard()
+    {
+        // All Tied Up says “Attach to your identity card,” while its Action is
+        // only “spend resources → discard this card.” The permission belongs
+        // to the attachment's whole printed text, not only the selected
+        // ability, so another player cannot trigger that Action.
+        var runner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                """
+                { "cards": [ { "card": "02048", "attachTo": { "query": "yourIdentity" }, "abilities": [ {
+                    "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+                    "effect": { "discard": "this" }
+                } ] } ] }
+                """));
+        Card? attachment = null;
+        var (_, world) = Playing(
+            board => attachment = board.CreateCard(
+                "02048",
+                board.AreaOf(
+                    DeckType.UpgradesArea,
+                    PlayArea.Of(0),
+                    host: board.Seats[0].IdentityCard.ObjectId)),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == attachment!.ObjectId);
+        Assert.DoesNotContain(runner.Actions(world, 1), action => action.Card == attachment!.ObjectId);
+    }
+
+    [Rule("rr:ability.8.1")]
+    [Rule("rr:the-golden-rules")]
+    [Fact]
+    public void AnExplicitAnyPlayerPermissionOverridesTheAttachmentRestriction()
+    {
+        // Obedience Potion says “Attach to your identity,” then its Hero
+        // Action ends “Any player can do this.” The printed exception lets the
+        // other player initiate the ability and pay from their own hand.
+        var runner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                """
+                { "cards": [ { "card": "16123", "attachTo": { "query": "yourIdentity" }, "abilities": [ {
+                    "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game", "form": "hero" },
+                    "anyPlayer": true,
+                    "cost": { "spend": "BB" },
+                    "effect": { "discard": "this" }
+                } ] } ] }
+                """));
+        Card? attachment = null;
+        Card[] payment = [];
+        var (_, world) = Playing(
+            board =>
+            {
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+                attachment = board.CreateCard(
+                    "16123",
+                    board.AreaOf(
+                        DeckType.UpgradesArea,
+                        PlayArea.Of(0),
+                        host: board.Seats[0].IdentityCard.ObjectId));
+                Hand(board, player: 1, Mentals, count: 2);
+                payment = [.. board.Seats[1].Hand.Cards.Take(2)];
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        var action = Assert.Single(
+            runner.Actions(world, 1), option => option.Card == attachment!.ObjectId);
+        runner.Act(world, action, [.. payment.Select(card => card.ObjectId)], []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, attachment!.Area.Type);
+        Assert.All(payment, card => Assert.Equal(DeckType.DiscardPile, card.Area.Type));
+    }
+
+    [Rule("rr:player-turn.5")]
+    [Fact]
+    public void AnyPlayerMayUseAPlayerCardThatPrintsThatPermission()
+    {
+        // Player-turn option 5.c is exactly Plot Convenience's last line:
+        // “Any player may trigger this ability.” The permission makes another
+        // player's support visible, that player initiates it, and its printed
+        // exhaust cost is paid before the effect resolves for that player.
+        var runner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                """
+                { "cards": [ { "card": "44050", "abilities": [
+                  {
+                    "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+                    "anyPlayer": true,
+                    "cost": { "exhaust": "this" },
+                    "effect": { "draw": { "player": "you", "count": 1 } }
+                  },
+                  {
+                    "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+                    "effect": { "draw": { "player": "you", "count": 2 } }
+                  }
+                ] } ] }
+                """));
+        Card? support = null;
+        var (_, world) = Playing(
+            board => support = InPlay(board, "44050"),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        int held = world.Seats[1].Hand.Cards.Count;
+
+        var action = Assert.Single(
+            runner.Actions(world, 1), option => option.Card == support!.ObjectId);
+        runner.Act(world, action, [], []);
+
+        Assert.False(support!.Ready);
+        Assert.Equal(held + 1, world.Seats[1].Hand.Cards.Count);
+    }
+
+    [Rule("rr:interrupt.1")]
+    [Rule("rr:response.1")]
+    [Fact]
+    public void AnyPlayerWindowAbilitiesAreEvaluatedForEachPlayer()
+    {
+        var runner = Runner(
+            "44050",
+            "Response",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spend": "B" }""",
+            eventName: Steps.DamageDealt,
+            anyPlayer: true);
+        Card? support = null;
+        Card[] payment = [];
+        var (_, world) = Playing(
+            board =>
+            {
+                support = InPlay(board, "44050");
+                Hand(board, player: 0, Physicals, count: 0);
+                Hand(board, player: 1, Mentals, count: 1);
+                payment = [.. board.Seats[1].Hand.Cards];
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        int held = world.Seats[1].Hand.Cards.Count;
+
+        var response = Assert.Single(
+            runner.Waiting(
+                world,
+                new Occurrence(1, [Steps.DamageDealt], Player: 0),
+                WindowKind.Response),
+            option => option.Player == 1);
+
+        Assert.Equal(1, response.Player);
+        runner.Act(world, response, [payment[0].ObjectId], []);
+        Assert.Equal(DeckType.DiscardPile, payment[0].Area.Type);
+        Assert.Equal(held, world.Seats[1].Hand.Cards.Count);
+        Assert.Equal(support!.ObjectId, response.Card);
+    }
+
+    [Rule("rr:in-player-order.1")]
+    [Rule("rr:response.1")]
+    [Fact]
+    public void AnyPlayerWindowAnswerResumesForThePlayerWhoAcceptedIt()
+    {
+        var runner = Runner(
+            "44050",
+            "Response",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            eventName: Steps.DamageDealt,
+            anyPlayer: true);
+        var (_, world) = Playing(
+            board => InPlay(board, "44050"),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var occurrence = new Occurrence(1, [Steps.DamageDealt], Player: 0);
+        var events = new List<GameEvent>();
+        int firstHeld = world.Seats[0].Hand.Cards.Count;
+        int secondHeld = world.Seats[1].Hand.Cards.Count;
+
+        var first = Offering.Work(
+            world, runner, occurrence, WindowKind.Response, events)!;
+        Assert.Equal(0, first.Player);
+        Sequence.Answer(world, Cards, runner, first, Decision.Decline, events);
+
+        var second = Offering.Work(
+            world, runner, occurrence, WindowKind.Response, events)!;
+        Assert.Equal(1, second.Player);
+        Sequence.Answer(
+            world, Cards, runner, second,
+            Decision.Take(Assert.Single(second.Affordances).Id), events);
+
+        Assert.Equal(firstHeld, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(secondHeld + 1, world.Seats[1].Hand.Cards.Count);
+    }
+
+    [Rule("rr:ability.8")]
+    [Fact]
+    public void TriggerPlayerStillNarrowsAnAnyPlayerWindow()
+    {
+        var runner = Runner(
+            "44050",
+            "Response",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            eventName: Steps.DamageDealt,
+            player: "trigger.player",
+            anyPlayer: true);
+        var (_, world) = Playing(
+            board => InPlay(board, "44050"),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        var waiting = runner.Waiting(
+            world,
+            new Occurrence(1, [Steps.DamageDealt], Player: 0),
+            WindowKind.Response);
+
+        Assert.Equal(0, Assert.Single(waiting).Player);
+    }
+
+    [Rule("rr:ability.8.1")]
+    [Fact]
+    public void AnAttachmentsYouTriggerMatchesOnlyItsHostController()
+    {
+        var runner = Runner(
+            AuthoredCards.PrelateArmor,
+            "Response",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            eventName: "WhenAttacked",
+            player: "you");
+        Card? attachment = null;
+        var (_, world) = Playing(
+            board => attachment = board.CreateCard(
+                AuthoredCards.PrelateArmor,
+                board.AreaOf(
+                    DeckType.UpgradesArea,
+                    PlayArea.Of(0),
+                    host: board.Seats[0].IdentityCard.ObjectId)),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        var ours = runner.Waiting(
+            world, new Occurrence(1, ["WhenAttacked"], Player: 0), WindowKind.Response);
+        var theirs = runner.Waiting(
+            world, new Occurrence(2, ["WhenAttacked"], Player: 1), WindowKind.Response);
+
+        Assert.Equal(0, Assert.Single(ours).Player);
+        Assert.Empty(theirs);
+    }
+
+    [Rule("rr:ability.8.1")]
+    [Rule("rr:ability.8.2")]
+    [Fact]
+    public void RestrictedResourceAbilitiesBelongOnlyToTheirPermittedPlayer()
+    {
+        var obligationRunner = Runner(
+            AuthoredCards.Hunted,
+            "Resource",
+            """{ "generate": "E" }""");
+        Card? obligation = null;
+        var (_, obligationWorld) = Playing(
+            board => obligation = board.CreateCard(
+                AuthoredCards.Hunted,
+                board.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0))),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: obligationRunner);
+
+        Assert.Contains(
+            obligationRunner.ResourceAbilities(obligationWorld, 0),
+            source => source.Effect == obligation!.ObjectId);
+        Assert.DoesNotContain(
+            obligationRunner.ResourceAbilities(obligationWorld, 1),
+            source => source.Effect == obligation!.ObjectId);
+        Assert.Throws<RulesNotImplementedException>(() => obligationRunner.UseResource(
+            obligationWorld, 1, obligation!.ObjectId, []));
+
+        // Compound bindings are still printed “you/your”: this query means
+        // allies controlled by the resolving player and restricts a
+        // player-hosted attachment just as the bare word “you” does.
+        var attachmentRunner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                $$"""
+                { "cards": [ { "card": "{{AuthoredCards.PrelateArmor}}", "abilities": [ {
+                    "trigger": { "event": "WhenActionTriggered", "timing": "Resource", "subject": "game" },
+                    "when": { "exists": { "query": "alliesYouControl" } },
+                    "effect": { "generate": "B" }
+                } ] } ] }
+                """));
+        Card? attachment = null;
+        var (_, attachmentWorld) = Playing(
+            board =>
+            {
+                board.CreateCard(
+                    "01002",
+                    board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                attachment = board.CreateCard(
+                    AuthoredCards.PrelateArmor,
+                    board.AreaOf(
+                        DeckType.UpgradesArea,
+                        PlayArea.Of(0),
+                        host: board.Seats[0].IdentityCard.ObjectId));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: attachmentRunner);
+
+        Assert.Contains(
+            attachmentRunner.ResourceAbilities(attachmentWorld, 0),
+            source => source.Effect == attachment!.ObjectId);
+        Assert.DoesNotContain(
+            attachmentRunner.ResourceAbilities(attachmentWorld, 1),
+            source => source.Effect == attachment!.ObjectId);
+
+        // Player-relative semantics can also be the node name rather than a
+        // word value. Test it in a real response occurrence whose target
+        // makes `isYourIdentity` true for the host controller and false for
+        // the other player.
+        var kindRunner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                $$"""
+                { "cards": [ { "card": "{{AuthoredCards.PrelateArmor}}", "abilities": [ {
+                    "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Response", "subject": "game" },
+                    "when": { "isYourIdentity": "trigger.target" },
+                    "effect": { "draw": { "player": "you", "count": 1 } }
+                } ] } ] }
+                """));
+        Card? kindAttachment = null;
+        var (_, kindWorld) = Playing(
+            board => kindAttachment = board.CreateCard(
+                AuthoredCards.PrelateArmor,
+                board.AreaOf(
+                    DeckType.UpgradesArea,
+                    PlayArea.Of(0),
+                    host: board.Seats[0].IdentityCard.ObjectId)),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: kindRunner);
+
+        var ours = kindRunner.Waiting(
+            kindWorld,
+            new Occurrence(
+                1,
+                ["WhenDamageWouldBeDealt"],
+                Player: 0,
+                Target: kindWorld.Seats[0].IdentityCard.ObjectId),
+            WindowKind.Response);
+        var theirs = kindRunner.Waiting(
+            kindWorld,
+            new Occurrence(
+                2,
+                ["WhenDamageWouldBeDealt"],
+                Player: 1,
+                Target: kindWorld.Seats[1].IdentityCard.ObjectId),
+            WindowKind.Response);
+
+        Assert.Equal(kindAttachment!.ObjectId, Assert.Single(ours).Card);
+        Assert.Empty(theirs);
+    }
+
+    [Rule("rr:interrupt.1.1")]
+    [Rule("rr:response.1.1")]
+    [Theory]
+    [InlineData("Interrupt")]
+    [InlineData("Response")]
+    public void AnotherPlayersObligationIsExcludedFromAbilityWindows(string timing)
+    {
+        var runner = Runner(
+            AuthoredCards.Hunted,
+            timing,
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            eventName: "WhenAttacked");
+        var (_, world) = Playing(
+            board => board.CreateCard(
+                AuthoredCards.Hunted,
+                board.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0))),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        world.FirstPlayer = 1;
+        var occurrence = new Occurrence(1, ["WhenAttacked"], Player: 1);
+
+        var prompt = Offering.Work(
+            world,
+            runner,
+            occurrence,
+            timing == "Interrupt" ? WindowKind.Interrupt : WindowKind.Response,
+            []);
+
+        Assert.NotNull(prompt);
+        Assert.Equal(0, prompt.Player);
+    }
+
+    [Rule("rr:action.2")]
+    [Rule("rr:action.2.1")]
+    [Rule("rr:forced.2")]
+    [Fact]
+    public void ALegalForcedActionMustResolveBeforeThePlayerPhaseEnds()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "ForcedAction",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+
+        // It may be used at any ordinary action opportunity.
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+
+        // At the boundary it is no longer optional: the phase stays in the
+        // player turn and the only answer is to resolve the Forced Action.
+        game.Resolve(Decision.Decline);
+        Assert.Equal(GamePhase.PlayerTurn, game.Phase);
+        Assert.False(game.Pending!.Cancellable);
+        var forced = Assert.Single(game.Pending.Affordances);
+
+        int held = world.Seats[0].Hand.Cards.Count;
+        game.Resolve(Decision.Take(forced.Id));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+
+        // Its exhaust cost is now unpayable, so resolution continues directly
+        // to the ordinary end phase. It must not reopen a normal turn.
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+        Assert.DoesNotContain(
+            game.Pending!.Affordances,
+            option => option.Verb is Game.ChangeForm or Game.ActionVerb);
+    }
+
+    [Rule("rr:action.2")]
+    [Rule("rr:ability.8.2")]
+    [Fact]
+    public void APlayersForcedActionAsksThatPlayerToChooseItsPayment()
+    {
+        var runner = Runner(
+            AuthoredCards.Hunted,
+            "ForcedAction",
+            """{ "discard": "this" }""",
+            cost: """{ "discardFromHand": 1 }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = board.CreateCard(
+                AuthoredCards.Hunted,
+                board.AreaOf(DeckType.ObligationsArea, PlayArea.Of(1))),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
+
+        Assert.Equal(1, game.Pending!.Player);
+        var forced = Assert.Single(game.Pending.Affordances);
+        Assert.NotNull(forced.Targets);
+        var targets = forced.Targets;
+        Assert.All(
+            targets.Legal,
+            id => Assert.Contains(world.Cards[id], world.Seats[1].Hand.Cards));
+        int p0Held = world.Seats[0].Hand.Cards.Count;
+        var paid = world.Cards[targets.Legal[0]];
+
+        game.Resolve(Decision.Take(forced.Id, [paid.ObjectId], []));
+
+        Assert.Equal(p0Held, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(DeckType.DiscardPile, paid.Area.Type);
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+    }
+
+    [Rule("rr:action.2")]
+    [Fact]
+    public void ACostlessForcedActionNeedOnlyResolveOnceBeforeThePhaseEnds()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "ForcedAction",
+            """{ "draw": { "player": "you", "count": 1 } }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+
+        game.Resolve(Decision.Decline);
+        var forced = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        game.Resolve(Decision.Take(forced.Id));
+
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+    }
+
+    [Rule("rr:action.2")]
+    [Rule("rr:player-elimination.step.5")]
+    [Fact]
+    public void EliminatingTheFirstPlayerDuringTheGateMovesTheEndPhaseToTheSurvivor()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "ForcedAction",
+            """{ "dealDamage": { "cards": "you", "amount": 99 } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
+        var forced = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(forced.Id));
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.Equal(1, world.FirstPlayer);
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+        Assert.Equal(1, game.Pending!.Player);
+    }
+
+    [Rule("rr:action.2")]
+    [Fact]
+    public void ForcedActionsOnTwoFacesOfOneIdentityAreDistinctAbilities()
+    {
+        var runner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                $$"""
+                { "cards": [
+                  { "card": "{{AuthoredCards.SpiderMan}}", "abilities": [ {
+                    "trigger": { "event": "WhenActionTriggered", "timing": "ForcedAction", "subject": "game" },
+                    "limitPerRound": 1,
+                    "effect": { "changeForm": { "player": "you", "to": "alter-ego" } }
+                  } ] },
+                  { "card": "01001b", "abilities": [ {
+                    "trigger": { "event": "WhenActionTriggered", "timing": "ForcedAction", "subject": "game" },
+                    "limitPerRound": 1,
+                    "effect": { "draw": { "player": "you", "count": 1 } }
+                  } ] }
+                ] }
+                """));
+        var (game, world) = Playing(_ => { }, hero: true, abilities: runner);
+
+        game.Resolve(Decision.Decline);
+        var heroAction = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(Decision.Take(heroAction.Id));
+
+        Assert.Equal("01001b", world.Seats[0].IdentityCard.FaceId);
+        var alterEgoAction = Assert.Single(game.Pending!.Affordances);
+        int held = world.Seats[0].Hand.Cards.Count;
+        game.Resolve(Decision.Take(alterEgoAction.Id));
+
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+    }
+
+    [Rule("rr:action.2")]
+    [Rule("rr:leaves-play.1")]
+    [Fact]
+    public void AForcedActionOnACardThatLeavesAndReturnsBelongsToTheNewCopy()
+    {
+        var runner = Runner(
+            "01101",
+            "ForcedAction",
+            """{ "seq": [ { "discard": "this" }, { "putIntoPlay": { "card": "this", "where": "engagedWithYou" } } ] }""",
+            limit: 1);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = board.CreateCard(
+                "01101",
+                board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0))),
+            abilities: runner);
+        int firstCopy = source!.Incarnation;
+
+        game.Resolve(Decision.Decline);
+        var forced = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(Decision.Take(forced.Id));
+
+        Assert.True(source.Incarnation > firstCopy);
+        Assert.Equal(GamePhase.PlayerTurn, game.Phase);
+        Assert.False(game.Pending!.Cancellable);
+        Assert.Contains(game.Pending.Affordances, option => option.AnchorId == source.ObjectId);
+    }
+
+    [Rule("rr:limit")]
+    [Fact]
+    public void LimitedAbilitiesOnOneCardHaveIndependentUses()
+    {
+        var runner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                $$"""
+                { "cards": [ { "card": "{{AuthoredCards.AuntMay}}", "abilities": [
+                  {
+                    "trigger": { "event": "WhenActionTriggered", "timing": "ForcedAction", "subject": "game" },
+                    "limitPerRound": 1,
+                    "effect": { "draw": { "player": "you", "count": 1 } }
+                  },
+                  {
+                    "trigger": { "event": "WhenActionTriggered", "timing": "ForcedAction", "subject": "game" },
+                    "limitPerRound": 1,
+                    "effect": { "draw": { "player": "you", "count": 1 } }
+                  }
+                ] } ] }
+                """));
+        var (game, world) = Playing(
+            board => InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances[0].Id));
+
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.False(game.Pending!.Cancellable);
+        game.Resolve(Decision.Take(Assert.Single(game.Pending.Affordances).Id));
+
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+    }
+
+    [Rule("rr:action.2.2")]
+    [Rule("rr:forced.3")]
+    [Rule("rr:forced.3.1")]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AnIllegalForcedActionDoesNotPreventPhaseCompletion(bool targetless)
+    {
+        string effect = targetless
+            ? """{ "chooseCard": { "from": { "query": "minions" }, "effect": { "draw": { "player": "you", "count": 1 } } } }"""
+            : """{ "draw": { "player": "you", "count": 1 } }""";
+        string? cost = targetless ? null : """{ "spend": "BBBBBBBBBBBB" }""";
+        var runner = Runner(AuthoredCards.AuntMay, "ForcedAction", effect, cost: cost);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Decline);
+
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+        Assert.True(source!.Ready);
+    }
+
     [Rule("rr:cost")]
     [Rule("rr:player-turn.5")]
     [Fact]
@@ -645,6 +1341,26 @@ public sealed class ActionAbilityTests
     private static Card InPlay(World world, string faceId) => world.CreateCard(
         faceId, world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
 
+    private static Marvel.Cards.Run.AbilityRunner Runner(
+        string card,
+        string timing,
+        string effect,
+        string? cost = null,
+        string eventName = "WhenActionTriggered",
+        string? player = null,
+        long? limit = null,
+        bool anyPlayer = false) =>
+        new(Marvel.Cards.Dsl.AbilityCatalog.Parse(
+            $$"""
+            { "cards": [ { "card": "{{card}}", "abilities": [ {
+                "trigger": { "event": "{{eventName}}", "timing": "{{timing}}", "subject": "game"{{(player is null ? string.Empty : $", \"player\": \"{player}\"")}} },
+                {{(cost is null ? string.Empty : $"\"cost\": {cost},")}}
+                {{(limit is null ? string.Empty : $"\"limitPerRound\": {limit.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)},")}}
+                {{(anyPlayer ? "\"anyPlayer\": true," : string.Empty)}}
+                "effect": {{effect}}
+            } ] } ] }
+            """));
+
     /// <summary>
     /// A game past the mulligan, on the first player's turn.
     /// </summary>
@@ -654,7 +1370,10 @@ public sealed class ActionAbilityTests
     /// put into play afterwards is on the board and not in the question.
     /// </remarks>
     private static (Game Game, World World) Playing(
-        Action<World> prepare, bool hero = false, string[]? heroes = null)
+        Action<World> prepare,
+        bool hero = false,
+        string[]? heroes = null,
+        ICardAbilities? abilities = null)
     {
         string[] playing = heroes ?? ["spider_man"];
         var world = WorldSetup.Deal(
@@ -672,7 +1391,7 @@ public sealed class ActionAbilityTests
 
         // The mulligan is asked as a turn option too, so the loop watches the
         // verb rather than the question: declining it keeps the opening hand.
-        var game = Game.Begin(world, Cards, AuthoredCards.Runner());
+        var game = Game.Begin(world, Cards, abilities ?? AuthoredCards.Runner());
         while (game.Pending is { } asked
             && asked.Affordances.Any(
                 option => option.Verb == Game.ResolveMulligans))

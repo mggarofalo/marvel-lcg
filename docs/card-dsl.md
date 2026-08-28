@@ -1334,6 +1334,13 @@ both things an encounter card can say. Only the card knows which it said, so the
 card says it — `"player": "trigger.player"`, a closed set of one, closed for the
 reason `AbilitySubjects` is.
 
+An ability that explicitly prints “Any player can do this” carries
+`"anyPlayer": true` beside its trigger, cost, and effect. This is an authored
+permission, not an ownership inference: it overrides the normal restriction
+for an obligation or for an attachment whose card-level text binds “you” or
+“your” to its holder. The engine chooses this boolean wire spelling; the rules
+and printed card text define the permission, not its serialized name.
+
 An encounter-card ability with a cost and *without* that field is refused rather
 than priced against the first player's hand, and so is one that names a form.
 Both refusals name the field that is missing.

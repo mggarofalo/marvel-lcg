@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 523 |
+| Executable and cited | 535 |
 | Covered by a narrower rule | 50 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 39 |
 | Outside the supported product boundary | 68 |
-| Unimplemented behavior | 416 |
+| Unimplemented behavior | 404 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -67,10 +67,10 @@ items.
 | `rr:ability.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.7` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:ability.7.1` | Unimplemented behavior | MARVEL-283 | Mandatory abilities containing “may” need an optional choice inside forced resolution. |
+| `rr:ability.7.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.8` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:ability.8.1` | Unimplemented behavior | MARVEL-283 | Attachment abilities using “you” or “your” need controller-specific offering and payment. |
-| `rr:ability.8.2` | Unimplemented behavior | MARVEL-283 | Obligation abilities and costs need play-area ownership enforcement. |
+| `rr:ability.8.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:ability.8.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.9` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.10` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.11` | Executable and cited | — | A behavior test directly cites this record. |
@@ -89,10 +89,10 @@ items.
 | `rr:acceleration-token.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:action` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:action.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:action.1.1` | Unimplemented behavior | MARVEL-283 | Other players' obligations must be excluded from action offering. |
-| `rr:action.2` | Unimplemented behavior | MARVEL-283 | Forced Actions need end-of-phase resolution. |
-| `rr:action.2.1` | Unimplemented behavior | MARVEL-283 | Forced Actions becoming legal at phase end need immediate resolution. |
-| `rr:action.2.2` | Unimplemented behavior | MARVEL-283 | An unpayable or targetless Forced Action must not prevent phase completion. |
+| `rr:action.1.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:action.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:action.2.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:action.2.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:activation` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:activation.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:activation.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -476,9 +476,9 @@ items.
 | `rr:for-each.4` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
 | `rr:forced` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:forced.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:forced.2` | Unimplemented behavior | MARVEL-283 | Forced Action timing and end-of-phase resolution are not implemented. |
-| `rr:forced.3` | Unimplemented behavior | MARVEL-283 | Targetless forced abilities need explicit non-initiation behavior. |
-| `rr:forced.3.1` | Unimplemented behavior | MARVEL-283 | A targetless forced ability must not pay its costs. |
+| `rr:forced.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:forced.3` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:forced.3.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:forced.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:forced.5` | Unimplemented behavior | MARVEL-275 | Encounter reveal fixes the order of simultaneous forced abilities instead of asking the first player. |
 | `rr:forced.6` | Executable and cited | — | A behavior test directly cites this record. |
@@ -598,7 +598,7 @@ items.
 | `rr:instead` | Redirect or summary | — | This record redirects readers to Replacement Effect; the destination carries the rule. |
 | `rr:interrupt` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:interrupt.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:interrupt.1.1` | Unimplemented behavior | MARVEL-283 | Interrupt offering must exclude obligations in other players' play areas. |
+| `rr:interrupt.1.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:interrupt.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:interrupt.2.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:interrupt.3` | Executable and cited | — | A behavior test directly cites this record. |
@@ -936,7 +936,7 @@ items.
 | `rr:resource-type` | Redirect or summary | — | This record redirects readers to Resource; the destination carries the rule. |
 | `rr:response` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:response.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:response.1.1` | Unimplemented behavior | MARVEL-283 | Response offering must exclude obligations in other players' play areas. |
+| `rr:response.1.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:response.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:response.2.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:response.3` | Unimplemented behavior | MARVEL-275 | Responses to multiple conditions from one effect need a player-chosen order. |

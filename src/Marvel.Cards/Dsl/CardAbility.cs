@@ -228,9 +228,15 @@ public static class AbilityPlayers
 /// count is per card in play rather than per printed id.
 /// </param>
 /// <param name="When">An additional printed condition that must currently be true.</param>
+/// <param name="AnyPlayer">
+/// Whether the printed ability explicitly permits any player to initiate it.
+/// This is card text overriding the ordinary controller or attachment-holder
+/// permission, not a conclusion inferred from the card's ownership.
+/// </param>
 public sealed record CardAbility(
     string Card, string Name, AbilityTrigger Trigger, AbilityNode Effect,
-    AbilityNode? Cost = null, long? Limit = null, AbilityNode? When = null);
+    AbilityNode? Cost = null, long? Limit = null, AbilityNode? When = null,
+    bool AnyPlayer = false);
 
 /// <summary>
 /// Every authored card, and every ability on them.

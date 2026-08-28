@@ -33,6 +33,7 @@ public static class AbilityCatalog
         new(StringComparer.Ordinal)
         {
             "name", "note", "trigger", "effect", "cost", "limitPerRound", "when",
+            "anyPlayer",
         };
 
     private static readonly HashSet<string> TriggerKeys =
@@ -163,7 +164,8 @@ public static class AbilityCatalog
             Node(effect, card),
             element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
             element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null,
-            element.TryGetProperty("when", out var condition) ? Node(condition, card) : null);
+            element.TryGetProperty("when", out var condition) ? Node(condition, card) : null,
+            Flag(element, "anyPlayer", card));
     }
 
     /// <summary>One explicit occurrence role matcher, or null.</summary>
@@ -335,6 +337,21 @@ public static class AbilityCatalog
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
+
+    private static bool Flag(JsonElement element, string name, string card)
+    {
+        if (!element.TryGetProperty(name, out var value))
+        {
+            return false;
+        }
+
+        if (value.ValueKind is JsonValueKind.True or JsonValueKind.False)
+        {
+            return value.GetBoolean();
+        }
+
+        throw new AbilityException($"'{card}' gives '{name}' a non-boolean value");
+    }
 
     private static void Refuse(JsonElement element, HashSet<string> known, string what)
     {

@@ -175,7 +175,10 @@ public static class Sequence
         var taken = abilities
             .Waiting(world, window.Occurrence, window.Kind)
             .Select(ability => (Ability: ability, Offered: abilities.Describe(world, ability)))
-            .Where(pair => pair.Offered.Id == input.Affordance)
+            .Where(pair => pair.Offered.Id == input.Affordance
+                && (asked.Asking != Question.Opportunity
+                    || pair.Ability.Player == asked.Player
+                    || pair.Ability.Player < 0))
             .Select(pair => (PendingAbility?)pair.Ability)
             .FirstOrDefault();
 

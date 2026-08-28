@@ -121,10 +121,14 @@ public sealed class Game
     private readonly ICardAbilities abilities;
     private readonly Queue<Card> playerSetup = [];
     private readonly HashSet<int> finishedTurns = [];
+    private readonly HashSet<(
+        int Card, int Incarnation, string Face, AbilityType Type, int Ordinal)>
+        satisfiedForcedActions = [];
 
     private int nextHandle;
 
     private Asker asking = Asker.Game;
+    private bool endingPlayerPhase;
 
     private Game(World world, ICardFacts facts, ICardAbilities abilities)
     {
@@ -220,7 +224,9 @@ public sealed class Game
             Sequence.Answer(world, facts, abilities, Pending, input, during);
             return Phase == GamePhase.PlayerSetup
                 ? ContinuePlayerSetup(during)
-                : Turn(during);
+                : endingPlayerPhase
+                    ? ContinueForcedActions(during)
+                    : Turn(during);
         }
 
         if (!input.IsDecline && Phase != GamePhase.VillainPhase)
@@ -305,7 +311,7 @@ public sealed class Game
                 // `rr:player-phase`: "during the player phase, **each player**
                 // *(in player order)* takes one turn". So the phase is over
                 // when the last of them has had theirs, not when the first has.
-                return FinishTurn([]);
+                return endingPlayerPhase ? ContinueForcedActions([]) : FinishTurn([]);
 
             case GamePhase.EndPhase:
                 return EndOfPlayerPhase(input);
@@ -461,7 +467,7 @@ public sealed class Game
             .FirstOrDefault(pending => pending.Card == taken.AnchorId
                 && pending.Player == taken.AnchorPlayer
                 && Handle(
-                    $"{ActionVerb}:{pending.Ordinal}:player:{pending.Player}",
+                    $"{ActionVerb}:{pending.Type}:{pending.Ordinal}:player:{pending.Player}",
                     pending.Card) == taken.Id);
 
         if (ability.Card != taken.AnchorId)
@@ -476,8 +482,17 @@ public sealed class Game
         // value independent of the caller's mutable decision lists.
         world.Agenda.AddPlayerAction(Round, new PlayerAction(
             ability, [.. input.Spent], [.. input.Targets]));
+        if (ability.Type == AbilityType.ForcedAction)
+        {
+            // Resolving the ability once satisfies rr:action.2 for this player
+            // phase even when the printed ability remains legal afterwards.
+            // Printed use limits are a separate rule and stay in the runner.
+            satisfiedForcedActions.Add(
+                (ability.Card, world.Cards[ability.Card].Incarnation,
+                    world.Cards[ability.Card].FaceId, ability.Type, ability.Ordinal));
+        }
 
-        return Turn([]);
+        return endingPlayerPhase ? ContinueForcedActions([]) : Turn([]);
     }
 
     /// <summary>
@@ -795,6 +810,8 @@ public sealed class Game
 
         Round++;
         finishedTurns.Clear();
+        satisfiedForcedActions.Clear();
+        endingPlayerPhase = false;
         Phase = GamePhase.PlayerTurn;
         Active = world.FirstPlayer;
         Pending = TurnPrompt();
@@ -825,6 +842,48 @@ public sealed class Game
         }
 
         Active = world.FirstPlayer;
+        endingPlayerPhase = true;
+        return ContinueForcedActions(happened);
+    }
+
+    /// <summary>Finishes only the mandatory actions deferred to the phase boundary.</summary>
+    private Resolution ContinueForcedActions(List<GameEvent> happened)
+    {
+        if (Sequence.Work(world, facts, abilities, happened) is { } asked)
+        {
+            Pending = asked;
+            asking = Asker.Sequence;
+            return new Resolution(world, Pending, happened);
+        }
+
+        if (world.IsOver)
+        {
+            Phase = GamePhase.Over;
+            Pending = null;
+            asking = Asker.Game;
+            return new Resolution(world, null, happened);
+        }
+
+        Active = world.FirstPlayer;
+        var forced = TurnActions()
+            .Where(ability => ability.Type == AbilityType.ForcedAction
+                && !satisfiedForcedActions.Contains(
+                    (ability.Card, world.Cards[ability.Card].Incarnation,
+                        world.Cards[ability.Card].FaceId,
+                        ability.Type, ability.Ordinal)))
+            .ToList();
+        if (forced.Count > 0)
+        {
+            // `rr:action.2`: every legal Forced Action must resolve before the
+            // player phase can end. The player still chooses its timing during
+            // the phase; once the phase would end, declining is no longer an
+            // answer. Costs and targets remain ordinary action questions.
+            Pending = ForcedActionsPrompt(forced);
+            asking = Asker.Game;
+            return new Resolution(world, Pending, happened);
+        }
+
+        endingPlayerPhase = false;
         Phase = GamePhase.EndPhase;
         Pending = EndPhasePrompt();
         asking = Asker.Game;
@@ -856,6 +915,38 @@ public sealed class Game
             Label: $"\n--- {seat.Name}'s Turn ({Round}) ---",
             Cancellable: true,
             Affordances: TurnOptions(seat));
+    }
+
+    /// <summary>The mandatory action gate before the player phase may end.</summary>
+    private Prompt ForcedActionsPrompt(List<PendingAbility> forced)
+    {
+        // The rule says every legal Forced Action must resolve but does not
+        // order actions that several players deferred to this boundary. The
+        // engine chooses player order, starting with the first player (the
+        // order `TurnActions` returns), and the owning player chooses among
+        // their own actions and pays their own costs.
+        int player = forced[0].Player;
+        var options = new List<Affordance>();
+        foreach (var action in forced.Where(action => action.Player == player))
+        {
+            var described = abilities.Describe(world, action);
+            options.Add(described with
+            {
+                Verb = ActionVerb,
+                Id = Handle(
+                    $"{ActionVerb}:{action.Type}:{action.Ordinal}:player:{action.Player}",
+                    described.AnchorId),
+            });
+        }
+
+        return new Prompt(
+            Player: player,
+            Asking: Question.TurnOption,
+            When: TimingPriority.Untimed,
+            Trigger: TurnTrigger,
+            Label: "Your Forced Actions before the player phase ends",
+            Cancellable: false,
+            Affordances: options);
     }
 
     /// <summary>
@@ -949,7 +1040,7 @@ public sealed class Game
             {
                 Verb = ActionVerb,
                 Id = Handle(
-                    $"{ActionVerb}:{action.Ordinal}:player:{action.Player}",
+                    $"{ActionVerb}:{action.Type}:{action.Ordinal}:player:{action.Player}",
                     described.AnchorId),
             });
         }
