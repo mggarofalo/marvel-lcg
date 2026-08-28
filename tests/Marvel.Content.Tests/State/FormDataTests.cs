@@ -181,6 +181,7 @@ public sealed class FormDataTests
     }
 
     [Rule("rr:form-change-form.1")]
+    [Rule("rr:player-turn.1")]
     [Fact]
     public void TheChangeIsOfferedOnceARoundAndTheTurnDoesNotEndOnIt()
     {

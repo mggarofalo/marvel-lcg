@@ -12,6 +12,7 @@ public sealed class PowerOfAspectTests
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:resource-card.1")]
     [Theory]
     [InlineData("01055", "01054")]
     [InlineData("01062", "01060")]
@@ -19,6 +20,9 @@ public sealed class PowerOfAspectTests
     [InlineData("01079", "01080")]
     public void PowerOfCardDoublesOnlyForItsAspect(string sourceId, string matchingId)
     {
+        // "Some resource cards have card text that is active while using the
+        // card to generate resources." Each Power of card's text doubles its
+        // wild resource only while paying for a card of the matching aspect.
         var world = new World(Cards, players: 1);
         var seat = world.CreateSeat("p0");
         var source = world.CreateCard(sourceId, seat.Hand);

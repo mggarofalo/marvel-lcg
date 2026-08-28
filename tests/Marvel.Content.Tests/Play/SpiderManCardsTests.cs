@@ -72,13 +72,16 @@ public sealed class SpiderManCardsTests
         Assert.Equal(Steps.TurnAction, damage.Trigger);
     }
 
+    [Rule("rr:event.4")]
     [Rule("rr:stun-stunned.1")]
     [Rule("rr:initiating-abilities.step.5")]
     [Fact]
     public void StunCancelsSwingingWebKickAfterItsCostsArePaid()
     {
         // "As the attack is initiated, remove the stunned status card to
-        // cancel the attack." Initiation is after the event's costs are paid.
+        // cancel the attack." An event's attack is "considered to be performed
+        // by that player's identity", so the hero's stun cancels Swinging Web
+        // Kick. Initiation is after the event's costs are paid.
         var world = Deal(hero: true);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
@@ -258,11 +261,14 @@ public sealed class SpiderManCardsTests
 
     [Rule("rr:stun-stunned.1")]
     [Rule("rr:stun-stunned.2")]
+    [Rule("rr:upgrade.3")]
     [Fact]
     public void WebbedUpDiscardsItselfAndStunsItsEnemy()
     {
-        // "If an ability 'stuns' a character, give that character a stunned
-        // status card." Webbed Up's interrupt does both printed effects.
+        // An attached upgrade "modif[ies] the card [it is] attached to", not
+        // the identity who played it. "If an ability 'stuns' a character, give
+        // that character a stunned status card." Webbed Up's interrupt does
+        // both printed effects to its enemy host.
         var world = Deal(hero: true);
         var runner = AuthoredCards.Runner();
         var villain = world.TheCardIn(DeckType.VillainArea)!;

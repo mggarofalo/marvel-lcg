@@ -129,11 +129,13 @@ public sealed class CoreCardDslTests
 
     [Rule("rr:each-player")]
     [Rule("rr:draw-drawing-cards")]
+    [Rule("rr:draw-drawing-cards.1")]
     [Fact]
     public void MariaHillHasEachPlayerDraw()
     {
         // "Each player draws 1 card" is one resolution in player order, not
-        // another copy of the resolving player's draw.
+        // another copy of the resolving player's draw. Each drawn card is
+        // "added to a player's hand", which both cards visibly are.
         var world = Hero("01029a", players: 2);
         var maria = world.CreateCard(
             "01067", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));

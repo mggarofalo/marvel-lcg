@@ -37,12 +37,14 @@ public sealed class ActionAbilityTests
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
     [Rule("rr:player-turn.5")]
+    [Rule("rr:support.2")]
     [Fact]
     public void AnActionIsOfferedOnTheTurnAndDoesWhatItSays()
     {
         // "Alter-Ego Action: Exhaust Aunt May → heal 4 damage from Peter
         // Parker." The whole path: offered among the turn options, taken, cost
-        // paid, effect resolved, and the turn goes on.
+        // paid, effect resolved, and the turn goes on. A support is "active
+        // while it is in play", which is why Aunt May offers that action.
         Card? may = null;
         var (game, world) = Playing(board =>
         {
@@ -78,8 +80,8 @@ public sealed class ActionAbilityTests
         // damage to each enemy." The cost is paid before the effect. At two
         // remaining hit points that cost defeats and discards War Machine, but
         // rr:initiating-abilities.3 says leaving play does not stop the
-        // sequence, and the one live Action occurrence owns both the damage
-        // and defeat conditions.
+        // sequence, and the post-arrow effect still deals damage to every
+        // enemy.
         Card? warMachine = null;
         var (game, world) = Playing(board =>
         {
@@ -119,10 +121,12 @@ public sealed class ActionAbilityTests
 
     [Rule("rr:player-elimination.5")]
     [Rule("rr:player-elimination.step.5")]
+    [Rule("rr:upgrade.1")]
     [Fact]
     public void APlayerEliminatedByAnActionCostFinishesItAndTheirTurn()
     {
-        // Focused Rage's Hero Action deals one damage to its player as a cost.
+        // An upgrade is "active so long as it is in play". Focused Rage's Hero
+        // Action deals one damage to its player as a cost.
         // At one remaining hit point that eliminates She-Hulk, but the ability
         // still completes. She no longer participates, so the engine asks the
         // next player instead of constructing another prompt for seat zero.
@@ -207,14 +211,16 @@ public sealed class ActionAbilityTests
     }
 
     [Rule("rr:ability.2")]
+    [Rule("rr:ownership-and-control.4")]
     [Fact]
     public void ActionsComeFromInPlayCardsAndEventsInHand()
     {
         // Hero, alter-ego, ally, upgrade, and support abilities "may only be
         // used if the card is in play"; events implicitly work from out of
-        // play. Focused Rage in the discard pile is silent while the event in
-        // hand is offered, so the exception cannot accidentally admit every
-        // card.
+        // play, and a player "controls the cards in their own out-of-play
+        // areas". Focused Rage in the discard pile is silent while that
+        // player's event in hand is offered, so the exception cannot
+        // accidentally admit every card.
         Card? discardedRage = null;
         Card? kick = null;
         var (game, _) = Playing(

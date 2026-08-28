@@ -37,9 +37,22 @@ public sealed class CardPlayTests
 
     [Rule("rr:resource.2")]
     [Rule("rr:resource.4")]
+    [Rule("rr:energy-resource")]
+    [Rule("rr:energy-resource.1")]
+    [Rule("rr:energy-resource.2")]
+    [Rule("rr:mental-resource")]
+    [Rule("rr:mental-resource.1")]
+    [Rule("rr:mental-resource.2")]
+    [Rule("rr:physical-resource")]
+    [Rule("rr:physical-resource.1")]
+    [Rule("rr:physical-resource.2")]
     [Theory]
-    // "Many abilities require specific resource types, and the specified types
-    // in the specified quantities must be generated."
+    // Energy, mental and physical are three of the four resource types. Each
+    // "can be spent to pay the resource cost of cards and abilities", and
+    // abilities may specifically require that exact type.
+    [InlineData("Y", "Y", true)]
+    [InlineData("B", "B", true)]
+    [InlineData("R", "R", true)]
     [InlineData("BB", "B", true)]
     [InlineData("RR", "B", false)]
     // "Wild resources can be used as their type or any of the other types."
@@ -96,6 +109,22 @@ public sealed class CardPlayTests
         Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
         Assert.Equal(seat.IdentityCard.ObjectId, upgrade.Area.Host);
         Assert.Contains(events.OfType<CardAttached>(), e => e.Card == upgrade.ObjectId);
+    }
+
+    [Rule("rr:support.1")]
+    [Fact]
+    public void ASupportEntersTheBackRowOfItsPlayersArea()
+    {
+        // "Support cards enter play in the back row of a player's play area."
+        // The engine names that row SupportsArea and keeps the player's seat on it.
+        var printed = Cards();
+        var world = Board(printed);
+        var support = InHand(world, "support");
+
+        CardPlay.Play(world, printed, new Silent(), world.Seats[0], support, [], []);
+
+        Assert.Equal(DeckType.SupportsArea, support.Area.Type);
+        Assert.Equal(PlayArea.Of(0), support.Area.PlayArea);
     }
 
     [Rule("rr:play-put-into-play.2")]
@@ -260,11 +289,16 @@ public sealed class CardPlayTests
 
     [Rule("rr:play-put-into-play")]
     [Rule("rr:play-put-into-play.3")]
+    [Rule("rr:play-put-into-play.4")]
+    [Rule("rr:play-put-into-play.5")]
     [Rule("rr:ownership-and-control.3")]
     [Rule("rr:ownership-and-control.7.2")]
     [Fact]
     public void AnOwnedAllyCanEnterPlayUnderAnotherPlayersControl()
     {
+        // Putting a card into play ignores its resource cost but still uses a
+        // legal destination: this cost-three ally enters the controller's ally
+        // area without payment. It is not considered to have been played.
         var printed = Cards();
         var world = Table(printed);
         var owner = world.Seats[1];
@@ -509,7 +543,6 @@ public sealed class CardPlayTests
         Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
     }
 
-    [Rule("rr:alliance")]
     [Fact]
     public void AnAllianceCardCanBePaidForByTheWholeTable()
     {
@@ -628,6 +661,7 @@ public sealed class CardPlayTests
                 world, printed, new Silent(), world.Seats[0], resource, [], []));
     }
 
+    [Rule("rr:form-change-form.7")]
     [Rule("rr:play-put-into-play.1")]
     [Fact]
     public void AFormOnlyCardNeedsThatForm()
@@ -750,6 +784,7 @@ public sealed class CardPlayTests
 
     [Rule("rr:ownership-and-control.2.1")]
     [Rule("rr:ownership-and-control.7.2")]
+    [Rule("rr:upgrade.3.1")]
     [Fact]
     public void AnUpgradeAttachedToAnotherPlayersCardIsTheirsUntilItLeavesPlay()
     {
@@ -906,6 +941,7 @@ public sealed class CardPlayTests
         .With("ally", ("Cost", "1"), ("RES", "R"))
         .With("bruiser", ("Cost", "3"), ("HP", "3"), ("Toughness", "1"))
         .With("upgrade", ("Cost", "2"), ("RES", "B"))
+        .With("support", ("Cost", "0"), ("RES", "B"))
         .With("event", ("Cost", "0"), ("RES", "Y"))
         .With("free", ("Cost", "0"), ("RES", "Y"))
         .With("expensive", ("Cost", "9"), ("RES", "B"))
@@ -1002,6 +1038,7 @@ public sealed class CardPlayTests
             "res" => CardKind.Resource,
             "ally" or "bruiser" => CardKind.Ally,
             "event" => CardKind.Event,
+            "support" => CardKind.Support,
             _ => CardKind.Upgrade,
         };
 
