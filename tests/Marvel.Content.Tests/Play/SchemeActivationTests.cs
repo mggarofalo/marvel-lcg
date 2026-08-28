@@ -61,11 +61,12 @@ public sealed class SchemeActivationTests
     }
 
     [Rule("rr:scheme-enemy-activation.step.2")]
+    [Rule("rr:scheme-enemy-activation.step.2.b")]
     [Fact]
     public void ABoostCardsQuestionIsAnsweredBeforeTheThreatIsPlaced()
     {
-        // Step 2 resolves the boost cards and step 3 reads the modified SCH, in
-        // that order. A boost ability that *asks* is the case that can tell the
+        // Step 2b says to "resolve any 'Boost' abilities" before step 3 reads
+        // the modified SCH. A boost ability that *asks* is the case that can tell the
         // two apart: resolved inline, the player's answer landed after the
         // threat had already gone on.
         //

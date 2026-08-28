@@ -51,21 +51,26 @@ public sealed class VillainPhaseTests
     }
 
     [Rule("rr:scheme-enemy-activation.step.2.d")]
+    [Rule("rr:scheme-enemy-activation.step.2.a")]
     [Rule("rr:boost-boost-icon.5")]
     [Fact]
     public void TheBoostCardIsDiscardedWhicheverWayItCounts()
     {
-        // A zero-icon card is still discarded, so the discard is not
-        // conditional on the count.
+        // Step 2a says "flip the boost card faceup." A zero-icon card is still
+        // flipped and discarded, so neither operation is conditional on the count.
         var printed = new Printed()
             .With("villain", ("SCH", "1"))
             .With("scheme", ("EscalationThreat", "0"));
         var world = Board(printed, players: 1);
 
-        Run(world, printed);
+        var events = Run(world, printed);
 
-        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
-        Assert.Equal(["boost", "encounter"], discard.Cards.Select(card => card.FaceId));
+        Assert.Contains(events.OfType<CardsMoved>(), moved =>
+            moved.Verb == "Boost"
+            && moved.To.Zone == nameof(DeckType.EncounterDiscardPile)
+            && moved.Cards.Any(landing => world.Cards[landing.Card].FaceId == "boost"));
+        Assert.Contains(events.OfType<CardsFlipped>(), flipped =>
+            flipped.Verb == "Boost" && flipped.FaceUp);
     }
 
     [Rule("rr:villain-phase.step.5")]
@@ -89,20 +94,24 @@ public sealed class VillainPhaseTests
     }
 
     [Rule("rr:villain-phase.step.2")]
+    [Rule("rr:villain-phase.step.2.a")]
     [Rule("rr:activation.1")]
     [Rule("rr:activation.3")]
     [Fact]
     public void TheVillainActivatesOncePerPlayer()
     {
-        // Three players means three activations, three boost cards and three
-        // lots of threat -- not one.
+        // For each player, "the villain activates against the player." Three
+        // players therefore means three activations, boost cards, and lots of
+        // threat -- not one.
         var printed = new Printed()
             .With("villain", ("SCH", "1"))
             .With("scheme", ("EscalationThreat", "0"));
         var world = Board(printed, players: 3);
+        var activations = new ActivationObserver();
 
-        var events = Run(world, printed);
+        var events = Run(world, printed, activations);
 
+        Assert.Equal([0, 1, 2], activations.Players);
         Assert.Equal(3, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
         Assert.Equal(
             3,
@@ -196,10 +205,12 @@ public sealed class VillainPhaseTests
 
     [Rule("rr:reveal.3")]
     [Rule("rr:engage")]
+    [Rule("rr:minion.1")]
     [Fact]
     public void ARevealedMinionEntersPlayEngagedRatherThanBeingDiscarded()
     {
-        // `rr:reveal.3`: "it enters play in the play area of the player
+        // `rr:minion.1`: "If a minion enters play, it remains in play" until
+        // an effect makes it leave. `rr:reveal.3`: "it enters play in the play area of the player
         // revealing it. **It is considered to engage that player.**" Before
         // this, every revealed minion went straight to the discard pile -- the
         // encounter deck was a pile of treacheries however it was built.
@@ -284,12 +295,26 @@ public sealed class VillainPhaseTests
     }
 
     /// <summary>Schedules the villain phase and walks it to the end.</summary>
-    private static List<GameEvent> Run(World world, Printed printed)
+    private static List<GameEvent> Run(
+        World world, Printed printed, ICardAbilities? abilities = null)
     {
         var events = new List<GameEvent>();
         VillainPhase.Schedule(world.Agenda, round: 1);
-        Sequence.Finish(world, printed, new NoCardAbilities(), events);
+        Sequence.Finish(world, printed, abilities ?? new NoCardAbilities(), events);
         return events;
+    }
+
+    /// <summary>Records which player each completed villain activation targeted.</summary>
+    private sealed class ActivationObserver : NoCardAbilities
+    {
+        public List<int> Players { get; } = [];
+
+        public override IReadOnlyList<GameEvent> ActivationCompleted(
+            World world, EnemyActivation result)
+        {
+            Players.Add(result.Player);
+            return [];
+        }
     }
 
     /// <summary>A villain, a main scheme, one identity per seat, two encounter cards each.</summary>

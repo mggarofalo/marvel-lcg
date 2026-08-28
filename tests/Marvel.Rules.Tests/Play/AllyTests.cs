@@ -202,6 +202,7 @@ public sealed class AllyTests
 
         world.CreateCard("villain", world.AreaOf(DeckType.VillainArea));
         world.CreateCard("scheme", world.AreaOf(DeckType.MainSchemesArea));
+        world.CreateCard("filler", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
         return world;
     }

@@ -628,6 +628,7 @@ public sealed class AttackTests
         }
 
         var villain = world.CreateCard("villain", world.AreaOf(DeckType.VillainArea));
+        world.CreateCard("filler", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
 
         world.Agenda.Add(new PhaseStep(

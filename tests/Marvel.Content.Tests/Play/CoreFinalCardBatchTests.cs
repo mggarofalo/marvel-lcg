@@ -131,6 +131,10 @@ public sealed class CoreFinalCardBatchTests
         Sequence.Finish(world, Cards, runner, []);
 
         Assert.Equal(4, main.Tokens["k_threat"]);
+        Assert.Equal(Outcome.Unfinished, world.Result);
+        Assert.Equal(["01151"], world.AreaOf(DeckType.EncounterDeck).Cards
+            .Select(card => card.FaceId));
+        Assert.Equal(1, main.Tokens[EncounterDeck.AccelerationToken]);
     }
 
     [Rule("rr:choose-game-element.3.1")]

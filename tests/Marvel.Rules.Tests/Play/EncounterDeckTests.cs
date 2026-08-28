@@ -131,6 +131,82 @@ public sealed class EncounterDeckTests
         Assert.Equal("Accelerate", placed.Verb);
     }
 
+    [Rule("rr:encounter-deck.3")]
+    [Rule("rr:acceleration-token.1")]
+    [Fact]
+    public void ADealFinishesAfterItsLastCardImmediatelyResetsTheEncounterDeck()
+    {
+        // "If the encounter deck empties during the resolution of any other
+        // type of game effect," that effect "finishes resolving after the
+        // encounter deck has been reset." The final deck card is still dealt,
+        // while the discarded card becomes the replacement deck and the reset
+        // places its required acceleration token before the deal finishes.
+        var printed = new Printed();
+        var world = Board(printed);
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var card = world.CreateCard("card", deck);
+        var replacement = world.CreateCard(
+            "replacement", world.AreaOf(DeckType.EncounterDiscardPile));
+
+        var events = new List<GameEvent>();
+        var dealt = Deal.EncounterCard(world, 0, "test", events);
+
+        Assert.Same(card, dealt);
+        Assert.Same(
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)),
+            card.Area);
+        Assert.Equal([replacement], deck.Cards);
+        int reset = events.FindIndex(item => item is CardsMoved moved
+            && moved.Verb == "Reset");
+        int deal = events.FindIndex(item => item is CardsMoved moved
+            && moved.Verb == "Deal");
+        Assert.True(reset >= 0);
+        Assert.True(deal > reset);
+        Assert.Equal(
+            1,
+            world.TheCardIn(DeckType.MainSchemesArea)!
+                .Tokens[EncounterDeck.AccelerationToken]);
+    }
+
+    [Rule("rr:encounter-deck.4")]
+    [Fact]
+    public void TakingTheFinalCardWithNoDiscardPileEndsTheGame()
+    {
+        // If there are "no cards in both the encounter deck and the encounter
+        // discard pile simultaneously," the resulting infinite reset loop
+        // means "the players lose." Taking the only card creates that boundary.
+        var printed = new Printed();
+        var world = Board(printed);
+        world.CreateCard("card", world.AreaOf(DeckType.EncounterDeck));
+
+        Deal.EncounterCard(world, 0, "test", []);
+
+        Assert.Equal(Outcome.PlayersLose, world.Result);
+    }
+
+    [Rule("rr:encounter-deck.2")]
+    [Fact]
+    public void DiscardingTheFinalCardResetsItWithoutContinuingIntoTheNewDeck()
+    {
+        // A specified-number discard stops when "the encounter deck is empty."
+        // The discarded card enters the pile first, so the immediate reset can
+        // rebuild from it without the empty-pair loss or discarding it twice.
+        var printed = new Printed();
+        var world = Board(printed);
+        var card = world.CreateCard("card", world.AreaOf(DeckType.EncounterDeck));
+
+        var discarded = EncounterDeck.DiscardTop(world, 5, "test", []);
+
+        Assert.Equal([card], discarded);
+        Assert.Equal(Outcome.Unfinished, world.Result);
+        Assert.Equal([card], world.AreaOf(DeckType.EncounterDeck).Cards);
+        Assert.Empty(world.AreaOf(DeckType.EncounterDiscardPile).Cards);
+        Assert.Equal(
+            1,
+            world.TheCardIn(DeckType.MainSchemesArea)!
+                .Tokens[EncounterDeck.AccelerationToken]);
+    }
+
     private static World Board(ICardFacts facts)
     {
         var world = new World(facts, players: 1);

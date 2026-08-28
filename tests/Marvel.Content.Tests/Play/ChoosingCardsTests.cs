@@ -272,6 +272,33 @@ public sealed class ChoosingCardsTests
         Assert.Equal(2, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
 
+    [Rule("rr:crisis-icon.2")]
+    [Fact]
+    public void AnEncounterCardCanRemoveMainSchemeThreatThroughCrisis()
+    {
+        // "Abilities on encounter cards are not affected by the crisis icon."
+        // The same removal a player card cannot perform remains legal when a
+        // treachery resolves it.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01110", "abilities": [ {
+              "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                           "subject": "this" },
+              "effect": { "removeThreat": {
+                "scheme": { "query": "mainScheme" }, "amount": 2 } }
+            } ] } ] }
+            """));
+        var world = Deal();
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 2);
+        world.CreateCard("01108", world.AreaOf(DeckType.SideSchemesArea));
+        var treachery = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
+
+        runner.WhenRevealed(world, treachery, 0);
+
+        Assert.Equal(0, scheme.Tokens.GetValueOrDefault("k_threat"));
+    }
+
     [Rule("rr:choose-option.2")]
     [Rule("rr:draw-drawing-cards")]
     [Fact]

@@ -1491,6 +1491,11 @@ resource. `preventDamage` installs a one-use replacement for the imminent
 attack damage. `cancelWhenRevealed` suppresses only the revealed treachery's
 When Revealed effects; the card remains revealed and is discarded normally.
 
+The remembered cards cross a suspended choice as object ids on its continuation.
+That is an engine save-format choice, not card text: an immediate encounter-deck
+reset can move a discarded card back into the deck, while "discarded this way"
+still names that same card when the ability resumes.
+
 The same slice adds `removeCounters` as a payable cost, `removeThreat` as an
 action, and the board queries `enemies` and `schemes`. An event action or
 interrupt is played from hand: its printed cost is paid before its tree runs,

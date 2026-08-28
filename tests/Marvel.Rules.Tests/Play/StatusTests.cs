@@ -431,6 +431,7 @@ public sealed class StatusTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var ally = world.CreateCard(
             "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("encounter", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
 
         Grant(world, villain, Marvel.Rules.Timing.Keywords.Overkill);
@@ -462,6 +463,7 @@ public sealed class StatusTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var ally = world.CreateCard(
             "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 0));
+        world.CreateCard("encounter", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
 
         Grant(world, villain, Marvel.Rules.Timing.Keywords.Overkill);

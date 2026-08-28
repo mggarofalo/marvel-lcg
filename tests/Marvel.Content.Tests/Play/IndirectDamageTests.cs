@@ -1,3 +1,5 @@
+using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
@@ -106,6 +108,55 @@ public sealed class IndirectDamageTests
         Assert.Equal(1, identity.Damage);
     }
 
+    [Rule("rr:indirect-damage.1")]
+    [Fact]
+    public void ADiscardedCardBindingShapesAndResolvesTheSuspendedAssignment()
+    {
+        // The assignment names one character per point. Its amount is known
+        // before the question is asked, so the same "discarded this way" card
+        // must shape both the prompt and the answer after the ability suspends.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01111", "abilities": [ {
+              "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                           "subject": "this" },
+              "effect": { "seq": [
+                { "discardTop": { "from": "yourDeck", "count": 1 } },
+                { "indirectDamage": {
+                    "among": { "query": "heroesAndAllies" },
+                    "amount": { "printedResourceCountDiscarded": "Y" }
+                } }
+              ] }
+            } ] } ] }
+            """));
+        var world = Deal();
+        world.Abilities = runner;
+        var ally = world.CreateCard(
+            Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var energy = world.CreateCard("01002", world.Seats[0].Deck);
+        var source = world.CreateCard("01111", world.AreaOf(DeckType.RevealingArea));
+
+        runner.WhenRevealed(world, source, 0);
+
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        var prompt = runner.Choosing(world, source, 0, waiting.Index, waiting.Tier)!;
+        var targets = Assert.Single(prompt.Affordances).Targets!;
+        Assert.Equal(1, targets.Min);
+        Assert.Equal(1, targets.Max);
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(
+            world, source, 0, waiting.Index,
+            Decision.Take(source.ObjectId, [], []), waiting.Tier));
+        runner.Chose(
+            world, source, 0, waiting.Index,
+            Decision.Take(source.ObjectId, [ally.ObjectId], []), waiting.Tier);
+
+        Assert.Equal(1, ally.Damage);
+        Assert.Contains(
+            energy,
+            world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0).Cards);
+    }
+
     [Rule("rr:indirect-damage.3.1")]
     [Fact]
     public void NoCharacterIsAssignedMoreThanWouldDefeatIt()
@@ -122,6 +173,35 @@ public sealed class IndirectDamageTests
 
         var identity = world.Seats[0].IdentityCard;
         Assert.Equal(Damage.Health(world, Cards, identity), identity.Damage);
+    }
+
+    [Rule("rr:indirect-damage.3.1")]
+    [Fact]
+    public void AnAnswerCannotAssignOneCharacterPastItsRemainingHitPoints()
+    {
+        // "A character cannot be assigned more indirect damage than would
+        // cause it to be defeated." Repeating one legal target id must still
+        // respect that character's remaining hit points.
+        var world = Deal();
+        BombScare(world, threat: 3);
+        var ally = world.CreateCard(
+            Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        ally.TakeDamage(2);
+        var identity = world.Seats[0].IdentityCard;
+
+        var card = Reveal(world, AuthoredCards.Explosion);
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        var runner = AuthoredCards.Runner();
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(
+            world, card, 0, waiting.Index,
+            Decision.Take(card.ObjectId, [ally.ObjectId, ally.ObjectId, ally.ObjectId], [])));
+        runner.Chose(
+            world, card, 0, waiting.Index,
+            Decision.Take(card.ObjectId, [ally.ObjectId, identity.ObjectId, identity.ObjectId], []));
+
+        Assert.Equal(3, ally.Damage);
+        Assert.Equal(2, identity.Damage);
     }
 
     [Rule("rr:indirect-damage.4")]

@@ -1854,7 +1854,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // not one: an option is a branch the card lists, an element is a card
         // on the board. `Question` has told them apart since before anything
         // asked either.
-        var cast = Resolving(world, source, player, tier, finalStep);
+        var cast = Resuming(world, source, player, tier, finalStep);
         if (choice.Kind == "resolveSpecials")
         {
             var upgrades = Every(choice.Require("cards"), cast);
@@ -2068,7 +2068,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private Prompt Sharing(
         World world, Card source, int player, AbilityNode choice, AbilityType? tier)
     {
-        var cast = Resolving(world, source, player, tier);
+        var cast = Resuming(world, source, player, tier);
         long amount = Amount(choice.Require("amount"), cast);
         var eligible = Assignable(choice.Require("among"), cast);
 
@@ -2146,7 +2146,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             && live.Is(Steps.TurnAction)
                 ? live
                 : null;
-        var cast = Resolving(world, source, player, tier, finalStep, continuation) with
+        var cast = Resuming(world, source, player, tier, finalStep, continuation) with
         {
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
@@ -2348,24 +2348,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (choice.Kind == "indirectDamage")
         {
             var eligible = Assignable(choice.Require("among"), cast);
-            var chosen = new List<Card>();
-            foreach (int id in input.Targets)
+            long amount = Amount(choice.Require("amount"), cast);
+            long expected = Math.Min(amount, eligible.Sum(card => Room(cast, card)));
+            if (input.Targets.Count != expected)
             {
-                chosen.Add(
-                    eligible.FirstOrDefault(card => card.ObjectId == id)
-                    ?? throw new RulesNotImplementedException(
-                        $"card {id} cannot be assigned indirect damage from "
-                        + $"'{source.FaceId}'"));
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires {expected} indirect damage assignment(s) "
+                    + $"and {input.Targets.Count} were chosen");
             }
-
             // One point per entry, so a character named three times takes
             // three. `rr:indirect-damage.3` resolves the whole assignment at
             // once, which is why the counts are gathered before any of it is
             // dealt.
             var share = new Dictionary<int, long>();
-            foreach (var card in chosen)
+            foreach (int id in input.Targets)
             {
-                share[card.ObjectId] = share.GetValueOrDefault(card.ObjectId) + 1;
+                var card = eligible.FirstOrDefault(card => card.ObjectId == id)
+                    ?? throw new RulesNotImplementedException(
+                        $"card {id} cannot be assigned indirect damage from "
+                        + $"'{source.FaceId}'");
+                long assigned = share.GetValueOrDefault(card.ObjectId) + 1;
+                if (assigned > Room(cast, card))
+                {
+                    throw new RulesNotImplementedException(
+                        $"card {id} has room for {Room(cast, card)} indirect damage "
+                        + $"and was assigned {assigned} from '{source.FaceId}'");
+                }
+                share[card.ObjectId] = assigned;
             }
 
             Resolve(cast, share);
@@ -2664,6 +2673,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Tier = tier,
             FinalStep = finalStep,
         };
+
+    /// <summary>A suspended resolution with its persisted card bindings restored.</summary>
+    private Cast Resuming(
+        World world, Card source, int player, AbilityType? tier, bool finalStep = false,
+        Occurrence? continuation = null)
+    {
+        var cast = Resolving(world, source, player, tier, finalStep, continuation);
+        if (world.Agenda.Current?.Discarded is { } discarded)
+        {
+            cast.Discarded.AddRange(discarded.Select(id => world.Cards[id]));
+        }
+        return cast;
+    }
 
     /// <summary>The one choice a card offers, found again from the card.</summary>
     /// <remarks>
@@ -4432,7 +4454,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Tier: cast.Tier,
             FinalStep: cast.FinalStep,
             Trigger: cast.Trigger,
-            SurgeGained: cast.GainedKeywords.Contains("surge"));
+            SurgeGained: cast.GainedKeywords.Contains("surge"),
+            Discarded: [.. cast.Discarded.Select(card => card.ObjectId)]);
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
             cast.World.Agenda.ThenContinuation(continuation, cast.Occurrence);
@@ -5071,16 +5094,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (node.Field("player") is null
             && string.Equals(Word(node.Require("from")), "encounterDeck", StringComparison.Ordinal))
         {
-            for (long discarded = 0; discarded < count; discarded++)
-            {
-                var card = EncounterDeck.TakeTop(cast.World, cast.Trigger, cast.Events);
-                if (card is null)
-                {
-                    break;
-                }
-                Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-                cast.Discarded.Add(card);
-            }
+            cast.Discarded.AddRange(EncounterDeck.DiscardTop(
+                cast.World, count, cast.Trigger, cast.Events));
             return;
         }
         IEnumerable<Area> decks = node.Field("player") is { } players
@@ -6139,11 +6154,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.Discarded, Word(node.Argument)[0], cast.World.Facts),
             "printedBoostIconsDiscarded" => cast.Discarded.Sum(card =>
                 cast.World.Facts.PrintedValue(card.FaceId, "Boost", cast.World.Players)),
-            "topEncounterDiscardBoostPlusOne" => 1 + cast.World.AreaOf(
-                DeckType.EncounterDiscardPile).Cards
-                .Select(card => cast.World.Facts.PrintedValue(
-                    card.FaceId, "Boost", cast.World.Players))
-                .LastOrDefault(),
+            // The binding's spelling is the engine's choice. The printed card
+            // names what was "discarded this way," whose identity survives an
+            // immediate encounter-deck reset even when the discard pile does not.
+            "topEncounterDiscardBoostPlusOne" => 1 + (cast.Discarded.LastOrDefault() is { } card
+                ? cast.World.Facts.PrintedValue(card.FaceId, "Boost", cast.World.Players)
+                : 0),
             "remainingHealth" => Find(node.Argument, cast) is { } remaining
                 ? Math.Max(
                     0,
