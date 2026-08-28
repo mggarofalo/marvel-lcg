@@ -26,7 +26,7 @@ public static class EachPlayerEffects
     /// </remarks>
     public static void Schedule(
         World world, Card source, int stoppedAt, AbilityType? tier = null,
-        bool finalStep = false)
+        bool finalStep = false, bool surgeGained = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
@@ -40,7 +40,8 @@ public static class EachPlayerEffects
         int round = world.Agenda.Current?.Round ?? 0;
         if (players.Count == 1)
         {
-            ScheduleFrames(world, source, stoppedAt, tier, finalStep, players);
+            ScheduleFrames(
+                world, source, stoppedAt, tier, finalStep, surgeGained, players);
             return;
         }
 
@@ -53,7 +54,8 @@ public static class EachPlayerEffects
             Seat: world.FirstPlayer,
             Plan: true,
             Tier: tier,
-            FinalStep: finalStep));
+            FinalStep: finalStep,
+            SurgeGained: surgeGained));
     }
 
     internal static Prompt Ordering(World world, PhaseStep step)
@@ -113,6 +115,7 @@ public static class EachPlayerEffects
             step.Index,
             step.Tier,
             step.FinalStep,
+            step.SurgeGained,
             input.Targets.Select(identity => candidates[identity]).ToList());
     }
 
@@ -144,6 +147,7 @@ public static class EachPlayerEffects
         int stoppedAt,
         AbilityType? tier,
         bool finalStep,
+        bool surgeGained,
         List<int> players)
     {
         int round = world.Agenda.Current?.Round ?? 0;
@@ -160,7 +164,8 @@ public static class EachPlayerEffects
                 Tier: tier,
                 FinalStep: finalStep,
                 FinalPlayer: position == players.Count - 1,
-                EachPlayerFrame: true));
+                EachPlayerFrame: true,
+                SurgeGained: surgeGained));
         }
     }
 

@@ -1080,6 +1080,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             EachPlayerFrame = true,
             FinalPlayer = finalPlayer,
+            GainedKeywords = world.Agenda.Current is
+                { What: Steps.ResolveEachPlayer, SurgeGained: true }
+                    ? new HashSet<string>(["surge"], StringComparer.Ordinal)
+                    : new HashSet<string>(StringComparer.Ordinal),
         };
         cast.At(stoppedAt - 1);
         cast.SetContinuation(finalPlayer && outer.Kind == "seq"
@@ -2936,7 +2940,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "eachPlayer":
                 EachPlayerEffects.Schedule(
-                    cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep);
+                    cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep,
+                    cast.GainedKeywords.Contains("surge"));
                 cast.Suspend();
                 break;
 
@@ -3238,6 +3243,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         cast.World.Players) <= 0
                     && cast.GainedKeywords.Add("surge"))
                 {
+                    ((AbilityRunner)cast.Abilities).RememberGainedSurge(
+                        cast.World, cast.Source.ObjectId);
                     Deal.EncounterCard(
                         cast.World, cast.Player, cast.Trigger, cast.Events);
                 }
@@ -5276,6 +5283,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
     }
 
+    /// <summary>Propagate one reveal-scoped Surge gain to work already suspended.</summary>
+    private void RememberGainedSurge(World world, int source)
+    {
+        foreach (var continuation in activations.Values
+            .Where(continuation => continuation.Source == source)
+            .Distinct())
+        {
+            continuation.SurgeGained = true;
+        }
+
+        // Choice and each-player continuations are saveable agenda data. An
+        // earlier ability can already have scheduled one when a later sibling
+        // ability gains Surge, so its original snapshot must be advanced too.
+        // The rulebook determines the shared non-numeric keyword instance; the
+        // propagation mechanism is the engine's choice.
+        world.Agenda.MarkSurgeGained(source);
+    }
+
     /// <summary>All allies in player discard piles, in player and pile order.</summary>
     private static IReadOnlyList<Card> AlliesInPlayerDiscards(World world) =>
     [
@@ -6290,7 +6315,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public int Next { get; } = next;
         public int Remaining { get; set; } = remaining;
         public Dictionary<string, long> Results { get; } = results;
-        public bool SurgeGained { get; } = surgeGained;
+        public bool SurgeGained { get; set; } = surgeGained;
         public long Made { get; set; }
         public long Damage { get; set; }
         public long Threat { get; set; }

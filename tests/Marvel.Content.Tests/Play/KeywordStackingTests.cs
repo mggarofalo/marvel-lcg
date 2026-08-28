@@ -126,6 +126,139 @@ public sealed class KeywordStackingTests
         AssertOneAdditionalCard(world);
     }
 
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Fact]
+    public void LaterAbilityUpdatesAnEarlierChoiceContinuation()
+    {
+        // The first ability suspends before Surge is gained. The second
+        // ability still belongs to the same reveal, so its gain must update
+        // the already-scheduled continuation rather than leave a stale copy.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01110", "abilities": [
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "seq": [
+                  { "choose": { "options": [ { "seq": [] }, { "seq": [] } ] } },
+                  { "gainSurge": 1 } ] } },
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "gainSurge": 1 } }
+            ] } ] }
+            """));
+        var (world, card) = Board("01110", runner);
+
+        ResolveReveal(world, card, runner);
+        var waiting = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
+        Assert.True(waiting.SurgeGained);
+        runner.Chose(world, card, 0, waiting.Index, Decision.Take(0), waiting.Tier);
+
+        AssertOneAdditionalCard(world);
+    }
+
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Fact]
+    public void LaterAbilityUpdatesAnEarlierActivationContinuation()
+    {
+        // As with a pending choice, the activation continuation can exist
+        // before a sibling ability gains Surge. The shared reveal state must
+        // advance that pending cast before it resumes its remaining step.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01110", "abilities": [
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "seq": [
+                  { "enemyAttacks": { "enemies": { "query": "villain" } } },
+                  { "gainSurge": 1 } ] } },
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "gainSurge": 1 } }
+            ] } ] }
+            """));
+        var (world, card) = Board("01110", runner);
+        var seat = world.Seats[0];
+        seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
+        var villain = world.CreateCard("01113", world.AreaOf(DeckType.VillainArea));
+
+        ResolveReveal(world, card, runner);
+        int activation = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
+        runner.ActivationCompleted(
+            world,
+            new EnemyActivation(
+                villain.ObjectId, 0, Attacking: true, activation, Made: true));
+
+        AssertOneAdditionalCard(world);
+    }
+
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Fact]
+    public void GainedSurgeSurvivesEachPlayerFrames()
+    {
+        // Each-player work is represented by saveable agenda frames. Those
+        // frames and the final return to the outer sequence remain part of the
+        // same reveal and therefore share its one effective Surge instance.
+        var runner = Runner(
+            "01110",
+            """{ "seq": [ { "gainSurge": 1 }, { "eachPlayer": { "effect": { "seq": [] } } }, { "gainSurge": 1 } ] }""");
+        var (world, card) = Board("01110", runner);
+
+        ResolveReveal(world, card, runner);
+        var frame = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.ResolveEachPlayer);
+        runner.ResolveEachPlayer(
+            world, card, frame.Seat, frame.Index, frame.Tier,
+            frame.FinalStep, frame.FinalPlayer);
+
+        AssertOneAdditionalCard(world);
+    }
+
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Fact]
+    public void EachPlayerFramesShareGainedSurgeAcrossPlayers()
+    {
+        // The per-player frames are separate saved casts, but the keyword was
+        // gained by the card once during one reveal. The first frame advances
+        // the remaining frame so the second player does not resolve Surge too.
+        var runner = Runner(
+            "01110",
+            """{ "eachPlayer": { "effect": { "gainSurge": 1 } } }""");
+        var world = new World(Cards, players: 2) { Abilities = runner };
+        world.CreateSeat("p0");
+        world.CreateSeat("p1");
+        var card = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
+        world.CreateCard("01122", world.AreaOf(DeckType.EncounterDeck));
+        world.CreateCard("01123", world.AreaOf(DeckType.EncounterDeck));
+        world.Agenda.Add(new PhaseStep(
+            Steps.ResolveEachPlayer, 1, 2, Index: 1, Subject: card.ObjectId,
+            Seat: 0, Plan: true, Tier: Marvel.Rules.Timing.AbilityType.WhenRevealed,
+            EachPlayerFrame: true));
+        world.Agenda.Add(new PhaseStep(
+            Steps.ResolveEachPlayer, 1, 2, Index: 1, Subject: card.ObjectId,
+            Seat: 1, Plan: true, Tier: Marvel.Rules.Timing.AbilityType.WhenRevealed,
+            FinalPlayer: true, EachPlayerFrame: true));
+
+        var first = world.Agenda.Current!.Value;
+        runner.ResolveEachPlayer(
+            world, card, first.Seat, first.Index, first.Tier,
+            first.FinalStep, first.FinalPlayer);
+        world.Agenda.Advance();
+        world.Agenda.Advance();
+        world.Agenda.Advance();
+        var second = world.Agenda.Current!.Value;
+        runner.ResolveEachPlayer(
+            world, card, second.Seat, second.Index, second.Tier,
+            second.FinalStep, second.FinalPlayer);
+
+        AssertOneAdditionalCard(world);
+    }
+
     private static AbilityRunner Runner(string faceId, string effect) =>
         new(AbilityCatalog.Parse(
             $$"""

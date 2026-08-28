@@ -358,6 +358,30 @@ public sealed class Agenda
                 and not Steps.CompleteSchemeActivation),
     ];
 
+    /// <summary>Remember gained Surge on every continuation of one revealed card.</summary>
+    /// <remarks>
+    /// A reveal can schedule a continuation and then resolve another printed
+    /// ability before that continuation resumes. Updating every frame keeps
+    /// the reveal-scoped non-numeric keyword state authoritative instead of
+    /// leaving the earlier frame with a stale by-value snapshot. The flag and
+    /// this propagation are engine save-format choices.
+    /// </remarks>
+    /// <param name="source">The revealed card whose abilities share the gain.</param>
+    public void MarkSurgeGained(int source)
+    {
+        for (int index = 0; index < items.Count; index++)
+        {
+            var (step, stage, occurrence) = items[index];
+            if (step.Subject == source
+                && step.What is Steps.ChooseOption
+                    or Steps.OrderEachPlayer
+                    or Steps.ResolveEachPlayer)
+            {
+                items[index] = (step with { SurgeGained = true }, stage, occurrence);
+            }
+        }
+    }
+
     /// <summary>Put a step at the end of the list.</summary>
     /// <param name="step">What to do.</param>
     public void Add(PhaseStep step)
