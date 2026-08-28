@@ -237,6 +237,43 @@ public sealed class SimulationHarnessTests
     }
 
     [Fact]
+    public void ReplayRejectsChangedResultMetrics()
+    {
+        var lines = SuccessfulLines();
+        int changed = lines.FindIndex(line => JsonNode.Parse(line)!["type"]!.GetValue<string>()
+            == "result");
+        var result = JsonNode.Parse(lines[changed])!.AsObject();
+        result["seed"] = 999999;
+        result["metrics"]!["cards_played"] = 999999;
+        lines[changed] = result.ToJsonString(RecordJson.Options);
+
+        AssertReplayDiverges(lines);
+    }
+
+    [Fact]
+    public void ReportRejectsAChangedAggregateSummary()
+    {
+        var lines = SuccessfulLines();
+        int changed = lines.FindIndex(line => JsonNode.Parse(line)!["type"]!.GetValue<string>()
+            == "summary");
+        var summary = JsonNode.Parse(lines[changed])!.AsObject();
+        summary["players_win"] = 999999;
+        lines[changed] = summary.ToJsonString(RecordJson.Options);
+
+        string path = Path.Combine(
+            Path.GetTempPath(), $"marvel-sim-report-{Guid.NewGuid():N}.jsonl");
+        try
+        {
+            File.WriteAllLines(path, lines);
+            Assert.Throws<ReplayDivergenceException>(() => SimulationHarness.Report(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void InvalidConfigurationDoesNotCreateTheRequestedOutput()
     {
         string path = Path.Combine(
@@ -293,6 +330,18 @@ public sealed class SimulationHarnessTests
         {
             File.Delete(path);
         }
+    }
+
+    private static List<string> SuccessfulLines()
+    {
+        var record = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);
+        SimulationHarness.Run(
+            Config(games: 1, seeds: [265], selectionSeed: null),
+            record,
+            TextWriter.Null);
+        return record.ToString()
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
     }
 
     private static IEnumerable<JsonElement> Lines(StringWriter writer)

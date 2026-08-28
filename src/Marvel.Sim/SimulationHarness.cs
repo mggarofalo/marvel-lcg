@@ -149,7 +149,7 @@ internal static class SimulationHarness
                     "failure", FailureCategory(error, stage), gameIndex, seed, step,
                     error.GetType().FullName ?? error.GetType().Name,
                     error.Message,
-                    game?.Pending is null ? prompt : PromptRecord.From(game.Pending),
+                    FailurePrompt(stage, attempted, prompt, game),
                     attempted,
                     input?.Targets ?? [],
                     input?.Spent ?? [],
@@ -198,6 +198,11 @@ internal static class SimulationHarness
             throw new SimulationUsageException("record is empty");
         }
 
+        using (var document = JsonDocument.Parse(first))
+        {
+            RequireEqual("header", RecordType(document.RootElement), "first record type");
+        }
+
         var header = Read<HeaderRecord>(first, "header");
         if (header.Schema != RecordSchema)
         {
@@ -212,6 +217,12 @@ internal static class SimulationHarness
                 $"policy {header.Policy} v{header.PolicyVersion} is not available");
         }
 
+        RequireEqual(
+            ActingPolicy.Visibility,
+            header.PolicyVisibility,
+            "policy visibility");
+        ValidateHeaderSeeds(header);
+
         var data = SimulationData.Load(config.RepoRoot);
         var simulation = new SimulationConfig(
             header.Scenario, header.Difficulty, header.Heroes, header.ModularSets, 1, [], null,
@@ -224,6 +235,16 @@ internal static class SimulationHarness
         int currentSteps = 0;
         int games = 0;
         int steps = 0;
+        int replayPlayerWins = 0;
+        int replayVillainWins = 0;
+        int replayPlayerLosses = 0;
+        int replayFailures = 0;
+        int replayRounds = 0;
+        int replayCardsPlayed = 0;
+        int replayPlayerAttacks = 0;
+        int replayPayments = 0;
+        int replayResourceAbilities = 0;
+        var replaySignatures = new Dictionary<string, int>(StringComparer.Ordinal);
         var replayRecent = new Queue<StepRecord>();
         bool sawSummary = false;
         string? line;
@@ -340,6 +361,9 @@ internal static class SimulationHarness
                         currentSteps, result.Decisions,
                         $"game {currentGame} decision count");
                     RequireEqual(
+                        header.Seeds[result.Game], result.Seed,
+                        $"game {currentGame} result seed");
+                    RequireEqual(
                         result.Outcome,
                         game!.State.Result.ToString(),
                         $"game {currentGame} outcome");
@@ -348,12 +372,36 @@ internal static class SimulationHarness
                         result.TerminalDigest,
                         game.State.Digest().Canonical(),
                         $"game {currentGame} terminal digest");
+                    RequireEqual(
+                        JsonSerializer.Serialize(result.Metrics, RecordJson.Options),
+                        JsonSerializer.Serialize(replayPolicy!.Metrics, RecordJson.Options),
+                        $"game {currentGame} policy metrics");
                     if (game.Pending is not null)
                     {
                         throw new ReplayDivergenceException(
                             $"game {currentGame} has a prompt after its result");
                     }
 
+                    switch (game.State.Result)
+                    {
+                        case Outcome.PlayersWin:
+                            replayPlayerWins++;
+                            break;
+                        case Outcome.VillainWins:
+                            replayVillainWins++;
+                            break;
+                        case Outcome.PlayersLose:
+                            replayPlayerLosses++;
+                            break;
+                    }
+
+                    replayRounds += game.Round;
+                    AddMetrics(
+                        replayPolicy.Metrics,
+                        ref replayCardsPlayed,
+                        ref replayPlayerAttacks,
+                        ref replayPayments,
+                        ref replayResourceAbilities);
                     game = null;
                     replayPolicy = null;
                     break;
@@ -386,6 +434,7 @@ internal static class SimulationHarness
                         catch (Exception error)
                         {
                             RequireFailure(failure, error, "setup");
+                            AddFailure(failure, replaySignatures, ref replayFailures);
                             diagnostics.WriteLine(
                                 $"reproduced expected setup failure in game {failure.Game}: "
                                 + $"{error.GetType().Name}: {error.Message}");
@@ -408,12 +457,20 @@ internal static class SimulationHarness
                         $"game {currentGame} last-good digest");
                     RequireNullablePrompt(
                         failure.Prompt,
-                        game.Pending is null ? null : PromptRecord.From(game.Pending),
+                        ExpectedFailurePrompt(failure, game),
                         $"game {currentGame} failure prompt");
                     RequireEqual(
                         JsonSerializer.Serialize(failure.RecentSteps, RecordJson.Options),
                         JsonSerializer.Serialize(replayRecent, RecordJson.Options),
                         $"game {currentGame} recent steps");
+                    AddFailure(failure, replaySignatures, ref replayFailures);
+                    replayRounds += game.Round;
+                    AddMetrics(
+                        replayPolicy!.Metrics,
+                        ref replayCardsPlayed,
+                        ref replayPlayerAttacks,
+                        ref replayPayments,
+                        ref replayResourceAbilities);
                     if (string.Equals(
                             failure.Category, "decision_limit", StringComparison.Ordinal))
                     {
@@ -518,6 +575,23 @@ internal static class SimulationHarness
 
                     var summary = Read<SummaryRecord>(line, type);
                     RequireEqual(games, summary.Games, "summary game count");
+                    RequireEqual(replayPlayerWins, summary.PlayersWin, "summary player wins");
+                    RequireEqual(replayVillainWins, summary.VillainWins, "summary villain wins");
+                    RequireEqual(replayPlayerLosses, summary.PlayersLose, "summary player losses");
+                    RequireEqual(replayFailures, summary.Failures, "summary failures");
+                    RequireEqual(steps, summary.Decisions, "summary decisions");
+                    RequireEqual(replayRounds, summary.Rounds, "summary rounds");
+                    RequireEqual(replayCardsPlayed, summary.CardsPlayed, "summary cards played");
+                    RequireEqual(replayPlayerAttacks, summary.PlayerAttacks, "summary player attacks");
+                    RequireEqual(replayPayments, summary.Payments, "summary payments");
+                    RequireEqual(
+                        replayResourceAbilities,
+                        summary.ResourceAbilitiesUsed,
+                        "summary resource abilities");
+                    RequireEqual(
+                        JsonSerializer.Serialize(replaySignatures, RecordJson.Options),
+                        JsonSerializer.Serialize(summary.FailureSignatures, RecordJson.Options),
+                        "summary failure signatures");
                     sawSummary = true;
                     break;
                 }
@@ -548,6 +622,8 @@ internal static class SimulationHarness
         {
             throw new SimulationUsageException($"record does not exist: {fullPath}");
         }
+
+        _ = Replay(new ReplayConfig(fullPath, null), TextWriter.Null);
 
         SummaryRecord? found = null;
         foreach (string line in File.ReadLines(fullPath))
@@ -736,6 +812,54 @@ internal static class SimulationHarness
         JsonSerializer.Deserialize<T>(line, RecordJson.Options)
         ?? throw new JsonException($"{expectedType} record was null");
 
+    private static void ValidateHeaderSeeds(HeaderRecord header)
+    {
+        if (header.Seeds.Count == 0)
+        {
+            throw new ReplayDivergenceException("header contains no game seeds");
+        }
+
+        switch (header.SeedMode)
+        {
+            case "explicit":
+                if (header.SelectionSeed is not null)
+                {
+                    throw new ReplayDivergenceException(
+                        "explicit seed mode records a selection seed");
+                }
+
+                break;
+            case "consecutive":
+                if (header.SelectionSeed is not null
+                    || (ulong)header.Seeds[0] + (ulong)header.Seeds.Count - 1
+                        > uint.MaxValue
+                    || header.Seeds.Where((seed, index) => index > 0
+                        && seed != header.Seeds[0] + (uint)index).Any())
+                {
+                    throw new ReplayDivergenceException(
+                        "consecutive seed plan does not match its mode");
+                }
+
+                break;
+            case "random":
+                if (header.SelectionSeed is not { } selectionSeed)
+                {
+                    throw new ReplayDivergenceException(
+                        "random seed mode has no selection seed");
+                }
+
+                var planner = new MersenneTwister(selectionSeed);
+                var expected = Enumerable.Range(0, header.Seeds.Count)
+                    .Select(_ => planner.NextUInt32())
+                    .ToList();
+                RequireSequence(expected, header.Seeds, "random seed plan");
+                break;
+            default:
+                throw new ReplayDivergenceException(
+                    $"unknown seed mode '{header.SeedMode}'");
+        }
+    }
+
     private static string RecordType(JsonElement record)
     {
         if (record.ValueKind != JsonValueKind.Object
@@ -825,6 +949,64 @@ internal static class SimulationHarness
         return string.Equals(stage, "policy", StringComparison.Ordinal)
             ? "policy_error"
             : "engine_exception";
+    }
+
+    private static PromptRecord? FailurePrompt(
+        string stage,
+        DecisionSelector? attempted,
+        PromptRecord? beforeDecision,
+        Game? game)
+    {
+        if (string.Equals(stage, "terminal", StringComparison.Ordinal)
+            || string.Equals(stage, "setup", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        if (attempted is not null)
+        {
+            return beforeDecision;
+        }
+
+        return game?.Pending is null ? beforeDecision : PromptRecord.From(game.Pending);
+    }
+
+    private static PromptRecord? ExpectedFailurePrompt(FailureRecord failure, Game game)
+    {
+        if (string.Equals(failure.Category, "engine_exception", StringComparison.Ordinal)
+            && failure.Decision is null
+            && game.Pending is null)
+        {
+            return null;
+        }
+
+        return game.Pending is null ? null : PromptRecord.From(game.Pending);
+    }
+
+    private static void AddFailure(
+        FailureRecord failure,
+        Dictionary<string, int> signatures,
+        ref int failures)
+    {
+        failures++;
+        string signature = $"{TypeName(failure.Exception)}: {failure.Message}";
+        signatures[signature] = signatures.GetValueOrDefault(signature) + 1;
+    }
+
+    private static string TypeName(string qualified) =>
+        qualified[(qualified.LastIndexOf('.') + 1)..];
+
+    private static void AddMetrics(
+        PolicyMetrics metrics,
+        ref int cardsPlayed,
+        ref int playerAttacks,
+        ref int payments,
+        ref int resourceAbilities)
+    {
+        cardsPlayed += metrics.CardsPlayed;
+        playerAttacks += metrics.PlayerAttacks;
+        payments += metrics.Payments;
+        resourceAbilities += metrics.ResourceAbilitiesUsed;
     }
 
     private static void RequirePrompt(
