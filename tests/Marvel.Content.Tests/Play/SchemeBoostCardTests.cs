@@ -75,6 +75,7 @@ public sealed class SchemeBoostCardTests
     }
 
     [Rule("rr:scheme-enemy-activation.step.2.e")]
+    [Rule("rr:boost-boost-icon.6.1")]
     [Fact]
     public void EveryBoostCardTheEnemyHoldsIsResolved()
     {

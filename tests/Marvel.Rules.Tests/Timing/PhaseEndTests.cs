@@ -85,6 +85,24 @@ public sealed class PhaseEndTests
             [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds], occurrence.Conditions));
     }
 
+    [Rule("rr:villain-phase.step.6.b")]
+    [Fact]
+    public void AfterTheRoundEndsEffectsResolveAfterExpiration()
+    {
+        // Step 6b resolves "when/after the villain phase ends" and
+        // "when/after the round ends" effects. A forced response is therefore
+        // resolved in the response window after step 6a has expired the round.
+        var world = Board();
+        world.Effects.Register(Lasting(TimingPoints.EndOfRound));
+        var waiting = new Offering(
+            new PendingAbility(0, AbilityType.ForcedResponse, 0));
+
+        EndRound(world, waiting);
+
+        Assert.Equal(1, waiting.Resolved);
+        Assert.Empty(world.Effects.Active());
+    }
+
     [Rule("rr:ability.11")]
     [Fact]
     public void AnOptionalAbilityInAWindowSaysSoRatherThanBeingDeclined()
@@ -184,12 +202,18 @@ public sealed class PhaseEndTests
     /// <summary>Puts a fixed set of abilities into every window.</summary>
     private sealed class Offering(params PendingAbility[] abilities) : NoCardAbilities
     {
+        public int Resolved { get; private set; }
+
         public override IReadOnlyList<PendingAbility> Waiting(
             World world, Occurrence occurrence, WindowKind window) => abilities;
 
         public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
+            IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+        {
+            Resolved += 1;
+            return [];
+        }
 
         public override Affordance Describe(World world, PendingAbility ability) =>
             new(ability.Card, "Use", ability.Card, ability.Player, $"ability on {ability.Card}");

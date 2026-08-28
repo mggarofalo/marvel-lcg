@@ -51,6 +51,7 @@ public sealed class DealTests
     }
 
     [Rule("rr:hazard-icon")]
+    [Rule("rr:hazard-icon.1")]
     [Theory]
     // No icons: one card each and no more.
     [InlineData(0, 2)]
@@ -161,6 +162,36 @@ public sealed class DealTests
 
         Run(world, printed);
         Assert.Null(Deal.NextToReveal(world));
+    }
+
+    [Rule("rr:reveal.step.1")]
+    [Rule("rr:reveal.step.3")]
+    [Rule("rr:reveal.step.4")]
+    [Rule("rr:reveal.6")]
+    [Rule("rr:reveal.8")]
+    [Rule("rr:treachery.1")]
+    [Rule("rr:treachery.2")]
+    [Fact]
+    public void ATreacheryCompletesItsRevealBeforeResponsesResolve()
+    {
+        // "Turn the encounter card faceup," place a treachery "in front of the
+        // player revealing it," and "resolve each 'When Revealed' ability."
+        // The revealing player "must resolve its effects" and, "after
+        // resolving," place it in the encounter discard pile as step 4 says.
+        // Responses "are not resolved until after all steps of the reveal
+        // process have been completed," so this one observes the discard.
+        var printed = new Printed();
+        var world = Board(printed, players: 1);
+        var abilities = new ObservingReveal();
+
+        Run(world, printed, abilities);
+
+        Assert.NotNull(abilities.Card);
+        Assert.True(abilities.Card.FaceUp);
+        Assert.Equal(DeckType.RevealingArea, abilities.AreaDuringWhenRevealed);
+        Assert.Equal(DeckType.EncounterDiscardPile, abilities.Card.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, abilities.AreaDuringResponse);
+        Assert.Equal(1, abilities.Responses);
     }
 
     /// <summary>
@@ -290,6 +321,42 @@ public sealed class DealTests
             World world, Occurrence occurrence, PendingAbility ability,
             IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
 
+    }
+
+    /// <summary>Observes the treachery during its own text and after all reveal steps.</summary>
+    private sealed class ObservingReveal : NoCardAbilities
+    {
+        public Card? Card { get; private set; }
+
+        public DeckType AreaDuringWhenRevealed { get; private set; }
+
+        public DeckType AreaDuringResponse { get; private set; }
+
+        public int Responses { get; private set; }
+
+        public override IReadOnlyList<GameEvent> WhenRevealed(
+            World world, Card card, int player)
+        {
+            Card = card;
+            AreaDuringWhenRevealed = card.Area.Type;
+            return [];
+        }
+
+        public override IReadOnlyList<PendingAbility> Waiting(
+            World world, Occurrence occurrence, WindowKind window) =>
+            window == WindowKind.Response
+            && occurrence.Conditions.Contains(Steps.CardRevealed, StringComparer.Ordinal)
+                ? [new PendingAbility(occurrence.Subject, AbilityType.ForcedResponse, 0)]
+                : [];
+
+        public override IReadOnlyList<GameEvent> Resolve(
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+        {
+            Responses += 1;
+            AreaDuringResponse = world.Cards[ability.Card].Area.Type;
+            return [];
+        }
     }
 
     /// <summary>Printed data for a handful of made-up cards.</summary>

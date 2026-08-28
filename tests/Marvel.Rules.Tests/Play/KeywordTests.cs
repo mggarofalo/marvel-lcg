@@ -82,6 +82,7 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:incite-x")]
+    [Rule("rr:incite-x.1")]
     [Theory]
     [InlineData(0, 0)]
     [InlineData(2, 2)]
@@ -226,6 +227,7 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:hinder-x")]
+    [Rule("rr:hinder-x.1")]
     [Fact]
     public void HinderXPutsThreatOnTheCardItself()
     {
@@ -245,11 +247,14 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:side-scheme")]
+    [Rule("rr:side-scheme.1")]
+    [Rule("rr:hinder-x.2")]
     [Fact]
     public void ASideSchemeEntersPlayWithItsStartingThreatAndItsHinder()
     {
-        // Two different sources of threat on one card, and they add: the
-        // printed starting threat every scheme has, and the keyword.
+        // A side scheme "enters play with an amount of threat on it equal to"
+        // its starting threat, and hinder is "in addition to any threat it
+        // normally enters play with." The two sources therefore add.
         var printed = new Printed()
             .With("sideScheme", ("Hinder", "2"), ("StartingThreat", "3"));
         var world = Board(printed);

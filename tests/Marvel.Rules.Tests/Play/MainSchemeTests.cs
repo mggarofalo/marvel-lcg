@@ -139,8 +139,12 @@ public sealed class MainSchemeTests
 
     [Rule("rr:villain-phase.step.1")]
     [Rule("rr:acceleration-icon")]
+    [Rule("rr:acceleration-icon.1")]
+    [Rule("rr:main-scheme-main-scheme-deck.1")]
     [Theory]
     [InlineData(0, 0, 1)]
+    // Step one places "the amount of threat indicated in the main scheme's
+    // acceleration field" before active icons and tokens add to it.
     // "If any acceleration icons or tokens are active, additional threat equal
     // to the number of such icons and tokens is also placed at this time."
     [InlineData(2, 0, 3)]
@@ -166,6 +170,7 @@ public sealed class MainSchemeTests
     }
 
     [Rule("rr:encounter-deck.1")]
+    [Rule("rr:acceleration-token.1")]
     [Fact]
     public void AnEmptyEncounterDeckIsRebuiltAndCostsAnAccelerationToken()
     {

@@ -131,6 +131,31 @@ public sealed class EncounterDeckTests
         Assert.Equal("Accelerate", placed.Verb);
     }
 
+    [Rule("rr:encounter-deck.3")]
+    [Rule("rr:acceleration-token.1")]
+    [Fact]
+    public void ADealFinishesAfterResettingAnEmptyEncounterDeck()
+    {
+        // "If the encounter deck empties during the resolution of any other
+        // type of game effect," that effect "finishes resolving after the
+        // encounter deck has been reset." The discarded card becomes the
+        // dealt card, and the reset also places its required acceleration token.
+        var printed = new Printed();
+        var world = Board(printed);
+        var card = world.CreateCard("card", world.AreaOf(DeckType.EncounterDiscardPile));
+
+        var dealt = Deal.EncounterCard(world, 0, "test", []);
+
+        Assert.Same(card, dealt);
+        Assert.Same(
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)),
+            card.Area);
+        Assert.Equal(
+            1,
+            world.TheCardIn(DeckType.MainSchemesArea)!
+                .Tokens[EncounterDeck.AccelerationToken]);
+    }
+
     private static World Board(ICardFacts facts)
     {
         var world = new World(facts, players: 1);
