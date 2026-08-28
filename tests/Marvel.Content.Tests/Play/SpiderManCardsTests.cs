@@ -40,12 +40,15 @@ public sealed class SpiderManCardsTests
     }
 
     [Rule("rr:player-turn.5")]
+    [Rule("rr:event")]
+    [Rule("rr:initiating-abilities.step.1")]
     [Rule("rr:play-put-into-play.2")]
     [Fact]
     public void SwingingWebKickPaysChoosesDamagesAndThenDiscards()
     {
-        // An Action on an event is played from hand. It remains there while
-        // its target question is waiting, then goes to discard after damage.
+        // An Action on an event is played from hand. It sits faceup and out of
+        // play while its target question is waiting, then goes to discard after
+        // damage.
         var world = Deal(hero: true);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
@@ -57,7 +60,9 @@ public sealed class SpiderManCardsTests
         var action = Assert.Single(runner.Actions(world, 0));
 
         var events = runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []).ToList();
-        Assert.Equal(DeckType.HandsArea, kick.Area.Type);
+        Assert.Equal(DeckType.RevealingArea, kick.Area.Type);
+        Assert.True(kick.FaceUp);
+        Assert.False(DeckTypes.IsInPlay(kick.Area.Type));
 
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var prompt = Sequence.Work(world, Cards, runner, events)!;
@@ -73,15 +78,19 @@ public sealed class SpiderManCardsTests
     }
 
     [Rule("rr:event.4")]
+    [Rule("rr:event.2")]
     [Rule("rr:stun-stunned.1")]
     [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:initiating-abilities.step.6")]
     [Fact]
     public void StunCancelsSwingingWebKickAfterItsCostsArePaid()
     {
         // "As the attack is initiated, remove the stunned status card to
         // cancel the attack." An event's attack is "considered to be performed
         // by that player's identity", so the hero's stun cancels Swinging Web
-        // Kick. Initiation is after the event's costs are paid.
+        // Kick. Initiation is after the event's costs are paid. Canceling only
+        // the effect still leaves those resources spent and the played event
+        // in its owner's discard pile.
         var world = Deal(hero: true);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
@@ -102,6 +111,8 @@ public sealed class SpiderManCardsTests
         Assert.False(Statuses.Has(world, hero, Statuses.Stunned));
         Assert.Equal(0, villain.Damage);
         Assert.Equal(DeckType.DiscardPile, kick.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, genius.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, energy.Area.Type);
     }
 
     [Rule("rr:guard.1")]
@@ -159,6 +170,7 @@ public sealed class SpiderManCardsTests
     }
 
     [Rule("rr:prevent")]
+    [Rule("rr:damage.step.3")]
     [Fact]
     public void BackflipPreventsTheImminentAttackDamage()
     {
@@ -209,6 +221,37 @@ public sealed class SpiderManCardsTests
         Assert.False(Statuses.Has(world, villain, Statuses.Tough));
         Assert.Equal(DeckType.RevealingArea, treachery.Area.Type);
         Assert.Equal(DeckType.DiscardPile, sense.Area.Type);
+    }
+
+    [Rule("rr:when-revealed-abilities.3")]
+    [Theory]
+    [InlineData(DeckType.VillainArea)]
+    [InlineData(DeckType.MainSchemesArea)]
+    public void VillainAndMainSchemeWhenRevealedAbilitiesCannotBeCanceled(
+        DeckType area)
+    {
+        var world = Deal(hero: true);
+        var card = world.TheCardIn(area)!;
+        var runner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                $$"""
+                { "cards": [ { "card": "{{card.FaceId}}", "abilities": [ {
+                    "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+                    "effect": { "draw": { "player": "you", "count": 1 } }
+                } ] } ] }
+                """));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "cancelWhenRevealed",
+            Affects: card.ObjectId,
+            Lasts: new Duration(Uses: 1)));
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.WhenRevealed(world, card, 0);
+
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Contains(
+            world.Effects.Active(), effect => effect.Affects == card.ObjectId);
     }
 
     [Rule("rr:uses-x-type")]

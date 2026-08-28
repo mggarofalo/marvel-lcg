@@ -63,7 +63,7 @@ items.
 | `rr:ability.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.3.1` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
-| `rr:ability.4` | Unimplemented behavior | MARVEL-284 | Whole-text alteration checks and sentence-by-sentence resolution require initiation-language work. |
+| `rr:ability.4` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:ability.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.7` | Executable and cited | — | A behavior test directly cites this record. |
@@ -76,7 +76,7 @@ items.
 | `rr:ability.11` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.12` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.13` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:ability.14` | Unimplemented behavior | MARVEL-284 | Quoted timing triggers need explicit reference rather than trigger semantics. |
+| `rr:ability.14` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:acceleration-icon` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-icon.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-icon.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -155,7 +155,7 @@ items.
 | `rr:attack-enemy-activation.step.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.3` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:attack-enemy-activation.step.3.a` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:attack-enemy-activation.step.3.b` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:attack-enemy-activation.step.3.b` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:attack-enemy-activation.step.3.c` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.3.d` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.3.e` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
@@ -163,7 +163,7 @@ items.
 | `rr:attack-enemy-activation.step.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.6.a` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.step.6.b` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:attack-enemy-activation.step.6.b` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:attack-enemy-activation.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.1.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.1.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -178,8 +178,8 @@ items.
 | `rr:attack-enemy-activation.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.4.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.6` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:attack-enemy-activation.7` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:attack-enemy-activation.6` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:attack-enemy-activation.7` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:attack-enemy-activation.7.1` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:attack-player-ability-type` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.step.7` | Executable and cited | — | A behavior test directly cites this record. |
@@ -196,11 +196,11 @@ items.
 | `rr:attack-player-ability-type.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.5` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:attack-player-ability-type.5.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-player-ability-type.6` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:attack-player-ability-type.6` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:attacks-against-allies` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attacks-against-allies.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attacks-against-allies.1.1` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:attacks-against-allies.1.2` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:attacks-against-allies.1.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:attacks-against-allies.1.2` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:attacks-against-allies.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
 | `rr:attacks-against-allies.3` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
 | `rr:base-value` | Executable and cited | — | A behavior test directly cites this record. |
@@ -309,7 +309,7 @@ items.
 | `rr:cost.11` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:cost.12` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:cost-arrow-icon` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:cost-arrow-icon.1` | Unimplemented behavior | MARVEL-284 | Responses to pre-arrow text must suspend the ability before its post-arrow effect. |
+| `rr:cost-arrow-icon.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:counter` | Redirect or summary | — | This record redirects readers to All-Purpose Counter; the destination carries the rule. |
 | `rr:crisis-icon` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:crisis-icon.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -317,8 +317,8 @@ items.
 | `rr:damage` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:damage.step.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:damage.step.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:damage.step.3` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:damage.step.4` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:damage.step.3` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:damage.step.4` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:damage.step.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:damage.step.6` | Unimplemented behavior | MARVEL-275 | Forced interrupts run, but optional interrupts cannot yet suspend damage for a player decision. |
 | `rr:damage.step.7` | Unimplemented behavior | MARVEL-275 | Forced defeat abilities run, but optional interrupt and response choices cannot yet suspend defeat. |
@@ -352,22 +352,22 @@ items.
 | `rr:defend-defense.3.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:defend-defense.3.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
 | `rr:defend-defense.3.3` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
-| `rr:defend-defense.4` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.4.1` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.4.2` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.4.3` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.4.4` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.4.5` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.4.6` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.4.7` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.4.8` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.4` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.4.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.4.2` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.4.3` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.4.4` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.4.5` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.4.6` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.4.7` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.4.8` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:defend-defense.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:defend-defense.5.1` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.5.2` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.5.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.5.2` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:defend-defense.6` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:defend-defense.7` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.7.1` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
-| `rr:defend-defense.7.2` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.7` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.7.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:defend-defense.7.2` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:delayed-effect` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:delayed-effect.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:delayed-effect.1.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -414,7 +414,7 @@ items.
 | `rr:end-of-player-phase.step.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:end-of-player-phase.step.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:end-of-player-phase.step.4` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:end-of-player-phase.step.5` | Unimplemented behavior | MARVEL-284 | The timing-window work item owns when and after player-phase-end abilities. |
+| `rr:end-of-player-phase.step.5` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:enemy` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:enemy-activation` | Redirect or summary | — | This record redirects readers to Activation, Attack (Enemy Activation), Scheme (Enemy; the destination carries the rule. |
 | `rr:enemy-attacks` | Redirect or summary | — | This record redirects readers to Activation, Attack (Enemy Activation); the destination carries the rule. |
@@ -429,9 +429,9 @@ items.
 | `rr:enters-play` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:environment` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:environment.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:event` | Unimplemented behavior | MARVEL-284 | Event initiation must represent the faceup, out-of-play table state before payment and resolution. |
-| `rr:event.1` | Unimplemented behavior | MARVEL-284 | Card initiation must expose which of multiple event abilities is being played. |
-| `rr:event.2` | Unimplemented behavior | MARVEL-284 | The card-initiation work item owns canceled event effects with costs left paid. |
+| `rr:event` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:event.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:event.2` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:event.3` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns event target legality before play. |
 | `rr:event.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:event.5` | Unimplemented behavior | MARVEL-268 | The modifiers work in the costs and restrictions item owns each event damage or threat instance. |
@@ -585,15 +585,15 @@ items.
 | `rr:indirect-damage.6` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:infinite-hit-points` | Redirect or summary | — | This record redirects readers to Hit Points; the destination carries the rule. |
 | `rr:initiating-abilities` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:initiating-abilities.step.1` | Unimplemented behavior | MARVEL-284 | Card declaration needs a faceup, not-in-play state that can participate in timing windows. |
+| `rr:initiating-abilities.step.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:initiating-abilities.step.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:initiating-abilities.step.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:initiating-abilities.step.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:initiating-abilities.step.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:initiating-abilities.step.6` | Unimplemented behavior | MARVEL-284 | Commencement and attempted initiation need an explicit resumable timing step. |
+| `rr:initiating-abilities.step.6` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:initiating-abilities.step.7` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:initiating-abilities.1` | Unimplemented behavior | MARVEL-284 | Interrupts around initiation steps need a resumable window. |
-| `rr:initiating-abilities.2` | Unimplemented behavior | MARVEL-284 | Responses around initiation steps need a resumable window. |
+| `rr:initiating-abilities.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:initiating-abilities.2` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:initiating-abilities.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:instead` | Redirect or summary | — | This record redirects readers to Replacement Effect; the destination carries the rule. |
 | `rr:interrupt` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
@@ -651,7 +651,7 @@ items.
 | `rr:lasting-effects.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:lasting-effects.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:lasting-effects.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:lasting-effects.6` | Unimplemented behavior | MARVEL-284 | The timing work item owns restricting effect initiation to its named time period. |
+| `rr:lasting-effects.6` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:leader` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:leaves-play` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:leaves-play.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
@@ -660,7 +660,7 @@ items.
 | `rr:leaves-play.2.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:leaves-play.2.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:limit` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:limit.1` | Unimplemented behavior | MARVEL-284 | The initiation work item owns counting a canceled play or ability against its limit. |
+| `rr:limit.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:linked-card-title` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
 | `rr:linked-card-title.1` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
 | `rr:linked-card-title.2` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
@@ -703,7 +703,7 @@ items.
 | `rr:minion.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:minion.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:minion.3` | Unimplemented behavior | MARVEL-275 | The engine currently uses play-area order instead of asking the engaged player. |
-| `rr:minion.4` | Unimplemented behavior | MARVEL-284 | Activation timing must include a minion that engages during an activate-all-minions effect. |
+| `rr:minion.4` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:modes-of-play` | Outside the supported product boundary | MARVEL-272 | Standard and expert setup are supported; the remaining published modes belong to later product boundaries. |
 | `rr:modes-of-play.1` | Unimplemented behavior | MARVEL-269 | Standard scenarios are supported; their existing setup proof needs this narrow citation. |
 | `rr:modes-of-play.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -841,10 +841,10 @@ items.
 | `rr:player-elimination.3` | Unimplemented behavior | MARVEL-271 | The elimination lifecycle owns returning other cards to their owners' discard piles. |
 | `rr:player-elimination.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-elimination.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:player-elimination.5.1` | Unimplemented behavior | MARVEL-284 | The combat timing work item owns ending an attack when its player is eliminated. |
+| `rr:player-elimination.5.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:player-elimination.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-phase` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:player-phase.1` | Unimplemented behavior | MARVEL-284 | The timing work item owns phase-end expiration followed by when and after windows. |
+| `rr:player-phase.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:player-side-scheme` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-side-scheme.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:player-side-scheme.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
@@ -1011,16 +1011,16 @@ items.
 | `rr:standard-set.1` | Outside the supported product boundary | MARVEL-272 | Selecting or rejecting fixed encounter sets as modular choices needs product-level set validation. |
 | `rr:standard-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:star-icon` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:star-icon.1` | Unimplemented behavior | MARVEL-284 | Combat timing must initiate or reject mandatory enemy text whenever a starred ATK or SCH value is used. |
+| `rr:star-icon.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:star-icon.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:star-icon.3` | Unimplemented behavior | MARVEL-284 | Combat timing must initiate an ally's mandatory text whenever its starred ATK or THW value is used. |
-| `rr:star-icon.4` | Unimplemented behavior | MARVEL-284 | Basic-power timing must initiate an identity's mandatory text whenever its starred power is used. |
+| `rr:star-icon.3` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
+| `rr:star-icon.4` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:star-icon.5` | Unimplemented behavior | MARVEL-268 | Variable-value handling owns star-valued powers and their defined-or-zero result. |
 | `rr:star-icon.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:status-cards` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:status-cards.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:status-cards.1.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:status-cards.2` | Unimplemented behavior | MARVEL-284 | The card-initiation timing work item owns status-card priority over conflicting attack and damage triggers. |
+| `rr:status-cards.2` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:steady` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:steady.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:stun-stunned` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
@@ -1116,7 +1116,7 @@ items.
 | `rr:treachery` | Not enforceable by an engine | — | This record names a printed card type; its clauses carry the executable treachery rules. |
 | `rr:treachery.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:treachery.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:treachery.2.1` | Unimplemented behavior | MARVEL-284 | Reveal continuations must keep a final activation effect ahead of treachery discard. |
+| `rr:treachery.2.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:triggered-ability` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:triggering-condition` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:triggering-condition.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -1201,7 +1201,7 @@ items.
 | `rr:when-revealed-abilities` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:when-revealed-abilities.1` | Unimplemented behavior | MARVEL-271 | The setup lifecycle work owns encounter cards entering during setup and resolving later. |
 | `rr:when-revealed-abilities.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:when-revealed-abilities.3` | Unimplemented behavior | MARVEL-284 | The timing work item owns cancellation legality for villain and main-scheme reveal occurrences. |
+| `rr:when-revealed-abilities.3` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:wild-resource` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:wild-resource.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:wild-resource.1.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |

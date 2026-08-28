@@ -210,6 +210,43 @@ public sealed class ActivationCardsTests
         Assert.Equal(1, attack.Round);
     }
 
+    [Rule("rr:treachery.2.1")]
+    [Fact]
+    public void AnAttackingTreacheryStaysFaceupUntilTheActivationFinishes()
+    {
+        // A treachery whose last effect makes an enemy activate "is discarded
+        // after all of those activations have resolved." Assault therefore
+        // remains faceup while its attack is stopped on the defender question,
+        // and only reaches the discard pile after that attack completes.
+        var world = Deal();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var card = world.CreateCard(
+            AuthoredCards.Assault,
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        world.Agenda.Add(new PhaseStep(
+            Steps.RevealEncounterCard, 1, 4,
+            Subject: card.ObjectId, Seat: 0));
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+
+        var defender = Sequence.Work(world, Cards, runner, events);
+
+        Assert.NotNull(defender);
+        Assert.Equal(DeckType.RevealingArea, card.Area.Type);
+        Assert.True(card.FaceUp);
+
+        var prompt = defender;
+        for (int answered = 0; prompt is not null; answered++)
+        {
+            Assert.True(answered < 10, "the attack did not finish after ten declined prompts");
+            Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+            prompt = Sequence.Work(world, Cards, runner, events);
+        }
+
+        Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
+    }
+
     private static Area Queue(World world) =>
         world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0));
 

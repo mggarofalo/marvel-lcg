@@ -29,6 +29,22 @@ public sealed class AbilityDataTests
     private static readonly CardCatalog Printed =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:ability.14")]
+    [Fact]
+    public void AQuotedTimingTriggerIsAuthoredOnlyAsAReference()
+    {
+        // Enhanced Spider-Sense says to cancel "When Revealed" effects. The
+        // quotation marks refer to abilities on the treachery; they do not
+        // give Spider-Sense a second When Revealed ability of its own.
+        var written = AuthoredCards.Book.On("01004").ToList();
+
+        var ability = Assert.Single(written);
+        Assert.Equal(AbilityType.Interrupt, ability.Trigger.Timing);
+        Assert.Equal(Steps.CardRevealed, ability.Trigger.Event);
+        Assert.DoesNotContain(
+            written, candidate => candidate.Trigger.Timing == AbilityType.WhenRevealed);
+    }
+
     [Rule("rr:ability.5")]
     [Fact]
     public void EveryTriggerNamesAConditionTheEngineActuallyProduces()

@@ -203,6 +203,28 @@ public sealed class VillainPhaseTests
         Assert.Equal(5, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
     }
 
+    [Rule("rr:minion.4")]
+    [Fact]
+    public void AMinionEngagedDuringActivationsJoinsTheCurrentProcedure()
+    {
+        // "If a minion engages a player during the resolution of the engaged
+        // minions' activations, that minion also activates during this step."
+        // The villain's completion creates the minion here so a planner that
+        // snapshots the area before the villain activates misses its SCH 3.
+        var printed = new Printed()
+            .With("villain", ("SCH", "2"))
+            .With("arriving", ("SCH", "3"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("boost", ("Boost", "0"));
+        var world = Board(printed, players: 1);
+        var abilities = new EngageAfterVillain(world.TheCardIn(DeckType.VillainArea)!.ObjectId);
+
+        Run(world, printed, abilities);
+
+        Assert.Equal(5, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+        Assert.Equal(["villain", "arriving"], abilities.Completed);
+    }
+
     [Rule("rr:reveal.3")]
     [Rule("rr:engage")]
     [Rule("rr:minion.1")]
@@ -313,6 +335,25 @@ public sealed class VillainPhaseTests
             World world, EnemyActivation result)
         {
             Players.Add(result.Player);
+            return [];
+        }
+    }
+
+    private sealed class EngageAfterVillain(int villain) : NoCardAbilities
+    {
+        public List<string> Completed { get; } = [];
+
+        public override IReadOnlyList<GameEvent> ActivationCompleted(
+            World world, EnemyActivation result)
+        {
+            Completed.Add(world.Cards[result.Enemy].FaceId);
+            if (result.Enemy == villain)
+            {
+                world.CreateCard(
+                    "arriving",
+                    world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(result.Player)));
+            }
+
             return [];
         }
     }

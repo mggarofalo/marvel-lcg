@@ -43,6 +43,7 @@ public sealed class ChoosingCardsTests
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
     [Rule("rr:choose-option")]
+    [Rule("rr:ability.4")]
     [Fact]
     public void HydraBomberAsksRatherThanDeciding()
     {

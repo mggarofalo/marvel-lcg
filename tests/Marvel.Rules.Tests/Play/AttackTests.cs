@@ -335,6 +335,8 @@ public sealed class AttackTests
     }
 
     [Rule("rr:defend-defense.5")]
+    [Rule("rr:defend-defense.5.1")]
+    [Rule("rr:defend-defense.5.2")]
     [Rule("rr:attack-enemy-activation.1.3")]
     [Rule("rr:attack-enemy-activation.2")]
     [Fact]
@@ -365,6 +367,7 @@ public sealed class AttackTests
         // second.
         Assert.Equal(1, world.Attack!.Player);
         Assert.Equal(rescuer.ObjectId, world.Attack.Target);
+        Assert.Equal(1, world.Activation!.Player);
 
         Sequence.Finish(world, printed, new NoCardAbilities(), events);
 
@@ -403,6 +406,25 @@ public sealed class AttackTests
         // `rr:player-elimination.4` -- "if all players are eliminated, the game
         // ends and the players lose." One player, so this is that.
         Assert.Equal(Outcome.PlayersLose, world.Result);
+    }
+
+    [Rule("rr:player-elimination.5.1")]
+    [Fact]
+    public void EliminatingTheAttackedPlayerEndsTheAttackImmediately()
+    {
+        // A second player keeps the game alive, making the attack cleanup
+        // observable instead of having game-over abandon the entire agenda.
+        var printed = Printed(atk: 20, boost: 0);
+        var world = Board(printed, players: 2);
+
+        Finish(world, printed);
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.False(world.Seats[1].Eliminated);
+        Assert.Null(world.Attack);
+        Assert.Null(world.Activation);
+        Assert.NotNull(world.FinishedAttack);
+        Assert.False(world.Agenda.IsBusy);
     }
 
     [Rule("rr:damage.1")]
@@ -448,10 +470,11 @@ public sealed class AttackTests
     /// asks the same question forever — and a test that hangs says far less
     /// than one that fails.
     /// </remarks>
-    private static void Finish(World world, ICardFacts facts)
+    private static void Finish(
+        World world, ICardFacts facts, ICardAbilities? abilities = null)
     {
         var events = new List<GameEvent>();
-        var abilities = new NoCardAbilities();
+        abilities ??= new NoCardAbilities();
         var asked = Sequence.Work(world, facts, abilities, events);
         for (int answered = 0; asked is not null; answered++)
         {
@@ -462,6 +485,7 @@ public sealed class AttackTests
     }
 
     [Rule("rr:attack-enemy-activation.step.6.a")]
+    [Rule("rr:attack-enemy-activation.7")]
     [Rule("rr:tough.3")]
     [Fact]
     public void AnAttackRecordsWhetherItLandedAndOnlyItsOwnWindowSeesIt()
@@ -492,6 +516,77 @@ public sealed class AttackTests
         Finish(world, facts);
 
         Assert.False(world.FinishedAttack!.Damaged);
+    }
+
+    [Rule("rr:status-cards.2")]
+    [Fact]
+    public void StunCancelsBeforeAttackInitiationAbilitiesCanTrigger()
+    {
+        // "Status card abilities have timing priority over all conflicting
+        // triggered abilities." The stun cancels this attack, so an authored
+        // "when the villain attacks" interrupt must never observe it.
+        var facts = Printed(atk: 3, boost: 0);
+        var world = Board(facts);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Statuses.Give(world, villain, Statuses.Stunned);
+        var observer = new CombatWindowObserver();
+
+        Finish(world, facts, observer);
+
+        Assert.False(Statuses.Has(world, villain, Statuses.Stunned));
+        Assert.False(observer.SawAttackInitiation);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:initiating-abilities.1")]
+    [Rule("rr:initiating-abilities.2")]
+    [Fact]
+    public void AttackInitiationOpensOneInterruptAndOneResponseWindow()
+    {
+        var facts = Printed(atk: 1, boost: 0);
+        var world = Board(facts);
+        var observer = new CombatWindowObserver();
+
+        Finish(world, facts, observer);
+
+        Assert.Equal(1, observer.AttackInitiationInterrupts);
+        Assert.Equal(1, observer.AttackInitiationResponses);
+    }
+
+    [Rule("rr:damage.step.4")]
+    [Fact]
+    public void DamageThatLandsCreatesTheDamageResponseCondition()
+    {
+        var facts = Printed(atk: 1, boost: 0);
+        var world = Board(facts);
+        var observer = new CombatWindowObserver();
+
+        Finish(world, facts, observer);
+
+        Assert.True(observer.SawDamageWouldBeDealt);
+        Assert.True(observer.SawDamageDealt);
+    }
+
+    [Rule("rr:status-cards.2")]
+    [Rule("rr:damage.step.2")]
+    [Fact]
+    public void ToughPreventionCreatesNoDamageDealtResponse()
+    {
+        // Tough sits after "would be dealt" effects and before the later
+        // damage triggers. The interrupt therefore sees imminent damage, but
+        // the response cannot say damage was dealt when Tough prevented it.
+        var facts = Printed(atk: 3, boost: 0);
+        var world = Board(facts);
+        var hero = world.Seats[0].IdentityCard;
+        Statuses.Give(world, hero, Statuses.Tough);
+        var observer = new CombatWindowObserver();
+
+        Finish(world, facts, observer);
+
+        Assert.True(observer.SawDamageWouldBeDealt);
+        Assert.False(observer.SawDamageDealt);
+        Assert.False(Statuses.Has(world, hero, Statuses.Tough));
+        Assert.Equal(0, hero.Damage);
     }
 
     [Rule("rr:attack-enemy-activation")]
@@ -545,6 +640,42 @@ public sealed class AttackTests
 
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(deck, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
+    }
+
+    [Rule("rr:defend-defense.7")]
+    [Rule("rr:defend-defense.7.1")]
+    [Rule("rr:attack-enemy-activation.6")]
+    [Fact]
+    public void AnAttackThatEndsEarlyRemainsDefendedAtItsAfterAttackWindow()
+    {
+        // "If an effect causes a defended attack to end before fully
+        // resolving, the attack is still considered to have been defended."
+        // Removing an activating minion after the defender is declared skips
+        // its remaining activation steps, but the final attack occurrence must
+        // retain the defense for after-defense abilities.
+        var facts = Printed(atk: 3, boost: 0, def: 1);
+        var world = Board(facts);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var minion = world.CreateCard(
+            "villain", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Agenda.Abandon();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: minion.ObjectId, Seat: 0));
+        var events = new List<GameEvent>();
+        var abilities = new NoCardAbilities();
+
+        var defend = Sequence.Work(world, facts, abilities, events)!;
+        Sequence.Answer(
+            world, facts, abilities, defend,
+            Decision.Take(world.Seats[0].IdentityCard.ObjectId), events);
+        World.MoveToTop(minion, world.AreaOf(DeckType.EncounterDiscardPile));
+        Sequence.Finish(world, facts, abilities, events);
+
+        Assert.NotNull(world.FinishedAttack);
+        Assert.True(world.FinishedAttack!.IsDefended);
+        Assert.True(world.FinishedAttack.BasicDefense);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(DeckType.VillainArea, villain.Area.Type);
     }
 
     [Rule("rr:attack-enemy-activation")]
@@ -637,6 +768,37 @@ public sealed class AttackTests
     }
 
     private static Facts Printed(int atk, int boost, int def = 0) => new(atk, boost, def);
+
+    private sealed class CombatWindowObserver : NoCardAbilities
+    {
+        public bool SawAttackInitiation { get; private set; }
+        public bool SawDamageWouldBeDealt { get; private set; }
+        public bool SawDamageDealt { get; private set; }
+        public int AttackInitiationInterrupts { get; private set; }
+        public int AttackInitiationResponses { get; private set; }
+
+        public override IReadOnlyList<PendingAbility> Waiting(
+            World world, Occurrence occurrence, WindowKind window)
+        {
+            SawAttackInitiation |= occurrence.Is(Steps.AttackInitiated);
+            if (occurrence.Is(Steps.AttackInitiated))
+            {
+                if (window == WindowKind.Interrupt)
+                {
+                    AttackInitiationInterrupts += 1;
+                }
+                else
+                {
+                    AttackInitiationResponses += 1;
+                }
+            }
+            SawDamageWouldBeDealt |= window == WindowKind.Interrupt
+                && occurrence.Is(Steps.DamageWouldBeDealt);
+            SawDamageDealt |= window == WindowKind.Response
+                && occurrence.Is(Steps.DamageDealt);
+            return [];
+        }
+    }
 
     private sealed class RequiresAlly(int player) : NoCardAbilities
     {

@@ -108,6 +108,12 @@ public enum Stage
 /// is an engine save-format choice; it preserves "discarded this way" bindings
 /// when the ability resumes after a player choice.
 /// </param>
+/// <param name="ActivatedEnemies">
+/// Enemies that have already activated in the current player's step-2
+/// procedure, by object id. This is engine continuation data rather than a
+/// Rules Reference term: it lets the procedure re-read the engaged-minion area
+/// after every activation without activating an enemy twice.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
@@ -115,7 +121,8 @@ public readonly record struct PhaseStep(
     bool FinalPlayer = false, bool EachPlayerFrame = false, string Trigger = "",
     CharacterAttack? CharacterAttack = null, CharacterThwart? CharacterThwart = null,
     PlayerAction? PlayerAction = null, int? OccurrenceId = null,
-    bool SurgeGained = false, IReadOnlyList<int>? Discarded = null)
+    bool SurgeGained = false, IReadOnlyList<int>? Discarded = null,
+    IReadOnlyList<int>? ActivatedEnemies = null)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -652,6 +659,29 @@ public sealed class Agenda
                 $"activation {activationId} has no completion sentinel");
     }
 
+    /// <summary>Remove the unfinished steps of an activation that ended early.</summary>
+    public void EndActivationEarly(int activationId)
+    {
+        if (activationId < 0)
+        {
+            return;
+        }
+
+        // Keep the current occurrence so its response window can resolve, and
+        // keep the completion sentinel so the effect that initiated the
+        // activation still receives its result and can resume.
+        for (int index = items.Count - 1; index >= 1; index--)
+        {
+            var item = items[index];
+            if (item.Step.ActivationId == activationId
+                && item.Step.What is not (Steps.CompleteAttackActivation
+                    or Steps.CompleteSchemeActivation))
+            {
+                items.RemoveAt(index);
+            }
+        }
+    }
+
     private static bool IsActivation(PhaseStep step) =>
         step.What is Steps.Attack or Steps.Scheme && step.ActivationId < 0;
 
@@ -952,6 +982,9 @@ public static class Steps
     /// <summary>One card being revealed — <c>rr:reveal</c>, <c>rr:villain-phase.step.4</c>.</summary>
     public const string RevealEncounterCard = "RevealEncounterCard";
 
+    /// <summary>Discard a resolved treachery after its final nested activation.</summary>
+    public const string DiscardRevealedTreachery = "DiscardRevealedTreachery";
+
     /// <summary>Step 5 — <c>rr:villain-phase.step.5</c>.</summary>
     /// <summary>
     /// A card ability waiting for a player to choose between its options —
@@ -1188,10 +1221,12 @@ public static class Steps
         [GiveBoostCard] = ["WhenBoostCardGiven"],
         [DeclareDefender] = ["WhenDefenderDeclared"],
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],
-        // Damage from an attack is imminent before this step applies and dealt
-        // after it applies. `rr:triggering-condition.2` gives one occurrence
-        // one pair of windows when it creates several conditions.
-        [DealAttackDamage] = [DamageWouldBeDealt, DamageDealt],
+        // Damage from an attack is imminent before this step applies. Whether
+        // it was dealt is known only afterwards: Tough may prevent it, so the
+        // applying step adds `DamageDealt` only when damage actually lands.
+        // `rr:triggering-condition.2` still gives both one occurrence and one
+        // pair of windows.
+        [DealAttackDamage] = [DamageWouldBeDealt],
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
@@ -1237,6 +1272,8 @@ public static class Steps
     public static IReadOnlySet<string> EveryCondition { get; } =
         new HashSet<string>(
             Conditions.Values.SelectMany(each => each).Concat(
-                [ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds]),
+                // These are discovered while their occurrence applies rather
+                // than promised when its step is scheduled.
+                [DamageDealt, ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds]),
             StringComparer.Ordinal);
 }

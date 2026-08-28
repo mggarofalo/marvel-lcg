@@ -68,6 +68,7 @@ public sealed class HuntedTests
     }
 
     [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:cost-arrow-icon.1")]
     [Fact]
     public void PayingDiscardsTheChosenCardAndThenTheObligation()
     {

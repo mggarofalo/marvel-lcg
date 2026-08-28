@@ -36,6 +36,24 @@ public sealed class BasicPowerTests
         Assert.Equal(3, villain.Damage);
     }
 
+    [Rule("rr:star-icon.4")]
+    [Fact]
+    public void AStarredIdentityPowerChecksItsTextWhenUsed()
+    {
+        // The star changes no number; it requires the engine to check the
+        // identity's text at the timing point created by using the power.
+        var printed = new Printed().With("hero", ("ATK", "3*")).With("villain", ("HP", "10"));
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var observer = new StarredPowerObserver(world.Seats[0].IdentityCard.ObjectId);
+
+        BasicPowers.BasicAttack(world, printed, 0, villain, []);
+        Agendas.Finish(world, printed, observer);
+
+        Assert.True(observer.Checked);
+        Assert.Equal(3, villain.Damage);
+    }
+
     [Rule("rr:modifiers")]
     [Rule("rr:upgrade.2")]
     [Fact]
@@ -602,6 +620,22 @@ public sealed class BasicPowerTests
         }
     }
 
+    private sealed class StarredPowerObserver(int identity) : NoCardAbilities
+    {
+        public bool Checked { get; private set; }
+
+        public override IReadOnlyList<Marvel.Rules.Timing.PendingAbility> Waiting(
+            World world,
+            Marvel.Rules.Timing.Occurrence occurrence,
+            Marvel.Rules.Timing.WindowKind window)
+        {
+            Checked |= window == Marvel.Rules.Timing.WindowKind.Response
+                && occurrence.Is(Steps.AttackEnds)
+                && occurrence.Actor == identity;
+            return [];
+        }
+    }
+
     /// <summary>A villain, a main scheme, and one identity per seat.</summary>
     private static World Board(Printed printed, int players = 1, bool hero = true)
     {
@@ -661,7 +695,7 @@ public sealed class BasicPowerTests
 
         public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) =>
             Attributes(faceId).TryGetValue(attribute, out string? value)
-            && long.TryParse(value, out long number)
+            && long.TryParse(value.TrimEnd('*'), out long number)
                 ? number
                 : fallback;
 

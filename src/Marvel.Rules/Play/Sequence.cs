@@ -75,6 +75,28 @@ public static class Sequence
                 // `rr:triggering-condition.1` is per occurrence, and the
                 // occurrence is what remembers which abilities have used it.
                 var occurrence = world.Agenda.Begin(world, facts);
+
+                // `rr:status-cards.2`: status-card abilities have timing
+                // priority over every conflicting triggered ability. A stun
+                // replaces the attack before its initiation interrupt window,
+                // so neither "when this enemy attacks" text nor a response to
+                // an attack that never happened may resolve. Basic and card
+                // attacks spend their stun before they reach the agenda; this
+                // is the enemy-activation path.
+                if (kind == WindowKind.Interrupt
+                    && step.What == Steps.Attack
+                    && BasicPowers.Cancelled(
+                        world, facts, world.Cards[step.Subject], Statuses.Stunned, events))
+                {
+                    world.PendingAdditionalAttackPlayers = [];
+                    if (world.Windows.Current is not null)
+                    {
+                        world.Windows.Close();
+                    }
+                    world.Agenda.Cancel(occurrence);
+                    continue;
+                }
+
                 if (Offering.Work(world, abilities, occurrence, kind, events, scope) is { } asked)
                 {
                     return asked;
