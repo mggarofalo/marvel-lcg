@@ -62,6 +62,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static readonly DeckType[] Owned = [DeckType.UpgradesArea, DeckType.SupportsArea];
 
+    // A facedown Ultron Drone retains the underlying player-card face id for
+    // the state digest, but `rr:in-play-and-out-of-play.5` and `.13` make that
+    // facedown card text inactive. Every authored-ability entry point goes
+    // through this boundary so no trigger, action, constant, boost, or query
+    // can accidentally execute the hidden card.
+    private IEnumerable<CardAbility> On(Card card) =>
+        FacedownDrones.Is(card) ? [] : book.On(card.FaceId);
+
     /// <summary>The authored cards, whether or not they do anything.</summary>
     public IReadOnlySet<string> Authored => book.Authored;
 
@@ -75,7 +83,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var occurrence = new Occurrence(
             0, [Steps.CardEntersPlay], Subject: card.ObjectId,
             Player: ControllerOf(world, card));
-        foreach (var ability in book.On(card.FaceId).Where(ability =>
+        foreach (var ability in On(card).Where(ability =>
             ability.Trigger.Timing == AbilityType.WhenRevealed
             && string.Equals(
                 ability.Trigger.Event, Steps.CardEntersPlay,
@@ -101,7 +109,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var enemy = world.Cards[result.Enemy];
         if (result.Made)
         {
-            foreach (var ability in book.On(enemy.FaceId).Where(ability =>
+            foreach (var ability in On(enemy).Where(ability =>
                 ability.Trigger.Timing == AbilityType.ForcedResponse
                 && string.Equals(
                     ability.Trigger.Event, "WhenActivationCompleted",
@@ -212,7 +220,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var source = world.Cards[sourceId];
-        var abilities = book.On(source.FaceId).ToList();
+        var abilities = On(source).ToList();
         var ability = abilities.ElementAtOrDefault(abilityIndex)
             ?? throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has no ability {abilityIndex} for its "
@@ -281,7 +289,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         string classes = world.Facts.Attributes(payingFor.FaceId)
             .GetValueOrDefault("Class", string.Empty);
-        bool doubles = book.On(source.FaceId).Any(ability =>
+        bool doubles = On(source).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
             && ability.Effect.Kind == "doubleResourceFor"
             && classes.Split(';').Contains(
@@ -298,7 +306,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(candidates);
 
         var enemy = world.Cards[attack.Enemy];
-        bool requiresControlledAlly = book.On(enemy.FaceId).Any(ability =>
+        bool requiresControlledAlly = On(enemy).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
             && ability.Effect.Kind == "requireAllyDefender");
         if (!requiresControlledAlly)
@@ -323,7 +331,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         foreach (var card in world.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)))
         {
-            foreach (var ability in book.On(card.FaceId).Where(ability =>
+            foreach (var ability in On(card).Where(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
             {
                 if (ProhibitsThreatRemoval(
@@ -361,7 +369,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 continue;
             }
 
-            var written = book.On(card.FaceId).ToList();
+            var written = On(card).ToList();
             for (int index = 0; index < written.Count; index++)
             {
                 var ability = written[index];
@@ -529,7 +537,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var occurrence = new Occurrence(
             0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player);
 
-        foreach (var ability in book.On(card.FaceId))
+        foreach (var ability in On(card))
         {
             // `rr:ability.step.3` -- "When Revealed" *is* the occurrence, not a
             // window around it. An interrupt or a response to a card being
@@ -561,7 +569,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // Revealed" and a "Boost" -- would otherwise pass on the strength of
         // the half somebody had written, and the other half would go back to
         // being silent.
-        var boosts = book.On(card.FaceId)
+        var boosts = On(card)
             .Where(ability => ability.Trigger.Timing == AbilityType.Boost)
             .ToList();
 
@@ -607,7 +615,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
 
-        var ability = book.On(card.FaceId).SingleOrDefault(candidate =>
+        var ability = On(card).SingleOrDefault(candidate =>
             candidate.Trigger.Timing == AbilityType.Special)
             ?? throw new RulesNotImplementedException(
                 $"card '{card.FaceId}' has no authored Special ability");
@@ -635,7 +643,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var sources = new List<ResourceSource>();
         foreach (var card in Triggerable(world, player).ToList())
         {
-            foreach (var ability in book.On(card.FaceId))
+            foreach (var ability in On(card))
             {
                 if (ability.Trigger.Timing != AbilityType.Resource
                     || !Available(world, card, ability)
@@ -728,7 +736,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
 
         var holder = world.Cards[card];
-        var ability = book.On(holder.FaceId).FirstOrDefault(candidate =>
+        var ability = On(holder).FirstOrDefault(candidate =>
             candidate.Trigger.Timing == AbilityType.Resource
             && Available(world, holder, candidate)
             && InForm(world, player, candidate.Trigger.Form)
@@ -760,7 +768,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return true;
         }
 
-        foreach (var ability in book.On(target.FaceId).Where(ability =>
+        foreach (var ability in On(target).Where(ability =>
             ability.Trigger.Timing == AbilityType.Constant))
         {
             var cast = new Cast(
@@ -914,7 +922,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             .Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
             .ToList()
-            .SelectMany(card => book.On(card.FaceId)
+            .SelectMany(card => On(card)
                 .Where(ability => Answers(world, ability, card, what))
                 .Select(ability => (Card: card, Ability: ability)))
             .ToList(),
@@ -1007,7 +1015,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var occurrence = new Occurrence(
             0, [Steps.Setup], Subject: card.ObjectId, Player: card.Owner);
 
-        foreach (var ability in book.On(card.FaceId))
+        foreach (var ability in On(card))
         {
             if (ability.Trigger.Timing == AbilityType.Setup)
             {
@@ -1037,7 +1045,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     && area.PlayArea == PlayArea.Of(player))
                 .SelectMany(area => area.Cards)
                 .Where(card => ControllerOf(world, card) == player
-                    && book.On(card.FaceId).Any(
+                    && On(card).Any(
                         ability => ability.Trigger.Timing == AbilityType.Setup)),
         ];
     }
@@ -1047,7 +1055,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         World world, Card source, int player, int stoppedAt,
         AbilityType? tier, bool finalStep, bool finalPlayer)
     {
-        var outer = book.On(source.FaceId)
+        var outer = On(source)
             .Where(ability => tier is null || ability.Trigger.Timing == tier)
             .Select(ability => ability.Effect)
             .Single(effect => EachPlayers(effect).Any());
@@ -1104,13 +1112,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // Drone minion. Its face id remains underneath for the digest, so the
         // interpreter must use the runtime card kind rather than mistake that
         // id for active player-card text.
-        if (FacedownDrones.Is(card) || !constant.Contains(card.FaceId))
+        if (!constant.Contains(card.FaceId))
         {
             return [];
         }
 
         var found = new List<ContinuousEffect>();
-        foreach (var ability in book.On(card.FaceId))
+        foreach (var ability in On(card))
         {
             if (ability.Trigger.Timing != AbilityType.Constant)
             {
@@ -1139,7 +1147,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(defeated);
 
-        var written = book.On(card.FaceId)
+        var written = On(card)
             .Where(ability => ability.Trigger.Timing == AbilityType.WhenDefeated)
             .ToList();
 
@@ -1346,7 +1354,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var found = new List<PendingAbility>();
         foreach (var card in Triggerable(world, player).ToList())
         {
-            foreach (var (ability, ordinal) in book.On(card.FaceId)
+            foreach (var (ability, ordinal) in On(card)
                          .Where(candidate => candidate.Trigger.Timing == AbilityType.Action)
                          .Select((candidate, ordinal) => (candidate, ordinal)))
             {
@@ -1371,7 +1379,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <summary>The exact same-timing ability named by a pending ordinal.</summary>
     private CardAbility Pending(Card card, PendingAbility pending) =>
-        book.On(card.FaceId)
+        On(card)
             .Where(candidate => candidate.Trigger.Timing == pending.Type)
             .ElementAtOrDefault(pending.Ordinal)
         ?? throw new AbilityException(
@@ -2112,7 +2120,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             EventTrigger = eventTrigger,
         };
         cast.At(Math.Max(0, stoppedAt - 1));
-        cast.SetContinuation(book.On(source.FaceId).Any(ability =>
+        cast.SetContinuation(On(source).Any(ability =>
             (tier is null || ability.Trigger.Timing == tier)
             && ability.Effect.Kind == "seq"
             && Nodes(ability.Effect.Argument).Count() > stoppedAt));
@@ -2576,7 +2584,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private List<GameEvent> Continue(Card source, Cast cast, int from)
     {
-        var effect = book.On(source.FaceId)
+        var effect = On(source)
             .Select(ability => ability.Effect)
             .FirstOrDefault(tree => Choices(tree).Any());
 
@@ -2633,7 +2641,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // and its "Boost" chooses between two effects, and picking the first
         // ability with a choice in it would resume the wrong one -- silently,
         // and with a legal-looking question about the wrong cards.
-        var written = book.On(source.FaceId)
+        var written = On(source)
             .Where(ability => tier is null || ability.Trigger.Timing == tier)
             .ToList();
 
@@ -4699,7 +4707,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{cast.Source.FaceId}' asks a question inside a {power.ToLowerInvariant()}");
         }
 
-        var abilities = book.On(cast.Source.FaceId).ToList();
+        var abilities = On(cast.Source).ToList();
         var addresses = abilities
             .Select((ability, index) => (Ability: ability, Index: index))
             .Where(candidate => cast.Tier is null
