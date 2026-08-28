@@ -170,31 +170,36 @@ public sealed class MainSchemeTests
     }
 
     [Rule("rr:acceleration-icon.2")]
+    [Rule("rr:acceleration-icon.3")]
+    [Rule("rr:acceleration-token.4")]
     [Fact]
     public void DefeatingTheCardPrintedWithAnAccelerationIconRemovesTheIcon()
     {
         // "An acceleration icon can be removed from play by defeating the
-        // encounter card it is printed on." It adds threat for the first
-        // phase, then the defeated side scheme contributes nothing to the next.
+        // encounter card it is printed on." Icons and tokens are not considered
+        // one another: defeating the icon's card removes that icon without
+        // removing the acceleration token already on the main scheme.
         var printed = new Printed()
             .With("scheme", ("EscalationThreat", "1"), ("TargetThreat", "99"))
             .With("hero", ("THW", "2"))
             .With("sideScheme", ("Acceleration", "1"));
         var world = Board(printed, stages: 1);
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens(EncounterDeck.AccelerationToken, 1);
         var side = world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
         side.PlaceTokens("k_threat", 2);
 
         Run(world, printed, []);
-        Assert.Equal(2, scheme.Tokens["k_threat"]);
+        Assert.Equal(3, scheme.Tokens["k_threat"]);
 
         world.Seats[0].IdentityCard.TurnTo("hero");
         BasicPowers.BasicThwart(world, printed, 0, side, []);
         Agendas.Finish(world, printed);
         Assert.Equal(DeckType.EncounterDiscardPile, side.Area.Type);
+        Assert.Equal(1, scheme.Tokens[EncounterDeck.AccelerationToken]);
 
         Run(world, printed, []);
-        Assert.Equal(3, scheme.Tokens["k_threat"]);
+        Assert.Equal(5, scheme.Tokens["k_threat"]);
     }
 
     [Rule("rr:encounter-deck.1")]

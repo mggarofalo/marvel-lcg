@@ -70,7 +70,7 @@ public sealed class SinisterSyndicateTests
     {
         // "**Forced Response:** After Boomerang attacks you, deal 1 damage to
         // each ally you control." Two allies, one damage each -- and the
-        // response is on the attack ending rather than on the damage step,
+        // The response is on the attack ending rather than on the damage step,
         // which is where `rr:attack-enemy-activation.step.6.a` puts "after
         // [character] attacks ... you".
         var world = Deal();
