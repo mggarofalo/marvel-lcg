@@ -157,7 +157,7 @@ public sealed class SimulationHarnessTests
             record,
             TextWriter.Null);
         var lines = record.ToString()
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
             .ToList();
         int changed = lines.FindIndex(line =>
         {
@@ -194,7 +194,7 @@ public sealed class SimulationHarnessTests
             record,
             TextWriter.Null);
         var lines = record.ToString()
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
             .ToList();
         int changed = lines.FindIndex(line =>
         {
@@ -218,7 +218,7 @@ public sealed class SimulationHarnessTests
             record,
             TextWriter.Null);
         var lines = record.ToString()
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
             .ToList();
         lines[1] = "{}";
 
@@ -340,13 +340,14 @@ public sealed class SimulationHarnessTests
             record,
             TextWriter.Null);
         return record.ToString()
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
             .ToList();
     }
 
     private static IEnumerable<JsonElement> Lines(StringWriter writer)
     {
-        foreach (string line in writer.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        foreach (string line in writer.ToString().Split(
+                     ['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
         {
             using var document = JsonDocument.Parse(line);
             yield return document.RootElement.Clone();
