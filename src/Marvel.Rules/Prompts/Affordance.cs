@@ -42,11 +42,15 @@ namespace Marvel.Rules.Prompts;
 /// trusted.
 /// </para>
 /// <para>
-/// What survives a session boundary is <paramref name="AnchorId"/> and
-/// <paramref name="Verb"/> together, and that pair resolved every drifted
-/// input uniquely. Both are on this record already, so nothing needs adding —
-/// but a consumer that persists an affordance (a replay, a saved macro, a
-/// tutorial script) must persist the pair and not the id.
+/// In that corpus, <paramref name="AnchorId"/> and <paramref name="Verb"/>
+/// resolved every drifted input uniquely. Multiplayer requires
+/// <paramref name="AnchorPlayer"/> to distinguish who takes an implied shared
+/// action, and multiple actions on one card require <paramref name="Label"/>.
+/// A consumer that persists an affordance must therefore persist
+/// (AnchorId, AnchorPlayer, Verb, Label) plus its zero-based occurrence among
+/// exact matches, and never persist the id. Repeated choice nodes in printed
+/// order can otherwise be identical on every public field. The rules define
+/// no persistent command identifier; this is the engine's wire-format choice.
 /// </para>
 /// <para>
 /// This replaces a list of option strings. The strings were enough for a web
