@@ -69,7 +69,7 @@ internal static partial class Citations
     // An attribute is a literal on its own line. The named note is metadata on
     // the same claim, so it does not change the id the report reads.
     [GeneratedRegex(
-        @"^[ \t]*\[Rule\(""([^""]+)""(?:,[ \t]*Note[ \t]*=[ \t]*""(?:\\.|[^""\\])*"")?\)\][ \t]*$")]
+        @"^[ \t]*\[Rule\(""([^""]+)""(?:,[^\r\n]*)?\)\][ \t]*$")]
     private static partial Regex Attribute();
 
     /// <summary>Advances the lexical state through one physical source line.</summary>
