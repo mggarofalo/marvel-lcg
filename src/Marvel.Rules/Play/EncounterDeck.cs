@@ -64,6 +64,58 @@ public static class EncounterDeck
     }
 
     /// <summary>
+    /// Discards up to a specified count from the current encounter deck, then
+    /// resets after the final discarded card has entered the discard pile.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:encounter-deck.2</c>: a specified-number discard stops when its
+    /// condition is met or "the encounter deck is empty." The reset is still
+    /// immediate, but the replacement deck is not part of the same bounded
+    /// discard effect.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="count">The maximum number of cards to discard.</param>
+    /// <param name="trigger">What caused the discard, for the event stream.</param>
+    /// <param name="events">Where to record the discard and any reset.</param>
+    /// <returns>The exact cards discarded, in discard order.</returns>
+    public static IReadOnlyList<Card> DiscardTop(
+        World world, long count, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (count <= 0)
+        {
+            return [];
+        }
+
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        if (deck.Cards.Count == 0 && !Reset(world, trigger, events))
+        {
+            return [];
+        }
+
+        long remaining = Math.Min(count, deck.Cards.Count);
+        var discarded = new List<Card>();
+        for (long index = 0; index < remaining; index++)
+        {
+            var card = deck.TakeTop()
+                ?? throw new InvalidOperationException(
+                    "the encounter deck changed while one discard effect was resolving");
+            Discard.Card(world, card, trigger, events);
+            discarded.Add(card);
+
+            if (deck.Cards.Count == 0)
+            {
+                Reset(world, trigger, events);
+                break;
+            }
+        }
+
+        return discarded;
+    }
+
+    /// <summary>
     /// Discards from the current encounter deck until a card of the requested
     /// kind and optional printed trait is discarded.
     /// </summary>

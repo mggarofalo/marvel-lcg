@@ -103,6 +103,11 @@ public enum Stage
 /// Rules Reference's one effective instance of a non-numeric keyword when the
 /// ability resumes after a player choice.
 /// </param>
+/// <param name="Discarded">
+/// Cards discarded earlier in a suspended ability, by object id. The spelling
+/// is an engine save-format choice; it preserves "discarded this way" bindings
+/// when the ability resumes after a player choice.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
@@ -110,7 +115,7 @@ public readonly record struct PhaseStep(
     bool FinalPlayer = false, bool EachPlayerFrame = false, string Trigger = "",
     CharacterAttack? CharacterAttack = null, CharacterThwart? CharacterThwart = null,
     PlayerAction? PlayerAction = null, int? OccurrenceId = null,
-    bool SurgeGained = false)
+    bool SurgeGained = false, IReadOnlyList<int>? Discarded = null)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>

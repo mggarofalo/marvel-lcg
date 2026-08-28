@@ -184,6 +184,29 @@ public sealed class EncounterDeckTests
         Assert.Equal(Outcome.PlayersLose, world.Result);
     }
 
+    [Rule("rr:encounter-deck.2")]
+    [Fact]
+    public void DiscardingTheFinalCardResetsItWithoutContinuingIntoTheNewDeck()
+    {
+        // A specified-number discard stops when "the encounter deck is empty."
+        // The discarded card enters the pile first, so the immediate reset can
+        // rebuild from it without the empty-pair loss or discarding it twice.
+        var printed = new Printed();
+        var world = Board(printed);
+        var card = world.CreateCard("card", world.AreaOf(DeckType.EncounterDeck));
+
+        var discarded = EncounterDeck.DiscardTop(world, 5, "test", []);
+
+        Assert.Equal([card], discarded);
+        Assert.Equal(Outcome.Unfinished, world.Result);
+        Assert.Equal([card], world.AreaOf(DeckType.EncounterDeck).Cards);
+        Assert.Empty(world.AreaOf(DeckType.EncounterDiscardPile).Cards);
+        Assert.Equal(
+            1,
+            world.TheCardIn(DeckType.MainSchemesArea)!
+                .Tokens[EncounterDeck.AccelerationToken]);
+    }
+
     private static World Board(ICardFacts facts)
     {
         var world = new World(facts, players: 1);

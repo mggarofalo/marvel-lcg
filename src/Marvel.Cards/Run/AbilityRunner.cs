@@ -2156,6 +2156,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                     : new HashSet<string>(StringComparer.Ordinal),
         };
+        if (world.Agenda.Current?.Discarded is { } discarded)
+        {
+            cast.Discarded.AddRange(discarded.Select(id => world.Cards[id]));
+        }
         cast.At(Math.Max(0, stoppedAt - 1));
         cast.SetContinuation(On(source).Any(ability =>
             (tier is null || ability.Trigger.Timing == tier)
@@ -4432,7 +4436,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Tier: cast.Tier,
             FinalStep: cast.FinalStep,
             Trigger: cast.Trigger,
-            SurgeGained: cast.GainedKeywords.Contains("surge"));
+            SurgeGained: cast.GainedKeywords.Contains("surge"),
+            Discarded: [.. cast.Discarded.Select(card => card.ObjectId)]);
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
             cast.World.Agenda.ThenContinuation(continuation, cast.Occurrence);
@@ -5071,16 +5076,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (node.Field("player") is null
             && string.Equals(Word(node.Require("from")), "encounterDeck", StringComparison.Ordinal))
         {
-            for (long discarded = 0; discarded < count; discarded++)
-            {
-                var card = EncounterDeck.TakeTop(cast.World, cast.Trigger, cast.Events);
-                if (card is null)
-                {
-                    break;
-                }
-                Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-                cast.Discarded.Add(card);
-            }
+            cast.Discarded.AddRange(EncounterDeck.DiscardTop(
+                cast.World, count, cast.Trigger, cast.Events));
             return;
         }
         IEnumerable<Area> decks = node.Field("player") is { } players
@@ -6139,11 +6136,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.Discarded, Word(node.Argument)[0], cast.World.Facts),
             "printedBoostIconsDiscarded" => cast.Discarded.Sum(card =>
                 cast.World.Facts.PrintedValue(card.FaceId, "Boost", cast.World.Players)),
-            "topEncounterDiscardBoostPlusOne" => 1 + cast.World.AreaOf(
-                DeckType.EncounterDiscardPile).Cards
-                .Select(card => cast.World.Facts.PrintedValue(
-                    card.FaceId, "Boost", cast.World.Players))
-                .LastOrDefault(),
+            // The binding's spelling is the engine's choice. The printed card
+            // names what was "discarded this way," whose identity survives an
+            // immediate encounter-deck reset even when the discard pile does not.
+            "topEncounterDiscardBoostPlusOne" => 1 + (cast.Discarded.LastOrDefault() is { } card
+                ? cast.World.Facts.PrintedValue(card.FaceId, "Boost", cast.World.Players)
+                : 0),
             "remainingHealth" => Find(node.Argument, cast) is { } remaining
                 ? Math.Max(
                     0,
