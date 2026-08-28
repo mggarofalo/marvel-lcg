@@ -28,6 +28,7 @@ plane module add-work-items --module-id "Corpus and Oracle" --issues "$ID" -p MA
 | **Engine Core** | The C# rules engine |
 | **Card DSL and Port** | Data-only card ability DSL, then the card ports |
 | **Client and Integration** | Reconnecting the existing web client |
+| **Rules Reference Coverage** | Classify every v1.8 record, add missing citations, and implement executable gaps |
 | **Maintenance Backlog** | Default bucket for small hardening and fixes that fit no phase |
 
 If no phase fits, use **Maintenance Backlog**.
