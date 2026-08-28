@@ -206,6 +206,36 @@ public sealed class ActionAbilityTests
                 .Select(card => card.Card));
     }
 
+    [Rule("rr:ability.2")]
+    [Fact]
+    public void ActionsComeFromInPlayCardsAndEventsInHand()
+    {
+        // Hero, alter-ego, ally, upgrade, and support abilities "may only be
+        // used if the card is in play"; events implicitly work from out of
+        // play. Focused Rage in the discard pile is silent while the event in
+        // hand is offered, so the exception cannot accidentally admit every
+        // card.
+        Card? discardedRage = null;
+        Card? kick = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                discardedRage = board.CreateCard(
+                    "01027",
+                    board.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+                kick = board.CreateCard(AuthoredCards.SwingingWebKick, board.Seats[0].Hand);
+                board.Seats[0].IdentityCard.TakeDamage(1);
+            },
+            hero: true);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == discardedRage!.ObjectId);
+        Assert.Contains(
+            game.Pending.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == kick!.ObjectId);
+    }
+
     [Rule("rr:initiating-abilities.step.5")]
     [Fact]
     public void ARejectedActionCommandDoesNotRemainOnTheAgenda()
@@ -273,6 +303,7 @@ public sealed class ActionAbilityTests
     }
 
     [Rule("rr:player-turn.5.1")]
+    [Rule("rr:ability.13")]
     [Fact]
     public void AnAlterEgoActionIsNotOfferedToAHero()
     {
@@ -311,6 +342,7 @@ public sealed class ActionAbilityTests
     }
 
     [Rule("rr:player-turn.5")]
+    [Rule("rr:action.1")]
     [Fact]
     public void AnotherPlayersActionIsOfferedDirectlyAndResolvedByThem()
     {

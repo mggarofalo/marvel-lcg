@@ -90,6 +90,7 @@ public sealed class VillainPhaseTests
 
     [Rule("rr:villain-phase.step.2")]
     [Rule("rr:activation.1")]
+    [Rule("rr:activation.3")]
     [Fact]
     public void TheVillainActivatesOncePerPlayer()
     {
@@ -103,6 +104,9 @@ public sealed class VillainPhaseTests
         Run(world, printed);
 
         Assert.Equal(3, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+        Assert.Equal(
+            3,
+            world.AreaOf(DeckType.EncounterDiscardPile).Cards.Count(card => card.FaceId == "boost"));
     }
 
     // Deliberately uncited: no published rule says a card acquires a token
@@ -163,6 +167,7 @@ public sealed class VillainPhaseTests
 
     [Rule("rr:villain-phase.step.2.b")]
     [Rule("rr:minion.3")]
+    [Rule("rr:activation.2")]
     [Fact]
     public void EachEngagedMinionActivatesAfterTheVillain()
     {

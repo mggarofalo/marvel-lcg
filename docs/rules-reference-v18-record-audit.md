@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 403 |
+| Executable and cited | 414 |
 | Covered by a narrower rule | 46 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 37 |
 | Outside the supported product boundary | 66 |
-| Unimplemented behavior | 544 |
+| Unimplemented behavior | 533 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -57,23 +57,23 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:ability.step.4.b` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.step.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:ability.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:ability.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:ability.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:ability.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.3.1` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
-| `rr:ability.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:ability.4` | Unimplemented behavior | MARVEL-284 | Whole-text alteration checks and sentence-by-sentence resolution require initiation-language work. |
 | `rr:ability.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.7` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:ability.7.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:ability.7.1` | Unimplemented behavior | MARVEL-283 | Mandatory abilities containing “may” need an optional choice inside forced resolution. |
 | `rr:ability.8` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:ability.8.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:ability.8.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:ability.8.1` | Unimplemented behavior | MARVEL-283 | Attachment abilities using “you” or “your” need controller-specific offering and payment. |
+| `rr:ability.8.2` | Unimplemented behavior | MARVEL-283 | Obligation abilities and costs need play-area ownership enforcement. |
 | `rr:ability.9` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.10` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ability.11` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:ability.12` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:ability.13` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:ability.14` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:ability.12` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:ability.13` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:ability.14` | Unimplemented behavior | MARVEL-284 | Quoted timing triggers need explicit reference rather than trigger semantics. |
 | `rr:acceleration-icon` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-icon.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:acceleration-icon.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -85,23 +85,23 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:acceleration-token.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:acceleration-token.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:action` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:action.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:action.1.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:action.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:action.2.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:action.2.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:action.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:action.1.1` | Unimplemented behavior | MARVEL-283 | Other players' obligations must be excluded from action offering. |
+| `rr:action.2` | Unimplemented behavior | MARVEL-283 | Forced Actions need end-of-phase resolution. |
+| `rr:action.2.1` | Unimplemented behavior | MARVEL-283 | Forced Actions becoming legal at phase end need immediate resolution. |
+| `rr:action.2.2` | Unimplemented behavior | MARVEL-283 | An unpayable or targetless Forced Action must not prevent phase completion. |
 | `rr:activation` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:activation.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:activation.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:activation.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:activation.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:activation.5` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:activation.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:activation.3` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:activation.4` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:activation.5` | Unimplemented behavior | MARVEL-275 | Simultaneous enemy activations currently use fixed order instead of the player's chosen order. |
 | `rr:activation.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:activation.7` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:activation.8` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:activation.8.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:activation.8.1` | Unimplemented behavior | MARVEL-275 | Multiple nested activations need a first-player ordering affordance. |
 | `rr:activation.8.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:active-player` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:active-player` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:additional` | Redirect or summary | — | This record redirects readers to Alteration Effect; the destination carries the rule. |
 | `rr:after` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:all-purpose-counter` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
@@ -473,9 +473,9 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:for-each.4` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
 | `rr:forced` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:forced.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:forced.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:forced.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:forced.3.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:forced.2` | Unimplemented behavior | MARVEL-283 | Forced Action timing and end-of-phase resolution are not implemented. |
+| `rr:forced.3` | Unimplemented behavior | MARVEL-283 | Targetless forced abilities need explicit non-initiation behavior. |
+| `rr:forced.3.1` | Unimplemented behavior | MARVEL-283 | A targetless forced ability must not pay its costs. |
 | `rr:forced.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:forced.5` | Unimplemented behavior | MARVEL-275 | Encounter reveal fixes the order of simultaneous forced abilities instead of asking the first player. |
 | `rr:forced.6` | Executable and cited | — | A behavior test directly cites this record. |
@@ -582,22 +582,22 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:indirect-damage.6` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:infinite-hit-points` | Redirect or summary | — | This record redirects readers to Hit Points; the destination carries the rule. |
 | `rr:initiating-abilities` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:initiating-abilities.step.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:initiating-abilities.step.1` | Unimplemented behavior | MARVEL-284 | Card declaration needs a faceup, not-in-play state that can participate in timing windows. |
 | `rr:initiating-abilities.step.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:initiating-abilities.step.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:initiating-abilities.step.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:initiating-abilities.step.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:initiating-abilities.step.6` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:initiating-abilities.step.6` | Unimplemented behavior | MARVEL-284 | Commencement and attempted initiation need an explicit resumable timing step. |
 | `rr:initiating-abilities.step.7` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:initiating-abilities.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:initiating-abilities.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:initiating-abilities.1` | Unimplemented behavior | MARVEL-284 | Interrupts around initiation steps need a resumable window. |
+| `rr:initiating-abilities.2` | Unimplemented behavior | MARVEL-284 | Responses around initiation steps need a resumable window. |
 | `rr:initiating-abilities.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:instead` | Redirect or summary | — | This record redirects readers to Replacement Effect; the destination carries the rule. |
 | `rr:interrupt` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:interrupt.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:interrupt.1.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:interrupt.1.1` | Unimplemented behavior | MARVEL-283 | Interrupt offering must exclude obligations in other players' play areas. |
 | `rr:interrupt.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:interrupt.2.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:interrupt.2.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:interrupt.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:interrupt.3.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:interrupt.4` | Executable and cited | — | A behavior test directly cites this record. |
@@ -933,10 +933,10 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:resource-type` | Redirect or summary | — | This record redirects readers to Resource; the destination carries the rule. |
 | `rr:response` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:response.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:response.1.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:response.1.1` | Unimplemented behavior | MARVEL-283 | Response offering must exclude obligations in other players' play areas. |
 | `rr:response.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:response.2.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:response.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:response.2.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:response.3` | Unimplemented behavior | MARVEL-275 | Responses to multiple conditions from one effect need a player-chosen order. |
 | `rr:response.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:restricted` | Unimplemented behavior | MARVEL-275 | The deterministic oldest-card workaround does not ask which restricted card the player chooses to discard. |
 | `rr:restricted.1` | Unimplemented behavior | MARVEL-275 | The forced response is implemented with a fixed discard instead of the required player choice. |

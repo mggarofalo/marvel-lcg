@@ -167,6 +167,7 @@ public sealed class CoreFinalCardBatchTests
     }
 
     [Rule("rr:crisis-icon.1")]
+    [Rule("rr:ability.3")]
     [Fact]
     public void LegalPracticeIsNotOfferedWhenCrisisLeavesNoThwartableScheme()
     {
