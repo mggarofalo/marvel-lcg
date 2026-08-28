@@ -50,10 +50,10 @@ $ dotnet run --project tools/Marvel.Rules.Index -- citations
 
 Rules Reference v1.8
 
-  entries             124 / 262   cited (47.3%)
-  citable records     345 / 1218  cited (28.3%)
+  entries             141 / 262   cited (53.8%)
+  citable records     414 / 1218  cited (34.0%)
 
-  citations made  682
+  citations made  1014
 ```
 
 ```
@@ -69,6 +69,10 @@ does not depend on whether the suite currently compiles.
 surface an entry touches. It is a reading order, not a backlog: a good deal of
 the glossary is vocabulary (`rr:you-your`, `rr:and`) that no test should be
 expected to assert. Triage is a person's job.
+
+[`rules-reference-v18-record-audit.md`](rules-reference-v18-record-audit.md)
+records that triage for all 1,218 records. It is a work list, not another
+coverage gate.
 
 Two things this deliberately does not do:
 
