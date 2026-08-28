@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Marvel.Sim.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Marvel.Sim/Marvel.Sim.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
+    <Compile Include="../Shared/Rule.cs" Link="Rule.cs" />
+    <Compile Include="../Shared/RuleCitations.cs" Link="RuleCitations.cs" />
+  </ItemGroup>
+
+</Project>

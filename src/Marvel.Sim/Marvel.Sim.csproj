@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Headless research/review host. This is the I/O boundary: the engine and
+       card assemblies continue to parse strings and never open datasets. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Marvel.Sim</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Cards/Marvel.Cards.csproj" />
+    <ProjectReference Include="../Marvel.Content/Marvel.Content.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marvel.Sim.Tests" />
+  </ItemGroup>
+
+</Project>

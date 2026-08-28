@@ -74,45 +74,16 @@ dotnet run --project src/Marvel.Sim -- run \
   --selection-seed 266 \
   --policy acting@1 \
   --policy-seed 9001 \
-  --policy-option decline_one_in=4 \
   --decision-limit 600 \
-  --record compact \
-  --output artifacts/sim/rhino-expert-two-player
+  --output artifacts/sim/rhino-expert-two-player.jsonl
 ```
 
 Repeated `--hero` and `--modular` flags preserve their order. Hero order is
 seat order. Modular-set order is the order passed to `Dealer.DealOrder`.
 
-The same run can be stored as JSON configuration:
-
-```json
-{
-  "schema": "marvel.sim.config/v1",
-  "scenario": "rhino",
-  "difficulty": "expert",
-  "heroes": ["spider_man", "she_hulk"],
-  "modular_sets": ["legions_of_hydra"],
-  "games": 1000,
-  "seeds": {"mode": "random", "selection_seed": 266},
-  "policy": {
-    "name": "acting",
-    "version": 1,
-    "seed": 9001,
-    "parameters": {"decline_one_in": 4}
-  },
-  "decision_limit": 600,
-  "record": "compact",
-  "compression": "gzip"
-}
-```
-
-`--config FILE` reads this shape. Gameplay flags cannot accompany `--config`.
-Operational flags may accompany it: `--output`, `--jobs` and `--shard`. This
-separation keeps the recorded game plan independent of the machine running it.
-
-The run command requires `--output DIR`. The explicit path is the caller's
-permission to write records there. The harness never chooses a repository path
-and never writes beside a dataset or test. See [Output behavior](#output-behavior).
+When `--output` is omitted, JSONL goes to standard output and the human summary
+goes to standard error. Naming an output file is explicit permission to write
+that file. See [Output behavior](#output-behavior).
 
 ## Configuration rules
 
@@ -132,9 +103,7 @@ The following rules apply:
 - `--no-modulars` selects an empty list and cannot accompany `--modular`.
 - `games` is positive and agrees with the selected seed mode.
 - `decision_limit` is positive. It defaults to 600.
-- `record` is `compact` or `full`. It defaults to `compact`.
-- `compression` is `gzip` or `none`. It defaults to `gzip`.
-- Every policy parameter must be declared by that policy version.
+- `--policy`, when present, is `acting` or `acting@1`.
 
 The scenario and difficulty spelling is an engine-project choice. The dataset
 stores standard and expert setups as separate campaign records. The command
@@ -182,15 +151,12 @@ Policy randomness is separate from game randomness. A policy cannot consume
 `World.Random`, even when it can inspect the full world. This keeps a policy
 change from moving the encounter deck's random stream.
 
-Every run names a policy as `<name>@<version>` and supplies one 32-bit master
-seed. The run planner creates a separate MT19937 stream from that master seed.
-It draws one raw word for each `(game index, seat)` in game-major, seat-major
-order. That word seeds the policy instance for that seat.
-
-The planner creates all game and policy seeds before applying a shard. A shard
-therefore uses the same seeds as the corresponding games in an unsharded run.
-Every game header records the final game seed and every seat policy seed, so a
-replay does not need to derive them again.
+Every run supplies one 32-bit policy seed. Game `i` uses that value plus `i` as
+its game-local policy master seed. A separate MT19937 stream draws one raw word
+for each seat in seat order. Those words seed the seat policies and are written
+to the start record. A one-game reproduction command can therefore use the
+recorded game-local master seed directly. None of these streams enters a
+`World`.
 
 Each policy declares one visibility level:
 
@@ -204,10 +170,10 @@ information that a player cannot. Reports must not silently combine policies
 with different names, versions, parameters or visibility levels.
 
 `acting@1` is the first baseline policy. It is a deterministic legal-action
-fuzzer, not a strategy bot. It uses only its prompt, sometimes declines a
-cancellable prompt, selects one legal affordance, selects legal targets and
-pays only with offered resource generators. Its `decline_one_in` parameter is a
-positive integer and defaults to 4.
+fuzzer, not a strategy bot. It plays payable cards and Actions, changes to hero
+form, prefers attacks or urgent thwarting, selects legal targets and pays only
+with offered resource generators. Random choices use the answering seat's
+policy stream.
 
 A policy version is immutable after records use it. A change that can choose a
 different answer from the same prompt and stream creates a new version. A
@@ -235,18 +201,14 @@ Each game follows one production path:
 The same runner must serve setup and gameplay. A setup card resolved by one
 interpreter and a revealed card resolved by another is not one game.
 
-Setup events go into the header. `Game.Begin` produces the initial prompt but
+Setup events go into each game's start record. `Game.Begin` produces the initial prompt but
 no events. Each later event list comes directly from the corresponding
 `Resolution`. The harness does not derive a parallel event stream from digest
 differences.
 
-The run is single-threaded within a game. `--jobs N` may run independent worlds
-at the same time, but no thread or asynchronous task may touch one world from
-another. Output ordering remains game-index order, regardless of completion
-order.
-
-`--shard I/N` runs game indices whose `index % N == I`. `I` starts at zero.
-The manifest records the full plan and the selected shard.
+The initial implementation is sequential. Independent-game parallelism may be
+added later, but no thread or asynchronous task may ever touch a world owned by
+another game. Record order remains game-index order.
 
 ## Multiplayer and implied actions
 
@@ -322,73 +284,43 @@ as part of the payment menu.
 
 ## Game record stream
 
-Each game is one UTF-8 JSON Lines stream. Gzip compression changes only the
-container. Decompressing a `.jsonl.gz` file produces the same bytes as a
-`.jsonl` file from the same run.
+One run is one UTF-8 JSON Lines stream. Every JSON value is one physical line.
+Arrays retain domain order. The stream starts with one run header, then contains
+one `start`, zero or more `step` records, and one `result` or `failure` record
+per game. One final `summary` record makes the aggregate machine-readable.
 
-Every JSON value is one physical line with no insignificant whitespace. Object
-keys use the order shown by the source-generated writer. Arrays retain domain
-order. The stream contains one header, zero or more steps, and one result or
-failure record.
-
-The schema id is `marvel.sim.game/v1`. A reader rejects an unknown major
-version. New optional fields may be added within version 1 only when an older
-reader can ignore them without changing a decision or verdict.
+The numeric `schema` is `1`. Replay rejects any other value.
 
 ### Header record
 
-The header identifies the executable contract, setup and random inputs. After
-successful setup it also contains the full initial digest because every replay
-begins there. If setup throws, `initial` is null and the following failure
-record names the setup error.
-
-The example below is formatted for reading. A file stores it on one line and
-contains the complete digest and events.
+The run header records the configuration shared by every game:
 
 ```json
 {
-  "schema": "marvel.sim.game/v1",
   "type": "header",
-  "game_index": 0,
-  "engine": {
-    "commit": "5336236a93606b6e3b26c36d4b266cdea94eb2bf",
-    "digest_version": 2
-  },
-  "setup": {
-    "scenario": "rhino",
-    "campaign": "rhino_expert",
-    "difficulty": "expert",
-    "heroes": ["spider_man", "she_hulk"],
-    "seat_names": ["Spider-Man", "She-Hulk"],
-    "modular_sets": ["legions_of_hydra"],
-    "used_recommended_modulars": false
-  },
-  "game_seed": 1608637542,
-  "policy": {
-    "name": "acting",
-    "version": 1,
-    "visibility": "prompt_only",
-    "master_seed": 9001,
-    "seat_seeds": [123, 456],
-    "parameters": {"decline_one_in": 4}
-  },
-  "limits": {"decisions": 600},
-  "record": "compact",
-  "initial": {
-    "digest": "{\"v\":2,\"cards\":[]}",
-    "fingerprint": "b06ec3cd3c0b6b4ece7b78f2bd99f14f8f8307339a0fd161f93e24d8abd2a31a",
-    "setup_events": []
-  }
+  "schema": 1,
+  "scenario": "rhino",
+  "difficulty": "expert",
+  "heroes": ["spider_man", "she_hulk"],
+  "modular_sets": ["legions_of_hydra"],
+  "policy": "acting",
+  "policy_version": 1,
+  "policy_visibility": "full_state",
+  "policy_seed": 9001,
+  "decision_limit": 600,
+  "seed_mode": "random",
+  "selection_seed": 266,
+  "seeds": [342154546, 3107468503]
 }
 ```
 
-The digest and fingerprint values above only show field shape. A real header
-contains `World.Digest().Canonical()` and its actual `Fingerprint()`.
+`modular_sets` is null when printed recommendations were requested and an empty
+array when no modular set was requested.
 
-The commit identifies the built source when available. A packaged build may
-use its assembly informational version instead. The field is provenance, not a
-replay input. Replay reports a difference but does not reject solely because
-the build identity changed.
+Each successfully dealt game follows with a start record containing its game
+index, game seed, game-local policy master seed, ordered seat policy seeds,
+complete setup events, and full canonical initial digest. Setup uses the same
+fresh `AbilityRunner` that gameplay receives.
 
 ### Step record
 
@@ -396,49 +328,35 @@ One step records the prompt before the decision and state after resolution:
 
 ```json
 {
-  "schema": "marvel.sim.game/v1",
   "type": "step",
-  "index": 0,
+  "game": 0,
+  "step": 0,
   "prompt": {
     "player": 0,
     "asking": "TurnOption",
     "when": "Untimed",
     "trigger": "WhenPlayerInTurn",
     "label": "Spider-Man takes a turn",
-    "cancellable": true,
-    "affordances": [
-      {
-        "verb": "Play",
-        "anchor_id": 9,
-        "anchor_player": 0,
-        "label": "Play Swinging Web Kick",
-        "targets": {"legal": [49], "min": 1, "max": 1},
-        "costs": [],
-        "illegal": null
-      }
-    ]
+    "cancellable": true
   },
   "decision": {
-    "kind": "take",
-    "selector": {"anchor_id": 9, "verb": "Play"},
-    "targets": [49],
-    "resources": [12, 17]
+    "decline": false,
+    "anchor_id": 9,
+    "anchor_player": 0,
+    "verb": "Play",
+    "label": "Play Swinging Web Kick",
+    "occurrence": 0
   },
+  "targets": [49],
+  "resources": [12, 17],
   "events": [],
-  "after": {
-    "fingerprint": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-  }
+  "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 }
 ```
 
-The prompt is the stable wire projection defined in
-[affordances.md](affordances.md). It keeps the offered order for research and
-for divergence reports. Its affordances omit session ids.
-
-Compact records store a full digest in the header and terminal record, with a
-SHA-256 fingerprint after each step. Full records also store the canonical
-digest in every step's `after` object. The digest remains a string so byte
-equality stays observable.
+The record never persists `Affordance.Id`. See [Durable decisions](#durable-decisions).
+It stores a SHA-256 fingerprint after each step, while start and terminal
+records store full canonical digests.
 
 Events use the production serialization from
 [event-stream.md](event-stream.md#the-vocabulary). They remain in execution
@@ -446,37 +364,30 @@ order. An empty event array is meaningful and is always present.
 
 ### Terminal record
 
-A game that reaches an engine outcome ends with:
+A game that reaches an engine outcome ends with a result record:
 
 ```json
 {
-  "schema": "marvel.sim.game/v1",
   "type": "result",
-  "status": "finished",
+  "game": 0,
+  "seed": 1608637542,
   "outcome": "PlayersWin",
-  "rounds": 8,
+  "round": 8,
   "decisions": 143,
   "metrics": {
-    "taken": 91,
-    "declined": 52,
-    "verbs": {"Action": 11, "Attack": 18, "Play": 22},
-    "events": {"CardsMoved": 74, "FieldSet": 81},
-    "distinct_anchor_cards": 27
+    "cards_played": 22,
+    "player_attacks": 18,
+    "payments": 20,
+    "resource_abilities_used": 3
   },
-  "terminal": {
-    "digest": "{\"v\":2,\"cards\":[]}",
-    "fingerprint": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-  }
+  "terminal_digest": "{\"v\":2,\"cards\":[]}"
 }
 ```
 
 `outcome` uses the engine enum spelling: `PlayersWin`, `VillainWins` or
 `PlayersLose`. `Unfinished` is never a finished result.
 
-Metrics are observations derived from records. They never affect policy
-choices or replay. `verbs` counts taken decisions by verb. `events` counts
-event records by kind. `distinct_anchor_cards` counts distinct card object ids
-selected during the game.
+Metrics are observations and never affect policy choices or replay.
 
 ## Replay and divergence
 
@@ -555,71 +466,31 @@ from all three game outcomes.
 
 ## Aggregate reports
 
-The run command writes `report.json` and a concise `report.md` after all selected
-games finish. The report command rebuilds both from game streams and produces
-the same aggregate values.
+The run appends one `summary` JSON value after all selected games finish and
+prints the same values as one concise human sentence. `Marvel.Sim report`
+renders that summary again from a saved stream.
 
-Each report contains:
+The summary contains:
 
-- The fully resolved configuration and shard.
-- Requested, selected, finished and failed game counts.
+- Selected and failed game counts.
 - Counts for `PlayersWin`, `VillainWins` and `PlayersLose`.
-- Counts by failure category.
-- Decision and round minimum, median, 95th percentile and maximum.
-- Taken and declined decision totals.
-- Taken decisions by verb and prompt question.
-- Events by event kind.
-- Distinct printed card faces used as selected anchors.
-- Every failed seed with its replay command.
+- Total decisions and rounds.
+- Total cards played, player attacks, paid costs and resource abilities used.
+- Failure signatures grouped by exception type and message.
 
-The median and 95th percentile use nearest-rank over values sorted ascending.
-The report states the policy name, version, parameters and visibility beside
-every group. It does not combine incompatible policy groups into one rate.
-
-`report.json` is the machine-readable authority. `report.md` is a rendering of
-the same values. Neither includes a timestamp, elapsed wall time or throughput
-inside its deterministic result section. A runner may print timing to standard
-error, but timing never enters a game record or comparison.
+Neither form includes a timestamp, elapsed wall time or throughput. The JSONL
+summary is the machine-readable authority.
 
 ## Output behavior
 
-The output directory must not exist. An existing path is a configuration error.
-This avoids an implicit overwrite and prevents two runs from becoming one
-dataset by accident.
-
-One run creates this layout:
-
-```text
-<output>/
-  manifest.json
-  report.json
-  report.md
-  games/
-    000000-1608637542.jsonl.gz
-    000001-3421126067.jsonl.gz
-  failures/
-    000019-787846414.json
-```
-
-The six-digit prefix is the index in the full run plan, not completion order or
-shard-local order. A failure has both its game stream and a convenience copy of
-the failure capsule under `failures/`.
-
-Each game writes to a temporary file inside the requested output directory and
-renames it only after the terminal record is flushed. The manifest lists game
-files in game-index order with their SHA-256 hashes and statuses. It is written
-last. A missing manifest therefore means the run did not finish committing its
-artifacts.
-
-Gzip output fixes the header modification time to zero, stores no source file
-name and uses one pinned compression level. Map keys that do not have a schema
-order are sorted by ordinal string order. These choices make successful game
-streams byte-identical for the same configuration and binaries. Exception
-messages remain diagnostics and are not a cross-build byte contract.
+With no `--output`, JSONL is written to standard output. With `--output FILE`,
+the command creates or replaces that explicit file and prints the human summary
+to standard output. Its parent directory is created when needed. The user chose
+the path, so the write is authorized and unsurprising.
 
 The harness creates no file when validation fails. It never writes to
 `datasets/`, `src/`, `tests/` or `docs/` unless the caller explicitly names one
-of those paths as the output directory. Tests use temporary directories and
+of those paths as the output file. Tests use temporary directories and
 leave `git status` unchanged.
 
 ## Exit codes
@@ -644,17 +515,16 @@ CI does not run the hero-by-scenario-by-player-count product. It checks the
 harness contract with small, named tests:
 
 - Configuration validation and the three seed-plan vectors.
-- Policy seed derivation, including shard equivalence.
-- JSONL and gzip round trips.
-- One solo game that generates and replays a compact record.
-- One two-player game that generates and replays a full record.
+- Per-seat policy seed derivation.
+- JSONL record and report round trips.
+- One solo game that generates and replays a record.
+- One two-player game that generates and replays a record.
 - A two-player obligation case that places the card with the matching identity
   player.
 - An implied cross-player Action with no request or acceptance decision.
 - Stable-selector failure for zero and multiple matches.
 - A forced failure that proves the last-good and post-failure digests are kept.
-- Report rebuilding from one success and one failure.
-- A test that starts and ends with a clean repository status.
+- Machine and human summary rebuilding.
 
 These are semantic examples, not samples of the full product. Large sweeps run
 manually or in a separate scheduled job and publish ordinary artifacts. Their
@@ -662,15 +532,17 @@ records are not vendored under `datasets/` and are not a build dependency.
 
 ## Staged delivery
 
-Implementation should land in four reviewable stages:
+The first implementation lands in three reviewable stages:
 
 1. Add `Marvel.Sim`, configuration validation, seed planning and policy
    version contracts. Pin them with small unit vectors.
-2. Run one game, write compact and full records, and replay stable decisions.
+2. Run games, write records, and replay stable decisions, events and digests.
 3. Add multiplayer dispatch, implied Actions, obligation coverage and failure
-   capsules.
-4. Add batching, deterministic jobs and shards, compression and aggregate
-   reports.
+   capsules plus aggregate summaries.
+
+Deterministic sharding and gzip are compatible future extensions. They do not
+belong in the initial contract and are not required to run large sequential
+research batches.
 
 Each stage must keep the solution green on Windows and Linux. A stage that
 cannot replay what it writes is incomplete.
