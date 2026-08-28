@@ -32,7 +32,7 @@ internal readonly record struct Cited(string Id, string Site);
 /// What this does with an unknown id is count it, and say so.
 /// </para>
 /// </remarks>
-internal static partial class Citations
+internal static class Citations
 {
     /// <summary>Reads every citation under <c>tests/</c>.</summary>
     public static IReadOnlyList<Cited> Read() =>
