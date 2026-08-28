@@ -1,6 +1,7 @@
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -73,6 +74,54 @@ public sealed class KeywordStackingTests
         var (world, card) = Board("01110", runner);
 
         ResolveReveal(world, card, runner);
+
+        AssertOneAdditionalCard(world);
+    }
+
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Fact]
+    public void GainedSurgeSurvivesAChoiceContinuation()
+    {
+        // The choice only suspends this one reveal ability. It does not create
+        // a new instance of that ability, so the later gain is still the inert
+        // additional instance described by the keyword rule.
+        var runner = Runner(
+            "01110",
+            """{ "seq": [ { "gainSurge": 1 }, { "choose": { "options": [ { "seq": [] }, { "seq": [] } ] } }, { "gainSurge": 1 } ] }""");
+        var (world, card) = Board("01110", runner);
+
+        ResolveReveal(world, card, runner);
+        var waiting = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
+        runner.Chose(world, card, 0, waiting.Index, Decision.Take(0), waiting.Tier);
+
+        AssertOneAdditionalCard(world);
+    }
+
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Fact]
+    public void GainedSurgeSurvivesAnActivationContinuation()
+    {
+        // An activation caused in the middle of the ability finishes before
+        // its remaining steps. Resuming those steps does not make the later
+        // non-numeric keyword instance effective again.
+        var runner = Runner(
+            "01110",
+            """{ "seq": [ { "gainSurge": 1 }, { "enemyAttacks": { "enemies": { "query": "villain" } } }, { "gainSurge": 1 } ] }""");
+        var (world, card) = Board("01110", runner);
+        var seat = world.Seats[0];
+        seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
+        var villain = world.CreateCard("01113", world.AreaOf(DeckType.VillainArea));
+
+        ResolveReveal(world, card, runner);
+        int activation = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
+        runner.ActivationCompleted(
+            world,
+            new EnemyActivation(
+                villain.ObjectId, 0, Attacking: true, activation, Made: true));
 
         AssertOneAdditionalCard(world);
     }

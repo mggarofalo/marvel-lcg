@@ -97,13 +97,20 @@ public enum Stage
 /// <param name="OccurrenceId">
 /// A dynamically allocated occurrence id, or null when round/number/index name it.
 /// </param>
+/// <param name="SurgeGained">
+/// Whether this suspended reveal ability has already gained and resolved Surge.
+/// This continuation flag is an engine save-format choice; it preserves the
+/// Rules Reference's one effective instance of a non-numeric keyword when the
+/// ability resumes after a player choice.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
     ThreatPlacement? Placement = null, int ActivationId = -1, bool FinalStep = false,
     bool FinalPlayer = false, bool EachPlayerFrame = false, string Trigger = "",
     CharacterAttack? CharacterAttack = null, CharacterThwart? CharacterThwart = null,
-    PlayerAction? PlayerAction = null, int? OccurrenceId = null)
+    PlayerAction? PlayerAction = null, int? OccurrenceId = null,
+    bool SurgeGained = false)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>

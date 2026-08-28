@@ -175,6 +175,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             this)
         {
             Tier = continuation.Tier,
+            GainedKeywords = continuation.SurgeGained
+                ? new HashSet<string>(["surge"], StringComparer.Ordinal)
+                : new HashSet<string>(StringComparer.Ordinal),
         };
         foreach (var (name, value) in continuation.Results)
         {
@@ -2138,6 +2141,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
             EventTrigger = eventTrigger,
+            GainedKeywords = world.Agenda.Current is
+                { What: Steps.ChooseOption, SurgeGained: true }
+                    ? new HashSet<string>(["surge"], StringComparer.Ordinal)
+                    : new HashSet<string>(StringComparer.Ordinal),
         };
         cast.At(Math.Max(0, stoppedAt - 1));
         cast.SetContinuation(On(source).Any(ability =>
@@ -4411,7 +4418,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // and the card and the position do not say which -- see `Choice`.
             Tier: cast.Tier,
             FinalStep: cast.FinalStep,
-            Trigger: cast.Trigger);
+            Trigger: cast.Trigger,
+            SurgeGained: cast.GainedKeywords.Contains("surge"));
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
             cast.World.Agenda.ThenContinuation(continuation, cast.Occurrence);
@@ -5260,7 +5268,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             sequence,
             next,
             cast.ActivationIds.Count,
-            new Dictionary<string, long>(cast.Results, StringComparer.Ordinal));
+            new Dictionary<string, long>(cast.Results, StringComparer.Ordinal),
+            cast.GainedKeywords.Contains("surge"));
         foreach (int id in cast.ActivationIds)
         {
             activations.Add(id, continuation);
@@ -6270,7 +6279,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         AbilityNode sequence,
         int next,
         int remaining,
-        Dictionary<string, long> results)
+        Dictionary<string, long> results,
+        bool surgeGained)
     {
         public int Source { get; } = source;
         public Occurrence Occurrence { get; } = occurrence;
@@ -6280,6 +6290,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public int Next { get; } = next;
         public int Remaining { get; set; } = remaining;
         public Dictionary<string, long> Results { get; } = results;
+        public bool SurgeGained { get; } = surgeGained;
         public long Made { get; set; }
         public long Damage { get; set; }
         public long Threat { get; set; }
