@@ -175,6 +175,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             this)
         {
             Tier = continuation.Tier,
+            GainedKeywords = continuation.SurgeGained
+                ? new HashSet<string>(["surge"], StringComparer.Ordinal)
+                : new HashSet<string>(StringComparer.Ordinal),
         };
         foreach (var (name, value) in continuation.Results)
         {
@@ -195,7 +198,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             world, attack.Source, attack.Enemy, attack.Player, attack.AbilityIndex,
             attack.PowerOrdinal, attack.ResumeFrom, attack.FinalStep,
             attack.Targets ?? [attack.Enemy], attack.Amount, null,
-            attack.Trigger, occurrence, events, BasicPowers.AttackVerb);
+            attack.Trigger, attack.SurgeGained, occurrence, events,
+            BasicPowers.AttackVerb);
 
     /// <inheritdoc/>
     public void ResolveCardThwart(
@@ -204,12 +208,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             world, thwart.Source, thwart.Scheme, thwart.Player, thwart.AbilityIndex,
             thwart.PowerOrdinal, thwart.ResumeFrom, thwart.FinalStep,
             thwart.Targets ?? [thwart.Scheme], thwart.Amount, thwart.ImminentThreat,
-            thwart.Trigger, occurrence, events, BasicPowers.ThwartVerb);
+            thwart.Trigger, thwart.SurgeGained, occurrence, events,
+            BasicPowers.ThwartVerb);
 
     private void ResolvePower(
         World world, int sourceId, int targetId, int player, int abilityIndex,
         int powerOrdinal, int resumeFrom, bool finalStep, IReadOnlyList<int> targets,
         long powerAmount, ThreatPlacement? imminentThreat, string eventTrigger,
+        bool surgeGained,
         Occurrence occurrence,
         List<GameEvent> events, string power)
     {
@@ -247,6 +253,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ImminentThreat = imminentThreat,
             EventTrigger = eventTrigger,
             PowerTargets = [.. targets.Select(id => world.Cards[id])],
+            GainedKeywords = surgeGained
+                ? new HashSet<string>(["surge"], StringComparer.Ordinal)
+                : new HashSet<string>(StringComparer.Ordinal),
         };
         cast.Choose(world.Cards[targetId]);
         Run(effect, cast);
@@ -537,6 +546,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var occurrence = new Occurrence(
             0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player);
 
+        // One reveal can contain several authored abilities. A non-numeric
+        // keyword gained by more than one of them is still one keyword, so the
+        // casts share which keyword grants have already resolved.
+        var gainedKeywords = new HashSet<string>(StringComparer.Ordinal);
         foreach (var ability in On(card))
         {
             // `rr:ability.step.3` -- "When Revealed" *is* the occurrence, not a
@@ -551,6 +564,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     new Cast(world, card, occurrence, player, events, this)
                     {
                         Tier = ability.Trigger.Timing,
+                        GainedKeywords = gainedKeywords,
                     });
             }
         }
@@ -1072,6 +1086,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             EachPlayerFrame = true,
             FinalPlayer = finalPlayer,
+            GainedKeywords = world.Agenda.Current is
+                { What: Steps.ResolveEachPlayer, SurgeGained: true }
+                    ? new HashSet<string>(["surge"], StringComparer.Ordinal)
+                    : new HashSet<string>(StringComparer.Ordinal),
         };
         cast.At(stoppedAt - 1);
         cast.SetContinuation(finalPlayer && outer.Kind == "seq"
@@ -2133,6 +2151,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
             EventTrigger = eventTrigger,
+            GainedKeywords = world.Agenda.Current is
+                { What: Steps.ChooseOption, SurgeGained: true }
+                    ? new HashSet<string>(["surge"], StringComparer.Ordinal)
+                    : new HashSet<string>(StringComparer.Ordinal),
         };
         cast.At(Math.Max(0, stoppedAt - 1));
         cast.SetContinuation(On(source).Any(ability =>
@@ -2924,7 +2946,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "eachPlayer":
                 EachPlayerEffects.Schedule(
-                    cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep);
+                    cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep,
+                    cast.GainedKeywords.Contains("surge"));
                 cast.Suspend();
                 break;
 
@@ -3213,17 +3236,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // facedown encounter card from the top of the encounter deck",
                 // and `.1` writes it as "**When Revealed**: deal yourself 1
                 // facedown encounter card". A card that *gains* surge does the
-                // same thing the keyword would have -- so this is one deal, and
-                // the number beside the node is how many.
+                // same thing the keyword would have.
                 //
-                // `.2` finishes the original card first, which the villain
-                // phase's reveal queue does without anything here.
-                for (long dealt = 0; dealt < Number(node.Argument); dealt++)
+                // `rr:keywords.1` makes every additional non-numeric instance
+                // inert. Printed and continuously granted Surge already ran in
+                // `Reveal.Keywords`; multiple nodes and a value greater than one
+                // are multiple gained instances inside this reveal. All four
+                // shapes therefore produce at most one deal between them.
+                if (Number(node.Argument) > 0
+                    && StateFields.Modified(
+                        cast.World, cast.Source, "surge", cast.World.Facts,
+                        cast.World.Players) <= 0
+                    && cast.GainedKeywords.Add("surge"))
                 {
+                    ((AbilityRunner)cast.Abilities).RememberGainedSurge(
+                        cast.World, cast.Source.ObjectId);
                     Deal.EncounterCard(
                         cast.World, cast.Player, cast.Trigger, cast.Events);
                 }
 
+                // `.2` finishes the original card first, which the villain
+                // phase's reveal queue does without anything else here.
                 break;
 
             case "heal":
@@ -4398,7 +4431,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // and the card and the position do not say which -- see `Choice`.
             Tier: cast.Tier,
             FinalStep: cast.FinalStep,
-            Trigger: cast.Trigger);
+            Trigger: cast.Trigger,
+            SurgeGained: cast.GainedKeywords.Contains("surge"));
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
             cast.World.Agenda.ThenContinuation(continuation, cast.Occurrence);
@@ -4719,7 +4753,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.Trigger, cast.Events, abilityIndex: address.Index,
                 powerOrdinal: address.Ordinal, resumeFrom: resumeFrom,
                 finalStep: cast.FinalStep,
-                targets: [.. targets.Select(card => card.ObjectId)], nested: true)
+                targets: [.. targets.Select(card => card.ObjectId)], nested: true,
+                surgeGained: cast.GainedKeywords.Contains("surge"))
             : BasicPowers.CardThwart(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
                 cast.Trigger, cast.Events, abilityIndex: address.Index,
@@ -4728,7 +4763,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 targets: [.. targets.Select(card => card.ObjectId)],
                 imminentThreat: cast.Occurrence.Threat,
                 automaticTarget: node.Field("automaticTarget") is not null,
-                nested: true);
+                nested: true,
+                surgeGained: cast.GainedKeywords.Contains("surge"));
         if (!scheduled)
         {
             return;
@@ -5247,10 +5283,39 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             sequence,
             next,
             cast.ActivationIds.Count,
-            new Dictionary<string, long>(cast.Results, StringComparer.Ordinal));
+            new Dictionary<string, long>(cast.Results, StringComparer.Ordinal),
+            cast.GainedKeywords.Contains("surge"));
         foreach (int id in cast.ActivationIds)
         {
             activations.Add(id, continuation);
+        }
+    }
+
+    /// <summary>Propagate one reveal-scoped Surge gain to work already suspended.</summary>
+    private void RememberGainedSurge(World world, int source)
+    {
+        foreach (var continuation in activations.Values
+            .Where(continuation => continuation.Source == source)
+            .Distinct())
+        {
+            continuation.SurgeGained = true;
+        }
+
+        // Choice and each-player continuations are saveable agenda data. An
+        // earlier ability can already have scheduled one when a later sibling
+        // ability gains Surge, so its original snapshot must be advanced too.
+        // The rulebook determines the shared non-numeric keyword instance; the
+        // propagation mechanism is the engine's choice.
+        world.Agenda.MarkSurgeGained(source);
+        if (world.CharacterAttack is { Source: var attackSource } attack
+            && attackSource == source)
+        {
+            world.CharacterAttack = attack with { SurgeGained = true };
+        }
+        if (world.CharacterThwart is { Source: var thwartSource } thwart
+            && thwartSource == source)
+        {
+            world.CharacterThwart = thwart with { SurgeGained = true };
         }
     }
 
@@ -6160,6 +6225,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// </remarks>
         public Dictionary<string, long> Results { get; } = new(StringComparer.Ordinal);
 
+        /// <summary>Non-numeric keywords gained during this resolution scope.</summary>
+        /// <remarks>
+        /// A reveal shares this set across each of the card's When Revealed
+        /// abilities. Other entry points keep the per-cast default.
+        /// </remarks>
+        public HashSet<string> GainedKeywords { get; init; } =
+            new(StringComparer.Ordinal);
+
         /// <summary>The resource letters generated to pay for this event.</summary>
         public string Payment { get; private set; } = string.Empty;
 
@@ -6249,7 +6322,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         AbilityNode sequence,
         int next,
         int remaining,
-        Dictionary<string, long> results)
+        Dictionary<string, long> results,
+        bool surgeGained)
     {
         public int Source { get; } = source;
         public Occurrence Occurrence { get; } = occurrence;
@@ -6259,6 +6333,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public int Next { get; } = next;
         public int Remaining { get; set; } = remaining;
         public Dictionary<string, long> Results { get; } = results;
+        public bool SurgeGained { get; set; } = surgeGained;
         public long Made { get; set; }
         public long Damage { get; set; }
         public long Threat { get; set; }

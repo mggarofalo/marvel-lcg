@@ -229,7 +229,8 @@ public static class BasicPowers
         Card? source = null, Card? moveFrom = null, bool overkill = false,
         string trigger = AttackVerb, int abilityIndex = -1, int powerOrdinal = 0,
         int resumeFrom = -1,
-        bool finalStep = false, IReadOnlyList<int>? targets = null, bool nested = false)
+        bool finalStep = false, IReadOnlyList<int>? targets = null, bool nested = false,
+        bool surgeGained = false)
     {
         var attack = new CharacterAttack(
             attacker.ObjectId,
@@ -244,7 +245,8 @@ public static class BasicPowers
             powerOrdinal,
             resumeFrom,
             finalStep,
-            targets);
+            targets,
+            surgeGained);
         world.CharacterAttack = attack;
         var step = new PhaseStep(
             Steps.CharacterAttacks,
@@ -253,7 +255,8 @@ public static class BasicPowers
             Index: player,
             Subject: enemy.ObjectId,
             Seat: player,
-            CharacterAttack: attack);
+            CharacterAttack: attack,
+            SurgeGained: surgeGained);
         if (nested)
         {
             world.Agenda.Now(step);
@@ -277,7 +280,8 @@ public static class BasicPowers
         string trigger, List<GameEvent> events, bool overkill = false, Card? moveFrom = null,
         int abilityIndex = -1, int powerOrdinal = 0, int resumeFrom = -1,
         bool finalStep = false,
-        IReadOnlyList<int>? targets = null, bool nested = false)
+        IReadOnlyList<int>? targets = null, bool nested = false,
+        bool surgeGained = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -300,7 +304,7 @@ public static class BasicPowers
 
         InitiateAttack(
             world, attacker, enemy, player, amount, source, moveFrom, overkill, trigger,
-            abilityIndex, powerOrdinal, resumeFrom, finalStep, targets, nested);
+            abilityIndex, powerOrdinal, resumeFrom, finalStep, targets, nested, surgeGained);
         return true;
     }
 
@@ -333,7 +337,8 @@ public static class BasicPowers
         Card? source = null, string trigger = ThwartVerb, int abilityIndex = -1,
         int powerOrdinal = 0, int resumeFrom = -1, bool finalStep = false,
         IReadOnlyList<int>? targets = null,
-        ThreatPlacement? imminentThreat = null, bool nested = false)
+        ThreatPlacement? imminentThreat = null, bool nested = false,
+        bool surgeGained = false)
     {
         var thwart = new CharacterThwart(
             thwarter.ObjectId,
@@ -347,7 +352,8 @@ public static class BasicPowers
             resumeFrom,
             finalStep,
             targets,
-            imminentThreat);
+            imminentThreat,
+            surgeGained);
         world.CharacterThwart = thwart;
         var step = new PhaseStep(
             Steps.CharacterThwarts,
@@ -356,7 +362,8 @@ public static class BasicPowers
             Index: player,
             Subject: scheme.ObjectId,
             Seat: player,
-            CharacterThwart: thwart);
+            CharacterThwart: thwart,
+            SurgeGained: surgeGained);
         if (nested)
         {
             world.Agenda.Now(step);
@@ -596,7 +603,7 @@ public static class BasicPowers
         int powerOrdinal = 0, int resumeFrom = -1,
         bool finalStep = false, IReadOnlyList<int>? targets = null,
         ThreatPlacement? imminentThreat = null, bool automaticTarget = false,
-        bool nested = false)
+        bool nested = false, bool surgeGained = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -620,7 +627,8 @@ public static class BasicPowers
 
         InitiateThwart(
             world, thwarter, scheme, player, amount, source, trigger, abilityIndex,
-            powerOrdinal, resumeFrom, finalStep, targets, imminentThreat, nested);
+            powerOrdinal, resumeFrom, finalStep, targets, imminentThreat, nested,
+            surgeGained);
         return true;
     }
 

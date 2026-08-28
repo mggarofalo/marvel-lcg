@@ -97,13 +97,20 @@ public enum Stage
 /// <param name="OccurrenceId">
 /// A dynamically allocated occurrence id, or null when round/number/index name it.
 /// </param>
+/// <param name="SurgeGained">
+/// Whether this suspended reveal ability has already gained and resolved Surge.
+/// This continuation flag is an engine save-format choice; it preserves the
+/// Rules Reference's one effective instance of a non-numeric keyword when the
+/// ability resumes after a player choice.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
     ThreatPlacement? Placement = null, int ActivationId = -1, bool FinalStep = false,
     bool FinalPlayer = false, bool EachPlayerFrame = false, string Trigger = "",
     CharacterAttack? CharacterAttack = null, CharacterThwart? CharacterThwart = null,
-    PlayerAction? PlayerAction = null, int? OccurrenceId = null)
+    PlayerAction? PlayerAction = null, int? OccurrenceId = null,
+    bool SurgeGained = false)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -350,6 +357,42 @@ public sealed class Agenda
             .Where(step => step.What is not Steps.CompleteAttackActivation
                 and not Steps.CompleteSchemeActivation),
     ];
+
+    /// <summary>Remember gained Surge on every continuation of one revealed card.</summary>
+    /// <remarks>
+    /// A reveal can schedule a continuation and then resolve another printed
+    /// ability before that continuation resumes. Updating every frame keeps
+    /// the reveal-scoped non-numeric keyword state authoritative instead of
+    /// leaving the earlier frame with a stale by-value snapshot. The flag and
+    /// this propagation are engine save-format choices.
+    /// </remarks>
+    /// <param name="source">The revealed card whose abilities share the gain.</param>
+    public void MarkSurgeGained(int source)
+    {
+        for (int index = 0; index < items.Count; index++)
+        {
+            var (step, stage, occurrence) = items[index];
+            bool ownsContinuation = step.Subject == source
+                && step.What is Steps.ChooseOption
+                    or Steps.OrderEachPlayer
+                    or Steps.ResolveEachPlayer;
+            ownsContinuation |= step.CharacterAttack?.Source == source
+                || step.CharacterThwart?.Source == source;
+            if (ownsContinuation)
+            {
+                items[index] = (step with
+                {
+                    SurgeGained = true,
+                    CharacterAttack = step.CharacterAttack is { } attack
+                        ? attack with { SurgeGained = true }
+                        : null,
+                    CharacterThwart = step.CharacterThwart is { } thwart
+                        ? thwart with { SurgeGained = true }
+                        : null,
+                }, stage, occurrence);
+            }
+        }
+    }
 
     /// <summary>Put a step at the end of the list.</summary>
     /// <param name="step">What to do.</param>
