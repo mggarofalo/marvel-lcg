@@ -148,17 +148,40 @@ public sealed class EncounterDeckTests
         var replacement = world.CreateCard(
             "replacement", world.AreaOf(DeckType.EncounterDiscardPile));
 
-        var dealt = Deal.EncounterCard(world, 0, "test", []);
+        var events = new List<GameEvent>();
+        var dealt = Deal.EncounterCard(world, 0, "test", events);
 
         Assert.Same(card, dealt);
         Assert.Same(
             world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)),
             card.Area);
         Assert.Equal([replacement], deck.Cards);
+        int reset = events.FindIndex(item => item is CardsMoved moved
+            && moved.Verb == "Reset");
+        int deal = events.FindIndex(item => item is CardsMoved moved
+            && moved.Verb == "Deal");
+        Assert.True(reset >= 0);
+        Assert.True(deal > reset);
         Assert.Equal(
             1,
             world.TheCardIn(DeckType.MainSchemesArea)!
                 .Tokens[EncounterDeck.AccelerationToken]);
+    }
+
+    [Rule("rr:encounter-deck.4")]
+    [Fact]
+    public void TakingTheFinalCardWithNoDiscardPileEndsTheGame()
+    {
+        // If there are "no cards in both the encounter deck and the encounter
+        // discard pile simultaneously," the resulting infinite reset loop
+        // means "the players lose." Taking the only card creates that boundary.
+        var printed = new Printed();
+        var world = Board(printed);
+        world.CreateCard("card", world.AreaOf(DeckType.EncounterDeck));
+
+        Deal.EncounterCard(world, 0, "test", []);
+
+        Assert.Equal(Outcome.PlayersLose, world.Result);
     }
 
     private static World Board(ICardFacts facts)

@@ -55,8 +55,7 @@ public static class EncounterDeck
         }
 
         var card = deck.TakeTop();
-        if (deck.Cards.Count == 0
-            && world.AreaOf(DeckType.EncounterDiscardPile).Cards.Count > 0)
+        if (deck.Cards.Count == 0)
         {
             Reset(world, trigger, events);
         }

@@ -196,11 +196,11 @@ public sealed class DealTests
 
     [Rule("rr:incite-x.1")]
     [Fact]
-    public void InciteResolvesDuringRevealAfterTheCardTurnsFaceup()
+    public void InciteResolvesDuringRevealAfterTheCardEntersPlay()
     {
         // Incite is equivalent to "When Revealed: Place X threat on the main
-        // scheme." Its threat event therefore follows the reveal's faceup
-        // event and precedes step 4 discarding the treachery.
+        // scheme." Its threat event therefore follows both step 1 turning the
+        // card faceup and step 2 putting this side scheme into play.
         var printed = new Printed().With("incite", ("Incite", "2"));
         var world = Board(printed, players: 1);
         var deck = world.AreaOf(DeckType.EncounterDeck);
@@ -213,16 +213,16 @@ public sealed class DealTests
         int flipped = events.FindIndex(item => item is CardsFlipped value
             && value.Verb == "Reveal"
             && value.Cards.Contains(incite.ObjectId));
+        int entered = events.FindIndex(item => item is CardsMoved value
+            && value.To.Zone == nameof(DeckType.SideSchemesArea)
+            && value.Cards.Any(landing => landing.Card == incite.ObjectId));
         int placed = events.FindIndex(item => item is FieldSet value
             && value.Trigger == "incite"
             && value.Card == world.TheCardIn(DeckType.MainSchemesArea)!.ObjectId);
-        int discarded = events.FindIndex(item => item is CardsMoved value
-            && value.Verb == "Reveal"
-            && value.Cards.Any(landing => landing.Card == incite.ObjectId));
 
         Assert.True(flipped >= 0);
-        Assert.True(placed > flipped);
-        Assert.True(discarded > placed);
+        Assert.True(entered > flipped);
+        Assert.True(placed > entered);
     }
 
     /// <summary>
@@ -417,6 +417,7 @@ public sealed class DealTests
             "identity" => CardKind.AlterEgo,
             "villain" => CardKind.EncounterVillain,
             "scheme" => CardKind.MainScheme,
+            "incite" => CardKind.EncounterSideScheme,
             "hazardous" => CardKind.EncounterSideScheme,
             _ => CardKind.Treachery,
         };

@@ -53,7 +53,7 @@ Rules Reference v1.8
   entries             153 / 262   cited (58.4%)
   citable records     509 / 1218  cited (41.8%)
 
-  citations made  1136
+  citations made  1137
 ```
 
 ```

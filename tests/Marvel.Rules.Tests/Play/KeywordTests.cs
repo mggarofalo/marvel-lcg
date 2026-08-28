@@ -410,6 +410,7 @@ public sealed class KeywordTests
         var world = Board(printed);
         world.Seats[0].IdentityCard.TurnTo("hero");
         var villain = world.TheCardIn(DeckType.VillainArea)!;
+        KeepEncounterDeckLive(world);
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
 
         Attack.Initiate(
@@ -630,6 +631,7 @@ public sealed class KeywordTests
         var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
         world.CreateCard("friend", engaged);
         var arriving = world.CreateCard("acolyte", engaged);
+        KeepEncounterDeckLive(world);
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
 
         Reveal.Teamwork(world, printed, arriving, 0, round: 1);
@@ -827,6 +829,7 @@ public sealed class KeywordTests
         world.Seats[0].IdentityCard.TurnTo("hero");
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        KeepEncounterDeckLive(world);
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
 
         Attack.Initiate(
@@ -853,6 +856,7 @@ public sealed class KeywordTests
             .With("sideScheme", ("Amplify", amplify.ToString()));
         var world = Board(printed);
         world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        KeepEncounterDeckLive(world);
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
 
         VillainPhase.Schedule(world.Agenda, round: 1);
@@ -983,6 +987,10 @@ public sealed class KeywordTests
         world.CreateCard("scheme", world.AreaOf(DeckType.MainSchemesArea));
         return world;
     }
+
+    /// <summary>Gives non-exhaustion tests a replacement encounter deck.</summary>
+    private static void KeepEncounterDeckLive(World world) =>
+        world.CreateCard("replacement", world.AreaOf(DeckType.EncounterDeck));
 
     private sealed class Printed : ICardFacts
     {
