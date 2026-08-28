@@ -259,6 +259,94 @@ public sealed class KeywordStackingTests
         AssertOneAdditionalCard(world);
     }
 
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Fact]
+    public void GainedSurgeSurvivesAnAttackContinuation()
+    {
+        // A card-defined attack is a saveable occurrence in the middle of the
+        // reveal ability. Finishing it resumes the same sequence and therefore
+        // the same already-effective non-numeric keyword instance.
+        var runner = Runner(
+            "01110",
+            """{ "seq": [ { "gainSurge": 1 }, { "attack": { "target": { "query": "villain" }, "effect": { "seq": [] } } }, { "gainSurge": 1 } ] }""");
+        var (world, card) = Board("01110", runner);
+        var seat = world.Seats[0];
+        seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
+        world.CreateCard("01113", world.AreaOf(DeckType.VillainArea));
+
+        ResolveReveal(world, card, runner);
+        var step = Assert.Single(
+            world.Agenda.Outstanding, item => item.What == Steps.CharacterAttacks);
+        runner.ResolveCardAttack(
+            world, step.CharacterAttack!, step.OccurrenceOf(world, Cards), []);
+
+        AssertOneAdditionalCard(world);
+    }
+
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Fact]
+    public void GainedSurgeSurvivesAThwartContinuation()
+    {
+        // Thwart uses its own queued power record, so it independently carries
+        // the reveal state needed when the outer sequence resumes.
+        var runner = Runner(
+            "01110",
+            """{ "seq": [ { "gainSurge": 1 }, { "thwart": { "target": { "query": "mainScheme" }, "effect": { "seq": [] } } }, { "gainSurge": 1 } ] }""");
+        var (world, card) = Board("01110", runner);
+        var seat = world.Seats[0];
+        seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
+        var scheme = world.CreateCard("01116a", world.AreaOf(DeckType.MainSchemesArea));
+        scheme.PlaceTokens("k_threat", 1);
+
+        ResolveReveal(world, card, runner);
+        var step = Assert.Single(
+            world.Agenda.Outstanding, item => item.What == Steps.CharacterThwarts);
+        runner.ResolveCardThwart(
+            world, step.CharacterThwart!, step.OccurrenceOf(world, Cards), []);
+
+        AssertOneAdditionalCard(world);
+    }
+
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Fact]
+    public void LaterAbilityUpdatesAnEarlierPowerContinuation()
+    {
+        // A sibling ability can gain Surge after the attack record was queued.
+        // The queued record must be advanced along with choice, activation and
+        // each-player continuations before its sequence resumes.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01110", "abilities": [
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "seq": [
+                  { "attack": { "target": { "query": "villain" },
+                                "effect": { "seq": [] } } },
+                  { "gainSurge": 1 } ] } },
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "gainSurge": 1 } }
+            ] } ] }
+            """));
+        var (world, card) = Board("01110", runner);
+        var seat = world.Seats[0];
+        seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
+        world.CreateCard("01113", world.AreaOf(DeckType.VillainArea));
+
+        ResolveReveal(world, card, runner);
+        var step = Assert.Single(
+            world.Agenda.Outstanding, item => item.What == Steps.CharacterAttacks);
+        Assert.True(step.CharacterAttack!.SurgeGained);
+        Assert.True(world.CharacterAttack!.SurgeGained);
+        runner.ResolveCardAttack(
+            world, step.CharacterAttack, step.OccurrenceOf(world, Cards), []);
+
+        AssertOneAdditionalCard(world);
+    }
+
     private static AbilityRunner Runner(string faceId, string effect) =>
         new(AbilityCatalog.Parse(
             $$"""

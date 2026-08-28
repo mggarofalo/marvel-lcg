@@ -372,12 +372,24 @@ public sealed class Agenda
         for (int index = 0; index < items.Count; index++)
         {
             var (step, stage, occurrence) = items[index];
-            if (step.Subject == source
+            bool ownsContinuation = step.Subject == source
                 && step.What is Steps.ChooseOption
                     or Steps.OrderEachPlayer
-                    or Steps.ResolveEachPlayer)
+                    or Steps.ResolveEachPlayer;
+            ownsContinuation |= step.CharacterAttack?.Source == source
+                || step.CharacterThwart?.Source == source;
+            if (ownsContinuation)
             {
-                items[index] = (step with { SurgeGained = true }, stage, occurrence);
+                items[index] = (step with
+                {
+                    SurgeGained = true,
+                    CharacterAttack = step.CharacterAttack is { } attack
+                        ? attack with { SurgeGained = true }
+                        : null,
+                    CharacterThwart = step.CharacterThwart is { } thwart
+                        ? thwart with { SurgeGained = true }
+                        : null,
+                }, stage, occurrence);
             }
         }
     }

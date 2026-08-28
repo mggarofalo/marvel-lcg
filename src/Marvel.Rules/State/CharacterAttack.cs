@@ -42,6 +42,10 @@ namespace Marvel.Rules.State;
 /// <param name="ResumeFrom">The next top-level sequence step, or -1 when none remains.</param>
 /// <param name="FinalStep">Whether this is the final Special in its parent sequence.</param>
 /// <param name="Targets">Every target selected for this one attack.</param>
+/// <param name="SurgeGained">
+/// Whether the suspended source ability has already gained and resolved Surge.
+/// The field is engine continuation data rather than a rulebook term.
+/// </param>
 public sealed record CharacterAttack(
     int Attacker,
     int Enemy,
@@ -55,4 +59,5 @@ public sealed record CharacterAttack(
     int PowerOrdinal = 0,
     int ResumeFrom = -1,
     bool FinalStep = false,
-    IReadOnlyList<int>? Targets = null);
+    IReadOnlyList<int>? Targets = null,
+    bool SurgeGained = false);

@@ -198,7 +198,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             world, attack.Source, attack.Enemy, attack.Player, attack.AbilityIndex,
             attack.PowerOrdinal, attack.ResumeFrom, attack.FinalStep,
             attack.Targets ?? [attack.Enemy], attack.Amount, null,
-            attack.Trigger, occurrence, events, BasicPowers.AttackVerb);
+            attack.Trigger, attack.SurgeGained, occurrence, events,
+            BasicPowers.AttackVerb);
 
     /// <inheritdoc/>
     public void ResolveCardThwart(
@@ -207,12 +208,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             world, thwart.Source, thwart.Scheme, thwart.Player, thwart.AbilityIndex,
             thwart.PowerOrdinal, thwart.ResumeFrom, thwart.FinalStep,
             thwart.Targets ?? [thwart.Scheme], thwart.Amount, thwart.ImminentThreat,
-            thwart.Trigger, occurrence, events, BasicPowers.ThwartVerb);
+            thwart.Trigger, thwart.SurgeGained, occurrence, events,
+            BasicPowers.ThwartVerb);
 
     private void ResolvePower(
         World world, int sourceId, int targetId, int player, int abilityIndex,
         int powerOrdinal, int resumeFrom, bool finalStep, IReadOnlyList<int> targets,
         long powerAmount, ThreatPlacement? imminentThreat, string eventTrigger,
+        bool surgeGained,
         Occurrence occurrence,
         List<GameEvent> events, string power)
     {
@@ -250,6 +253,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ImminentThreat = imminentThreat,
             EventTrigger = eventTrigger,
             PowerTargets = [.. targets.Select(id => world.Cards[id])],
+            GainedKeywords = surgeGained
+                ? new HashSet<string>(["surge"], StringComparer.Ordinal)
+                : new HashSet<string>(StringComparer.Ordinal),
         };
         cast.Choose(world.Cards[targetId]);
         Run(effect, cast);
@@ -4747,7 +4753,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.Trigger, cast.Events, abilityIndex: address.Index,
                 powerOrdinal: address.Ordinal, resumeFrom: resumeFrom,
                 finalStep: cast.FinalStep,
-                targets: [.. targets.Select(card => card.ObjectId)], nested: true)
+                targets: [.. targets.Select(card => card.ObjectId)], nested: true,
+                surgeGained: cast.GainedKeywords.Contains("surge"))
             : BasicPowers.CardThwart(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
                 cast.Trigger, cast.Events, abilityIndex: address.Index,
@@ -4756,7 +4763,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 targets: [.. targets.Select(card => card.ObjectId)],
                 imminentThreat: cast.Occurrence.Threat,
                 automaticTarget: node.Field("automaticTarget") is not null,
-                nested: true);
+                nested: true,
+                surgeGained: cast.GainedKeywords.Contains("surge"));
         if (!scheduled)
         {
             return;
@@ -5299,6 +5307,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // The rulebook determines the shared non-numeric keyword instance; the
         // propagation mechanism is the engine's choice.
         world.Agenda.MarkSurgeGained(source);
+        if (world.CharacterAttack is { Source: var attackSource } attack
+            && attackSource == source)
+        {
+            world.CharacterAttack = attack with { SurgeGained = true };
+        }
+        if (world.CharacterThwart is { Source: var thwartSource } thwart
+            && thwartSource == source)
+        {
+            world.CharacterThwart = thwart with { SurgeGained = true };
+        }
     }
 
     /// <summary>All allies in player discard piles, in player and pile order.</summary>

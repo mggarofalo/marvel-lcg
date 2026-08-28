@@ -41,6 +41,10 @@ namespace Marvel.Rules.State;
 /// <param name="FinalStep">Whether this is the final Special in its parent sequence.</param>
 /// <param name="Targets">Every scheme selected for this one thwart.</param>
 /// <param name="ImminentThreat">The outer assignment an interrupt can prevent.</param>
+/// <param name="SurgeGained">
+/// Whether the suspended source ability has already gained and resolved Surge.
+/// The field is engine continuation data rather than a rulebook term.
+/// </param>
 public sealed record CharacterThwart(
     int Thwarter,
     int Scheme,
@@ -53,4 +57,5 @@ public sealed record CharacterThwart(
     int ResumeFrom = -1,
     bool FinalStep = false,
     IReadOnlyList<int>? Targets = null,
-    ThreatPlacement? ImminentThreat = null);
+    ThreatPlacement? ImminentThreat = null,
+    bool SurgeGained = false);
