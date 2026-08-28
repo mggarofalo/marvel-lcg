@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 401 |
+| Executable and cited | 402 |
 | Covered by a narrower rule | 46 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 37 |
 | Outside the supported product boundary | 66 |
-| Unimplemented behavior | 546 |
+| Unimplemented behavior | 545 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -989,7 +989,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:setup-keyword.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:setup-triggered-ability` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:setup-triggered-ability.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:setup-triggered-ability.2` | Unimplemented behavior | MARVEL-269 | Successful encounter-card setup behavior is proved under appendix citations; the narrow citation currently covers only a fail-closed case. |
+| `rr:setup-triggered-ability.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:setup-triggered-ability.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:shuffle` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:shuffle.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
