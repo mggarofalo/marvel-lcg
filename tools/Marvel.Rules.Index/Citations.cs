@@ -33,10 +33,13 @@ internal readonly record struct Cited(string Id, string Site);
 internal static partial class Citations
 {
     /// <summary>Reads every citation under <c>tests/</c>.</summary>
-    public static IReadOnlyList<Cited> Read()
+    public static IReadOnlyList<Cited> Read() =>
+        Read(RepositoryPaths.Repository("tests"), RepositoryPaths.Root);
+
+    /// <summary>Reads every citation under one source root.</summary>
+    internal static IReadOnlyList<Cited> Read(string root, string repositoryRoot)
     {
         var found = new List<Cited>();
-        string root = RepositoryPaths.Repository("tests");
 
         foreach (string file in Directory
             .EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
@@ -44,7 +47,7 @@ internal static partial class Citations
             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .OrderBy(path => path, StringComparer.Ordinal))
         {
-            string site = Path.GetRelativePath(RepositoryPaths.Root, file)
+            string site = Path.GetRelativePath(repositoryRoot, file)
                 .Replace(Path.DirectorySeparatorChar, '/');
 
             foreach (Match match in Attribute().Matches(File.ReadAllText(file)))
@@ -56,7 +59,10 @@ internal static partial class Citations
         return found;
     }
 
-    // `[Rule("rr:forced.4")]`, and the same attribute carrying a note.
-    [GeneratedRegex(@"\[Rule\(""([^""]+)""")]
+    // An attribute is a literal on its own line. Anchoring that grammar keeps
+    // documentation and comments from becoming claims the suite never made.
+    [GeneratedRegex(
+        @"^[ \t]*\[Rule\(""([^""]+)""\)\][ \t]*\r?$",
+        RegexOptions.Multiline)]
     private static partial Regex Attribute();
 }
