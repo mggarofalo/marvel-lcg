@@ -53,6 +53,7 @@ public sealed class ActivationCardsTests
 
     [Rule("rr:scheme-enemy-activation")]
     [Rule("rr:activation.1")]
+    [Rule("rr:activation.4")]
     [Fact]
     public void AdvanceMakesTheVillainScheme()
     {

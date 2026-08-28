@@ -61,6 +61,7 @@ public sealed class PlayerSetupTests
 
     [Rule("rr:in-player-order")]
     [Rule("rr:appendix-ii-setup.step.16")]
+    [Rule("rr:active-player")]
     [Fact]
     public void PlayerSetupUsesPlayerOrderAndStableCardOrder()
     {
@@ -87,6 +88,9 @@ public sealed class PlayerSetupTests
         Assert.Equal(
             [p1Low.ObjectId, p1High.ObjectId, p0High.ObjectId],
             abilities.Resolved);
+        // "The player taking their turn during the player phase is the active
+        // player." The first player's setup order becomes the first turn.
+        Assert.Equal(GamePhase.PlayerTurn, game.Phase);
         Assert.Equal(1, game.Active);
         Assert.Equal(1, game.Pending!.Player);
     }

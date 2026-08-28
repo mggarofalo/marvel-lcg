@@ -144,18 +144,22 @@ public sealed class AbilityWindowTests
     }
 
     [Rule("rr:triggering-condition.1.1")]
-    [Fact]
-    public void TwoCopiesOfACardEachGetATurn()
+    [Rule("rr:interrupt.2.1")]
+    [Rule("rr:response.2.1")]
+    [Theory]
+    [InlineData(WindowKind.Interrupt, AbilityType.Interrupt)]
+    [InlineData(WindowKind.Response, AbilityType.Response)]
+    public void TwoCopiesOfACardEachGetATurn(WindowKind window, AbilityType type)
     {
         // "Multiple copies of a card with an interrupt or response can each be
         // triggered by the same triggering condition." Keyed on the card in
         // play, so a second copy is a second card and not a spent one.
         var occurrence = new Occurrence(1, "WhenAttacked");
-        occurrence.Trigger(WindowKind.Interrupt, card: 1);
+        occurrence.Trigger(window, card: 1);
 
         var tier = Assert.Single(AbilityWindow.Tiers(
-            [An(AbilityType.Interrupt, card: 1), An(AbilityType.Interrupt, card: 2)],
-            WindowKind.Interrupt,
+            [An(type, card: 1), An(type, card: 2)],
+            window,
             occurrence));
 
         Assert.Equal([2], tier.Abilities.Select(ability => ability.Card));

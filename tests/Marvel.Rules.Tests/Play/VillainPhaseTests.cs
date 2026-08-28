@@ -90,6 +90,7 @@ public sealed class VillainPhaseTests
 
     [Rule("rr:villain-phase.step.2")]
     [Rule("rr:activation.1")]
+    [Rule("rr:activation.3")]
     [Fact]
     public void TheVillainActivatesOncePerPlayer()
     {
@@ -100,9 +101,14 @@ public sealed class VillainPhaseTests
             .With("scheme", ("EscalationThreat", "0"));
         var world = Board(printed, players: 3);
 
-        Run(world, printed);
+        var events = Run(world, printed);
 
         Assert.Equal(3, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+        Assert.Equal(
+            3,
+            events.OfType<CardsMoved>().Count(moved =>
+                moved.Verb == "Boost"
+                && moved.To.Zone == nameof(DeckType.BoostCardsDeck)));
     }
 
     // Deliberately uncited: no published rule says a card acquires a token
@@ -163,6 +169,7 @@ public sealed class VillainPhaseTests
 
     [Rule("rr:villain-phase.step.2.b")]
     [Rule("rr:minion.3")]
+    [Rule("rr:activation.2")]
     [Fact]
     public void EachEngagedMinionActivatesAfterTheVillain()
     {
@@ -277,10 +284,12 @@ public sealed class VillainPhaseTests
     }
 
     /// <summary>Schedules the villain phase and walks it to the end.</summary>
-    private static void Run(World world, Printed printed)
+    private static List<GameEvent> Run(World world, Printed printed)
     {
+        var events = new List<GameEvent>();
         VillainPhase.Schedule(world.Agenda, round: 1);
-        Sequence.Finish(world, printed, new NoCardAbilities(), []);
+        Sequence.Finish(world, printed, new NoCardAbilities(), events);
+        return events;
     }
 
     /// <summary>A villain, a main scheme, one identity per seat, two encounter cards each.</summary>

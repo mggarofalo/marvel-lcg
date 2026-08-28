@@ -66,6 +66,7 @@ public sealed class OfferingTests
     }
 
     [Rule("rr:forced.1")]
+    [Rule("rr:ability.12")]
     [Fact]
     public void AForcedAbilityIsResolvedAndReportedRatherThanOffered()
     {
