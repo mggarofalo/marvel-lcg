@@ -169,6 +169,34 @@ public sealed class MainSchemeTests
         Assert.Equal(expected, scheme.Tokens["k_threat"]);
     }
 
+    [Rule("rr:acceleration-icon.2")]
+    [Fact]
+    public void DefeatingTheCardPrintedWithAnAccelerationIconRemovesTheIcon()
+    {
+        // "An acceleration icon can be removed from play by defeating the
+        // encounter card it is printed on." It adds threat for the first
+        // phase, then the defeated side scheme contributes nothing to the next.
+        var printed = new Printed()
+            .With("scheme", ("EscalationThreat", "1"), ("TargetThreat", "99"))
+            .With("hero", ("THW", "2"))
+            .With("sideScheme", ("Acceleration", "1"));
+        var world = Board(printed, stages: 1);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        var side = world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        side.PlaceTokens("k_threat", 2);
+
+        Run(world, printed, []);
+        Assert.Equal(2, scheme.Tokens["k_threat"]);
+
+        world.Seats[0].IdentityCard.TurnTo("hero");
+        BasicPowers.BasicThwart(world, printed, 0, side, []);
+        Agendas.Finish(world, printed);
+        Assert.Equal(DeckType.EncounterDiscardPile, side.Area.Type);
+
+        Run(world, printed, []);
+        Assert.Equal(3, scheme.Tokens["k_threat"]);
+    }
+
     [Rule("rr:encounter-deck.1")]
     [Rule("rr:acceleration-token.1")]
     [Fact]
@@ -230,7 +258,7 @@ public sealed class MainSchemeTests
     {
         var world = new World(printed, players: 1);
         world.CreateSeat("p0");
-        world.Seats[0].IdentityCard = world.CreateCard("identity", world.Seats[0].Hero);
+        world.Seats[0].IdentityCard = world.CreateCard("identity,hero", world.Seats[0].Hero);
         world.CreateCard("villain", world.AreaOf(DeckType.VillainArea));
 
         var scheme = world.CreateCard("schemea,scheme", world.AreaOf(DeckType.MainSchemesArea));
@@ -308,6 +336,7 @@ public sealed class MainSchemeTests
         public CardKind Kind(string faceId) => faceId switch
         {
             "identity" => CardKind.AlterEgo,
+            "hero" => CardKind.Hero,
             "villain" => CardKind.EncounterVillain,
             "attachment" => CardKind.Attachment,
             "sideScheme" => CardKind.EncounterSideScheme,

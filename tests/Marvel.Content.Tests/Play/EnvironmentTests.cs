@@ -47,6 +47,7 @@ public sealed class EnvironmentTests
     }
 
     [Rule("rr:reveal.2")]
+    [Rule("rr:villain-s-play-area.1")]
     [Fact]
     public void ARevealedEnvironmentEntersPlayAndStaysThere()
     {

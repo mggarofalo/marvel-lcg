@@ -161,6 +161,7 @@ public sealed class CardsInWindowsTests
 
     [Rule("rr:ability.1")]
     [Rule("rr:in-play-and-out-of-play")]
+    [Rule("rr:in-play-and-out-of-play.10")]
     [Fact]
     public void ChargeWaitsInTheWindowOnlyWhileItIsInPlay()
     {
@@ -174,6 +175,8 @@ public sealed class CardsInWindowsTests
         World.MoveToTop(
             spare,
             world.AreaOf(DeckType.StatusArea, rhino.Area.PlayArea, rhino.ObjectId));
+        spare.TurnFaceDown();
+        Assert.False(spare.FaceUp, "a facedown card attached to an in-play card is out of play");
 
         var attacking = Occurrence.ForAttack(
             1, [Steps.AttackInitiated], world, Cards,

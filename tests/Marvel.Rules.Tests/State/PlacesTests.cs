@@ -26,6 +26,7 @@ public sealed class PlacesTests
 
     [Rule("rr:play-area")]
     [Rule("rr:play-area.2")]
+    [Rule("rr:villain-s-play-area")]
     [Fact]
     public void TheVillainsPlayAreaIsAPlaceAndNotTheAbsenceOfOne()
     {
@@ -38,6 +39,46 @@ public sealed class PlacesTests
         Assert.False(PlayArea.Villains.IsPlayers);
         Assert.True(PlayArea.Of(0).IsPlayers);
         Assert.False(PlayArea.Of(0).IsVillains);
+
+        // The current villain and main scheme, their decks, and the encounter
+        // deck and discard are all areas inside this one villain play area.
+        var world = Ordinary(players: 1);
+        DeckType[] villainAreas =
+        [
+            DeckType.VillainArea,
+            DeckType.VillainDeck,
+            DeckType.MainSchemesArea,
+            DeckType.MainSchemesDeck,
+            DeckType.EncounterDeck,
+            DeckType.EncounterDiscardPile,
+        ];
+        foreach (var type in villainAreas)
+        {
+            var card = InPlayArea(world, type, PlayArea.Villains);
+            Assert.Equal(PlayArea.Villains, Places.PlayAreaOf(card));
+        }
+    }
+
+    [Rule("rr:in-play-and-out-of-play.2")]
+    [Fact]
+    public void TheCurrentVillainAndMainSchemeAreFaceupAndInPlay()
+    {
+        // For encounter cards, the faceup top card of the villain deck and of
+        // the main-scheme deck are in play. The engine gives those current
+        // stages their in-play areas while the unrevealed next stages remain
+        // in the out-of-play decks.
+        var world = Ordinary(players: 1);
+        var villain = InPlayArea(world, DeckType.VillainArea, PlayArea.Villains);
+        var scheme = InPlayArea(world, DeckType.MainSchemesArea, PlayArea.Villains);
+        var nextVillain = InPlayArea(world, DeckType.VillainDeck, PlayArea.Villains);
+        var nextScheme = InPlayArea(world, DeckType.MainSchemesDeck, PlayArea.Villains);
+
+        Assert.True(villain.FaceUp);
+        Assert.True(scheme.FaceUp);
+        Assert.True(DeckTypes.IsInPlay(villain.Area.Type));
+        Assert.True(DeckTypes.IsInPlay(scheme.Area.Type));
+        Assert.False(DeckTypes.IsInPlay(nextVillain.Area.Type));
+        Assert.False(DeckTypes.IsInPlay(nextScheme.Area.Type));
     }
 
     [Rule("rr:play-area.3")]

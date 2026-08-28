@@ -40,13 +40,18 @@ public sealed class HuntedTests
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
     [Rule("rr:player-turn.5")]
+    [Rule("rr:player-s-play-area.4")]
+    [Rule("rr:villain-s-play-area.4")]
     [Fact]
     public void TheObligationIsOfferedAndAsksWhichCardPaysForIt()
     {
+        // An obligation given to a player is in that player's play area and
+        // not in the villain's play area, even though the scenario owns it.
         // A cost with a choice in it, described rather than decided: the
         // affordance carries the hand and a count of exactly one, so the client
         // can put the question and the engine never picks.
-        var (game, world) = Playing(out _);
+        var (game, world) = Playing(out var hunted);
+        Assert.Equal(PlayArea.Of(0), hunted.Area.PlayArea);
 
         var action = Assert.Single(
             game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);

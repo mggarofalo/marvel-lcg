@@ -248,6 +248,7 @@ public sealed class KeywordTests
     [Rule("rr:side-scheme")]
     [Rule("rr:side-scheme.1")]
     [Rule("rr:hinder-x.2")]
+    [Rule("rr:villain-s-play-area.1")]
     [Fact]
     public void ASideSchemeEntersPlayWithItsStartingThreatAndItsHinder()
     {
@@ -799,16 +800,26 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:crisis-icon")]
-    [Fact]
-    public void ACrisisIconOutOfPlayStopsNothing()
+    [Rule("rr:in-play-and-out-of-play.9")]
+    [Theory]
+    [InlineData(DeckType.EncounterDeck)]
+    [InlineData(DeckType.EncounterDiscardPile)]
+    [InlineData(DeckType.VillainDeck)]
+    [InlineData(DeckType.MainSchemesDeck)]
+    [InlineData(DeckType.DealtEncounterCardsDeck)]
+    public void ACrisisIconInAnEncounterOutOfPlayAreaStopsNothing(DeckType area)
     {
         // "While at least one crisis icon is **in play**." The encounter deck
-        // is full of them in an ordinary game, and counting those would make
-        // the main scheme permanently unthwartable.
+        // and discard, unrevealed villain and main-scheme cards, and facedown
+        // cards dealt to a player are all out of play. Counting any of them
+        // would make the main scheme unthwartable before that card entered.
         var printed = new Printed().With("sideScheme", ("Crisis", "1"));
         var world = Board(printed);
         world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 5);
-        world.CreateCard("sideScheme", world.AreaOf(DeckType.EncounterDeck));
+        var playArea = area == DeckType.DealtEncounterCardsDeck
+            ? PlayArea.Of(0)
+            : PlayArea.Villains;
+        world.CreateCard("sideScheme", world.AreaOf(area, playArea));
 
         Assert.Single(BasicPowers.Thwartable(world, printed, 0));
     }

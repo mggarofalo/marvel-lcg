@@ -13,6 +13,7 @@ public sealed class FacedownDroneTests
     [Rule("rr:base-value")]
     [Rule("rr:engage")]
     [Rule("rr:player-s-play-area.3")]
+    [Rule("rr:villain-s-play-area.3")]
     [Fact]
     public void TheTopPlayerCardBecomesThePrintedFacedownDrone()
     {

@@ -43,7 +43,16 @@ public sealed class EliminationTests
         var minion = world.CreateCard(
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         minion.TakeDamage(2);
-        Statuses.Give(world, minion, Statuses.Tough);
+        var tough = Statuses.Give(world, minion, Statuses.Tough);
+        var tucked = world.CreateCard(
+            "attachment",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId, cardOwner: -1));
+        tucked.TurnFaceDown();
+        var nested = world.CreateCard(
+            "attachment",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), tucked.ObjectId, cardOwner: -1));
 
         Elimination.Eliminate(world, printed, 0, "test", []);
 
@@ -54,6 +63,13 @@ public sealed class EliminationTests
             minion, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)).Cards);
         Assert.Equal(2, minion.Damage);
         Assert.True(Statuses.Has(world, minion, Statuses.Tough));
+        Assert.Equal(PlayArea.Of(1), tough.Area.PlayArea);
+        Assert.Equal(PlayArea.Of(1), tucked.Area.PlayArea);
+        Assert.False(tucked.FaceUp);
+        Assert.Equal(PlayArea.Of(1), nested.Area.PlayArea);
+        Assert.Same(
+            world.GameAreaOf(PlayArea.Of(1)),
+            Places.GameAreaOf(world, nested));
     }
 
     [Rule("rr:defeat.2")]
@@ -84,6 +100,7 @@ public sealed class EliminationTests
     }
 
     [Rule("rr:player-elimination.step.4")]
+    [Rule("rr:player-s-play-area.6")]
     [Fact]
     public void EveryCardInThePlayAreaGoesToItsOwnersDiscardPile()
     {
@@ -94,6 +111,9 @@ public sealed class EliminationTests
         var world = Board(printed, players: 2);
         var mine = world.CreateCard(
             "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var playArea = world.Cards
+            .Where(card => card.Area.PlayArea == PlayArea.Of(0))
+            .ToArray();
 
         Elimination.Eliminate(world, printed, 0, "test", []);
 
@@ -101,6 +121,14 @@ public sealed class EliminationTests
         // removes that pile with the rest of the play area, so it ends up
         // removed from the game either way.
         Assert.Equal(DeckType.RemovedArea, mine.Area.Type);
+
+        // `rr:player-s-play-area.6`: "their play area is removed from the
+        // game." That includes the identity, deck, discard pile, hand, and
+        // every in-play card which belonged to that area at elimination.
+        Assert.All(playArea, card => Assert.Equal(DeckType.RemovedArea, card.Area.Type));
+        Assert.DoesNotContain(world.Cards, card => card.Area.PlayArea == PlayArea.Of(0));
+        Assert.Null(world.GameAreaOf(PlayArea.Of(0)));
+        Assert.NotNull(world.GameAreaOf(PlayArea.Of(1)));
 
         // **A card another player owns is not tested here and cannot be.**
         // `World.AreaOf` matches on (type, play area, host) and not on owner,

@@ -121,12 +121,14 @@ public sealed class ConstantAbilityTests
     }
 
     [Rule("rr:attach-to.1")]
+    [Rule("rr:in-play-and-out-of-play.12")]
     [Fact]
     public void ReturningHellcatToHandDiscardsInspired()
     {
         // "If the game element [a card] is attached to leaves play, discard
-        // the attached card." Leaving play for a hand is still leaving play;
-        // the cleanup cannot be confined to the discard-card path.
+        // the attached card." A card leaves play when it moves from a play
+        // area to an out-of-play area, so returning Hellcat to her owner's hand
+        // must run the same cleanup as discarding her.
         var world = Bare();
         var hellcat = world.CreateCard(
             "01020",

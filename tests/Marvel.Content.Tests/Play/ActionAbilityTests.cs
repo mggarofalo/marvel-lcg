@@ -211,17 +211,23 @@ public sealed class ActionAbilityTests
     }
 
     [Rule("rr:ability.2")]
+    [Rule("rr:in-play-and-out-of-play.4")]
+    [Rule("rr:in-play-and-out-of-play.7")]
+    [Rule("rr:in-play-and-out-of-play.8")]
     [Rule("rr:ownership-and-control.4")]
     [Fact]
     public void ActionsComeFromInPlayCardsAndEventsInHand()
     {
         // Hero, alter-ego, ally, upgrade, and support abilities "may only be
-        // used if the card is in play"; events implicitly work from out of
-        // play, and a player "controls the cards in their own out-of-play
-        // areas". Focused Rage in the discard pile is silent while that
-        // player's event in hand is offered, so the exception cannot
-        // accidentally admit every card.
+        // used if the card is in play"; cards in a player's hand, deck, and
+        // discard pile are out of play. Events implicitly resolve from an
+        // out-of-play area, so the event in hand is offered while Focused Rage
+        // is silent from each of those three areas. The live copy is the
+        // control that proves the card's action itself is reachable.
         Card? discardedRage = null;
+        Card? heldRage = null;
+        Card? deckRage = null;
+        Card? liveRage = null;
         Card? kick = null;
         var (game, _) = Playing(
             board =>
@@ -229,14 +235,22 @@ public sealed class ActionAbilityTests
                 discardedRage = board.CreateCard(
                     "01027",
                     board.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+                heldRage = board.CreateCard("01027", board.Seats[0].Hand);
+                deckRage = board.CreateCard("01027", board.Seats[0].Deck);
+                liveRage = board.CreateCard(
+                    "01027",
+                    board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
                 kick = board.CreateCard(AuthoredCards.SwingingWebKick, board.Seats[0].Hand);
                 board.Seats[0].IdentityCard.TakeDamage(1);
             },
             hero: true);
 
-        Assert.DoesNotContain(
-            game.Pending!.Affordances,
-            option => option.Verb == Game.ActionVerb && option.AnchorId == discardedRage!.ObjectId);
+        int[] outOfPlay =
+            [discardedRage!.ObjectId, heldRage!.ObjectId, deckRage!.ObjectId];
+        Assert.DoesNotContain(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && outOfPlay.Contains(option.AnchorId));
+        Assert.Contains(game.Pending.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == liveRage!.ObjectId);
         Assert.Contains(
             game.Pending.Affordances,
             option => option.Verb == Game.ActionVerb && option.AnchorId == kick!.ObjectId);

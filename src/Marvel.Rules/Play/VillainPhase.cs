@@ -1391,7 +1391,9 @@ public static class VillainPhase
 
         // Same reason as the boost card: the revealing area is where an
         // encounter card registers its pools.
-        World.MoveToTop(card, world.AreaOf(DeckType.RevealingArea));
+        World.MoveToTop(
+            card,
+            world.AreaOf(DeckType.RevealingArea, PlayArea.Of(player)));
         card.TurnFaceUp();
         events.Add(new CardsFlipped([card.ObjectId], true)
         {
@@ -1427,10 +1429,13 @@ public static class VillainPhase
         // first player their order, and asking is MARVEL-187.
         Reveal.Teamwork(world, facts, card, player, round);
 
-        // Step 4. "If the card is a treachery, discard it." Asked as "is it
-        // still where step 2 left something not in play", so that an ability
-        // that put the card somewhere is not undone.
-        if (card.Area.Type != DeckType.RevealingArea)
+        // Step 4. "If the card is a treachery, discard it." An attachment
+        // without a target and an "other" card also remain in this out-of-play
+        // staging area, but the rule names only treacheries for the discard.
+        // The area check keeps an ability that moved the treachery from being
+        // undone.
+        if (facts.Kind(card.FaceId) != CardKind.Treachery
+            || card.Area.Type != DeckType.RevealingArea)
         {
             return;
         }

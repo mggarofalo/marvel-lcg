@@ -134,6 +134,7 @@ public sealed class FormsTests
     }
 
     [Rule("rr:form-change-form.6")]
+    [Rule("rr:in-play-and-out-of-play.11")]
     [Rule("rr:set-aside-set-aside")]
     [Fact]
     public void AFormCardOutOfPlayGrantsNothing()
@@ -156,10 +157,12 @@ public sealed class FormsTests
         // is the state that separates the two.
         var printed = new Printed();
         printed.Forms["gamma"] = "energy";
+        printed.Forms["pulsar"] = "energy";
         var world = Board(printed);
         var seat = world.Seats[0];
         seat.IdentityCard.TurnTo("hero");
         world.CreateCard("gamma", seat.Identity).TurnFaceUp();
+        world.CreateCard("pulsar", world.AreaOf(DeckType.RemovedArea)).TurnFaceUp();
 
         Assert.Equal([Forms.Hero], Forms.Of(world, seat, printed));
     }
