@@ -411,6 +411,7 @@ public static class CardPlay
             });
         }
 
+        AllyLimit(world, facts, world.Seats[controller], ally);
         Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
     }
 

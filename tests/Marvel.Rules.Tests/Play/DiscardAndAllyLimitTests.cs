@@ -160,6 +160,32 @@ public sealed class DiscardAndAllyLimitTests
         Assert.Equal(4, allies.Cards.Count);
     }
 
+    [Rule("rr:ally-limit")]
+    [Fact]
+    public void AnAllyPutIntoPlayAlsoRequiresTheLimitChoice()
+    {
+        // The rule explicitly permits allies to be "played or put into play"
+        // beyond the limit, then immediately requires the same discard choice
+        // in either case.
+        var facts = new Facts();
+        var world = Board(facts);
+        var allies = world.AreaOf(
+            DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+        world.CreateCard("ally", allies);
+        world.CreateCard("ally", allies);
+        world.CreateCard("ally", allies);
+        var fourth = world.CreateCard(
+            "ally",
+            world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+
+        CardPlay.PutAllyIntoPlay(
+            world, facts, new NoCardAbilities(), fourth, 0, "test", []);
+
+        var choice = Assert.Single(world.Agenda.Outstanding);
+        Assert.Equal(Steps.ChooseAllyForLimit, choice.What);
+        Assert.Equal(DeckType.AlliesArea, fourth.Area.Type);
+    }
+
     private static World Board(Facts facts)
     {
         var world = new World(facts, players: 1);
