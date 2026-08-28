@@ -48,6 +48,7 @@ public sealed class EvictionNoticeTests
         Assert.Equal(before, seat.FormChangedInRound);
     }
 
+    [Rule("rr:may")]
     [Fact]
     public void DecliningTheFlipLeavesTheHeroStandingAndStillAsksTheSecond()
     {

@@ -94,13 +94,15 @@ public sealed class SearchAndDiscardCardsTests
         Assert.Equal(queued + 1, Queue(world).Cards.Count);
     }
 
+    [Rule("rr:ownership-and-control.8")]
     [Fact]
     public void AnotherPlayersUpgradeIsNotYoursToDiscard()
     {
-        // "An upgrade or support **you control**." Control is which play area
-        // the card is in, so the other player's upgrade is not offered -- and
-        // with nothing of your own, the card surges instead of reaching across
-        // the table.
+        // "An upgrade or support **you control**." That phrase "only refers to
+        // cards in play currently under that player's control." Control is
+        // which play area the card is in, so the other player's upgrade is not
+        // offered -- and with nothing of your own, the card surges instead of
+        // reaching across the table.
         var world = Deal("spider_man", "she_hulk");
         world.CreateCard(
             WebShooter, world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));

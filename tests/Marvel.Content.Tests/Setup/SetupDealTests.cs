@@ -249,6 +249,22 @@ public sealed class SetupDealTests
         Assert.Equal(1, holding);
     }
 
+    [Rule("rr:ownership-and-control.1")]
+    [Fact]
+    public void EachIdentityIsOwnedAndControlledByItsPlayer()
+    {
+        // "Identity cards are owned and controlled by the player playing as
+        // that identity." Ownership is the card field; control is the seat's
+        // play area containing it.
+        var (world, _) = Deal(["spider_man", "she_hulk"]);
+
+        Assert.All(world.Seats, seat =>
+        {
+            Assert.Equal(seat.Index, seat.IdentityCard.Owner);
+            Assert.Equal(PlayArea.Of(seat.Index), seat.IdentityCard.Area.PlayArea);
+        });
+    }
+
     [Fact]
     public void TheHeroDeckAndThePlayerDeckAreOneUnbrokenRunOfIds()
     {

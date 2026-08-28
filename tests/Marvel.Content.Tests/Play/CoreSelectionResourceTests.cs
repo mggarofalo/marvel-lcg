@@ -43,9 +43,13 @@ public sealed class CoreSelectionResourceTests
     }
 
     [Rule("rr:printed")]
+    [Rule("rr:resource-card.1")]
     [Fact]
     public void PepperPottsAdvertisesAndGeneratesTheCurrentTopDiscardsPrintedResources()
     {
+        // "Some resource cards have card text that is active while using the
+        // card to generate resources." Pepper reads that resource card's
+        // printed icons, including both wilds printed by The Power of Leadership.
         var world = Board("01029b");
         var pepper = world.CreateCard(
             "01033", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));

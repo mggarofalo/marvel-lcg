@@ -19,6 +19,7 @@ namespace Marvel.Rules.Tests.Play;
 public sealed class AllyTests
 {
     [Rule("rr:ally.2")]
+    [Rule("rr:player-turn.4")]
     [Fact]
     public void AnAllyExhaustsToAttackAndDealsItsAttackValue()
     {
@@ -102,10 +103,13 @@ public sealed class AllyTests
         Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
     }
 
+    [Rule("rr:exhausted.1")]
     [Rule("rr:exhausted.2")]
     [Fact]
     public void AnExhaustedAllyCannotActAndIsNotOffered()
     {
+        // "An exhausted card cannot be exhausted again until it is ready."
+        // An ally must exhaust to attack or thwart, so neither action is legal.
         var printed = Cards();
         var world = Board(printed);
         var ally = Ally(world, "ally");
@@ -140,6 +144,7 @@ public sealed class AllyTests
         Assert.True(ally.Ready);
     }
 
+    [Rule("rr:ally.4")]
     [Rule("rr:defend-defense.3")]
     [Fact]
     public void AnAllyDefendingDoesNotReduceDamageByItsDefense()

@@ -37,6 +37,7 @@ public sealed class BasicPowerTests
     }
 
     [Rule("rr:modifiers")]
+    [Rule("rr:upgrade.2")]
     [Fact]
     public void ABasicAttackDealsTheModifiedAttackValue()
     {

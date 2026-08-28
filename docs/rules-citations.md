@@ -50,10 +50,10 @@ $ dotnet run --project tools/Marvel.Rules.Index -- citations
 
 Rules Reference v1.8
 
-  entries             146 / 262   cited (55.7%)
-  citable records     455 / 1218  cited (37.4%)
+  entries             153 / 262   cited (58.4%)
+  citable records     491 / 1218  cited (40.3%)
 
-  citations made  1081
+  citations made  1117
 ```
 
 ```

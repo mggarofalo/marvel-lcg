@@ -52,6 +52,7 @@ public sealed class PlayerPhaseEndTests
     }
 
     [Rule("rr:end-of-player-phase.step.3")]
+    [Rule("rr:ready.1")]
     [Fact]
     public void EveryCardInPlayReadiesIncludingTheEncounterCards()
     {
@@ -108,6 +109,7 @@ public sealed class PlayerPhaseEndTests
         Assert.Equal(3, world.Seats[0].Hand.Cards.Count);
     }
 
+    [Rule("rr:draw-drawing-cards.2")]
     [Rule("rr:end-of-player-phase.step.1")]
     [Fact]
     public void AnOverFullHandMustComeDownAndTheEngineWillNotChoose()

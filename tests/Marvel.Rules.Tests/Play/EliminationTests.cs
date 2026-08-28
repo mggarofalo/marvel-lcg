@@ -57,6 +57,7 @@ public sealed class EliminationTests
     }
 
     [Rule("rr:defeat.2")]
+    [Rule("rr:identity.3")]
     [Fact]
     public void TheIdentityIsRemovedFromTheGameRatherThanDiscarded()
     {
