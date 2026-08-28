@@ -175,6 +175,35 @@ public sealed class IndirectDamageTests
         Assert.Equal(Damage.Health(world, Cards, identity), identity.Damage);
     }
 
+    [Rule("rr:indirect-damage.3.1")]
+    [Fact]
+    public void AnAnswerCannotAssignOneCharacterPastItsRemainingHitPoints()
+    {
+        // "A character cannot be assigned more indirect damage than would
+        // cause it to be defeated." Repeating one legal target id must still
+        // respect that character's remaining hit points.
+        var world = Deal();
+        BombScare(world, threat: 3);
+        var ally = world.CreateCard(
+            Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        ally.TakeDamage(2);
+        var identity = world.Seats[0].IdentityCard;
+
+        var card = Reveal(world, AuthoredCards.Explosion);
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        var runner = AuthoredCards.Runner();
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(
+            world, card, 0, waiting.Index,
+            Decision.Take(card.ObjectId, [ally.ObjectId, ally.ObjectId, ally.ObjectId], [])));
+        runner.Chose(
+            world, card, 0, waiting.Index,
+            Decision.Take(card.ObjectId, [ally.ObjectId, identity.ObjectId, identity.ObjectId], []));
+
+        Assert.Equal(3, ally.Damage);
+        Assert.Equal(2, identity.Damage);
+    }
+
     [Rule("rr:indirect-damage.4")]
     [Fact]
     public void ASupportIsNotACharacterAndTakesNone()

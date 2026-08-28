@@ -2356,24 +2356,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     $"'{source.FaceId}' requires {expected} indirect damage assignment(s) "
                     + $"and {input.Targets.Count} were chosen");
             }
-            var chosen = new List<Card>();
-            foreach (int id in input.Targets)
-            {
-                chosen.Add(
-                    eligible.FirstOrDefault(card => card.ObjectId == id)
-                    ?? throw new RulesNotImplementedException(
-                        $"card {id} cannot be assigned indirect damage from "
-                        + $"'{source.FaceId}'"));
-            }
-
             // One point per entry, so a character named three times takes
             // three. `rr:indirect-damage.3` resolves the whole assignment at
             // once, which is why the counts are gathered before any of it is
             // dealt.
             var share = new Dictionary<int, long>();
-            foreach (var card in chosen)
+            foreach (int id in input.Targets)
             {
-                share[card.ObjectId] = share.GetValueOrDefault(card.ObjectId) + 1;
+                var card = eligible.FirstOrDefault(card => card.ObjectId == id)
+                    ?? throw new RulesNotImplementedException(
+                        $"card {id} cannot be assigned indirect damage from "
+                        + $"'{source.FaceId}'");
+                long assigned = share.GetValueOrDefault(card.ObjectId) + 1;
+                if (assigned > Room(cast, card))
+                {
+                    throw new RulesNotImplementedException(
+                        $"card {id} has room for {Room(cast, card)} indirect damage "
+                        + $"and was assigned {assigned} from '{source.FaceId}'");
+                }
+                share[card.ObjectId] = assigned;
             }
 
             Resolve(cast, share);
