@@ -13,6 +13,45 @@ public sealed class CoreActivationAbilityTests
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:play-put-into-play")]
+    [Fact]
+    public void LegionsOfHydraPutsMadameHydraIntoPlayEngagedWithTheRevealingPlayer()
+    {
+        // The printed side scheme says to put Madame Hydra into play engaged
+        // with the player who revealed it. The authored effect uses the DSL's
+        // reusable `where: engagedWithYou` destination.
+        var world = Board("01001a", "01094");
+        var legions = world.CreateCard("01180", world.AreaOf(DeckType.SideSchemesArea));
+        var madame = world.CreateCard("01181", world.AreaOf(DeckType.EncounterDeck));
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+
+        runner.WhenRevealed(world, legions, 0);
+
+        Assert.Equal(DeckType.EngagedEnemiesArea, madame.Area.Type);
+        Assert.Equal(PlayArea.Of(0), madame.Area.PlayArea);
+    }
+
+    [Rule("rr:forced.6")]
+    [Fact]
+    public void MadameHydrasCompletedActivationDoesNothingAfterLegionsLeavesPlay()
+    {
+        // A forced ability resolves as completely as possible. If Legions of
+        // Hydra has already left play, "place 2 threat on Legions of Hydra"
+        // has no scheme to change and does not invent one or fail the game.
+        var world = Board("01001a", "01094");
+        var madame = world.CreateCard(
+            "01181", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var runner = AuthoredCards.Runner();
+
+        var events = runner.ActivationCompleted(
+            world,
+            new EnemyActivation(madame.ObjectId, 0, Attacking: true, Made: true));
+
+        Assert.Empty(events);
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
     [Rule("rr:boost-boost-icon.4")]
     [Rule("rr:boost-boost-icon.6")]
     [Fact]

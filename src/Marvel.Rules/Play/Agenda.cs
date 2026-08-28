@@ -987,6 +987,9 @@ public static class Steps
     /// <summary>A player card has finished entering play.</summary>
     public const string CardPlayed = "WhenCardPlayed";
 
+    /// <summary>Choose an ally to discard after exceeding the ally limit.</summary>
+    public const string ChooseAllyForLimit = "ChooseAllyForLimit";
+
     /// <summary>A card finished entering play, however it got there.</summary>
     public const string CardEntersPlay = "WhenCardEntersPlay";
 

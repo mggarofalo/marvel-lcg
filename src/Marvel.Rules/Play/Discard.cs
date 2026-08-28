@@ -22,7 +22,9 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Discard
 {
-    /// <summary>Puts a card in its owner's discard pile.</summary>
+    /// <summary>
+    /// Puts a card in its owner's discard pile, or removes a spent status component.
+    /// </summary>
     /// <param name="world">The board.</param>
     /// <param name="card">The card being discarded.</param>
     /// <param name="trigger">What caused it, for the event stream.</param>
@@ -33,9 +35,42 @@ public static class Discard
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        var pile = card.Owner < 0
-            ? world.AreaOf(DeckType.EncounterDiscardPile)
-            : world.AreaOf(DeckType.DiscardPile, PlayArea.Of(card.Owner), cardOwner: card.Owner);
+        // `rr:attach-to.1`: "if the game element an attachment is attached to
+        // leaves play, the attachment is discarded." Snapshot the areas because
+        // discarding an attachment moves it and can itself detach hosted cards.
+        if (DeckTypes.IsInPlay(card.Area.Type))
+        {
+            var attachedCards = world.Areas
+                .Where(area => area.Host == card.ObjectId)
+                .SelectMany(area => area.Cards)
+                .ToList();
+            if (attachedCards.FirstOrDefault(attached => world.Facts.PrintedValue(
+                    attached.FaceId, "Permanent", world.Players) > 0) is { } permanent)
+            {
+                // `rr:permanent.5` resolves the attachment's attach-to text
+                // again and removes it only if no valid target exists. The
+                // ordinary discard rule is deliberately not guessed here.
+                throw new RulesNotImplementedException(
+                    $"permanent attachment {permanent.ObjectId} lost host "
+                    + $"{card.ObjectId}, and rr:permanent.5 is not implemented");
+            }
+
+            foreach (var attached in attachedCards)
+            {
+                Card(world, attached, trigger, events);
+            }
+        }
+
+        // A status card is discarded by its keyword rule, but it is not an
+        // encounter card and therefore has no encounter discard pile. The
+        // engine chooses RemovedArea as the out-of-play home for spent status
+        // components; the Rules Reference does not name a separate status pile.
+        var pile = card.Area.Type == DeckType.StatusArea
+            ? world.AreaOf(DeckType.RemovedArea)
+            : card.Owner < 0
+                ? world.AreaOf(DeckType.EncounterDiscardPile)
+                : world.AreaOf(
+                    DeckType.DiscardPile, PlayArea.Of(card.Owner), cardOwner: card.Owner);
 
         var from = card.Area;
         int host = from.Host;

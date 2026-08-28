@@ -1100,7 +1100,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
 
-        if (!constant.Contains(card.FaceId))
+        // A player's printed card is blank while Ultron uses it facedown as a
+        // Drone minion. Its face id remains underneath for the digest, so the
+        // interpreter must use the runtime card kind rather than mistake that
+        // id for active player-card text.
+        if (FacedownDrones.Is(card) || !constant.Contains(card.FaceId))
         {
             return [];
         }
@@ -3709,7 +3713,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Word(node.Require("card")), "yourHero", StringComparison.Ordinal))
                 {
                     throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' would grant to a card that is not there");
+                        $"'{cast.Source.FaceId}' card {cast.Source.ObjectId} in "
+                        + $"{cast.Source.Area.Type} hosted by {cast.Source.Area.Host} would grant "
+                        + "to a card that is not there");
                 }
                 break;
 
@@ -4751,8 +4757,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var schemes = Every(node.Require("scheme"), cast);
         if (schemes.Count == 0)
         {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would place threat on a scheme that is not there");
+            // The ability has initiated, but its named game element can leave
+            // before resolution. `rr:resolve-as-much-as-possible` resolves the
+            // remaining effect with no target rather than recreating the card
+            // or treating an absent target as an engine gap.
+            return;
         }
 
         if (cast.HasContinuation)

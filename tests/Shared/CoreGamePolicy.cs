@@ -99,7 +99,12 @@ public sealed class CoreGamePolicy(ICardFacts facts)
             return Taking(game, change, []);
         }
 
-        if (Find(asked, Game.ActionVerb) is { } action
+        // This research policy does not knowingly take an action at one hit
+        // point. Some action costs deal damage, and choosing a likely-suicidal
+        // optional action is neither useful play nor required coverage.
+        long health = Damage.Health(world, facts, seat.IdentityCard) - seat.IdentityCard.Damage;
+        if (health > 1
+            && Find(asked, Game.ActionVerb) is { } action
             && Payment(action) is { } actionPayment)
         {
             return Taking(game, action, actionPayment);
@@ -132,7 +137,12 @@ public sealed class CoreGamePolicy(ICardFacts facts)
         IReadOnlyList<int>? targets = null)
     {
         var world = game.State;
-        if (string.Equals(option.Verb, CardPlay.Verb, StringComparison.Ordinal))
+        bool eventInHand = string.Equals(option.Verb, Game.ActionVerb, StringComparison.Ordinal)
+            && option.AnchorPlayer >= 0
+            && world.Seats[option.AnchorPlayer].Hand.Cards.Any(
+                card => card.ObjectId == option.AnchorId)
+            && facts.Kind(world.Cards[option.AnchorId].FaceId) == CardKind.Event;
+        if (string.Equals(option.Verb, CardPlay.Verb, StringComparison.Ordinal) || eventInHand)
         {
             CardsPlayed++;
         }

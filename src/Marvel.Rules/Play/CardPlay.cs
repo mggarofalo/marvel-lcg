@@ -791,9 +791,45 @@ public static class CardPlay
         // not care how it got there. Eighteen allies in the pool print
         // `rr:toughness`, and before this a played one got no tough status card
         // -- only a *revealed* card ran them.
+        AllyLimit(world, facts, seat, card);
         Reveal.EnterPlay(world, facts, card, events, abilities: abilities);
         Played(world, seat, card);
         Restricted(world, facts, seat, card, events);
+    }
+
+    /// <summary>
+    /// Ask which ally leaves when a player exceeds their ally limit —
+    /// <c>rr:ally-limit</c>.
+    /// </summary>
+    private static void AllyLimit(World world, ICardFacts facts, Seat seat, Card played)
+    {
+        if (FacedownDrones.Kind(played, facts) != CardKind.Ally)
+        {
+            return;
+        }
+
+        long limit = StateFields.Modified(
+            world, seat.IdentityCard, "ally_limit", facts, world.Players);
+        int controlled = world.Areas
+            .Where(area => area.Type == DeckType.AlliesArea
+                && area.PlayArea == PlayArea.Of(seat.Index))
+            .Sum(area => area.Cards.Count);
+        if (controlled <= limit)
+        {
+            return;
+        }
+
+        // This is a mandatory rule choice rather than an occurrence, so it
+        // opens no interrupt or response windows. It is scheduled before the
+        // CardPlayed occurrence: the rule says the discard happens before
+        // abilities that resolve upon entering play.
+        world.Agenda.Then(new PhaseStep(
+            Steps.ChooseAllyForLimit,
+            world.Agenda.Current?.Round ?? 0,
+            0,
+            Subject: played.ObjectId,
+            Seat: seat.Index,
+            Plan: true));
     }
 
     private static void Played(World world, Seat seat, Card card)
