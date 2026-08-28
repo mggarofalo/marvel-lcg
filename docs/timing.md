@@ -348,6 +348,14 @@ not before it: a step that schedules another has not itself finished happening.
 order and not interleaved — and the recorded discard pile is what catches it if
 they are.
 
+An Action continuation is the deliberate exception. A choice inside an
+accepted Action suspends the ability rather than finishing its occurrence, so
+`Agenda.ThenContinuation` carries the same `Occurrence` through the question
+and resumes it before the response window. This matters when an Action pays a
+lethal self-damage cost or defeats a target after a choice: the added defeat
+condition and the original `WhenActionTriggered` condition belong to one
+occurrence under `rr:triggering-condition.2`.
+
 Threat placement carries its assignment on the occurrence: scheme, source,
 assigned and remaining amount, player and cause. `rr:prevent.2` changes the
 remaining amount in the interrupt window before any token is placed. The

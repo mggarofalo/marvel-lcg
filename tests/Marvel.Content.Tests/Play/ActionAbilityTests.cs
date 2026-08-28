@@ -1,5 +1,6 @@
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -64,6 +65,211 @@ public sealed class ActionAbilityTests
         // many times as the player is able", so the turn is still going.
         Assert.NotNull(game.Pending);
         Assert.Equal(Question.TurnOption, game.Pending.Asking);
+    }
+
+    [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:initiating-abilities.3")]
+    [Rule("rr:damage.step.7")]
+    [Rule("rr:triggering-condition.2")]
+    [Fact]
+    public void ASourceDefeatedByItsActionCostStillFinishesThatAction()
+    {
+        // "Action: Exhaust War Machine and deal 2 damage to him → deal 1
+        // damage to each enemy." The cost is paid before the effect. At two
+        // remaining hit points that cost defeats and discards War Machine, but
+        // rr:initiating-abilities.3 says leaving play does not stop the
+        // sequence, and the one live Action occurrence owns both the damage
+        // and defeat conditions.
+        Card? warMachine = null;
+        var (game, world) = Playing(board =>
+        {
+            warMachine = board.CreateCard(
+                "01030",
+                board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            warMachine.TakeDamage(2);
+        });
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb
+                && option.AnchorId == warMachine!.ObjectId);
+        var resolved = game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(DeckType.DiscardPile, warMachine!.Area.Type);
+        Assert.Equal(1, villain.Damage);
+        Assert.All(resolved.Events, happened => Assert.Equal(Steps.TurnAction, happened.Trigger));
+
+        int discarded = resolved.Events
+            .Select((happened, index) => (happened, index))
+            .First(pair => pair.happened is CardsMoved moved
+                && moved.Cards.Any(card => card.Card == warMachine.ObjectId))
+            .index;
+        int damaged = resolved.Events
+            .Select((happened, index) => (happened, index))
+            .First(pair => pair.happened is FieldSet changed
+                && changed.Card == villain.ObjectId
+                && changed.Field == "health")
+            .index;
+        Assert.True(discarded >= 0);
+        Assert.True(damaged > discarded);
+        Assert.False(world.Agenda.IsBusy);
+        Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+    }
+
+    [Rule("rr:player-elimination.5")]
+    [Rule("rr:player-elimination.step.5")]
+    [Fact]
+    public void APlayerEliminatedByAnActionCostFinishesItAndTheirTurn()
+    {
+        // Focused Rage's Hero Action deals one damage to its player as a cost.
+        // At one remaining hit point that eliminates She-Hulk, but the ability
+        // still completes. She no longer participates, so the engine asks the
+        // next player instead of constructing another prompt for seat zero.
+        Card? rage = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                board.Seats[0].IdentityCard.TurnTo("01019a");
+                board.Seats[0].IdentityCard.TakeDamage(14);
+                rage = board.CreateCard(
+                    "01027",
+                    board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+            },
+            heroes: ["she_hulk", "spider_man"]);
+
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb
+                && option.AnchorId == rage!.ObjectId);
+        var resolved = game.Resolve(Decision.Take(action.Id));
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.False(world.IsOver);
+        Assert.Equal(1, game.Active);
+        Assert.Equal(1, game.Pending!.Player);
+        Assert.Equal(Question.TurnOption, game.Pending.Asking);
+        Assert.All(resolved.Events, happened => Assert.Equal(Steps.TurnAction, happened.Trigger));
+
+        game.Resolve(Decision.Decline);
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+        Assert.Equal(1, game.Pending!.Player);
+    }
+
+    [Rule("rr:player-turn.5")]
+    [Rule("rr:initiating-abilities.step.7")]
+    [Fact]
+    public void AnEventActionResumesItsOccurrenceAfterChoosingATarget()
+    {
+        Card? kick = null;
+        Card? genius = null;
+        Card? energy = null;
+        Card? minion = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                foreach (var card in board.Seats[0].Hand.Cards.ToList())
+                {
+                    World.MoveToTop(card, board.Seats[0].Deck);
+                }
+
+                kick = board.CreateCard(AuthoredCards.SwingingWebKick, board.Seats[0].Hand);
+                genius = board.CreateCard("01089", board.Seats[0].Hand);
+                energy = board.CreateCard("01088", board.Seats[0].Hand);
+                minion = board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == kick!.ObjectId);
+
+        var paying = new[] { genius!.ObjectId, energy!.ObjectId };
+        var suspended = game.Resolve(Decision.Take(action.Id, [], paying));
+        Assert.Equal(Question.Element, suspended.Prompt!.Asking);
+        Assert.Equal(DeckType.HandsArea, kick!.Area.Type);
+
+        var finished = game.Resolve(Decision.Take(minion!.ObjectId));
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, kick.Area.Type);
+        Assert.False(world.Agenda.IsBusy);
+        Assert.Equal(Question.TurnOption, finished.Prompt!.Asking);
+        var damage = Assert.Single(finished.Events.OfType<FieldSet>(), happened =>
+            happened.Card == minion.ObjectId && happened.Field == "health");
+        Assert.Equal(Steps.TurnAction, damage.Trigger);
+        Assert.Equal(
+            paying,
+            suspended.Events.OfType<CardsMoved>()
+                .SelectMany(moved => moved.Cards)
+                .Select(card => card.Card));
+    }
+
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void ARejectedActionCommandDoesNotRemainOnTheAgenda()
+    {
+        Card? kick = null;
+        Card? genius = null;
+        Card? energy = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                foreach (var card in board.Seats[0].Hand.Cards.ToList())
+                {
+                    World.MoveToTop(card, board.Seats[0].Deck);
+                }
+
+                kick = board.CreateCard(AuthoredCards.SwingingWebKick, board.Seats[0].Hand);
+                genius = board.CreateCard("01089", board.Seats[0].Hand);
+                energy = board.CreateCard("01088", board.Seats[0].Hand);
+            },
+            hero: true);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == kick!.ObjectId);
+
+        Assert.Throws<RulesNotImplementedException>(
+            () => game.Resolve(Decision.Take(action.Id)));
+
+        Assert.False(world.Agenda.IsBusy);
+        Assert.Equal(DeckType.HandsArea, kick!.Area.Type);
+        Assert.Equal(DeckType.HandsArea, genius!.Area.Type);
+        Assert.Equal(DeckType.HandsArea, energy!.Area.Type);
+
+        var retry = game.Resolve(Decision.Take(
+            action.Id, [], [genius.ObjectId, energy.ObjectId]));
+        Assert.Equal(Question.Element, retry.Prompt!.Asking);
+    }
+
+    [Rule("rr:choose-game-element.3.1")]
+    [Rule("rr:player-turn.5")]
+    [Fact]
+    public void ACardSpecificChoiceSuspendsInsideTheActionOccurrence()
+    {
+        Card? practice = null;
+        Card? discard = null;
+        var (game, world) = Playing(board =>
+        {
+            var scheme = board.TheCardIn(DeckType.MainSchemesArea)!;
+            scheme.PlaceTokens("k_threat", 2);
+            practice = board.CreateCard("01023", board.Seats[0].Hand);
+            discard = board.CreateCard("01087", board.Seats[0].Hand);
+        });
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == practice!.ObjectId);
+
+        var suspended = game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(Question.Element, suspended.Prompt!.Asking);
+        Assert.Equal(Steps.ChooseOption, world.Agenda.Current!.Value.What);
+        Assert.True(world.Agenda.Current.Value.Plan);
+        var occurrence = Assert.IsType<Occurrence>(world.Agenda.Occurrence);
+        Assert.True(occurrence.Is(Steps.TurnAction));
+        Assert.Equal(practice!.ObjectId, occurrence.Subject);
+        Assert.Contains(discard!, world.Seats[0].Hand.Cards);
     }
 
     [Rule("rr:player-turn.5.1")]

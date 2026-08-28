@@ -150,6 +150,13 @@ turn, so it is offered beside the basic powers rather than in an interrupt or a
 response — which is why `AbilityTypes.PriorityOf` has always refused to give it
 a tier, and why `ICardAbilities` asks for it separately from `Waiting`.
 
+Acceptance starts an occurrence, however. `Steps.TurnAction` goes onto the
+agenda with the resolving player, source card, chosen targets and payment. Its
+interrupt window precedes payment; its response window follows the completed
+effect. Costs and effects use that same occurrence, including a defeat caused
+by a self-damage cost. A choice merely suspends that occurrence: it is not a
+second occurrence and does not open a second pair of windows.
+
 `.c` is a card's own text and belongs to whichever card says it, so there is
 nothing general to write for it. `.6` lets the active player ask another player
 to trigger anything they could trigger on their own turn, and lets that player
@@ -157,6 +164,11 @@ offer. The engine presents those actions directly. Taking one represents the
 request being accepted or the action being offered; there is no separate
 request/accept handshake. The other player remains the ability's resolving
 player, so their form, resources, targets and limits apply.
+
+If that resolving player is eliminated by the Action, the ability still
+finishes (`rr:player-elimination.5`). The active player's turn continues when
+the active player remains in the game; if the active player was eliminated,
+the next participating player takes their turn.
 
 **The form gate is `.5.1`**: "if the action ability is preceded by *Hero* or
 *Alter-Ego*, the player must be in the specified form", and 728 of the 966 are.
