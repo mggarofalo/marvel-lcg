@@ -97,6 +97,7 @@ internal static class CommandLine
         string? requestedSeedMode = null;
         uint policySeed = 266;
         int games = 1;
+        bool gamesSpecified = false;
         int decisionLimit = 600;
         string? output = null;
         string? repoRoot = null;
@@ -137,6 +138,7 @@ internal static class CommandLine
                     break;
                 case "--games":
                     games = PositiveInt(Value(args, ref index, option), option);
+                    gamesSpecified = true;
                     break;
                 case "--seed":
                     explicitSeeds.Add(UInt(Value(args, ref index, option), option));
@@ -220,7 +222,7 @@ internal static class CommandLine
 
         if (explicitSeeds.Count > 0)
         {
-            if (games != 1 && games != explicitSeeds.Count)
+            if (gamesSpecified && games != explicitSeeds.Count)
             {
                 throw new SimulationUsageException(
                     "--games must equal the number of repeated --seed values");

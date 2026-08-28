@@ -21,7 +21,9 @@ public static class Program
             Console.Error.WriteLine(error.Message);
             return 3;
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is IOException
+            or UnauthorizedAccessException
+            or System.Text.Json.JsonException)
         {
             Console.Error.WriteLine(error.Message);
             return 2;

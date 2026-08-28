@@ -471,7 +471,9 @@ public sealed class Game
         var ability = abilities.Actions(world, taken.AnchorPlayer)
             .FirstOrDefault(pending => pending.Card == taken.AnchorId
                 && pending.Player == taken.AnchorPlayer
-                && Handle($"{ActionVerb}:{pending.Ordinal}", pending.Card) == taken.Id);
+                && Handle(
+                    $"{ActionVerb}:{pending.Ordinal}:player:{pending.Player}",
+                    pending.Card) == taken.Id);
 
         if (ability.Card != taken.AnchorId)
         {
@@ -913,7 +915,9 @@ public sealed class Game
             options.Add(described with
             {
                 Verb = ActionVerb,
-                Id = Handle($"{ActionVerb}:{action.Ordinal}", described.AnchorId),
+                Id = Handle(
+                    $"{ActionVerb}:{action.Ordinal}:player:{action.Player}",
+                    described.AnchorId),
             });
         }
 
@@ -951,13 +955,12 @@ public sealed class Game
     /// <remarks>
     /// The active player's actions come first, followed clockwise by the other
     /// players. The rules do not order offers from several players; this stable
-    /// ordering is the engine's choice. An encounter card is triggerable by
-    /// every player, but remains one action on one card, so its first eligible
-    /// occurrence is the only one offered.
+    /// ordering is the engine's choice. Encounter-card actions remain distinct
+    /// per eligible player because the acting player supplies the form,
+    /// resources, targets and per-player limits used to resolve the action.
     /// </remarks>
     private IEnumerable<PendingAbility> TurnActions()
     {
-        var shared = new HashSet<(int Card, int Ordinal)>();
         for (int offset = 0; offset < world.Players; offset++)
         {
             int player = (Active + offset) % world.Players;
@@ -968,11 +971,7 @@ public sealed class Game
 
             foreach (var action in abilities.Actions(world, player))
             {
-                bool encounter = world.Cards[action.Card].Owner == World.Scenario;
-                if (!encounter || shared.Add((action.Card, action.Ordinal)))
-                {
-                    yield return action;
-                }
+                yield return action;
             }
         }
     }

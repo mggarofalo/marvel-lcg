@@ -14,6 +14,7 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
 
     private readonly IReadOnlyList<EngineRandom> random =
         [.. seatSeeds.Select(seed => new EngineRandom(seed))];
+    private PolicyMetrics pending = new(0, 0, 0, 0);
 
     public int CardsPlayed { get; private set; }
     public int PlayerAttacks { get; private set; }
@@ -26,6 +27,7 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
     public Decision Answer(Game game)
     {
         ArgumentNullException.ThrowIfNull(game);
+        pending = new PolicyMetrics(0, 0, 0, 0);
         var asked = game.Pending
             ?? throw new InvalidOperationException("a finished game has no prompt to answer");
         var world = game.State;
@@ -69,6 +71,15 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
             : Taking(game, asked.Affordances.First(option => option.IsLegal), []);
     }
 
+    public void DecisionResolved()
+    {
+        CardsPlayed += pending.CardsPlayed;
+        PlayerAttacks += pending.PlayerAttacks;
+        Payments += pending.Payments;
+        ResourceAbilitiesUsed += pending.ResourceAbilitiesUsed;
+        pending = new PolicyMetrics(0, 0, 0, 0);
+    }
+
     private Decision Turn(Game game, Prompt asked)
     {
         var world = game.State;
@@ -85,9 +96,12 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
             return Taking(game, change, []);
         }
 
-        long health = Damage.Health(world, facts, seat.IdentityCard) - seat.IdentityCard.Damage;
-        if (health > 1
-            && Find(asked, Game.ActionVerb) is { } action
+        var payableAction = asked.Affordances.FirstOrDefault(option =>
+            option.IsLegal
+            && string.Equals(option.Verb, Game.ActionVerb, StringComparison.Ordinal)
+            && ActingHealth(world, option.AnchorPlayer) > 1
+            && Payment(option) is not null);
+        if (payableAction is { } action
             && Payment(action) is { } actionPayment)
         {
             return Taking(game, action, actionPayment);
@@ -127,22 +141,26 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
             && facts.Kind(world.Cards[option.AnchorId].FaceId) == CardKind.Event;
         if (string.Equals(option.Verb, CardPlay.Verb, StringComparison.Ordinal) || eventInHand)
         {
-            CardsPlayed++;
+            pending = pending with { CardsPlayed = pending.CardsPlayed + 1 };
         }
 
         if (string.Equals(option.Verb, BasicPowers.AttackVerb, StringComparison.Ordinal))
         {
-            PlayerAttacks++;
+            pending = pending with { PlayerAttacks = pending.PlayerAttacks + 1 };
         }
 
         if (payment.Count > 0)
         {
-            Payments++;
+            pending = pending with { Payments = pending.Payments + 1 };
             var cardsInHands = world.Seats
                 .SelectMany(seat => seat.Hand.Cards)
                 .Select(card => card.ObjectId)
                 .ToHashSet();
-            ResourceAbilitiesUsed += payment.Count(id => !cardsInHands.Contains(id));
+            pending = pending with
+            {
+                ResourceAbilitiesUsed = pending.ResourceAbilitiesUsed
+                    + payment.Count(id => !cardsInHands.Contains(id)),
+            };
         }
 
         return Decision.Take(option.Id, targets ?? Targets(world, option), payment);
@@ -151,6 +169,12 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
     private static Affordance? Find(Prompt asked, string verb) =>
         asked.Affordances.FirstOrDefault(option =>
             option.IsLegal && string.Equals(option.Verb, verb, StringComparison.Ordinal));
+
+    private long ActingHealth(World world, int player)
+    {
+        var identity = world.Seats[player].IdentityCard;
+        return Damage.Health(world, facts, identity) - identity.Damage;
+    }
 
     private static (Affordance Option, IReadOnlyList<int> Payment)? ResourceAbilityPlay(
         Prompt asked,

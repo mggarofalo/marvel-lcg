@@ -217,12 +217,18 @@ different campaigns.
 Effect object ids are allocated per session and a recording is a different
 session, which is why the engine re-resolves a recorded input through
 `CommandDescriptor.FindNewEffectId` rather than trusting the number it wrote
-down. What survives the boundary is `(AnchorId, Verb)`, and that pair resolved
-all nine **uniquely**.
+down. In that corpus, `(AnchorId, Verb)` resolved all nine **uniquely**. The
+engine's multiplayer prompts need two more existing fields: `AnchorPlayer`
+distinguishes who accepts an implied request to use a shared encounter action,
+and `Label` distinguishes multiple actions on one card.
 
-Both fields are already on `Affordance`, so nothing needs adding. What this
-buys is a rule: a consumer that persists an affordance — a replay, a saved
-macro, a tutorial script — persists the pair, never the id.
+The durable selector is therefore `(AnchorId, AnchorPlayer, Verb, Label,
+Occurrence)`, where `Occurrence` is the zero-based position among exact
+four-field matches. Repeated choice nodes can be identical on every public
+field, so their authored order is the remaining discriminator. This is an
+engine wire-format choice; the rules do not define persistent command
+identifiers. A consumer persists that selector, never the id, and rejects an
+occurrence that is absent from the rebuilt prompt.
 
 ### A grouped selection is not a count
 

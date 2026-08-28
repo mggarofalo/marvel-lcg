@@ -34,7 +34,7 @@ internal static class SimulationHarness
         Validate(data.Setup, config);
         var seeds = PlanSeeds(config);
         string seedMode = config.ExplicitSeeds.Count > 0 ? "explicit"
-            : config.SelectionSeed.HasValue ? "sampled"
+            : config.SelectionSeed.HasValue ? "random"
             : "consecutive";
         diagnostics.WriteLine($"selected seeds: {string.Join(',', seeds)}");
         RecordJson.Write(records, new HeaderRecord(
@@ -61,12 +61,14 @@ internal static class SimulationHarness
             uint policySeed = unchecked(config.PolicySeed + (uint)gameIndex);
             var policySeeds = SeatPolicySeeds(policySeed, config.Heroes.Count);
             Game? game = null;
+            ActingPolicy? policy = null;
             DecisionSelector? attempted = null;
             Decision? input = null;
             PromptRecord? prompt = null;
             string? lastGood = null;
-            var recent = new Queue<JsonElement>();
+            var recent = new Queue<StepRecord>();
             int step = 0;
+            string stage = "setup";
             try
             {
                 var opened = Open(data, config, seed);
@@ -76,9 +78,10 @@ internal static class SimulationHarness
                     "start", gameIndex, seed, policySeed, policySeeds, lastGood,
                     [.. opened.SetupEvents.Select(RecordJson.Event)]));
 
-                var policy = new ActingPolicy(data.Cards, policySeeds);
+                policy = new ActingPolicy(data.Cards, policySeeds);
                 while (game.Pending is not null)
                 {
+                    stage = "policy";
                     if (step >= config.DecisionLimit)
                     {
                         throw new SimulationRunException(
@@ -90,28 +93,31 @@ internal static class SimulationHarness
                     prompt = PromptRecord.From(asked);
                     input = policy.Answer(game);
                     attempted = DecisionSelector.From(asked, input);
+                    stage = "resolve";
                     var resolved = game.Resolve(input);
+                    policy.DecisionResolved();
                     var happened = resolved.Events.Select(RecordJson.Event).ToList();
-                    foreach (var item in happened)
+                    lastGood = game.State.Digest().Canonical();
+                    var recordedStep = new StepRecord(
+                        "step", gameIndex, step, prompt, attempted,
+                        input.Targets,
+                        input.Spent,
+                        happened,
+                        game.State.Digest().Fingerprint());
+                    recent.Enqueue(recordedStep);
+                    while (recent.Count > RecentEventLimit)
                     {
-                        recent.Enqueue(item);
-                        while (recent.Count > RecentEventLimit)
-                        {
-                            recent.Dequeue();
-                        }
+                        recent.Dequeue();
                     }
 
-                    lastGood = game.State.Digest().Canonical();
-                    RecordJson.Write(records, new StepRecord(
-                        "step", gameIndex, step, prompt, attempted,
-                        input.Targets, input.Spent, happened,
-                        game.State.Digest().Fingerprint()));
+                    RecordJson.Write(records, recordedStep);
                     step++;
                     decisions++;
                     attempted = null;
                     input = null;
                 }
 
+                stage = "terminal";
                 string outcome = game.State.Result.ToString();
                 switch (game.State.Result)
                 {
@@ -129,11 +135,6 @@ internal static class SimulationHarness
                             $"game ended without a terminal outcome: {outcome}");
                 }
 
-                rounds += game.Round;
-                cardsPlayed += policy.CardsPlayed;
-                playerAttacks += policy.PlayerAttacks;
-                payments += policy.Payments;
-                resourceAbilities += policy.ResourceAbilitiesUsed;
                 RecordJson.Write(records, new ResultRecord(
                     "result", gameIndex, seed, outcome, game.Round, step,
                     policy.Metrics, game.State.Digest().Canonical()));
@@ -145,7 +146,7 @@ internal static class SimulationHarness
                 signatures[signature] = signatures.GetValueOrDefault(signature) + 1;
                 diagnostics.WriteLine($"game {gameIndex}, seed {seed}: {signature}");
                 RecordJson.Write(records, new FailureRecord(
-                    "failure", gameIndex, seed, step,
+                    "failure", FailureCategory(error, stage), gameIndex, seed, step,
                     error.GetType().FullName ?? error.GetType().Name,
                     error.Message,
                     game?.Pending is null ? prompt : PromptRecord.From(game.Pending),
@@ -156,6 +157,14 @@ internal static class SimulationHarness
                     game?.State.Digest().Canonical(),
                     [.. recent],
                     Reproduce(config, seed, policySeed)));
+            }
+            finally
+            {
+                rounds += game?.Round ?? 0;
+                cardsPlayed += policy?.CardsPlayed ?? 0;
+                playerAttacks += policy?.PlayerAttacks ?? 0;
+                payments += policy?.Payments ?? 0;
+                resourceAbilities += policy?.ResourceAbilitiesUsed ?? 0;
             }
         }
 
@@ -210,23 +219,42 @@ internal static class SimulationHarness
         Validate(data.Setup, simulation);
 
         Game? game = null;
+        ActingPolicy? replayPolicy = null;
         int currentGame = -1;
+        int currentSteps = 0;
         int games = 0;
         int steps = 0;
+        var replayRecent = new Queue<StepRecord>();
+        bool sawSummary = false;
         string? line;
         while ((line = reader.ReadLine()) is not null)
         {
+            if (sawSummary)
+            {
+                throw new ReplayDivergenceException(
+                    "a record appeared after the terminal summary");
+            }
+
             using var document = JsonDocument.Parse(line);
-            string type = document.RootElement.GetProperty("type").GetString()
-                ?? throw new JsonException("record type was null");
+            string type = RecordType(document.RootElement);
             switch (type)
             {
                 case "start":
                 {
                     var start = Read<StartRecord>(line, type);
+                    if (game is not null)
+                    {
+                        throw new ReplayDivergenceException(
+                            $"game {start.Game} started before game {currentGame} ended");
+                    }
+
+                    RequireEqual(games, start.Game, $"start game index");
                     var opened = Open(data, simulation, start.Seed);
                     game = opened.Game;
+                    replayPolicy = new ActingPolicy(data.Cards, start.SeatPolicySeeds);
                     currentGame = start.Game;
+                    currentSteps = 0;
+                    replayRecent.Clear();
                     if (start.Game < 0 || start.Game >= header.Seeds.Count)
                     {
                         throw new ReplayDivergenceException(
@@ -259,15 +287,39 @@ internal static class SimulationHarness
                 {
                     var step = Read<StepRecord>(line, type);
                     RequireGame(game, currentGame, step.Game);
+                    RequireEqual(
+                        currentSteps, step.Step,
+                        $"game {currentGame} step index");
                     var asked = game!.Pending
                         ?? throw new ReplayDivergenceException(
                             $"game {currentGame} ended before recorded step {step.Step}");
-                    RequireEqual(
+                    RequirePrompt(
                         step.Prompt,
                         PromptRecord.From(asked),
                         $"game {currentGame} step {step.Step} prompt");
+                    var policyDecision = replayPolicy!.Answer(game);
+                    RequireEqual(
+                        JsonSerializer.Serialize(
+                            step.Decision, RecordJson.Options),
+                        JsonSerializer.Serialize(
+                            DecisionSelector.From(asked, policyDecision), RecordJson.Options),
+                        $"game {currentGame} step {step.Step} policy decision");
+                    RequireSequence(
+                        step.Targets,
+                        policyDecision.Targets,
+                        $"game {currentGame} step {step.Step} policy targets");
+                    RequireSequence(
+                        step.Resources,
+                        policyDecision.Spent,
+                        $"game {currentGame} step {step.Step} policy resources");
                     var decision = step.Decision.Resolve(asked, step.Targets, step.Resources);
                     var resolved = game.Resolve(decision);
+                    replayPolicy.DecisionResolved();
+                    replayRecent.Enqueue(step);
+                    while (replayRecent.Count > RecentEventLimit)
+                    {
+                        replayRecent.Dequeue();
+                    }
                     RequireEvents(
                         step.Events,
                         resolved.Events,
@@ -277,12 +329,16 @@ internal static class SimulationHarness
                         game.State.Digest().Fingerprint(),
                         $"game {currentGame} step {step.Step} digest");
                     steps++;
+                    currentSteps++;
                     break;
                 }
                 case "result":
                 {
                     var result = Read<ResultRecord>(line, type);
                     RequireGame(game, currentGame, result.Game);
+                    RequireEqual(
+                        currentSteps, result.Decisions,
+                        $"game {currentGame} decision count");
                     RequireEqual(
                         result.Outcome,
                         game!.State.Result.ToString(),
@@ -292,17 +348,140 @@ internal static class SimulationHarness
                         result.TerminalDigest,
                         game.State.Digest().Canonical(),
                         $"game {currentGame} terminal digest");
+                    if (game.Pending is not null)
+                    {
+                        throw new ReplayDivergenceException(
+                            $"game {currentGame} has a prompt after its result");
+                    }
+
                     game = null;
+                    replayPolicy = null;
                     break;
                 }
                 case "failure":
                 {
                     var failure = Read<FailureRecord>(line, type);
-                    RequireGame(game, currentGame, failure.Game);
-                    if (failure.Decision is null || game!.Pending is null)
+                    if (failure.Game < 0 || failure.Game >= header.Seeds.Count)
                     {
                         throw new ReplayDivergenceException(
-                            $"game {currentGame} failure has no replayable decision");
+                            $"failure names game index {failure.Game} outside the seed plan");
+                    }
+
+                    RequireEqual(
+                        header.Seeds[failure.Game], failure.Seed,
+                        $"game {failure.Game} failure seed");
+                    if (game is null)
+                    {
+                        RequireEqual(games, failure.Game, "setup failure game index");
+                        if (failure.LastGoodDigest is not null || failure.Decision is not null)
+                        {
+                            throw new ReplayDivergenceException(
+                                $"game {failure.Game} has no start but records gameplay state");
+                        }
+
+                        try
+                        {
+                            _ = Open(data, simulation, failure.Seed);
+                        }
+                        catch (Exception error)
+                        {
+                            RequireFailure(failure, error, "setup");
+                            diagnostics.WriteLine(
+                                $"reproduced expected setup failure in game {failure.Game}: "
+                                + $"{error.GetType().Name}: {error.Message}");
+                            games++;
+                            currentGame = failure.Game;
+                            break;
+                        }
+
+                        throw new ReplayDivergenceException(
+                            $"game {failure.Game} did not reproduce recorded setup failure");
+                    }
+
+                    RequireGame(game, currentGame, failure.Game);
+                    RequireEqual(
+                        currentSteps, failure.Step,
+                        $"game {currentGame} failure step");
+                    RequireEqual(
+                        failure.LastGoodDigest,
+                        game.State.Digest().Canonical(),
+                        $"game {currentGame} last-good digest");
+                    RequireNullablePrompt(
+                        failure.Prompt,
+                        game.Pending is null ? null : PromptRecord.From(game.Pending),
+                        $"game {currentGame} failure prompt");
+                    RequireEqual(
+                        JsonSerializer.Serialize(failure.RecentSteps, RecordJson.Options),
+                        JsonSerializer.Serialize(replayRecent, RecordJson.Options),
+                        $"game {currentGame} recent steps");
+                    if (string.Equals(
+                            failure.Category, "decision_limit", StringComparison.Ordinal))
+                    {
+                        string expected = $"decision limit {header.DecisionLimit} reached at "
+                            + $"'{game.Pending?.Label}'";
+                        RequireEqual(
+                            "decision_limit",
+                            failure.Category,
+                            $"game {currentGame} failure category");
+                        RequireEqual(
+                            typeof(SimulationRunException).FullName,
+                            failure.Exception,
+                            $"game {currentGame} failure type");
+                        RequireEqual(
+                            expected, failure.Message,
+                            $"game {currentGame} failure message");
+                        RequireEqual(
+                            failure.PostFailureDigest,
+                            game.State.Digest().Canonical(),
+                            $"game {currentGame} post-failure digest");
+                        game = null;
+                        replayPolicy = null;
+                        break;
+                    }
+
+                    if (string.Equals(
+                            failure.Category, "policy_error", StringComparison.Ordinal))
+                    {
+                        try
+                        {
+                            var generated = replayPolicy!.Answer(game);
+                            _ = DecisionSelector.From(game.Pending!, generated);
+                        }
+                        catch (Exception error)
+                        {
+                            RequireFailure(failure, error, "policy");
+                            game = null;
+                            replayPolicy = null;
+                            break;
+                        }
+
+                        throw new ReplayDivergenceException(
+                            $"game {currentGame} did not reproduce recorded policy failure");
+                    }
+
+                    if (failure.Decision is null)
+                    {
+                        if (string.Equals(
+                                failure.Category, "engine_exception", StringComparison.Ordinal)
+                            && game.Pending is null)
+                        {
+                            var terminal = new SimulationRunException(
+                                $"game ended without a terminal outcome: {game.State.Result}");
+                            RequireFailure(failure, terminal, "terminal");
+                            game = null;
+                            replayPolicy = null;
+                            break;
+                        }
+
+                        throw new ReplayDivergenceException(
+                            $"game {currentGame} records category '{failure.Category}' "
+                            + "without an attempted decision");
+                    }
+
+                    if (game.Pending is null)
+                    {
+                        throw new ReplayDivergenceException(
+                            $"game {currentGame} failure has no pending decision");
                     }
 
                     try
@@ -313,18 +492,16 @@ internal static class SimulationHarness
                     }
                     catch (Exception error)
                     {
+                        RequireFailure(failure, error, "resolve");
                         RequireEqual(
-                            failure.Exception,
-                            error.GetType().FullName ?? error.GetType().Name,
-                            $"game {currentGame} failure type");
-                        RequireEqual(
-                            failure.Message,
-                            error.Message,
-                            $"game {currentGame} failure message");
+                            failure.PostFailureDigest,
+                            game.State.Digest().Canonical(),
+                            $"game {currentGame} post-failure digest");
                         diagnostics.WriteLine(
                             $"reproduced expected failure in game {currentGame}: "
                             + $"{error.GetType().Name}: {error.Message}");
                         game = null;
+                        replayPolicy = null;
                         break;
                     }
 
@@ -332,8 +509,18 @@ internal static class SimulationHarness
                         $"game {currentGame} did not reproduce recorded failure");
                 }
                 case "summary":
-                    _ = Read<SummaryRecord>(line, type);
+                {
+                    if (game is not null)
+                    {
+                        throw new ReplayDivergenceException(
+                            $"summary appeared while game {currentGame} was active");
+                    }
+
+                    var summary = Read<SummaryRecord>(line, type);
+                    RequireEqual(games, summary.Games, "summary game count");
+                    sawSummary = true;
                     break;
+                }
                 default:
                     throw new SimulationUsageException($"unknown record type '{type}'");
             }
@@ -343,6 +530,12 @@ internal static class SimulationHarness
         {
             throw new ReplayDivergenceException(
                 $"record ended while game {currentGame} was still open");
+        }
+
+        RequireEqual(header.Seeds.Count, games, "recorded game count");
+        if (!sawSummary)
+        {
+            throw new ReplayDivergenceException("record has no terminal summary");
         }
 
         return new ReplaySummary(games, steps);
@@ -360,7 +553,7 @@ internal static class SimulationHarness
         foreach (string line in File.ReadLines(fullPath))
         {
             using var document = JsonDocument.Parse(line);
-            if (document.RootElement.GetProperty("type").GetString() == "summary")
+            if (RecordType(document.RootElement) == "summary")
             {
                 found = Read<SummaryRecord>(line, "summary");
             }
@@ -543,6 +736,19 @@ internal static class SimulationHarness
         JsonSerializer.Deserialize<T>(line, RecordJson.Options)
         ?? throw new JsonException($"{expectedType} record was null");
 
+    private static string RecordType(JsonElement record)
+    {
+        if (record.ValueKind != JsonValueKind.Object
+            || !record.TryGetProperty("type", out var type)
+            || type.ValueKind != JsonValueKind.String
+            || type.GetString() is not { Length: > 0 } value)
+        {
+            throw new JsonException("record has no string 'type'");
+        }
+
+        return value;
+    }
+
     private static void RequireGame(Game? game, int current, int recorded)
     {
         if (game is null || current != recorded)
@@ -579,6 +785,64 @@ internal static class SimulationHarness
                 expected[index].GetRawText(), written[index].GetRawText(),
                 $"{what}[{index}]");
         }
+    }
+
+    private static void RequireFailure(
+        FailureRecord expected, Exception actual, string stage)
+    {
+        RequireEqual(
+            FailureCategory(actual, stage),
+            expected.Category,
+            $"game {expected.Game} failure category");
+        RequireEqual(
+            expected.Exception,
+            actual.GetType().FullName ?? actual.GetType().Name,
+            $"game {expected.Game} failure type");
+        RequireEqual(
+            expected.Message,
+            actual.Message,
+            $"game {expected.Game} failure message");
+    }
+
+    private static string FailureCategory(Exception error, string stage)
+    {
+        if (error is SimulationRunException
+            && error.Message.StartsWith("decision limit ", StringComparison.Ordinal))
+        {
+            return "decision_limit";
+        }
+
+        if (error is RulesNotImplementedException)
+        {
+            return "rules_not_implemented";
+        }
+
+        if (error is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return "record_error";
+        }
+
+        return string.Equals(stage, "policy", StringComparison.Ordinal)
+            ? "policy_error"
+            : "engine_exception";
+    }
+
+    private static void RequirePrompt(
+        PromptRecord expected, PromptRecord actual, string what)
+    {
+        RequireEqual(
+            JsonSerializer.Serialize(expected, RecordJson.Options),
+            JsonSerializer.Serialize(actual, RecordJson.Options),
+            what);
+    }
+
+    private static void RequireNullablePrompt(
+        PromptRecord? expected, PromptRecord? actual, string what)
+    {
+        RequireEqual(
+            JsonSerializer.Serialize(expected, RecordJson.Options),
+            JsonSerializer.Serialize(actual, RecordJson.Options),
+            what);
     }
 
     private static void RequireSequence<T>(

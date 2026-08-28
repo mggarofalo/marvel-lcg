@@ -241,15 +241,18 @@ cards from another seat unless the engine offered those generators.
 ## Durable decisions
 
 `Affordance.Id` is a session handle. A record must never persist it. The stable
-selector is this pair:
+selector is:
 
 ```text
-(anchor_id, verb)
+(anchor_id, anchor_player, verb, label, occurrence)
 ```
 
-This is the persistence rule already settled in
-[affordances.md](affordances.md#id-is-a-handle-not-a-name). A selected decision
-stores that pair, the ordered targets and the resource generator card ids.
+`anchor_player` distinguishes which player actually takes an implied shared
+action; `label` distinguishes several actions on one card. `occurrence` is the
+zero-based position among exact four-field matches because repeated choice
+nodes can otherwise be identical. This authored prompt order is part of the
+engine wire format; the rules do not define persistent command identifiers. A
+selected decision also stores ordered targets and resource generator ids.
 
 A decline stores no selector:
 
@@ -262,20 +265,25 @@ A taken affordance stores:
 ```json
 {
   "kind": "take",
-  "selector": {"anchor_id": 9, "verb": "Play"},
+  "selector": {
+    "anchor_id": 9,
+    "anchor_player": 0,
+    "verb": "Play",
+    "label": "Play Swinging Web Kick",
+    "occurrence": 0
+  },
   "targets": [49],
   "resources": [12, 17]
 }
 ```
 
-Target order is significant and remains unchanged. Resource order has no rules
-meaning, so the writer sorts distinct resource ids in ascending order for one
-canonical spelling.
+Target order is significant and remains unchanged. Resource order has no
+tabletop meaning, but it determines the order of generated events, so the
+record retains the policy's order to make exact replay possible.
 
 Before taking an affordance, the runner requires exactly one legal option with
-the selected pair. Zero matches are `selector_not_found`. More than one match
-is `selector_ambiguous`. Both fail the game before `Game.Resolve` runs. The
-label and list position are diagnostic fields, never fallback identity.
+the selected selector occurrence. A missing occurrence fails before
+`Game.Resolve` runs. The session handle is never a fallback identity.
 
 Recorded prompts also omit every `Affordance.Id`. Their affordances keep verb,
 anchor, anchor player, label, legality, target request and cost options. A
@@ -402,7 +410,8 @@ For each game, replay performs these checks in order:
 2. Deal with the recorded game seed and seat order.
 3. Compare the complete initial digest and setup events.
 4. Compare the stable current prompt with the recorded prompt.
-5. Resolve a taken decision by exactly one `(anchor_id, verb)` pair.
+5. Resolve a taken decision by exactly one
+   `(anchor_id, anchor_player, verb, label, occurrence)` selector.
 6. Validate targets with `TargetRequest.Allows`.
 7. Validate each resource against the selected cost's offered generators.
 8. Call `Game.Resolve` once.
@@ -414,14 +423,13 @@ Replay stops at the first mismatch. The report names the game and step, then
 shows the narrowest useful difference. A state mismatch uses the structural
 digest diff rather than only printing two hashes.
 
-Replay never falls back to `Affordance.Id`, label, list index or a best match.
-A missing or ambiguous stable selector is itself the divergence.
+Replay never falls back to `Affordance.Id` or a best match. A missing recorded
+occurrence is itself the divergence.
 
 The command is:
 
 ```bash
-dotnet run --project src/Marvel.Sim -- replay \
-  --input artifacts/sim/rhino-expert-two-player/games/000000-1608637542.jsonl.gz
+dotnet run --project src/Marvel.Sim -- replay artifacts/sim/rhino-expert-two-player.jsonl
 ```
 
 It writes diagnostics to standard error and changes no file unless an explicit

@@ -71,6 +71,7 @@ internal sealed record ResultRecord(
 
 internal sealed record FailureRecord(
     string Type,
+    string Category,
     int Game,
     uint Seed,
     int Step,
@@ -82,7 +83,7 @@ internal sealed record FailureRecord(
     IReadOnlyList<int> Resources,
     string? LastGoodDigest,
     string? PostFailureDigest,
-    IReadOnlyList<JsonElement> RecentEvents,
+    IReadOnlyList<StepRecord> RecentSteps,
     string Reproduce);
 
 internal sealed record SummaryRecord(
@@ -106,7 +107,8 @@ internal sealed record PromptRecord(
     string When,
     string Trigger,
     string Label,
-    bool Cancellable)
+    bool Cancellable,
+    IReadOnlyList<AffordanceRecord> Affordances)
 {
     public static PromptRecord From(Prompt prompt) => new(
         prompt.Player,
@@ -114,7 +116,30 @@ internal sealed record PromptRecord(
         prompt.When.ToString(),
         prompt.Trigger,
         prompt.Label,
-        prompt.Cancellable);
+        prompt.Cancellable,
+        [.. prompt.Affordances.Select(AffordanceRecord.From)]);
+}
+
+internal sealed record AffordanceRecord(
+    string Verb,
+    int AnchorId,
+    int AnchorPlayer,
+    string Label,
+    JsonElement? Targets,
+    IReadOnlyList<JsonElement> Costs,
+    string? Illegal)
+{
+    public static AffordanceRecord From(Affordance affordance) => new(
+        affordance.Verb,
+        affordance.AnchorId,
+        affordance.AnchorPlayer,
+        affordance.Label,
+        affordance.Targets is null
+            ? null
+            : JsonSerializer.SerializeToElement(affordance.Targets, RecordJson.Options),
+        [.. affordance.CostOptions.Select(cost =>
+            JsonSerializer.SerializeToElement(cost, RecordJson.Options))],
+        affordance.Illegal);
 }
 
 internal sealed record DecisionSelector(
@@ -152,6 +177,12 @@ internal sealed record DecisionSelector(
     {
         if (Decline)
         {
+            if (targets.Count > 0 || resources.Count > 0)
+            {
+                throw new ReplayDivergenceException(
+                    $"decline at prompt '{prompt.Label}' records targets or resources");
+            }
+
             return Decision.Decline;
         }
 
@@ -169,7 +200,67 @@ internal sealed record DecisionSelector(
                 + $"not recorded occurrence {Occurrence}");
         }
 
-        return Decision.Take(exact[Occurrence].Id, targets, resources);
+        var selected = exact[Occurrence];
+        if (selected.Targets is null ? targets.Count > 0 : !selected.Targets.Allows(targets))
+        {
+            throw new ReplayDivergenceException(
+                $"recorded targets are not allowed by '{selected.Label}'");
+        }
+
+        if (!PaymentIsOffered(selected, resources))
+        {
+            throw new ReplayDivergenceException(
+                $"recorded resources do not pay an offered cost for '{selected.Label}'");
+        }
+
+        return Decision.Take(selected.Id, targets, resources);
+    }
+
+    private static bool PaymentIsOffered(
+        Affordance selected, IReadOnlyList<int> resources)
+    {
+        if (resources.Distinct().Count() != resources.Count)
+        {
+            return false;
+        }
+
+        if (selected.CostOptions.Count == 0)
+        {
+            return resources.Count == 0;
+        }
+
+        return selected.CostOptions.Any(cost =>
+        {
+            var sources = new List<ResourceSource>(resources.Count);
+            foreach (int resource in resources)
+            {
+                var matches = cost.Generators
+                    .Where(source => source.Effect == resource)
+                    .ToList();
+                if (matches.Count != 1)
+                {
+                    return false;
+                }
+
+                sources.Add(matches[0]);
+            }
+
+            string generated = string.Concat(sources.Select(source => source.Generates));
+            bool primary = long.TryParse(
+                    cost.Cost,
+                    System.Globalization.NumberStyles.None,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out long amount)
+                && Resources.Pays(generated, amount, string.Concat(cost.Rule ?? []));
+            bool alternative = cost.HasAlternative
+                && long.TryParse(
+                    cost.OrCost,
+                    System.Globalization.NumberStyles.None,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out long other)
+                && Resources.Pays(generated, other, string.Concat(cost.OrRule ?? []));
+            return primary || alternative;
+        });
     }
 }
 

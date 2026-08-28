@@ -45,7 +45,7 @@ public sealed class SimulationHarnessTests
     }
 
     [Fact]
-    public void AStableSelectorDistinguishesTwoActionsOnTheSameCard()
+    public void AStableSelectorUsesActorLabelAndOrderedOccurrence()
     {
         var original = Prompt(
             new Affordance(10, "Action", 7, 1, "Choose"),
@@ -111,12 +111,41 @@ public sealed class SimulationHarnessTests
         var documents = Lines(record).ToList();
         var failure = Assert.Single(
             documents, item => item.GetProperty("type").GetString() == "failure");
+        Assert.Equal("decision_limit", failure.GetProperty("category").GetString());
         Assert.Contains("--seed 265", failure.GetProperty("reproduce").GetString());
         Assert.NotNull(failure.GetProperty("last_good_digest").GetString());
         Assert.NotNull(failure.GetProperty("post_failure_digest").GetString());
         var machine = Assert.Single(
             documents, item => item.GetProperty("type").GetString() == "summary");
         Assert.Equal(1, machine.GetProperty("failures").GetInt32());
+
+        string path = Path.Combine(
+            Path.GetTempPath(), $"marvel-sim-failure-{Guid.NewGuid():N}.jsonl");
+        try
+        {
+            File.WriteAllText(path, record.ToString());
+            Assert.Equal(
+                1,
+                SimulationHarness.Replay(
+                    new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void FailedGamesKeepMetricsFromDecisionsThatResolvedBeforeTheLimit()
+    {
+        var summary = SimulationHarness.Run(
+            Config(games: 1, seeds: [265], selectionSeed: null, decisionLimit: 20),
+            TextWriter.Null,
+            TextWriter.Null);
+
+        Assert.Equal(1, summary.Failures);
+        Assert.True(summary.CardsPlayed > 0);
+        Assert.True(summary.Payments > 0);
     }
 
     [Fact]
@@ -149,6 +178,57 @@ public sealed class SimulationHarnessTests
             Assert.Throws<ReplayDivergenceException>(() =>
                 SimulationHarness.Replay(
                     new ReplayConfig(path, RepositoryRoot()), TextWriter.Null));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void ReplayRejectsATargetOutsideTheRecordedAffordance()
+    {
+        var record = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);
+        SimulationHarness.Run(
+            Config(games: 1, seeds: [265], selectionSeed: null),
+            record,
+            TextWriter.Null);
+        var lines = record.ToString()
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+        int changed = lines.FindIndex(line =>
+        {
+            using var document = JsonDocument.Parse(line);
+            return document.RootElement.GetProperty("type").GetString() == "step"
+                && document.RootElement.GetProperty("targets").GetArrayLength() > 0;
+        });
+        var step = JsonNode.Parse(lines[changed])!.AsObject();
+        step["targets"] = new JsonArray(999999);
+        lines[changed] = step.ToJsonString(RecordJson.Options);
+
+        AssertReplayDiverges(lines);
+    }
+
+    [Fact]
+    public void ReplayRejectsARecordWithoutAType()
+    {
+        var record = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);
+        SimulationHarness.Run(
+            Config(games: 1, seeds: [265], selectionSeed: null),
+            record,
+            TextWriter.Null);
+        var lines = record.ToString()
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+        lines[1] = "{}";
+
+        string path = Path.Combine(
+            Path.GetTempPath(), $"marvel-sim-malformed-{Guid.NewGuid():N}.jsonl");
+        try
+        {
+            File.WriteAllLines(path, lines);
+            Assert.Throws<JsonException>(() => SimulationHarness.Replay(
+                new ReplayConfig(path, RepositoryRoot()), TextWriter.Null));
         }
         finally
         {
@@ -192,6 +272,22 @@ public sealed class SimulationHarnessTests
             Assert.True(replay.Steps > 0);
             Assert.Equal(1, SimulationHarness.Report(path).Games);
             return Lines(record).ToList();
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    private static void AssertReplayDiverges(IReadOnlyList<string> lines)
+    {
+        string path = Path.Combine(
+            Path.GetTempPath(), $"marvel-sim-divergence-{Guid.NewGuid():N}.jsonl");
+        try
+        {
+            File.WriteAllLines(path, lines);
+            Assert.Throws<ReplayDivergenceException>(() => SimulationHarness.Replay(
+                new ReplayConfig(path, RepositoryRoot()), TextWriter.Null));
         }
         finally
         {

@@ -180,12 +180,10 @@ public sealed class ActionAbilityTests
     [Rule("rr:player-turn.5")]
     [Rule("rr:player-turn.6")]
     [Fact]
-    public void ASharedEncounterActionIsOfferedOnceByTheFirstEligiblePlayer()
+    public void ASharedEncounterActionIsOfferedForEveryEligiblePlayer()
     {
-        // Every hero could trigger the Ivory Horn action, but it is one action
-        // on one encounter card. When more than one player is eligible, the
-        // stable active-then-clockwise order offers only the active player's
-        // copy.
+        // The request is implied, but the acting seat is material: that player
+        // supplies the resources and resolves every reference to "you".
         Card? horn = null;
         var (game, _) = Playing(
             board =>
@@ -210,9 +208,8 @@ public sealed class ActionAbilityTests
             .Where(option => option.Verb == Game.ActionVerb
                 && option.AnchorId == horn!.ObjectId)
             .ToList();
-        var action = Assert.Single(actions);
-
-        Assert.Equal(0, action.AnchorPlayer);
+        Assert.Equal([0, 1], actions.Select(action => action.AnchorPlayer));
+        Assert.Equal(2, actions.Select(action => action.Id).Distinct().Count());
     }
 
     [Rule("rr:cost")]
