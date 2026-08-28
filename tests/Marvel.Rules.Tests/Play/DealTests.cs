@@ -187,11 +187,42 @@ public sealed class DealTests
         Run(world, printed, abilities);
 
         Assert.NotNull(abilities.Card);
-        Assert.True(abilities.Card.FaceUp);
+        Assert.True(abilities.FaceUpDuringWhenRevealed);
         Assert.Equal(DeckType.RevealingArea, abilities.AreaDuringWhenRevealed);
         Assert.Equal(DeckType.EncounterDiscardPile, abilities.Card.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, abilities.AreaDuringResponse);
         Assert.Equal(1, abilities.Responses);
+    }
+
+    [Rule("rr:incite-x.1")]
+    [Fact]
+    public void InciteResolvesDuringRevealAfterTheCardTurnsFaceup()
+    {
+        // Incite is equivalent to "When Revealed: Place X threat on the main
+        // scheme." Its threat event therefore follows the reveal's faceup
+        // event and precedes step 4 discarding the treachery.
+        var printed = new Printed().With("incite", ("Incite", "2"));
+        var world = Board(printed, players: 1);
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var incite = world.CreateCard("incite", deck);
+        var events = new List<GameEvent>();
+        Deal.EncounterCard(world, 0, "test", events);
+
+        Run(world, printed, events: events);
+
+        int flipped = events.FindIndex(item => item is CardsFlipped value
+            && value.Verb == "Reveal"
+            && value.Cards.Contains(incite.ObjectId));
+        int placed = events.FindIndex(item => item is FieldSet value
+            && value.Trigger == "incite"
+            && value.Card == world.TheCardIn(DeckType.MainSchemesArea)!.ObjectId);
+        int discarded = events.FindIndex(item => item is CardsMoved value
+            && value.Verb == "Reveal"
+            && value.Cards.Any(landing => landing.Card == incite.ObjectId));
+
+        Assert.True(flipped >= 0);
+        Assert.True(placed > flipped);
+        Assert.True(discarded > placed);
     }
 
     /// <summary>
@@ -330,6 +361,8 @@ public sealed class DealTests
 
         public DeckType AreaDuringWhenRevealed { get; private set; }
 
+        public bool FaceUpDuringWhenRevealed { get; private set; }
+
         public DeckType AreaDuringResponse { get; private set; }
 
         public int Responses { get; private set; }
@@ -339,6 +372,7 @@ public sealed class DealTests
         {
             Card = card;
             AreaDuringWhenRevealed = card.Area.Type;
+            FaceUpDuringWhenRevealed = card.FaceUp;
             return [];
         }
 

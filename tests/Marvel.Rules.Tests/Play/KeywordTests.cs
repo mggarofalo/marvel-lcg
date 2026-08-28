@@ -82,7 +82,6 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:incite-x")]
-    [Rule("rr:incite-x.1")]
     [Theory]
     [InlineData(0, 0)]
     [InlineData(2, 2)]

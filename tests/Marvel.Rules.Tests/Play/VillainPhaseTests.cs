@@ -65,8 +65,10 @@ public sealed class VillainPhaseTests
 
         var events = Run(world, printed);
 
-        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
-        Assert.Equal(["boost", "encounter"], discard.Cards.Select(card => card.FaceId));
+        Assert.Contains(events.OfType<CardsMoved>(), moved =>
+            moved.Verb == "Boost"
+            && moved.To.Zone == nameof(DeckType.EncounterDiscardPile)
+            && moved.Cards.Any(landing => world.Cards[landing.Card].FaceId == "boost"));
         Assert.Contains(events.OfType<CardsFlipped>(), flipped =>
             flipped.Verb == "Boost" && flipped.FaceUp);
     }
@@ -105,9 +107,11 @@ public sealed class VillainPhaseTests
             .With("villain", ("SCH", "1"))
             .With("scheme", ("EscalationThreat", "0"));
         var world = Board(printed, players: 3);
+        var activations = new ActivationObserver();
 
-        var events = Run(world, printed);
+        var events = Run(world, printed, activations);
 
+        Assert.Equal([0, 1, 2], activations.Players);
         Assert.Equal(3, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
         Assert.Equal(
             3,
@@ -291,12 +295,26 @@ public sealed class VillainPhaseTests
     }
 
     /// <summary>Schedules the villain phase and walks it to the end.</summary>
-    private static List<GameEvent> Run(World world, Printed printed)
+    private static List<GameEvent> Run(
+        World world, Printed printed, ICardAbilities? abilities = null)
     {
         var events = new List<GameEvent>();
         VillainPhase.Schedule(world.Agenda, round: 1);
-        Sequence.Finish(world, printed, new NoCardAbilities(), events);
+        Sequence.Finish(world, printed, abilities ?? new NoCardAbilities(), events);
         return events;
+    }
+
+    /// <summary>Records which player each completed villain activation targeted.</summary>
+    private sealed class ActivationObserver : NoCardAbilities
+    {
+        public List<int> Players { get; } = [];
+
+        public override IReadOnlyList<GameEvent> ActivationCompleted(
+            World world, EnemyActivation result)
+        {
+            Players.Add(result.Player);
+            return [];
+        }
     }
 
     /// <summary>A villain, a main scheme, one identity per seat, two encounter cards each.</summary>

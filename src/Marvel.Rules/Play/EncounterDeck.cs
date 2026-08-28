@@ -36,7 +36,8 @@ public static class EncounterDeck
     public const string AccelerationToken = "k_acceleration";
 
     /// <summary>
-    /// Takes the top card, resetting the deck first if it is empty.
+    /// Takes the top card, resetting before an empty take or immediately after
+    /// the take empties it into an available discard pile.
     /// </summary>
     /// <param name="world">The board.</param>
     /// <param name="trigger">What caused it, for the event stream.</param>
@@ -48,12 +49,19 @@ public static class EncounterDeck
         ArgumentNullException.ThrowIfNull(events);
 
         var deck = world.AreaOf(DeckType.EncounterDeck);
-        if (deck.Cards.Count == 0)
+        if (deck.Cards.Count == 0 && !Reset(world, trigger, events))
+        {
+            return null;
+        }
+
+        var card = deck.TakeTop();
+        if (deck.Cards.Count == 0
+            && world.AreaOf(DeckType.EncounterDiscardPile).Cards.Count > 0)
         {
             Reset(world, trigger, events);
         }
 
-        return deck.TakeTop();
+        return card;
     }
 
     /// <summary>
