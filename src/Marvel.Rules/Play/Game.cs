@@ -120,6 +120,7 @@ public sealed class Game
     private readonly ICardFacts facts;
     private readonly ICardAbilities abilities;
     private readonly Queue<Card> playerSetup = [];
+    private readonly HashSet<int> finishedTurns = [];
 
     private int nextHandle;
 
@@ -304,19 +305,7 @@ public sealed class Game
                 // `rr:player-phase`: "during the player phase, **each player**
                 // *(in player order)* takes one turn". So the phase is over
                 // when the last of them has had theirs, not when the first has.
-                if (Next(Active) is { } player)
-                {
-                    Active = player;
-                    Pending = TurnPrompt();
-        asking = Asker.Game;
-                    return new Resolution(world, Pending, []);
-                }
-
-                Active = world.FirstPlayer;
-                Phase = GamePhase.EndPhase;
-                Pending = EndPhasePrompt();
-        asking = Asker.Game;
-                return new Resolution(world, Pending, []);
+                return FinishTurn([]);
 
             case GamePhase.EndPhase:
                 return EndOfPlayerPhase(input);
@@ -483,11 +472,12 @@ public sealed class Game
 
         // `rr:initiating-abilities.step.5` -- the answer carries which cards
         // were spent, because a cost of resources is a choice of *which* and
-        // the affordance already said what could pay.
-        var happened = new List<GameEvent>(
-            abilities.Act(world, ability, input.Spent, input.Targets));
+        // the affordance already said what could pay. Copies make the agenda
+        // value independent of the caller's mutable decision lists.
+        world.Agenda.AddPlayerAction(Round, new PlayerAction(
+            ability, [.. input.Spent], [.. input.Targets]));
 
-        return Turn(happened);
+        return Turn([]);
     }
 
     /// <summary>
@@ -537,9 +527,16 @@ public sealed class Game
     private int? Next(int seat)
     {
         int taken = ((seat - world.FirstPlayer) + world.Players) % world.Players;
-        return taken + 1 < world.Players
-            ? (world.FirstPlayer + taken + 1) % world.Players
-            : null;
+        for (int offset = taken + 1; offset < world.Players; offset++)
+        {
+            int player = (world.FirstPlayer + offset) % world.Players;
+            if (!world.Seats[player].Eliminated)
+            {
+                return player;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -704,6 +701,7 @@ public sealed class Game
             }
 
             Round = 1;
+            finishedTurns.Clear();
             Active = world.FirstPlayer;
             Phase = GamePhase.PlayerTurn;
             Pending = TurnPrompt();
@@ -766,6 +764,11 @@ public sealed class Game
             return new Resolution(world, null, happened);
         }
 
+        if (world.Seats[Active].Eliminated)
+        {
+            return FinishTurn(happened);
+        }
+
         Pending = TurnPrompt();
         asking = Asker.Game;
         return new Resolution(world, Pending, happened);
@@ -791,9 +794,39 @@ public sealed class Game
         }
 
         Round++;
+        finishedTurns.Clear();
         Phase = GamePhase.PlayerTurn;
         Active = world.FirstPlayer;
         Pending = TurnPrompt();
+        asking = Asker.Game;
+        return new Resolution(world, Pending, happened);
+    }
+
+    /// <summary>Finish the active turn and find the next participating player.</summary>
+    /// <remarks>
+    /// <c>rr:player-elimination.5</c> finishes an ability after eliminating its
+    /// resolving player, while <c>rr:player-elimination.step.5</c> says that
+    /// player no longer participates. Remembering completed seats avoids
+    /// relying on the first-player token, which elimination itself may pass.
+    /// </remarks>
+    private Resolution FinishTurn(List<GameEvent> happened)
+    {
+        finishedTurns.Add(Active);
+        for (int offset = 1; offset < world.Players; offset++)
+        {
+            int player = (Active + offset) % world.Players;
+            if (!finishedTurns.Contains(player) && !world.Seats[player].Eliminated)
+            {
+                Active = player;
+                Pending = TurnPrompt();
+                asking = Asker.Game;
+                return new Resolution(world, Pending, happened);
+            }
+        }
+
+        Active = world.FirstPlayer;
+        Phase = GamePhase.EndPhase;
+        Pending = EndPhasePrompt();
         asking = Asker.Game;
         return new Resolution(world, Pending, happened);
     }

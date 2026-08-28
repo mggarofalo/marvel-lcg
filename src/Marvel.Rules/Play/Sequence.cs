@@ -95,7 +95,14 @@ public static class Sequence
                 return asking;
             }
 
-            world.Agenda.Advance(applying);
+            // A player Action advances itself before moving any suspended
+            // continuations in front of its response window. Those children
+            // share the occurrence, so advancing by identity here would move
+            // the first child instead and apply the Action a second time.
+            if (step.What != Steps.TurnAction)
+            {
+                world.Agenda.Advance(applying);
+            }
 
             if (world.IsOver)
             {

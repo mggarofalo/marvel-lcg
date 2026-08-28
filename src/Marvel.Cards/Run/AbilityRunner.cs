@@ -1316,10 +1316,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     public IReadOnlyList<GameEvent> Act(
         World world, PendingAbility ability, IReadOnlyList<int> paying,
         IReadOnlyList<int> chosen)
+        => Act(
+            world, ability, paying, chosen,
+            new Occurrence(
+                0, [Steps.TurnAction], Subject: ability.Card, Player: ability.Player));
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Act(
+        World world, PendingAbility ability, IReadOnlyList<int> paying,
+        IReadOnlyList<int> chosen, Occurrence occurrence)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(paying);
         ArgumentNullException.ThrowIfNull(chosen);
+        ArgumentNullException.ThrowIfNull(occurrence);
 
         var card = world.Cards[ability.Card];
         var found = Pending(card, ability);
@@ -1328,7 +1338,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var cast = new Cast(
             world,
             card,
-            new Occurrence(0, [Steps.TurnAction], Subject: card.ObjectId, Player: ability.Player),
+            occurrence,
             ability.Player,
             events,
             this)
@@ -2113,7 +2123,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(input);
 
         var choice = Choice(source, stoppedAt, tier);
-        var cast = Resolving(world, source, player, tier, finalStep) with
+        var continuation = world.Agenda.Current is { What: Steps.ChooseOption, Plan: true }
+            && world.Agenda.Occurrence is { } live
+            && live.Is(Steps.TurnAction)
+                ? live
+                : null;
+        var cast = Resolving(world, source, player, tier, finalStep, continuation) with
         {
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
@@ -2614,10 +2629,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <summary>A fresh resolution of one card's ability, by one player.</summary>
     private Cast Resolving(
-        World world, Card source, int player, AbilityType? tier, bool finalStep = false) =>
+        World world, Card source, int player, AbilityType? tier, bool finalStep = false,
+        Occurrence? continuation = null) =>
         new(world,
             source,
-            new Occurrence(0, [Steps.CardRevealed], Subject: source.ObjectId, Player: player),
+            continuation ?? new Occurrence(
+                0, [Steps.CardRevealed], Subject: source.ObjectId, Player: player),
             player,
             [],
             this)
@@ -3088,34 +3105,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             case "resolveSpecials":
                 if (Every(node.Require("cards"), cast).Count > 0)
                 {
-                    cast.World.Agenda.Then(new PhaseStep(
-                        Steps.ChooseOption,
-                        cast.World.Agenda.Current?.Round ?? 0,
-                        2,
-                        Index: cast.Position + 1,
-                        Subject: cast.Source.ObjectId,
-                        Seat: cast.Player,
-                        Tier: cast.Tier,
-                        FinalStep: cast.FinalStep,
-                        Trigger: cast.Trigger));
-                    cast.Suspend();
+                    SuspendForChoice(cast);
                 }
 
                 break;
 
             case "payOrExhaust":
             case "payOrEffect":
-                cast.World.Agenda.Then(new PhaseStep(
-                    Steps.ChooseOption,
-                    cast.World.Agenda.Current?.Round ?? 0,
-                    2,
-                    Index: cast.Position + 1,
-                    Subject: cast.Source.ObjectId,
-                    Seat: cast.Player,
-                    Tier: cast.Tier,
-                    FinalStep: cast.FinalStep,
-                    Trigger: cast.Trigger));
-                cast.Suspend();
+                SuspendForChoice(cast);
                 break;
 
             case "chooseTopForHand":
@@ -3125,34 +3122,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     break;
                 }
-                cast.World.Agenda.Then(new PhaseStep(
-                    Steps.ChooseOption,
-                    cast.World.Agenda.Current?.Round ?? 0,
-                    2,
-                    Index: cast.Position + 1,
-                        Subject: cast.Source.ObjectId,
-                        Seat: cast.Player,
-                        Tier: cast.Tier,
-                        FinalStep: cast.FinalStep,
-                        Trigger: cast.Trigger));
-                cast.Suspend();
+                SuspendForChoice(cast);
                 break;
 
             case "chooseDiscardToShuffle":
             case "thwartDifferentSchemes":
             case "makeTheCall":
             case "legalPractice":
-                cast.World.Agenda.Then(new PhaseStep(
-                    Steps.ChooseOption,
-                    cast.World.Agenda.Current?.Round ?? 0,
-                    2,
-                    Index: cast.Position + 1,
-                    Subject: cast.Source.ObjectId,
-                    Seat: cast.Player,
-                    Tier: cast.Tier,
-                    FinalStep: cast.FinalStep,
-                    Trigger: cast.Trigger));
-                cast.Suspend();
+                SuspendForChoice(cast);
                 break;
 
             case "afterActivation":
@@ -4400,10 +4377,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "guard the choice with `exists`");
         }
 
+        SuspendForChoice(cast);
+    }
+
+    /// <summary>Suspend an ability for one persisted player choice.</summary>
+    private static void SuspendForChoice(Cast cast)
+    {
         // `Index` is where to pick the ability up: the step *after* this
         // choice in the top-level sequence. A choice that is the whole effect
         // has nothing after it and resumes at one, which runs nothing.
-        cast.World.Agenda.Then(new PhaseStep(
+        var continuation = new PhaseStep(
             Steps.ChooseOption,
             cast.World.Agenda.Current?.Round ?? 0,
             2,
@@ -4415,7 +4398,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // and the card and the position do not say which -- see `Choice`.
             Tier: cast.Tier,
             FinalStep: cast.FinalStep,
-            Trigger: cast.Trigger));
+            Trigger: cast.Trigger);
+        if (cast.Occurrence.Is(Steps.TurnAction))
+        {
+            cast.World.Agenda.ThenContinuation(continuation, cast.Occurrence);
+        }
+        else
+        {
+            cast.World.Agenda.Then(continuation);
+        }
 
         cast.Suspend();
     }
@@ -4493,21 +4484,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
 
-        cast.World.Agenda.Then(new PhaseStep(
-            Steps.ChooseOption,
-            cast.World.Agenda.Current?.Round ?? 0,
-            2,
-            Index: cast.Position + 1,
-            Subject: cast.Source.ObjectId,
-            Seat: cast.Player,
-
-            // Which ability stopped. A card can have a choice in two of them,
-            // and the card and the position do not say which -- see `Choice`.
-            Tier: cast.Tier,
-            FinalStep: cast.FinalStep,
-            Trigger: cast.Trigger));
-
-        cast.Suspend();
+        SuspendForChoice(cast);
     }
 
     /// <summary>The characters indirect damage may be assigned to.</summary>

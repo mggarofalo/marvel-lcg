@@ -93,12 +93,17 @@ public enum Stage
 /// </param>
 /// <param name="CharacterAttack">The complete queued player attack, when this step is one.</param>
 /// <param name="CharacterThwart">The complete queued player thwart, when this step is one.</param>
+/// <param name="PlayerAction">The accepted action and its payment choices, when this step is one.</param>
+/// <param name="OccurrenceId">
+/// A dynamically allocated occurrence id, or null when round/number/index name it.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
     ThreatPlacement? Placement = null, int ActivationId = -1, bool FinalStep = false,
     bool FinalPlayer = false, bool EachPlayerFrame = false, string Trigger = "",
-    CharacterAttack? CharacterAttack = null, CharacterThwart? CharacterThwart = null)
+    CharacterAttack? CharacterAttack = null, CharacterThwart? CharacterThwart = null,
+    PlayerAction? PlayerAction = null, int? OccurrenceId = null)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -116,7 +121,7 @@ public readonly record struct PhaseStep(
     /// </remarks>
     public Occurrence OccurrenceOf(World world, ICardFacts facts)
     {
-        int id = Moment.Id(Round, Number, Index);
+        int id = OccurrenceId ?? Moment.Id(Round, Number, Index);
 
         return What switch
         {
@@ -236,8 +241,21 @@ public readonly record struct PhaseStep(
         Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
             or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
             ? null
-            : new Occurrence(Moment.Id(Round, Number, Index), Conditions, Subject, Seat);
+            : new Occurrence(
+                OccurrenceId ?? Moment.Id(Round, Number, Index), Conditions, Subject, Seat);
 }
+
+/// <summary>An accepted player Action, stored as data until its agenda step applies.</summary>
+/// <remarks>
+/// The rules do not define an engine command format. Keeping the reconstructable
+/// ability address and copied input lists here is the engine's choice, and lets
+/// an action survive a suspended interrupt window without retaining a call stack,
+/// effect tree or session affordance handle.
+/// </remarks>
+public sealed record PlayerAction(
+    PendingAbility Ability,
+    IReadOnlyList<int> Paying,
+    IReadOnlyList<int> Chosen);
 
 /// <summary>
 /// What the game still has to do, and where in it the game is.
@@ -268,6 +286,7 @@ public sealed class Agenda
     private readonly Dictionary<int, List<int>> queuedAfterActivation = [];
     private int scheduled;
     private int nextActivationId;
+    private int nextPlayerActionOccurrence = -1;
 
     /// <summary>Whether the game is part-way through anything.</summary>
     public bool IsBusy => items.Count > 0;
@@ -345,6 +364,51 @@ public sealed class Agenda
         items.Add((step, Stage.Interrupts, step.ScheduledOccurrence));
     }
 
+    /// <summary>Schedule one accepted Action with a game-unique dynamic occurrence id.</summary>
+    public void AddPlayerAction(int round, PlayerAction action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        Add(new PhaseStep(
+            Steps.TurnAction,
+            round,
+            Number: 0,
+            Subject: action.Ability.Card,
+            Seat: action.Ability.Player,
+            PlayerAction: action,
+            OccurrenceId: nextPlayerActionOccurrence--));
+    }
+
+    /// <summary>
+    /// Move work scheduled by the applying occurrence ahead of its response window.
+    /// </summary>
+    /// <remarks>
+    /// An Action is not complete while an effect it scheduled still needs an
+    /// answer. <see cref="Then"/> normally places child work after the current
+    /// occurrence; an Action calls this after its Apply body so those children
+    /// resolve before the Action reaches Responses. Work inserted with
+    /// <see cref="Now(PhaseStep)"/> or <see cref="Before"/> is already ahead.
+    /// </remarks>
+    public void BeforeResponses(Occurrence occurrence)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        if (scheduled == 0)
+        {
+            return;
+        }
+
+        int parent = items.FindIndex(item => ReferenceEquals(item.Occurrence, occurrence));
+        if (parent < 0)
+        {
+            throw new InvalidOperationException("the occurrence is not on the agenda");
+        }
+
+        int count = Math.Min(scheduled, items.Count - parent - 1);
+        var children = items.GetRange(parent + 1, count);
+        items.RemoveRange(parent + 1, count);
+        items.InsertRange(parent, children);
+        scheduled = 0;
+    }
+
     /// <summary>
     /// Schedule a step to be taken as soon as the current one is finished with.
     /// </summary>
@@ -367,6 +431,22 @@ public sealed class Agenda
         items.Insert(
             Math.Min(scheduled, items.Count),
             (step, Stage.Interrupts, step.ScheduledOccurrence));
+    }
+
+    /// <summary>Schedule a suspended ability continuation inside its occurrence.</summary>
+    /// <remarks>
+    /// A choice is an implementation suspension point, not a second game
+    /// occurrence. The continuation therefore asks during <paramref name="occurrence"/>
+    /// and opens no windows of its own; the owning occurrence reaches its one
+    /// response window only after the continuation finishes.
+    /// </remarks>
+    public void ThenContinuation(PhaseStep step, Occurrence occurrence)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        scheduled += 1;
+        items.Insert(
+            Math.Min(scheduled, items.Count),
+            (step with { Plan = true, OccurrenceId = occurrence.Id }, Stage.Apply, occurrence));
     }
 
     /// <summary>Schedule one complete enemy activation and return its stable id.</summary>
@@ -951,10 +1031,10 @@ public static class Steps
     /// <c>rr:player-turn.5</c>.
     /// </summary>
     /// <remarks>
-    /// A condition rather than a step: an action is not scheduled, it is one of
-    /// the six things a turn offers and it happens when the player says so. It
-    /// is here so that a card can answer "after a player triggers an action",
-    /// and so that <see cref="EveryCondition"/> knows the name.
+    /// The player chooses it directly rather than from a timing window. Once
+    /// chosen it is an agenda step, because <c>rr:ability</c> puts interrupt and
+    /// response windows around the occurrence and its costs and effects must
+    /// remain resumable between them.
     /// </remarks>
     public const string TurnAction = "WhenActionTriggered";
 

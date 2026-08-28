@@ -274,6 +274,14 @@ public interface ICardAbilities : IWindowAbilities
         IReadOnlyList<int> paying,
         IReadOnlyList<int> chosen);
 
+    /// <summary>Resolves an accepted Action inside its live agenda occurrence.</summary>
+    IReadOnlyList<GameEvent> Act(
+        World world,
+        PendingAbility ability,
+        IReadOnlyList<int> paying,
+        IReadOnlyList<int> chosen,
+        Occurrence occurrence) => Act(world, ability, paying, chosen);
+
     /// <summary>
     /// Resolves the <b>Special</b> ability on a card named by another ability —
     /// <c>rr:special</c>.
@@ -843,6 +851,37 @@ public static class VillainPhase
             case Steps.ResolveSpecial:
                 events.AddRange(abilities.ResolveSpecial(
                     world, world.Cards[step.Subject], step.Seat, step.FinalStep));
+                break;
+
+            case Steps.TurnAction:
+                if (step.PlayerAction is not { } action)
+                {
+                    throw new InvalidOperationException(
+                        "a player Action agenda step has no accepted action");
+                }
+
+                var occurrence = world.Agenda.Occurrence
+                    ?? throw new InvalidOperationException(
+                        "an applying player Action has no occurrence");
+                try
+                {
+                    events.AddRange(abilities.Act(
+                        world, action.Ability, action.Paying, action.Chosen, occurrence));
+                }
+                catch
+                {
+                    // A refused command must not become permanent agenda work.
+                    // The engine chooses its command failure semantics; they
+                    // match the former direct Action path, whose failed input
+                    // left the open turn prompt retryable.
+                    world.Agenda.Cancel(occurrence);
+                    throw;
+                }
+                // Advance the owner while it is still first. Continuations
+                // intentionally share its occurrence, so moving them ahead
+                // first would make identity-based advancement select a child.
+                world.Agenda.Advance(occurrence);
+                world.Agenda.BeforeResponses(occurrence);
                 break;
 
             case Steps.ChooseOption:
