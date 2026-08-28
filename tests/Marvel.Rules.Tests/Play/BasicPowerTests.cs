@@ -548,6 +548,10 @@ public sealed class BasicPowerTests
         var printed = new Printed().With("hero", ("ATK", "9")).With("villain", ("HP", "5"));
         var world = Board(printed);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var attachment = world.CreateCard(
+            "upgrade",
+            world.AreaOf(
+                DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId));
 
         BasicPowers.BasicAttack(world, printed, 0, villain, []);
 
@@ -555,6 +559,7 @@ public sealed class BasicPowerTests
 
         Assert.Equal(Outcome.PlayersWin, world.Result);
         Assert.True(world.IsOver);
+        Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
     }
 
     [Fact]
