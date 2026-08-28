@@ -196,6 +196,10 @@ public sealed class SpiderManCardsTests
 
         Assert.Equal(0, runner.WouldBeDealt(world, hero, hero, 7, []));
         Assert.Equal(DeckType.DiscardPile, backflip.Area.Type);
+        Assert.Equal(Steps.EventPlayed, world.Agenda.Current!.Value.What);
+        Assert.Equal(backflip.ObjectId, world.Agenda.Occurrence!.Subject);
+        Assert.True(world.Agenda.Occurrence.Is(Steps.CardPlayed));
+        Assert.False(world.Agenda.Occurrence.Is(Steps.DamageWouldBeDealt));
     }
 
     [Rule("rr:cancel.4")]

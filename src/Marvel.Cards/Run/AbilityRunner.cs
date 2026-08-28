@@ -1832,11 +1832,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // event is played and its effect resolves. The action's persistent
         // occurrence owns the response window after that effect, so add the
         // condition here rather than creating an earlier separate window.
-        cast.Occurrence.Also(Steps.CardPlayed);
+        if (cast.Occurrence.Is(Steps.TurnAction))
+        {
+            cast.Occurrence.Also(Steps.CardPlayed);
+        }
     }
 
     private static void DiscardEvent(Card card, Cast cast)
     {
+        bool playedInWindow = !cast.Suspended
+            && cast.World.Facts.Kind(card.FaceId) == CardKind.Event
+            && card.Area.Type == DeckType.RevealingArea
+            && card.Area.PlayArea == PlayArea.Of(card.Owner)
+            && !cast.Occurrence.Is(Steps.TurnAction);
         if (!cast.Suspended
             && cast.World.Facts.Kind(card.FaceId) == CardKind.Event
             && card.Area.Type == DeckType.RevealingArea
@@ -1848,6 +1856,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 && effect.Kind.StartsWith("paid:", StringComparison.Ordinal)).ToList())
             {
                 cast.World.Effects.Use(payment);
+            }
+
+            if (playedInWindow)
+            {
+                cast.World.Agenda.NowEventPlayed(
+                    cast.World.Agenda.Current?.Round ?? 0,
+                    card.ObjectId,
+                    cast.Player);
             }
         }
     }

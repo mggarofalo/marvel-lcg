@@ -682,6 +682,7 @@ public sealed class AttackTests
         Assert.Equal(DeckType.VillainArea, villain.Area.Type);
         Assert.False(abilities.SawBoostCardsFlipped);
         Assert.False(abilities.SawDamageWouldBeDealt);
+        Assert.True(abilities.SawAttackEnds);
     }
 
     [Rule("rr:attack-enemy-activation")]
@@ -781,6 +782,7 @@ public sealed class AttackTests
         public bool SawDamageWouldBeDealt { get; private set; }
         public bool SawDamageDealt { get; private set; }
         public bool SawBoostCardsFlipped { get; private set; }
+        public bool SawAttackEnds { get; private set; }
         public int AttackInitiationInterrupts { get; private set; }
         public int AttackInitiationResponses { get; private set; }
         public List<EnemyActivation> CompletedActivations { get; } = [];
@@ -805,6 +807,7 @@ public sealed class AttackTests
             SawDamageDealt |= window == WindowKind.Response
                 && occurrence.Is(Steps.DamageDealt);
             SawBoostCardsFlipped |= occurrence.Is("WhenBoostCardsFlipped");
+            SawAttackEnds |= occurrence.Is(Steps.AttackEnds);
             return [];
         }
 

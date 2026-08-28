@@ -790,6 +790,10 @@ public static class VillainPhase
                 SchemeThreat(world, facts, abilities, step, events);
                 break;
 
+            case Steps.EndSchemeEarly:
+                EndSchemeEarly(world);
+                break;
+
             case Steps.Attack:
                 Attack.Initiate(world, facts, step, events);
                 break;
@@ -932,6 +936,7 @@ public static class VillainPhase
             // the step was scheduled, so occurrence tier has nothing further
             // to mutate.
             case Steps.CardPlayed:
+            case Steps.EventPlayed:
             case Steps.CardEntersPlay:
             case Steps.FormChanged:
                 break;
@@ -1313,6 +1318,14 @@ public static class VillainPhase
             world.FinishedActivation = activation with { ThreatPlaced = placed };
             world.Activation = null;
         }
+    }
+
+    /// <summary>Ends a scheme without placing threat when its minion left play.</summary>
+    private static void EndSchemeEarly(World world)
+    {
+        world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.FinishedActivation = world.Activation;
+        world.Activation = null;
     }
 
     /// <summary>Step 3. One encounter card to each player, in player order.</summary>

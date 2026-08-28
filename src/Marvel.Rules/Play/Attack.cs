@@ -746,22 +746,6 @@ public static class Attack
         Finish(world, events);
     }
 
-    /// <summary>Ends an activation before another window opens when its minion left play.</summary>
-    public static bool EndIfEnemyLeftPlay(World world, List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(events);
-        if (world.Attack is null || !Over(world))
-        {
-            return false;
-        }
-
-        int activationId = world.Activation?.Id ?? -1;
-        world.Agenda.EndActivationEarly(activationId, preserveCurrentOccurrence: false);
-        Finish(world, events);
-        return true;
-    }
-
     private static void Finish(World world, List<GameEvent> events)
     {
         world.Effects.Expire(TimingPoints.EndOfAttack);

@@ -440,6 +440,16 @@ public sealed class Agenda
             OccurrenceId: nextPlayerActionOccurrence--));
     }
 
+    /// <summary>Open the lifecycle occurrence for an event played inside another window.</summary>
+    public void NowEventPlayed(int round, int subject, int player) =>
+        Now(new PhaseStep(
+            Steps.EventPlayed,
+            round,
+            Number: 0,
+            Subject: subject,
+            Seat: player,
+            OccurrenceId: nextPlayerActionOccurrence--));
+
     /// <summary>
     /// Move work scheduled by the applying occurrence ahead of its response window.
     /// </summary>
@@ -833,6 +843,9 @@ public static class Steps
     /// <summary>The parallel completion sentinel for a scheme activation.</summary>
     public const string CompleteSchemeActivation = "CompleteSchemeActivation";
 
+    /// <summary>An early scheme end after its activating minion leaves play.</summary>
+    public const string EndSchemeEarly = "EndSchemeEarly";
+
     /// <summary>
     /// Damage step 8, after nested step-7 abilities and before the original
     /// occurrence's response window.
@@ -1156,6 +1169,13 @@ public static class Steps
     /// <summary>A player card has finished entering play.</summary>
     public const string CardPlayed = "WhenCardPlayed";
 
+    /// <summary>
+    /// An event played inside another timing window. This engine step separates
+    /// its nested response boundary from <see cref="CardPlayed"/>, whose
+    /// ordinary non-event card also enters play at the same moment.
+    /// </summary>
+    public const string EventPlayed = "EventPlayed";
+
     /// <summary>Choose an ally to discard after exceeding the ally limit.</summary>
     public const string ChooseAllyForLimit = "ChooseAllyForLimit";
 
@@ -1226,6 +1246,7 @@ public static class Steps
         [Attack] = [EnemyActivates, AttackInitiated],
         [Scheme] = [EnemyActivates, EnemySchemes],
         [SchemeThreat] = [ThreatWouldBePlaced],
+        [EndSchemeEarly] = [SchemeEnds],
         [GiveBoostCard] = ["WhenBoostCardGiven"],
         [DeclareDefender] = ["WhenDefenderDeclared"],
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],
@@ -1249,6 +1270,7 @@ public static class Steps
         // occurrence that creates several triggering conditions one pair of
         // windows rather than one pair per description of the moment.
         [CardPlayed] = [CardPlayed, CardEntersPlay],
+        [EventPlayed] = [CardPlayed],
         [CardEntersPlay] = [CardEntersPlay],
         [FormChanged] = [FormChanged],
         [ChooseOption] = ["WhenOptionChosen"],
