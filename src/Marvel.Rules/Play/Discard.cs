@@ -101,5 +101,13 @@ public static class Discard
                 Trigger = trigger, Verb = "Discard",
             });
         }
+
+        // A support such as The Triskelion can leave play and reduce a
+        // player's modified ally limit. `rr:ally-limit` applies whenever the
+        // count is over the live limit, not only when the latest ally entered.
+        foreach (int player in world.PlayerOrder)
+        {
+            CardPlay.CheckAllyLimit(world, world.Facts, player);
+        }
     }
 }

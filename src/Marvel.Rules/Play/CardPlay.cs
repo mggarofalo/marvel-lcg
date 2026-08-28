@@ -809,13 +809,22 @@ public static class CardPlay
             return;
         }
 
+        CheckAllyLimit(world, facts, seat.Index, played.ObjectId);
+    }
+
+    /// <summary>Schedule the mandatory choice when a player exceeds their ally limit.</summary>
+    internal static void CheckAllyLimit(
+        World world, ICardFacts facts, int player, int subject = -1)
+    {
+        var seat = world.Seats[player];
         long limit = StateFields.Modified(
             world, seat.IdentityCard, "ally_limit", facts, world.Players);
         int controlled = world.Areas
             .Where(area => area.Type == DeckType.AlliesArea
-                && area.PlayArea == PlayArea.Of(seat.Index))
+                && area.PlayArea == PlayArea.Of(player))
             .Sum(area => area.Cards.Count);
-        if (controlled <= limit)
+        if (controlled <= limit || world.Agenda.Outstanding.Any(step =>
+                step.What == Steps.ChooseAllyForLimit && step.Seat == player))
         {
             return;
         }
@@ -828,8 +837,8 @@ public static class CardPlay
             Steps.ChooseAllyForLimit,
             world.Agenda.Current?.Round ?? 0,
             0,
-            Subject: played.ObjectId,
-            Seat: seat.Index,
+            Subject: subject,
+            Seat: player,
             Plan: true));
     }
 

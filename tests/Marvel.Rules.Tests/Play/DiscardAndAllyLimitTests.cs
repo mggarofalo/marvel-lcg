@@ -186,6 +186,39 @@ public sealed class DiscardAndAllyLimitTests
         Assert.Equal(DeckType.AlliesArea, fourth.Area.Type);
     }
 
+    [Rule("rr:ally-limit")]
+    [Fact]
+    public void LosingAnAllyLimitModifierRequiresAnImmediateChoice()
+    {
+        // "If a player ever controls a number of allies greater than their
+        // ally limit" includes the limit falling while four allies remain.
+        var facts = new Facts();
+        var world = Board(facts);
+        var seat = world.Seats[0];
+        var allies = world.AreaOf(
+            DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+        for (int count = 0; count < 4; count++)
+        {
+            world.CreateCard("ally", allies);
+        }
+        var support = world.CreateCard(
+            "support",
+            world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.ConstantAbility,
+            "ally_limit",
+            Amount: 1,
+            Card: support.ObjectId,
+            Affects: seat.IdentityCard.ObjectId,
+            Lasts: Duration.WhileInPlay));
+
+        Discard.Card(world, support, "test", []);
+
+        var choice = Assert.Single(world.Agenda.Outstanding);
+        Assert.Equal(Steps.ChooseAllyForLimit, choice.What);
+        Assert.Equal(0, choice.Seat);
+    }
+
     private static World Board(Facts facts)
     {
         var world = new World(facts, players: 1);
