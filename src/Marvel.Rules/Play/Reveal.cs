@@ -126,8 +126,10 @@ public static class Reveal
         }
 
         // `rr:surge`: "the player resolving the card deals themself a facedown
-        // encounter card from the top of the encounter deck."
-        if (facts.PrintedValue(card.FaceId, "Surge", world.Players) > 0)
+        // encounter card from the top of the encounter deck." `rr:keywords.1`
+        // makes additional non-numeric instances inert, so printed and gained
+        // surge are read together and the one ability fires once when present.
+        if (StateFields.Modified(world, card, "surge", facts, world.Players) > 0)
         {
             Deal.EncounterCard(world, player, "surge", events);
         }

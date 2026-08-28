@@ -187,6 +187,44 @@ public sealed class KeywordTests
         Assert.Equal(["next"], queue.Cards.Select(dealt => dealt.FaceId));
     }
 
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Theory]
+    [InlineData(0, 2)]
+    [InlineData(1, 2)]
+    public void AdditionalSurgeInstancesHaveNoEffect(int printedSurge, int gainedSurge)
+    {
+        // "If a card gains multiple instances of a keyword, any additional
+        // instances have no effect unless that keyword is followed by a
+        // number." Surge has no number: whether both instances were gained or
+        // one was printed, the card has one When Revealed ability and deals
+        // exactly one additional encounter card.
+        var printed = new Printed().With(
+            "treachery", ("Surge", printedSurge.ToString()));
+        var world = Board(printed);
+        var card = world.CreateCard(
+            "treachery", world.AreaOf(DeckType.RevealingArea));
+        for (int instance = 0; instance < gainedSurge; instance++)
+        {
+            world.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: "surge",
+                Amount: 1,
+                Affects: card.ObjectId));
+        }
+
+        world.CreateCard("after", world.AreaOf(DeckType.EncounterDeck));
+        world.CreateCard("next", world.AreaOf(DeckType.EncounterDeck));
+
+        Reveal.Keywords(world, printed, new NoCardAbilities(), card, 0, []);
+
+        var queue = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0));
+        Assert.Equal(["next"], queue.Cards.Select(dealt => dealt.FaceId));
+        Assert.Equal(
+            ["after"],
+            world.AreaOf(DeckType.EncounterDeck).Cards.Select(next => next.FaceId));
+    }
+
     [Rule("rr:hinder-x")]
     [Fact]
     public void HinderXPutsThreatOnTheCardItself()
@@ -242,20 +280,28 @@ public sealed class KeywordTests
         Assert.Equal(where, card.Area.Type);
     }
 
+    [Rule("rr:keywords.1")]
     [Rule("rr:retaliate-x")]
     [Rule("rr:attack-player-ability-type.5.1")]
     [Fact]
-    public void RetaliateHitsTheAttackerBack()
+    public void NumberedRetaliateInstancesAddTogether()
     {
-        // "**Forced Response**: after this character is attacked, deal X damage
-        // to the attacker."
+        // "If a card gains multiple instances of a keyword [...] followed by a
+        // number [...] the numbers for each instance are added together." The
+        // printed Retaliate 1 and gained Retaliate 2 deal three damage through
+        // the keyword's one Forced Response.
         var printed = new Printed()
             .With("hero", ("ATK", "2"), ("HP", "10"))
-            .With("minion", ("HP", "9"), ("Retaliate", "3"));
+            .With("minion", ("HP", "9"), ("Retaliate", "1"));
         var world = Board(printed);
         world.Seats[0].IdentityCard.TurnTo("hero");
         var minion = world.CreateCard(
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "retaliate",
+            Amount: 2,
+            Affects: minion.ObjectId));
 
         BasicPowers.BasicAttack(world, printed, 0, minion, []);
 
