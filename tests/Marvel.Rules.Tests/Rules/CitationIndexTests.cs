@@ -26,9 +26,6 @@ public sealed class CitationIndexTests
                     "/*",
                     example,
                     "*/",
-                    "#if false",
-                    example,
-                    "#endif",
                     "string interpolation = $@\"",
                     "{ '\"' }",
                     example,
@@ -56,6 +53,45 @@ public sealed class CitationIndexTests
                     new Cited("rr:noted-citation", "ExampleTests.cs"),
                 ],
                 Citations.Read(root, root));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData("true")]
+    [InlineData("NET8_0")]
+    public void ConditionalCitationsAreRefused(string condition)
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(),
+            $"marvel-rules-index-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+
+        try
+        {
+            string attribute = "[Rule(\"rr:conditional-citation\")]";
+            File.WriteAllLines(
+                Path.Combine(root, "ConditionalTests.cs"),
+                [
+                    "public sealed class ConditionalTests",
+                    "{",
+                    $"#if {condition}",
+                    $"    {attribute}",
+                    "    [Fact]",
+                    "    public void Example() { }",
+                    "#endif",
+                    "}",
+                ]);
+
+            var error = Assert.Throws<InvalidOperationException>(
+                () => Citations.Read(root, root));
+            Assert.Equal(
+                "ConditionalTests.cs contains a conditional Rule attribute; citations must "
+                + "apply in every build configuration",
+                error.Message);
         }
         finally
         {

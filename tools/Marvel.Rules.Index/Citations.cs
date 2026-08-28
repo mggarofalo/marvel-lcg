@@ -22,8 +22,8 @@ internal readonly record struct Cited(string Id, string Site);
 /// <b>The source and not the assemblies.</b> Reflection would be the more
 /// precise answer and needs the suite built first, which makes a report of what
 /// has been written depend on whether it currently compiles. The attribute is a
-/// literal string on a line of its own in every use, so a reader over the text
-/// answers the same question with nothing in the way.
+/// literal string in every use, so parsing the source answers the same question
+/// without counting examples in comments or strings.
 /// </para>
 /// <para>
 /// <b>It does not validate.</b> A citation naming no rule is a build failure —
@@ -53,10 +53,21 @@ internal static class Citations
                 .Replace(Path.DirectorySeparatorChar, '/');
 
             var rootNode = CSharpSyntaxTree.ParseText(File.ReadAllText(file)).GetRoot();
-            foreach (var attribute in rootNode
-                .DescendantNodes()
-                .OfType<AttributeSyntax>()
-                .Where(candidate => candidate.Name.ToString() == "Rule"))
+            var attributes = RuleAttributes(rootNode).ToArray();
+            bool conditional = attributes.Any(attribute => IsConditional(rootNode, attribute))
+                || rootNode
+                .DescendantTrivia(descendIntoTrivia: true)
+                .Where(trivia => trivia.IsKind(SyntaxKind.DisabledTextTrivia))
+                .Select(trivia => CSharpSyntaxTree.ParseText(trivia.ToFullString()).GetRoot())
+                .Any(disabled => RuleAttributes(disabled).Any());
+            if (conditional)
+            {
+                throw new InvalidOperationException(
+                    $"{site} contains a conditional Rule attribute; citations must apply "
+                    + "in every build configuration");
+            }
+
+            foreach (var attribute in attributes)
             {
                 if (attribute.ArgumentList?.Arguments.FirstOrDefault()?.Expression
                     is LiteralExpressionSyntax literal
@@ -68,5 +79,34 @@ internal static class Citations
         }
 
         return found;
+    }
+
+    private static IEnumerable<AttributeSyntax> RuleAttributes(SyntaxNode root) =>
+        root.DescendantNodes()
+            .OfType<AttributeSyntax>()
+            .Where(candidate => candidate.Name.ToString() == "Rule");
+
+    private static bool IsConditional(SyntaxNode root, AttributeSyntax attribute)
+    {
+        int depth = 0;
+        foreach (var directive in root
+            .DescendantTrivia(descendIntoTrivia: true)
+            .Where(trivia => trivia.HasStructure)
+            .Select(trivia => trivia.GetStructure())
+            .OfType<DirectiveTriviaSyntax>()
+            .Where(directive => directive.SpanStart < attribute.SpanStart)
+            .OrderBy(directive => directive.SpanStart))
+        {
+            if (directive.IsKind(SyntaxKind.IfDirectiveTrivia))
+            {
+                depth++;
+            }
+            else if (directive.IsKind(SyntaxKind.EndIfDirectiveTrivia))
+            {
+                depth--;
+            }
+        }
+
+        return depth > 0;
     }
 }
