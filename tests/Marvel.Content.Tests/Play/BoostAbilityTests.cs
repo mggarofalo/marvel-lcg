@@ -75,6 +75,30 @@ public sealed class BoostAbilityTests
         Assert.Contains(unauthoredBoost, thrown.Message, StringComparison.Ordinal);
     }
 
+    [Rule("rr:star-icon.6")]
+    [Fact]
+    public void ABoostStarIsCheckedWhenTheCardFlipsDuringAnActivation()
+    {
+        // "Whenever that card is turned face up as a boost card during the
+        // villain's activation," the star reminds the engine to check its text
+        // box. An unauthored printed ability must therefore stop the activation
+        // at the flip rather than silently behaving like ordinary boost icons.
+        const string unauthoredBoost = "02007";
+        var world = Deal();
+        var card = world.CreateCard(
+            unauthoredBoost, world.AreaOf(DeckType.EncounterDeck));
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        VillainPhase.Schedule(world.Agenda, round: 1);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => Sequence.Finish(world, Cards, runner, []));
+
+        Assert.Contains(unauthoredBoost, thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.BoostingArea, card.Area.Type);
+        Assert.True(card.FaceUp);
+    }
+
     [Fact]
     public void ACardWithoutOneResolvesInSilence()
     {
@@ -90,7 +114,9 @@ public sealed class BoostAbilityTests
     [Fact]
     public void AWrittenBoostAbilityRuns()
     {
-        // Authored inline rather than in the dataset, because the card this
+        // A star in an encounter card's boost field is the reminder to check
+        // its text whenever it turns faceup as a boost card. Authored inline
+        // rather than in the dataset, because the card this
         // uses needs a shape the interpreter has not got yet -- "if this
         // activation deals damage to a character, stun that character". What is
         // under test is the tier and the wiring, not the card.

@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 520 |
+| Executable and cited | 523 |
 | Covered by a narrower rule | 50 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 39 |
 | Outside the supported product boundary | 68 |
-| Unimplemented behavior | 419 |
+| Unimplemented behavior | 416 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -80,13 +80,13 @@ items.
 | `rr:acceleration-icon` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-icon.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-icon.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:acceleration-icon.3` | Unimplemented behavior | MARVEL-282 | The remaining icon batch owns effects that distinguish acceleration icons from tokens. |
+| `rr:acceleration-icon.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-token` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:acceleration-token.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-token.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-token.2.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-token.3` | Unimplemented behavior | MARVEL-271 | The lifecycle implementation owns clearing a non-main-scheme card's hosted acceleration token when it leaves play. |
-| `rr:acceleration-token.4` | Unimplemented behavior | MARVEL-282 | The remaining icon batch owns effects that distinguish acceleration tokens from icons. |
+| `rr:acceleration-token.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:action` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:action.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:action.1.1` | Unimplemented behavior | MARVEL-283 | Other players' obligations must be excluded from action offering. |
@@ -1011,12 +1011,12 @@ items.
 | `rr:standard-set.1` | Outside the supported product boundary | MARVEL-272 | Selecting or rejecting fixed encounter sets as modular choices needs product-level set validation. |
 | `rr:standard-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:star-icon` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:star-icon.1` | Unimplemented behavior | MARVEL-282 | The remaining icon batch owns mandatory enemy stat-text checks. |
+| `rr:star-icon.1` | Unimplemented behavior | MARVEL-284 | Combat timing must initiate or reject mandatory enemy text whenever a starred ATK or SCH value is used. |
 | `rr:star-icon.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:star-icon.3` | Unimplemented behavior | MARVEL-282 | The remaining icon batch owns mandatory ally stat-text checks. |
-| `rr:star-icon.4` | Unimplemented behavior | MARVEL-282 | The remaining icon batch owns mandatory identity stat-text checks. |
-| `rr:star-icon.5` | Unimplemented behavior | MARVEL-282 | The remaining icon batch owns undefined star-valued powers. |
-| `rr:star-icon.6` | Unimplemented behavior | MARVEL-282 | The remaining icon batch owns the boost-field reminder's end-to-end proof. |
+| `rr:star-icon.3` | Unimplemented behavior | MARVEL-284 | Combat timing must initiate an ally's mandatory text whenever its starred ATK or THW value is used. |
+| `rr:star-icon.4` | Unimplemented behavior | MARVEL-284 | Basic-power timing must initiate an identity's mandatory text whenever its starred power is used. |
+| `rr:star-icon.5` | Unimplemented behavior | MARVEL-268 | Variable-value handling owns star-valued powers and their defined-or-zero result. |
+| `rr:star-icon.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:status-cards` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:status-cards.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:status-cards.1.1` | Executable and cited | — | A behavior test directly cites this record. |
