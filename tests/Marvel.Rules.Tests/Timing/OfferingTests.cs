@@ -1,4 +1,5 @@
 using Marvel.Rules.Events;
+using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
@@ -118,8 +119,9 @@ public sealed class OfferingTests
         var cards = new Cards(
             new PendingAbility(5, AbilityType.ForcedInterrupt, 0),
             new PendingAbility(6, AbilityType.ForcedInterrupt, 1));
+        var occurrence = Moment();
 
-        var prompt = Offering.Work(world, cards, Moment(), WindowKind.Interrupt, []);
+        var prompt = Offering.Work(world, cards, occurrence, WindowKind.Interrupt, []);
 
         Assert.NotNull(prompt);
         Assert.Equal(Question.Order, prompt.Asking);
@@ -127,6 +129,11 @@ public sealed class OfferingTests
         Assert.False(prompt.Cancellable);
         Assert.Equal(2, prompt.Affordances.Count);
         Assert.Empty(cards.Resolved);
+
+        Sequence.Answer(
+            world, new Facts(), cards, prompt, Decision.Take(6), []);
+
+        Assert.Equal([6], cards.Resolved);
     }
 
     [Rule("rr:interrupt.1")]
@@ -277,7 +284,7 @@ public sealed class OfferingTests
     }
 
     /// <summary>A fixed set of waiting abilities, and a record of what resolved.</summary>
-    private sealed class Cards(params PendingAbility[] abilities) : IWindowAbilities
+    private sealed class Cards(params PendingAbility[] abilities) : NoCardAbilities
     {
         private readonly List<PendingAbility> waiting = [.. abilities];
 
@@ -288,11 +295,11 @@ public sealed class OfferingTests
 
         public void Add(PendingAbility ability) => waiting.Add(ability);
 
-        public IReadOnlyList<PendingAbility> Waiting(
+        public override IReadOnlyList<PendingAbility> Waiting(
             World world, Occurrence occurrence, WindowKind window) =>
             [.. waiting.Where(ability => ability.Card != WithdrawnCard)];
 
-        public IReadOnlyList<GameEvent> Resolve(
+        public override IReadOnlyList<GameEvent> Resolve(
             World world, Occurrence occurrence, PendingAbility ability,
             IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
         {
@@ -300,7 +307,7 @@ public sealed class OfferingTests
             return [new CardsFlipped([ability.Card], true) { Trigger = "test" }];
         }
 
-        public Affordance Describe(World world, PendingAbility ability) =>
+        public override Affordance Describe(World world, PendingAbility ability) =>
             new(ability.Card, "Use", ability.Card, ability.Player, $"ability {ability.Card}");
 
         private int? WithdrawnCard => Resolved.Count > 0 ? Withdraw : null;

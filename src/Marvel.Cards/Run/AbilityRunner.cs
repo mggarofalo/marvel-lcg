@@ -382,49 +382,68 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             for (int index = 0; index < written.Count; index++)
             {
                 var ability = written[index];
-                if (!Answers(world, ability, card, occurrence, window))
+                IEnumerable<int> players;
+                if (!ability.AnyPlayer)
                 {
-                    continue;
+                    players = [Controller(world, ability, card, occurrence)];
                 }
-
-                int controller = Controller(world, ability, card, occurrence);
-
-                // `rr:initiating-abilities.step.2` -- "if the card or ability
-                // has a form requirement (for example, 'Hero form only' or
-                // 'Hero Action'), the form of the player playing that card or
-                // initiating that ability is checked now." Step 2 is about any
-                // ability, not only an action: Prelate Armor prints a *Hero
-                // Response*, and an alter-ego cannot initiate one.
-                if (!InForm(world, controller, ability.Trigger.Form, card))
+                else if (ability.Trigger.Player == AbilityPlayers.TriggerPlayer
+                    && occurrence.Player >= 0)
                 {
-                    continue;
+                    // The permission is broad, but the trigger is not:
+                    // trigger.player is the seat the occurrence happened to.
+                    players = [occurrence.Player];
                 }
-
-                var eligibility = new Cast(
-                    world, card, occurrence, controller, [], this);
-                if ((ability.When is not null && !Test(ability.When, eligibility))
-                    || (HasLabelledPower(ability.Effect)
-                        && !CanInitiate(ability.Effect, eligibility)))
+                else
                 {
-                    continue;
+                    players = world.PlayerOrder;
                 }
-
-                // `rr:initiating-abilities.step.3` -- the cost and "the
-                // player's ability to pay them" are one step, and only "if both
-                // conditions are met" do the later steps happen. So an ability
-                // nobody can pay for is not an offer that fails at step 5; it
-                // never reaches the window at all.
-                if (!Payable(world, card, controller, ability.Cost)
-                    || !EventPayable(world, card, controller)
-                    || !Available(world, card, ability))
+                foreach (int controller in players)
                 {
-                    continue;
-                }
+                    if (!Answers(
+                            world, ability, card, occurrence, window,
+                            ability.AnyPlayer ? controller : null))
+                    {
+                        continue;
+                    }
 
-                int ordinal = written.Take(index).Count(candidate =>
-                    candidate.Trigger.Timing == ability.Trigger.Timing);
-                waiting.Add(new PendingAbility(
-                    card.ObjectId, ability.Trigger.Timing, controller, ordinal));
+                    // `rr:initiating-abilities.step.2` -- "if the card or ability
+                    // has a form requirement (for example, 'Hero form only' or
+                    // 'Hero Action'), the form of the player playing that card or
+                    // initiating that ability is checked now." Step 2 is about any
+                    // ability, not only an action: Prelate Armor prints a *Hero
+                    // Response*, and an alter-ego cannot initiate one.
+                    if (!InForm(world, controller, ability.Trigger.Form, card))
+                    {
+                        continue;
+                    }
+
+                    var eligibility = new Cast(
+                        world, card, occurrence, controller, [], this);
+                    if ((ability.When is not null && !Test(ability.When, eligibility))
+                        || (HasLabelledPower(ability.Effect)
+                            && !CanInitiate(ability.Effect, eligibility)))
+                    {
+                        continue;
+                    }
+
+                    // `rr:initiating-abilities.step.3` -- the cost and "the
+                    // player's ability to pay them" are one step, and only "if both
+                    // conditions are met" do the later steps happen. So an ability
+                    // nobody can pay for is not an offer that fails at step 5; it
+                    // never reaches the window at all.
+                    if (!Payable(world, card, controller, ability.Cost)
+                        || !EventPayable(world, card, controller)
+                        || !Available(world, card, ability))
+                    {
+                        continue;
+                    }
+
+                    int ordinal = written.Take(index).Count(candidate =>
+                        candidate.Trigger.Timing == ability.Trigger.Timing);
+                    waiting.Add(new PendingAbility(
+                        card.ObjectId, ability.Trigger.Timing, controller, ordinal));
+                }
             }
         }
 
@@ -659,10 +678,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             foreach (var ability in On(card))
             {
+                var eligibility = new Cast(
+                    world,
+                    card,
+                    new Occurrence(
+                        0, [Steps.TurnAction], Subject: card.ObjectId, Player: player),
+                    player,
+                    [],
+                    this);
                 if (ability.Trigger.Timing != AbilityType.Resource
+                    || !MayInitiate(world, ability, card, player)
                     || !Available(world, card, ability)
                     || !InForm(world, player, ability.Trigger.Form)
-                    || !Payable(world, card, player, ability.Cost))
+                    || !Payable(world, card, player, ability.Cost)
+                    || (ability.When is not null && !Test(ability.When, eligibility)))
                 {
                     continue;
                 }
@@ -699,28 +728,50 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// round without anything having to remember to clear it.
     /// </para>
     /// </remarks>
-    private static bool Available(World world, Card card, CardAbility ability) =>
+    private bool Available(World world, Card card, CardAbility ability) =>
         ability.Limit is not { } limit
         || world.Effects.Active().Count(effect =>
             effect.Card == card.ObjectId
-            && string.Equals(effect.Kind, Spent(ability), StringComparison.Ordinal)) < limit;
+            && string.Equals(effect.Kind, Spent(card, ability), StringComparison.Ordinal)) < limit;
 
     /// <summary>Records one use of a limited ability, until the round ends.</summary>
-    private static void Use(World world, Card card, CardAbility ability)
+    private void Use(World world, Card card, CardAbility ability)
     {
         if (ability.Limit is not null)
         {
             world.Effects.Register(new ContinuousEffect(
                 EffectSource.LastingEffect,
-                Kind: Spent(ability),
+                Kind: Spent(card, ability),
                 Card: card.ObjectId,
                 Affects: card.ObjectId,
                 Lasts: Duration.UntilEndOf(TimingPoints.EndOfRound)));
         }
     }
 
-    /// <summary>The effect kind that stands for one use of an ability.</summary>
-    private static string Spent(CardAbility ability) => "spent:" + ability.Name;
+    /// <summary>The effect kind that stands for one use of this instance of an ability.</summary>
+    private string Spent(Card card, CardAbility ability)
+    {
+        var written = On(card).ToList();
+        int ordinal = written.FindIndex(candidate => ReferenceEquals(candidate, ability));
+        if (ordinal < 0)
+        {
+            throw new RulesNotImplementedException(
+                $"card '{card.FaceId}' used an ability that is not on its current face");
+        }
+
+        // `rr:limit` counts "per instance of that ability". The engine chooses
+        // the printed face plus its ordinal as the stable ability identity;
+        // names are display text and two unnamed abilities default to the same
+        // card name. Face matters because two sides can each have ordinal zero.
+        // `rr:leaves-play.1` makes a returning card a new copy with no memory,
+        // so its in-play incarnation is part of the key as well.
+        return "spent:"
+            + card.Incarnation.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            + ":"
+            + ability.Card
+            + ":"
+            + ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
 
     /// <summary>What letters an effect generates, if it only generates.</summary>
     private static string Generated(AbilityNode effect, World world, int player)
@@ -751,10 +802,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var holder = world.Cards[card];
         var ability = On(holder).FirstOrDefault(candidate =>
-            candidate.Trigger.Timing == AbilityType.Resource
-            && Available(world, holder, candidate)
-            && InForm(world, player, candidate.Trigger.Form)
-            && Payable(world, holder, player, candidate.Cost))
+        {
+            var eligibility = new Cast(
+                world,
+                holder,
+                new Occurrence(
+                    0, [Steps.TurnAction], Subject: holder.ObjectId, Player: player),
+                player,
+                [],
+                this);
+            return candidate.Trigger.Timing == AbilityType.Resource
+                && MayInitiate(world, candidate, holder, player)
+                && Available(world, holder, candidate)
+                && InForm(world, player, candidate.Trigger.Form)
+                && Payable(world, holder, player, candidate.Cost)
+                && (candidate.When is null || Test(candidate.When, eligibility));
+        })
             ?? throw new RulesNotImplementedException(
                 $"card {card} has no resource ability left to use this round");
 
@@ -943,14 +1006,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     ];
 
     /// <summary>Whether one ability answers this occurrence at all.</summary>
-    private static bool Answers(
-        World world, CardAbility ability, Card card, Occurrence what) =>
-        ability.Trigger.Event is { } condition
-        && what.Conditions.Contains(condition, StringComparer.Ordinal)
-        && Subject(world, ability.Trigger.Subject, card, what)
-        && Role(world, ability.Trigger.Actor, card, what.ActorFacts)
-        && Role(world, ability.Trigger.Target, card, what.TargetFacts)
-        && Player(world, ability.Trigger.Player, card, what);
+    private bool Answers(
+        World world, CardAbility ability, Card card, Occurrence what)
+    {
+        int? restricted = RestrictedPlayer(world, ability, card);
+        return ability.Trigger.Event is { } condition
+            && what.Conditions.Contains(condition, StringComparer.Ordinal)
+            && Subject(world, ability.Trigger.Subject, card, what, restricted)
+            && Role(world, ability.Trigger.Actor, card, what.ActorFacts, restricted)
+            && Role(world, ability.Trigger.Target, card, what.TargetFacts, restricted)
+            && Player(world, ability.Trigger.Player, card, what, restricted);
+    }
 
     /// <inheritdoc/>
     public int? AttachesTo(World world, Card card)
@@ -1382,10 +1448,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var found = new List<PendingAbility>();
         foreach (var card in Triggerable(world, player).ToList())
         {
-            foreach (var (ability, ordinal) in On(card)
-                         .Where(candidate => candidate.Trigger.Timing == AbilityType.Action)
-                         .Select((candidate, ordinal) => (candidate, ordinal)))
+            var written = On(card).ToList();
+            for (int index = 0; index < written.Count; index++)
             {
+                var ability = written[index];
+                if (ability.Trigger.Timing is not (AbilityType.Action or AbilityType.ForcedAction)
+                    || !MayInitiate(world, ability, card, player))
+                {
+                    continue;
+                }
+
                 var eligibility = new Cast(world, card, new Occurrence(
                     0, [Steps.TurnAction], Subject: card.ObjectId, Player: player),
                     player, [], this);
@@ -1396,8 +1468,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     && (ability.When is null || Test(ability.When, eligibility))
                     && CanInitiate(ability.Effect, eligibility))
                 {
+                    int ordinal = written.Take(index).Count(candidate =>
+                        candidate.Trigger.Timing == ability.Trigger.Timing);
                     found.Add(new PendingAbility(
-                        card.ObjectId, AbilityType.Action, player, ordinal));
+                        card.ObjectId, ability.Trigger.Timing, player, ordinal));
                 }
             }
         }
@@ -1433,7 +1507,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// scheme", it is played by triggering its action.
     /// </para>
     /// </remarks>
-    private static IEnumerable<Card> Triggerable(World world, int player)
+    private IEnumerable<Card> Triggerable(World world, int player)
     {
         foreach (var area in world.Areas)
         {
@@ -1447,7 +1521,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // `.a` and `.b`: yours, or nobody's. A card another player
                 // controls is theirs to trigger -- `rr:player-turn.6` is how
                 // you ask them.
-                if (ControllerOf(world, card) == player || card.Owner == World.Scenario)
+                if (ControllerOf(world, card) == player
+                    || card.Owner == World.Scenario
+                    || On(card).Any(ability => ability.AnyPlayer))
                 {
                     yield return card;
                 }
@@ -2836,8 +2912,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <summary>Whether one ability answers this occurrence, in this window.</summary>
-    private static bool Answers(
-        World world, CardAbility ability, Card card, Occurrence occurrence, WindowKind window)
+    private bool Answers(
+        World world, CardAbility ability, Card card, Occurrence occurrence, WindowKind window,
+        int? initiatingPlayer = null)
     {
         // A constant ability names no condition at all -- `rr:ability.5` -- so
         // it answers no occurrence and appears in no window. What it does is
@@ -2869,11 +2946,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             _ => false,
         };
 
+        int? restricted = initiatingPlayer ?? RestrictedPlayer(world, ability, card);
         return belongs
-            && Subject(world, ability.Trigger.Subject, card, occurrence)
-            && Role(world, ability.Trigger.Actor, card, occurrence.ActorFacts)
-            && Role(world, ability.Trigger.Target, card, occurrence.TargetFacts)
-            && Player(world, ability.Trigger.Player, card, occurrence);
+            && Subject(world, ability.Trigger.Subject, card, occurrence, restricted)
+            && Role(world, ability.Trigger.Actor, card, occurrence.ActorFacts, restricted)
+            && Role(world, ability.Trigger.Target, card, occurrence.TargetFacts, restricted)
+            && Player(world, ability.Trigger.Player, card, occurrence, restricted);
     }
 
     /// <summary>
@@ -2903,22 +2981,123 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// which it said.
     /// </para>
     /// </remarks>
-    private static int Controller(
+    private int Controller(
         World world, CardAbility ability, Card card, Occurrence occurrence) =>
-        ability.Trigger.Player is not null
+        RestrictedPlayer(world, ability, card) is { } restricted
+            ? restricted
+            : ability.Trigger.Player is not null
             ? occurrence.Player
             : ability.Trigger.Actor == AbilityRoles.You
                 ? occurrence.ActorFacts?.Controller ?? ControllerOf(world, card)
                 : ControllerOf(world, card);
 
+    /// <summary>The one player allowed to use this encounter-card ability, if any.</summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:ability.8.1</c>: only the controller of a player card bearing an
+    /// attachment may trigger or pay for that attachment's abilities that use
+    /// “you” or “your”. The host supplies that controller; the attachment is
+    /// still owned by the scenario.
+    /// </para>
+    /// <para>
+    /// <c>rr:ability.8.2</c>: only the player whose play area holds an
+    /// obligation may trigger or pay for it. This is a permission distinct
+    /// from control, because an obligation remains an encounter card.
+    /// </para>
+    /// </remarks>
+    private int? RestrictedPlayer(World world, CardAbility ability, Card card)
+    {
+        // The Golden Rules give explicit card text precedence. Obedience
+        // Potion-shaped attachments say “Any player can do this,” so that
+        // permission overrides the otherwise card-wide “your identity” binding.
+        if (ability.AnyPlayer)
+        {
+            return null;
+        }
+
+        if (world.Facts.Kind(card.FaceId) == CardKind.Obligation
+            && card.Area.PlayArea.IsPlayers)
+        {
+            return card.Area.PlayArea.Player;
+        }
+
+        if (world.Facts.Kind(card.FaceId) == CardKind.Attachment
+            && card.Area.Host >= 0
+            && card.Area.Host < world.Cards.Count
+            && UsesYouOrYour(ability, card))
+        {
+            int controller = ControllerOf(world, world.Cards[card.Area.Host]);
+            return controller >= 0 ? controller : null;
+        }
+
+        return null;
+    }
+
+    /// <summary>Whether the authored ability contains the printed “you/your” binding.</summary>
+    private bool UsesYouOrYour(CardAbility ability, Card card) =>
+        ability.Trigger.Subject == AbilitySubjects.You
+        || ability.Trigger.Actor == AbilityRoles.You
+        || ability.Trigger.Target == AbilityRoles.You
+        || ability.Trigger.Player == AbilityPlayers.You
+        || ContainsYouOrYour(ability.Effect)
+        || (ability.Cost is { } cost && ContainsYouOrYour(cost))
+        || (ability.When is { } when && ContainsYouOrYour(when))
+        || (book.Attaches(card.FaceId) is { } attachment
+            && ContainsYouOrYour(attachment));
+
+    private static bool ContainsYouOrYour(AbilityNode node) =>
+        IsYouOrYourBinding(node.Kind) || ContainsYouOrYour(node.Argument);
+
+    private static bool ContainsYouOrYour(AbilityValue value) => value switch
+    {
+        AbilityValue.Word word => IsYouOrYourBinding(word.Value),
+        AbilityValue.List list => list.Values.Any(ContainsYouOrYour),
+        AbilityValue.Map map => map.Entries.Any(entry =>
+            IsYouOrYourBinding(entry.Key) || ContainsYouOrYour(entry.Value)),
+        _ => false,
+    };
+
+    /// <summary>Whether one DSL identifier is relative to the resolving player.</summary>
+    private static bool IsYouOrYourBinding(string value)
+    {
+        if (string.Equals(value, "you", StringComparison.Ordinal)
+            || value.StartsWith("your", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        // Compound DSL identifiers use camel case: alliesYouControl,
+        // isYourIdentity, identitySpecificInYourHand. A printed title can also
+        // contain the word “You”, so only identifier-shaped values count.
+        return value.All(character => char.IsLetterOrDigit(character) || character == '.')
+            && (value.Contains("You", StringComparison.Ordinal)
+                || value.Contains("Your", StringComparison.Ordinal));
+    }
+
+    /// <summary>Whether this player is permitted to initiate the ability.</summary>
+    private bool MayInitiate(World world, CardAbility ability, Card card, int player)
+    {
+        // `rr:player-turn.5.a-c` grants permission per ability: a player may
+        // use their card, an encounter card, or the particular ability whose
+        // text allows them. One AnyPlayer ability must not expose its card's
+        // other controller-only actions or resource abilities.
+        bool cardPermits = ControllerOf(world, card) == player
+            || card.Owner == World.Scenario
+            || ability.AnyPlayer;
+        return cardPermits
+            && (RestrictedPlayer(world, ability, card) is not { } restricted
+                || restricted == player);
+    }
+
     private static bool Subject(
-        World world, string? subject, Card card, Occurrence occurrence) => subject switch
+        World world, string? subject, Card card, Occurrence occurrence,
+        int? restricted = null) => subject switch
     {
         null => true,
         AbilitySubjects.This => occurrence.Subject == card.ObjectId,
         AbilitySubjects.AttachedTo => card.Area.Host >= 0 && occurrence.Subject == card.Area.Host,
-        AbilitySubjects.You =>
-            occurrence.Player >= 0 && occurrence.Player == ControllerOf(world, card),
+        AbilitySubjects.You => occurrence.Player >= 0
+            && occurrence.Player == (restricted ?? ControllerOf(world, card)),
 
         // Nothing to match: the condition alone decides. `Waiting` has already
         // checked that the card is in play and that the occurrence carries the
@@ -2929,14 +3108,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <summary>Whether a captured card fills one named occurrence role.</summary>
     private static bool Role(
-        World world, string? match, Card card, OccurrenceCard? role) => match switch
+        World world, string? match, Card card, OccurrenceCard? role,
+        int? restricted = null) => match switch
     {
         null => true,
         _ when role is null => false,
         AbilityRoles.This => role.Card == card.ObjectId,
         AbilityRoles.AttachedTo => card.Area.Host >= 0 && role.Card == card.Area.Host,
         AbilityRoles.You => role.Controller >= 0
-            && (card.Owner == World.Scenario || role.Controller == ControllerOf(world, card)),
+            && (restricted is { } player
+                ? role.Controller == player
+                : card.Owner == World.Scenario || role.Controller == ControllerOf(world, card)),
         AbilityRoles.Villain => role.IsVillain,
         AbilityRoles.Minion => role.IsMinion,
         AbilityRoles.Hero => role.IsHero,
@@ -2948,11 +3130,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <summary>Whether the occurrence's player fills the trigger's player role.</summary>
     private static bool Player(
-        World world, string? match, Card card, Occurrence occurrence) => match switch
+        World world, string? match, Card card, Occurrence occurrence,
+        int? restricted = null) => match switch
     {
         null or AbilityPlayers.TriggerPlayer => true,
-        AbilityPlayers.You =>
-            occurrence.Player >= 0 && occurrence.Player == ControllerOf(world, card),
+        AbilityPlayers.You => occurrence.Player >= 0
+            && occurrence.Player == (restricted ?? ControllerOf(world, card)),
         _ => throw new AbilityException($"'{match}' is not an occurrence player matcher"),
     };
 

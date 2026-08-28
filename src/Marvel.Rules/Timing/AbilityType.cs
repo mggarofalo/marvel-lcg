@@ -136,9 +136,10 @@ public static class AbilityTypes
     /// <c>rr:ability.7</c> lists the mandatory types and <c>rr:ability.8</c> the
     /// optional ones; <c>rr:ability.11</c> states the rule the two lists follow,
     /// that everything is optional unless prefaced by "Forced".
-    /// <c>rr:ability.7.1</c> is the exception this does not model: a mandatory
-    /// ability using the word "may" is optional after the "may", which is a
-    /// property of the ability's text rather than of its type.
+    /// <c>rr:ability.7.1</c> does not change this classification: a mandatory
+    /// ability using the word “may” remains mandatory to initiate, while the
+    /// part after “may” is represented as an optional choice inside its effect
+    /// tree because that choice is a property of the printed text, not its type.
     /// </remarks>
     /// <param name="type">The bold trigger.</param>
     public static bool IsMandatory(AbilityType type) => type is

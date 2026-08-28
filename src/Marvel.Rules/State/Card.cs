@@ -39,6 +39,16 @@ public sealed class Card
     /// <summary>The printed id of the face currently showing.</summary>
     public string FaceId => Faces[FaceIndex];
 
+    /// <summary>Which entry into play this is, starting at one.</summary>
+    /// <remarks>
+    /// <c>rr:leaves-play.1</c> makes a card that leaves play and returns a new
+    /// copy with no memory of its former state. Object ids deliberately remain
+    /// stable, so engine bookkeeping that belongs to one in-play copy uses
+    /// this generation beside the id rather than allocating another card.
+    /// Moving between two in-play areas does not create a new copy.
+    /// </remarks>
+    public int Incarnation { get; private set; }
+
     /// <summary>The seat that owns this card, or -1 for the scenario.</summary>
     public int Owner { get; }
 
@@ -171,6 +181,12 @@ public sealed class Card
 
     internal void MovedTo(Area area)
     {
+        if (DeckTypes.IsInPlay(area.Type)
+            && (Area is null || !DeckTypes.IsInPlay(Area.Type)))
+        {
+            Incarnation++;
+        }
+
         Area = area;
         FaceUp = !DeckTypes.FaceDownOnEntry(area.Type);
         HasRegisteredTokens |= DeckTypes.GrantsTokenPool(area.Type);

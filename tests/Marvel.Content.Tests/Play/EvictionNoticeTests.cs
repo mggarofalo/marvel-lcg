@@ -49,6 +49,7 @@ public sealed class EvictionNoticeTests
     }
 
     [Rule("rr:may")]
+    [Rule("rr:ability.7.1")]
     [Fact]
     public void DecliningTheFlipLeavesTheHeroStandingAndStillAsksTheSecond()
     {
