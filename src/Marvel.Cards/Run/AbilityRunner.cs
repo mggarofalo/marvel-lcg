@@ -3003,6 +3003,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         $"'{cast.Source.FaceId}' cannot find the card added to hand");
                 var oldArea = added.Area;
                 var newHand = cast.World.Seats[cast.Player].Hand;
+                if (DeckTypes.IsInPlay(oldArea.Type))
+                {
+                    Rules.Play.Discard.Attachments(
+                        cast.World, added, cast.Trigger, cast.Events);
+                }
                 World.MoveToTop(added, newHand);
                 cast.Events.Add(new CardsMoved(
                     Places.Reference(oldArea), Places.Reference(newHand),
@@ -3023,6 +3028,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
                 var returnedFrom = returned.Area;
                 var ownersHand = cast.World.Seats[returned.Owner].Hand;
+                if (DeckTypes.IsInPlay(returnedFrom.Type))
+                {
+                    Rules.Play.Discard.Attachments(
+                        cast.World, returned, cast.Trigger, cast.Events);
+                }
                 World.MoveToTop(returned, ownersHand);
                 cast.Events.Add(new CardsMoved(
                     Places.Reference(returnedFrom), Places.Reference(ownersHand),
@@ -4906,6 +4916,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             var from = card.Area;
             var hand = cast.World.Seats[card.Owner].Hand;
+            if (DeckTypes.IsInPlay(from.Type))
+            {
+                Rules.Play.Discard.Attachments(
+                    cast.World, card, cast.Trigger, cast.Events);
+            }
             World.MoveToTop(card, hand);
             card.TurnFaceUp();
 

@@ -83,6 +83,40 @@ public sealed class DiscardAndAllyLimitTests
         Assert.Equal(DeckType.AlliesArea, host.Area.Type);
     }
 
+    [Rule("rr:permanent.5")]
+    [Fact]
+    public void ANestedPermanentRefusesTheWholeHostMoveBeforeAnythingChanges()
+    {
+        // The refusal is atomic across the attachment tree. An ordinary
+        // sibling must not be discarded before a permanent descendant proves
+        // that the host's departure cannot yet be resolved.
+        var facts = new Facts();
+        var world = Board(facts);
+        var host = world.CreateCard(
+            "ally",
+            world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var sibling = world.CreateCard(
+            "upgrade",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId, cardOwner: 0));
+        var bridge = world.CreateCard(
+            "upgrade",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId, cardOwner: 0));
+        var permanent = world.CreateCard(
+            "permanent",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), bridge.ObjectId, cardOwner: 0));
+
+        Assert.Throws<RulesNotImplementedException>(
+            () => Discard.Card(world, host, "Defeat", []));
+
+        Assert.Equal(DeckType.AlliesArea, host.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, sibling.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, bridge.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
+    }
+
     [Rule("rr:ally-limit")]
     [Fact]
     public void AFourthAllyIsChosenAndDiscardedBeforeCardPlayed()
@@ -98,13 +132,14 @@ public sealed class DiscardAndAllyLimitTests
         var chosen = world.CreateCard("ally", allies);
         world.CreateCard("ally", allies);
         world.CreateCard("ally", allies);
-        var fourth = world.CreateCard("ally", seat.Hand);
+        var fourth = world.CreateCard("toughally", seat.Hand);
 
         CardPlay.Play(world, facts, new NoCardAbilities(), seat, fourth, [], []);
 
         Assert.Equal(
-            [Steps.ChooseAllyForLimit, Steps.CardPlayed],
+            [Steps.ChooseAllyForLimit, Steps.FinalizeAllyEntry, Steps.CardPlayed],
             world.Agenda.Outstanding.Select(step => step.What));
+        Assert.Empty(Statuses.On(world, fourth, Statuses.Tough));
         var events = new List<GameEvent>();
         var asked = Sequence.Work(world, facts, new NoCardAbilities(), events);
         Assert.NotNull(asked);
@@ -121,6 +156,7 @@ public sealed class DiscardAndAllyLimitTests
             moved.Cards.Any(card => card.Card == chosen.ObjectId));
         Sequence.Finish(world, facts, new NoCardAbilities(), events);
         Assert.Empty(world.Agenda.Outstanding);
+        Assert.Single(Statuses.On(world, fourth, Statuses.Tough));
     }
 
     [Rule("rr:ally-limit")]
@@ -181,8 +217,9 @@ public sealed class DiscardAndAllyLimitTests
         CardPlay.PutAllyIntoPlay(
             world, facts, new NoCardAbilities(), fourth, 0, "test", []);
 
-        var choice = Assert.Single(world.Agenda.Outstanding);
-        Assert.Equal(Steps.ChooseAllyForLimit, choice.What);
+        Assert.Equal(
+            [Steps.ChooseAllyForLimit, Steps.FinalizeAllyEntry],
+            world.Agenda.Outstanding.Select(step => step.What));
         Assert.Equal(DeckType.AlliesArea, fourth.Area.Type);
     }
 
@@ -237,7 +274,7 @@ public sealed class DiscardAndAllyLimitTests
         {
             "alterego" => CardKind.AlterEgo,
             "hero" => CardKind.Hero,
-            "ally" => CardKind.Ally,
+            "ally" or "toughally" => CardKind.Ally,
             "support" => CardKind.Support,
             "resource" => CardKind.Resource,
             _ => CardKind.Upgrade,
@@ -251,6 +288,7 @@ public sealed class DiscardAndAllyLimitTests
         public long PrintedValue(
             string faceId, string attribute, int players, long fallback = 0) =>
             faceId == "permanent" && attribute == "Permanent" ? 1
+                : faceId == "toughally" && attribute == "Toughness" ? 1
                 : attribute == "Cost" ? 0
                 : fallback;
     }

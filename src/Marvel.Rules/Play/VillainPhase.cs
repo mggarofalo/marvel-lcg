@@ -853,6 +853,10 @@ public static class VillainPhase
             case Steps.ChooseAllyForLimit:
                 return ChooseAllyForLimit(world, facts, step.Seat);
 
+            case Steps.FinalizeAllyEntry:
+                FinalizeAllyEntry(world, facts, abilities, step.Subject, events);
+                break;
+
             case Steps.OrderEachPlayer:
                 return EachPlayerEffects.Ordering(world, step);
 
@@ -1038,6 +1042,17 @@ public static class VillainPhase
             .SelectMany(area => area.Cards)
             .OrderBy(card => card.ObjectId),
     ];
+
+    private static void FinalizeAllyEntry(
+        World world, ICardFacts facts, ICardAbilities abilities, int allyId,
+        List<GameEvent> events)
+    {
+        var ally = world.Cards[allyId];
+        if (ally.Area.Type == DeckType.AlliesArea)
+        {
+            Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
+        }
+    }
 
     /// <summary>
     /// Step 2, as one activation per player — <c>rr:villain-phase.step.2</c>,

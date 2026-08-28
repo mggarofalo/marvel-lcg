@@ -120,6 +120,34 @@ public sealed class ConstantAbilityTests
         Assert.Equal(4, Modified(world, world.Seats[0].IdentityCard, "ally_limit"));
     }
 
+    [Rule("rr:attach-to.1")]
+    [Fact]
+    public void ReturningHellcatToHandDiscardsInspired()
+    {
+        // "If the game element [a card] is attached to leaves play, discard
+        // the attached card." Leaving play for a hand is still leaving play;
+        // the cleanup cannot be confined to the discard-card path.
+        var world = Bare();
+        var hellcat = world.CreateCard(
+            "01020",
+            world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var inspired = world.CreateCard(
+            "01074",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), hellcat.ObjectId, cardOwner: 0));
+        world.CreateCard("01080", world.Seats[0].Deck);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var action = Assert.Single(
+            runner.Actions(world, 0), candidate => candidate.Card == hellcat.ObjectId);
+        var events = runner.Act(world, action, [], []);
+
+        Assert.Equal(DeckType.HandsArea, hellcat.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, inspired.Area.Type);
+        Assert.Contains(events.OfType<Marvel.Rules.Events.CardDetached>(), detached =>
+            detached.Card == inspired.ObjectId && detached.Host == hellcat.ObjectId);
+    }
+
     [Rule("rr:retaliate-x")]
     [Fact]
     public void TheGrantedRetaliateActuallyHitsBack()

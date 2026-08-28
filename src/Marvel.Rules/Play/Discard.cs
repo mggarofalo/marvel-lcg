@@ -40,25 +40,7 @@ public static class Discard
         // discarding an attachment moves it and can itself detach hosted cards.
         if (DeckTypes.IsInPlay(card.Area.Type))
         {
-            var attachedCards = world.Areas
-                .Where(area => area.Host == card.ObjectId)
-                .SelectMany(area => area.Cards)
-                .ToList();
-            if (attachedCards.FirstOrDefault(attached => world.Facts.PrintedValue(
-                    attached.FaceId, "Permanent", world.Players) > 0) is { } permanent)
-            {
-                // `rr:permanent.5` resolves the attachment's attach-to text
-                // again and removes it only if no valid target exists. The
-                // ordinary discard rule is deliberately not guessed here.
-                throw new RulesNotImplementedException(
-                    $"permanent attachment {permanent.ObjectId} lost host "
-                    + $"{card.ObjectId}, and rr:permanent.5 is not implemented");
-            }
-
-            foreach (var attached in attachedCards)
-            {
-                Card(world, attached, trigger, events);
-            }
+            Attachments(world, card, trigger, events);
         }
 
         // A status card is discarded by its keyword rule, but it is not an
@@ -110,4 +92,51 @@ public static class Discard
             CardPlay.CheckAllyLimit(world, world.Facts, player);
         }
     }
+
+    /// <summary>Discard every non-permanent card hosted by a game element leaving play.</summary>
+    public static void Attachments(
+        World world, State.Card host, string trigger, List<GameEvent> events)
+    {
+        var direct = AttachedTo(world, host.ObjectId);
+        var descendants = new List<State.Card>();
+        var pending = new Stack<State.Card>(direct.AsEnumerable().Reverse());
+        var seen = new HashSet<int> { host.ObjectId };
+        while (pending.TryPop(out var attached))
+        {
+            if (!seen.Add(attached.ObjectId))
+            {
+                throw new RulesNotImplementedException(
+                    $"attachment {attached.ObjectId} forms a hosting cycle");
+            }
+
+            descendants.Add(attached);
+            foreach (var child in AttachedTo(world, attached.ObjectId).AsEnumerable().Reverse())
+            {
+                pending.Push(child);
+            }
+        }
+
+        if (descendants.FirstOrDefault(attached => world.Facts.PrintedValue(
+                attached.FaceId, "Permanent", world.Players) > 0) is { } permanent)
+        {
+            // `rr:permanent.5` resolves the attachment's attach-to text again
+            // and removes it only if no valid target exists. Preflight the
+            // complete tree so no ordinary sibling moves before this refusal.
+            throw new RulesNotImplementedException(
+                $"permanent attachment {permanent.ObjectId} lost host "
+                + $"{host.ObjectId}, and rr:permanent.5 is not implemented");
+        }
+
+        foreach (var attached in direct)
+        {
+            Card(world, attached, trigger, events);
+        }
+    }
+
+    private static List<State.Card> AttachedTo(World world, int host) =>
+    [
+        .. world.Areas
+            .Where(area => area.Host == host)
+            .SelectMany(area => area.Cards),
+    ];
 }

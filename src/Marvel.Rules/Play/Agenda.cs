@@ -990,6 +990,9 @@ public static class Steps
     /// <summary>Choose an ally to discard after exceeding the ally limit.</summary>
     public const string ChooseAllyForLimit = "ChooseAllyForLimit";
 
+    /// <summary>Apply an ally's entry state after an ally-limit choice.</summary>
+    public const string FinalizeAllyEntry = "FinalizeAllyEntry";
+
     /// <summary>A card finished entering play, however it got there.</summary>
     public const string CardEntersPlay = "WhenCardEntersPlay";
 
