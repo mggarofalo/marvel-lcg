@@ -9,11 +9,11 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 | Disposition | Records |
 |---|---:|
 | Executable and cited | 402 |
-| Covered by a narrower rule | 51 |
-| Redirect or summary | 114 |
+| Covered by a narrower rule | 46 |
+| Redirect or summary | 119 |
 | Not enforceable by an engine | 36 |
-| Outside the supported product boundary | 73 |
-| Unimplemented behavior | 542 |
+| Outside the supported product boundary | 70 |
+| Unimplemented behavior | 545 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -438,8 +438,8 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:exhausted.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:exhausted.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:expert-mode` | Redirect or summary | — | This record redirects readers to Modes of Play; the destination carries the rule. |
-| `rr:expert-set` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:expert-set.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:expert-set` | Unimplemented behavior | MARVEL-269 | Setup includes the fixed expert set at expert difficulty; this existing behavior needs its narrow citation. |
+| `rr:expert-set.1` | Outside the supported product boundary | MARVEL-272 | Selecting or rejecting fixed encounter sets as modular choices needs product-level set validation. |
 | `rr:expert-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:find` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:find.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
@@ -725,7 +725,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:modifiers.7` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:modular-encounter-set` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:modular-encounter-set.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:modular-encounter-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:modular-encounter-set.2` | Unimplemented behavior | MARVEL-269 | Setup adds every card from a selected modular set; this existing behavior needs its narrow citation. |
 | `rr:modular-encounter-set.3` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:move` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:move.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
@@ -814,11 +814,11 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:play-restrictions-and-permissions.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:play-restrictions-and-permissions.2` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:player` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
-| `rr:player.1` | Covered by a narrower rule | — | Play-area and ownership entries state each listed area more precisely. |
-| `rr:player.2` | Covered by a narrower rule | — | Player-phase and player-turn entries state this round procedure more precisely. |
-| `rr:player.3` | Covered by a narrower rule | — | Ownership and control entries state starting ownership more precisely. |
-| `rr:player.4` | Covered by a narrower rule | — | The first-player entry states this role more precisely. |
-| `rr:player-card` | Covered by a narrower rule | — | The seven dedicated player-card type entries state this list more precisely. |
+| `rr:player.1` | Redirect or summary | — | Play-area and ownership entries state each listed area more precisely. |
+| `rr:player.2` | Redirect or summary | — | Player-phase and player-turn entries state this round procedure more precisely. |
+| `rr:player.3` | Redirect or summary | — | Ownership and control entries state starting ownership more precisely. |
+| `rr:player.4` | Redirect or summary | — | The first-player entry states this role more precisely. |
+| `rr:player-card` | Redirect or summary | — | The seven dedicated player-card type entries state this list more precisely. |
 | `rr:player-card.1` | Outside the supported product boundary | MARVEL-272 | Player-card classifications become executable at the corresponding product boundaries. |
 | `rr:player-card.2` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:player-deck` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
@@ -1004,8 +1004,8 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:stalwart.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:stalwart.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:standard-mode` | Redirect or summary | — | This record redirects readers to Modes of Play; the destination carries the rule. |
-| `rr:standard-set` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:standard-set.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:standard-set` | Unimplemented behavior | MARVEL-269 | Setup includes the fixed standard set in supported scenarios; this existing behavior needs its narrow citation. |
+| `rr:standard-set.1` | Outside the supported product boundary | MARVEL-272 | Selecting or rejecting fixed encounter sets as modular choices needs product-level set validation. |
 | `rr:standard-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:star-icon` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:star-icon.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
