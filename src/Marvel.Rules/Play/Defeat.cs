@@ -411,6 +411,7 @@ public static class Defeat
 
         var display = world.AreaOf(DeckType.VictoryDisplay);
         var from = card.Area;
+        Discard.Attachments(world, card, trigger, events);
         World.MoveToTop(card, display);
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(display),
@@ -441,6 +442,18 @@ public static class Defeat
     private static void VillainStage(
         World world, ICardFacts facts, Card villain, string trigger, List<GameEvent> events)
     {
+        var deck = world.AreaOf(DeckType.VillainDeck);
+        var following = deck.Cards.Count > 0 ? deck.Cards[^1] : null;
+        bool carriesToFollowing = following is not null && string.Equals(
+            facts.Title(villain.FaceId), facts.Title(following.FaceId),
+            StringComparison.Ordinal);
+        if (!carriesToFollowing)
+        {
+            // Same-title stages inherit hosted cards. Every other departure,
+            // including the final stage, discards them before the host moves.
+            Discard.Attachments(world, villain, trigger, events);
+        }
+
         var removed = world.AreaOf(DeckType.RemovedArea);
         var from = villain.Area;
         World.MoveToTop(villain, removed);
@@ -451,7 +464,6 @@ public static class Defeat
             Trigger = trigger, Verb = "Defeat",
         });
 
-        var deck = world.AreaOf(DeckType.VillainDeck);
         var next = deck.TakeTop();
         if (next is null)
         {

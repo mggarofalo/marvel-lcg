@@ -87,6 +87,67 @@ public sealed class ConstantAbilityTests
         Assert.Equal(0, Modified(world, unus, "amplify"));
     }
 
+    [Rule("rr:in-play-and-out-of-play.5")]
+    [Fact]
+    public void AFacedownUltronDroneDoesNotUseItsPrintedPlayerCardAbility()
+    {
+        // A facedown card's printed text is inactive. Inspired is deliberately
+        // a constant ability that would need an attachment host; as a Drone it
+        // is a blank minion, not a hostless copy still granting +1 THW/+1 ATK.
+        var world = Bare();
+        var inspired = world.CreateCard("01074", world.Seats[0].Deck);
+        world.Abilities = AuthoredCards.Runner();
+
+        FacedownDrones.EngageTop(world, 0, "test", "Drone", []);
+
+        Assert.Same(inspired, Assert.Single(FacedownDrones.InPlay(world)));
+        Assert.Empty(world.Effects.Active());
+    }
+
+    [Rule("rr:ally-limit")]
+    [Fact]
+    public void TheTriskelionRaisesItsControllersAllyLimit()
+    {
+        // "Increase your ally limit by 1." The identity registers the base
+        // limit of three; the support's constant modifier must reach that live
+        // field rather than merely parse successfully.
+        var world = Bare();
+        world.CreateCard(
+            "01073",
+            world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.Abilities = AuthoredCards.Runner();
+
+        Assert.Equal(4, Modified(world, world.Seats[0].IdentityCard, "ally_limit"));
+    }
+
+    [Rule("rr:attach-to.1")]
+    [Fact]
+    public void ReturningHellcatToHandDiscardsInspired()
+    {
+        // "If the game element [a card] is attached to leaves play, discard
+        // the attached card." Leaving play for a hand is still leaving play;
+        // the cleanup cannot be confined to the discard-card path.
+        var world = Bare();
+        var hellcat = world.CreateCard(
+            "01020",
+            world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var inspired = world.CreateCard(
+            "01074",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), hellcat.ObjectId, cardOwner: 0));
+        world.CreateCard("01080", world.Seats[0].Deck);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var action = Assert.Single(
+            runner.Actions(world, 0), candidate => candidate.Card == hellcat.ObjectId);
+        var events = runner.Act(world, action, [], []);
+
+        Assert.Equal(DeckType.HandsArea, hellcat.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, inspired.Area.Type);
+        Assert.Contains(events.OfType<Marvel.Rules.Events.CardDetached>(), detached =>
+            detached.Card == inspired.ObjectId && detached.Host == hellcat.ObjectId);
+    }
+
     [Rule("rr:retaliate-x")]
     [Fact]
     public void TheGrantedRetaliateActuallyHitsBack()

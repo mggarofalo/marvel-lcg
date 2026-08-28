@@ -411,7 +411,14 @@ public static class CardPlay
             });
         }
 
-        Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
+        if (AllyLimit(world, facts, world.Seats[controller], ally))
+        {
+            FinalizeAllyEntry(world, ally, controller);
+        }
+        else
+        {
+            Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
+        }
     }
 
     /// <summary>
@@ -791,10 +798,82 @@ public static class CardPlay
         // not care how it got there. Eighteen allies in the pool print
         // `rr:toughness`, and before this a played one got no tough status card
         // -- only a *revealed* card ran them.
-        Reveal.EnterPlay(world, facts, card, events, abilities: abilities);
+        if (AllyLimit(world, facts, seat, card))
+        {
+            FinalizeAllyEntry(world, card, seat.Index);
+        }
+        else
+        {
+            Reveal.EnterPlay(world, facts, card, events, abilities: abilities);
+        }
         Played(world, seat, card);
         Restricted(world, facts, seat, card, events);
     }
+
+    /// <summary>
+    /// Ask which ally leaves when a player exceeds their ally limit —
+    /// <c>rr:ally-limit</c>.
+    /// </summary>
+    private static bool AllyLimit(World world, ICardFacts facts, Seat seat, Card played)
+    {
+        if (FacedownDrones.Kind(played, facts) != CardKind.Ally)
+        {
+            return false;
+        }
+
+        return CheckAllyLimit(world, facts, seat.Index, played.ObjectId);
+    }
+
+    /// <summary>Schedule the mandatory choice when a player exceeds their ally limit.</summary>
+    internal static bool CheckAllyLimit(
+        World world, ICardFacts facts, int player, int subject = -1)
+    {
+        var seat = world.Seats[player];
+        // Discard is also used while building deliberately partial boards.
+        // With no identity assigned there is no player ally-limit value yet.
+        if (seat.IdentityCard is null)
+        {
+            return false;
+        }
+
+        int controlled = world.Areas
+            .Where(area => area.Type == DeckType.AlliesArea
+                && area.PlayArea == PlayArea.Of(player))
+            .Sum(area => area.Cards.Count);
+        long limit = StateFields.Modified(
+            world, seat.IdentityCard, "ally_limit", facts, world.Players);
+        if (controlled <= limit)
+        {
+            return false;
+        }
+
+        // This is a mandatory rule choice rather than an occurrence, so it
+        // opens no interrupt or response windows. It is scheduled before the
+        // CardPlayed occurrence: the rule says the discard happens before
+        // abilities that resolve upon entering play.
+        if (!world.Agenda.Outstanding.Any(step =>
+                step.What == Steps.ChooseAllyForLimit && step.Seat == player))
+        {
+            world.Agenda.Then(new PhaseStep(
+                Steps.ChooseAllyForLimit,
+                world.Agenda.Current?.Round ?? 0,
+                0,
+                Subject: subject,
+                Seat: player,
+                Plan: true));
+        }
+
+        return true;
+    }
+
+    private static void FinalizeAllyEntry(World world, Card ally, int player) =>
+        world.Agenda.Then(new PhaseStep(
+            Steps.FinalizeAllyEntry,
+            world.Agenda.Current?.Round ?? 0,
+            0,
+            Subject: ally.ObjectId,
+            Seat: player,
+            Plan: true));
 
     private static void Played(World world, Seat seat, Card card)
     {

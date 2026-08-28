@@ -22,7 +22,9 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Discard
 {
-    /// <summary>Puts a card in its owner's discard pile.</summary>
+    /// <summary>
+    /// Puts a card in its owner's discard pile, or removes a spent status component.
+    /// </summary>
     /// <param name="world">The board.</param>
     /// <param name="card">The card being discarded.</param>
     /// <param name="trigger">What caused it, for the event stream.</param>
@@ -33,9 +35,24 @@ public static class Discard
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        var pile = card.Owner < 0
-            ? world.AreaOf(DeckType.EncounterDiscardPile)
-            : world.AreaOf(DeckType.DiscardPile, PlayArea.Of(card.Owner), cardOwner: card.Owner);
+        // `rr:attach-to.1`: "if the game element an attachment is attached to
+        // leaves play, the attachment is discarded." Snapshot the areas because
+        // discarding an attachment moves it and can itself detach hosted cards.
+        if (DeckTypes.IsInPlay(card.Area.Type))
+        {
+            Attachments(world, card, trigger, events);
+        }
+
+        // A status card is discarded by its keyword rule, but it is not an
+        // encounter card and therefore has no encounter discard pile. The
+        // engine chooses RemovedArea as the out-of-play home for spent status
+        // components; the Rules Reference does not name a separate status pile.
+        var pile = card.Area.Type == DeckType.StatusArea
+            ? world.AreaOf(DeckType.RemovedArea)
+            : card.Owner < 0
+                ? world.AreaOf(DeckType.EncounterDiscardPile)
+                : world.AreaOf(
+                    DeckType.DiscardPile, PlayArea.Of(card.Owner), cardOwner: card.Owner);
 
         var from = card.Area;
         int host = from.Host;
@@ -66,5 +83,60 @@ public static class Discard
                 Trigger = trigger, Verb = "Discard",
             });
         }
+
+        // A support such as The Triskelion can leave play and reduce a
+        // player's modified ally limit. `rr:ally-limit` applies whenever the
+        // count is over the live limit, not only when the latest ally entered.
+        foreach (int player in world.PlayerOrder)
+        {
+            CardPlay.CheckAllyLimit(world, world.Facts, player);
+        }
     }
+
+    /// <summary>Discard every non-permanent card hosted by a game element leaving play.</summary>
+    public static void Attachments(
+        World world, State.Card host, string trigger, List<GameEvent> events)
+    {
+        var direct = AttachedTo(world, host.ObjectId);
+        var descendants = new List<State.Card>();
+        var pending = new Stack<State.Card>(direct.AsEnumerable().Reverse());
+        var seen = new HashSet<int> { host.ObjectId };
+        while (pending.TryPop(out var attached))
+        {
+            if (!seen.Add(attached.ObjectId))
+            {
+                throw new RulesNotImplementedException(
+                    $"attachment {attached.ObjectId} forms a hosting cycle");
+            }
+
+            descendants.Add(attached);
+            foreach (var child in AttachedTo(world, attached.ObjectId).AsEnumerable().Reverse())
+            {
+                pending.Push(child);
+            }
+        }
+
+        if (descendants.FirstOrDefault(attached => world.Facts.PrintedValue(
+                attached.FaceId, "Permanent", world.Players) > 0) is { } permanent)
+        {
+            // `rr:permanent.5` resolves the attachment's attach-to text again
+            // and removes it only if no valid target exists. Preflight the
+            // complete tree so no ordinary sibling moves before this refusal.
+            throw new RulesNotImplementedException(
+                $"permanent attachment {permanent.ObjectId} lost host "
+                + $"{host.ObjectId}, and rr:permanent.5 is not implemented");
+        }
+
+        foreach (var attached in direct)
+        {
+            Card(world, attached, trigger, events);
+        }
+    }
+
+    private static List<State.Card> AttachedTo(World world, int host) =>
+    [
+        .. world.Areas
+            .Where(area => area.Host == host)
+            .SelectMany(area => area.Cards),
+    ];
 }

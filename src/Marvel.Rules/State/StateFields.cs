@@ -205,7 +205,8 @@ public static class StateFields
     /// </remarks>
     /// <param name="field">The field name, as this class spells it.</param>
     public static bool IsModifiable(string field) =>
-        PrintedFrom.ContainsKey(field) || string.Equals(field, "health", StringComparison.Ordinal);
+        PrintedFrom.ContainsKey(field)
+        || field is "health" or "ally_limit";
 
     // What a card attached to another adds to it. The engine's own attribute
     // names, and a closed set: 116 cards carry `ATK+`, 50 carry `SCH+`, four
@@ -380,9 +381,12 @@ public static class StateFields
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
 
-        long value = PrintedFrom.TryGetValue(field, out string? attribute)
-            ? FacedownDrones.BaseValue(card, facts, attribute, players)
-            : 0;
+        long value = field == "ally_limit"
+            && FacedownDrones.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo
+                ? AllyLimit
+                : PrintedFrom.TryGetValue(field, out string? attribute)
+                    ? FacedownDrones.BaseValue(card, facts, attribute, players)
+                    : 0;
         return value + Adjustments(world, card, field, facts, players);
     }
 

@@ -95,6 +95,48 @@ public sealed class CoreDroneAbilityTests
             _ => { });
     }
 
+    [Rule("rr:in-play-and-out-of-play.5")]
+    [Rule("rr:in-play-and-out-of-play.13")]
+    [Fact]
+    public void AFacedownHulkDroneDoesNotTriggerHulksPrintedResponse()
+    {
+        // Only a faceup card's text is active. The object still carries Hulk's
+        // face id underneath for the digest, but its completed Drone attack
+        // cannot run "After Hulk attacks" from that hidden player card.
+        var world = Board(players: 1);
+        var hulk = world.CreateCard("01050", world.Seats[0].Deck);
+        FacedownDrones.EngageTop(world, 0, "test", "Create_Drone", []);
+        var runner = AuthoredCards.Runner();
+        var occurrence = Occurrence.ForAttack(
+            1,
+            [Steps.AttackEnds],
+            world,
+            Cards,
+            hulk.ObjectId,
+            world.Seats[0].IdentityCard.ObjectId,
+            0);
+
+        Assert.Empty(runner.Waiting(world, occurrence, WindowKind.Response));
+    }
+
+    [Rule("rr:in-play-and-out-of-play.5")]
+    [Rule("rr:in-play-and-out-of-play.13")]
+    [Fact]
+    public void AFacedownHelicarrierDroneDoesNotOfferHelicarriersAction()
+    {
+        // The Drone is in an in-play area and retains the underlying player
+        // owner, both of which make it easy for an action scan to find. Its
+        // facedown text is nevertheless inactive.
+        var world = Board(players: 1);
+        var helicarrier = world.CreateCard("01092", world.Seats[0].Deck);
+        FacedownDrones.EngageTop(world, 0, "test", "Create_Drone", []);
+        var runner = AuthoredCards.Runner();
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 0),
+            ability => ability.Card == helicarrier.ObjectId);
+    }
+
     private static World Board(int players)
     {
         var world = new World(Cards, players);

@@ -47,6 +47,9 @@ public static class Sequence
             // Activate", and the activations under it are the occurrences.
             if (step.Plan)
             {
+                var planOccurrence = world.Agenda.Occurrence
+                    ?? throw new InvalidOperationException(
+                        $"a planning '{step.What}' agenda step has no occurrence");
                 if (world.Agenda.Stage == Stage.Apply)
                 {
                     if (VillainPhase.Take(world, facts, abilities, step, events) is { } planQuestion)
@@ -55,7 +58,10 @@ public static class Sequence
                     }
                 }
 
-                world.Agenda.Advance();
+                // Answering a plan may schedule nested work. Advance the plan
+                // that was being worked rather than whichever item is now at
+                // the front of the agenda.
+                world.Agenda.Advance(planOccurrence);
                 continue;
             }
 
@@ -82,7 +88,8 @@ public static class Sequence
             // -- and until it is answered the step has not happened, so the
             // agenda stays where it is.
             var applying = world.Agenda.Occurrence
-                ?? throw new InvalidOperationException("an applying agenda step has no occurrence");
+                ?? throw new InvalidOperationException(
+                    $"an applying '{step.What}' agenda step has no occurrence");
             if (VillainPhase.Take(world, facts, abilities, step, events) is { } asking)
             {
                 return asking;

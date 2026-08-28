@@ -175,16 +175,7 @@ public static class MainScheme
 
         // Step 1. Attached cards are discarded before the card leaves, so that
         // a client sees them go rather than vanishing with their host.
-        foreach (var area in world.Areas.ToList())
-        {
-            if (area.Host == scheme.ObjectId && DeckTypes.IsInPlay(area.Type))
-            {
-                foreach (var attached in area.Cards.ToList())
-                {
-                    Discard.Card(world, attached, trigger, events);
-                }
-            }
-        }
+        Discard.Attachments(world, scheme, trigger, events);
 
         long carried = scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
         var removed = world.AreaOf(DeckType.RemovedArea);

@@ -499,13 +499,23 @@ public sealed class KeywordTests
         var world = Board(printed);
         var minion = world.CreateCard(
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var attachment = world.CreateCard(
+            "attachment",
+            world.AreaOf(
+                DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
+        var events = new List<GameEvent>();
 
         Agendas.Happening(world);
 
-        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", events);
 
         Assert.Equal(DeckType.VictoryDisplay, minion.Area.Type);
-        Assert.Empty(world.AreaOf(DeckType.EncounterDiscardPile).Cards);
+        Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
+        Assert.Contains(events.OfType<CardDetached>(), detached =>
+            detached.Card == attachment.ObjectId && detached.Host == minion.ObjectId);
+        Assert.DoesNotContain(
+            world.AreaOf(DeckType.EncounterDiscardPile).Cards,
+            card => card.ObjectId == minion.ObjectId);
     }
 
     [Rule("rr:quickstrike")]

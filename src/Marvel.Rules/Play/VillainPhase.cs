@@ -850,6 +850,13 @@ public static class VillainPhase
                     world, world.Cards[step.Subject], step.Seat, step.Index, step.Tier,
                     step.FinalStep, step.EachPlayerFrame, step.FinalPlayer);
 
+            case Steps.ChooseAllyForLimit:
+                return ChooseAllyForLimit(world, facts, step.Seat);
+
+            case Steps.FinalizeAllyEntry:
+                FinalizeAllyEntry(world, facts, abilities, step.Subject, events);
+                break;
+
             case Steps.OrderEachPlayer:
                 return EachPlayerEffects.Ordering(world, step);
 
@@ -965,6 +972,10 @@ public static class VillainPhase
                     step.FinalStep, step.EachPlayerFrame, step.FinalPlayer, step.Trigger));
                 break;
 
+            case Steps.ChooseAllyForLimit:
+                DiscardAllyForLimit(world, facts, step.Seat, input, events);
+                break;
+
             case Steps.OrderEachPlayer:
                 EachPlayerEffects.Ordered(world, step, input);
                 break;
@@ -972,6 +983,74 @@ public static class VillainPhase
             default:
                 throw new RulesNotImplementedException(
                     $"step '{step.What}' asked nothing and cannot take an answer");
+        }
+    }
+
+    private static Prompt ChooseAllyForLimit(World world, ICardFacts facts, int player)
+    {
+        var allies = ControlledAllies(world, player);
+        long limit = StateFields.Modified(
+            world, world.Seats[player].IdentityCard, "ally_limit", facts, world.Players);
+        if (allies.Count <= limit)
+        {
+            throw new InvalidOperationException(
+                $"player {player} no longer exceeds their ally limit");
+        }
+
+        return new Prompt(
+            player,
+            Question.Element,
+            TimingPriority.Untimed,
+            Steps.ChooseAllyForLimit,
+            $"{world.Seats[player].Name} chooses an ally to discard",
+            false,
+            [.. allies.Select(ally => new Affordance(
+                ally.ObjectId,
+                "Discard",
+                ally.ObjectId,
+                player,
+                facts.Title(ally.FaceId)))]);
+    }
+
+    private static void DiscardAllyForLimit(
+        World world, ICardFacts facts, int player, Decision input, List<GameEvent> events)
+    {
+        var ally = ControlledAllies(world, player)
+            .FirstOrDefault(card => card.ObjectId == input.Affordance)
+            ?? throw new RulesNotImplementedException(
+                $"card {input.Affordance} was not offered for the ally limit");
+        Discard.Card(world, ally, Steps.ChooseAllyForLimit, events);
+
+        long limit = StateFields.Modified(
+            world, world.Seats[player].IdentityCard, "ally_limit", facts, world.Players);
+        if (ControlledAllies(world, player).Count > limit)
+        {
+            world.Agenda.Then(new PhaseStep(
+                Steps.ChooseAllyForLimit,
+                world.Agenda.Current?.Round ?? 0,
+                0,
+                Seat: player,
+                Plan: true));
+        }
+    }
+
+    private static List<Card> ControlledAllies(World world, int player) =>
+    [
+        .. world.Areas
+            .Where(area => area.Type == DeckType.AlliesArea
+                && area.PlayArea == PlayArea.Of(player))
+            .SelectMany(area => area.Cards)
+            .OrderBy(card => card.ObjectId),
+    ];
+
+    private static void FinalizeAllyEntry(
+        World world, ICardFacts facts, ICardAbilities abilities, int allyId,
+        List<GameEvent> events)
+    {
+        var ally = world.Cards[allyId];
+        if (ally.Area.Type == DeckType.AlliesArea)
+        {
+            Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
         }
     }
 

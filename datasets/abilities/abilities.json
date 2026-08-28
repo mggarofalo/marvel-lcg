@@ -3064,7 +3064,7 @@
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
           "effect": { "seq": [
             { "if": { "test": { "not": { "titleInPlay": "Madame Hydra" } }, "then": { "seq": [
-              { "putIntoPlay": { "card": { "cardsIn": { "areas": [ "encounterDeck", "encounterDiscardPile" ], "title": "Madame Hydra" } }, "engagedWith": "you" } },
+              { "putIntoPlay": { "card": { "cardsIn": { "areas": [ "encounterDeck", "encounterDiscardPile" ], "title": "Madame Hydra" } }, "where": "engagedWithYou" } },
               { "shuffle": "encounterDeck" }
             ] } } },
             { "placeThreat": { "scheme": "this", "amount": { "mul": [ 2, { "count": { "enemiesWithTrait": "HYDRA" } } ] } } }
