@@ -17,21 +17,33 @@ public sealed class CitationIndexTests
         try
         {
             string attribute = "[Rule(\"rr:actual-citation\")]";
-            File.WriteAllText(
+            string noted = "[Rule(\"rr:noted-citation\", Note = \"why it belongs here\")]";
+            string example = "[Rule(\"rr:not-a-citation\")]";
+            File.WriteAllLines(
                 Path.Combine(root, "ExampleTests.cs"),
-                $$"""
-                /// Every <c>[Rule("rr:not-a-citation")]</c> is checked.
-                public sealed class ExampleTests
-                {
-                    {{attribute}}
-                    [Fact]
-                    public void Example() { }
-                }
-                """);
+                [
+                    $"/// Every <c>{example}</c> is checked.",
+                    "/*",
+                    example,
+                    "*/",
+                    "string documentation = \"\"\"",
+                    example,
+                    "\"\"\";",
+                    "public sealed class ExampleTests",
+                    "{",
+                    $"    {attribute}",
+                    $"    {noted}",
+                    "    [Fact]",
+                    "    public void Example() { }",
+                    "}",
+                ]);
 
-            Cited citation = Assert.Single(Citations.Read(root, root));
-            Assert.Equal("rr:actual-citation", citation.Id);
-            Assert.Equal("ExampleTests.cs", citation.Site);
+            Assert.Equal(
+                [
+                    new Cited("rr:actual-citation", "ExampleTests.cs"),
+                    new Cited("rr:noted-citation", "ExampleTests.cs"),
+                ],
+                Citations.Read(root, root));
         }
         finally
         {

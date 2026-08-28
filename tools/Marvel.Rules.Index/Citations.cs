@@ -50,19 +50,117 @@ internal static partial class Citations
             string site = Path.GetRelativePath(repositoryRoot, file)
                 .Replace(Path.DirectorySeparatorChar, '/');
 
-            foreach (Match match in Attribute().Matches(File.ReadAllText(file)))
+            var state = SourceState.Code;
+            int rawQuotes = 0;
+            foreach (string line in File.ReadLines(file))
             {
-                found.Add(new Cited(match.Groups[1].Value, site));
+                if (state == SourceState.Code && Attribute().Match(line) is { Success: true } match)
+                {
+                    found.Add(new Cited(match.Groups[1].Value, site));
+                }
+
+                Scan(line, ref state, ref rawQuotes);
             }
         }
 
         return found;
     }
 
-    // An attribute is a literal on its own line. Anchoring that grammar keeps
-    // documentation and comments from becoming claims the suite never made.
+    // An attribute is a literal on its own line. The named note is metadata on
+    // the same claim, so it does not change the id the report reads.
     [GeneratedRegex(
-        @"^[ \t]*\[Rule\(""([^""]+)""\)\][ \t]*\r?$",
-        RegexOptions.Multiline)]
+        @"^[ \t]*\[Rule\(""([^""]+)""(?:,[ \t]*Note[ \t]*=[ \t]*""(?:\\.|[^""\\])*"")?\)\][ \t]*$")]
     private static partial Regex Attribute();
+
+    /// <summary>Advances the lexical state through one physical source line.</summary>
+    private static void Scan(string line, ref SourceState state, ref int rawQuotes)
+    {
+        for (int index = 0; index < line.Length; index += 1)
+        {
+            char current = line[index];
+            char next = index + 1 < line.Length ? line[index + 1] : '\0';
+
+            switch (state)
+            {
+                case SourceState.Code when current == '/' && next == '/':
+                    return;
+                case SourceState.Code when current == '/' && next == '*':
+                    state = SourceState.BlockComment;
+                    index += 1;
+                    break;
+                case SourceState.Code when current == '\'':
+                    state = SourceState.Character;
+                    break;
+                case SourceState.Code when current == '"':
+                    int quotes = QuotesAt(line, index);
+                    if (quotes >= 3)
+                    {
+                        state = SourceState.RawString;
+                        rawQuotes = quotes;
+                        index += quotes - 1;
+                    }
+                    else
+                    {
+                        state = IsVerbatimPrefix(line, index)
+                            ? SourceState.VerbatimString
+                            : SourceState.String;
+                    }
+
+                    break;
+                case SourceState.BlockComment when current == '*' && next == '/':
+                    state = SourceState.Code;
+                    index += 1;
+                    break;
+                case SourceState.String when current == '\\':
+                case SourceState.Character when current == '\\':
+                    index += 1;
+                    break;
+                case SourceState.String when current == '"':
+                case SourceState.Character when current == '\'':
+                    state = SourceState.Code;
+                    break;
+                case SourceState.VerbatimString when current == '"' && next == '"':
+                    index += 1;
+                    break;
+                case SourceState.VerbatimString when current == '"':
+                    state = SourceState.Code;
+                    break;
+                case SourceState.RawString when current == '"':
+                    int closing = QuotesAt(line, index);
+                    if (closing >= rawQuotes)
+                    {
+                        state = SourceState.Code;
+                        index += rawQuotes - 1;
+                        rawQuotes = 0;
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    private static int QuotesAt(string line, int start)
+    {
+        int end = start;
+        while (end < line.Length && line[end] == '"')
+        {
+            end += 1;
+        }
+
+        return end - start;
+    }
+
+    private static bool IsVerbatimPrefix(string line, int quote) =>
+        quote > 0 && line[quote - 1] == '@'
+        || quote > 1 && line[quote - 2] == '@' && line[quote - 1] == '$';
+
+    private enum SourceState
+    {
+        Code,
+        BlockComment,
+        String,
+        VerbatimString,
+        RawString,
+        Character,
+    }
 }
