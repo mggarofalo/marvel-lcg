@@ -537,6 +537,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var occurrence = new Occurrence(
             0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player);
 
+        // One reveal can contain several authored abilities. A non-numeric
+        // keyword gained by more than one of them is still one keyword, so the
+        // casts share which keyword grants have already resolved.
+        var gainedKeywords = new HashSet<string>(StringComparer.Ordinal);
         foreach (var ability in On(card))
         {
             // `rr:ability.step.3` -- "When Revealed" *is* the occurrence, not a
@@ -551,6 +555,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     new Cast(world, card, occurrence, player, events, this)
                     {
                         Tier = ability.Trigger.Timing,
+                        GainedKeywords = gainedKeywords,
                     });
             }
         }
@@ -3213,17 +3218,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // facedown encounter card from the top of the encounter deck",
                 // and `.1` writes it as "**When Revealed**: deal yourself 1
                 // facedown encounter card". A card that *gains* surge does the
-                // same thing the keyword would have -- so this is one deal, and
-                // the number beside the node is how many.
+                // same thing the keyword would have.
                 //
-                // `.2` finishes the original card first, which the villain
-                // phase's reveal queue does without anything here.
-                for (long dealt = 0; dealt < Number(node.Argument); dealt++)
+                // `rr:keywords.1` makes every additional non-numeric instance
+                // inert. Printed and continuously granted Surge already ran in
+                // `Reveal.Keywords`; multiple nodes and a value greater than one
+                // are multiple gained instances inside this reveal. All four
+                // shapes therefore produce at most one deal between them.
+                if (Number(node.Argument) > 0
+                    && StateFields.Modified(
+                        cast.World, cast.Source, "surge", cast.World.Facts,
+                        cast.World.Players) <= 0
+                    && cast.GainedKeywords.Add("surge"))
                 {
                     Deal.EncounterCard(
                         cast.World, cast.Player, cast.Trigger, cast.Events);
                 }
 
+                // `.2` finishes the original card first, which the villain
+                // phase's reveal queue does without anything else here.
                 break;
 
             case "heal":
@@ -6159,6 +6172,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// this sentence and not about the game.
         /// </remarks>
         public Dictionary<string, long> Results { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>Non-numeric keywords gained during this resolution scope.</summary>
+        /// <remarks>
+        /// A reveal shares this set across each of the card's When Revealed
+        /// abilities. Other entry points keep the per-cast default.
+        /// </remarks>
+        public HashSet<string> GainedKeywords { get; init; } =
+            new(StringComparer.Ordinal);
 
         /// <summary>The resource letters generated to pay for this event.</summary>
         public string Payment { get; private set; } = string.Empty;
