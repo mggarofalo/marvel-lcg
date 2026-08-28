@@ -817,12 +817,19 @@ public static class CardPlay
         World world, ICardFacts facts, int player, int subject = -1)
     {
         var seat = world.Seats[player];
-        long limit = StateFields.Modified(
-            world, seat.IdentityCard, "ally_limit", facts, world.Players);
+        // Discard is also used while building deliberately partial boards.
+        // With no identity assigned there is no player ally-limit value yet.
+        if (seat.IdentityCard is null)
+        {
+            return;
+        }
+
         int controlled = world.Areas
             .Where(area => area.Type == DeckType.AlliesArea
                 && area.PlayArea == PlayArea.Of(player))
             .Sum(area => area.Cards.Count);
+        long limit = StateFields.Modified(
+            world, seat.IdentityCard, "ally_limit", facts, world.Players);
         if (controlled <= limit || world.Agenda.Outstanding.Any(step =>
                 step.What == Steps.ChooseAllyForLimit && step.Seat == player))
         {
