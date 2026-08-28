@@ -450,7 +450,8 @@ failed. Its last record has `type: "failure"` and one of these categories:
 
 The failure record contains:
 
-- The game and step index.
+- The game, step and current round.
+- Policy metrics from decisions that resolved before the failure.
 - The exact replay command.
 - The exception type and message, when present.
 - The last known good full digest and fingerprint, or null when setup failed.

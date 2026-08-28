@@ -75,6 +75,8 @@ internal sealed record FailureRecord(
     int Game,
     uint Seed,
     int Step,
+    int Round,
+    PolicyMetrics Metrics,
     string Exception,
     string Message,
     PromptRecord? Prompt,

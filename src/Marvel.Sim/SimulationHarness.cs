@@ -147,6 +147,8 @@ internal static class SimulationHarness
                 diagnostics.WriteLine($"game {gameIndex}, seed {seed}: {signature}");
                 RecordJson.Write(records, new FailureRecord(
                     "failure", FailureCategory(error, stage), gameIndex, seed, step,
+                    game?.Round ?? 0,
+                    policy?.Metrics ?? new PolicyMetrics(0, 0, 0, 0),
                     error.GetType().FullName ?? error.GetType().Name,
                     error.Message,
                     FailurePrompt(stage, attempted, prompt, game),
@@ -427,6 +429,17 @@ internal static class SimulationHarness
                                 $"game {failure.Game} has no start but records gameplay state");
                         }
 
+                        RequireEqual(0, failure.Round, $"game {failure.Game} setup round");
+                        RequireEqual(
+                            JsonSerializer.Serialize(
+                                new PolicyMetrics(0, 0, 0, 0), RecordJson.Options),
+                            JsonSerializer.Serialize(failure.Metrics, RecordJson.Options),
+                            $"game {failure.Game} setup metrics");
+                        RequireNullablePrompt(
+                            null, failure.Prompt, $"game {failure.Game} setup prompt");
+                        RequireEqual(0, failure.RecentSteps.Count,
+                            $"game {failure.Game} setup recent-step count");
+
                         try
                         {
                             _ = Open(data, simulation, failure.Seed);
@@ -463,6 +476,13 @@ internal static class SimulationHarness
                         JsonSerializer.Serialize(failure.RecentSteps, RecordJson.Options),
                         JsonSerializer.Serialize(replayRecent, RecordJson.Options),
                         $"game {currentGame} recent steps");
+                    RequireEqual(
+                        game.Round, failure.Round, $"game {currentGame} failure round");
+                    RequireEqual(
+                        JsonSerializer.Serialize(
+                            replayPolicy!.Metrics, RecordJson.Options),
+                        JsonSerializer.Serialize(failure.Metrics, RecordJson.Options),
+                        $"game {currentGame} failure metrics");
                     AddFailure(failure, replaySignatures, ref replayFailures);
                     replayRounds += game.Round;
                     AddMetrics(
@@ -623,16 +643,106 @@ internal static class SimulationHarness
             throw new SimulationUsageException($"record does not exist: {fullPath}");
         }
 
-        _ = Replay(new ReplayConfig(fullPath, null), TextWriter.Null);
-
         SummaryRecord? found = null;
+        HeaderRecord? reportHeader = null;
+        bool sawAny = false;
+        int games = 0;
+        int playerWins = 0;
+        int villainWins = 0;
+        int playerLosses = 0;
+        int failures = 0;
+        int decisions = 0;
+        int rounds = 0;
+        int cardsPlayed = 0;
+        int playerAttacks = 0;
+        int payments = 0;
+        int resourceAbilities = 0;
+        var signatures = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (string line in File.ReadLines(fullPath))
         {
-            using var document = JsonDocument.Parse(line);
-            if (RecordType(document.RootElement) == "summary")
+            if (found is not null)
             {
-                found = Read<SummaryRecord>(line, "summary");
+                throw new ReplayDivergenceException(
+                    "a record appeared after the terminal summary");
             }
+
+            using var document = JsonDocument.Parse(line);
+            string type = RecordType(document.RootElement);
+            switch (type)
+            {
+                case "header":
+                    if (sawAny)
+                    {
+                        throw new ReplayDivergenceException(
+                            "header is not the first record");
+                    }
+
+                    reportHeader = Read<HeaderRecord>(line, type);
+                    break;
+                case "start":
+                    break;
+                case "step":
+                    decisions++;
+                    break;
+                case "result":
+                {
+                    var result = Read<ResultRecord>(line, type);
+                    RequireEqual(games, result.Game, "result game index");
+                    games++;
+                    rounds += result.Round;
+                    AddMetrics(
+                        result.Metrics,
+                        ref cardsPlayed,
+                        ref playerAttacks,
+                        ref payments,
+                        ref resourceAbilities);
+                    switch (result.Outcome)
+                    {
+                        case nameof(Outcome.PlayersWin):
+                            playerWins++;
+                            break;
+                        case nameof(Outcome.VillainWins):
+                            villainWins++;
+                            break;
+                        case nameof(Outcome.PlayersLose):
+                            playerLosses++;
+                            break;
+                        default:
+                            throw new ReplayDivergenceException(
+                                $"unknown result outcome '{result.Outcome}'");
+                    }
+
+                    break;
+                }
+                case "failure":
+                {
+                    var failure = Read<FailureRecord>(line, type);
+                    RequireEqual(games, failure.Game, "failure game index");
+                    games++;
+                    rounds += failure.Round;
+                    AddMetrics(
+                        failure.Metrics,
+                        ref cardsPlayed,
+                        ref playerAttacks,
+                        ref payments,
+                        ref resourceAbilities);
+                    AddFailure(failure, signatures, ref failures);
+                    break;
+                }
+                case "summary":
+                    if (found is not null)
+                    {
+                        throw new ReplayDivergenceException(
+                            "record contains more than one summary");
+                    }
+
+                    found = Read<SummaryRecord>(line, type);
+                    break;
+                default:
+                    throw new SimulationUsageException($"unknown record type '{type}'");
+            }
+
+            sawAny = true;
         }
 
         if (found is null)
@@ -640,12 +750,34 @@ internal static class SimulationHarness
             throw new SimulationUsageException("record has no summary");
         }
 
+        if (reportHeader is null)
+        {
+            throw new ReplayDivergenceException("record has no header");
+        }
+
+        if (reportHeader.Schema != RecordSchema)
+        {
+            throw new SimulationUsageException(
+                $"record schema {reportHeader.Schema} is not supported; "
+                + $"expected {RecordSchema}");
+        }
+
+        RequireEqual(reportHeader.Seeds.Count, games, "recorded game count");
+
+        var rebuilt = new SummaryRecord(
+            "summary", games, playerWins, villainWins, playerLosses, failures,
+            decisions, rounds, cardsPlayed, playerAttacks, payments,
+            resourceAbilities, signatures);
+        RequireEqual(
+            JsonSerializer.Serialize(rebuilt, RecordJson.Options),
+            JsonSerializer.Serialize(found, RecordJson.Options),
+            "aggregate summary");
         return new SimulationSummary(
-            found.Games, found.PlayersWin, found.VillainWins,
-            found.PlayersLose, found.Failures, found.Decisions,
-            found.Rounds, found.CardsPlayed, found.PlayerAttacks,
-            found.Payments, found.ResourceAbilitiesUsed,
-            found.FailureSignatures);
+            rebuilt.Games, rebuilt.PlayersWin, rebuilt.VillainWins,
+            rebuilt.PlayersLose, rebuilt.Failures, rebuilt.Decisions,
+            rebuilt.Rounds, rebuilt.CardsPlayed, rebuilt.PlayerAttacks,
+            rebuilt.Payments, rebuilt.ResourceAbilitiesUsed,
+            rebuilt.FailureSignatures);
     }
 
     private static OpenedGame Open(
