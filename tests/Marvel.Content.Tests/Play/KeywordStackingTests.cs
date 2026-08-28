@@ -50,6 +50,33 @@ public sealed class KeywordStackingTests
         AssertOneAdditionalCard(world);
     }
 
+    [Rule("rr:keywords.1")]
+    [Rule("rr:surge")]
+    [Fact]
+    public void SeparateAbilitiesShareTheOneGainedSurge()
+    {
+        // Each When Revealed ability has its own resolution state, but both
+        // belong to this one reveal. The first gained instance creates Surge's
+        // ability and the second is inert even though it came from another
+        // printed ability on the card.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01110", "abilities": [
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "gainSurge": 1 } },
+              { "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
+                             "subject": "this" },
+                "effect": { "gainSurge": 1 } }
+            ] } ] }
+            """));
+        var (world, card) = Board("01110", runner);
+
+        ResolveReveal(world, card, runner);
+
+        AssertOneAdditionalCard(world);
+    }
+
     private static AbilityRunner Runner(string faceId, string effect) =>
         new(AbilityCatalog.Parse(
             $$"""
