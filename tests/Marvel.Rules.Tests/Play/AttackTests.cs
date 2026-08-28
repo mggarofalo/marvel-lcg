@@ -108,19 +108,21 @@ public sealed class AttackTests
     }
 
     [Rule("rr:defend-defense.2")]
+    [Rule("rr:defend-defense.6")]
     [Fact]
     public void DecliningToDefendLeavesTheAttackUndefended()
     {
-        // `rr:attack-enemy-activation.4` -- "if no character was declared the
-        // defender of the attack, the attack is considered undefended", and it
-        // still resolves. The hero stays ready, which is the visible half of
-        // not having exhausted to defend.
+        // "If no character is used to defend against an enemy attack, that
+        // attack is considered undefended", and it still resolves. The hero
+        // stays ready, which is the visible half of not having exhausted to
+        // defend.
         var printed = Printed(atk: 2, boost: 0, def: 1);
         var world = Board(printed);
         Finish(world, printed);
 
         Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
         Assert.True(world.Seats[0].IdentityCard.Ready);
+        Assert.False(world.FinishedAttack!.IsDefended);
     }
 
     [Rule("rr:defend-defense.3")]
@@ -199,12 +201,19 @@ public sealed class AttackTests
 
     [Rule("rr:defend-defense.3")]
     [Rule("rr:defend-defense.3.1")]
+    [Rule("rr:attack-enemy-activation.1.2")]
+    [Rule("rr:attack-enemy-activation.3")]
+    [Rule("rr:damage.step.5")]
+    [Rule("rr:damage.2")]
+    [Rule("rr:hit-points.3")]
+    [Rule("rr:sustained-damage.2")]
     [Fact]
     public void AnAllyDefendingTakesTheDamageAndTheHeroTakesNone()
     {
-        // "Damage from the attack is dealt to that ally", and `.3.1`: "that
-        // ally becomes the **target character** for that attack, and its
-        // controller becomes the target player."
+        // "If a character other than the attacked character defends the
+        // attack, that character becomes the new target", and all damage is
+        // dealt to that ally. The two damage placed on the ally are its damage
+        // tokens and therefore its sustained damage.
         //
         // **And its DEF does not apply.** `rr:defend-defense.2`'s reduction is
         // the hero's basic defense power; an ally exhausting to defend is a
@@ -229,12 +238,14 @@ public sealed class AttackTests
     }
 
     [Rule("rr:ally.1")]
+    [Rule("rr:damage.step.8")]
     [Fact]
     public void AnAllyDefeatedByTheAttackIsDiscarded()
     {
-        // "If an ally's remaining hit points are reduced to zero, it is
-        // defeated and discarded from play." Three hit points against an attack
-        // of four, and no DEF to reduce it.
+        // "An ally or minion with zero or fewer remaining hit points is
+        // defeated and placed in the appropriate discard pile." Discarding is
+        // damage step 8. Three hit points against an attack of four, and no DEF
+        // to reduce it.
         var printed = Printed(atk: 4, boost: 0);
         var world = Board(printed);
         var ally = world.CreateCard(
@@ -324,13 +335,15 @@ public sealed class AttackTests
     }
 
     [Rule("rr:defend-defense.5")]
+    [Rule("rr:attack-enemy-activation.1.3")]
+    [Rule("rr:attack-enemy-activation.2")]
     [Fact]
     public void DefendingForAnotherPlayerMakesYouTheTarget()
     {
-        // "If a player defends against an enemy attack that targets a different
-        // player [...] the defending player becomes the new target of that
-        // attack." **Both** the target character and the target player move --
-        // the damage lands on the defender, and the attack is now against them.
+        // "If a player other than the attacked player defends the attack with a
+        // character they control, that player becomes the new target of that
+        // attack." A hero was declared, so the damage is dealt to that hero.
+        // **Both** the target character and the target player move.
         var printed = Printed(atk: 5, boost: 0, def: 2);
         var world = Board(printed, players: 2);
         var rescuer = world.Seats[1].IdentityCard;
@@ -394,13 +407,15 @@ public sealed class AttackTests
 
     [Rule("rr:damage.1")]
     [Rule("rr:hit-points")]
+    [Rule("rr:remaining-hit-points.1")]
+    [Rule("rr:sustained-damage.1")]
     [Fact]
     public void HealthIsWhatIsLeftAfterDamage()
     {
-        // The digest records a character's `health` and no damage key at all,
-        // so damage is the subtrahend rather than something counted beside it.
-        // Every recorded board has zero damage on everything, which is exactly
-        // why the recording cannot tell a subtraction from a printed constant.
+        // "An identity's or villain's hit point dial represents their remaining
+        // hit points." Its sustained damage is maximum minus that remaining
+        // value: four damage changes nine remaining hit points to five. The
+        // digest records `health` and no damage key, so it exposes the dial.
         var printed = Printed(atk: 1, boost: 0);
         var world = new World(printed, players: 1);
         world.CreateSeat("p0");

@@ -385,11 +385,12 @@ public sealed class BasicPowerTests
     }
 
     [Rule("rr:villain-defeat")]
+    [Rule("rr:hit-points.2.2")]
     [Fact]
     public void DefeatingAVillainStageRemovesItAndRevealsTheNext()
     {
-        // "Remove the current stage of the villain deck from the game. The next
-        // sequential stage of the villain deck is revealed."
+        // "If a villain's hit point dial is reduced to zero, that stage of the
+        // villain is defeated." Remove that stage and reveal the next one.
         var printed = new Printed()
             .With("hero", ("ATK", "9"))
             .With("villain", ("HP", "5"))

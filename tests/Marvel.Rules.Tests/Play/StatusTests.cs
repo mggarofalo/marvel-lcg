@@ -69,9 +69,12 @@ public sealed class StatusTests
     }
 
     [Rule("rr:confuse-confused.1")]
+    [Rule("rr:confuse-confused.5")]
     [Fact]
     public void AConfusedHeroThwartsNothingAndLosesTheConfusion()
     {
+        // "Discard the confused card instead. Costs associated with the thwart
+        // attempt, including exhausting the character, must still be paid."
         var printed = Cards();
         var world = Board(printed);
         var hero = world.Seats[0].IdentityCard;
@@ -128,12 +131,13 @@ public sealed class StatusTests
     }
 
     [Rule("rr:stun-stunned.1")]
+    [Rule("rr:stun-stunned.6")]
     [Fact]
     public void AStunnedEnemyDoesNotAttackAtAll()
     {
-        // "Remove each stunned status card from it **instead**." Instead of
-        // attacking -- so none of the attack's six steps happens, and the boost
-        // card it would have been given stays on the encounter deck.
+        // "If a stunned villain or minion would attack, discard the stunned
+        // status card instead." So none of the attack's six steps happens, and
+        // the boost card it would have been given stays on the encounter deck.
         var printed = Cards();
         var world = Board(printed);
         world.Seats[0].IdentityCard.TurnTo("hero");
@@ -152,14 +156,16 @@ public sealed class StatusTests
     }
 
     [Rule("rr:confuse-confused.1")]
+    [Rule("rr:confuse-confused.6")]
     [Fact]
     public void AConfusedEnemyPlacesNoThreat()
     {
         var printed = Cards();
         var world = Board(printed);
 
-        // Alter-ego form, because `rr:activation.1` is what decides whether the
-        // villain schemes at all.
+        // "If a confused villain or minion would scheme, discard the confused
+        // status card instead." Alter-ego form makes the villain attempt that
+        // scheme.
         world.Seats[0].IdentityCard.TurnTo("alterego");
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
@@ -176,11 +182,14 @@ public sealed class StatusTests
 
     [Rule("rr:stalwart")]
     [Rule("rr:stalwart.1")]
+    [Rule("rr:confuse-confused.4")]
+    [Rule("rr:stun-stunned.4")]
     [Fact]
     public void AStalwartCharacterCannotBeStunnedOrConfused()
     {
-        // "This character cannot have confused or stunned status cards." Tough
-        // is not one of the two and is unaffected.
+        // "If a character has an ability stating that it 'cannot be confused'"
+        // or "cannot be stunned", that status cannot be placed. Stalwart is
+        // exactly those two constant abilities. Tough is unaffected.
         var printed = Cards().With("minion", ("HP", "3"), ("Stalwart", "1"));
         var world = Board(printed);
         var minion = world.CreateCard(
@@ -207,25 +216,30 @@ public sealed class StatusTests
     }
 
     [Rule("rr:steady")]
+    [Rule("rr:steady.1")]
+    [Rule("rr:confuse-confused.3.1")]
     [Rule("rr:stun-stunned.3.1")]
-    [Fact]
-    public void ASteadyCharacterNeedsTwoStatusCardsToBeAfflicted()
+    [Theory]
+    [InlineData(Statuses.Stunned)]
+    [InlineData(Statuses.Confused)]
+    public void ASteadyCharacterNeedsTwoStatusCardsToBeAfflicted(string status)
     {
-        // "That character is not stunned unless they have two stunned status
-        // cards", and `rr:status-cards.1.1` lets it hold the second.
+        // A steady character is stunned or confused "only if it has two"
+        // corresponding status cards, and `rr:status-cards.1.1` lets it hold
+        // that second card.
         var printed = Cards().With("minion", ("HP", "3"), ("Steady", "1"));
         var world = Board(printed);
         var minion = world.CreateCard(
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
-        Assert.NotNull(Statuses.Inflict(world, printed, minion, Statuses.Stunned));
-        Assert.False(Statuses.Afflicted(world, printed, minion, Statuses.Stunned));
+        Assert.NotNull(Statuses.Inflict(world, printed, minion, status));
+        Assert.False(Statuses.Afflicted(world, printed, minion, status));
 
-        Assert.NotNull(Statuses.Inflict(world, printed, minion, Statuses.Stunned));
-        Assert.True(Statuses.Afflicted(world, printed, minion, Statuses.Stunned));
+        Assert.NotNull(Statuses.Inflict(world, printed, minion, status));
+        Assert.True(Statuses.Afflicted(world, printed, minion, status));
 
         // And no third.
-        Assert.Null(Statuses.Inflict(world, printed, minion, Statuses.Stunned));
+        Assert.Null(Statuses.Inflict(world, printed, minion, status));
     }
 
     [Rule("rr:steady")]
@@ -382,12 +396,13 @@ public sealed class StatusTests
 
     [Rule("rr:overkill")]
     [Rule("rr:overkill.1")]
+    [Rule("rr:excess-damage")]
     [Fact]
     public void OverkillCarriesTheExcessFromADefeatedMinionToTheVillain()
     {
-        // "If a minion is defeated by an attack with the overkill keyword, deal
-        // any damage on that minion beyond its hit points **to the villain**."
-        // Six damage against two hit points is four beyond.
+        // "Excess damage is any amount of damage [...] beyond that character's
+        // remaining hit points." If overkill defeats a minion, that excess is
+        // dealt to the villain: six against two is four beyond.
         var printed = Cards().With("hero", ("ATK", "6"), ("HP", "10"))
             .With("minion", ("HP", "2"));
         var world = Board(printed);

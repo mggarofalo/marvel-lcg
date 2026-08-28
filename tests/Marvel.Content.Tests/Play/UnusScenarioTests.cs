@@ -111,6 +111,7 @@ public sealed class UnusScenarioTests
     }
 
     [Rule("rr:ability.9")]
+    [Rule("rr:maximum-hit-points")]
     [Theory]
     [InlineData(0, false, false, 3)]
     [InlineData(3, true, false, 3)]
@@ -119,11 +120,10 @@ public sealed class UnusScenarioTests
     public void TheInfiniteSoldierReadsGenePoolTheSameWayUnusDoes(
         long threat, bool quickstrike, bool surge, long health)
     {
-        // "If the amount of threat on Gene Pool is at least: 3 — this minion
-        // gains quickstrike. 6 — **also** surge. 9 — **also** +3 hit points."
-        // The villain's shape one card down, and the hit points are the half a
-        // keyword grant does not have: `health` is computed rather than
-        // printed, and `Damage.Health` is where the modifier is summed in.
+        // "A character's maximum hit points is their base hit points plus or
+        // minus all 'gets' hit point modifiers" active on it. Gene Pool's
+        // threshold grants +3, taking the soldier's printed three to six while
+        // the condition holds; the lower thresholds grant only keywords.
         var (world, pool) = Board();
         var soldier = world.CreateCard(
             "45069", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));

@@ -108,12 +108,13 @@ public sealed class CoreCardDslTests
     }
 
     [Rule("rr:remaining-hit-points")]
+    [Rule("rr:remaining-hit-points.2")]
     [Fact]
     public void TitaniasAttackTracksHerRemainingHitPoints()
     {
-        // "X is equal to Titania's remaining hit points." The value falls as
-        // damage is sustained and reads the same modified maximum health that
-        // the damage rules use.
+        // "Start with the character's maximum hit points [...] and subtract
+        // their sustained damage." Titania's six minus four is two, and her X
+        // follows that remaining-hit-point calculation.
         var world = Hero("01029a");
         var titania = world.CreateCard(
             "01162", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
