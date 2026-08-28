@@ -416,14 +416,18 @@ public sealed class AttackTests
         // observable instead of having game-over abandon the entire agenda.
         var printed = Printed(atk: 20, boost: 0);
         var world = Board(printed, players: 2);
+        var observer = new CombatWindowObserver();
 
-        Finish(world, printed);
+        Finish(world, printed, observer);
 
         Assert.True(world.Seats[0].Eliminated);
         Assert.False(world.Seats[1].Eliminated);
         Assert.Null(world.Attack);
         Assert.Null(world.Activation);
         Assert.NotNull(world.FinishedAttack);
+        Assert.True(world.FinishedAttack!.Damaged);
+        Assert.Equal(10, Assert.Single(observer.CompletedActivations).DamageDealt);
+        Assert.True(observer.SawDamageDealt);
         Assert.False(world.Agenda.IsBusy);
     }
 
@@ -662,7 +666,7 @@ public sealed class AttackTests
         world.Agenda.Add(new PhaseStep(
             Steps.Attack, 1, 2, Subject: minion.ObjectId, Seat: 0));
         var events = new List<GameEvent>();
-        var abilities = new NoCardAbilities();
+        var abilities = new CombatWindowObserver();
 
         var defend = Sequence.Work(world, facts, abilities, events)!;
         Sequence.Answer(
@@ -676,6 +680,8 @@ public sealed class AttackTests
         Assert.True(world.FinishedAttack.BasicDefense);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(DeckType.VillainArea, villain.Area.Type);
+        Assert.False(abilities.SawBoostCardsFlipped);
+        Assert.False(abilities.SawDamageWouldBeDealt);
     }
 
     [Rule("rr:attack-enemy-activation")]
@@ -774,8 +780,10 @@ public sealed class AttackTests
         public bool SawAttackInitiation { get; private set; }
         public bool SawDamageWouldBeDealt { get; private set; }
         public bool SawDamageDealt { get; private set; }
+        public bool SawBoostCardsFlipped { get; private set; }
         public int AttackInitiationInterrupts { get; private set; }
         public int AttackInitiationResponses { get; private set; }
+        public List<EnemyActivation> CompletedActivations { get; } = [];
 
         public override IReadOnlyList<PendingAbility> Waiting(
             World world, Occurrence occurrence, WindowKind window)
@@ -796,6 +804,14 @@ public sealed class AttackTests
                 && occurrence.Is(Steps.DamageWouldBeDealt);
             SawDamageDealt |= window == WindowKind.Response
                 && occurrence.Is(Steps.DamageDealt);
+            SawBoostCardsFlipped |= occurrence.Is("WhenBoostCardsFlipped");
+            return [];
+        }
+
+        public override IReadOnlyList<GameEvent> ActivationCompleted(
+            World world, EnemyActivation result)
+        {
+            CompletedActivations.Add(result);
             return [];
         }
     }

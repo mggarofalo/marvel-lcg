@@ -1827,6 +1827,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             required, card.ObjectId,
             cast.Player, cast.Events, payingFor: card);
         CardPlay.UseCostModifiers(cast.World, adjusted);
+
+        // `rr:initiating-abilities.step.6`: after its costs are paid, the
+        // event is played and its effect resolves. The action's persistent
+        // occurrence owns the response window after that effect, so add the
+        // condition here rather than creating an earlier separate window.
+        cast.Occurrence.Also(Steps.CardPlayed);
     }
 
     private static void DiscardEvent(Card card, Cast cast)

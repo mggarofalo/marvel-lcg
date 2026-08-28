@@ -63,6 +63,7 @@ public sealed class SpiderManCardsTests
         Assert.Equal(DeckType.RevealingArea, kick.Area.Type);
         Assert.True(kick.FaceUp);
         Assert.False(DeckTypes.IsInPlay(kick.Area.Type));
+        Assert.True(world.Agenda.Occurrence!.Is(Steps.CardPlayed));
 
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var prompt = Sequence.Work(world, Cards, runner, events)!;

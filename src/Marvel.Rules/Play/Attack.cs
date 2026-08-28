@@ -635,9 +635,17 @@ public static class Attack
         // `rr:tough.3` shortens -- a character whose tough card absorbed the
         // attack "is not considered to have taken damage" -- so an attack that
         // hit a tough card did not damage anybody.
-        if (damage.Characters.Count > 0 && world.Attack is not null)
+        if (damage.Characters.Count > 0)
         {
-            world.Attack = attack with { Damaged = true };
+            if (world.Attack is not null)
+            {
+                world.Attack = attack with { Damaged = true };
+            }
+            else if (world.FinishedAttack is { } finishedAttack)
+            {
+                world.FinishedAttack = finishedAttack with { Damaged = true };
+            }
+
             // Direct rules-unit calls have no surrounding window; an agenda
             // occurrence gains the condition for its shared response window.
             world.Agenda.Occurrence?.Also(Steps.DamageDealt);
@@ -648,6 +656,13 @@ public static class Attack
             world.Activation = activation with
             {
                 DamageDealt = activation.DamageDealt + damage.Amount,
+            };
+        }
+        else if (world.FinishedActivation is { } finishedActivation)
+        {
+            world.FinishedActivation = finishedActivation with
+            {
+                DamageDealt = finishedActivation.DamageDealt + damage.Amount,
             };
         }
     }
@@ -729,6 +744,22 @@ public static class Attack
         world.Agenda.Occurrence?.Also(Steps.AttackEnds);
         world.Agenda.EndActivationEarly(activationId);
         Finish(world, events);
+    }
+
+    /// <summary>Ends an activation before another window opens when its minion left play.</summary>
+    public static bool EndIfEnemyLeftPlay(World world, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(events);
+        if (world.Attack is null || !Over(world))
+        {
+            return false;
+        }
+
+        int activationId = world.Activation?.Id ?? -1;
+        world.Agenda.EndActivationEarly(activationId, preserveCurrentOccurrence: false);
+        Finish(world, events);
+        return true;
     }
 
     private static void Finish(World world, List<GameEvent> events)

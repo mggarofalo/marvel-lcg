@@ -114,6 +114,12 @@ public enum Stage
 /// Rules Reference term: it lets the procedure re-read the engaged-minion area
 /// after every activation without activating an enemy twice.
 /// </param>
+/// <param name="ActivationPlayers">
+/// The stable player order for the current step-2 procedure. This is engine
+/// continuation data: eliminating a player changes <c>World.PlayerOrder</c>,
+/// but must not make a continuation mistake the next surviving player for the
+/// player whose enemies have already activated.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
@@ -122,7 +128,8 @@ public readonly record struct PhaseStep(
     CharacterAttack? CharacterAttack = null, CharacterThwart? CharacterThwart = null,
     PlayerAction? PlayerAction = null, int? OccurrenceId = null,
     bool SurgeGained = false, IReadOnlyList<int>? Discarded = null,
-    IReadOnlyList<int>? ActivatedEnemies = null)
+    IReadOnlyList<int>? ActivatedEnemies = null,
+    IReadOnlyList<int>? ActivationPlayers = null)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -660,7 +667,7 @@ public sealed class Agenda
     }
 
     /// <summary>Remove the unfinished steps of an activation that ended early.</summary>
-    public void EndActivationEarly(int activationId)
+    public void EndActivationEarly(int activationId, bool preserveCurrentOccurrence = true)
     {
         if (activationId < 0)
         {
@@ -670,7 +677,8 @@ public sealed class Agenda
         // Keep the current occurrence so its response window can resolve, and
         // keep the completion sentinel so the effect that initiated the
         // activation still receives its result and can resume.
-        for (int index = items.Count - 1; index >= 1; index--)
+        int first = preserveCurrentOccurrence ? 1 : 0;
+        for (int index = items.Count - 1; index >= first; index--)
         {
             var item = items[index];
             if (item.Step.ActivationId == activationId

@@ -120,6 +120,42 @@ public sealed class VillainPhaseTests
                 && moved.To.Zone == nameof(DeckType.BoostCardsDeck)));
     }
 
+    [Rule("rr:villain-phase.step.2.a")]
+    [Rule("rr:player-elimination.5.1")]
+    [Fact]
+    public void EliminatingAPlayerDoesNotSkipTheNextPlayersVillainActivation()
+    {
+        // Each player resolves the villain activation in player order. Player
+        // zero begins one hit point from defeat; removing that seat changes
+        // World.PlayerOrder, but cannot turn player one's continuation into an
+        // already-completed activation for player zero.
+        var printed = new Printed()
+            .With("villain", ("ATK", "1"))
+            .With("identity", ("HP", "10"), ("DEF", "0"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("boost", ("Boost", "0"));
+        printed.Kinds["identity"] = CardKind.Hero;
+        var world = Board(printed, players: 2);
+        world.Seats[0].IdentityCard.TakeDamage(9);
+        var activations = new ActivationObserver();
+
+        var events = new List<GameEvent>();
+        VillainPhase.Schedule(world.Agenda, round: 1);
+        var asked = Sequence.Work(world, printed, activations, events);
+        for (int answered = 0; asked is not null; answered++)
+        {
+            Assert.True(answered < 10);
+            Sequence.Answer(
+                world, printed, activations, asked, Decision.Decline, events);
+            asked = Sequence.Work(world, printed, activations, events);
+        }
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.False(world.Seats[1].Eliminated);
+        Assert.Equal([0, 1], activations.Players);
+        Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
+    }
+
     // Deliberately uncited: no published rule says a card acquires a token
     // pool. It is an artefact of how the digest serialises a card, kept because
     // the digest is a wire format, and `docs/rules-citations.md` uses it as the

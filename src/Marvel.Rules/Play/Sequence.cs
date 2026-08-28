@@ -65,6 +65,16 @@ public static class Sequence
                 continue;
             }
 
+            // `rr:activation.6`: once an attacking minion leaves play, no
+            // further steps of its activation resolve. Detect that before the
+            // next scheduled step opens its interrupt window; an Apply-time
+            // guard would still expose windows for an occurrence that cannot
+            // happen.
+            if (step.ActivationId >= 0 && Attack.EndIfEnemyLeftPlay(world, events))
+            {
+                continue;
+            }
+
             if (world.Agenda.Stage is Stage.Interrupts or Stage.Responses)
             {
                 var kind = world.Agenda.Stage == Stage.Interrupts

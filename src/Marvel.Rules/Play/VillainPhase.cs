@@ -1103,7 +1103,7 @@ public static class VillainPhase
     /// </summary>
     private static void PlanActivations(World world, ICardFacts facts, PhaseStep step)
     {
-        var playerOrder = world.PlayerOrder.ToList();
+        var playerOrder = step.ActivationPlayers ?? world.PlayerOrder.ToList();
         if (step.Index >= playerOrder.Count)
         {
             return;
@@ -1117,6 +1117,21 @@ public static class VillainPhase
 
         int seat = playerOrder[step.Index];
         var activated = step.ActivatedEnemies ?? [];
+
+        // An eliminated seat remains in this procedure's stable order so its
+        // removal cannot shift the next player under the current index. It has
+        // no enemies left to activate; advance and clear the per-player set.
+        if (world.Seats[seat].Eliminated)
+        {
+            world.Agenda.Then(step with
+            {
+                Index = step.Index + 1,
+                ActivatedEnemies = [],
+                ActivationPlayers = playerOrder,
+                OccurrenceId = null,
+            });
+            return;
+        }
 
         // `rr:activation.1`: hero form and the enemy attacks, alter-ego form
         // and it schemes. Read the form immediately before each activation:
@@ -1141,6 +1156,7 @@ public static class VillainPhase
             world.Agenda.Then(step with
             {
                 ActivatedEnemies = [.. activated, next],
+                ActivationPlayers = playerOrder,
                 OccurrenceId = null,
             });
             return;
@@ -1156,6 +1172,7 @@ public static class VillainPhase
         {
             Index = step.Index + 1,
             ActivatedEnemies = [],
+            ActivationPlayers = playerOrder,
             OccurrenceId = null,
         });
     }
