@@ -106,22 +106,113 @@ public sealed class ActionAbilityTests
 
     [Rule("rr:player-turn.5")]
     [Fact]
-    public void AnotherPlayersCardIsNotYoursToTrigger()
+    public void AnotherPlayersActionIsOfferedDirectlyAndResolvedByThem()
     {
-        // "A card in play **they control**". `rr:player-turn.6` is how you
-        // reach somebody else's -- by asking them -- and that is not written.
-        var (game, _) = Playing(
+        // "Ask another player to trigger any Action ability that player could
+        // trigger on their own turn." The engine treats taking this direct
+        // affordance as the other player accepting or offering. It is still
+        // their action: their alter-ego form makes it legal, their Aunt May
+        // exhausts, and their identity is healed.
+        Card? may = null;
+        var (game, world) = Playing(
             board =>
             {
-                board.CreateCard(
+                may = board.CreateCard(
                     AuthoredCards.AuntMay,
                     board.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
-                board.Seats[0].IdentityCard.TakeDamage(5);
+                board.Seats[1].IdentityCard.TakeDamage(5);
             },
             heroes: ["spider_man", "she_hulk"]);
 
-        Assert.DoesNotContain(
+        var action = Assert.Single(
             game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);
+        Assert.Equal(may!.ObjectId, action.AnchorId);
+        Assert.Equal(1, action.AnchorPlayer);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(may.Ready);
+        Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:player-turn.5.1")]
+    [Rule("rr:player-turn.6")]
+    [Rule("rr:limit")]
+    [Fact]
+    public void AnotherPlayersFormPaymentAndLimitRemainTheirs()
+    {
+        // Captain Marvel's Rechannel can be offered during Spider-Man's turn,
+        // but Captain Marvel remains the resolving player. Her hero face makes
+        // it available, her hand pays it, her damage is healed and her
+        // once-per-round limit removes the re-offer.
+        Card? energy = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+                board.Seats[1].IdentityCard.TakeDamage(2);
+                energy = board.CreateCard("01087", board.Seats[1].Hand);
+            },
+            heroes: ["spider_man", "captain_marvel"]);
+
+        int captain = world.Seats[1].IdentityCard.ObjectId;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == captain);
+        var price = Assert.Single(action.CostOptions);
+
+        Assert.Equal(1, action.AnchorPlayer);
+        Assert.Contains(price.Generators, source => source.Effect == energy!.ObjectId);
+        Assert.DoesNotContain(
+            price.Generators,
+            source => world.Seats[0].Hand.Cards.Any(card => card.ObjectId == source.Effect));
+
+        game.Resolve(Decision.Take(action.Id, [], [energy!.ObjectId]));
+
+        Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
+        Assert.Equal(DeckType.DiscardPile, energy.Area.Type);
+        Assert.DoesNotContain(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == captain);
+    }
+
+    [Rule("rr:player-turn.5")]
+    [Rule("rr:player-turn.6")]
+    [Fact]
+    public void ASharedEncounterActionIsOfferedOnceByTheFirstEligiblePlayer()
+    {
+        // Every hero could trigger the Ivory Horn action, but it is one action
+        // on one encounter card. When more than one player is eligible, the
+        // stable active-then-clockwise order offers only the active player's
+        // copy.
+        Card? horn = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                board.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+                horn = board.CreateCard(
+                    AuthoredCards.IvoryHorn, board.AreaOf(DeckType.RevealingArea));
+                board.Abilities = AuthoredCards.Runner();
+                Reveal.Resolve(board, Cards, horn, 0, []);
+
+                foreach (var card in board.Seats[0].Hand.Cards.ToList())
+                {
+                    World.MoveToTop(card, board.Seats[0].Deck);
+                }
+
+                Hand(board, player: 1, Physicals, count: 3);
+            },
+            heroes: ["spider_man", "captain_marvel"]);
+
+        var actions = game.Pending!.Affordances
+            .Where(option => option.Verb == Game.ActionVerb
+                && option.AnchorId == horn!.ObjectId)
+            .ToList();
+        var action = Assert.Single(actions);
+
+        Assert.Equal(0, action.AnchorPlayer);
     }
 
     [Rule("rr:cost")]
@@ -230,16 +321,19 @@ public sealed class ActionAbilityTests
     private static void Physical(World world, int count) =>
         Hand(world, Physicals, count);
 
-    private static void Hand(World world, string faceId, int count)
+    private static void Hand(World world, string faceId, int count) =>
+        Hand(world, player: 0, faceId, count);
+
+    private static void Hand(World world, int player, string faceId, int count)
     {
-        foreach (var card in world.Seats[0].Hand.Cards.ToList())
+        foreach (var card in world.Seats[player].Hand.Cards.ToList())
         {
-            World.MoveToTop(card, world.Seats[0].Deck);
+            World.MoveToTop(card, world.Seats[player].Deck);
         }
 
         for (int made = 0; made < count; made++)
         {
-            world.CreateCard(faceId, world.Seats[0].Hand);
+            world.CreateCard(faceId, world.Seats[player].Hand);
         }
     }
 

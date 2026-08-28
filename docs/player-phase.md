@@ -151,8 +151,12 @@ response — which is why `AbilityTypes.PriorityOf` has always refused to give i
 a tier, and why `ICardAbilities` asks for it separately from `Waiting`.
 
 `.c` is a card's own text and belongs to whichever card says it, so there is
-nothing general to write for it. `.6`, asking another player, is not
-implemented.
+nothing general to write for it. `.6` lets the active player ask another player
+to trigger anything they could trigger on their own turn, and lets that player
+offer. The engine presents those actions directly. Taking one represents the
+request being accepted or the action being offered; there is no separate
+request/accept handshake. The other player remains the ability's resolving
+player, so their form, resources, targets and limits apply.
 
 **The form gate is `.5.1`**: "if the action ability is preceded by *Hero* or
 *Alter-Ego*, the player must be in the specified form", and 728 of the 966 are.
@@ -297,8 +301,6 @@ icon**". A villain's `14*` hit points do not shrink when somebody dies.
 
 ## What is not implemented
 
-- **Asking another player** (`rr:player-turn.6`). Triggering an action (`.5`) is
-  written; `.5.c` is a card's own text and has nothing general behind it.
 - Cost modifiers, `X` costs and the per-player icon on a cost — all refused by
   name rather than read as a number.
 - **The interrupt window around a defeat.**

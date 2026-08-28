@@ -468,8 +468,9 @@ public sealed class Game
     private Resolution TriggerAction(Decision input)
     {
         var taken = Pending!.Affordances.First(option => option.Id == input.Affordance);
-        var ability = abilities.Actions(world, Active)
+        var ability = abilities.Actions(world, taken.AnchorPlayer)
             .FirstOrDefault(pending => pending.Card == taken.AnchorId
+                && pending.Player == taken.AnchorPlayer
                 && Handle($"{ActionVerb}:{pending.Ordinal}", pending.Card) == taken.Id);
 
         if (ability.Card != taken.AnchorId)
@@ -832,9 +833,9 @@ public sealed class Game
     /// defect on the action menu.
     /// </para>
     /// <para>
-    /// <c>rr:player-turn</c> lists six options and five are here: change form,
-    /// playing a card, ally actions, the basic powers, and triggering an
-    /// action. Asking another player (<c>.6</c>) is not written.
+    /// <c>rr:player-turn</c> lists six options and all six are here: change form,
+    /// playing a card, ally actions, the basic powers, triggering an action,
+    /// and asking another player to trigger one.
     /// </para>
     /// </remarks>
     /// <param name="seat">Whose turn.</param>
@@ -888,10 +889,18 @@ public sealed class Game
         // their hand (by playing that event)". Not a window -- an action is one
         // of the six things a turn offers, so it is asked with the others.
         //
+        // `rr:player-turn.6` also permits asking another player to trigger any
+        // action they could trigger on their own turn, and permits that player
+        // to offer. The engine chooses to represent an accepted request or an
+        // offer as the action itself: there is no request/accept handshake.
+        // `PendingAbility.Player` and `AnchorPlayer` remain the player actually
+        // acting, so their form, cards, resources, targets and limits decide
+        // whether the option is legal and how it resolves.
+        //
         // `.5.1` is applied where the ability is found: "if the action ability
         // is preceded by Hero or Alter-Ego, the player must be in the specified
         // form", and 728 of the 966 in the pool are.
-        foreach (var action in abilities.Actions(world, seat.Index))
+        foreach (var action in TurnActions())
         {
             // **Re-stamped, not taken as given.** `Describe` answers with the
             // card's object id, because a card interpreter has no handle
@@ -933,6 +942,39 @@ public sealed class Game
         }
 
         return options;
+    }
+
+    /// <summary>
+    /// Actions available directly or by asking another player —
+    /// <c>rr:player-turn.5</c> and <c>rr:player-turn.6</c>.
+    /// </summary>
+    /// <remarks>
+    /// The active player's actions come first, followed clockwise by the other
+    /// players. The rules do not order offers from several players; this stable
+    /// ordering is the engine's choice. An encounter card is triggerable by
+    /// every player, but remains one action on one card, so its first eligible
+    /// occurrence is the only one offered.
+    /// </remarks>
+    private IEnumerable<PendingAbility> TurnActions()
+    {
+        var shared = new HashSet<(int Card, int Ordinal)>();
+        for (int offset = 0; offset < world.Players; offset++)
+        {
+            int player = (Active + offset) % world.Players;
+            if (world.Seats[player].Eliminated)
+            {
+                continue;
+            }
+
+            foreach (var action in abilities.Actions(world, player))
+            {
+                bool encounter = world.Cards[action.Card].Owner == World.Scenario;
+                if (!encounter || shared.Add((action.Card, action.Ordinal)))
+                {
+                    yield return action;
+                }
+            }
+        }
     }
 
     /// <summary>Offers one card in hand, anchored to the card rather than the seat.</summary>
