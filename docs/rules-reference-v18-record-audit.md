@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 410 |
-| Covered by a narrower rule | 54 |
-| Redirect or summary | 102 |
-| Not enforceable by an engine | 33 |
-| Outside the supported product boundary | 71 |
-| Unimplemented behavior | 548 |
+| Executable and cited | 405 |
+| Covered by a narrower rule | 51 |
+| Redirect or summary | 113 |
+| Not enforceable by an engine | 38 |
+| Outside the supported product boundary | 74 |
+| Unimplemented behavior | 537 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -25,7 +25,7 @@ The six dispositions are mutually exclusive:
 - Outside the supported product boundary means a named Plane item holds the later product work.
 - Unimplemented behavior means a named Plane item owns the missing behavior or citation check.
 
-MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are in the Rules Reference Coverage module. MARVEL-254 records the one known ordering gap outside those broad work items.
+MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARVEL-276 are in the Rules Reference Coverage module. MARVEL-254 records the one known ordering gap outside those broad work items.
 
 ## Record classifications
 
@@ -109,8 +109,8 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:all-purpose-counter.2` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns how a printed counter reference selects compatible counters. |
 | `rr:all-purpose-counter.3` | Unimplemented behavior | MARVEL-271 | The lifecycle work item owns counter identity and type when a counter moves between cards. |
 | `rr:alliance` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:alliance.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:alliance.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:alliance.1` | Unimplemented behavior | MARVEL-269 | Whole-table payment is implemented under the parent citation; this clause needs its narrow citation. |
+| `rr:alliance.2` | Unimplemented behavior | MARVEL-269 | The playing player remains the resolver; the existing proof needs this narrow citation. |
 | `rr:ally` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:ally.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ally.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -136,7 +136,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:assault.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:assault.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:atk` | Redirect or summary | — | This record redirects readers to Attack (Player Ability Type), Basic Power; the destination carries the rule. |
-| `rr:attachment` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attachment` | Not enforceable by an engine | — | This record names a printed card type; its clauses carry the executable attachment rules. |
 | `rr:attachment.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:attachment.1.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:attachment.1.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -205,13 +205,13 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:basic-card.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:basic-card.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:basic-card.3` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:basic-power` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:basic-power.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:basic-power.1.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:basic-power.1.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:basic-power.1.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:basic-power.1.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:basic-power.1.5` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:basic-power` | Redirect or summary | — | This entry summarizes the dedicated attack, thwart, defense, recovery, and scheme entries. |
+| `rr:basic-power.1` | Redirect or summary | — | This record lists the five powers stated by the dedicated entries. |
+| `rr:basic-power.1.1` | Redirect or summary | — | The attack ability-type entry states this power more precisely. |
+| `rr:basic-power.1.2` | Redirect or summary | — | The thwart entry states this power more precisely. |
+| `rr:basic-power.1.3` | Redirect or summary | — | The defend entry states this power more precisely. |
+| `rr:basic-power.1.4` | Redirect or summary | — | The recover entry states this power more precisely. |
+| `rr:basic-power.1.5` | Redirect or summary | — | The enemy-scheme entry states this power more precisely. |
 | `rr:boost-boost-icon` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:boost-boost-icon.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:boost-boost-icon.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -238,8 +238,8 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:cannot.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:card-ability` | Redirect or summary | — | This record redirects readers to Ability; the destination carries the rule. |
 | `rr:card-types` | Not enforceable by an engine | — | This record defines the term; the following clauses and dedicated entries carry the decisions. |
-| `rr:card-types.1` | Covered by a narrower rule | — | The dedicated player-card type entries state these classifications more precisely. |
-| `rr:card-types.2` | Covered by a narrower rule | — | The dedicated encounter-card type entries state these classifications more precisely. |
+| `rr:card-types.1` | Redirect or summary | — | This record lists the dedicated player-card type entries. |
+| `rr:card-types.2` | Redirect or summary | — | This record lists the dedicated encounter-card type entries. |
 | `rr:card-types.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:card-types.3.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:card-types.3.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
@@ -287,7 +287,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:cost` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:cost.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:cost.1.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:cost.2` | Unimplemented behavior | MARVEL-268 | Per-player costs are cited only by a fail-closed test and are not yet calculated. |
 | `rr:cost.2.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:cost.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:cost.3.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
@@ -333,7 +333,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:dash-value.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:deal-deal-an-encounter-card` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:deal-deal-an-encounter-card.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:deck` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:deck` | Redirect or summary | — | This record lists the four dedicated deck entries. |
 | `rr:deck.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:deck-customization` | Redirect or summary | — | This record redirects readers to Appendix I: Deck Customization; the destination carries the rule. |
 | `rr:def` | Redirect or summary | — | This record redirects readers to Basic Power, Defend; the destination carries the rule. |
@@ -394,7 +394,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:each-time` | Redirect or summary | — | This record redirects readers to Alteration Effect; the destination carries the rule. |
 | `rr:effect` | Redirect or summary | — | This record redirects readers to Ability, Cost; the destination carries the rule. |
 | `rr:empty-deck` | Redirect or summary | — | This record redirects readers to Encounter Deck, Player Deck; the destination carries the rule. |
-| `rr:encounter-card` | Covered by a narrower rule | — | The eight dedicated encounter-card type entries state this list more precisely. |
+| `rr:encounter-card` | Redirect or summary | — | This record lists the eight dedicated encounter-card type entries. |
 | `rr:encounter-card.1` | Outside the supported product boundary | MARVEL-272 | Encounter classifications become executable at the corresponding product boundaries. |
 | `rr:encounter-card.2` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:encounter-deck` | Executable and cited | — | A behavior test directly cites this record. |
@@ -426,7 +426,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:enters-play` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:environment` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:environment.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:event` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:event` | Not enforceable by an engine | — | This record names a printed card type; its clauses carry the executable event rules. |
 | `rr:event.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:event.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:event.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -603,7 +603,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:interrupt.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:interrupt.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:keywords` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
-| `rr:keywords.1` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
+| `rr:keywords.1` | Unimplemented behavior | MARVEL-276 | No dedicated keyword entry repeats the numeric and non-numeric stacking rule. |
 | `rr:keywords.2` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
 | `rr:keywords.3` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
 | `rr:keywords.4` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
@@ -699,10 +699,10 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:minion` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:minion.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:minion.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:minion.3` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:minion.3` | Unimplemented behavior | MARVEL-275 | The engine currently uses play-area order instead of asking the engaged player. |
 | `rr:minion.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:modes-of-play` | Outside the supported product boundary | MARVEL-272 | Standard and expert setup are supported; the remaining published modes belong to later product boundaries. |
-| `rr:modes-of-play.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:modes-of-play.1` | Unimplemented behavior | MARVEL-269 | Standard scenarios are supported; their existing setup proof needs this narrow citation. |
 | `rr:modes-of-play.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:modes-of-play.3` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:modes-of-play.4` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
@@ -833,7 +833,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:player-elimination.step.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:player-elimination.step.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-elimination.step.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:player-elimination.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:player-elimination.1` | Unimplemented behavior | MARVEL-271 | Permanent attachments cannot yet resolve their attach-to text when their player is eliminated. |
 | `rr:player-elimination.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:player-elimination.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:player-elimination.4` | Executable and cited | — | A behavior test directly cites this record. |
@@ -938,8 +938,8 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:response.2.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:response.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:response.4` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:restricted` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:restricted.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:restricted` | Unimplemented behavior | MARVEL-275 | The deterministic oldest-card workaround does not ask which restricted card the player chooses to discard. |
+| `rr:restricted.1` | Unimplemented behavior | MARVEL-275 | The forced response is implemented with a fixed discard instead of the required player choice. |
 | `rr:retaliate-x` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:retaliate-x.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:retaliate-x.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -1031,7 +1031,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:stun-stunned.6` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:stun-stunned.7` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:subtitle` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
-| `rr:support` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:support` | Not enforceable by an engine | — | This record names a printed card type; its clauses carry the executable support rules. |
 | `rr:support.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:support.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:support.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -1077,8 +1077,8 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:team-up.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:team-up.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:teamwork` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:teamwork.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:teamwork.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:teamwork.1` | Redirect or summary | — | This shorter restatement is covered by the cited parent keyword, which retains the word “other.” |
+| `rr:teamwork.2` | Unimplemented behavior | MARVEL-269 | Post-reveal teamwork timing is implemented under the parent citation and needs this narrow citation. |
 | `rr:temporary` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:temporary.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:text-box` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
@@ -1110,7 +1110,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:traits` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:traits.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:traits.2` | Unimplemented behavior | MARVEL-269 | The citation work item must inspect the existing printed-text and trait readers and attach this distinction to its proof. |
-| `rr:treachery` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:treachery` | Not enforceable by an engine | — | This record names a printed card type; its clauses carry the executable treachery rules. |
 | `rr:treachery.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:treachery.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:treachery.2.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -1125,16 +1125,16 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:undefended` | Redirect or summary | — | This record redirects readers to Attack (Enemy Activation); the destination carries the rule. |
 | `rr:unique-icon` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:unique-icon.1` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:unique-icon.1.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:unique-icon.1.1` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns title matching without subtitles or alter-ego titles. |
 | `rr:unique-icon.1.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:unique-icon.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:unique-icon.2.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:unique-icon.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:unique-icon.3.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:unique-icon.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:unique-icon.4.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:unique-icon.4.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:upgrade` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:unique-icon.2` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns matching-card deckbuilding limits. |
+| `rr:unique-icon.2.1` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns matching cards added after setup begins. |
+| `rr:unique-icon.3` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns identity selection. |
+| `rr:unique-icon.3.1` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns the identity and villain exception. |
+| `rr:unique-icon.4` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns matching cards entering play. |
+| `rr:unique-icon.4.1` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns play and put-into-play checks. |
+| `rr:unique-icon.4.2` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns encounter-card reveal handling. |
+| `rr:upgrade` | Not enforceable by an engine | — | This record names a printed card type; its clauses carry the executable upgrade rules. |
 | `rr:upgrade.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:upgrade.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:upgrade.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -1170,7 +1170,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, and MARVEL-275 are i
 | `rr:villain-phase.step.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:villain-phase.step.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:villain-phase.step.2.a` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:villain-phase.step.2.b` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:villain-phase.step.2.b` | Unimplemented behavior | MARVEL-275 | The engine currently uses play-area order instead of asking the engaged player. |
 | `rr:villain-phase.step.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:villain-phase.step.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:villain-phase.step.5` | Executable and cited | — | A behavior test directly cites this record. |
