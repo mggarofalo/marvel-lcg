@@ -66,6 +66,10 @@ public static class DeckTypes
         DeckType.PlayerDeck, DeckType.DiscardPile, DeckType.AdditionalDeck,
         DeckType.AdditionalDiscardPile, DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
 
+        // `rr:deal-deal-an-encounter-card`: a dealt encounter card is placed
+        // facedown in front of the player and is not revealed at that time.
+        DeckType.DealtEncounterCardsDeck,
+
         // The one entry here the recording cannot vouch for, because nothing in
         // it ever sits in this place. `rr:attack-enemy-activation.step.1` is
         // where it comes from instead: "give it one *facedown* boost card from
@@ -89,7 +93,8 @@ public static class DeckTypes
     /// <remarks>
     /// <para>
     /// True for the places a card can sit hidden: a draw pile that is not a
-    /// discard pile, a hand, and an enemy's facedown boost cards.
+    /// discard pile, a hand, a dealt encounter queue, and an enemy's facedown
+    /// boost cards.
     /// </para>
     /// <para>
     /// <b>Measured, not read off a flag.</b> The obvious candidate,

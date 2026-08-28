@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 497 |
+| Executable and cited | 520 |
 | Covered by a narrower rule | 50 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 39 |
 | Outside the supported product boundary | 68 |
-| Unimplemented behavior | 442 |
+| Unimplemented behavior | 419 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -79,13 +79,13 @@ items.
 | `rr:ability.14` | Unimplemented behavior | MARVEL-284 | Quoted timing triggers need explicit reference rather than trigger semantics. |
 | `rr:acceleration-icon` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-icon.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:acceleration-icon.2` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns removal through defeating the printed encounter card. |
+| `rr:acceleration-icon.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-icon.3` | Unimplemented behavior | MARVEL-282 | The remaining icon batch owns effects that distinguish acceleration icons from tokens. |
 | `rr:acceleration-token` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:acceleration-token.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-token.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-token.2.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:acceleration-token.3` | Unimplemented behavior | MARVEL-281 | The lifecycle batch owns removing a hosted acceleration token with its card. |
+| `rr:acceleration-token.3` | Unimplemented behavior | MARVEL-271 | The lifecycle implementation owns clearing a non-main-scheme card's hosted acceleration token when it leaves play. |
 | `rr:acceleration-token.4` | Unimplemented behavior | MARVEL-282 | The remaining icon batch owns effects that distinguish acceleration tokens from icons. |
 | `rr:action` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:action.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -554,18 +554,18 @@ items.
 | `rr:ignore` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:ignore.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:in-play-and-out-of-play` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:in-play-and-out-of-play.1` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:in-play-and-out-of-play.2` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:in-play-and-out-of-play.3` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:in-play-and-out-of-play.4` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
+| `rr:in-play-and-out-of-play.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:in-play-and-out-of-play.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:in-play-and-out-of-play.3` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:in-play-and-out-of-play.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:in-play-and-out-of-play.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:in-play-and-out-of-play.6` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:in-play-and-out-of-play.7` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:in-play-and-out-of-play.8` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:in-play-and-out-of-play.9` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:in-play-and-out-of-play.10` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:in-play-and-out-of-play.11` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:in-play-and-out-of-play.12` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
+| `rr:in-play-and-out-of-play.6` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:in-play-and-out-of-play.7` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:in-play-and-out-of-play.8` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:in-play-and-out-of-play.9` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:in-play-and-out-of-play.10` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:in-play-and-out-of-play.11` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:in-play-and-out-of-play.12` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:in-play-and-out-of-play.13` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:in-player-order` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:in-player-order.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -866,12 +866,12 @@ items.
 | `rr:player-turn.5.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-turn.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-s-play-area` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:player-s-play-area.1` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:player-s-play-area.2` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
+| `rr:player-s-play-area.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:player-s-play-area.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-s-play-area.3` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:player-s-play-area.4` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:player-s-play-area.5` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
-| `rr:player-s-play-area.6` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns this existing-behavior check. |
+| `rr:player-s-play-area.4` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:player-s-play-area.5` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:player-s-play-area.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:playing-cards` | Redirect or summary | — | This record redirects readers to Initiating Abilities; the destination carries the rule. |
 | `rr:prevent` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:prevent.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -958,7 +958,7 @@ items.
 | `rr:reveal.4.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:reveal.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:reveal.6` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:reveal.7` | Unimplemented behavior | MARVEL-281 | The movement and zone batch owns the out-of-play staging area for other card types. |
+| `rr:reveal.7` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:reveal.8` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:rookie-mode` | Redirect or summary | — | This record redirects readers to Modes of Play; the destination carries the rule. |
 | `rr:round-structure` | Redirect or summary | — | This record redirects readers to Overview - Round Overview, End of the Player Phase,; the destination carries the rule. |
@@ -1180,11 +1180,11 @@ items.
 | `rr:villain-phase.step.6` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:villain-phase.step.6.a` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:villain-phase.step.6.b` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:villain-s-play-area` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns the villain-area boundary. |
-| `rr:villain-s-play-area.1` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns environment and side-scheme placement. |
-| `rr:villain-s-play-area.2` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns hosted attachment area membership. |
-| `rr:villain-s-play-area.3` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns engaged-minion area membership. |
-| `rr:villain-s-play-area.4` | Unimplemented behavior | MARVEL-281 | The movement and zone citation batch owns obligation area membership. |
+| `rr:villain-s-play-area` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:villain-s-play-area.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:villain-s-play-area.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:villain-s-play-area.3` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:villain-s-play-area.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:villainous` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:villainous.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:villainous.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |

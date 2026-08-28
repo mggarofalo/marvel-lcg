@@ -47,11 +47,14 @@ public sealed class AttachToTests
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
     [Rule("rr:attach-to")]
+    [Rule("rr:player-s-play-area.2")]
+    [Rule("rr:villain-s-play-area.2")]
     [Fact]
     public void AnAttachmentAttachesAsItEntersPlay()
     {
         // Charge's own printed line, "Attach to Rhino", resolved by the route
-        // into play rather than by an ability.
+        // into play rather than by an ability. An attachment on a villain-area
+        // card is itself in the villain's play area, not the player's.
         var world = Deal(AuthoredCards.Runner());
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var charge = world.Cards.First(card => card.FaceId == AuthoredCards.Charge);
@@ -60,6 +63,7 @@ public sealed class AttachToTests
 
         Assert.Equal(DeckType.UpgradesArea, charge.Area.Type);
         Assert.Equal(villain.ObjectId, charge.Area.Host);
+        Assert.Equal(PlayArea.Villains, charge.Area.PlayArea);
     }
 
     [Rule("rr:attach-to")]

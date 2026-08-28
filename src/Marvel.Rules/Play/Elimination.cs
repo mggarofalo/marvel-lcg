@@ -55,6 +55,7 @@ public static class Elimination
             var onto = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(neighbour));
             foreach (var minion in engaged.Cards.ToList())
             {
+                var hosted = HostedTree(world, minion);
                 var from = minion.Area;
                 World.MoveToTop(minion, onto);
                 events.Add(new CardsMoved(
@@ -63,6 +64,32 @@ public static class Elimination
                 {
                     Trigger = trigger, Verb = "Engage",
                 });
+
+                // "Retaining any tokens, attached cards, boost cards, tucked
+                // cards, and status cards on them" includes their placement:
+                // they move into the next player's play area with their host.
+                foreach (var (source, card) in hosted)
+                {
+                    var destination = world.AreaOf(
+                        source.Type, onto.PlayArea, source.Host, source.CardOwner);
+                    bool wasFaceUp = card.FaceUp;
+                    World.MoveToTop(card, destination);
+                    if (wasFaceUp)
+                    {
+                        card.TurnFaceUp();
+                    }
+                    else
+                    {
+                        card.TurnFaceDown();
+                    }
+
+                    events.Add(new CardsMoved(
+                        Places.Reference(source), Places.Reference(destination),
+                        [new Landing(card.ObjectId, destination.Cards.Count - 1)])
+                    {
+                        Trigger = trigger, Verb = "Engage",
+                    });
+                }
             }
         }
 
@@ -98,6 +125,11 @@ public static class Elimination
             }
         }
 
+        // `rr:player-s-play-area.6` removes the play area itself, not only the
+        // game elements that were inside it. Game-area membership is the
+        // model's representation of that boundary.
+        world.Detach(PlayArea.Of(player));
+
         // `.4`: "if all players are eliminated, the game ends and the players
         // lose." Asked after the play area is cleared, so a game that ends here
         // ends on a board nobody is still holding cards on.
@@ -105,6 +137,37 @@ public static class Elimination
         {
             world.Finish(Outcome.PlayersLose);
         }
+    }
+
+    /// <summary>Every card hosted below one root, parents before children.</summary>
+    private static List<(Area Source, Card Card)> HostedTree(World world, Card root)
+    {
+        var descendants = new List<(Area Source, Card Card)>();
+        var pending = new Stack<Card>(world.Areas
+            .Where(area => area.Host == root.ObjectId)
+            .SelectMany(area => area.Cards)
+            .Reverse());
+        var seen = new HashSet<int> { root.ObjectId };
+
+        while (pending.TryPop(out var card))
+        {
+            if (!seen.Add(card.ObjectId))
+            {
+                throw new RulesNotImplementedException(
+                    $"attachment {card.ObjectId} forms a hosting cycle");
+            }
+
+            descendants.Add((card.Area, card));
+            foreach (var child in world.Areas
+                         .Where(area => area.Host == card.ObjectId)
+                         .SelectMany(area => area.Cards)
+                         .Reverse())
+            {
+                pending.Push(child);
+            }
+        }
+
+        return descendants;
     }
 
     /// <summary>

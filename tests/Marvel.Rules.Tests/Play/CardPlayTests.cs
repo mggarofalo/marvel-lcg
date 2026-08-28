@@ -90,9 +90,14 @@ public sealed class CardPlayTests
     }
 
     [Rule("rr:play-put-into-play")]
+    [Rule("rr:in-play-and-out-of-play.3")]
+    [Rule("rr:player-s-play-area.1")]
     [Fact]
-    public void AnAllyEntersPlayAndAnUpgradeAttaches()
+    public void PlayerCardsEnterTheirKindsAreaInThePlayersPlayArea()
     {
+        // A card enters play when it moves from an out-of-play area to a play
+        // area. Allies, supports, and upgrades all start here in hand and land
+        // in their printed kind's area inside the playing player's play area.
         var printed = Cards();
         var world = Board(printed);
         var seat = world.Seats[0];
@@ -102,13 +107,38 @@ public sealed class CardPlayTests
         CardPlay.Play(world, printed, new Silent(), seat, ally, [Pay(world, "res")], events);
 
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.Equal(PlayArea.Of(0), ally.Area.PlayArea);
 
         var upgrade = InHand(world, "upgrade");
         CardPlay.Play(world, printed, new Silent(), seat, upgrade, [Pay(world, "res")], events);
 
         Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
+        Assert.Equal(PlayArea.Of(0), upgrade.Area.PlayArea);
         Assert.Equal(seat.IdentityCard.ObjectId, upgrade.Area.Host);
         Assert.Contains(events.OfType<CardAttached>(), e => e.Card == upgrade.ObjectId);
+
+        var support = InHand(world, "support");
+        CardPlay.Play(world, printed, new Silent(), seat, support, [], events);
+
+        Assert.Equal(DeckType.SupportsArea, support.Area.Type);
+        Assert.Equal(PlayArea.Of(0), support.Area.PlayArea);
+    }
+
+    [Rule("rr:player-s-play-area.5")]
+    [Fact]
+    public void APlayedCardGoesToItsPlayersAreaAndNotAnotherPlayers()
+    {
+        // Unless a rule or card ability says otherwise, a card cannot be
+        // played into another player's play area. An ordinary support has no
+        // such permission, so player zero's card cannot land with player one.
+        var printed = Cards();
+        var world = Table(printed);
+        var support = world.CreateCard("support", world.Seats[0].Hand);
+
+        CardPlay.Play(world, printed, new Silent(), world.Seats[0], support, [], []);
+
+        Assert.Equal(PlayArea.Of(0), support.Area.PlayArea);
+        Assert.NotEqual(PlayArea.Of(1), support.Area.PlayArea);
     }
 
     [Rule("rr:support.1")]
@@ -484,13 +514,15 @@ public sealed class CardPlayTests
     }
 
     [Rule("rr:identity.4")]
+    [Rule("rr:in-play-and-out-of-play.1")]
+    [Rule("rr:in-play-and-out-of-play.6")]
     [Fact]
     public void OnlyTheFaceupSideOfAnIdentityIsInPlay()
     {
         // "The faceup side of an identity card is considered to be in play. The
-        // facedown side [...] is considered to be out of play." So a player
-        // whose alter-ego is showing is not the hero the card names, however
-        // sure the table is about who they are.
+        // facedown side [...] is considered to be out of play." More generally,
+        // the faceup side of a double-sided card is in play. So a player whose
+        // alter-ego is showing is not the hero the card names.
         var printed = Cards();
         var world = Board(printed);
         var identity = world.CreateCard("alterego,Wasp", world.Seats[0].Hero);

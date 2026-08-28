@@ -105,6 +105,7 @@ public sealed class DealTests
     }
 
     [Rule("rr:deal-deal-an-encounter-card")]
+    [Rule("rr:in-play-and-out-of-play.9")]
     [Fact]
     public void ACardDealtOutsideStepThreeIsStillRevealedInStepFour()
     {
@@ -116,6 +117,7 @@ public sealed class DealTests
         var events = new List<GameEvent>();
 
         var early = Deal.EncounterCard(world, 0, "an ability", events)!;
+        Assert.False(early.FaceUp, "a dealt encounter card is facedown and out of play");
         Run(world, printed, events: events);
 
         // Two: the one dealt early and the one step 3 dealt. The early one is
@@ -123,6 +125,25 @@ public sealed class DealTests
         var revealed = Revealed(world, events);
         Assert.Equal(2, revealed.Count);
         Assert.Equal(early.ObjectId, revealed[0]);
+    }
+
+    [Rule("rr:reveal.7")]
+    [Fact]
+    public void AnOtherCardRemainsInFrontOfTheRevealingPlayerAndOutOfPlay()
+    {
+        // "Other: Place it on the table in front of the player revealing it.
+        // (It is not in play.)" Unlike a treachery, step 4 does not discard it.
+        var printed = new Printed();
+        var world = Board(printed, players: 1);
+        var other = world.CreateCard("other", world.AreaOf(DeckType.EncounterDeck));
+        var events = new List<GameEvent>();
+        Assert.Same(other, Deal.EncounterCard(world, 0, "test", events));
+
+        Run(world, printed, events: events);
+
+        Assert.Equal(DeckType.RevealingArea, other.Area.Type);
+        Assert.Equal(PlayArea.Of(0), other.Area.PlayArea);
+        Assert.False(DeckTypes.IsInPlay(other.Area.Type));
     }
 
     [Rule("rr:deal-deal-an-encounter-card.1")]
@@ -419,6 +440,7 @@ public sealed class DealTests
             "scheme" => CardKind.MainScheme,
             "incite" => CardKind.EncounterSideScheme,
             "hazardous" => CardKind.EncounterSideScheme,
+            "other" => CardKind.Unknown,
             _ => CardKind.Treachery,
         };
 
