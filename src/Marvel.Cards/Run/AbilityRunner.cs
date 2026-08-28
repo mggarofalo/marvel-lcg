@@ -1854,7 +1854,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // not one: an option is a branch the card lists, an element is a card
         // on the board. `Question` has told them apart since before anything
         // asked either.
-        var cast = Resolving(world, source, player, tier, finalStep);
+        var cast = Resuming(world, source, player, tier, finalStep);
         if (choice.Kind == "resolveSpecials")
         {
             var upgrades = Every(choice.Require("cards"), cast);
@@ -2068,7 +2068,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private Prompt Sharing(
         World world, Card source, int player, AbilityNode choice, AbilityType? tier)
     {
-        var cast = Resolving(world, source, player, tier);
+        var cast = Resuming(world, source, player, tier);
         long amount = Amount(choice.Require("amount"), cast);
         var eligible = Assignable(choice.Require("among"), cast);
 
@@ -2146,7 +2146,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             && live.Is(Steps.TurnAction)
                 ? live
                 : null;
-        var cast = Resolving(world, source, player, tier, finalStep, continuation) with
+        var cast = Resuming(world, source, player, tier, finalStep, continuation) with
         {
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
@@ -2156,10 +2156,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                     : new HashSet<string>(StringComparer.Ordinal),
         };
-        if (world.Agenda.Current?.Discarded is { } discarded)
-        {
-            cast.Discarded.AddRange(discarded.Select(id => world.Cards[id]));
-        }
         cast.At(Math.Max(0, stoppedAt - 1));
         cast.SetContinuation(On(source).Any(ability =>
             (tier is null || ability.Trigger.Timing == tier)
@@ -2352,6 +2348,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (choice.Kind == "indirectDamage")
         {
             var eligible = Assignable(choice.Require("among"), cast);
+            long amount = Amount(choice.Require("amount"), cast);
+            long expected = Math.Min(amount, eligible.Sum(card => Room(cast, card)));
+            if (input.Targets.Count != expected)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires {expected} indirect damage assignment(s) "
+                    + $"and {input.Targets.Count} were chosen");
+            }
             var chosen = new List<Card>();
             foreach (int id in input.Targets)
             {
@@ -2668,6 +2672,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Tier = tier,
             FinalStep = finalStep,
         };
+
+    /// <summary>A suspended resolution with its persisted card bindings restored.</summary>
+    private Cast Resuming(
+        World world, Card source, int player, AbilityType? tier, bool finalStep = false,
+        Occurrence? continuation = null)
+    {
+        var cast = Resolving(world, source, player, tier, finalStep, continuation);
+        if (world.Agenda.Current?.Discarded is { } discarded)
+        {
+            cast.Discarded.AddRange(discarded.Select(id => world.Cards[id]));
+        }
+        return cast;
+    }
 
     /// <summary>The one choice a card offers, found again from the card.</summary>
     /// <remarks>
