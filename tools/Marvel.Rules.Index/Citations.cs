@@ -14,6 +14,11 @@ namespace Marvel.Rules.Index;
 /// <param name="Site">The file it was found in, relative to the repository root.</param>
 internal readonly record struct Cited(string Id, string Site);
 
+/// <summary>One citation as it appears in a parsed source configuration.</summary>
+/// <param name="Position">The attribute's source position.</param>
+/// <param name="Id">The cited id.</param>
+internal readonly record struct ParsedCitation(int Position, string Id);
+
 /// <summary>
 /// Every citation the test suite makes, read off the source.
 /// </summary>
@@ -52,61 +57,75 @@ internal static class Citations
             string site = Path.GetRelativePath(repositoryRoot, file)
                 .Replace(Path.DirectorySeparatorChar, '/');
 
-            var rootNode = CSharpSyntaxTree.ParseText(File.ReadAllText(file)).GetRoot();
-            var attributes = RuleAttributes(rootNode).ToArray();
-            bool conditional = attributes.Any(attribute => IsConditional(rootNode, attribute))
-                || rootNode
-                .DescendantTrivia(descendIntoTrivia: true)
-                .Where(trivia => trivia.IsKind(SyntaxKind.DisabledTextTrivia))
-                .Select(trivia => CSharpSyntaxTree.ParseText(trivia.ToFullString()).GetRoot())
-                .Any(disabled => RuleAttributes(disabled).Any());
-            if (conditional)
+            string source = File.ReadAllText(file);
+            var configurations = Configurations(source).ToArray();
+            var citations = Parse(source, configurations[0]);
+            if (configurations.Skip(1).Any(symbols => !citations.SequenceEqual(Parse(source, symbols))))
             {
                 throw new InvalidOperationException(
                     $"{site} contains a conditional Rule attribute; citations must apply "
                     + "in every build configuration");
             }
 
-            foreach (var attribute in attributes)
+            foreach (var citation in citations)
             {
-                if (attribute.ArgumentList?.Arguments.FirstOrDefault()?.Expression
-                    is LiteralExpressionSyntax literal
-                    && literal.IsKind(SyntaxKind.StringLiteralExpression))
-                {
-                    found.Add(new Cited(literal.Token.ValueText, site));
-                }
+                found.Add(new Cited(citation.Id, site));
             }
         }
 
         return found;
     }
 
-    private static IEnumerable<AttributeSyntax> RuleAttributes(SyntaxNode root) =>
-        root.DescendantNodes()
+    private static ParsedCitation[] Parse(
+        string source,
+        IEnumerable<string> symbols) =>
+        CSharpSyntaxTree.ParseText(
+                source,
+                new CSharpParseOptions(preprocessorSymbols: symbols))
+            .GetRoot()
+            .DescendantNodes()
             .OfType<AttributeSyntax>()
-            .Where(candidate => candidate.Name.ToString() == "Rule");
+            .Where(attribute => attribute.Name.ToString() == "Rule")
+            .Select(attribute => (Attribute: attribute, Literal:
+                attribute.ArgumentList?.Arguments.FirstOrDefault()?.Expression
+                    as LiteralExpressionSyntax))
+            .Where(pair => pair.Literal?.IsKind(SyntaxKind.StringLiteralExpression) == true)
+            .Select(pair => new ParsedCitation(pair.Attribute.SpanStart, pair.Literal!.Token.ValueText))
+            .ToArray();
 
-    private static bool IsConditional(SyntaxNode root, AttributeSyntax attribute)
+    private static IEnumerable<IReadOnlyList<string>> Configurations(string source)
     {
-        int depth = 0;
-        foreach (var directive in root
+        var root = CSharpSyntaxTree.ParseText(source).GetRoot();
+        string[] symbols = root
             .DescendantTrivia(descendIntoTrivia: true)
             .Where(trivia => trivia.HasStructure)
             .Select(trivia => trivia.GetStructure())
-            .OfType<DirectiveTriviaSyntax>()
-            .Where(directive => directive.SpanStart < attribute.SpanStart)
-            .OrderBy(directive => directive.SpanStart))
+            .SelectMany(directive => directive switch
+            {
+                IfDirectiveTriviaSyntax conditional => conditional.Condition.DescendantTokens(),
+                ElifDirectiveTriviaSyntax conditional => conditional.Condition.DescendantTokens(),
+                _ => [],
+            })
+            .Where(token => token.IsKind(SyntaxKind.IdentifierToken))
+            .Select(token => token.ValueText)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(symbol => symbol, StringComparer.Ordinal)
+            .ToArray();
+
+        // The report deliberately requires one citation set for every source
+        // configuration. Exhausting the symbols makes that choice independent
+        // of the framework or build configuration used to run this tool.
+        if (symbols.Length > 16)
         {
-            if (directive.IsKind(SyntaxKind.IfDirectiveTrivia))
-            {
-                depth++;
-            }
-            else if (directive.IsKind(SyntaxKind.EndIfDirectiveTrivia))
-            {
-                depth--;
-            }
+            throw new InvalidOperationException(
+                "A source file has too many preprocessor symbols to verify Rule citations");
         }
 
-        return depth > 0;
+        for (int mask = 0; mask < 1 << symbols.Length; mask++)
+        {
+            yield return symbols
+                .Where((_, index) => (mask & (1 << index)) != 0)
+                .ToArray();
+        }
     }
 }

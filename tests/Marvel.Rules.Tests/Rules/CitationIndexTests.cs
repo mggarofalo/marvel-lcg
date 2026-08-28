@@ -60,10 +60,8 @@ public sealed class CitationIndexTests
         }
     }
 
-    [Theory]
-    [InlineData("true")]
-    [InlineData("NET8_0")]
-    public void ConditionalCitationsAreRefused(string condition)
+    [Fact]
+    public void ConditionalCitationsAreRefused()
     {
         string root = Path.Combine(
             Path.GetTempPath(),
@@ -78,7 +76,7 @@ public sealed class CitationIndexTests
                 [
                     "public sealed class ConditionalTests",
                     "{",
-                    $"#if {condition}",
+                    "#if NET8_0",
                     $"    {attribute}",
                     "    [Fact]",
                     "    public void Example() { }",
@@ -92,6 +90,77 @@ public sealed class CitationIndexTests
                 "ConditionalTests.cs contains a conditional Rule attribute; citations must "
                 + "apply in every build configuration",
                 error.Message);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ConditionalCitationIdsAreRefused()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(),
+            $"marvel-rules-index-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+
+        try
+        {
+            File.WriteAllLines(
+                Path.Combine(root, "ConditionalTests.cs"),
+                [
+                    "public sealed class ConditionalTests",
+                    "{",
+                    "    [Rule(",
+                    "#if NET8_0",
+                    "        \"rr:net8-citation\"",
+                    "#else",
+                    "        \"rr:other-citation\"",
+                    "#endif",
+                    "    )]",
+                    "    [Fact]",
+                    "    public void Example() { }",
+                    "}",
+                ]);
+
+            var error = Assert.Throws<InvalidOperationException>(
+                () => Citations.Read(root, root));
+            Assert.Equal(
+                "ConditionalTests.cs contains a conditional Rule attribute; citations must "
+                + "apply in every build configuration",
+                error.Message);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ConditionalDocumentationExamplesAreNotCitations()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(),
+            $"marvel-rules-index-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+
+        try
+        {
+            string example = "[Rule(\"rr:not-a-citation\")]";
+            File.WriteAllLines(
+                Path.Combine(root, "ConditionalTests.cs"),
+                [
+                    "#if NET8_0",
+                    "/*",
+                    "#if EXAMPLE",
+                    example,
+                    "#endif",
+                    "*/",
+                    "#endif",
+                ]);
+
+            Assert.Empty(Citations.Read(root, root));
         }
         finally
         {
