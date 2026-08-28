@@ -122,6 +122,7 @@ public sealed class AttackTests
 
         Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
         Assert.True(world.Seats[0].IdentityCard.Ready);
+        Assert.False(world.FinishedAttack!.IsDefended);
     }
 
     [Rule("rr:defend-defense.3")]
@@ -204,6 +205,7 @@ public sealed class AttackTests
     [Rule("rr:attack-enemy-activation.3")]
     [Rule("rr:damage.step.5")]
     [Rule("rr:damage.2")]
+    [Rule("rr:hit-points.3")]
     [Rule("rr:sustained-damage.2")]
     [Fact]
     public void AnAllyDefendingTakesTheDamageAndTheHeroTakesNone()
@@ -237,7 +239,6 @@ public sealed class AttackTests
 
     [Rule("rr:ally.1")]
     [Rule("rr:damage.step.8")]
-    [Rule("rr:hit-points.3")]
     [Fact]
     public void AnAllyDefeatedByTheAttackIsDiscarded()
     {

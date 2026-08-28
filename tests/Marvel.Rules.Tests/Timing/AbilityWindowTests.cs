@@ -50,7 +50,6 @@ public sealed class AbilityWindowTests
     }
 
     [Rule("rr:ability.step.2.a")]
-    [Rule("rr:status-cards.2")]
     [Fact]
     public void AStatusCardsForcedInterruptGoesBeforeAnOrdinaryOne()
     {

@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 444 |
+| Executable and cited | 443 |
 | Covered by a narrower rule | 49 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 37 |
 | Outside the supported product boundary | 66 |
-| Unimplemented behavior | 500 |
+| Unimplemented behavior | 501 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -1020,7 +1020,7 @@ items.
 | `rr:status-cards` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:status-cards.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:status-cards.1.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:status-cards.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:status-cards.2` | Unimplemented behavior | MARVEL-284 | The card-initiation timing work item owns status-card priority over conflicting attack and damage triggers. |
 | `rr:steady` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:steady.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:stun-stunned` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
