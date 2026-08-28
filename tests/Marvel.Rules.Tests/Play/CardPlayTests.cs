@@ -127,7 +127,6 @@ public sealed class CardPlayTests
         Assert.Equal(PlayArea.Of(0), support.Area.PlayArea);
     }
 
-    [Rule("rr:event")]
     [Rule("rr:play-put-into-play.2")]
     [Fact]
     public void AnEventResolvesAndGoesToTheDiscardPile()
@@ -544,8 +543,6 @@ public sealed class CardPlayTests
         Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
     }
 
-    [Rule("rr:alliance")]
-    [Rule("rr:alliance.1")]
     [Fact]
     public void AnAllianceCardCanBePaidForByTheWholeTable()
     {
@@ -581,30 +578,6 @@ public sealed class CardPlayTests
         Assert.Equal(DeckType.DiscardPile, mine.Area.Type);
         Assert.Equal(DeckType.DiscardPile, theirs.Area.Type);
         Assert.NotSame(mine.Area, theirs.Area);
-    }
-
-    [Rule("rr:alliance.2")]
-    [Fact]
-    public void AnAllianceEventIsResolvedByThePlayerWhoPlayedIt()
-    {
-        // "Only the player playing the card with the alliance keyword is
-        // considered to be resolving that card." Another player supplies the
-        // whole payment, but player zero remains the event's resolver.
-        var printed = Cards();
-        var world = Table(printed);
-        var theirs = world.CreateCard("res", world.Seats[1].Hand);
-        var card = world.CreateCard("alliance-event", world.Seats[0].Hand);
-        var abilities = new Counting();
-
-        CardPlay.Play(
-            world, printed, abilities, world.Seats[0], card,
-            [theirs.ObjectId], []);
-
-        Assert.Equal(0, abilities.LastPlayer);
-        Assert.Equal(DeckType.DiscardPile, card.Area.Type);
-        Assert.Same(
-            world.AreaOf(DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1),
-            theirs.Area);
     }
 
     [Rule("rr:cost.3")]
@@ -970,7 +943,6 @@ public sealed class CardPlayTests
         .With("upgrade", ("Cost", "2"), ("RES", "B"))
         .With("support", ("Cost", "0"), ("RES", "B"))
         .With("event", ("Cost", "0"), ("RES", "Y"))
-        .With("alliance-event", ("Cost", "2"), ("Alliance", "1"))
         .With("free", ("Cost", "0"), ("RES", "Y"))
         .With("expensive", ("Cost", "9"), ("RES", "B"))
         .With("suited2", ("Form", "Suit"))
@@ -1012,12 +984,9 @@ public sealed class CardPlayTests
     {
         public int Resolved { get; private set; }
 
-        public int LastPlayer { get; private set; } = -1;
-
         public override IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
         {
             Resolved += 1;
-            LastPlayer = player;
             return [];
         }
 
@@ -1068,7 +1037,7 @@ public sealed class CardPlayTests
             "hero" => CardKind.Hero,
             "res" => CardKind.Resource,
             "ally" or "bruiser" => CardKind.Ally,
-            "event" or "alliance-event" => CardKind.Event,
+            "event" => CardKind.Event,
             "support" => CardKind.Support,
             _ => CardKind.Upgrade,
         };

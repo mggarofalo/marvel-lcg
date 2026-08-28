@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 479 |
+| Executable and cited | 474 |
 | Covered by a narrower rule | 49 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 37 |
 | Outside the supported product boundary | 68 |
-| Unimplemented behavior | 463 |
+| Unimplemented behavior | 468 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -111,9 +111,9 @@ items.
 | `rr:all-purpose-counter.1` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns references that treat every all-purpose counter as a token. |
 | `rr:all-purpose-counter.2` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns how a printed counter reference selects compatible counters. |
 | `rr:all-purpose-counter.3` | Unimplemented behavior | MARVEL-271 | The lifecycle work item owns counter identity and type when a counter moves between cards. |
-| `rr:alliance` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:alliance.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:alliance.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:alliance` | Unimplemented behavior | MARVEL-268 | The event offer and payment surface does not yet accept resources from other players. |
+| `rr:alliance.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns whole-table event payment end to end. |
+| `rr:alliance.2` | Unimplemented behavior | MARVEL-268 | The alliance payment path must retain the playing player as the event resolver. |
 | `rr:ally` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:ally.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ally.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -309,7 +309,7 @@ items.
 | `rr:cost.11` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:cost.12` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:cost-arrow-icon` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:cost-arrow-icon.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:cost-arrow-icon.1` | Unimplemented behavior | MARVEL-284 | Responses to pre-arrow text must suspend the ability before its post-arrow effect. |
 | `rr:counter` | Redirect or summary | — | This record redirects readers to All-Purpose Counter; the destination carries the rule. |
 | `rr:crisis-icon` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:crisis-icon.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -429,7 +429,7 @@ items.
 | `rr:enters-play` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:environment` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:environment.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:event` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:event` | Unimplemented behavior | MARVEL-284 | Event initiation must represent the faceup, out-of-play table state before payment and resolution. |
 | `rr:event.1` | Unimplemented behavior | MARVEL-284 | Card initiation must expose which of multiple event abilities is being played. |
 | `rr:event.2` | Unimplemented behavior | MARVEL-284 | The card-initiation work item owns canceled event effects with costs left paid. |
 | `rr:event.3` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns event target legality before play. |

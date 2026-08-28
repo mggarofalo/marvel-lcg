@@ -71,7 +71,6 @@ public sealed class ActionAbilityTests
 
     [Rule("rr:initiating-abilities.step.5")]
     [Rule("rr:initiating-abilities.3")]
-    [Rule("rr:cost-arrow-icon.1")]
     [Rule("rr:damage.step.7")]
     [Rule("rr:triggering-condition.2")]
     [Fact]
@@ -81,8 +80,8 @@ public sealed class ActionAbilityTests
         // damage to each enemy." The cost is paid before the effect. At two
         // remaining hit points that cost defeats and discards War Machine, but
         // rr:initiating-abilities.3 says leaving play does not stop the
-        // sequence. The defeat response to the cost finishes before the text
-        // following the cost arrow deals damage to every enemy.
+        // sequence, and the post-arrow effect still deals damage to every
+        // enemy.
         Card? warMachine = null;
         var (game, world) = Playing(board =>
         {
