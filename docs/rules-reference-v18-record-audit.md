@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 402 |
+| Executable and cited | 401 |
 | Covered by a narrower rule | 46 |
-| Redirect or summary | 119 |
-| Not enforceable by an engine | 36 |
-| Outside the supported product boundary | 70 |
-| Unimplemented behavior | 545 |
+| Redirect or summary | 122 |
+| Not enforceable by an engine | 37 |
+| Outside the supported product boundary | 66 |
+| Unimplemented behavior | 546 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -395,7 +395,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:effect` | Redirect or summary | — | This record redirects readers to Ability, Cost; the destination carries the rule. |
 | `rr:empty-deck` | Redirect or summary | — | This record redirects readers to Encounter Deck, Player Deck; the destination carries the rule. |
 | `rr:encounter-card` | Redirect or summary | — | This record lists the eight dedicated encounter-card type entries. |
-| `rr:encounter-card.1` | Outside the supported product boundary | MARVEL-272 | Encounter classifications become executable at the corresponding product boundaries. |
+| `rr:encounter-card.1` | Redirect or summary | — | The dedicated classification entries state the actual classification rules. |
 | `rr:encounter-card.2` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:encounter-deck` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:encounter-deck.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -403,8 +403,8 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:encounter-deck.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:encounter-deck.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:encounter-discard-pile` | Redirect or summary | — | This record redirects readers to Discard Pile; the destination carries the rule. |
-| `rr:encounter-set` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:encounter-set.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:encounter-set` | Not enforceable by an engine | — | This record defines an encounter set as a grouping of encounter cards. |
+| `rr:encounter-set.1` | Redirect or summary | — | The four dedicated encounter-set entries state the rules for each listed type. |
 | `rr:encounter-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:end-of-player-phase` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:end-of-player-phase.step.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -819,7 +819,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:player.3` | Redirect or summary | — | Ownership and control entries state starting ownership more precisely. |
 | `rr:player.4` | Redirect or summary | — | The first-player entry states this role more precisely. |
 | `rr:player-card` | Redirect or summary | — | The seven dedicated player-card type entries state this list more precisely. |
-| `rr:player-card.1` | Outside the supported product boundary | MARVEL-272 | Player-card classifications become executable at the corresponding product boundaries. |
+| `rr:player-card.1` | Redirect or summary | — | The dedicated classification entries state the actual classification rules. |
 | `rr:player-card.2` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:player-deck` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:player-deck.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -989,7 +989,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:setup-keyword.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:setup-triggered-ability` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:setup-triggered-ability.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:setup-triggered-ability.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:setup-triggered-ability.2` | Unimplemented behavior | MARVEL-269 | Successful encounter-card setup behavior is proved under appendix citations; the narrow citation currently covers only a fail-closed case. |
 | `rr:setup-triggered-ability.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:shuffle` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:shuffle.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
