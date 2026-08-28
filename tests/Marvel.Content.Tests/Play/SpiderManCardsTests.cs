@@ -257,9 +257,12 @@ public sealed class SpiderManCardsTests
     }
 
     [Rule("rr:stun-stunned.1")]
+    [Rule("rr:stun-stunned.2")]
     [Fact]
     public void WebbedUpDiscardsItselfAndStunsItsEnemy()
     {
+        // "If an ability 'stuns' a character, give that character a stunned
+        // status card." Webbed Up's interrupt does both printed effects.
         var world = Deal(hero: true);
         var runner = AuthoredCards.Runner();
         var villain = world.TheCardIn(DeckType.VillainArea)!;

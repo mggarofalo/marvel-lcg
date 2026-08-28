@@ -392,12 +392,13 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:retaliate-x")]
+    [Rule("rr:attack-enemy-activation.4.1")]
     [Fact]
     public void AHeroWithRetaliateHitsBackAtAnAttackingEnemy()
     {
-        // The other direction: `rr:retaliate-x` is a character rule, not a
-        // player one, so an enemy attacking a hero with retaliate takes the
-        // damage the same way.
+        // An undefended attack's "targeted character is considered to have been
+        // attacked", so the hero's retaliate response fires. Retaliate is a
+        // character rule, not a player one, and damages the attacking enemy.
         var printed = new Printed()
             .With("hero", ("HP", "10"), ("Retaliate", "2"))
             .With("villain", ("ATK", "3"), ("HP", "20"))
@@ -889,6 +890,7 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:vulnerable")]
+    [Rule("rr:vulnerable.1")]
     [Rule("rr:vulnerable.2")]
     [Fact]
     public void AVulnerableCharacterIsDiscardedWhenItIsStunned()

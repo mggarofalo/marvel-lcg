@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 414 |
-| Covered by a narrower rule | 46 |
+| Executable and cited | 444 |
+| Covered by a narrower rule | 49 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 37 |
 | Outside the supported product boundary | 66 |
-| Unimplemented behavior | 533 |
+| Unimplemented behavior | 500 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -25,7 +25,10 @@ The six dispositions are mutually exclusive:
 - Outside the supported product boundary means a named Plane item holds the later product work.
 - Unimplemented behavior means a named Plane item owns the missing behavior or citation check.
 
-MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARVEL-276 are in the Rules Reference Coverage module. MARVEL-254 records the one known ordering gap outside those broad work items.
+MARVEL-268 through MARVEL-287 hold the active coverage batches and the
+implementation work those batches exposed in the Rules Reference Coverage
+module. MARVEL-254 records the one known ordering gap outside those broad work
+items.
 
 ## Record classifications
 
@@ -151,32 +154,32 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:attack-enemy-activation.step.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.3` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:attack-enemy-activation.step.3.a` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-enemy-activation.step.3.b` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attack-enemy-activation.step.3.a` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:attack-enemy-activation.step.3.b` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
 | `rr:attack-enemy-activation.step.3.c` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.3.d` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.step.3.e` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attack-enemy-activation.step.3.e` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
 | `rr:attack-enemy-activation.step.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.6.a` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.step.6.b` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attack-enemy-activation.step.6.b` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
 | `rr:attack-enemy-activation.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.1.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.1.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-enemy-activation.1.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attack-enemy-activation.1.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:attack-enemy-activation.1.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.1.4` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-enemy-activation.2.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-enemy-activation.2.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-enemy-activation.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-enemy-activation.3.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-enemy-activation.3.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attack-enemy-activation.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:attack-enemy-activation.2.1` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:attack-enemy-activation.2.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:attack-enemy-activation.3` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:attack-enemy-activation.3.1` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:attack-enemy-activation.3.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
 | `rr:attack-enemy-activation.4` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.4.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attack-enemy-activation.4.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.6` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-enemy-activation.7` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attack-enemy-activation.6` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:attack-enemy-activation.7` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
 | `rr:attack-enemy-activation.7.1` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:attack-player-ability-type` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.step.7` | Executable and cited | — | A behavior test directly cites this record. |
@@ -184,22 +187,22 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:attack-player-ability-type.step.9` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.1.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-player-ability-type.1.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attack-player-ability-type.1.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
 | `rr:attack-player-ability-type.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-player-ability-type.2.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-player-ability-type.2.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-player-ability-type.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attack-player-ability-type.3.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attack-player-ability-type.2.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:attack-player-ability-type.2.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:attack-player-ability-type.3` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:attack-player-ability-type.3.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
 | `rr:attack-player-ability-type.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.5` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:attack-player-ability-type.5.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-player-ability-type.6` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attack-player-ability-type.6` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
 | `rr:attacks-against-allies` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attacks-against-allies.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attacks-against-allies.1.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attacks-against-allies.1.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attacks-against-allies.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:attacks-against-allies.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:attacks-against-allies.1.1` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:attacks-against-allies.1.2` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:attacks-against-allies.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:attacks-against-allies.3` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
 | `rr:base-value` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:basic-card` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:basic-card.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
@@ -268,18 +271,18 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:classifications.8` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:confuse-confused` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:confuse-confused.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:confuse-confused.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:confuse-confused.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:confuse-confused.3.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:confuse-confused.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:confuse-confused.5` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:confuse-confused.5.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:confuse-confused.6` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:confuse-confused.7` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:confuse-confused.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:confuse-confused.3` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
+| `rr:confuse-confused.3.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:confuse-confused.4` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:confuse-confused.5` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:confuse-confused.5.1` | Unimplemented behavior | MARVEL-287 | The dynamic hit-point and status implementation work item owns this executable rule. |
+| `rr:confuse-confused.6` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:confuse-confused.7` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:consequential-damage` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:consequential-damage.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:consequential-damage.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:consequential-damage.2.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:consequential-damage.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:consequential-damage.2.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
 | `rr:consequential-damage.2.2` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:constant-ability` | Redirect or summary | — | This record redirects readers to Ability; the destination carries the rule. |
 | `rr:control` | Redirect or summary | — | This record redirects readers to Ownership and Control; the destination carries the rule. |
@@ -314,19 +317,19 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:damage` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:damage.step.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:damage.step.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:damage.step.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:damage.step.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:damage.step.5` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:damage.step.3` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:damage.step.4` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:damage.step.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:damage.step.6` | Unimplemented behavior | MARVEL-275 | Forced interrupts run, but optional interrupts cannot yet suspend damage for a player decision. |
 | `rr:damage.step.7` | Unimplemented behavior | MARVEL-275 | Forced defeat abilities run, but optional interrupt and response choices cannot yet suspend defeat. |
-| `rr:damage.step.8` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:damage.step.8` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:damage.step.9` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:damage.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:damage.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:damage.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:damage.3.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:damage.3.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:damage.3.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:damage.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:damage.3` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:damage.3.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:damage.3.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:damage.3.3` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
 | `rr:dash-value` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:dash-value.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:dash-value.2` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
@@ -343,28 +346,28 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:defend-defense` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:defend-defense.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:defend-defense.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:defend-defense.2.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.2.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:defend-defense.2.1` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:defend-defense.2.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
 | `rr:defend-defense.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:defend-defense.3.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:defend-defense.3.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.3.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.4.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.4.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.4.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.4.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.4.5` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.4.6` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.4.7` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.4.8` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:defend-defense.3.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:defend-defense.3.3` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:defend-defense.4` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.4.1` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.4.2` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.4.3` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.4.4` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.4.5` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.4.6` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.4.7` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.4.8` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
 | `rr:defend-defense.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:defend-defense.5.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.5.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.6` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.7` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.7.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:defend-defense.7.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:defend-defense.5.1` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.5.2` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.6` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:defend-defense.7` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.7.1` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
+| `rr:defend-defense.7.2` | Unimplemented behavior | MARVEL-284 | The card-initiation timing and trigger-reference work item owns this executable rule. |
 | `rr:delayed-effect` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:delayed-effect.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:delayed-effect.1.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -433,7 +436,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:event.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:event.5` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:event.5.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:excess-damage` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:excess-damage` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:exhausted` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:exhausted.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:exhausted.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -509,20 +512,20 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:hazard-icon.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:heal` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:heal.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:heal.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:heal.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:hero-hero-form` | Redirect or summary | — | This record redirects readers to Form, Identity; the destination carries the rule. |
 | `rr:heroic-mode` | Redirect or summary | — | This record redirects readers to Modes of Play; the destination carries the rule. |
 | `rr:hinder-x` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:hinder-x.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:hinder-x.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:hit-points` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:hit-points.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:hit-points.1` | Unimplemented behavior | MARVEL-287 | The dynamic hit-point and status implementation work item owns this executable rule. |
 | `rr:hit-points.2` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:hit-points.2.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:hit-points.2.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:hit-points.2.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:hit-points.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:hit-points.3.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:hit-points.2.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:hit-points.2.3` | Unimplemented behavior | MARVEL-287 | The dynamic hit-point and status implementation work item owns this executable rule. |
+| `rr:hit-points.3` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:hit-points.3.1` | Unimplemented behavior | MARVEL-287 | The dynamic hit-point and status implementation work item owns this executable rule. |
 | `rr:icons` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
 | `rr:icons.1` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
 | `rr:icons.2` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
@@ -574,11 +577,11 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:indirect-damage.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:indirect-damage.3` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:indirect-damage.3.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:indirect-damage.3.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:indirect-damage.3.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
 | `rr:indirect-damage.4` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:indirect-damage.4.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:indirect-damage.5` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:indirect-damage.5.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:indirect-damage.4.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:indirect-damage.5` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:indirect-damage.5.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
 | `rr:indirect-damage.6` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:infinite-hit-points` | Redirect or summary | — | This record redirects readers to Hit Points; the destination carries the rule. |
 | `rr:initiating-abilities` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
@@ -691,7 +694,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:max-maximum.4` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:max-maximum.5` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
 | `rr:max-maximum.6` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:maximum-hit-points` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:maximum-hit-points` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:may` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:mental-resource` | Unimplemented behavior | MARVEL-269 | Resource-type behavior exists; the citation work item must attach this narrow definition to its proof. |
 | `rr:mental-resource.1` | Unimplemented behavior | MARVEL-269 | Resource payment exists; the citation work item must attach this narrow clause to its proof. |
@@ -760,8 +763,8 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:otherwise.2` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
 | `rr:overkill` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:overkill.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:overkill.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:overkill.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:overkill.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:overkill.3` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
 | `rr:overkill.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:overpay` | Redirect or summary | — | This record redirects readers to Cost; the destination carries the rule. |
 | `rr:ownership-and-control` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
@@ -898,8 +901,8 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:referential-ability.step.2` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
 | `rr:referential-ability.step.3` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
 | `rr:remaining-hit-points` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:remaining-hit-points.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:remaining-hit-points.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:remaining-hit-points.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:remaining-hit-points.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:reminder-text` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:removed-from-the-game` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:removed-from-the-game.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
@@ -1002,7 +1005,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:special` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:stalwart` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:stalwart.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:stalwart.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:stalwart.2` | Unimplemented behavior | MARVEL-287 | The dynamic hit-point and status implementation work item owns this executable rule. |
 | `rr:standard-mode` | Redirect or summary | — | This record redirects readers to Modes of Play; the destination carries the rule. |
 | `rr:standard-set` | Unimplemented behavior | MARVEL-269 | Setup includes the fixed standard set in supported scenarios; this existing behavior needs its narrow citation. |
 | `rr:standard-set.1` | Outside the supported product boundary | MARVEL-272 | Selecting or rejecting fixed encounter sets as modular choices needs product-level set validation. |
@@ -1017,19 +1020,19 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:status-cards` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:status-cards.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:status-cards.1.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:status-cards.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:status-cards.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:steady` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:steady.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:steady.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:stun-stunned` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:stun-stunned.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:stun-stunned.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:stun-stunned.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:stun-stunned.3` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:stun-stunned.3.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:stun-stunned.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:stun-stunned.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:stun-stunned.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:stun-stunned.5.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:stun-stunned.6` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:stun-stunned.7` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:stun-stunned.6` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:stun-stunned.7` | Unimplemented behavior | MARVEL-287 | The dynamic hit-point and status implementation work item owns this executable rule. |
 | `rr:subtitle` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:support` | Not enforceable by an engine | — | This record names a printed card type; its clauses carry the executable support rules. |
 | `rr:support.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -1038,9 +1041,9 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:surge` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:surge.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:surge.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:sustained-damage` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:sustained-damage.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:sustained-damage.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:sustained-damage` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
+| `rr:sustained-damage.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:sustained-damage.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:swap` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:swap.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:swap.1.1` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
@@ -1100,10 +1103,10 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:thwart.2.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:timing` | Redirect or summary | — | This record redirects readers to Ability, Interrupt, Response, “Would”; the destination carries the rule. |
 | `rr:tough` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:tough.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:tough.1` | Covered by a narrower rule | — | The directly cited `rr:tough.2` states the executable replacement effect more precisely. |
 | `rr:tough.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:tough.2.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:tough.2.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:tough.2.2` | Unimplemented behavior | MARVEL-287 | The dynamic hit-point and status implementation work item owns this executable rule. |
 | `rr:tough.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:toughness` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:toughness.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -1186,7 +1189,7 @@ MARVEL-268, MARVEL-269, MARVEL-270, MARVEL-271, MARVEL-272, MARVEL-275, and MARV
 | `rr:villainous.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:villainous.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:vulnerable` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:vulnerable.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
+| `rr:vulnerable.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:vulnerable.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:vulnerable.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:when-completed-abilities` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |

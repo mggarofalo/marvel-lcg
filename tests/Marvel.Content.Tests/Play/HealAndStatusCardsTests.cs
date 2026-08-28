@@ -108,13 +108,15 @@ public sealed class HealAndStatusCardsTests
     }
 
     [Rule("rr:you-your.5")]
+    [Rule("rr:confuse-confused.2")]
     [Fact]
     public void FalseAlarmConfusesTheRevealingPlayersIdentity()
     {
-        // "You are confused." The status goes on the identity of the player
-        // resolving the card -- not on the first player, and not on a card the
-        // ability happens to be looking at. Revealed by the *second* player on
-        // a two-player board so that "the revealing player" is a claim.
+        // "If an ability 'confuses' a character, give that character a confused
+        // status card." Here "You are confused" puts that status on the
+        // identity of the player resolving the card -- not on the first player,
+        // and not on a card the ability happens to be looking at. Revealed by
+        // the *second* player so that "the revealing player" is a claim.
         var world = Deal("spider_man", "she_hulk");
 
         Reveal(world, AuthoredCards.FalseAlarm, player: 1);

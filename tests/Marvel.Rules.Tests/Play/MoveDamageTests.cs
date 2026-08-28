@@ -10,9 +10,12 @@ public sealed class MoveDamageTests
     [Rule("rr:move.3.1")]
     [Rule("rr:move.4")]
     [Rule("rr:move.5")]
+    [Rule("rr:heal.2")]
     [Fact]
     public void MovingDamageHealsTheOriginAndDealsTheSameAmountToTheDestination()
     {
+        // "Effects that move damage off of a character are considered to heal
+        // that character." The source loses the two damage the enemy gains.
         var facts = new Printed();
         var world = Board(facts);
         var hero = world.Seats[0].IdentityCard;

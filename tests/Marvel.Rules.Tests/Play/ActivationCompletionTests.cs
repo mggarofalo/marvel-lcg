@@ -129,10 +129,14 @@ public sealed class ActivationCompletionTests
     }
 
     [Rule("rr:confuse-confused.1")]
+    [Rule("rr:confuse-confused.7")]
     [Rule("rr:activation.7")]
     [Fact]
     public void ACancelledSchemeStillCompletesAndReportsThatNoneWasMade()
     {
+        // Removal replaces the scheme activation, so "that character is not
+        // considered to have [...] schemed." Completion still occurs but says
+        // no scheme was made and no threat was placed.
         var (world, facts, enemy) = Board(attacking: false, value: 2);
         Statuses.Give(world, enemy, Statuses.Confused);
         var abilities = new CompletionRecorder();

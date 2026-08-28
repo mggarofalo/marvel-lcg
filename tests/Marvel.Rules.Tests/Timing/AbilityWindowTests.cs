@@ -50,13 +50,15 @@ public sealed class AbilityWindowTests
     }
 
     [Rule("rr:ability.step.2.a")]
+    [Rule("rr:status-cards.2")]
     [Fact]
     public void AStatusCardsForcedInterruptGoesBeforeAnOrdinaryOne()
     {
-        // Stun, Confuse and Tough are status cards, and this tier is why they
-        // beat whatever else wants the same window. Collapsing 2a into 2b would
-        // let an ordinary forced interrupt resolve first and cancel the attack
-        // the status card was there to change.
+        // "Status card abilities have timing priority over all conflicting
+        // triggered abilities." Stun, Confuse and Tough are status cards, and
+        // this tier is why they beat whatever else wants the same window.
+        // Collapsing 2a into 2b would let an ordinary forced interrupt resolve
+        // first and cancel the attack the status card was there to change.
         var tiers = AbilityWindow.Tiers(
             [An(AbilityType.ForcedInterrupt, card: 1), An(AbilityType.StatusForcedInterrupt, card: 2)],
             WindowKind.Interrupt,
