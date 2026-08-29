@@ -133,6 +133,7 @@ public enum Stage
 /// <param name="AbilityOccurrence">The occurrence the suspended ability is resolving in.</param>
 /// <param name="AbilityFace">The printed face whose authored ability suspended.</param>
 /// <param name="AbilityPlayer">The player resolving the containing ability.</param>
+/// <param name="AbilityActor">The performer attributed to the containing labeled ability.</param>
 /// <param name="AbilityHasContinuation">Whether structural ancestor work remains.</param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
@@ -148,7 +149,7 @@ public readonly record struct PhaseStep(
     IReadOnlyList<int>? AbilityActivationIds = null,
     IReadOnlyDictionary<string, long>? AbilityResults = null,
     Occurrence? AbilityOccurrence = null,
-    string AbilityFace = "", int AbilityPlayer = -1,
+    string AbilityFace = "", int AbilityPlayer = -1, int AbilityActor = -1,
     bool AbilityHasContinuation = false)
 {
     /// <summary>What is happening, as triggering conditions.</summary>

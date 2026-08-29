@@ -1923,6 +1923,101 @@ public sealed class ActionAbilityTests
             world, world.Seats[0].IdentityCard, Statuses.Confused));
     }
 
+    [Rule("rr:labeled-ability.6")]
+    [Fact]
+    public void LabeledPowerDoesNotBeginAgainDuringItsEffect()
+    {
+        // A labeled ability is canceled "when the player initiates" it. The
+        // stun gained after initiation therefore remains in play and cannot
+        // retroactively cancel the attack child of the already-running ability.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """
+            { "seq": [
+              { "giveStatus": { "card": "you", "status": "stunned" } },
+              { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "dealAttackDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              } }
+            ] }
+            """,
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = board.CreateCard(
+                "01017",
+                board.AreaOf(
+                    DeckType.UpgradesArea, PlayArea.Of(0),
+                    board.Seats[0].IdentityCard.ObjectId, cardOwner: 0)),
+            hero: true,
+            abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.True(Statuses.Has(
+            world, world.Seats[0].IdentityCard, Statuses.Stunned));
+        Assert.Equal(1, villain.Damage);
+    }
+
+    [Rule("rr:labeled-ability.1")]
+    [Rule("rr:upgrade.4")]
+    [Rule("rr:piercing.1")]
+    [Fact]
+    public void LabeledPerformerSurvivesAChoiceContinuation()
+    {
+        // An upgrade attached to "another friendly character" attributes its
+        // labeled ability to that character. The chosen ally remains the
+        // performer after the prompt, so its Piercing discards each Tough card.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """
+            { "chooseCard": {
+              "from": { "query": "attackableEnemies" },
+              "effect": { "dealAttackDamage": {
+                "cards": "chosen", "amount": 1
+              } }
+            } }
+            """,
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        Card? ally = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                ally = board.CreateCard(
+                    AuthoredCards.BlackCat,
+                    board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0), ally.ObjectId, cardOwner: 0));
+                board.Effects.Register(new ContinuousEffect(
+                    EffectSource.LastingEffect,
+                    Kind: Keywords.Piercing,
+                    Card: ally.ObjectId,
+                    Affects: ally.ObjectId));
+            },
+            hero: true,
+            abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Statuses.Give(world, villain, Statuses.Tough);
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(villain.ObjectId));
+
+        Assert.False(Statuses.Has(world, villain, Statuses.Tough));
+        Assert.Equal(1, villain.Damage);
+    }
+
     [Rule("rr:lasting-effects.6")]
     [Fact]
     public void AnUntilEndOfAttackEffectCannotBeginOutsideAnAttack()

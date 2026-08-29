@@ -146,6 +146,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     this)
                 {
                     Tier = effect.Tier,
+                    AbilityActor = effect.AbilityActor >= 0
+                        ? world.Cards[effect.AbilityActor]
+                        : null,
                 };
                 delayedCast.Results["activationDamage"] = result.DamageDealt;
                 delayedCast.Results["activationThreat"] = result.ThreatPlaced;
@@ -226,7 +229,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             BasicPowers.AttackVerb, attack.AbilityPath, attack.AbilityFace,
             attack.AbilityResults, attack.AbilityOccurrence, attack.Discarded,
             attack.EachPlayerFrame, attack.FinalPlayer, attack.AbilityPlayer,
-            attack.AbilityHasContinuation);
+            attack.AbilityHasContinuation, attack.AbilityActor);
 
     /// <inheritdoc/>
     public void ResolveCardThwart(
@@ -239,7 +242,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             BasicPowers.ThwartVerb, thwart.AbilityPath, thwart.AbilityFace,
             thwart.AbilityResults, thwart.AbilityOccurrence, thwart.Discarded,
             thwart.EachPlayerFrame, thwart.FinalPlayer, thwart.AbilityPlayer,
-            thwart.AbilityHasContinuation);
+            thwart.AbilityHasContinuation, thwart.AbilityActor);
 
     private void ResolvePower(
         World world, int sourceId, int targetId, int player, int abilityIndex,
@@ -251,7 +254,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
         Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
         bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
-        bool abilityHasContinuation = false)
+        bool abilityHasContinuation = false, int abilityActor = -1)
     {
         if (sourceId < 0 || sourceId >= world.Cards.Count)
         {
@@ -285,6 +288,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
             AbilityPlayer = abilityPlayer,
+            AbilityActor = abilityActor >= 0 ? world.Cards[abilityActor] : null,
             GainedKeywords = surgeGained
                 ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal),
@@ -9639,7 +9643,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     [.. cast.AbilityPath], cast.AbilityFace, cast.Player,
                     new Dictionary<string, long>(cast.Results, StringComparer.Ordinal),
                     cast.Occurrence, [.. cast.Discarded.Select(card => card.ObjectId)],
-                    cast.HasContinuation);
+                    cast.HasContinuation, cast.AbilityActor?.ObjectId ?? -1);
                 cast.Suspend();
                 break;
 
@@ -9894,7 +9898,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 waiting.Add(new ActivationEffect(
                     cast.Source.ObjectId, cast.Player, cast.Tier,
                     Tree(node.Require("effect")),
-                    cast.Altered?.ObjectId ?? -1));
+                    cast.Altered?.ObjectId ?? -1,
+                    cast.AbilityActor?.ObjectId ?? -1));
                 cast.ResolveEffect();
                 break;
 
@@ -11624,6 +11629,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
         RestorePersisted(cast, step.Discarded, step.AbilityResults);
+        cast.AbilityActor = step.AbilityActor >= 0
+            ? cast.World.Cards[step.AbilityActor]
+            : null;
     }
 
     private static void RestorePersisted(
@@ -12052,6 +12060,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             AbilityOccurrence: cast.Occurrence,
             AbilityFace: cast.AbilityFace,
             AbilityPlayer: cast.AbilityPlayer,
+            AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
             AbilityHasContinuation: cast.HasContinuation);
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
@@ -12390,7 +12399,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
                 discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
                 finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer,
-                abilityHasContinuation: cast.HasContinuation)
+                abilityHasContinuation: cast.HasContinuation,
+                performer: cast.AbilityActor)
             : BasicPowers.CardThwart(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
                 cast.Trigger, cast.Events, abilityIndex: address.Index,
@@ -12405,7 +12415,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
                 discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
                 finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer,
-                abilityHasContinuation: cast.HasContinuation);
+                abilityHasContinuation: cast.HasContinuation,
+                performer: cast.AbilityActor);
         if (!scheduled)
         {
             return;
@@ -12925,6 +12936,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 AbilityOccurrence: cast.Occurrence,
                 AbilityFace: cast.AbilityFace,
                 AbilityPlayer: cast.AbilityPlayer,
+                AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
                 AbilityHasContinuation: cast.HasContinuation));
             cast.WaitFor(activationIds);
             cast.Suspend();
@@ -14084,5 +14096,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private sealed record ActivationEffect(
-        int Source, int Player, AbilityType? Tier, AbilityNode Effect, int Altered);
+        int Source, int Player, AbilityType? Tier, AbilityNode Effect, int Altered,
+        int AbilityActor);
 }
