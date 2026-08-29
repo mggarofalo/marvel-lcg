@@ -147,6 +147,31 @@ public sealed class SetAsideTests
         Assert.Equal(3, blueprints.Count(card => card.Slot == SetupSlot.PlayerDeck));
     }
 
+    [Rule("rr:linked-card-title.1")]
+    [Fact]
+    public void LinkedPlayerCardsUseTheGeneralSetAsidePileNotTheNemesisSet()
+    {
+        var order = Dealer.DealOrder(Setup, "rhino", ["spider_man"])
+            .Concat([new Creation("43021", CreationSource.PlayerDeck, 0)])
+            .ToList();
+        var world = WorldSetup.Deal(
+            Cards,
+            Blueprints.From(order, Cards),
+            [Setup.Hero("spider_man").Name],
+            12345);
+        string[] linked = ["43034", "43035", "43036", "43037"];
+
+        Assert.All(
+            world.Seats[0].SetAside.Cards,
+            card => Assert.Contains(card.FaceId, linked));
+        Assert.Equal(
+            linked,
+            world.Seats[0].SetAside.Cards.Select(card => card.FaceId));
+        Assert.DoesNotContain(
+            world.Seats[0].Nemesis.Cards,
+            card => linked.Contains(card.FaceId, StringComparer.Ordinal));
+    }
+
     [Rule("rr:linked-card-title")]
     [Theory]
     [InlineData("49020", "49033")] // title: New Recruits
@@ -170,7 +195,7 @@ public sealed class SetAsideTests
     {
         var world = new World(Cards, players: 1);
         var seat = world.CreateSeat("p0");
-        var linked = world.CreateCard("53034", seat.Nemesis);
+        var linked = world.CreateCard("53034", seat.SetAside);
         Assert.Equal(World.Scenario, linked.Owner);
         World.MoveToTop(
             linked,
@@ -188,7 +213,7 @@ public sealed class SetAsideTests
     {
         var world = new World(Cards, players: 1);
         var seat = world.CreateSeat("p0");
-        var linked = world.CreateCard("53034", seat.Nemesis);
+        var linked = world.CreateCard("53034", seat.SetAside);
         var runner = new AbilityRunner(AbilityCatalog.Parse(
             """
             { "cards": [ { "card": "53034", "abilities": [ {

@@ -10884,7 +10884,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Trigger = cast.Trigger, Verb = "Remove_Counter",
         });
 
-        if (before == 1
+        if (CounterCount(cast.Source, "allPurpose") == 0
             && Reveal.Uses(cast.World.Facts.Attributes(cast.Source.FaceId)).Count > 0)
         {
             Rules.Play.Discard.Card(cast.World, cast.Source, cast.Trigger, cast.Events);

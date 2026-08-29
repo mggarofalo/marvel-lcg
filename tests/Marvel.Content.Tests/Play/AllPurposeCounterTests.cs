@@ -84,6 +84,37 @@ public sealed class AllPurposeCounterTests
         Assert.Equal(5, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void UsesCardRemainsWhileAnyAllPurposeCounterRemains()
+    {
+        // "If there are no all-purpose counters on this card, discard this
+        // card." Removing the last web counter does not satisfy that condition
+        // while an arrow counter remains in the same token inventory.
+        Card? shooter = null;
+        var (game, _) = Playing(board =>
+        {
+            shooter = board.CreateCard(
+                "01008",
+                board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+            shooter.PlaceTokens("c_web", 1);
+            shooter.PlaceTokens("c_arrow", 1);
+        }, Runner(
+            "01008",
+            """{ "removeCounters": "web" }""",
+            """{ "draw": { "player": "you", "count": 1 } }"""));
+
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb
+                && option.AnchorId == shooter!.ObjectId);
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(0, shooter!.Tokens.GetValueOrDefault("c_web"));
+        Assert.Equal(1, shooter.Tokens["c_arrow"]);
+        Assert.Equal(DeckType.UpgradesArea, shooter.Area.Type);
+    }
+
     [Rule("rr:all-purpose-counter.2")]
     [Fact]
     public void RemovingOneOfSeveralTypesRaisesBeforeChoosingForThePlayer()

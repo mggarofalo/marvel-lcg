@@ -458,7 +458,7 @@ public sealed class World
     /// <summary>Makes a seat and the areas that belong to it.</summary>
     /// <param name="name">The player's name, e.g. <c>Spider-Man</c>.</param>
     /// <remarks>
-    /// The five areas are made in one fixed order, which is why this is one
+    /// The six areas are made in one fixed order, which is why this is one
     /// call rather than five. Area ids are not on the wire, so the order does
     /// not have to be this one — but it does have to be the same every time,
     /// or two deals of a seed allocate ids differently.
@@ -477,7 +477,11 @@ public sealed class World
             nemesis: CreateArea(DeckType.AsideDeck, Scenario, PlayArea.Of(index)),
             deck: CreateArea(DeckType.PlayerDeck, index, PlayArea.Of(index)),
             hand: CreateArea(DeckType.HandsArea, index, PlayArea.Of(index)),
-            hero: CreateArea(DeckType.HeroArea, index, PlayArea.Of(index)));
+            hero: CreateArea(DeckType.HeroArea, index, PlayArea.Of(index)),
+            // Created last so the existing five area identities remain stable.
+            // It is in the player's play area but scenario-owned until a rule
+            // such as Linked transfers ownership of one of its cards.
+            setAside: CreateArea(DeckType.AsideDeck, Scenario, PlayArea.Of(index)));
         seats.Add(seat);
         return seat;
     }

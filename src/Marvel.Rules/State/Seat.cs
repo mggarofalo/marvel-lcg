@@ -20,7 +20,9 @@ namespace Marvel.Rules.State;
 /// </remarks>
 public sealed class Seat
 {
-    internal Seat(int index, string name, Area identity, Area nemesis, Area deck, Area hand, Area hero)
+    internal Seat(
+        int index, string name, Area identity, Area nemesis,
+        Area deck, Area hand, Area hero, Area setAside)
     {
         Index = index;
         Name = name;
@@ -29,6 +31,7 @@ public sealed class Seat
         Deck = deck;
         Hand = hand;
         Hero = hero;
+        SetAside = setAside;
     }
 
     /// <summary>Which seat this is, from 0.</summary>
@@ -59,6 +62,16 @@ public sealed class Seat
 
     /// <summary>Where this player's identity sits once it is in play.</summary>
     public Area Hero { get; }
+
+    /// <summary>
+    /// This player's general set-aside pile, distinct from their nemesis set.
+    /// </summary>
+    /// <remarks>
+    /// Both use the <c>AsideDeck</c> zone, but effects that name a player's
+    /// nemesis encounter set must not see linked player cards here. Cards begin
+    /// scenario-owned until a rule transfers their ownership.
+    /// </remarks>
+    public Area SetAside { get; }
 
     /// <summary>The identity card, once the deal has made it.</summary>
     /// <remarks>
