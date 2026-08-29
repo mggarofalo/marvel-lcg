@@ -4343,11 +4343,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private readonly record struct DamageTransfer(
-        int From, int To, long Amount);
+        int From, int To, long Amount, bool GrantsTough = false);
 
     private sealed record DamageTraceState(
         Dictionary<int, long> Damage, long PeakTargetDamage,
-        HashSet<int> Players);
+        HashSet<int> Players, Dictionary<int, int> Tough);
 
     private static long PeakRepeatedDamageOn(
         Card target, AbilityNode repeatedEffect, Cast cast,
@@ -4357,7 +4357,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         try
         {
             IReadOnlyList<DamageTraceState> states =
-                [new(new Dictionary<int, long>(), target.Damage, [])];
+                [new(new Dictionary<int, long>(), target.Damage, [], new())];
             for (int frame = 0; frame < frames; frame++)
             {
                 var next = new List<DamageTraceState>();
@@ -4397,15 +4397,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         Card target, Cast cast)
     {
         var damage = new Dictionary<int, long>(state.Damage);
+        var tough = new Dictionary<int, int>(state.Tough);
         long peak = state.PeakTargetDamage;
         long Current(int card) => damage.TryGetValue(card, out long amount)
             ? amount
             : cast.World.Cards[card].Damage;
+        int CurrentTough(int card) => tough.TryGetValue(card, out int count)
+            ? count
+            : Statuses.Count(cast.World, cast.World.Cards[card], Statuses.Tough);
 
         foreach (var transfer in trace)
         {
+            if (transfer.GrantsTough)
+            {
+                tough[transfer.To] = Math.Max(1, CurrentTough(transfer.To));
+                continue;
+            }
             if (transfer.From < 0)
             {
+                if (transfer.Amount > 0 && CurrentTough(transfer.To) > 0)
+                {
+                    tough[transfer.To] = CurrentTough(transfer.To) - 1;
+                    continue;
+                }
                 damage[transfer.To] = SaturatingSum(
                     Current(transfer.To), [transfer.Amount]);
                 peak = Math.Max(peak, Current(target.ObjectId));
@@ -4417,12 +4431,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             damage[transfer.From] = available - amount;
             if (transfer.To >= 0)
             {
-                damage[transfer.To] = SaturatingSum(
-                    Current(transfer.To), [amount]);
+                if (amount > 0 && CurrentTough(transfer.To) > 0)
+                {
+                    tough[transfer.To] = CurrentTough(transfer.To) - 1;
+                }
+                else
+                {
+                    damage[transfer.To] = SaturatingSum(
+                        Current(transfer.To), [amount]);
+                }
             }
             peak = Math.Max(peak, Current(target.ObjectId));
         }
-        return new DamageTraceState(damage, peak, state.Players);
+        return new DamageTraceState(damage, peak, state.Players, tough);
     }
 
     private static IReadOnlyList<IReadOnlyList<DamageTransfer>> DamageTraces(
@@ -4502,6 +4523,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [new DamageTransfer(
                 from.ObjectId, to.ObjectId,
                 Amount(node.Require("amount"), cast))];
+        }
+        if (node.Kind == "giveStatus"
+            && Word(node.Require("status")) == Statuses.Tough)
+        {
+            return
+            [
+                .. Every(node.Require("card"), cast).Select(card =>
+                    new DamageTransfer(0, card.ObjectId, 0, GrantsTough: true)),
+            ];
         }
         return [];
     }
