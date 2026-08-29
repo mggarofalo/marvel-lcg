@@ -3944,6 +3944,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return true;
         }
+        if (node.Kind == "eachPlayer")
+        {
+            int original = cast.Player;
+            try
+            {
+                foreach (int player in cast.World.PlayerOrder)
+                {
+                    cast.RestorePlayer(player);
+                    if (HasNestedEachPlayer(
+                        Tree(node.Require("effect")), cast, inside: true, stateMayChange))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            finally
+            {
+                cast.RestorePlayer(original);
+            }
+        }
         bool within = inside || node.Kind == "eachPlayer";
         return GuardChildren(node, cast, stateMayChange).Any(child =>
             HasNestedEachPlayer(child.Node, cast, within, child.StateMayChange));
@@ -3952,6 +3973,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool ContainsUnsupportedPower(
         AbilityNode node, Cast cast, bool stateMayChange = false)
     {
+        if (node.Kind == "eachPlayer")
+        {
+            int original = cast.Player;
+            try
+            {
+                foreach (int player in cast.World.PlayerOrder)
+                {
+                    cast.RestorePlayer(player);
+                    if (ContainsUnsupportedPower(
+                        Tree(node.Require("effect")), cast, stateMayChange))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            finally
+            {
+                cast.RestorePlayer(original);
+            }
+        }
         if (node.Kind is "attack" or "thwart"
             && SuspendsPowerEffect(Tree(node.Require("effect"))))
         {

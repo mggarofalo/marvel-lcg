@@ -2863,6 +2863,30 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
     }
 
+    [Rule("rr:each-player.1")]
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void EachPlayerPreflightUsesEveryPlayersCurrentForm()
+    {
+        // "For each player" reaches both identities. A safe branch for the
+        // initiating hero cannot hide an unsupported branch for an alter-ego.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
     [Rule("rr:choose-option")]
     [Fact]
     public void AChoiceContinuationPreservesEarlierEffectResults()
