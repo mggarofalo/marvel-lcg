@@ -3563,6 +3563,9 @@ public sealed class ActionAbilityTests
     [Theory]
     [InlineData("\"yourHero\"")]
     [InlineData("{ \"query\": \"charactersYouControl\" }")]
+    [InlineData("{ \"withTrait\": { \"cards\": \"yourHero\", \"trait\": \"AVENGER\" } }")]
+    [InlineData("{ \"withTrait\": { \"cards\": { \"query\": \"charactersYouControl\" }, \"trait\": \"AVENGER\" } }")]
+    [InlineData("{ \"maxBy\": { \"of\": { \"query\": \"charactersYouControl\" }, \"by\": \"attack\" } }")]
     public void PlayerRelativeDamageTargetsApplyOnlyInTheirPlayersFrame(
         string targets)
     {

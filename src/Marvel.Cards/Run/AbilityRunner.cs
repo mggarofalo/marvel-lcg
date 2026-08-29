@@ -4307,9 +4307,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool RebindsToEachPlayer(AbilityValue targets) => targets switch
     {
         AbilityValue.Word word => word.Value is "you" or "yourHero",
-        AbilityValue.Map when Tree(targets) is { Kind: "query" } query =>
-            query.Argument is AbilityValue.Word
-                { Value: "charactersYouControl" },
+        AbilityValue.Map => RebindsToEachPlayer(Tree(targets)),
+        _ => false,
+    };
+
+    private static bool RebindsToEachPlayer(AbilityNode targets) => targets.Kind switch
+    {
+        "query" => targets.Argument is AbilityValue.Word
+            { Value: "charactersYouControl" },
+        "withTrait" => RebindsToEachPlayer(targets.Require("cards")),
+        "minBy" or "maxBy" => RebindsToEachPlayer(targets.Require("of")),
+        "withoutAnotherCopyAttached" => RebindsToEachPlayer(targets.Argument),
         _ => false,
     };
 
