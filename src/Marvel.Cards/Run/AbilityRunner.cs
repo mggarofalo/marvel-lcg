@@ -5149,21 +5149,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return true;
         }
-        if (Rules.State.Traits.Has(
-                cast.World, current, trait, cast.World.Facts))
+        if (FacedownDrones.InherentTraits(current, cast.World.Facts)
+            .Contains(trait, StringComparer.Ordinal))
         {
             return true;
         }
 
         int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        string grantedKind = Rules.State.Traits.Granted + trait;
+        if (cast.World.Effects.Active().Any(effect =>
+            effect.Affects == current.ObjectId
+            && (effect.Card is not int source || !discarded.Contains(source))
+            && string.Equals(effect.Kind, grantedKind, StringComparison.Ordinal)))
+        {
+            return true;
+        }
+
         var carried = TraceCarriedAttachments(current, cast, discarded);
         var carriedIds = carried.Select(card => card.ObjectId).ToHashSet();
         return cast.World.Effects.Active().Any(effect =>
             effect.Affects == boardVillain
             && effect.Card is int source && carriedIds.Contains(source)
-            && string.Equals(
-                effect.Kind, Rules.State.Traits.Granted + trait,
-                StringComparison.Ordinal));
+            && string.Equals(effect.Kind, grantedKind, StringComparison.Ordinal));
     }
 
     private static List<Card> TraceCarriedAttachments(

@@ -4564,6 +4564,55 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:ability")]
+    [Fact]
+    public void DiscardedAttachmentStopsGrantingItsTraitDuringTheTrace()
+    {
+        // A constant ability remains active only while its card is in play.
+        // Discarding Cosmic Flight removes AERIAL before the filtered damage,
+        // so the wounded identity is no longer one of that effect's targets.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "discard": { "titled": "Cosmic Flight" } },
+                { "dealDamage": {
+                  "cards": { "withTrait": {
+                    "cards": { "query": "characters" }, "trait": "AERIAL"
+                  } },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:traits.1")]
     [Fact]
     public void EarlierTraitGrantChangesALaterDynamicTargetSet()
