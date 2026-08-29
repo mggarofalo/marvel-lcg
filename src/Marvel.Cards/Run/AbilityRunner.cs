@@ -3475,6 +3475,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         bool cancelled = LabeledAbilities.WouldBeCancelled(
             cast.World, cast.World.Facts, Resolver(cast), cast.Source, labels);
+
+        foreach (string power in LabeledAbilities.Known)
+        {
+            if (!labels.Contains(power, StringComparer.Ordinal)
+                && PowerNodes(ability.Effect, power).Any())
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' contains a {power.ToLowerInvariant()} power "
+                    + "that is absent from its ability labels");
+            }
+        }
+
         if (!cancelled
             && labels.Contains(Attack.DefenseVerb, StringComparer.Ordinal)
             && !Attack.CanUseDefenseAbility(cast.World, Resolver(cast)))

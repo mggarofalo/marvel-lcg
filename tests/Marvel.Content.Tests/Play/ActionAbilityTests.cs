@@ -2135,6 +2135,64 @@ public sealed class ActionAbilityTests
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }
 
+    [Rule("rr:labeled-ability.5")]
+    [Rule("rr:labeled-ability.6")]
+    [Fact]
+    public void EnvelopeCannotHideAnUndeclaredPower()
+    {
+        // The envelope's labels are the whole set. An attack-only ability may
+        // not append a thwart that skips Confused merely because the attack
+        // already persisted its performer into the continuation.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """
+            { "seq": [
+              { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "dealAttackDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              } },
+              { "thwart": {
+                "target": { "query": "mainScheme" },
+                "effect": { "removeThreat": {
+                  "scheme": { "query": "mainScheme" }, "amount": 1
+                } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                Statuses.Give(
+                    board, board.Seats[0].IdentityCard, Statuses.Confused);
+            },
+            hero: true);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long threat = scheme.Tokens.GetValueOrDefault("k_threat");
+        var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => runner.Act(world, forged, [], []));
+
+        Assert.Contains("absent from its ability labels", thrown.Message);
+        Assert.True(source.Ready);
+        Assert.True(Statuses.Has(
+            world, world.Seats[0].IdentityCard, Statuses.Confused));
+        Assert.Equal(0, villain.Damage);
+        Assert.Equal(threat, scheme.Tokens.GetValueOrDefault("k_threat"));
+    }
+
     [Rule("rr:lasting-effects.6")]
     [Fact]
     public void AnUntilEndOfAttackEffectCannotBeginOutsideAnAttack()
