@@ -473,7 +473,7 @@ public sealed class ContinuousEffects(World world)
             return;
         }
 
-        Card[] candidates = LostUsesCandidates(ending);
+        Card[] candidates = LostUsesCandidates();
         ConstantEnding constantsEnding;
         suppressed.UnionWith(ending);
         try
@@ -497,20 +497,7 @@ public sealed class ContinuousEffects(World world)
         constantsEnding.Complete(trigger, sink);
     }
 
-    private Card[] LostUsesCandidates(List<Entry> ending)
-        => LostUsesCandidates(ending.Select(entry => entry.Effect));
-
-    private Card[] LostUsesCandidates(IEnumerable<ContinuousEffect> ending)
-    {
-        if (!ending.Any(effect => string.Equals(
-                effect.Kind,
-                Characteristics.LossOf("uses"),
-                StringComparison.Ordinal)))
-        {
-            return [];
-        }
-
-        return world.Cards.Where(card =>
+    private Card[] LostUsesCandidates() => world.Cards.Where(card =>
             DeckTypes.IsInPlay(card.Area.Type)
             && !FacedownDrones.Is(card)
             && Characteristics.IsLost(world, card, "uses")
@@ -518,7 +505,6 @@ public sealed class ContinuousEffects(World world)
             && card.Tokens
                 .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
                 .Sum(pair => pair.Value) == 0).ToArray();
-    }
 
     private Card[] RestoredUsesAfter(Card[] candidates)
     {
@@ -602,7 +588,7 @@ public sealed class ContinuousEffects(World world)
                 var ending = layer
                     .SelectMany(card => world.Abilities.Constant(world, card))
                     .ToArray();
-                var candidates = LostUsesCandidates(ending);
+                var candidates = LostUsesCandidates();
                 suppressedConstants.AddRange(ending);
 
                 foreach (var card in RestoredUsesAfter(candidates))

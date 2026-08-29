@@ -1152,6 +1152,33 @@ public sealed class KeywordTests
             moved.Cards.Any(landing => landing.Card == source.ObjectId));
     }
 
+    [Rule("rr:ability.9")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ADependentConstantEndingRestoresUsesAndDiscardsTheCard()
+    {
+        // S grants B a trait, and B conditionally makes U lose Uses while it
+        // has that trait. S authors no Uses loss itself, but its departure
+        // still disables B's condition and restores U at zero counters.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var bridge = world.CreateCard(
+            "bridge", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var uses = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        world.Abilities = new DependentConstantUsesLoss(
+            source.ObjectId, bridge.ObjectId, uses.ObjectId);
+        Assert.True(Characteristics.IsLost(world, uses, "uses"));
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, uses.Area.Type);
+    }
+
     [Rule("rr:ability.5")]
     [Rule("rr:permanent.5")]
     [Rule("rr:uses-x-type.1")]
@@ -1599,5 +1626,38 @@ public sealed class KeywordTests
                     Affects: loss.Affected,
                     Lasts: Duration.WhileInPlay)),
         ];
+    }
+
+    private sealed class DependentConstantUsesLoss(
+        int source, int bridge, int affected) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Traits.Granted + "ENABLED",
+                        Card: source,
+                        Affects: bridge,
+                        Lasts: Duration.WhileInPlay),
+                ];
+            }
+
+            return card.ObjectId == bridge
+                && Traits.Has(world, card, "ENABLED", world.Facts)
+                    ?
+                    [
+                        new ContinuousEffect(
+                            EffectSource.ConstantAbility,
+                            Characteristics.LossOf("uses"),
+                            Card: bridge,
+                            Affects: affected,
+                            Lasts: Duration.WhileInPlay),
+                    ]
+                    : [];
+        }
     }
 }
