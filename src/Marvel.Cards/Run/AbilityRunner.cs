@@ -4480,12 +4480,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         next.FaceId, "Toughness", cast.World.Players) > 0 ? 1 : 0);
                 return;
             }
-            if (card.Area.Type is DeckType.EngagedEnemiesArea
+            if ((card.Area.Type is DeckType.EngagedEnemiesArea
                     or DeckType.AlliesArea
+                    || engagement.ContainsKey(cardId))
                 && Current(cardId) >= Damage.Health(
                     cast.World, cast.World.Facts, card) + HealthBonus(cardId))
             {
                 discarded.Add(cardId);
+                engagement.Remove(cardId);
             }
         }
 
@@ -4516,7 +4518,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             if (transfer.EntersPlay)
             {
-                discarded.Remove(to);
+                if (!discarded.Remove(to))
+                {
+                    // A repeated frame is reconstructed from the unchanged
+                    // World, so its branch may still contain the same entry.
+                    // Once trace-local play has made the card available, that
+                    // later transfer is a no-op and must not migrate its
+                    // engagement or restore its printed statuses.
+                    continue;
+                }
                 engagement[to] = Resolver(cast);
                 tough[to] = Math.Max(
                     CurrentTough(to),

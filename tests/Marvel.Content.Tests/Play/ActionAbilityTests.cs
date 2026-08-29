@@ -5168,6 +5168,105 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void AOneTimeGuardEntryKeepsItsOriginalEngagementAcrossFrames()
+    {
+        // Guard protects only the engaged player. Hydra Mercenary enters
+        // engaged with player zero once; the next frame does not put it into
+        // play again or move that engagement to player one, so Rhino takes the
+        // later damage and the lethal continuation must be rejected up front.
+        var runner = GuardEntryRunner();
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EncounterDiscardPile));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EncounterDiscardPile, mercenary!.Area.Type);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:guard.1")]
+    [Rule("rr:damage.step.7")]
+    [Fact]
+    public void DefeatingATraceEnteredGuardImmediatelyExposesTheVillain()
+    {
+        // Guard prevents attacks only while the minion remains engaged. Three
+        // damage defeats Hydra Mercenary, so Guard leaves play before the next
+        // effect damages Rhino and makes the following lethal move reachable.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "if": {
+                  "test": { "not": { "titleInPlay": "Hydra Mercenary" } },
+                  "then": { "putIntoPlay": {
+                    "card": { "cardsIn": {
+                      "areas": [ "encounterDiscardPile" ],
+                      "title": "Hydra Mercenary"
+                    } },
+                    "where": "engagedWithYou"
+                  } }
+                } },
+                { "dealDamage": {
+                  "cards": { "enemiesWithTrait": "HYDRA" }, "amount": 3
+                } },
+                { "dealDamage": {
+                  "cards": { "query": "attackableEnemies" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EncounterDiscardPile));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EncounterDiscardPile, mercenary!.Area.Type);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:ability.step.1")]
     [Fact]
     public void EnteringConstantAbilityRaisesBeforeARepeatedEffectMutates()
@@ -5822,6 +5921,38 @@ public sealed class ActionAbilityTests
             AuthoredCards.Book.AttachTo);
         return new Marvel.Cards.Run.AbilityRunner(book);
     }
+
+    private static Marvel.Cards.Run.AbilityRunner GuardEntryRunner() => Runner(
+        AuthoredCards.AuntMay,
+        "Action",
+        """
+        { "eachPlayer": { "effect": { "if": {
+          "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+          "then": { "seq": [
+            { "if": {
+              "test": { "not": { "titleInPlay": "Hydra Mercenary" } },
+              "then": { "putIntoPlay": {
+                "card": { "cardsIn": {
+                  "areas": [ "encounterDiscardPile" ],
+                  "title": "Hydra Mercenary"
+                } },
+                "where": "engagedWithYou"
+              } }
+            } },
+            { "dealDamage": {
+              "cards": { "query": "attackableEnemies" }, "amount": 1
+            } },
+            { "moveDamage": {
+              "from": { "query": "villain" },
+              "to": { "titled": "Spider-Man" }, "amount": 1
+            } }
+          ] },
+          "else": { "attack": {
+            "target": { "query": "villain" },
+            "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+          } }
+        } } } }
+        """);
 
     private static Marvel.Cards.Run.AbilityRunner RepeatedDynamicTargetRunner(
         string firstTarget, string secondTarget,
