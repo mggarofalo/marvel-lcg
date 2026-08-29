@@ -221,6 +221,29 @@ public static class StateFields
         ["thwart"] = "THW+",
     };
 
+    private static readonly HashSet<string> PowerAttributes =
+        new(["ATK", "THW", "DEF", "REC", "SCH"], StringComparer.Ordinal);
+
+    /// <summary>Whether one of the five basic powers prints a usable value.</summary>
+    /// <remarks>
+    /// The generated card dataset omits a power whose printed value is a dash.
+    /// Literal dashes remain supported for synthetic facts. This closed check
+    /// applies only to powers: an omitted keyword or other quantity may still
+    /// be granted by a modifier.
+    /// </remarks>
+    public static bool HasUsablePrintedPower(
+        ICardFacts facts, string faceId, string attribute)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentException.ThrowIfNullOrEmpty(faceId);
+        ArgumentException.ThrowIfNullOrEmpty(attribute);
+
+        return PowerAttributes.Contains(attribute)
+            && facts.Attributes(faceId).TryGetValue(attribute, out string? printed)
+            && !string.IsNullOrWhiteSpace(printed)
+            && printed is not ("-" or "–");
+    }
+
     /// <summary>
     /// Which printed attribute fills each field, for the tests that hold this
     /// map to the card pool.
@@ -381,6 +404,15 @@ public static class StateFields
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
 
+        if (PrintedFrom.TryGetValue(field, out string? printedAttribute)
+            && PowerAttributes.Contains(printedAttribute)
+            && !HasUsablePrintedPower(facts, card.FaceId, printedAttribute))
+        {
+            // `rr:dash-value.3`: a referenced dash is an unmodifiable zero.
+            // Return before either attached or lasting modifiers are read.
+            return 0;
+        }
+
         long value = field == "ally_limit"
             && FacedownDrones.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo
                 ? AllyLimit
@@ -399,6 +431,13 @@ public static class StateFields
         {
             if (!fields.ContainsKey(field) || field == "printed_stage")
             {
+                continue;
+            }
+
+            if (PowerAttributes.Contains(attribute)
+                && !HasUsablePrintedPower(facts, faceId, attribute))
+            {
+                fields[field] = 0;
                 continue;
             }
 

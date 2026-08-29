@@ -988,7 +988,8 @@ public sealed class Game
         {
             if (CardPlay.Price(world, facts, seat, card) is { } price)
             {
-                var hosts = abilities.AttachmentTargets(world, card);
+                var hosts = CardPlay.LegalAttachmentTargets(
+                    world, facts, seat, card, abilities);
                 if (hosts is not { Count: 0 })
                 {
                     options.Add(Priced(seat, card, price, hosts));
@@ -1004,10 +1005,16 @@ public sealed class Game
         // in, and whether the identity is exhausted does not matter.
         foreach (var ally in BasicPowers.Allies(world, seat.Index))
         {
-            Offer(options, ally, BasicPowers.AttackVerb,
-                BasicPowers.Attackable(world, facts, seat.Index));
-            Offer(options, ally, BasicPowers.ThwartVerb,
-                BasicPowers.Thwartable(world, facts, seat.Index));
+            if (BasicPowers.CanUsePower(facts, ally, "ATK"))
+            {
+                Offer(options, ally, BasicPowers.AttackVerb,
+                    BasicPowers.Attackable(world, facts, seat.Index));
+            }
+            if (BasicPowers.CanUsePower(facts, ally, "THW"))
+            {
+                Offer(options, ally, BasicPowers.ThwartVerb,
+                    BasicPowers.Thwartable(world, facts, seat.Index));
+            }
         }
 
         // `rr:player-turn.5`: "trigger an **Action** ability on a card in play
@@ -1059,10 +1066,16 @@ public sealed class Game
             // attack needs an enemy that can be attacked and a basic thwart
             // needs a scheme with at least one threat on it. With neither, the
             // power is not on offer at all.
-            Offer(options, seat.IdentityCard, BasicPowers.AttackVerb,
-                BasicPowers.Attackable(world, facts, seat.Index));
-            Offer(options, seat.IdentityCard, BasicPowers.ThwartVerb,
-                BasicPowers.Thwartable(world, facts, seat.Index));
+            if (BasicPowers.CanUsePower(facts, seat.IdentityCard, "ATK"))
+            {
+                Offer(options, seat.IdentityCard, BasicPowers.AttackVerb,
+                    BasicPowers.Attackable(world, facts, seat.Index));
+            }
+            if (BasicPowers.CanUsePower(facts, seat.IdentityCard, "THW"))
+            {
+                Offer(options, seat.IdentityCard, BasicPowers.ThwartVerb,
+                    BasicPowers.Thwartable(world, facts, seat.Index));
+            }
         }
         else if (BasicPowers.CanRecover(world, facts, seat.Index))
         {

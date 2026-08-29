@@ -25,7 +25,7 @@ The six dispositions are mutually exclusive:
 - Outside the supported product boundary means a named Plane item holds the later product work.
 - Unimplemented behavior means a named Plane item owns the missing behavior or citation check.
 
-MARVEL-268 through MARVEL-287 hold the active coverage batches and the
+MARVEL-268 through MARVEL-288 hold the active coverage batches and the
 implementation work those batches exposed in the Rules Reference Coverage
 module. MARVEL-254 records the one known ordering gap outside those broad work
 items.
@@ -111,9 +111,9 @@ items.
 | `rr:all-purpose-counter.1` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns references that treat every all-purpose counter as a token. |
 | `rr:all-purpose-counter.2` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns how a printed counter reference selects compatible counters. |
 | `rr:all-purpose-counter.3` | Unimplemented behavior | MARVEL-271 | The lifecycle work item owns counter identity and type when a counter moves between cards. |
-| `rr:alliance` | Unimplemented behavior | MARVEL-268 | The event offer and payment surface does not yet accept resources from other players. |
-| `rr:alliance.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns whole-table event payment end to end. |
-| `rr:alliance.2` | Unimplemented behavior | MARVEL-268 | The alliance payment path must retain the playing player as the event resolver. |
+| `rr:alliance` | Implemented | MARVEL-268 | Cited live-action tests pay Alliance cards across hands. |
+| `rr:alliance.1` | Implemented | MARVEL-268 | Cited tests hold whole-table contribution in both offers and payment. |
+| `rr:alliance.2` | Implemented | MARVEL-268 | Cited tests hold the playing player as resolver when another player contributes. |
 | `rr:ally` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:ally.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ally.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -288,26 +288,26 @@ items.
 | `rr:control` | Redirect or summary | — | This record redirects readers to Ownership and Control; the destination carries the rule. |
 | `rr:copy` | Outside the supported product boundary | MARVEL-272 | Title matching becomes executable when deckbuilding and uniqueness checks cross product boundaries. |
 | `rr:cost` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:cost.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.1.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.2` | Unimplemented behavior | MARVEL-268 | Per-player costs are cited only by a fail-closed test and are not yet calculated. |
-| `rr:cost.2.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:cost.1` | Unimplemented behavior | MARVEL-288 | Advanced cost syntax remains tracked with the other residual cost surfaces. |
+| `rr:cost.1.1` | Unimplemented behavior | MARVEL-288 | Advanced cost syntax remains tracked with the other residual cost surfaces. |
+| `rr:cost.2` | Implemented | MARVEL-268 | Cited tests multiply the stable starting player count before reductions. |
+| `rr:cost.2.1` | Implemented | MARVEL-268 | Cited tests apply reductions to the multiplied total. |
 | `rr:cost.3` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:cost.3.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:cost.3.1` | Implemented | MARVEL-268 | Cited event tests observe resource-sensitive effects from the card's payment. |
 | `rr:cost.4` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:cost.4.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.4.2` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.5` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.5.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.6` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.7` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.7.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.7.2` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.8` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.9` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.10` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.11` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:cost.12` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:cost.4.1` | Unimplemented behavior | MARVEL-288 | Exact paid icons are tracked when allocation is unambiguous; unlike-resource overpayment is rejected until the player can allocate individual icons on the wire. |
+| `rr:cost.4.2` | Implemented | MARVEL-268 | Cited tests prove excess resources do not carry into another cost. |
+| `rr:cost.5` | Unimplemented behavior | MARVEL-288 | Non-event resource-cost sequences are validated and paid atomically; combining an event's printed cost with an arrow cost awaits one payment representation. |
+| `rr:cost.5.1` | Unimplemented behavior | MARVEL-288 | Double-resource generators divide across non-event simultaneous costs; printed event plus arrow-cost allocation remains unsupported. |
+| `rr:cost.6` | Implemented | MARVEL-268 | Cited tests reject targetless events in offers and forged execution before payment. |
+| `rr:cost.7` | Unimplemented behavior | MARVEL-288 | Advanced controlled, chosen, and friendly cost targets remain tracked together. |
+| `rr:cost.7.1` | Unimplemented behavior | MARVEL-288 | Advanced controlled, chosen, and friendly cost targets remain tracked together. |
+| `rr:cost.7.2` | Unimplemented behavior | MARVEL-288 | Advanced controlled, chosen, and friendly cost targets remain tracked together. |
+| `rr:cost.8` | Unimplemented behavior | MARVEL-288 | Out-of-play cost ownership remains in the advanced cost tranche. |
+| `rr:cost.9` | Unimplemented behavior | MARVEL-288 | Any-number and up-to cost minima remain in the advanced cost tranche. |
+| `rr:cost.10` | Implemented | MARVEL-268 | Cited tests reject an unpayable additional cost without paying an exhaust cost first. |
+| `rr:cost.11` | Implemented | MARVEL-268 | A cited Tough test holds that prevented dealt damage still pays the cost. |
+| `rr:cost.12` | Unimplemented behavior | MARVEL-288 | Take-damage costs and prevention remain in the advanced cost tranche. |
 | `rr:cost-arrow-icon` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:cost-arrow-icon.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:counter` | Redirect or summary | — | This record redirects readers to All-Purpose Counter; the destination carries the rule. |
@@ -331,8 +331,8 @@ items.
 | `rr:damage.3.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
 | `rr:damage.3.3` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
 | `rr:dash-value` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:dash-value.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:dash-value.2` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:dash-value.1` | Implemented | MARVEL-268 | Cited tests reject a dash-cost card before it leaves hand. |
+| `rr:dash-value.2` | Implemented | MARVEL-268 | Cited tests reject dash powers before exhaustion. |
 | `rr:dash-value.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:deal-deal-an-encounter-card` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:deal-deal-an-encounter-card.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -432,10 +432,10 @@ items.
 | `rr:event` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:event.1` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:event.2` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
-| `rr:event.3` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns event target legality before play. |
+| `rr:event.3` | Implemented | MARVEL-268 | Cited tests share target legality between offers and pre-payment execution. |
 | `rr:event.4` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:event.5` | Unimplemented behavior | MARVEL-268 | The modifiers work in the costs and restrictions item owns each event damage or threat instance. |
-| `rr:event.5.1` | Unimplemented behavior | MARVEL-268 | The modifiers work in the costs and restrictions item owns the first attack of a multi-attack event. |
+| `rr:event.5` | Unimplemented behavior | MARVEL-288 | Event-wide instance modifiers remain in the advanced semantics tranche. |
+| `rr:event.5.1` | Unimplemented behavior | MARVEL-288 | First-attack-only modifiers remain in the advanced semantics tranche. |
 | `rr:excess-damage` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:exhausted` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:exhausted.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -507,7 +507,7 @@ items.
 | `rr:guard` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:guard.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:hand-size` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:hand-size.1` | Unimplemented behavior | MARVEL-268 | The variable-value work item owns rechecking a dynamically modified hand size after each draw. |
+| `rr:hand-size.1` | Implemented | MARVEL-268 | A cited dynamic-value test proves hand size is re-read after every draw. |
 | `rr:hazard-icon` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:hazard-icon.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:heal` | Executable and cited | — | A behavior test directly cites this record. |
@@ -551,8 +551,8 @@ items.
 | `rr:identity-specific-card.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:identity-specific-card.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:identity-specific-card.3.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:ignore` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:ignore.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:ignore` | Unimplemented behavior | MARVEL-288 | Non-event cards have a distinct ignored-cost play path; events are rejected until that path can select and resolve their Action ability. |
+| `rr:ignore.1` | Unimplemented behavior | MARVEL-288 | Non-event ignored plays pay zero resources; ignored-cost event lifecycle and Action selection remain unsupported. |
 | `rr:in-play-and-out-of-play` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:in-play-and-out-of-play.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:in-play-and-out-of-play.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -685,15 +685,15 @@ items.
 | `rr:main-scheme-main-scheme-deck.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:main-scheme-main-scheme-deck.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:main-scheme-main-scheme-deck.6` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:max-maximum` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:max-maximum.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:max-maximum.1.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:max-maximum.2` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:max-maximum.3` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:max-maximum.3.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:max-maximum.4` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:max-maximum.5` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:max-maximum.6` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:max-maximum` | Implemented | MARVEL-268 | Cited tests count copies by title across player and attachment-host maxima. |
+| `rr:max-maximum.1` | Unimplemented behavior | MARVEL-288 | Period maxima and cancellation accounting remain in the advanced tranche. |
+| `rr:max-maximum.1.1` | Unimplemented behavior | MARVEL-288 | Period maxima and cancellation accounting remain in the advanced tranche. |
+| `rr:max-maximum.2` | Unimplemented behavior | MARVEL-288 | Per-deck validation remains in the advanced tranche. |
+| `rr:max-maximum.3` | Implemented | MARVEL-268 | Cited tests enforce the chosen controller's per-player title maximum. |
+| `rr:max-maximum.3.1` | Unimplemented behavior | MARVEL-288 | Control-transfer refusal remains in the advanced tranche. |
+| `rr:max-maximum.4` | Implemented | MARVEL-268 | Cited tests enforce the title maximum independently for each attachment host. |
+| `rr:max-maximum.5` | Unimplemented behavior | MARVEL-288 | Per-instance triggering maxima remain in the advanced tranche. |
+| `rr:max-maximum.6` | Unimplemented behavior | MARVEL-288 | Within-ability maximum values remain in the advanced tranche. |
 | `rr:maximum-hit-points` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:may` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:mental-resource` | Executable and cited | — | A behavior test directly cites this record. |
@@ -746,8 +746,8 @@ items.
 | `rr:nemesis-encounter-set.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:nemesis-encounter-set.3.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:nemesis-encounter-set.4` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:non-numerical-variable` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:non-numerical-variable.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:non-numerical-variable` | Unimplemented behavior | MARVEL-288 | Explicit variable definitions remain in the advanced value tranche. |
+| `rr:non-numerical-variable.1` | Unimplemented behavior | MARVEL-288 | X-choice and post-choice modifiers require an explicit affordance/input representation. |
 | `rr:obligation` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:obligation.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:obligation.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -786,7 +786,7 @@ items.
 | `rr:patrol.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:pay` | Redirect or summary | — | This record redirects readers to Cost; the destination carries the rule. |
 | `rr:per-player-icon` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:per-player-icon.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:per-player-icon.1` | Implemented | MARVEL-268 | A cited elimination boundary test keeps the starting player count stable. |
 | `rr:peril` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:peril.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:permanent` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
@@ -813,9 +813,9 @@ items.
 | `rr:play-area.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:play-area.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:play-area.3` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:play-restrictions-and-permissions` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:play-restrictions-and-permissions.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:play-restrictions-and-permissions.2` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:play-restrictions-and-permissions` | Unimplemented behavior | MARVEL-288 | Ordinary restrictions are implemented; general permission syntax remains tracked. |
+| `rr:play-restrictions-and-permissions.1` | Implemented | MARVEL-268 | Cited form-only tests share restriction checks between offers and execution. |
+| `rr:play-restrictions-and-permissions.2` | Unimplemented behavior | MARVEL-288 | Zone and timing permissions remain in the advanced tranche. |
 | `rr:player` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:player.1` | Redirect or summary | — | Play-area and ownership entries state each listed area more precisely. |
 | `rr:player.2` | Redirect or summary | — | Player-phase and player-turn entries state this round procedure more precisely. |
@@ -882,8 +882,8 @@ items.
 | `rr:prevent.1.5` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:prevent.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:printed` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:printed.1` | Unimplemented behavior | MARVEL-268 | The costs work item owns printed-resource payment from icons in ability text. |
-| `rr:printed.1.1` | Unimplemented behavior | MARVEL-268 | The costs work item owns the restriction on wild resources for printed-resource costs. |
+| `rr:printed.1` | Unimplemented behavior | MARVEL-288 | Text-box printed-resource generators require an explicit dataset field and cost operator. |
+| `rr:printed.1.1` | Unimplemented behavior | MARVEL-288 | Printed-resource costs must prohibit wild substitution in the advanced tranche. |
 | `rr:qualifiers` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
 | `rr:quickstrike` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:quickstrike.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -911,7 +911,7 @@ items.
 | `rr:replacement-effect.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:requirement-resources` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:requirement-resources.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:requirement-resources.2` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:requirement-resources.2` | Implemented | MARVEL-268 | A cited test rejects ignored-cost play before a required card leaves hand. |
 | `rr:resolve` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
 | `rr:resolve.1` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
 | `rr:resolve.2` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns this executable rule. |
@@ -926,10 +926,10 @@ items.
 | `rr:resource.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:resource.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:resource.4` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:resource.5` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:resource.5` | Implemented | MARVEL-268 | A cited live payment test proves excess cannot pay a later card. |
 | `rr:resource-ability` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:resource-ability.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:resource-ability.1.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:resource-ability.1.1` | Implemented | MARVEL-268 | A cited conditional-generator test shares cost-type legality between pricing and payment. |
 | `rr:resource-card` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:resource-card.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:resource-card.2` | Unimplemented behavior | MARVEL-270 | The ability-language work item owns effects that treat resources as spent by the identity. |
@@ -1015,7 +1015,7 @@ items.
 | `rr:star-icon.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:star-icon.3` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
 | `rr:star-icon.4` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
-| `rr:star-icon.5` | Unimplemented behavior | MARVEL-268 | Variable-value handling owns star-valued powers and their defined-or-zero result. |
+| `rr:star-icon.5` | Implemented | MARVEL-268 | A cited test holds an undefined star-valued power to zero. |
 | `rr:star-icon.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:status-cards` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:status-cards.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -1202,11 +1202,11 @@ items.
 | `rr:when-revealed-abilities.1` | Unimplemented behavior | MARVEL-271 | The setup lifecycle work owns encounter cards entering during setup and resolving later. |
 | `rr:when-revealed-abilities.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:when-revealed-abilities.3` | Implemented | MARVEL-284 | Covered by the cited behavior tests added for MARVEL-284. |
-| `rr:wild-resource` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:wild-resource.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:wild-resource.1.1` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:wild-resource.2` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
-| `rr:wild-resource.3` | Unimplemented behavior | MARVEL-268 | The costs and restrictions work item owns this executable rule. |
+| `rr:wild-resource` | Unimplemented behavior | MARVEL-288 | Wilds pay ordinary and required costs, but a source-only payment cannot yet carry each paid wild's declared type. |
+| `rr:wild-resource.1` | Unimplemented behavior | MARVEL-288 | Wilds can satisfy energy, mental, and physical requirements; outcome-sensitive declarations are rejected until represented on the wire. |
+| `rr:wild-resource.1.1` | Unimplemented behavior | MARVEL-288 | Doubled wild icons can satisfy different required types, but independent player declarations are not yet carried by a payment decision. |
+| `rr:wild-resource.2` | Implemented | MARVEL-268 | Cited tests satisfy costs that specifically require wild resources. |
+| `rr:wild-resource.3` | Implemented | MARVEL-268 | Cited printed-count tests do not reinterpret wild outside payment. |
 | `rr:winning-the-game` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:winning-the-game.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:winning-the-game.1.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |

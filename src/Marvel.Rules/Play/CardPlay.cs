@@ -98,7 +98,7 @@ public static class CardPlay
         ArgumentNullException.ThrowIfNull(seat);
         ArgumentNullException.ThrowIfNull(card);
 
-        long amount = Resources.Cost(card.FaceId, facts) ?? 0;
+        long amount = Resources.Cost(card.FaceId, facts, world.Players) ?? 0;
         var modifiers = world.Effects.Active().Where(effect =>
             string.Equals(effect.Kind, CardCostReduction, StringComparison.Ordinal)
             && effect.Affects == seat.IdentityCard.ObjectId
@@ -339,6 +339,52 @@ public static class CardPlay
         UseCostModifiers(world, adjusted);
     }
 
+    /// <summary>Plays a card while an effect ignores its resource cost.</summary>
+    /// <remarks>
+    /// This is a distinct entry point because ignoring a cost is a permission
+    /// supplied by another resolving ability, not a payment choice on the
+    /// card's ordinary affordance. All play restrictions still apply.
+    /// </remarks>
+    public static void PlayIgnoringResourceCost(
+        World world, ICardFacts facts, ICardAbilities abilities, Seat seat, Card card,
+        List<GameEvent> events, IReadOnlyList<int>? targets = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(seat);
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (facts.Kind(card.FaceId) == CardKind.Event)
+        {
+            throw new RulesNotImplementedException(
+                $"event '{card.FaceId}' cannot be played ignoring its resource cost "
+                + "until its Action selection can be represented");
+        }
+
+        if (!Permitted(world, facts, seat, card, targets, abilities))
+        {
+            throw new RulesNotImplementedException(
+                $"card {card.ObjectId} ('{card.FaceId}') cannot be played ignoring its cost");
+        }
+
+        // `rr:requirement-resources.2`: ignoring the cost generates and pays
+        // no resources, so a printed requirement makes this permission
+        // unusable. Refuse before the card leaves its hand.
+        if (Resources.Required(card.FaceId, facts).Length > 0)
+        {
+            throw new RulesNotImplementedException(
+                $"card '{card.FaceId}' has a resource requirement and cannot be played "
+                + "ignoring its resource cost");
+        }
+
+        // `rr:ignore.1`: zero resources are considered paid. Cost reductions
+        // are neither applied nor consumed because there is no resource cost
+        // in effect during this play.
+        Enter(world, facts, abilities, seat, card, events, targets ?? []);
+    }
+
     /// <summary>
     /// Puts an ally into play under the named player's control.
     /// </summary>
@@ -453,10 +499,15 @@ public static class CardPlay
     /// </param>
     /// <param name="events">Where to record what moved.</param>
     /// <param name="payingFor">The card being paid for, or null for an ability cost.</param>
+    /// <param name="resourcePayers">
+    /// Which player owns each selected resource ability. Ordinary payments
+    /// omit this because every ability belongs to <paramref name="payer"/>;
+    /// alliance payments may name a helper's ability.
+    /// </param>
     public static void Spend(
         World world, ICardFacts facts, IReadOnlyList<Area> hands, IReadOnlyList<int> paying,
         long cost, string required, int itself, int payer, List<GameEvent> events,
-        Card? payingFor = null)
+        Card? payingFor = null, IReadOnlyDictionary<int, int>? resourcePayers = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -475,16 +526,20 @@ public static class CardPlay
         // Asked as "was this one offered" rather than "is this card in a hand",
         // so that a payment naming a card that is neither still says the thing
         // that is wrong with it.
-        var abilities = world.Abilities.ResourceAbilities(world, payer)
-            .Select(source => source.Effect)
-            .ToHashSet();
+        var abilityPayers = resourcePayers is null
+            ? world.Abilities.ResourceAbilities(world, payer)
+                .GroupBy(source => source.Effect)
+                .ToDictionary(group => group.Key, _ => payer)
+            : resourcePayers;
 
         foreach (int id in paying)
         {
             var source = world.Cards[id];
-            if (abilities.Contains(id) && !hands.Contains(source.Area))
+            if (abilityPayers.TryGetValue(id, out int abilityPayer)
+                && !hands.Contains(source.Area))
             {
-                generated.Append(world.Abilities.UseResource(world, payer, id, events));
+                generated.Append(world.Abilities.UseResource(
+                    world, abilityPayer, id, events));
                 continue;
             }
 
@@ -633,6 +688,15 @@ public static class CardPlay
             return false;
         }
 
+        // `rr:dash-value.1`: a dash cost cannot be paid; the card may only
+        // enter play through another effect. The dataset represents that both
+        // as a literal dash and, on card types never normally played, as no
+        // Cost field at all.
+        if (!Resources.HasPlayableCost(card.FaceId, facts))
+        {
+            return false;
+        }
+
         // `rr:play-put-into-play.1` and `rr:form-change-form.7`: cards with the
         // text "[type] form only" can only be played by a player whose identity
         // is in that form.
@@ -686,24 +750,56 @@ public static class CardPlay
         // this is an engine compatibility choice, not a Rules Reference term.
         string unit = facts.Attributes(card.FaceId)
             .GetValueOrDefault("MaxPerUnitKind", "player");
-        if (!string.Equals(unit, "player", StringComparison.Ordinal))
-        {
-            return true;
-        }
-
         IReadOnlyList<int>? eligible = facts.Kind(card.FaceId) == CardKind.Upgrade
             ? abilities.AttachmentTargets(world, card)
             : null;
-        if (eligible is null)
+        if (string.Equals(unit, "player", StringComparison.Ordinal))
         {
-            return CountControlled(world, facts, card, seat.Index) < maximum;
+            if (eligible is null)
+            {
+                return CountControlled(world, facts, card, seat.Index) < maximum;
+            }
+
+            IEnumerable<int> controlledHosts = targets is { Count: > 0 } ? targets : eligible;
+            return controlledHosts.Any(host =>
+                eligible.Contains(host)
+                && world.Cards[host].Area.PlayArea is { IsPlayers: true } area
+                && CountControlled(world, facts, card, area.Player) < maximum);
         }
 
-        IEnumerable<int> hosts = targets is { Count: > 0 } ? targets : eligible;
+        // `rr:max-maximum.4`: every non-player unit is an attachment-host
+        // maximum. AttachmentTargets has already applied the printed host
+        // restriction (ally, enemy, scheme, and so on); this check asks the
+        // separate question of whether that host already has this title.
+        if (eligible is null && targets is not { Count: > 0 })
+        {
+            // A generic offer can precede attachment-target selection. There
+            // is no host maximum to test until the ability layer supplies a
+            // legal host; Play calls this method again with the chosen target.
+            return true;
+        }
+
+        IEnumerable<int> hosts = targets is { Count: > 0 } ? targets : eligible!;
         return hosts.Any(host =>
-            eligible.Contains(host)
-            && world.Cards[host].Area.PlayArea is { IsPlayers: true } area
-            && CountControlled(world, facts, card, area.Player) < maximum);
+            (eligible is null || eligible.Contains(host))
+            && CountAttached(world, facts, card, host) < maximum);
+    }
+
+    /// <summary>Attachment targets that also satisfy the card's printed maximum.</summary>
+    public static IReadOnlyList<int>? LegalAttachmentTargets(
+        World world, ICardFacts facts, Seat seat, Card card, ICardAbilities abilities)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(seat);
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(abilities);
+
+        var targets = abilities.AttachmentTargets(world, card);
+        return targets is null
+            ? null
+            : [.. targets.Where(target =>
+                WithinPerPlayerLimit(world, facts, seat, card, [target], abilities))];
     }
 
     private static int CountControlled(
@@ -715,6 +811,17 @@ public static class CardPlay
             .SelectMany(area => area.Cards)
             .Count(inPlay => DeckTypes.IsInPlay(inPlay.Area.Type)
                 && string.Equals(facts.Title(inPlay.FaceId), title, StringComparison.Ordinal));
+    }
+
+    private static int CountAttached(
+        World world, ICardFacts facts, Card card, int host)
+    {
+        string title = facts.Title(card.FaceId);
+        return world.Areas
+            .Where(area => area.Host == host && DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Count(attached => string.Equals(
+                facts.Title(attached.FaceId), title, StringComparison.Ordinal));
     }
 
     /// <summary>Where a played card goes — <c>rr:enters-play</c>.</summary>

@@ -33,6 +33,16 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class BasicPowers
 {
+    /// <summary>Whether a character has a usable printed value for one basic power.</summary>
+    public static bool CanUsePower(ICardFacts facts, Card character, string field)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(character);
+        ArgumentException.ThrowIfNullOrEmpty(field);
+
+        return StateFields.HasUsablePrintedPower(facts, character.FaceId, field);
+    }
+
     /// <summary>The affordance verb for a basic attack.</summary>
     public const string AttackVerb = "Attack";
 
@@ -151,6 +161,7 @@ public static class BasicPowers
         var seat = world.Seats[player];
         return Forms.In(world, seat, facts, Forms.AlterEgo)
             && seat.IdentityCard.Ready
+            && CanUsePower(facts, seat.IdentityCard, "REC")
             && seat.IdentityCard.Damage > 0;
     }
 
@@ -177,7 +188,7 @@ public static class BasicPowers
 
         var seat = world.Seats[player];
         var character = seat.IdentityCard;
-        Require(world, facts, seat, Forms.Hero, AttackVerb);
+        Require(world, facts, seat, Forms.Hero, AttackVerb, "ATK");
 
         // `rr:attack-player-ability-type.1.1`: "a character can only initiate a
         // basic attack if there is an enemy that can be attacked by that
@@ -575,7 +586,9 @@ public static class BasicPowers
 
         var seat = world.Seats[player];
         var character = seat.IdentityCard;
-        Require(world, facts, seat, Forms.Hero, ThwartVerb);
+        Require(
+            world, facts, seat, Forms.Hero, ThwartVerb,
+            UsesAttack(world, facts, scheme) ? "ATK" : "THW");
 
         // `rr:thwart.1.1` and `rr:confuse-confused.5.1`, the same pair.
         if (!Statuses.Afflicted(world, facts, character, Statuses.Confused)
@@ -682,7 +695,7 @@ public static class BasicPowers
         ArgumentNullException.ThrowIfNull(events);
 
         var seat = world.Seats[player];
-        Require(world, facts, seat, Forms.AlterEgo, RecoverVerb);
+        Require(world, facts, seat, Forms.AlterEgo, RecoverVerb, "REC");
 
         if (seat.IdentityCard.Damage == 0)
         {
@@ -758,6 +771,13 @@ public static class BasicPowers
         }
 
         bool attacking = string.Equals(verb, AttackVerb, StringComparison.Ordinal);
+        string field = attacking ? "ATK" : "THW";
+        if (!CanUsePower(facts, ally, field))
+        {
+            throw new RulesNotImplementedException(
+                $"card {ally.ObjectId} has no usable {field} value");
+        }
+
         var legal = attacking
             ? Attackable(world, facts, ally.Owner)
             : Thwartable(world, facts, ally.Owner);
@@ -890,7 +910,7 @@ public static class BasicPowers
 
     /// <summary>`rr:player-turn.3` -- which powers a form permits.</summary>
     private static void Require(
-        World world, ICardFacts facts, Seat seat, string form, string verb)
+        World world, ICardFacts facts, Seat seat, string form, string verb, string field)
     {
         if (!Forms.In(world, seat, facts, form))
         {
@@ -906,6 +926,12 @@ public static class BasicPowers
             // card is ready."
             throw new RulesNotImplementedException(
                 $"{seat.Name} is exhausted and a basic {verb} must exhaust to use");
+        }
+
+        if (!CanUsePower(facts, seat.IdentityCard, field))
+        {
+            throw new RulesNotImplementedException(
+                $"{seat.Name}'s {field} value is a dash and cannot be used");
         }
     }
 

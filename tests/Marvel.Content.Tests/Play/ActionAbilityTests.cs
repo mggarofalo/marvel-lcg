@@ -119,6 +119,36 @@ public sealed class ActionAbilityTests
         Assert.Equal(Question.TurnOption, game.Pending!.Asking);
     }
 
+    [Rule("rr:cost.11")]
+    [Fact]
+    public void DealingDamageAsACostIsPaidWhenTheDamageIsPrevented()
+    {
+        // Focused Rage deals one damage as its cost. Tough prevents all of
+        // that damage, but dealing damage is still considered paid and the
+        // post-arrow draw resolves.
+        Card? rage = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                board.Seats[0].IdentityCard.TurnTo("01019a");
+                rage = board.CreateCard(
+                    "01027",
+                    board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Tough);
+            },
+            heroes: ["she_hulk"]);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == rage!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Tough));
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
     [Rule("rr:player-elimination.5")]
     [Rule("rr:player-elimination.step.5")]
     [Rule("rr:upgrade.1")]
@@ -439,6 +469,570 @@ public sealed class ActionAbilityTests
         Assert.DoesNotContain(
             game.Pending!.Affordances,
             option => option.Verb == Game.ActionVerb && option.AnchorId == captain);
+    }
+
+    [Rule("rr:alliance")]
+    [Rule("rr:alliance.1")]
+    [Rule("rr:alliance.2")]
+    [Fact]
+    public void AnAllianceEventUsesTheWholeTablesResourcesButItsPlayerResolvesIt()
+    {
+        // Any player may contribute while paying an Alliance card's costs,
+        // but "only the player playing the card ... is considered to be
+        // resolving that card." Player one supplies two of the three
+        // resources; the effect still draws for player zero.
+        const string alliance = "25036"; // Cosmic Alliance, cost 3.
+        Card? card = null;
+        Card? mine = null;
+        Card? theirs = null;
+        var runner = Runner(
+            alliance,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""");
+        var (game, world) = Playing(
+            board =>
+            {
+                Hand(board, player: 0, Physicals, count: 0);
+                Hand(board, player: 1, Mentals, count: 0);
+                card = board.CreateCard(alliance, board.Seats[0].Hand);
+                mine = board.CreateCard(Physicals, board.Seats[0].Hand);
+                theirs = board.CreateCard("01088", board.Seats[1].Hand); // two energy
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == card!.ObjectId);
+        var price = Assert.Single(action.CostOptions);
+        Assert.Contains(price.Generators, source => source.Effect == mine!.ObjectId);
+        Assert.Contains(price.Generators, source => source.Effect == theirs!.ObjectId);
+        int playerZeroHand = world.Seats[0].Hand.Cards.Count;
+        int playerOneHand = world.Seats[1].Hand.Cards.Count;
+
+        game.Resolve(Decision.Take(
+            action.Id, [], [mine!.ObjectId, theirs!.ObjectId]));
+
+        Assert.Equal(DeckType.DiscardPile, card!.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, mine.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, theirs.Area.Type);
+        Assert.Equal(playerZeroHand - 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(playerOneHand - 1, world.Seats[1].Hand.Cards.Count);
+    }
+
+    [Rule("rr:alliance")]
+    [Rule("rr:resource-ability.1")]
+    [Fact]
+    public void AnAllianceHelperCanUseTheirResourceAbility()
+    {
+        // Player one controls Peter Parker's Scientist resource ability. It is
+        // offered as their contribution and is used by them, while player zero
+        // remains the event's resolver.
+        const string alliance = "25036"; // Cosmic Alliance, cost 3.
+        Card? card = null;
+        Card? doubleEnergy = null;
+        var runner = Runner(
+            alliance,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            includeAuthored: true);
+        var (game, world) = Playing(
+            board =>
+            {
+                Hand(board, player: 0, Physicals, count: 0);
+                Hand(board, player: 1, Mentals, count: 0);
+                card = board.CreateCard(alliance, board.Seats[0].Hand);
+                doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
+            },
+            heroes: ["captain_marvel", "spider_man"],
+            abilities: runner);
+
+        int scientist = world.Seats[1].IdentityCard.ObjectId;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == card!.ObjectId);
+        var price = Assert.Single(action.CostOptions);
+        Assert.Contains(price.Generators, source => source.Effect == scientist);
+
+        game.Resolve(Decision.Take(
+            action.Id, [], [doubleEnergy!.ObjectId, scientist]));
+
+        Assert.Equal(DeckType.DiscardPile, card!.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, doubleEnergy.Area.Type);
+        Assert.DoesNotContain(
+            runner.ResourceAbilities(world, 1), source => source.Effect == scientist);
+    }
+
+    [Fact]
+    public void AnEventWithPrintedAndArrowCostsIsRejectedBeforePayment()
+    {
+        const string alliance = "25036";
+        Card? card = null;
+        var runner = Runner(
+            alliance,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spend": "Y" }""");
+        var (game, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 4);
+                card = board.CreateCard(alliance, board.Seats[0].Hand);
+            },
+            abilities: runner);
+        var eventCard = Assert.IsType<Card>(card);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == eventCard.ObjectId);
+        int[] payment = [.. world.Seats[0].Hand.Cards
+            .Where(candidate => candidate.ObjectId != eventCard.ObjectId)
+            .Select(candidate => candidate.ObjectId)];
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world,
+            new PendingAbility(eventCard.ObjectId, AbilityType.Action, 0),
+            payment,
+            []));
+        Assert.Same(world.Seats[0].Hand, eventCard.Area);
+        Assert.All(payment, id => Assert.Same(world.Seats[0].Hand, world.Cards[id].Area));
+    }
+
+    [Fact]
+    public void AWindowEventWithPrintedAndArrowCostsIsNotOfferedOrResolved()
+    {
+        Card? card = null;
+        Card? energy = null;
+        var runner = Runner(
+            AuthoredCards.Backflip,
+            "Interrupt",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spend": "Y" }""",
+            eventName: "WhenDamageWouldBeDealt");
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, AuthoredCards.Backflip, 0);
+                card = board.CreateCard(AuthoredCards.Backflip, board.Seats[0].Hand);
+                energy = board.CreateCard("01088", board.Seats[0].Hand);
+            },
+            hero: true,
+            abilities: runner);
+        var eventCard = Assert.IsType<Card>(card);
+        var payment = Assert.IsType<Card>(energy);
+        var occurrence = new Occurrence(
+            1,
+            ["WhenDamageWouldBeDealt"],
+            Player: 0,
+            Target: world.Seats[0].IdentityCard.ObjectId);
+
+        Assert.Empty(runner.Waiting(world, occurrence, WindowKind.Interrupt));
+        Assert.Throws<RulesNotImplementedException>(() => runner.Resolve(
+            world,
+            occurrence,
+            new PendingAbility(eventCard.ObjectId, AbilityType.Interrupt, 0),
+            [payment.ObjectId],
+            []));
+        Assert.Same(world.Seats[0].Hand, eventCard.Area);
+        Assert.Same(world.Seats[0].Hand, payment.Area);
+    }
+
+    [Fact]
+    public void UnlikeOverpaymentForAResourceSensitiveEventIsRejectedBeforePayment()
+    {
+        const string relentlessAssault = "01053"; // cost 2; physical payment grants overkill.
+        Card? card = null;
+        Card? doubleMental = null;
+        Card? physical = null;
+        var runner = AuthoredCards.Runner();
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                board.Seats[0].IdentityCard.TurnTo("01010a");
+                card = board.CreateCard(relentlessAssault, board.Seats[0].Hand);
+                doubleMental = board.CreateCard("01089", board.Seats[0].Hand);
+                physical = board.CreateCard(Physicals, board.Seats[0].Hand);
+                board.CreateCard(
+                    AuthoredCards.Shocker,
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            heroes: ["captain_marvel"],
+            abilities: runner);
+        foreach (var extra in world.Seats[0].Hand.Cards
+                     .Where(candidate => candidate != card
+                         && candidate != doubleMental
+                         && candidate != physical)
+                     .ToList())
+        {
+            World.MoveToTop(extra, world.Seats[0].Deck);
+        }
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+        var price = Assert.Single(runner.Describe(world, action).CostOptions);
+
+        Assert.Contains(
+            price.Generators, source => source.Effect == doubleMental!.ObjectId);
+        Assert.DoesNotContain(
+            price.Generators, source => source.Effect == physical!.ObjectId);
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world, action, [doubleMental!.ObjectId, physical!.ObjectId],
+            [world.Cards.First(candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId]));
+
+        Assert.Same(world.Seats[0].Hand, card!.Area);
+        Assert.Same(world.Seats[0].Hand, doubleMental!.Area);
+        Assert.Same(world.Seats[0].Hand, physical!.Area);
+    }
+
+    [Fact]
+    public void WildOverpaymentForAResourceSensitiveEventIsRejectedBeforePayment()
+    {
+        const string relentlessAssault = "01053";
+        Card? card = null;
+        Card? doubleMental = null;
+        Card? wild = null;
+        var runner = AuthoredCards.Runner();
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                card = board.CreateCard(relentlessAssault, board.Seats[0].Hand);
+                doubleMental = board.CreateCard("01089", board.Seats[0].Hand);
+                wild = board.CreateCard("01011", board.Seats[0].Hand);
+                board.CreateCard(
+                    AuthoredCards.Shocker,
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+        int target = world.Cards.First(
+            candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId;
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world, action, [doubleMental!.ObjectId, wild!.ObjectId], [target]));
+
+        Assert.Same(world.Seats[0].Hand, card!.Area);
+        Assert.Same(world.Seats[0].Hand, doubleMental!.Area);
+        Assert.Same(world.Seats[0].Hand, wild!.Area);
+    }
+
+    [Fact]
+    public void AllWildOverpaymentStillNeedsEachWildsDeclaredType()
+    {
+        // The player may declare every paid wild as a non-physical type. The
+        // source-only wire cannot infer Relentless Assault's physical bonus.
+        const string relentlessAssault = "01053";
+        Card? card = null;
+        var wilds = new List<Card>();
+        var runner = AuthoredCards.Runner();
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                board.Seats[0].IdentityCard.TurnTo("01010a");
+                card = board.CreateCard(relentlessAssault, board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    wilds.Add(board.CreateCard("01011", board.Seats[0].Hand));
+                }
+                board.CreateCard(
+                    AuthoredCards.Shocker,
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            heroes: ["captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+        int target = world.Cards.First(
+            candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId;
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world,
+            action,
+            [.. wilds.Select(source => source.ObjectId)],
+            [target]));
+
+        Assert.Same(world.Seats[0].Hand, card!.Area);
+        Assert.All(wilds, source => Assert.Same(world.Seats[0].Hand, source.Area));
+    }
+
+    [Fact]
+    public void ExactWildPaymentStillNeedsTheWildsDeclaredType()
+    {
+        const string relentlessAssault = "01053";
+        Card? card = null;
+        Card? wild = null;
+        Card? mental = null;
+        var runner = AuthoredCards.Runner();
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                card = board.CreateCard(relentlessAssault, board.Seats[0].Hand);
+                wild = board.CreateCard("01011", board.Seats[0].Hand);
+                mental = board.CreateCard(Mentals, board.Seats[0].Hand);
+                board.CreateCard(
+                    AuthoredCards.Shocker,
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+        int target = world.Cards.First(
+            candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId;
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world, action, [wild!.ObjectId, mental!.ObjectId], [target]));
+
+        Assert.Same(world.Seats[0].Hand, card!.Area);
+        Assert.Same(world.Seats[0].Hand, wild!.Area);
+        Assert.Same(world.Seats[0].Hand, mental!.Area);
+    }
+
+    [Rule("rr:requirement-resources")]
+    [Fact]
+    public void ARequirementCanForceAnUnambiguousWildDeclaration()
+    {
+        const string requiredEvent = "27016"; // cost 2, requirement physical.
+        Card? card = null;
+        Card? doubleWild = null;
+        var runner = Runner(
+            requiredEvent,
+            "Action",
+            """{ "if": { "test": { "paidWithResource": "R" }, "then": { "draw": { "player": "you", "count": 1 } } } }""");
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                card = board.CreateCard(requiredEvent, board.Seats[0].Hand);
+                doubleWild = board.CreateCard("01044", board.Seats[0].Hand);
+            },
+            heroes: ["captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+
+        runner.Act(world, action, [doubleWild!.ObjectId], []);
+
+        Assert.Equal(DeckType.DiscardPile, card!.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, doubleWild.Area.Type);
+    }
+
+    [Rule("rr:requirement-resources")]
+    [Fact]
+    public void AForcedWildDeclarationIsCarriedIntoPaidResourceTests()
+    {
+        const string requiredEvent = "27016";
+        Card? card = null;
+        Card? wild = null;
+        Card? mental = null;
+        var runner = Runner(
+            requiredEvent,
+            "Action",
+            """{ "if": { "test": { "paidWithResource": "Y" }, "then": { "draw": { "player": "you", "count": 1 } } } }""");
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                card = board.CreateCard(requiredEvent, board.Seats[0].Hand);
+                wild = board.CreateCard("01011", board.Seats[0].Hand);
+                mental = board.CreateCard(Mentals, board.Seats[0].Hand);
+            },
+            heroes: ["captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.Act(world, action, [wild!.ObjectId, mental!.ObjectId], []);
+
+        // The requirement declared the wild physical, so the energy branch
+        // did not draw. The event and both generators have left the hand.
+        Assert.Equal(held - 3, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void EveryRepresentablePaidResourceChoiceRemainsAdvertised()
+    {
+        const string forJustice = "01060";
+        Card? card = null;
+        Card? doubleEnergy = null;
+        Card? doubleMental = null;
+        Card? safeTriple = null;
+        Card? ambiguousTriple = null;
+        var runner = AuthoredCards.Runner();
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                card = board.CreateCard(forJustice, board.Seats[0].Hand);
+                doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
+                doubleMental = board.CreateCard("01089", board.Seats[0].Hand);
+                safeTriple = board.CreateCard("01014", board.Seats[0].Hand);
+                ambiguousTriple = board.CreateCard("21183", board.Seats[0].Hand);
+                board.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 5);
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+        var price = Assert.Single(runner.Describe(world, action).CostOptions);
+
+        Assert.Contains(price.Generators, source => source.Effect == doubleEnergy!.ObjectId);
+        Assert.Contains(price.Generators, source => source.Effect == doubleMental!.ObjectId);
+        Assert.Contains(price.Generators, source => source.Effect == safeTriple!.ObjectId);
+        Assert.DoesNotContain(
+            price.Generators, source => source.Effect == ambiguousTriple!.ObjectId);
+    }
+
+    [Fact]
+    public void ARedundantSourceRemainsAdvertisedWhenItCannotChangeThePaidOutcome()
+    {
+        const string relentlessAssault = "01053";
+        Card? card = null;
+        Card? triplePhysical = null;
+        Card? mental = null;
+        var runner = AuthoredCards.Runner();
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                card = board.CreateCard(relentlessAssault, board.Seats[0].Hand);
+                triplePhysical = board.CreateCard("10007", board.Seats[0].Hand);
+                mental = board.CreateCard(Mentals, board.Seats[0].Hand);
+                board.CreateCard(
+                    AuthoredCards.Shocker,
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true,
+            abilities: runner);
+        foreach (var extra in world.Seats[0].Hand.Cards
+                     .Where(candidate => candidate != card
+                         && candidate != triplePhysical
+                         && candidate != mental)
+                     .ToList())
+        {
+            World.MoveToTop(extra, world.Seats[0].Deck);
+        }
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+        var price = Assert.Single(runner.Describe(world, action).CostOptions);
+
+        Assert.Contains(
+            price.Generators, source => source.Effect == triplePhysical!.ObjectId);
+        Assert.Contains(price.Generators, source => source.Effect == mental!.ObjectId);
+
+        runner.Act(
+            world,
+            action,
+            [triplePhysical!.ObjectId, mental!.ObjectId],
+            [world.Cards.First(candidate =>
+                candidate.FaceId == AuthoredCards.Shocker).ObjectId]);
+
+        Assert.Equal(DeckType.DiscardPile, triplePhysical.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, mental.Area.Type);
+    }
+
+    [Fact]
+    public void ARemainingWildDeclarationChoiceIsNotOfferedOrInferred()
+    {
+        const string requiredEvent = "27016"; // one of two wilds must be physical.
+        Card? card = null;
+        Card? doubleWild = null;
+        var runner = Runner(
+            requiredEvent,
+            "Action",
+            """{ "if": { "test": { "paidWithResource": "G" }, "then": { "draw": { "player": "you", "count": 1 } } } }""");
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                card = board.CreateCard(requiredEvent, board.Seats[0].Hand);
+                doubleWild = board.CreateCard("01044", board.Seats[0].Hand);
+            },
+            heroes: ["captain_marvel"],
+            abilities: runner);
+
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+        Assert.DoesNotContain(
+            Assert.Single(runner.Describe(world, action).CostOptions).Generators,
+            source => source.Effect == doubleWild!.ObjectId);
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world,
+            action,
+            [doubleWild!.ObjectId],
+            []));
+        Assert.Same(world.Seats[0].Hand, card!.Area);
+        Assert.Same(world.Seats[0].Hand, doubleWild!.Area);
+    }
+
+    [Rule("rr:cost.5")]
+    [Rule("rr:cost.5.1")]
+    [Fact]
+    public void OneDoubleResourceCanBeDividedBetweenSimultaneousCosts()
+    {
+        // Two energy costs on one ability are paid simultaneously. A single
+        // card generating two energy icons supplies one to each cost and is
+        // discarded once.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "seq": [ { "spend": "Y" }, { "spend": "Y" } ] }""");
+        Card? source = null;
+        Card? doubleEnergy = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                Hand(board, AuthoredCards.Backflip, 0);
+                doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
+            },
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+        var price = Assert.Single(action.CostOptions);
+
+        Assert.Equal("2", price.Cost);
+        Assert.Equal(["YY"], price.Rule);
+        game.Resolve(Decision.Take(action.Id, [], [doubleEnergy!.ObjectId]));
+
+        Assert.Equal(DeckType.DiscardPile, doubleEnergy.Area.Type);
+        Assert.NotNull(game.Pending);
+        Assert.Equal(Question.TurnOption, game.Pending.Asking);
+    }
+
+    [Rule("rr:cost.5")]
+    [Rule("rr:cost.10")]
+    [Fact]
+    public void AnUnpayableSimultaneousCostChangesNoState()
+    {
+        // The resource half is invalid, so the exhaust half is not paid first.
+        // The forged action is rejected with the source still ready.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "seq": [ { "exhaust": "this" }, { "spend": "B" } ] }""");
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                Hand(board, Physicals, 1);
+            },
+            abilities: runner);
+        var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
+
+        Assert.Throws<RulesNotImplementedException>(
+            () => runner.Act(world, forged, [world.Seats[0].Hand.Cards[0].ObjectId], []));
+        Assert.True(source.Ready);
     }
 
     [Rule("rr:player-turn.5")]
@@ -1182,6 +1776,37 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.DiscardPile, eventCard!.Area.Type);
     }
 
+    [Rule("rr:cost.6")]
+    [Rule("rr:event.3")]
+    [Fact]
+    public void AnEventWithNoValidTargetCannotBeOfferedOrForged()
+    {
+        // An event requiring a minion target cannot be initiated on a board
+        // with no minions. The same check runs again at execution, before the
+        // event leaves the hand or a payment source can be spent.
+        var runner = Runner(
+            AuthoredCards.Backflip,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "minions" }, "effect": { "discard": "chosen" } } }""");
+        Card? card = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, AuthoredCards.Backflip, 0);
+                card = board.CreateCard(AuthoredCards.Backflip, board.Seats[0].Hand);
+            },
+            hero: true,
+            abilities: runner);
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 0), action => action.Card == card!.ObjectId);
+
+        var forged = new PendingAbility(card!.ObjectId, AbilityType.Action, 0);
+        Assert.Throws<RulesNotImplementedException>(
+            () => runner.Act(world, forged, [], []));
+        Assert.Same(world.Seats[0].Hand, card.Area);
+    }
+
     [Rule("rr:limit.1")]
     [Fact]
     public void ACancelledLimitedAttackStillUsesItsLimit()
@@ -1443,8 +2068,10 @@ public sealed class ActionAbilityTests
         string eventName = "WhenActionTriggered",
         string? player = null,
         long? limit = null,
-        bool anyPlayer = false) =>
-        new(Marvel.Cards.Dsl.AbilityCatalog.Parse(
+        bool anyPlayer = false,
+        bool includeAuthored = false)
+    {
+        var local = Marvel.Cards.Dsl.AbilityCatalog.Parse(
             $$"""
             { "cards": [ { "card": "{{card}}", "abilities": [ {
                 "trigger": { "event": "{{eventName}}", "timing": "{{timing}}", "subject": "game"{{(player is null ? string.Empty : $", \"player\": \"{player}\"")}} },
@@ -1453,7 +2080,19 @@ public sealed class ActionAbilityTests
                 {{(anyPlayer ? "\"anyPlayer\": true," : string.Empty)}}
                 "effect": {{effect}}
             } ] } ] }
-            """));
+            """);
+        if (!includeAuthored)
+        {
+            return new Marvel.Cards.Run.AbilityRunner(local);
+        }
+
+        var book = new Marvel.Cards.Dsl.AbilityBook(
+            [.. AuthoredCards.Book.Abilities, .. local.Abilities],
+            AuthoredCards.Book.Authored.Concat(local.Authored)
+                .ToHashSet(StringComparer.Ordinal),
+            AuthoredCards.Book.AttachTo);
+        return new Marvel.Cards.Run.AbilityRunner(book);
+    }
 
     /// <summary>
     /// A game past the mulligan, on the first player's turn.

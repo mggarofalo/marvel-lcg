@@ -60,6 +60,15 @@ public static class Resources
     /// </remarks>
     public static IReadOnlyList<char> Types { get; } = [Mental, Energy, Physical, Wild];
 
+    /// <summary>Whether a card prints a cost value that permits it to be played.</summary>
+    public static bool HasPlayableCost(string faceId, ICardFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        return facts.Attributes(faceId).TryGetValue("Cost", out string? printed)
+            && !string.IsNullOrWhiteSpace(printed)
+            && printed is not ("-" or "–");
+    }
+
     /// <summary>
     /// What discarding this card from hand generates.
     /// </summary>
@@ -169,7 +178,7 @@ public static class Resources
         // types, and the specified types in the specified quantities must be
         // generated **in order to pay the cost**" -- so a cost of 3 requiring
         // one mental is three resources of which one is mental, not four.
-        if (generated.Length < cost)
+        if (generated.Length < cost || (required?.Length ?? 0) > cost)
         {
             return false;
         }
@@ -197,21 +206,78 @@ public static class Resources
         return true;
     }
 
+    /// <summary>The exact resources paid for a satisfied cost, excluding overpayment.</summary>
+    /// <remarks>
+    /// <c>rr:cost.4.1</c> distinguishes resources generated beyond a cost from
+    /// resources paid for it. Required types are allocated first, then the
+    /// remaining generated icons in generator order. That ordering is the
+    /// engine's deterministic allocation when no card effect distinguishes
+    /// otherwise; the rulebook does not define an engine representation.
+    /// </remarks>
+    public static string Paid(string generated, long cost, string? required = null)
+    {
+        ArgumentNullException.ThrowIfNull(generated);
+        if (!Pays(generated, cost, required))
+        {
+            throw new ArgumentException("The generated resources do not pay the cost.", nameof(generated));
+        }
+
+        var used = new bool[generated.Length];
+        foreach (char type in required ?? string.Empty)
+        {
+            int found = -1;
+            for (int index = 0; index < used.Length; index++)
+            {
+                if (!used[index] && generated[index] == type)
+                {
+                    found = index;
+                    break;
+                }
+            }
+            if (found < 0)
+            {
+                for (int index = 0; index < used.Length; index++)
+                {
+                    if (!used[index] && generated[index] == Wild)
+                    {
+                        found = index;
+                        break;
+                    }
+                }
+            }
+
+            used[found] = true;
+        }
+
+        long selected = used.LongCount(taken => taken);
+        for (int index = 0; index < used.Length && selected < cost; index++)
+        {
+            if (!used[index])
+            {
+                used[index] = true;
+                selected += 1;
+            }
+        }
+
+        return string.Concat(generated.Where((_, index) => used[index]));
+    }
+
     /// <summary>
     /// The printed cost of playing a card, or null when it has none.
     /// </summary>
     /// <remarks>
-    /// <c>rr:cost.2</c>'s per-player icon and a cost of <c>X</c> are both
-    /// printed here and neither is implemented, so both are refused by name
-    /// rather than read as a number. Measured over the pool: two cards print
-    /// <c>X</c>, four print a <c>*</c>, and one prints a letter.
+    /// <c>rr:cost.2</c>'s per-player icon is multiplied by the stable starting
+    /// player count. A cost of <c>X</c> still needs the card ability or player
+    /// choice that defines it and is refused by name rather than read as zero.
     /// </remarks>
     /// <param name="faceId">A printed card id.</param>
     /// <param name="facts">The printed card data.</param>
+    /// <param name="players">The number of players who started the scenario.</param>
     /// <exception cref="RulesNotImplementedException">The cost is not a number.</exception>
-    public static long? Cost(string faceId, ICardFacts facts)
+    public static long? Cost(string faceId, ICardFacts facts, int players = 1)
     {
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(players);
         if (!facts.Attributes(faceId).TryGetValue("Cost", out string? printed)
             || printed.Length == 0)
         {
@@ -223,8 +289,17 @@ public static class Resources
             return cost;
         }
 
+        if (printed.EndsWith('*')
+            && long.TryParse(printed[..^1], out long perPlayer))
+        {
+            // `rr:cost.2`: the multiplier is the number who started the
+            // scenario. World.Players is immutable when a seat is eliminated,
+            // unlike World.PlayerOrder, so callers pass that stable count.
+            return checked(perPlayer * players);
+        }
+
         throw new RulesNotImplementedException(
             $"card '{faceId}' costs '{printed}', which is not a number; "
-            + "rr:cost.2's per-player icon and a cost of X are not implemented");
+            + "a cost of X is not implemented");
     }
 }

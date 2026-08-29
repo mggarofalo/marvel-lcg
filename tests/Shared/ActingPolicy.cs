@@ -20,7 +20,9 @@ namespace Marvel.Tests;
 /// not a good player and is not meant to be — <c>rr:cost.4</c> permits
 /// generating beyond a cost, so paying with everything offered is always a
 /// legal payment even when it is a wasteful one, and a policy that reasoned
-/// about which card to spend would be a bot rather than a fuzzer.
+/// about which card to spend would be a bot rather than a fuzzer. It chooses
+/// the first smallest source set that pays, so it does not accidentally ask
+/// the engine to resolve an allocation the payment wire cannot express.
 /// </para>
 /// <para>
 /// <b>What it found.</b> The end-of-phase prompt offered an answer the engine
@@ -104,22 +106,86 @@ public sealed class ActingPolicy(int seed, int declineOneIn = 4)
     }
 
     /// <summary>
-    /// Every generator the affordance offered — <c>rr:cost.4</c>.
+    /// The first smallest set of generators that pays.
     /// </summary>
     /// <remarks>
-    /// "A player may generate more resources than are required." So spending
-    /// the whole offer is a payment whenever any payment exists, which
-    /// <c>CardPlay.Price</c> already relies on from the other side: it asks
-    /// whether the whole pool pays, "because if every generator together cannot
-    /// pay then no choice among them can".
+    /// The policy is a fuzzer, not a strategist, but the payment wire names
+    /// sources rather than allocating individual icons. Prefer fewer sources
+    /// so a double-resource card does not create avoidable ambiguous excess.
     /// </remarks>
-    private static IReadOnlyList<int> Paying(Affordance taken) =>
-    [
-        .. taken.CostOptions
-            .SelectMany(cost => cost.Generators)
-            .Select(source => source.Effect)
-            .Distinct(),
-    ];
+    private static IReadOnlyList<int> Paying(Affordance taken)
+    {
+        if (!string.Equals(taken.Verb, Game.ActionVerb, StringComparison.Ordinal))
+        {
+            return
+            [
+                .. taken.CostOptions
+                    .SelectMany(cost => cost.Generators)
+                    .Select(source => source.Effect)
+                    .Distinct(),
+            ];
+        }
+
+        var selected = new List<int>();
+        foreach (var cost in taken.CostOptions)
+        {
+            if (!long.TryParse(
+                    cost.Cost, System.Globalization.CultureInfo.InvariantCulture,
+                    out long amount))
+            {
+                continue;
+            }
+
+            string required = string.Concat(cost.Rule ?? []);
+            var sources = cost.Generators
+                .GroupBy(source => source.Effect)
+                .Select(group => group.First())
+                .ToList();
+            var payment = SmallestPayment(sources, amount, required);
+            if (payment is not null)
+            {
+                selected.AddRange(payment);
+            }
+        }
+
+        return [.. selected.Distinct()];
+    }
+
+    private static IReadOnlyList<int>? SmallestPayment(
+        List<ResourceSource> sources, long amount, string required)
+    {
+        for (int count = 0; count <= sources.Count; count++)
+        {
+            var chosen = new List<ResourceSource>();
+            if (Choose(start: 0, count))
+            {
+                return [.. chosen.Select(source => source.Effect)];
+            }
+
+            bool Choose(int start, int left)
+            {
+                if (left == 0)
+                {
+                    return Resources.Pays(
+                        string.Concat(chosen.Select(source => source.Generates)),
+                        amount, required);
+                }
+
+                for (int index = start; index <= sources.Count - left; index++)
+                {
+                    chosen.Add(sources[index]);
+                    if (Choose(index + 1, left - 1))
+                    {
+                        return true;
+                    }
+                    chosen.RemoveAt(chosen.Count - 1);
+                }
+                return false;
+            }
+        }
+
+        return null;
+    }
 }
 
 /// <summary>Two options in one prompt could not be told apart.</summary>
