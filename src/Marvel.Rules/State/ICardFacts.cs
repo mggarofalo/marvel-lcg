@@ -53,6 +53,15 @@ public interface ICardFacts
     /// <param name="faceId">A printed card id.</param>
     CardKind Kind(string faceId);
 
+    /// <summary>The printed encounter set this face belongs to, or an empty string.</summary>
+    /// <remarks>
+    /// This is printed acquisition data rather than a gameplay classification.
+    /// A card can name the set of another card it just discarded, so the rules
+    /// layer needs the fact without depending on the content dataset.
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    string EncounterSet(string faceId) => string.Empty;
+
     /// <summary>The printed traits, upper-cased as the digest spells them.</summary>
     /// <param name="faceId">A printed card id.</param>
     IReadOnlyList<string> Traits(string faceId);

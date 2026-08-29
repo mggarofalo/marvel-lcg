@@ -139,6 +139,7 @@ public sealed class InfiniteHunterTests
     }
 
     [Rule("rr:activation")]
+    [Rule("rr:alteration-effect")]
     [Theory]
     // A scheme activation: `rr:scheme-enemy-activation.step.3` reads the
     // modified SCH, and Unus's first stage prints 1.

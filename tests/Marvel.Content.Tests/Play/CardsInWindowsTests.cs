@@ -292,6 +292,7 @@ public sealed class CardsInWindowsTests
 
     [Rule("rr:delayed-effect.1")]
     [Rule("rr:lasting-effects.5")]
+    [Rule("rr:alteration-effect")]
     [Fact]
     public void AtTheEndOfTheAttackChargeDiscardsItselfAndOverkillExpires()
     {
@@ -386,6 +387,7 @@ public sealed class CardsInWindowsTests
     }
 
     [Rule("rr:status-cards.1")]
+    [Rule("rr:alteration-effect")]
     [Fact]
     public void ACardGivingAStatusGoesThroughTheRulesRatherThanRoundThem()
     {
@@ -401,8 +403,13 @@ public sealed class CardsInWindowsTests
         abilities.WhenRevealed(world, copies[0], 0);
         Assert.Equal(1, Statuses.Count(world, rhino, Statuses.Tough));
 
+        int queued = world.AreaOf(
+            DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count;
         abilities.WhenRevealed(world, copies[1], 0);
         Assert.Equal(1, Statuses.Count(world, rhino, Statuses.Tough));
+        Assert.Equal(
+            queued + 1,
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count);
     }
 
     /// <summary>Answers <c>rr:end-of-player-phase.step.1</c>, discarding the excess.</summary>

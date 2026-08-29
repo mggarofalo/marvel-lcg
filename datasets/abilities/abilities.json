@@ -3673,6 +3673,30 @@
       ]
     },
     {
+      "card": "90005",
+      "name": "You Dare Oppose Me?",
+      "note": "When revealed, the five-card discard is interrupted after each Kree Fanatic card: that exact card is dealt facedown before the next discard occurs, even when an immediate encounter-deck reset has already moved it. The count is bounded to the encounter deck that existed when the discard began, so the effect does not continue into the replacement deck. The Boost branch modifies the named attack only when the current activation is an attack.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "eachTime": {
+            "effect": { "discardTop": { "from": "encounterDeck", "count": 5 } },
+            "when": { "cardSet": { "card": "that", "set": "kree_fanatic" } },
+            "then": { "dealEncounterCard": { "card": "that", "player": "you" } }
+          } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "if": {
+            "test": { "activationIs": "attack" },
+            "then": { "grantUntil": {
+              "card": "activatingEnemy", "keyword": "overkill", "until": "EndOfAttack"
+            } }
+          } }
+        }
+      ]
+    },
+    {
       "card": "01055",
       "name": "The Power of Aggression",
       "note": "This card generates one wild resource normally and doubles that output while paying for an Aggression card. The card being paid for is payment context supplied by the engine, not inferred from the hand.",

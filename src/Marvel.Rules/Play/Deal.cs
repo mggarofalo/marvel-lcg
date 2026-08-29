@@ -69,6 +69,31 @@ public static class Deal
         return card;
     }
 
+    /// <summary>Deals one already identified encounter card to a player's queue.</summary>
+    /// <remarks>
+    /// Some card text says to deal “that card” after moving it elsewhere. The
+    /// identity of the card is part of the instruction, so drawing the current
+    /// top card would silently substitute a different game element.
+    /// </remarks>
+    public static void EncounterCard(
+        World world, Card card, int player, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(events);
+
+        var from = card.Area;
+        var queue = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(player));
+        World.MoveToTop(card, queue);
+        card.TurnFaceDown();
+        events.Add(new CardsMoved(
+            Places.Reference(from), Places.Reference(queue),
+            [new Landing(card.ObjectId, queue.Cards.Count - 1)])
+        {
+            Trigger = trigger, Verb = "Deal",
+        });
+    }
+
     /// <summary>
     /// The next card waiting to be revealed, and whose it is.
     /// </summary>
