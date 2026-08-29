@@ -54,6 +54,7 @@ public sealed class CoreActivationAbilityTests
 
     [Rule("rr:boost-boost-icon.4")]
     [Rule("rr:boost-boost-icon.6")]
+    [Rule("rr:star-icon.1")]
     [Fact]
     public void KlawGetsAnAdditionalFacedownBoostCardWhenHeAttacks()
     {

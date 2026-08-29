@@ -41,6 +41,7 @@ public sealed class CoreCombatResponseTests
     }
 
     [Rule("rr:attack-player-ability-type.step.7")]
+    [Rule("rr:attack-player-ability-type.6")]
     [Fact]
     public void SuperhumanStrengthUsesTheCompletedAttacksTarget()
     {
@@ -128,6 +129,7 @@ public sealed class CoreCombatResponseTests
 
     [Rule("rr:triggering-condition.2")]
     [Rule("rr:consequential-damage.1")]
+    [Rule("rr:star-icon.3")]
     [Fact]
     public void TigraRespondsOnlyWhenHerAttackDefeatedItsMinion()
     {
@@ -174,6 +176,9 @@ public sealed class CoreCombatResponseTests
     }
 
     [Rule("rr:defend-defense.2")]
+    [Rule("rr:defend-defense.7")]
+    [Rule("rr:defend-defense.7.2")]
+    [Rule("rr:attack-enemy-activation.step.6.b")]
     [Fact]
     public void IndomitableRequiresABasicHeroDefense()
     {

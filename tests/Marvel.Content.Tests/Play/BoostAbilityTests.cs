@@ -76,6 +76,7 @@ public sealed class BoostAbilityTests
     }
 
     [Rule("rr:star-icon.6")]
+    [Rule("rr:attack-enemy-activation.step.3.b")]
     [Fact]
     public void ABoostStarIsCheckedWhenTheCardFlipsDuringAnActivation()
     {
@@ -111,6 +112,7 @@ public sealed class BoostAbilityTests
     }
 
     [Rule("rr:boost-boost-icon.2")]
+    [Rule("rr:attack-enemy-activation.step.3.b")]
     [Fact]
     public void AWrittenBoostAbilityRuns()
     {

@@ -809,6 +809,8 @@ public sealed class SinisterSyndicateTests
 
     [Rule("rr:attacks-against-allies")]
     [Rule("rr:attacks-against-allies.1")]
+    [Rule("rr:attacks-against-allies.1.1")]
+    [Rule("rr:attacks-against-allies.1.2")]
     [Fact]
     public void SpeedDemonHitsTheAllyThatSwungAndNotItsController()
     {

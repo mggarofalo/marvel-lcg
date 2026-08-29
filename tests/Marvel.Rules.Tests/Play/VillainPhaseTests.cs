@@ -1,7 +1,9 @@
 using Marvel.Tests;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Xunit;
 
 namespace Marvel.Rules.Tests.Play;
@@ -120,6 +122,42 @@ public sealed class VillainPhaseTests
                 && moved.To.Zone == nameof(DeckType.BoostCardsDeck)));
     }
 
+    [Rule("rr:villain-phase.step.2.a")]
+    [Rule("rr:player-elimination.5.1")]
+    [Fact]
+    public void EliminatingAPlayerDoesNotSkipTheNextPlayersVillainActivation()
+    {
+        // Each player resolves the villain activation in player order. Player
+        // zero begins one hit point from defeat; removing that seat changes
+        // World.PlayerOrder, but cannot turn player one's continuation into an
+        // already-completed activation for player zero.
+        var printed = new Printed()
+            .With("villain", ("ATK", "1"))
+            .With("identity", ("HP", "10"), ("DEF", "0"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("boost", ("Boost", "0"));
+        printed.Kinds["identity"] = CardKind.Hero;
+        var world = Board(printed, players: 2);
+        world.Seats[0].IdentityCard.TakeDamage(9);
+        var activations = new ActivationObserver();
+
+        var events = new List<GameEvent>();
+        VillainPhase.Schedule(world.Agenda, round: 1);
+        var asked = Sequence.Work(world, printed, activations, events);
+        for (int answered = 0; asked is not null; answered++)
+        {
+            Assert.True(answered < 10);
+            Sequence.Answer(
+                world, printed, activations, asked, Decision.Decline, events);
+            asked = Sequence.Work(world, printed, activations, events);
+        }
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.False(world.Seats[1].Eliminated);
+        Assert.Equal([0, 1], activations.Players);
+        Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
+    }
+
     // Deliberately uncited: no published rule says a card acquires a token
     // pool. It is an artefact of how the digest serialises a card, kept because
     // the digest is a wire format, and `docs/rules-citations.md` uses it as the
@@ -201,6 +239,65 @@ public sealed class VillainPhaseTests
         Run(world, printed);
 
         Assert.Equal(5, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+    }
+
+    [Rule("rr:minion.4")]
+    [Fact]
+    public void AMinionEngagedDuringActivationsJoinsTheCurrentProcedure()
+    {
+        // "If a minion engages a player during the resolution of the engaged
+        // minions' activations, that minion also activates during this step."
+        // The villain's completion creates the minion here so a planner that
+        // snapshots the area before the villain activates misses its SCH 3.
+        var printed = new Printed()
+            .With("villain", ("SCH", "2"))
+            .With("arriving", ("SCH", "3"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("boost", ("Boost", "0"));
+        var world = Board(printed, players: 1);
+        var abilities = new EngageAfterVillain(world.TheCardIn(DeckType.VillainArea)!.ObjectId);
+
+        Run(world, printed, abilities);
+
+        Assert.Equal(5, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+        Assert.Equal(["villain", "arriving"], abilities.Completed);
+    }
+
+    [Rule("rr:activation.6")]
+    [Fact]
+    public void AMinionLeavingPlayCancelsTheRestOfItsSchemeBeforeMoreWindowsOpen()
+    {
+        // "If an activating minion leaves play, that minion's activation ends
+        // immediately and no further steps of that activation resolve." The
+        // boost and threat steps have their own windows, so skipping only their
+        // Apply bodies would still expose triggering conditions that never occur.
+        var printed = new Printed()
+            .With("villain", ("SCH", "0"))
+            .With("minion", ("SCH", "3"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("boost", ("Boost", "0"));
+        var world = Board(printed, players: 1);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Agenda.Abandon();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Scheme, 1, 2, Subject: minion.ObjectId, Seat: 0));
+        var abilities = new BoostWindowOffer(minion.ObjectId);
+        var events = new List<GameEvent>();
+
+        var asked = Sequence.Work(world, printed, abilities, events)!;
+        Assert.Equal(Question.Opportunity, asked.Asking);
+        World.MoveToTop(minion, world.AreaOf(DeckType.EncounterDiscardPile));
+        Sequence.Answer(world, printed, abilities, asked, Decision.Decline, events);
+        Sequence.Finish(world, printed, abilities, events);
+
+        Assert.Equal(
+            0,
+            world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.False(abilities.SawBoostFlipped);
+        Assert.False(abilities.SawThreat);
+        Assert.True(abilities.SawSchemeEnds);
+        Assert.Null(world.Activation);
     }
 
     [Rule("rr:reveal.3")]
@@ -315,6 +412,47 @@ public sealed class VillainPhaseTests
             Players.Add(result.Player);
             return [];
         }
+    }
+
+    private sealed class EngageAfterVillain(int villain) : NoCardAbilities
+    {
+        public List<string> Completed { get; } = [];
+
+        public override IReadOnlyList<GameEvent> ActivationCompleted(
+            World world, EnemyActivation result)
+        {
+            Completed.Add(world.Cards[result.Enemy].FaceId);
+            if (result.Enemy == villain)
+            {
+                world.CreateCard(
+                    "arriving",
+                    world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(result.Player)));
+            }
+
+            return [];
+        }
+    }
+
+    private sealed class BoostWindowOffer(int card) : NoCardAbilities
+    {
+        public bool SawBoostFlipped { get; private set; }
+        public bool SawThreat { get; private set; }
+        public bool SawSchemeEnds { get; private set; }
+
+        public override IReadOnlyList<PendingAbility> Waiting(
+            World world, Occurrence occurrence, WindowKind window)
+        {
+            SawBoostFlipped |= occurrence.Is("WhenBoostCardsFlipped");
+            SawThreat |= occurrence.Is(Steps.ThreatWouldBePlaced);
+            SawSchemeEnds |= occurrence.Is(Steps.SchemeEnds);
+            return window == WindowKind.Interrupt
+                && occurrence.Is("WhenBoostCardGiven")
+                ? [new PendingAbility(card, AbilityType.Interrupt, 0)]
+                : [];
+        }
+
+        public override Affordance Describe(World world, PendingAbility ability) =>
+            new(77, "Interrupt", ability.Card, 0, "interrupt boost");
     }
 
     /// <summary>A villain, a main scheme, one identity per seat, two encounter cards each.</summary>

@@ -103,6 +103,27 @@ public sealed class PhaseEndTests
         Assert.Empty(world.Effects.Active());
     }
 
+    [Rule("rr:end-of-player-phase.step.5")]
+    [Rule("rr:player-phase.1")]
+    [Fact]
+    public void PlayerPhaseResponsesResolveAfterPhaseEffectsExpire()
+    {
+        // Step 4 first ends effects lasting through the player phase. Only
+        // then does step 5 resolve “when/after the player phase ends” text, so
+        // a forced response observes the expired board in the response window.
+        var world = Board();
+        world.Effects.Register(Lasting(TimingPoints.EndOfPlayerPhase));
+        var waiting = new Offering(
+            new PendingAbility(0, AbilityType.ForcedResponse, 0));
+
+        world.Agenda.Add(new PhaseStep(
+            Steps.EndPlayerPhase, Round: 1, Number: 5));
+        Sequence.Finish(world, new Facts(), waiting, []);
+
+        Assert.Equal(1, waiting.Resolved);
+        Assert.Empty(world.Effects.Active());
+    }
+
     [Rule("rr:ability.11")]
     [Fact]
     public void AnOptionalAbilityInAWindowSaysSoRatherThanBeingDeclined()

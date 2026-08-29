@@ -70,6 +70,67 @@ public static class Attack
             .ToList();
     }
 
+    /// <summary>Whether a player may begin resolving a defense-labeled ability.</summary>
+    /// <remarks>
+    /// Outside an attack the label changes no roles —
+    /// <c>rr:defend-defense.4.8</c> — so the ability remains legal. During an
+    /// attack, <c>.4.6</c> locks defense abilities to the player already
+    /// defending, whether the defender is that player's identity or ally.
+    /// </remarks>
+    public static bool CanUseDefenseAbility(World world, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        if (world.Attack is not { Defender: >= 0 } attack)
+        {
+            return true;
+        }
+
+        return world.Cards[attack.Defender].Area.PlayArea == PlayArea.Of(player);
+    }
+
+    /// <summary>Establish the roles created by a defense-labeled ability.</summary>
+    /// <remarks>
+    /// This runs before the ability's effect. It neither exhausts the identity
+    /// nor marks a basic defense, so DEF is not applied —
+    /// <c>rr:defend-defense.4.1</c>, <c>.4.3</c>, and <c>.4.4</c>.
+    /// </remarks>
+    public static void BeginDefenseAbility(World world, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        if (world.Attack is not { } attack)
+        {
+            // `rr:defend-defense.4.8`: the label may resolve outside an attack
+            // without making an identity the defender of anything.
+            return;
+        }
+
+        if (!CanUseDefenseAbility(world, player))
+        {
+            throw new RulesNotImplementedException(
+                $"player {player} cannot defend an attack already defended by another player");
+        }
+
+        if (attack.Defender >= 0)
+        {
+            // `rr:defend-defense.4.7`: a defense ability remains legal while
+            // this player's ally defends, but the identity does not replace it.
+            return;
+        }
+
+        var identity = world.Seats[player].IdentityCard;
+        world.Attack = attack with
+        {
+            Defender = identity.ObjectId,
+            Target = identity.ObjectId,
+            Player = player,
+            BasicDefense = false,
+        };
+        if (world.Activation is { Attacking: true } activation)
+        {
+            world.Activation = activation with { Player = player };
+        }
+    }
+
     /// <summary>
     /// The attack initiates: it targets a player, and its steps go on the
     /// agenda.
@@ -392,6 +453,10 @@ public static class Attack
             Player = defender.Area.PlayArea.Player,
             BasicDefense = facts.Kind(defender.FaceId) != CardKind.Ally,
         };
+        if (world.Activation is { Attacking: true } activation)
+        {
+            world.Activation = activation with { Player = defender.Area.PlayArea.Player };
+        }
     }
 
     /// <summary>
@@ -572,7 +637,18 @@ public static class Attack
         // hit a tough card did not damage anybody.
         if (damage.Characters.Count > 0)
         {
-            world.Attack = attack with { Damaged = true };
+            if (world.Attack is not null)
+            {
+                world.Attack = attack with { Damaged = true };
+            }
+            else if (world.FinishedAttack is { } finishedAttack)
+            {
+                world.FinishedAttack = finishedAttack with { Damaged = true };
+            }
+
+            // Direct rules-unit calls have no surrounding window; an agenda
+            // occurrence gains the condition for its shared response window.
+            world.Agenda.Occurrence?.Also(Steps.DamageDealt);
         }
 
         if (world.Activation is { } activation)
@@ -580,6 +656,13 @@ public static class Attack
             world.Activation = activation with
             {
                 DamageDealt = activation.DamageDealt + damage.Amount,
+            };
+        }
+        else if (world.FinishedActivation is { } finishedActivation)
+        {
+            world.FinishedActivation = finishedActivation with
+            {
+                DamageDealt = finishedActivation.DamageDealt + damage.Amount,
             };
         }
     }
@@ -639,6 +722,32 @@ public static class Attack
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
 
+        if (world.Attack is null)
+        {
+            return;
+        }
+
+        Finish(world, events);
+    }
+
+    /// <summary>Ends an attack immediately when its attacked player is eliminated.</summary>
+    public static void EndForEliminatedPlayer(World world, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(events);
+        if (world.Attack is null)
+        {
+            return;
+        }
+
+        int activationId = world.Activation?.Id ?? -1;
+        world.Agenda.Occurrence?.Also(Steps.AttackEnds);
+        world.Agenda.EndActivationEarly(activationId);
+        Finish(world, events);
+    }
+
+    private static void Finish(World world, List<GameEvent> events)
+    {
         world.Effects.Expire(TimingPoints.EndOfAttack);
 
         // An attack is one of the two kinds of activation -- `rr:activation` --

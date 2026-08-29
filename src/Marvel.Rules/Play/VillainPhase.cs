@@ -790,6 +790,10 @@ public static class VillainPhase
                 SchemeThreat(world, facts, abilities, step, events);
                 break;
 
+            case Steps.EndSchemeEarly:
+                EndSchemeEarly(world);
+                break;
+
             case Steps.Attack:
                 Attack.Initiate(world, facts, step, events);
                 break;
@@ -846,6 +850,10 @@ public static class VillainPhase
                 RevealEncounterCard(
                     world, facts, abilities, world.Cards[step.Subject], step.Seat,
                     step.Round, events);
+                break;
+
+            case Steps.DiscardRevealedTreachery:
+                DiscardRevealedTreachery(world, facts, step, events);
                 break;
 
             case Steps.ResolveSpecial:
@@ -928,6 +936,7 @@ public static class VillainPhase
             // the step was scheduled, so occurrence tier has nothing further
             // to mutate.
             case Steps.CardPlayed:
+            case Steps.EventPlayed:
             case Steps.CardEntersPlay:
             case Steps.FormChanged:
                 break;
@@ -1094,49 +1103,83 @@ public static class VillainPhase
     }
 
     /// <summary>
-    /// Step 2, as one activation per player — <c>rr:villain-phase.step.2</c>,
-    /// "in player order, each player resolves".
+    /// Step 2, one enemy at a time — <c>rr:villain-phase.step.2</c>, "in player
+    /// order, each player resolves".
     /// </summary>
     private static void PlanActivations(World world, ICardFacts facts, PhaseStep step)
     {
+        var playerOrder = step.ActivationPlayers ?? world.PlayerOrder.ToList();
+        if (step.Index >= playerOrder.Count)
+        {
+            return;
+        }
+
         var villain = world.TheCardIn(DeckType.VillainArea);
         if (villain is null)
         {
             return;
         }
 
-        foreach (int seat in world.PlayerOrder)
-        {
-            // `rr:activation.1`: hero form and the enemy attacks, alter-ego
-            // form and it schemes. Which face is showing *is* which form, so
-            // this needs no separate flag.
-            var identity = world.Seats[seat].IdentityCard;
-            bool attacking = facts.Kind(identity.FaceId) != CardKind.AlterEgo;
+        int seat = playerOrder[step.Index];
+        var activated = step.ActivatedEnemies ?? [];
 
-            // `rr:villain-phase.step.2.a` then `.step.2.b`: "the villain
-            // activates against the player", and then "each minion engaged with
-            // the player activates against them, in the order of that player's
-            // choice".
-            //
-            // **The order is the player's and this takes it in the order they
-            // sit in the play area.** `rr:minion.3` says so outright, and the
-            // recorded prompt vocabulary has a verb for asking --
-            // `Minion_Activates_Order`, twice in the fixture. Asking is not
-            // implemented; the order here is deterministic and stated rather
-            // than a silent pick.
-            var enemies = new List<int> { villain.ObjectId };
-            enemies.AddRange(world
+        // An eliminated seat remains in this procedure's stable order so its
+        // removal cannot shift the next player under the current index. It has
+        // no enemies left to activate; advance and clear the per-player set.
+        if (world.Seats[seat].Eliminated)
+        {
+            world.Agenda.Then(step with
+            {
+                Index = step.Index + 1,
+                ActivatedEnemies = [],
+                ActivationPlayers = playerOrder,
+                OccurrenceId = null,
+            });
+            return;
+        }
+
+        // `rr:activation.1`: hero form and the enemy attacks, alter-ego form
+        // and it schemes. Read the form immediately before each activation:
+        // an earlier activation can change it.
+        var identity = world.Seats[seat].IdentityCard;
+        bool attacking = facts.Kind(identity.FaceId) != CardKind.AlterEgo;
+
+        int? enemy = !activated.Contains(villain.ObjectId)
+            ? villain.ObjectId
+            : world
                 .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat))
                 .Cards
-                .Select(minion => minion.ObjectId));
+                .OrderBy(minion => minion.ObjectId)
+                .Select(minion => (int?)minion.ObjectId)
+                .FirstOrDefault(candidate => candidate is { } id && !activated.Contains(id));
 
-            foreach (int enemy in enemies)
+        if (enemy is { } next)
+        {
+            world.Agenda.Then(new PhaseStep(
+                attacking ? Steps.Attack : Steps.Scheme,
+                step.Round, 2, Index: seat, Subject: next, Seat: seat));
+            world.Agenda.Then(step with
             {
-                world.Agenda.Then(new PhaseStep(
-                    attacking ? Steps.Attack : Steps.Scheme,
-                    step.Round, 2, Index: seat, Subject: enemy, Seat: seat));
-            }
+                ActivatedEnemies = [.. activated, next],
+                ActivationPlayers = playerOrder,
+                OccurrenceId = null,
+            });
+            return;
         }
+
+        // `rr:minion.4`: a minion that becomes engaged while engaged minions
+        // are activating joins this procedure. The continuation above therefore
+        // re-reads the area only after the preceding activation has completely
+        // resolved. The list prevents a surviving minion from being chosen
+        // again. Player-chosen ordering is not implemented; object-id order is
+        // the engine's deterministic choice until that prompt exists.
+        world.Agenda.Then(step with
+        {
+            Index = step.Index + 1,
+            ActivatedEnemies = [],
+            ActivationPlayers = playerOrder,
+            OccurrenceId = null,
+        });
     }
 
     /// <summary>Step 1. Threat from the main scheme's acceleration field.</summary>
@@ -1277,6 +1320,14 @@ public static class VillainPhase
         }
     }
 
+    /// <summary>Ends a scheme without placing threat when its minion left play.</summary>
+    private static void EndSchemeEarly(World world)
+    {
+        world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.FinishedActivation = world.Activation;
+        world.Activation = null;
+    }
+
     /// <summary>Step 3. One encounter card to each player, in player order.</summary>
     /// <remarks>
     /// Hazard icons deal additional cards. Nothing on the milestone board has
@@ -1349,6 +1400,8 @@ public static class VillainPhase
         World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
         int round, List<GameEvent> events)
     {
+        var revealOccurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException("a revealing card has no occurrence");
         // `rr:reveal.4.1` -- "if the card specifies a player to give it to,
         // **that player is considered to be revealing it**." One reassignment
         // and not a special case at the placement, because being the revealing
@@ -1429,11 +1482,35 @@ public static class VillainPhase
         // first player their order, and asking is MARVEL-187.
         Reveal.Teamwork(world, facts, card, player, round);
 
-        // Step 4. "If the card is a treachery, discard it." An attachment
-        // without a target and an "other" card also remain in this out-of-play
-        // staging area, but the rule names only treacheries for the discard.
+        // Step 4. "If the card is a treachery, discard it." This is agenda
+        // work rather than an inline move because `rr:treachery.2.1` keeps a
+        // treachery whose last effect initiates activations faceup until all of
+        // them finish. `Then` places this behind any activations or choices the
+        // When Revealed text just scheduled.
+        if (facts.Kind(card.FaceId) == CardKind.Treachery)
+        {
+            world.Agenda.Then(new PhaseStep(
+                Steps.DiscardRevealedTreachery,
+                round,
+                4,
+                Subject: card.ObjectId,
+                Seat: player,
+                Plan: true));
+
+            // Reveal responses wait for all four reveal steps. Move both the
+            // work initiated by the final effect and this discard continuation
+            // ahead of that response window, preserving their scheduled order.
+            world.Agenda.BeforeResponses(revealOccurrence);
+        }
+    }
+
+    private static void DiscardRevealedTreachery(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        var card = world.Cards[step.Subject];
         // The area check keeps an ability that moved the treachery from being
-        // undone.
+        // undone. The kind check makes a reconstructed agenda refuse stale or
+        // malformed continuation data rather than discarding another type.
         if (facts.Kind(card.FaceId) != CardKind.Treachery
             || card.Area.Type != DeckType.RevealingArea)
         {

@@ -78,6 +78,34 @@ public sealed class CardsInWindowsTests
             effect => effect.Kind == Keywords.Overkill);
     }
 
+    [Rule("rr:status-cards.2")]
+    [Rule("rr:stun-stunned.1")]
+    [Fact]
+    public void WebbedUpStunCancelsBeforeSpiderSenseCanBeOffered()
+    {
+        // Status-card abilities have priority over conflicting triggered
+        // abilities. Webbed Up creates the stun inside the attack-initiation
+        // interrupt window; the window must recheck that priority before it
+        // offers Spider-Sense for an attack the stun replaces.
+        var board = Attacking();
+        var world = board.World;
+        var rhino = world.TheCardIn(DeckType.VillainArea)!;
+        World.MoveToTop(board.Charge, world.AreaOf(DeckType.EncounterDiscardPile));
+        var webbed = world.CreateCard(AuthoredCards.WebbedUp, world.Seats[0].Hand);
+        World.MoveToTop(
+            webbed,
+            world.AreaOf(DeckType.UpgradesArea, rhino.Area.PlayArea, rhino.ObjectId));
+        int hand = world.Seats[0].Hand.Cards.Count;
+
+        var asked = Sequence.Work(world, Cards, board.Abilities, []);
+
+        Assert.Null(asked);
+        Assert.Equal(hand, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(DeckType.DiscardPile, webbed.Area.Type);
+        Assert.False(Statuses.Has(world, rhino, Statuses.Stunned));
+        Assert.Null(world.Attack);
+    }
+
     [Rule("rr:triggering-condition.1")]
     [Fact]
     public void ChargeFiresOnceAndNotOncePerVisitToTheWindow()

@@ -108,6 +108,18 @@ public enum Stage
 /// is an engine save-format choice; it preserves "discarded this way" bindings
 /// when the ability resumes after a player choice.
 /// </param>
+/// <param name="ActivatedEnemies">
+/// Enemies that have already activated in the current player's step-2
+/// procedure, by object id. This is engine continuation data rather than a
+/// Rules Reference term: it lets the procedure re-read the engaged-minion area
+/// after every activation without activating an enemy twice.
+/// </param>
+/// <param name="ActivationPlayers">
+/// The stable player order for the current step-2 procedure. This is engine
+/// continuation data: eliminating a player changes <c>World.PlayerOrder</c>,
+/// but must not make a continuation mistake the next surviving player for the
+/// player whose enemies have already activated.
+/// </param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
@@ -115,7 +127,9 @@ public readonly record struct PhaseStep(
     bool FinalPlayer = false, bool EachPlayerFrame = false, string Trigger = "",
     CharacterAttack? CharacterAttack = null, CharacterThwart? CharacterThwart = null,
     PlayerAction? PlayerAction = null, int? OccurrenceId = null,
-    bool SurgeGained = false, IReadOnlyList<int>? Discarded = null)
+    bool SurgeGained = false, IReadOnlyList<int>? Discarded = null,
+    IReadOnlyList<int>? ActivatedEnemies = null,
+    IReadOnlyList<int>? ActivationPlayers = null)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -426,6 +440,16 @@ public sealed class Agenda
             OccurrenceId: nextPlayerActionOccurrence--));
     }
 
+    /// <summary>Open the lifecycle occurrence for an event played inside another window.</summary>
+    public void NowEventPlayed(int round, int subject, int player) =>
+        Now(new PhaseStep(
+            Steps.EventPlayed,
+            round,
+            Number: 0,
+            Subject: subject,
+            Seat: player,
+            OccurrenceId: nextPlayerActionOccurrence--));
+
     /// <summary>
     /// Move work scheduled by the applying occurrence ahead of its response window.
     /// </summary>
@@ -652,6 +676,30 @@ public sealed class Agenda
                 $"activation {activationId} has no completion sentinel");
     }
 
+    /// <summary>Remove the unfinished steps of an activation that ended early.</summary>
+    public void EndActivationEarly(int activationId, bool preserveCurrentOccurrence = true)
+    {
+        if (activationId < 0)
+        {
+            return;
+        }
+
+        // Keep the current occurrence so its response window can resolve, and
+        // keep the completion sentinel so the effect that initiated the
+        // activation still receives its result and can resume.
+        int first = preserveCurrentOccurrence ? 1 : 0;
+        for (int index = items.Count - 1; index >= first; index--)
+        {
+            var item = items[index];
+            if (item.Step.ActivationId == activationId
+                && item.Step.What is not (Steps.CompleteAttackActivation
+                    or Steps.CompleteSchemeActivation))
+            {
+                items.RemoveAt(index);
+            }
+        }
+    }
+
     private static bool IsActivation(PhaseStep step) =>
         step.What is Steps.Attack or Steps.Scheme && step.ActivationId < 0;
 
@@ -794,6 +842,9 @@ public static class Steps
 
     /// <summary>The parallel completion sentinel for a scheme activation.</summary>
     public const string CompleteSchemeActivation = "CompleteSchemeActivation";
+
+    /// <summary>An early scheme end after its activating minion leaves play.</summary>
+    public const string EndSchemeEarly = "EndSchemeEarly";
 
     /// <summary>
     /// Damage step 8, after nested step-7 abilities and before the original
@@ -951,6 +1002,9 @@ public static class Steps
 
     /// <summary>One card being revealed — <c>rr:reveal</c>, <c>rr:villain-phase.step.4</c>.</summary>
     public const string RevealEncounterCard = "RevealEncounterCard";
+
+    /// <summary>Discard a resolved treachery after its final nested activation.</summary>
+    public const string DiscardRevealedTreachery = "DiscardRevealedTreachery";
 
     /// <summary>Step 5 — <c>rr:villain-phase.step.5</c>.</summary>
     /// <summary>
@@ -1115,6 +1169,13 @@ public static class Steps
     /// <summary>A player card has finished entering play.</summary>
     public const string CardPlayed = "WhenCardPlayed";
 
+    /// <summary>
+    /// An event played inside another timing window. This engine step separates
+    /// its nested response boundary from <see cref="CardPlayed"/>, whose
+    /// ordinary non-event card also enters play at the same moment.
+    /// </summary>
+    public const string EventPlayed = "EventPlayed";
+
     /// <summary>Choose an ally to discard after exceeding the ally limit.</summary>
     public const string ChooseAllyForLimit = "ChooseAllyForLimit";
 
@@ -1185,13 +1246,16 @@ public static class Steps
         [Attack] = [EnemyActivates, AttackInitiated],
         [Scheme] = [EnemyActivates, EnemySchemes],
         [SchemeThreat] = [ThreatWouldBePlaced],
+        [EndSchemeEarly] = [SchemeEnds],
         [GiveBoostCard] = ["WhenBoostCardGiven"],
         [DeclareDefender] = ["WhenDefenderDeclared"],
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],
-        // Damage from an attack is imminent before this step applies and dealt
-        // after it applies. `rr:triggering-condition.2` gives one occurrence
-        // one pair of windows when it creates several conditions.
-        [DealAttackDamage] = [DamageWouldBeDealt, DamageDealt],
+        // Damage from an attack is imminent before this step applies. Whether
+        // it was dealt is known only afterwards: Tough may prevent it, so the
+        // applying step adds `DamageDealt` only when damage actually lands.
+        // `rr:triggering-condition.2` still gives both one occurrence and one
+        // pair of windows.
+        [DealAttackDamage] = [DamageWouldBeDealt],
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
@@ -1206,6 +1270,7 @@ public static class Steps
         // occurrence that creates several triggering conditions one pair of
         // windows rather than one pair per description of the moment.
         [CardPlayed] = [CardPlayed, CardEntersPlay],
+        [EventPlayed] = [CardPlayed],
         [CardEntersPlay] = [CardEntersPlay],
         [FormChanged] = [FormChanged],
         [ChooseOption] = ["WhenOptionChosen"],
@@ -1237,6 +1302,8 @@ public static class Steps
     public static IReadOnlySet<string> EveryCondition { get; } =
         new HashSet<string>(
             Conditions.Values.SelectMany(each => each).Concat(
-                [ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds]),
+                // These are discovered while their occurrence applies rather
+                // than promised when its step is scheduled.
+                [DamageDealt, ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds]),
             StringComparer.Ordinal);
 }

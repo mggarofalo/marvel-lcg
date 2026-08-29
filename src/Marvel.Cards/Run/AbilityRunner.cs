@@ -421,7 +421,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     var eligibility = new Cast(
                         world, card, occurrence, controller, [], this);
                     if ((ability.When is not null && !Test(ability.When, eligibility))
-                        || (HasLabelledPower(ability.Effect)
+                        || (HasInitiationConstraint(ability.Effect)
                             && !CanInitiate(ability.Effect, eligibility)))
                     {
                         continue;
@@ -555,7 +555,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var cancellation = world.Effects.Active().FirstOrDefault(effect =>
             string.Equals(effect.Kind, "cancelWhenRevealed", StringComparison.Ordinal)
             && effect.Affects == card.ObjectId);
-        if (cancellation is not null && world.Effects.Use(cancellation))
+        bool mayBeCanceled = world.Facts.Kind(card.FaceId)
+            is not (CardKind.EncounterVillain or CardKind.MainScheme);
+        if (mayBeCanceled
+            && cancellation is not null
+            && world.Effects.Use(cancellation))
         {
             return events;
         }
@@ -1764,12 +1768,48 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var adjusted = CardPlay.CostOf(
             cast.World, cast.World.Facts, cast.World.Seats[cast.Player], card);
+        var generators = CardPlay.Generators(
+                cast.World, cast.World.Facts, cast.World.Seats[cast.Player], card)
+            .Where(source => source.Effect != card.ObjectId)
+            .ToList();
         var selected = paying.ToHashSet();
-        string generated = string.Concat(
-            CardPlay.Generators(
-                    cast.World, cast.World.Facts, cast.World.Seats[cast.Player], card)
-                .Where(source => selected.Contains(source.Effect))
-                .Select(source => source.Generates));
+        if (selected.Count != paying.Count
+            || paying.Any(id => generators.All(source => source.Effect != id)))
+        {
+            throw new RulesNotImplementedException(
+                $"the payment for event {card.ObjectId} names a source that is not available");
+        }
+
+        string generated = string.Concat(generators
+            .Where(source => selected.Contains(source.Effect))
+            .Select(source => source.Generates));
+        string required = Resources.Required(card.FaceId, cast.World.Facts);
+        if (!Resources.Pays(generated, adjusted.Amount, required))
+        {
+            throw new RulesNotImplementedException(
+                $"the cost is {adjusted.Amount}"
+                + (required.Length > 0 ? $" requiring '{required}'" : string.Empty)
+                + $" and the payment generates '{generated}'; "
+                + "rr:initiating-abilities.step.5 aborts without paying");
+        }
+
+        // `rr:initiating-abilities.step.1` and `rr:event`: the event leaves the
+        // hand faceup and out of play before costs are paid, and remains there
+        // while a choice suspends its resolution. RevealingArea already has
+        // exactly those state semantics; the player's play area distinguishes
+        // this event from encounter cards being revealed elsewhere.
+        var from = card.Area;
+        var resolving = cast.World.AreaOf(
+            DeckType.RevealingArea, PlayArea.Of(cast.Player), cardOwner: card.Owner);
+        World.MoveToTop(card, resolving);
+        cast.Events.Add(new CardsMoved(
+            Places.Reference(from), Places.Reference(resolving),
+            [new Landing(card.ObjectId, resolving.Cards.Count - 1)])
+        {
+            Trigger = CardPlay.Verb,
+            Verb = CardPlay.Verb,
+        });
+
         cast.PaidWith(generated);
         foreach (char resource in generated.Distinct())
         {
@@ -1784,16 +1824,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         CardPlay.Spend(
             cast.World, cast.World.Facts, [cast.World.Seats[cast.Player].Hand], paying,
             adjusted.Amount,
-            Resources.Required(card.FaceId, cast.World.Facts), card.ObjectId,
+            required, card.ObjectId,
             cast.Player, cast.Events, payingFor: card);
         CardPlay.UseCostModifiers(cast.World, adjusted);
+
+        // `rr:initiating-abilities.step.6`: after its costs are paid, the
+        // event is played and its effect resolves. The action's persistent
+        // occurrence owns the response window after that effect, so add the
+        // condition here rather than creating an earlier separate window.
+        if (cast.Occurrence.Is(Steps.TurnAction))
+        {
+            cast.Occurrence.Also(Steps.CardPlayed);
+        }
     }
 
     private static void DiscardEvent(Card card, Cast cast)
     {
+        bool playedInWindow = !cast.Suspended
+            && cast.World.Facts.Kind(card.FaceId) == CardKind.Event
+            && card.Area.Type == DeckType.RevealingArea
+            && card.Area.PlayArea == PlayArea.Of(card.Owner)
+            && !cast.Occurrence.Is(Steps.TurnAction);
         if (!cast.Suspended
             && cast.World.Facts.Kind(card.FaceId) == CardKind.Event
-            && card.Area == cast.World.Seats[card.Owner].Hand)
+            && card.Area.Type == DeckType.RevealingArea
+            && card.Area.PlayArea == PlayArea.Of(card.Owner))
         {
             Rules.Play.Discard.Card(cast.World, card, CardPlay.Verb, cast.Events);
             foreach (var payment in cast.World.Effects.Active().Where(effect =>
@@ -1801,6 +1856,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 && effect.Kind.StartsWith("paid:", StringComparison.Ordinal)).ToList())
             {
                 cast.World.Effects.Use(payment);
+            }
+
+            if (playedInWindow)
+            {
+                cast.World.Agenda.NowEventPlayed(
+                    cast.World.Agenda.Current?.Round ?? 0,
+                    card.ObjectId,
+                    cast.Player);
             }
         }
     }
@@ -2558,6 +2621,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "attachTo" => Find(node.Argument, cast) is not null,
         "grantUntil" => Find(node.Require("card"), cast) is not null,
         "delayUntil" => HasRequiredTargets(Tree(node.Require("effect")), cast),
+        "defense" => HasRequiredTargets(Tree(node.Require("effect")), cast),
         "discard" => Find(node.Field("card") ?? node.Argument, cast) is not null,
         "heal" => Find(node.Require("card"), cast) is not null,
         "indirectDamage" => Amount(node.Require("amount"), cast) <= 0
@@ -2602,12 +2666,32 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "thwartSchemes" => Every(node.Require("schemes"), cast).Count > 0,
         "attack" => Find(node.Require("target"), cast) is not { } enemy
             || cast.World.Abilities.CanTakeDamage(cast.World, enemy, cast.Source),
+        "defense" => Attack.CanUseDefenseAbility(cast.World, cast.Player)
+            && CanInitiate(Tree(node.Require("effect")), cast),
+        "grantUntil" => LastingPeriodIsOpen(node, cast)
+            && Find(node.Require("card"), cast) is not null,
         _ => true,
     };
 
+    private static bool LastingPeriodIsOpen(AbilityNode node, Cast cast) =>
+        Word(node.Require("until")) switch
+        {
+            TimingPoints.EndOfAttack => cast.World.Attack is not null
+                || cast.World.CharacterAttack is not null
+                || cast.Occurrence.Is(Steps.AttackInitiated),
+            TimingPoints.EndOfActivation => cast.World.Activation is not null,
+            _ => true,
+        };
+
     private static bool HasLabelledPower(AbilityNode node) =>
         PowerNodes(node, BasicPowers.AttackVerb).Any()
-        || PowerNodes(node, BasicPowers.ThwartVerb).Any();
+        || PowerNodes(node, BasicPowers.ThwartVerb).Any()
+        || PowerNodes(node, Attack.DefenseVerb).Any();
+
+    private static bool HasInitiationConstraint(AbilityNode node) =>
+        HasLabelledPower(node)
+        || node.Kind == "grantUntil"
+        || (node.Kind == "seq" && Nodes(node.Argument).Any(HasInitiationConstraint));
 
     /// <summary>Whether a player-card option can change the current state.</summary>
     private static bool CanPartiallyResolve(AbilityNode node, Cast cast)
@@ -2618,6 +2702,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 || Nodes(node.Argument).Any(step => CanPartiallyResolve(step, cast)),
             "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
                 is { } branch && CanPartiallyResolve(Tree(branch), cast),
+            "defense" => CanPartiallyResolve(Tree(node.Require("effect")), cast),
             "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
             "chooseCard" => Every(node.Require("from"), cast).Count > 0,
             "changeForm" => !Forms.In(
@@ -2837,6 +2922,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Where(branch => branch is not null)
                 .Select(branch => Tree(branch!)),
             "eachPlayer" => [Tree(node.Require("effect"))],
+            "defense" => [Tree(node.Require("effect"))],
             _ => [],
         };
 
@@ -3490,6 +3576,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "attack":
                 ((AbilityRunner)cast.Abilities).SchedulePower(node, cast, BasicPowers.AttackVerb);
+                break;
+
+            case "defense":
+                Attack.BeginDefenseAbility(cast.World, cast.Player);
+                Run(Tree(node.Require("effect")), cast);
                 break;
 
             case "thwart":

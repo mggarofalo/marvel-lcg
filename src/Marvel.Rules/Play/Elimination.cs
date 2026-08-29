@@ -36,6 +36,15 @@ public static class Elimination
 
         seat.Eliminated = true;
 
+        // `rr:player-elimination.5.1`: eliminating the attacked player in the
+        // middle of an attack ends that attack immediately. Its current
+        // occurrence still reaches responses, including after-attack text,
+        // but none of its later combat steps resolve.
+        if (world.Attack is { Player: var attacked } && attacked == player)
+        {
+            Attack.EndForEliminatedPlayer(world, events);
+        }
+
         // Step 1. "If the eliminated player has the first player token, they
         // pass it to the next clockwise player." Before step 5 takes their play
         // area away, and before `Next` starts skipping them.

@@ -161,6 +161,8 @@ public sealed class ActionAbilityTests
     }
 
     [Rule("rr:player-turn.5")]
+    [Rule("rr:event")]
+    [Rule("rr:initiating-abilities.step.1")]
     [Rule("rr:initiating-abilities.step.7")]
     [Fact]
     public void AnEventActionResumesItsOccurrenceAfterChoosingATarget()
@@ -192,7 +194,10 @@ public sealed class ActionAbilityTests
         var paying = new[] { genius!.ObjectId, energy!.ObjectId };
         var suspended = game.Resolve(Decision.Take(action.Id, [], paying));
         Assert.Equal(Question.Element, suspended.Prompt!.Asking);
-        Assert.Equal(DeckType.HandsArea, kick!.Area.Type);
+        Assert.Equal(DeckType.RevealingArea, kick!.Area.Type);
+        Assert.Equal(PlayArea.Of(0), kick.Area.PlayArea);
+        Assert.True(kick.FaceUp);
+        Assert.False(DeckTypes.IsInPlay(kick.Area.Type));
 
         var finished = game.Resolve(Decision.Take(minion!.ObjectId));
 
@@ -207,7 +212,8 @@ public sealed class ActionAbilityTests
             paying,
             suspended.Events.OfType<CardsMoved>()
                 .SelectMany(moved => moved.Cards)
-                .Select(card => card.Card));
+                .Select(card => card.Card)
+                .Where(paying.Contains));
     }
 
     [Rule("rr:ability.2")]
@@ -1136,6 +1142,94 @@ public sealed class ActionAbilityTests
 
         Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
         Assert.Equal(GamePhase.EndPhase, game.Phase);
+    }
+
+    [Rule("rr:event.1")]
+    [Fact]
+    public void PlayingAnEventChoosesOneOfItsTriggeredAbilities()
+    {
+        // Both actions belong to the same event. Their affordance ids retain
+        // the printed ordinal, so choosing the second resolves only its two-card
+        // draw and does not also resolve the first ability.
+        var runner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                """
+                { "cards": [ { "card": "01003", "abilities": [
+                  { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+                    "effect": { "draw": { "player": "you", "count": 1 } } },
+                  { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+                    "effect": { "draw": { "player": "you", "count": 2 } } }
+                ] } ] }
+                """));
+        Card? eventCard = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                Hand(board, AuthoredCards.Backflip, 0);
+                eventCard = board.CreateCard(AuthoredCards.Backflip, board.Seats[0].Hand);
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var choices = game.Pending!.Affordances
+            .Where(option => option.AnchorId == eventCard!.ObjectId)
+            .ToList();
+
+        Assert.Equal(2, choices.Count);
+        game.Resolve(Decision.Take(choices[1].Id));
+
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(DeckType.DiscardPile, eventCard!.Area.Type);
+    }
+
+    [Rule("rr:limit.1")]
+    [Fact]
+    public void ACancelledLimitedAttackStillUsesItsLimit()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": 1 } } } } } }""",
+            limit: 1);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
+            },
+            hero: true,
+            abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(villain.ObjectId));
+
+        Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
+        Assert.Equal(0, villain.Damage);
+        Assert.DoesNotContain(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:lasting-effects.6")]
+    [Fact]
+    public void AnUntilEndOfAttackEffectCannotBeginOutsideAnAttack()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "grantUntil": { "card": "this", "keyword": "attack", "amount": 1, "until": "EndOfAttack" } }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
     [Rule("rr:action.2.2")]

@@ -42,6 +42,35 @@ public static class Sequence
 
         while (world.Agenda.Current is { } step)
         {
+            // `rr:activation.6`: once an activating minion leaves play, no
+            // further steps of its activation resolve. A response belongs to
+            // an occurrence that already happened, so let that window finish;
+            // before any later interrupt, Apply body, or plan runs, replace
+            // the unfinished work with the activation's normal end window.
+            if (step.What is not (Steps.EndAttack or Steps.EndSchemeEarly)
+                && world.Activation is { } activation
+                && step.ActivationId == activation.Id
+                && !DeckTypes.IsInPlay(world.Cards[activation.Enemy].Area.Type)
+                && world.Agenda.Stage != Stage.Responses)
+            {
+                if (world.Windows.Current is not null)
+                {
+                    world.Windows.Close();
+                }
+
+                world.Agenda.EndActivationEarly(
+                    activation.Id, preserveCurrentOccurrence: false);
+                world.Agenda.Now(new PhaseStep(
+                    activation.Attacking ? Steps.EndAttack : Steps.EndSchemeEarly,
+                    step.Round,
+                    activation.Attacking ? 6 : 3,
+                    Index: activation.Player,
+                    Subject: activation.Enemy,
+                    Seat: activation.Player,
+                    ActivationId: activation.Id));
+                continue;
+            }
+
             // A plan is a heading rather than something that happens, so it
             // opens no windows: `rr:villain-phase.step.2` is "Enemies
             // Activate", and the activations under it are the occurrences.
@@ -75,9 +104,40 @@ public static class Sequence
                 // `rr:triggering-condition.1` is per occurrence, and the
                 // occurrence is what remembers which abilities have used it.
                 var occurrence = world.Agenda.Begin(world, facts);
-                if (Offering.Work(world, abilities, occurrence, kind, events, scope) is { } asked)
+
+                // `rr:status-cards.2`: status-card abilities have timing
+                // priority over every conflicting triggered ability. A stun
+                // replaces the attack before its initiation interrupt window,
+                // so neither "when this enemy attacks" text nor a response to
+                // an attack that never happened may resolve. Basic and card
+                // attacks spend their stun before they reach the agenda; this
+                // is the enemy-activation path.
+                bool statusCancelled = false;
+                bool ResolvePriorityStatus()
+                {
+                    statusCancelled = kind == WindowKind.Interrupt
+                        && step.What == Steps.Attack
+                        && BasicPowers.Cancelled(
+                            world, facts, world.Cards[step.Subject], Statuses.Stunned, events);
+                    return statusCancelled;
+                }
+
+                if (Offering.Work(
+                    world, abilities, occurrence, kind, events, scope,
+                    ResolvePriorityStatus) is { } asked)
                 {
                     return asked;
+                }
+
+                if (statusCancelled)
+                {
+                    world.PendingAdditionalAttackPlayers = [];
+                    if (world.Windows.Current is not null)
+                    {
+                        world.Windows.Close();
+                    }
+                    world.Agenda.Cancel(occurrence);
+                    continue;
                 }
 
                 world.Agenda.Advance(occurrence);
