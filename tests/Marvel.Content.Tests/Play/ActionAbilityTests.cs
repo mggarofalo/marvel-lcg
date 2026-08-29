@@ -5047,6 +5047,67 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:enters-play")]
+    [Rule("rr:toughness.1")]
+    [Fact]
+    public void AMinionPutIntoPlayJoinsLaterRankedTargetSets()
+    {
+        // A card enters play when it moves from an out-of-play area into play,
+        // and Toughness gives it a tough status at that point. Sandman joins
+        // the enemy set before the ranked damage: the first point consumes
+        // tough, the second frame damages Sandman, and Rhino has none to move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "if": {
+                  "test": { "not": { "titleInPlay": "Sandman" } },
+                  "then": { "putIntoPlay": {
+                    "card": { "cardsIn": {
+                      "areas": [ "encounterDiscardPile" ], "title": "Sandman"
+                    } },
+                    "where": "engagedWithYou"
+                  } }
+                } },
+                { "dealDamage": {
+                  "cards": { "maxBy": {
+                    "of": { "query": "enemies" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01102",
+                    board.AreaOf(DeckType.EncounterDiscardPile));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:damage.step.1")]
     [Rule("rr:replacement-effect.1")]
     [Fact]

@@ -4345,7 +4345,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private readonly record struct DamageTransfer(
         int From, int To, long Amount, bool GrantsTough = false,
         bool GrantsHealth = false, bool DealsDamage = false,
-        bool Discards = false, bool RemovesThreat = false,
+        bool Discards = false, bool EntersPlay = false,
+        bool RemovesThreat = false,
         bool PlacesThreat = false, string? GrantsTrait = null,
         string? GrantsField = null,
         AbilityValue? FromVillain = null, AbilityValue? ToVillain = null);
@@ -4371,7 +4372,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             int villain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
             IReadOnlyList<DamageTraceState> states =
-                [new(new Dictionary<int, long>(), target.Damage, [], new(), new(), [], new(),
+                [new(new Dictionary<int, long>(), target.Damage, [], new(), new(),
+                    TraceUnavailableMinions(cast), new(),
                     new(), new(), villain, 0, false)];
             for (int frame = 0; frame < frames; frame++)
             {
@@ -4406,6 +4408,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             cast.RestorePlayer(original);
         }
     }
+
+    private static HashSet<int> TraceUnavailableMinions(Cast cast) =>
+        cast.World.Areas
+            .SelectMany(area => area.Cards)
+            .Where(card => card.Area.Type != DeckType.EngagedEnemiesArea
+                && FacedownDrones.Kind(card, cast.World.Facts) == CardKind.Minion)
+            .Select(card => card.ObjectId)
+            .ToHashSet();
 
     private static DamageTraceState ApplyDamageTrace(
         DamageTraceState state, IReadOnlyList<DamageTransfer> trace,
@@ -4500,6 +4510,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 : transfer.To;
             if (from == int.MinValue || to == int.MinValue)
             {
+                continue;
+            }
+            if (transfer.EntersPlay)
+            {
+                discarded.Remove(to);
+                tough[to] = Math.Max(
+                    CurrentTough(to),
+                    cast.World.Facts.PrintedValue(
+                        cast.World.Cards[to].FaceId,
+                        "Toughness",
+                        cast.World.Players) > 0 ? 1 : 0);
                 continue;
             }
             if (transfer.RemovesThreat || transfer.PlacesThreat)
@@ -4888,6 +4909,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         ToVillain: target.VillainSelector)),
             ];
         }
+        if (node.Kind == "putIntoPlay"
+            && TraceCardNamed(node.Require("card"), cast) is { } entering)
+        {
+            return [new DamageTransfer(
+                0, entering.Card.ObjectId, 0, EntersPlay: true)];
+        }
         if (node.Kind is "removeThreat" or "placeThreat")
         {
             bool removes = node.Kind == "removeThreat";
@@ -4949,8 +4976,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 return
                 [
                     .. cast.World.Areas
-                        .Where(area => area.Type is DeckType.VillainArea
-                            or DeckType.EngagedEnemiesArea)
                         .SelectMany(area => area.Cards)
                         .Where(card => FacedownDrones.Kind(
                             card, cast.World.Facts) is
