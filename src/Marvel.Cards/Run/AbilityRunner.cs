@@ -3328,13 +3328,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
     private static bool CanInitiate(AbilityNode node, Cast cast)
     {
-        if (HasNestedEachPlayer(node))
+        if (HasNestedEachPlayer(node, cast))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' nests one each-player frame inside another, "
                 + "which is not implemented");
         }
-        if (ContainsUnsupportedPower(node))
+        if (ContainsUnsupportedPower(node, cast))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' suspends inside a labelled power, "
@@ -3937,17 +3937,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool ContainsNode(AbilityNode node, string kind) =>
         node.Kind == kind || StructuralChildren(node).Any(child => ContainsNode(child, kind));
 
-    private static bool HasNestedEachPlayer(AbilityNode node, bool inside = false)
+    private static bool HasNestedEachPlayer(
+        AbilityNode node, Cast cast, bool inside = false, bool stateMayChange = false)
     {
         if (inside && node.Kind == "eachPlayer")
         {
             return true;
         }
         bool within = inside || node.Kind == "eachPlayer";
-        return ContinuationChildren(node).Any(child => HasNestedEachPlayer(child, within));
+        return GuardChildren(node, cast, stateMayChange).Any(child =>
+            HasNestedEachPlayer(child.Node, cast, within, child.StateMayChange));
     }
 
-    private static bool ContainsUnsupportedPower(AbilityNode node)
+    private static bool ContainsUnsupportedPower(
+        AbilityNode node, Cast cast, bool stateMayChange = false)
     {
         if (node.Kind is "attack" or "thwart"
             && SuspendsPowerEffect(Tree(node.Require("effect"))))
@@ -3962,7 +3965,53 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 return true;
             }
         }
-        return ContinuationChildren(node).Any(ContainsUnsupportedPower);
+        return GuardChildren(node, cast, stateMayChange).Any(child =>
+            ContainsUnsupportedPower(child.Node, cast, child.StateMayChange));
+    }
+
+    /// <summary>Executable children that can be reached after an ability is offered.</summary>
+    private static IEnumerable<(AbilityNode Node, bool StateMayChange)> GuardChildren(
+        AbilityNode node, Cast cast, bool stateMayChange)
+    {
+        if (node.Kind == "seq")
+        {
+            return Nodes(node.Argument).Select((child, index) =>
+                (child, stateMayChange || index > 0));
+        }
+        if (node.Kind == "and")
+        {
+            var children = Nodes(node.Argument).ToList();
+            return children.Select(child =>
+                (child, stateMayChange || children.Count > 1));
+        }
+        if (node.Kind == "if")
+        {
+            var test = Tree(node.Require("test"));
+            bool canSwitch = stateMayChange
+                || cast.PaymentMayMutate && PaymentCanChange(test);
+            var branches = canSwitch
+                ? Branches.Select(node.Field).Where(value => value is not null)
+                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                    ? [active]
+                    : [];
+            return branches.Select(value => (Tree(value!), stateMayChange));
+        }
+        if (node.Kind is "then" or "otherwise")
+        {
+            var effect = Tree(node.Require("effect"));
+            var dependent = Tree(node.Require(node.Kind));
+            var required = node.Kind == "then"
+                ? ResolutionOutcome.Full
+                : ResolutionOutcome.None;
+            bool dependentCanRun = stateMayChange
+                || cast.PaymentMayMutate
+                || ActiveChoices(effect, cast).Any()
+                || ResolutionOf(effect, cast) == required;
+            return dependentCanRun
+                ? [(effect, stateMayChange), (dependent, stateMayChange)]
+                : [(effect, stateMayChange)];
+        }
+        return ContinuationChildren(node).Select(child => (child, stateMayChange));
     }
 
     private static IEnumerable<AbilityNode> ContinuationChildren(AbilityNode node) =>
@@ -4604,7 +4653,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "eachPlayer":
-                if (HasNestedEachPlayer(node))
+                if (HasNestedEachPlayer(node, cast))
                 {
                     throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' nests one each-player frame inside another, "
