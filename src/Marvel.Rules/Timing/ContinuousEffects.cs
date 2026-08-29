@@ -625,7 +625,8 @@ public sealed class ContinuousEffects(World world)
                 Discard.PreflightAttachments(world, card);
             }
 
-            return new ConstantEnding(this, roots, [.. plannedIds]);
+            var constants = suppressedConstants[firstSuppressed..].ToArray();
+            return new ConstantEnding(this, roots, [.. plannedIds], constants);
         }
         finally
         {
@@ -697,22 +698,25 @@ public sealed class ContinuousEffects(World world)
         private readonly ContinuousEffects effects;
         private readonly IReadOnlyList<Card> restored;
         private readonly IReadOnlyList<int> departures;
+        private readonly IReadOnlyList<ContinuousEffect> constants;
         private bool completed;
 
         internal ConstantEnding(
             ContinuousEffects effects,
             IReadOnlyList<Card> restored,
-            IReadOnlyList<int> departures)
+            IReadOnlyList<int> departures,
+            IReadOnlyList<ContinuousEffect>? constants = null)
         {
             this.effects = effects;
             this.restored = restored;
             this.departures = departures;
+            this.constants = constants ?? [];
         }
 
         /// <summary>
         /// Mark the whole preflighted cascade as one departure while it is applied.
         /// </summary>
-        public IDisposable Begin() => effects.BeginDepartures(departures);
+        public IDisposable Begin() => effects.BeginDepartures(departures, constants);
 
         /// <summary>Apply the preflighted changes after the source has left play.</summary>
         public void Complete(string trigger, List<GameEvent> events)
@@ -729,14 +733,35 @@ public sealed class ContinuousEffects(World world)
         }
     }
 
-    private DepartureScope BeginDepartures(IReadOnlyList<int> cards)
+    private DepartureScope BeginDepartures(
+        IReadOnlyList<int> cards, IReadOnlyList<ContinuousEffect> constants)
     {
         var added = cards.Where(departing.Add).ToArray();
-        return new DepartureScope(departing, added);
+        suppressedConstants.AddRange(constants);
+        return new DepartureScope(this, added, constants);
     }
 
-    private sealed class DepartureScope(HashSet<int> departing, IReadOnlyList<int> added)
-        : IDisposable
+    private void EndDepartures(
+        IReadOnlyList<int> cards, IReadOnlyList<ContinuousEffect> constants)
+    {
+        foreach (int card in cards)
+        {
+            departing.Remove(card);
+        }
+        foreach (var effect in constants.Reverse())
+        {
+            int index = suppressedConstants.FindLastIndex(candidate => candidate == effect);
+            if (index >= 0)
+            {
+                suppressedConstants.RemoveAt(index);
+            }
+        }
+    }
+
+    private sealed class DepartureScope(
+        ContinuousEffects effects,
+        IReadOnlyList<int> cards,
+        IReadOnlyList<ContinuousEffect> constants) : IDisposable
     {
         private bool disposed;
 
@@ -746,10 +771,7 @@ public sealed class ContinuousEffects(World world)
             {
                 return;
             }
-            foreach (int card in added)
-            {
-                departing.Remove(card);
-            }
+            effects.EndDepartures(cards, constants);
             disposed = true;
         }
     }

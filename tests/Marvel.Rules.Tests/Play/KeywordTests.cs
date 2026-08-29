@@ -1183,6 +1183,38 @@ public sealed class KeywordTests
     [Rule("rr:permanent.5")]
     [Rule("rr:uses-x-type.1")]
     [Fact]
+    public void AConstantDepartureCommitsThePreflightedSnapshot()
+    {
+        // S restores U1 and U2 together. U2 grants Permanent to A on U1, so
+        // A is no longer Permanent in the post-departure state that preflight
+        // approved. Commit must retain that snapshot while U1 moves first.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, first.ObjectId));
+        world.Abilities = new UsesLossWithDependentPermanent(
+            source.ObjectId, first.ObjectId, second.ObjectId, attachment.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, first.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
+    }
+
+    [Rule("rr:ability.5")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
     public void AConstantDeparturePreflightsTheCompleteUsesCascade()
     {
         // S restores U1 and U2; discarding U2 would restore U3, whose
@@ -1658,6 +1690,45 @@ public sealed class KeywordTests
                             Lasts: Duration.WhileInPlay),
                     ]
                     : [];
+        }
+    }
+
+    private sealed class UsesLossWithDependentPermanent(
+        int source, int first, int second, int attachment) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: source,
+                        Affects: first,
+                        Lasts: Duration.WhileInPlay),
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: source,
+                        Affects: second,
+                        Lasts: Duration.WhileInPlay),
+                ];
+            }
+
+            return card.ObjectId == second
+                ?
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        "permanent",
+                        Amount: 1,
+                        Card: second,
+                        Affects: attachment,
+                        Lasts: Duration.WhileInPlay),
+                ]
+                : [];
         }
     }
 }
