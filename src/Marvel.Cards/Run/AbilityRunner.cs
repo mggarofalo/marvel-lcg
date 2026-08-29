@@ -4854,10 +4854,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var node = Tree(value);
         return node.Kind switch
         {
-            "query" => node.Argument is AbilityValue.Word { Value: "villain" },
+            "query" => node.Argument is AbilityValue.Word
+                { Value: "villain" or "enemies" or "attackableEnemies" or "characters" },
             "titled" => string.Equals(
                 Word(node.Argument), cast.World.Facts.Title(current.FaceId),
                 StringComparison.Ordinal),
+            "enemiesWithTrait" => Rules.State.Traits.Has(
+                cast.World, current, Word(node.Argument), cast.World.Facts),
+            "withTrait" => Rules.State.Traits.Has(
+                    cast.World, current, Word(node.Require("trait")), cast.World.Facts)
+                && TracksCurrentVillain(
+                    node.Require("cards"), resolved, cast),
+            "withoutAnotherCopyAttached" => TracksCurrentVillain(
+                node.Argument, resolved, cast),
+            "minBy" or "maxBy" => TracksCurrentVillain(
+                node.Require("of"), resolved, cast),
             _ => false,
         };
     }

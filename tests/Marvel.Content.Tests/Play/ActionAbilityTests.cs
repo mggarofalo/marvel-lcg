@@ -4316,7 +4316,7 @@ public sealed class ActionAbilityTests
 
     [Rule("rr:villain-defeat.2")]
     [Fact]
-    public void ATitleSelectorMutatesTheNewVillainStageBeforeTheNextFrame()
+    public void AFilteredVillainSelectorMutatesTheNewStageBeforeTheNextFrame()
     {
         // The new stage is the current in-play card titled Rhino. It begins
         // without the defeated stage's excess damage, then receives this
@@ -4330,7 +4330,12 @@ public sealed class ActionAbilityTests
               "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
               "then": { "seq": [
                 { "dealDamage": { "cards": { "query": "villain" }, "amount": 100 } },
-                { "dealDamage": { "cards": { "titled": "Rhino" }, "amount": 1 } },
+                { "dealDamage": {
+                  "cards": { "withTrait": {
+                    "cards": { "query": "villain" }, "trait": "BRUTE"
+                  } },
+                  "amount": 1
+                } },
                 { "moveDamage": {
                   "from": { "query": "villain" },
                   "to": { "titled": "Spider-Man" },
