@@ -85,6 +85,7 @@ public sealed class CoreFinalCardBatchTests
     }
 
     [Rule("rr:resource.1")]
+    [Rule("rr:alteration-effect")]
     [Fact]
     public void RepulsorBlastCountsEveryPrintedEnergyResource()
     {

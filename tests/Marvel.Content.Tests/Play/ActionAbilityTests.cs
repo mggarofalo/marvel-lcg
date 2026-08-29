@@ -4195,6 +4195,73 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
     }
 
+    [Rule("rr:alteration-effect")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void NegativeEachTimeCountIsRejectedBeforeItsCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachTime": {
+              "effect": { "discardTop": { "from": "encounterDeck", "count": -1 } },
+              "when": { "cardSet": { "card": "that", "set": "kree_fanatic" } },
+              "then": { "draw": { "player": "you", "count": 1 } }
+            } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var refused = Assert.Throws<AbilityException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("non-negative", refused.Message);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:alteration-effect")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void MutableEachTimeCountAfterAnEarlierEffectIsRejectedBeforeItsCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "heal": { "cards": "you", "amount": 1 } },
+              { "eachTime": {
+                "effect": { "discardTop": {
+                  "from": "encounterDeck",
+                  "count": { "add": [ -1, { "damageOn": "you" } ] }
+                } },
+                "when": { "cardSet": { "card": "that", "set": "kree_fanatic" } },
+                "then": { "draw": { "player": "you", "count": 1 } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        World? world = null;
+        Card? source = null;
+
+        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(1);
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("each-time count after state may change", refused.Message);
+        Assert.True(source!.Ready);
+        Assert.Equal(1, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:for-each")]
     [Rule("rr:initiating-abilities.step.5")]
     [Fact]

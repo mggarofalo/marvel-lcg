@@ -201,6 +201,9 @@ internal static class AuthoredCards
     /// <summary>The printed id of "Infinite Hunter", the scenario's other minion.</summary>
     public const string InfiniteHunter = "45065";
 
+    /// <summary>The printed id of "You Dare Oppose Me?".</summary>
+    public const string YouDareOpposeMe = "90005";
+
     /// <summary>The printed id of "Infinite Soldier", the scenario's minion.</summary>
     public const string InfiniteSoldier = "45069";
 

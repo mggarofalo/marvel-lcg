@@ -114,6 +114,7 @@ public sealed class StampedeTests
     }
 
     [Rule("rr:delayed-effect")]
+    [Rule("rr:alteration-effect.1")]
     [Fact]
     public void AnAttackThatDamagedNobodyLeavesNothingWaiting()
     {

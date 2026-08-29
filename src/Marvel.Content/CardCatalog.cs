@@ -73,6 +73,9 @@ public sealed class CardCatalog : ICardFacts
     public CardKind Kind(string faceId) => Find(faceId).Kind;
 
     /// <inheritdoc />
+    public string EncounterSet(string faceId) => Find(faceId).Set;
+
+    /// <inheritdoc />
     /// <remarks>
     /// Read from the printed <c>Form</c> attribute, which the card data carries
     /// as a structured field on exactly the nine faces that print the keyword.
@@ -286,6 +289,10 @@ public sealed class CardCatalog : ICardFacts
             ? ToKind(name)
             : CardKind.Unknown;
 
+        string set = element.TryGetProperty("set", out var printedSet)
+            ? printedSet.GetString() ?? string.Empty
+            : string.Empty;
+
         if (element.TryGetProperty("attributes", out var printedAttributes)
             && printedAttributes.ValueKind == JsonValueKind.Object)
         {
@@ -315,7 +322,7 @@ public sealed class CardCatalog : ICardFacts
             ? textBox.GetString() ?? string.Empty
             : string.Empty;
 
-        return new Entry(kind, traits, attributes, title, subtitle, printed);
+        return new Entry(kind, set, traits, attributes, title, subtitle, printed);
     }
 
     /// <summary>
@@ -425,6 +432,7 @@ public sealed class CardCatalog : ICardFacts
 
     private sealed record Entry(
         CardKind Kind,
+        string Set,
         IReadOnlyList<string> Traits,
         IReadOnlyDictionary<string, string> Attributes,
         string Title,
