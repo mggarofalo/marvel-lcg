@@ -1791,8 +1791,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             { Kind: "exhaust" } => CostTarget(world, card, player, cost.Argument)?.Ready == true,
             { Kind: "discard" } => CostTarget(world, card, player,
                 cost.Field("card") ?? cost.Argument) is not null,
-            { Kind: "removeCounters" } => card.Tokens.GetValueOrDefault(
-                "c_" + Word(cost.Argument)) > 0,
+            { Kind: "removeCounters" } =>
+                CounterKeyForRemoval(card, Word(cost.Argument)) is not null,
 
             // Every other cost is somebody's, and an ability offered to every
             // seat at once has not said whose. `AbilityTrigger.Player` is where
@@ -3425,6 +3425,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "dealAttackDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
         "placeThreat" => Every(node.Require("scheme"), cast).Count > 0,
         "placeAccelerationToken" => cast.World.TheCardIn(DeckType.MainSchemesArea) is not null,
+        "advanceMainScheme" => CanAdvanceMainScheme(node, cast),
         "removeThreat" => Find(node.Require("scheme"), cast) is not null,
         "enemyAttacks" or "enemySchemes" => Every(node.Require("enemies"), cast).Count > 0,
         "putIntoPlay" => Find(node.Require("card"), cast) is not null,
@@ -3979,8 +3980,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 && card.Area.Type != DeckType.RemovedArea,
             "exhaust" => Find(node.Argument, cast)?.Ready == true,
             "ready" => Every(node.Argument, cast).Any(card => !card.Ready),
-            "removeCounters" => cast.Source.Tokens.GetValueOrDefault(
-                "c_" + Word(node.Argument)) > 0,
+            "removeCounters" =>
+                CounterKeyForRemoval(cast.Source, Word(node.Argument)) is not null,
+            "advanceMainScheme" => CanAdvanceMainScheme(node, cast),
             "discardAtRandom" => Amount(node.Require("count"), cast) > 0
                 && Seats(node.Require("player"), cast)
                     .Any(seat => cast.World.Seats[seat].Hand.Cards.Count > 0),
@@ -9668,6 +9670,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 });
                 break;
 
+            case "advanceMainScheme":
+                AdvanceMainScheme(node, cast);
+                break;
+
             case "preventDamage":
                 PreventDamage(node, cast);
                 cast.ResolveEffect();
@@ -9719,6 +9725,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     Rules.Play.Discard.Attachments(
                         cast.World, added, cast.Trigger, cast.Events);
+                }
+                if (cast.World.Facts.Attributes(added.FaceId).ContainsKey("Linked"))
+                {
+                    // rr:linked-card-title.4 changes ownership at the moment
+                    // the player takes control. A linked ally added from the
+                    // set-aside area reaches their hand before it enters play.
+                    added.TransferLinkedOwnership(cast.Player);
                 }
                 World.MoveToTop(added, newHand);
                 cast.Events.Add(new CardsMoved(
@@ -10860,13 +10873,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static void RemoveCounters(AbilityNode node, Cast cast)
     {
         string type = Word(node.Argument);
-        string key = "c_" + type;
-        long before = cast.Source.Tokens.GetValueOrDefault(key);
-        if (before <= 0)
-        {
-            throw new RulesNotImplementedException(
+        string key = CounterKeyForRemoval(cast.Source, type)
+            ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' has no {type} counter to remove");
-        }
+        long before = cast.Source.Tokens.GetValueOrDefault(key);
 
         cast.Source.PlaceTokens(key, -1);
         cast.Events.Add(new FieldSet(cast.Source.ObjectId, key, before, before - 1)
@@ -10874,11 +10884,99 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Trigger = cast.Trigger, Verb = "Remove_Counter",
         });
 
-        if (before == 1
+        if (CounterCount(cast.Source, "allPurpose") == 0
             && Reveal.Uses(cast.World.Facts.Attributes(cast.Source.FaceId)).Count > 0)
         {
             Rules.Play.Discard.Card(cast.World, cast.Source, cast.Trigger, cast.Events);
         }
+    }
+
+    /// <summary>
+    /// Advances because a card effect says to —
+    /// <c>rr:main-scheme-main-scheme-deck.2.2</c>.
+    /// </summary>
+    /// <remarks>
+    /// "If the main scheme advances other than through having threat on it
+    /// equal to or greater than its target threat value, that main scheme is
+    /// not considered completed." This calls the deck transition directly and
+    /// never writes <c>is_completed</c>. The DSL word <c>next</c> is the
+    /// engine's choice; stage-addressed advancement needs a separate
+    /// implementation.
+    /// </remarks>
+    private static void AdvanceMainScheme(AbilityNode node, Cast cast)
+    {
+        if (!string.Equals(Word(node.Argument), "next", StringComparison.Ordinal))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' advances to an unsupported main scheme stage");
+        }
+
+        var scheme = cast.World.TheCardIn(DeckType.MainSchemesArea)
+            ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' advances a main scheme that is not in play");
+        MainScheme.Advance(
+            cast.World, cast.World.Facts, cast.Abilities, scheme,
+            cast.Trigger, cast.Events);
+    }
+
+    private static bool CanAdvanceMainScheme(AbilityNode node, Cast cast)
+    {
+        if (!string.Equals(Word(node.Argument), "next", StringComparison.Ordinal))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' advances to an unsupported main scheme stage");
+        }
+
+        return cast.World.TheCardIn(DeckType.MainSchemesArea) is not null
+            && cast.World.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0;
+    }
+
+    /// <summary>
+    /// Reads a named counter pool, or every typed pool when the card says
+    /// "all-purpose counter" — <c>rr:all-purpose-counter.1</c> and
+    /// <c>rr:all-purpose-counter.2</c>.
+    /// </summary>
+    /// <remarks>
+    /// Counters use the same token inventory as threat, damage, and status
+    /// markers because the rules consider them tokens for every game purpose.
+    /// The DSL spelling <c>allPurpose</c> is the engine's choice. A reference
+    /// to it can see every <c>c_*</c> pool regardless of the type a card gave
+    /// that physical counter.
+    /// </remarks>
+    private static long CounterCount(Card card, string type) =>
+        string.Equals(type, "allPurpose", StringComparison.Ordinal)
+            ? card.Tokens
+                .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
+                .Sum(pair => pair.Value)
+            : card.Tokens.GetValueOrDefault("c_" + type);
+
+    /// <summary>Resolves the physical counter removed by a cost.</summary>
+    /// <remarks>
+    /// If more than one typed pool is present, the rule permits the player to
+    /// choose either one. The current action protocol has no counter-choice
+    /// affordance, so resolution raises before changing state rather than
+    /// choosing an outcome on the player's behalf.
+    /// </remarks>
+    private static string? CounterKeyForRemoval(Card card, string type)
+    {
+        if (!string.Equals(type, "allPurpose", StringComparison.Ordinal))
+        {
+            string typed = "c_" + type;
+            return card.Tokens.GetValueOrDefault(typed) > 0 ? typed : null;
+        }
+
+        string[] pools = [.. card.Tokens
+            .Where(pair => pair.Value > 0
+                && pair.Key.StartsWith("c_", StringComparison.Ordinal))
+            .Select(pair => pair.Key)
+            .Order(StringComparer.Ordinal)];
+        return pools.Length switch
+        {
+            0 => null,
+            1 => pools[0],
+            _ => throw new RulesNotImplementedException(
+                $"'{card.FaceId}' must choose which all-purpose counter to remove"),
+        };
     }
 
     private static void PreventDamage(AbilityNode node, Cast cast)
@@ -13630,8 +13728,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // attachment can hold when a card puts them there.
             "damageOn" => Find(node.Argument, cast)?.Damage ?? 0,
             "powerAmount" => cast.PowerAmount,
-            "countersOn" => Find(node.Require("card"), cast)?.Tokens.GetValueOrDefault(
-                "c_" + Word(node.Require("counter"))) ?? 0,
+            "countersOn" => Find(node.Require("card"), cast) is { } counterHolder
+                ? CounterCount(counterHolder, Word(node.Require("counter")))
+                : 0,
             "printedResourceCountDiscarded" => Resources.PrintedCount(
                 cast.Discarded, Word(node.Argument)[0], cast.World.Facts),
             "printedBoostIconsDiscarded" => cast.Discarded.Sum(card =>

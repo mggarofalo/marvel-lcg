@@ -144,6 +144,19 @@ public sealed class StandardSetCardsTests
         Assert.Equal(deck + 3, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
     }
 
+    [Rule("rr:linked-card-title.1")]
+    [Fact]
+    public void ShadowOfThePastDoesNotShuffleLinkedCardsIntoTheEncounterDeck()
+    {
+        var world = Deal();
+        var linked = world.CreateCard("53034", world.Seats[0].SetAside);
+
+        Reveal(world, AuthoredCards.ShadowOfThePast);
+
+        Assert.Contains(linked, world.Seats[0].SetAside.Cards);
+        Assert.DoesNotContain(linked, world.AreaOf(DeckType.EncounterDeck).Cards);
+    }
+
     [Fact]
     public void ShadowOfThePastSurgesWhenTheNemesisMinionHasGone()
     {

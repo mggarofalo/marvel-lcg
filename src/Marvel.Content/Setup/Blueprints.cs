@@ -14,12 +14,10 @@ public static class Blueprints
     /// <summary>The deal order, as blueprints.</summary>
     /// <remarks>
     /// <para>
-    /// <b>The order is untouched and only the destination changes.</b> A
-    /// creation's position in this list <i>is</i> the card's object id, which
-    /// is on the wire in every digest, so nothing here may reorder anything —
-    /// and nothing does. A set's cards land contiguously: in one measured game
-    /// the modular set's ran 40147-40150 into the encounter deck at ids
-    /// 202-205 and 40151-40158 into the aside pile at ids 206-215, unbroken.
+    /// Existing creations keep their relative order and destination. Linked
+    /// product cards are new creations inserted immediately before the first
+    /// bringing card in each deck — <c>rr:linked-card-title.3</c> — and that
+    /// deterministic insertion position is part of object-id allocation.
     /// </para>
     /// <para>
     /// <b>The aside pile's own order is not settled.</b> Measurement showed it
@@ -37,14 +35,45 @@ public static class Blueprints
     {
         ArgumentNullException.ThrowIfNull(dealt);
         ArgumentNullException.ThrowIfNull(facts);
-        return
-        [
-            .. dealt.Select(creation => new CardBlueprint(
+        var blueprints = new List<CardBlueprint>();
+        var linkedByDeck = new HashSet<(string Deck, string Card)>();
+        foreach (var creation in dealt)
+        {
+            if (DeckOf(creation) is { } deck)
+            {
+                foreach (string linked in creation.Faces
+                             .SelectMany(facts.LinkedCards)
+                             .Distinct(StringComparer.Ordinal))
+                {
+                    if (linkedByDeck.Add((deck, linked)))
+                    {
+                        // The linked creation precedes the first card that
+                        // names it. This allocation spelling is measured engine
+                        // behavior; the rulebook decides only that it is set
+                        // aside and excluded from deck size.
+                        blueprints.Add(new CardBlueprint(
+                            linked, SetupSlot.SetAside, creation.Player));
+                    }
+                }
+            }
+
+            blueprints.Add(new CardBlueprint(
                 creation.Spec,
                 SetAside(creation, facts) ? SetupSlot.SetAside : SlotFor(creation.Source),
-                creation.Player)),
-        ];
+                creation.Player));
+        }
+        return blueprints;
     }
+
+    private static string? DeckOf(Creation creation) => creation.Source switch
+    {
+        CreationSource.HeroDeck or CreationSource.PlayerDeck =>
+            $"player:{creation.Player}",
+        CreationSource.Encounter or CreationSource.EncounterSet => "encounter",
+        CreationSource.MainScheme => "main-scheme",
+        CreationSource.Villain => "villain",
+        _ => null,
+    };
 
     /// <summary>
     /// Whether a card begins the game outside every deck —

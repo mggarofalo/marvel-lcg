@@ -49,6 +49,14 @@ public enum CardKind
 /// </remarks>
 public interface ICardFacts
 {
+    /// <summary>The linked cards brought by a deck containing this face.</summary>
+    /// <remarks>
+    /// <c>rr:linked-card-title</c> makes this printed product data: the linked
+    /// card names the card that brings it, while setup starts from the bringing
+    /// card. Most hand-built boards have none, so the default is empty.
+    /// </remarks>
+    IReadOnlyList<string> LinkedCards(string bringingFaceId) => [];
+
     /// <summary>What kind of card this face is.</summary>
     /// <param name="faceId">A printed card id.</param>
     CardKind Kind(string faceId);

@@ -97,7 +97,8 @@ the three endings in `World.Result`.
 `.2.2` is why `is_completed` is set by the completion check and not inside the
 advance: *"if the main scheme advances other than through having threat on it
 equal to or greater than its target threat value, that main scheme is **not**
-considered completed."*
+considered completed."* Card abilities express that transition as
+`advanceMainScheme: next`, which calls the advance without writing the flag.
 
 ### Threat placed is threat placed, however it arrived
 

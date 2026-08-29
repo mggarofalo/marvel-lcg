@@ -135,10 +135,10 @@ public static class WorldSetup
 
                 // `rr:permanent.2` -- "permanent cards are set aside **before
                 // step 1 of setup**". A player's goes in their own aside pile,
-                // beside their nemesis set; the scenario's goes in the
+                // distinct from their nemesis set; the scenario's goes in the
                 // villain's, which is the split `rr:play-area` already makes.
                 SetupSlot.SetAside => seat >= 0
-                    ? world.Seats[seat].Nemesis
+                    ? world.Seats[seat].SetAside
                     : world.AreaOf(DeckType.AsideDeck),
                 _ => throw new ArgumentOutOfRangeException(nameof(blueprints)),
             };

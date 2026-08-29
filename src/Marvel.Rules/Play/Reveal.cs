@@ -501,6 +501,12 @@ public static class Reveal
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
+        if (facts.Attributes(card.FaceId).ContainsKey("Linked")
+            && card.Area.PlayArea.IsPlayers)
+        {
+            card.TransferLinkedOwnership(card.Area.PlayArea.Player);
+        }
+
         // `rr:toughness.1`: "**Forced Response**: after this character enters
         // play, give it a tough status card." A status is a card, not a flag --
         // see `Statuses`.

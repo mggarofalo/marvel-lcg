@@ -1,4 +1,8 @@
+using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
 using Marvel.Content.Setup;
+using Marvel.Rules.Events;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -105,6 +109,124 @@ public sealed class SetAsideTests
             [new Creation(faceId, CreationSource.PlayerDeck, 0)], Cards));
 
         Assert.True(blueprint.Slot == SetupSlot.SetAside, $"{faceId} is {why}");
+    }
+
+    [Rule("rr:linked-card-title")]
+    [Rule("rr:linked-card-title.1")]
+    [Rule("rr:linked-card-title.2")]
+    [Rule("rr:linked-card-title.3")]
+    [Rule("rr:linked-card-title.3.1")]
+    [Fact]
+    public void LinkedProductCardsAreAllocatedOnceBeforeTheirParentPerDeck()
+    {
+        // Specialized Training has four linked upgrades. Two copies in one
+        // deck still name the one product set; the same parent in a second
+        // player's deck gets that player another complete set.
+        var blueprints = Blueprints.From(
+        [
+            new Creation("43021", CreationSource.PlayerDeck, 0),
+            new Creation("43021", CreationSource.PlayerDeck, 0),
+            new Creation("43021", CreationSource.PlayerDeck, 1),
+        ], Cards);
+
+        Assert.Equal(
+        [
+            "43034", "43035", "43036", "43037", "43021", "43021",
+            "43034", "43035", "43036", "43037", "43021",
+        ], blueprints.Select(card => card.Spec));
+        Assert.All(blueprints.Take(4), card =>
+        {
+            Assert.Equal(SetupSlot.SetAside, card.Slot);
+            Assert.Equal(0, card.Seat);
+        });
+        Assert.All(blueprints.Skip(6).Take(4), card =>
+        {
+            Assert.Equal(SetupSlot.SetAside, card.Slot);
+            Assert.Equal(1, card.Seat);
+        });
+        Assert.Equal(3, blueprints.Count(card => card.Slot == SetupSlot.PlayerDeck));
+    }
+
+    [Rule("rr:linked-card-title.1")]
+    [Fact]
+    public void LinkedPlayerCardsUseTheGeneralSetAsidePileNotTheNemesisSet()
+    {
+        var order = Dealer.DealOrder(Setup, "rhino", ["spider_man"])
+            .Concat([new Creation("43021", CreationSource.PlayerDeck, 0)])
+            .ToList();
+        var world = WorldSetup.Deal(
+            Cards,
+            Blueprints.From(order, Cards),
+            [Setup.Hero("spider_man").Name],
+            12345);
+        string[] linked = ["43034", "43035", "43036", "43037"];
+
+        Assert.All(
+            world.Seats[0].SetAside.Cards,
+            card => Assert.Contains(card.FaceId, linked));
+        Assert.Equal(
+            linked,
+            world.Seats[0].SetAside.Cards.Select(card => card.FaceId));
+        Assert.DoesNotContain(
+            world.Seats[0].Nemesis.Cards,
+            card => linked.Contains(card.FaceId, StringComparer.Ordinal));
+    }
+
+    [Rule("rr:linked-card-title")]
+    [Theory]
+    [InlineData("49020", "49033")] // title: New Recruits
+    [InlineData("53023", "53034")] // qualified title: Captain America upgrade
+    [InlineData("55057", "55064")] // qualified title: Titania minion
+    public void LinkedParentReferencesAcceptPrintedTitleAndQualifiedTitle(
+        string parent, string linked)
+    {
+        var blueprints = Blueprints.From(
+            [new Creation(parent, CreationSource.PlayerDeck, 0)], Cards);
+
+        var brought = Assert.Single(blueprints, card => card.Spec == linked);
+        Assert.Equal(SetupSlot.SetAside, brought.Slot);
+        Assert.Equal(parent, blueprints[^1].Spec);
+        Assert.True(blueprints.ToList().IndexOf(brought) < blueprints.Count - 1);
+    }
+
+    [Rule("rr:linked-card-title.4")]
+    [Fact]
+    public void APlayerWhoTakesControlOfALinkedCardBecomesItsOwner()
+    {
+        var world = new World(Cards, players: 1);
+        var seat = world.CreateSeat("p0");
+        var linked = world.CreateCard("53034", seat.SetAside);
+        Assert.Equal(World.Scenario, linked.Owner);
+        World.MoveToTop(
+            linked,
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+
+        Reveal.EnterPlay(world, Cards, linked, new List<GameEvent>());
+
+        Assert.Equal(0, linked.Owner);
+    }
+
+    [Rule("rr:linked-card-title.4")]
+    [Fact]
+    public void ALinkedCardAddedFromSetAsideBecomesOwnedBeforeItEntersPlay()
+    {
+        var world = new World(Cards, players: 1);
+        var seat = world.CreateSeat("p0");
+        var linked = world.CreateCard("53034", seat.SetAside);
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "53034", "abilities": [ {
+              "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+              "effect": { "addToHand": "this" }
+            } ] } ] }
+            """));
+        world.Abilities = runner;
+
+        runner.WhenRevealed(world, linked, player: 0);
+
+        Assert.Contains(linked, seat.Hand.Cards);
+        Assert.Equal(0, linked.Owner);
     }
 
     [Fact]
