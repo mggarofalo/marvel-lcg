@@ -4122,7 +4122,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 foreach (int player in cast.World.PlayerOrder)
                 {
                     cast.RestorePlayer(player);
-                    observed |= RepeatedChanges(effect, cast, assumed, binding: false);
+                    observed |= RepeatedChanges(
+                        effect, cast, assumed, binding: false, priorFrames);
                 }
                 assumed |= observed;
             }
@@ -4135,7 +4136,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private static RepeatedChange RepeatedChanges(
-        AbilityNode node, Cast cast, RepeatedChange assumed, bool binding)
+        AbilityNode node, Cast cast, RepeatedChange assumed, bool binding,
+        int priorFrames)
     {
         if (node.Kind == "changeForm")
         {
@@ -4157,9 +4159,39 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return RepeatedChange.CardsInPlay | RepeatedChange.PlayerOrder;
         }
-        if (StableForCardsInPlay(node, cast))
+        if (StableForCardsInPlay(node, cast, priorFrames))
         {
             return RepeatedChange.None;
+        }
+        if (node.Kind is "seq" or "then" or "otherwise")
+        {
+            var changes = RepeatedChange.None;
+            foreach (var child in MutationChildren(node))
+            {
+                var next = RepeatedChanges(
+                    child, cast, assumed | changes, binding, priorFrames);
+                changes |= next;
+            }
+            return changes;
+        }
+        if (node.Kind == "and")
+        {
+            var ordered = MutationChildren(node).ToList();
+            var changes = RepeatedChange.None;
+            for (int pass = 0; pass < ordered.Count; pass++)
+            {
+                var before = changes;
+                foreach (var child in ordered)
+                {
+                    changes |= RepeatedChanges(
+                        child, cast, assumed | changes, binding, priorFrames);
+                }
+                if (changes == before)
+                {
+                    break;
+                }
+            }
+            return changes;
         }
         if (node.Kind == "if")
         {
@@ -4173,7 +4205,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return branches.Aggregate(
                 RepeatedChange.None,
                 (changes, branch) => changes
-                    | RepeatedChanges(Tree(branch!), cast, assumed, binding));
+                    | RepeatedChanges(
+                        Tree(branch!), cast, assumed, binding, priorFrames));
         }
         if (node.Kind is "chooseCard" or "thwartSchemes"
             or "thwartDifferentSchemes" or "legalPractice")
@@ -4187,7 +4220,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         return children.Aggregate(
             RepeatedChange.None,
-            (changes, child) => changes | RepeatedChanges(child, cast, assumed, binding));
+            (changes, child) => changes
+                | RepeatedChanges(child, cast, assumed, binding, priorFrames));
     }
 
     private static bool RepeatedTestCanChange(
@@ -4213,7 +4247,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         PlayerOrder = 4,
     }
 
-    private static bool StableForCardsInPlay(AbilityNode node, Cast cast) =>
+    private static bool StableForCardsInPlay(
+        AbilityNode node, Cast cast, int priorFrames) =>
         node.Kind is "draw" or "drawToHandSize" or "drawToPrintedHandSize"
             or "exhaust" or "ready" or "heal" or "generate" or "giveStatus"
             or "gainSurge" or "preventDamage" or "preventThreat"
@@ -4221,7 +4256,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             or "grantCharactersControlledBy" or "reduceNextCardCost"
         || node.Kind == "removeThreat"
             && Every(node.Require("scheme"), cast) is { Count: > 0 } schemes
-            && schemes.All(scheme => scheme.Area.Type == DeckType.MainSchemesArea);
+            && schemes.All(scheme => scheme.Area.Type == DeckType.MainSchemesArea
+                || Amount(node.Require("amount"), cast) * priorFrames
+                    < scheme.Tokens.GetValueOrDefault("k_threat"));
 
     private static bool DamageCanChangePlayerOrder(
         AbilityNode node, Cast cast, bool binding)
@@ -4236,8 +4273,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{node.Kind}' is not a direct damage node"),
         };
         var cards = Every(targets, cast);
+        long amount = node.Kind switch
+        {
+            "dealDamage" or "indirectDamage" => Amount(node.Require("amount"), cast),
+            "moveDamage" => Math.Min(
+                Find(node.Require("from"), cast)?.Damage ?? 0,
+                Amount(node.Require("amount"), cast)),
+            "replaceThreatWithDamage" => cast.Occurrence.Threat?.Remaining ?? long.MaxValue,
+            _ => long.MaxValue,
+        };
         return cards.Any(card => cast.World.PlayerOrder.Any(player =>
-                cast.World.Seats[player].IdentityCard == card))
+                cast.World.Seats[player].IdentityCard == card)
+            && amount >= Damage.Health(cast.World, cast.World.Facts, card) - card.Damage)
             || cards.Count == 0 && binding && BindingCanChange(targets);
     }
 
