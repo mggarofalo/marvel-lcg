@@ -5232,6 +5232,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         bool guarded = cast.World
             .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player))
             .Cards.Any(enemy => !discarded.Contains(enemy.ObjectId)
+                && !engagement.ContainsKey(enemy.ObjectId)
                 && FacedownDrones.Kind(enemy, cast.World.Facts) == CardKind.Minion
                 && StateFields.Modified(
                     cast.World, enemy, "guard", cast.World.Facts,
