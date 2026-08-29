@@ -4346,26 +4346,50 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         int From, int To, long Amount);
 
     private sealed record DamageTraceState(
-        Dictionary<int, long> Damage, long PeakTargetDamage);
+        Dictionary<int, long> Damage, long PeakTargetDamage,
+        HashSet<int> Players);
 
     private static long PeakRepeatedDamageOn(
         Card target, AbilityNode repeatedEffect, Cast cast,
         RepeatedChange assumed, bool binding, int frames)
     {
-        var traces = DamageTraces(repeatedEffect, cast, assumed, binding);
-        IReadOnlyList<DamageTraceState> states =
-            [new(new Dictionary<int, long>(), target.Damage)];
-        for (int frame = 0; frame < frames; frame++)
+        int original = cast.Player;
+        try
         {
-            states =
-            [
-                .. states.SelectMany(state => traces.Select(trace =>
-                    ApplyDamageTrace(state, trace, target, cast))),
-            ];
+            IReadOnlyList<DamageTraceState> states =
+                [new(new Dictionary<int, long>(), target.Damage, [])];
+            for (int frame = 0; frame < frames; frame++)
+            {
+                var next = new List<DamageTraceState>();
+                foreach (var state in states)
+                {
+                    foreach (int player in cast.World.PlayerOrder.Where(player =>
+                        !state.Players.Contains(player)))
+                    {
+                        cast.RestorePlayer(player);
+                        var traces = DamageTraces(
+                            repeatedEffect, cast, assumed, binding);
+                        foreach (var trace in traces)
+                        {
+                            var advanced = ApplyDamageTrace(
+                                state, trace, target, cast);
+                            next.Add(advanced with
+                            {
+                                Players = [.. state.Players, player],
+                            });
+                        }
+                    }
+                }
+                states = next;
+            }
+            return states.Select(state => state.PeakTargetDamage)
+                .DefaultIfEmpty(target.Damage)
+                .Max();
         }
-        return states.Select(state => state.PeakTargetDamage)
-            .DefaultIfEmpty(target.Damage)
-            .Max();
+        finally
+        {
+            cast.RestorePlayer(original);
+        }
     }
 
     private static DamageTraceState ApplyDamageTrace(
@@ -4398,7 +4422,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             peak = Math.Max(peak, Current(target.ObjectId));
         }
-        return new DamageTraceState(damage, peak);
+        return new DamageTraceState(damage, peak, state.Players);
     }
 
     private static IReadOnlyList<IReadOnlyList<DamageTransfer>> DamageTraces(
