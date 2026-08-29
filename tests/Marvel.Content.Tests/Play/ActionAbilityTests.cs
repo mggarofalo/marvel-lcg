@@ -2775,7 +2775,7 @@ public sealed class ActionAbilityTests
         var runner = Runner(
             AuthoredCards.SpiderMan,
             "WhenRevealed",
-            """{ "seq": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "enemyAttacks": { "enemies": { "query": "villain" } } }, { "enemyAttacks": { "enemies": { "query": "villain" } } }, { "if": { "test": { "atLeast": { "value": { "result": "activationDamage" }, "count": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""",
+            """{ "seq": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "seq": [ { "enemyAttacks": { "enemies": { "query": "villain" } } }, { "enemyAttacks": { "enemies": { "query": "villain" } } } ] }, { "if": { "test": { "atLeast": { "value": { "result": "activationDamage" }, "count": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""",
             eventName: Steps.CardRevealed);
         var (_, world) = Playing(_ => { }, hero: true, abilities: runner);
         var identity = world.Seats[0].IdentityCard;
@@ -2808,9 +2808,12 @@ public sealed class ActionAbilityTests
         var runner = Runner(
             AuthoredCards.SpiderMan,
             "WhenRevealed",
-            """{ "seq": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] }""",
+            """{ "seq": [ { "heal": { "card": "you", "amount": 1 } }, { "changeForm": { "player": "you", "to": "alter-ego" } }, { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } }, { "if": { "test": { "atLeast": { "value": { "result": "healed" }, "count": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""",
             eventName: Steps.CardRevealed);
-        var (_, world) = Playing(_ => { }, hero: true, abilities: runner);
+        var (_, world) = Playing(
+            board => board.Seats[0].IdentityCard.TakeDamage(1),
+            hero: true,
+            abilities: runner);
         var identity = world.Seats[0].IdentityCard;
         int held = world.Seats[0].Hand.Cards.Count;
 
@@ -2830,7 +2833,60 @@ public sealed class ActionAbilityTests
             frame.FinalStep, frame.FinalPlayer);
 
         Assert.Equal("01001b", identity.FaceId);
+        Assert.Equal(0, identity.Damage);
         Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:and.1")]
+    [Fact]
+    public void AFinalOrderedPowerKeepsNestedAncestorWorkPending()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "seq": [ { "and": [ { "draw": { "player": "you", "count": 1 } }, { "attack": { "target": { "query": "villain" }, "effect": { "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } } } } ] }, { "draw": { "player": "you", "count": 1 } } ] } } }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.Equal(1, villain.Damage);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void InvalidOrderedContinuationIsRejectedBeforeRunningAnySibling()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "and": [ { "exhaust": "this" }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var forged = new PhaseStep(
+            Steps.ResumeAbility, 1, 2, Subject: source!.ObjectId, Seat: 0,
+            Tier: AbilityType.Action, AbilityOrdinal: 0,
+            AbilityPath: ["and:0:1,99"], AbilityFace: source.FaceId,
+            AbilityHasContinuation: true);
+
+        Assert.Throws<RulesNotImplementedException>(
+            () => runner.ResumeAbility(world, forged));
+
+        Assert.True(source.Ready);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]

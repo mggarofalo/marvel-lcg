@@ -211,7 +211,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             attack.Trigger, attack.SurgeGained, occurrence, events,
             BasicPowers.AttackVerb, attack.AbilityPath, attack.AbilityFace,
             attack.AbilityResults, attack.AbilityOccurrence, attack.Discarded,
-            attack.EachPlayerFrame, attack.FinalPlayer, attack.AbilityPlayer);
+            attack.EachPlayerFrame, attack.FinalPlayer, attack.AbilityPlayer,
+            attack.AbilityHasContinuation);
 
     /// <inheritdoc/>
     public void ResolveCardThwart(
@@ -223,7 +224,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             thwart.Trigger, thwart.SurgeGained, occurrence, events,
             BasicPowers.ThwartVerb, thwart.AbilityPath, thwart.AbilityFace,
             thwart.AbilityResults, thwart.AbilityOccurrence, thwart.Discarded,
-            thwart.EachPlayerFrame, thwart.FinalPlayer, thwart.AbilityPlayer);
+            thwart.EachPlayerFrame, thwart.FinalPlayer, thwart.AbilityPlayer,
+            thwart.AbilityHasContinuation);
 
     private void ResolvePower(
         World world, int sourceId, int targetId, int player, int abilityIndex,
@@ -234,7 +236,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         List<GameEvent> events, string power, IReadOnlyList<string>? abilityPath = null,
         string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
         Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1)
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
+        bool abilityHasContinuation = false)
     {
         if (sourceId < 0 || sourceId >= world.Cards.Count)
         {
@@ -1213,7 +1216,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{source.FaceId}' has no each-player frame at step {stoppedAt - 1}");
         }
 
-        var cast = Resolving(world, source, player, tier, finalStep) with
+        var cast = Resolving(
+            world, source, player, tier, finalStep, step?.AbilityOccurrence) with
         {
             EachPlayerFrame = true,
             FinalPlayer = finalPlayer,
@@ -1223,16 +1227,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                     : new HashSet<string>(StringComparer.Ordinal),
         };
+        RestorePersisted(cast, step);
         cast.RestoreAbility(
             ordinal, [.. parentPath, "eachPlayer:effect"], step?.AbilityFace);
         cast.At(stoppedAt - 1);
-        cast.SetContinuation(finalPlayer && outer.Kind == "seq"
-            && stoppedAt < Nodes(outer.Argument).Count());
+        cast.SetContinuation(finalPlayer && (step?.AbilityHasContinuation
+            ?? (outer.Kind == "seq" && stoppedAt < Nodes(outer.Argument).Count())));
         Run(Tree(each.Require("effect")), cast);
         if (!cast.Suspended && finalPlayer)
         {
             cast.SetAbilityPath(parentPath);
             cast.RestorePlayer(cast.AbilityPlayer);
+            cast.SetContinuation(false);
             ResumeAfter(outer, parentPath, cast);
         }
         return cast.Events;
@@ -2888,7 +2894,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             cast.RestoreAbility(current.AbilityOrdinal, path, current.AbilityFace);
         }
         cast.At(Math.Max(0, stoppedAt - 1));
-        cast.SetContinuation(On(source).Any(ability =>
+        cast.SetContinuation(persisted?.AbilityHasContinuation ?? On(source).Any(ability =>
             (tier is null || ability.Trigger.Timing == tier)
             && ability.Effect.Kind == "seq"
             && Nodes(ability.Effect.Argument).Count() > stoppedAt));
@@ -2947,7 +2953,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Plan: true, FinalStep: index == input.Targets.Count - 1));
             }
 
-            return cast.Events;
+            return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "payOrEffect")
         {
@@ -3023,7 +3029,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
             }
 
-            return cast.Events;
+            return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "chooseDiscardToShuffle")
         {
@@ -3048,7 +3054,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 World.MoveToTop(card, world.Seats[player].Deck);
             }
             world.Shuffle(world.Seats[player].Deck);
-            return cast.Events;
+            return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "thwartDifferentSchemes")
         {
@@ -3481,7 +3487,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{cast.Source.FaceId}' orders simultaneous effects around a threat "
                 + "placement continuation, which is not implemented");
         }
-        return effects.All(effect => CanInitiate(effect, cast));
+        bool outerContinuation = cast.HasContinuation;
+        try
+        {
+            foreach (var effect in effects)
+            {
+                cast.SetContinuation(outerContinuation || effects.Count > 1);
+                if (!CanInitiate(effect, cast))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        finally
+        {
+            cast.SetContinuation(outerContinuation);
+        }
     }
 
     private static bool CanInitiateDependent(
@@ -3502,6 +3524,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool CanInitiateLeaf(AbilityNode node, Cast cast) => node.Kind switch
     {
+        "resolveSpecials" when cast.HasContinuation =>
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' continues after ordered Special abilities, "
+                + "which is not implemented"),
         "chooseCard" => Every(node.Require("from"), cast).Count > 0,
         "choose" => CanInitiateChoice(node, cast),
         "thwartDifferentSchemes" => Every(node.Require("schemes"), cast).Count > 0,
@@ -4509,7 +4535,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 EachPlayerEffects.Schedule(
                     cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep,
                     cast.GainedKeywords.Contains("surge"), AbilityOrdinal(node, cast),
-                    [.. cast.AbilityPath], cast.AbilityFace, cast.Player);
+                    [.. cast.AbilityPath], cast.AbilityFace, cast.Player,
+                    new Dictionary<string, long>(cast.Results, StringComparer.Ordinal),
+                    cast.Occurrence, [.. cast.Discarded.Select(card => card.ObjectId)],
+                    cast.HasContinuation);
                 cast.Suspend();
                 break;
 
@@ -6155,12 +6184,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"ability continuation frame '{frame}' is not implemented"),
         };
 
+        bool inheritedContinuation = cast.HasContinuation;
+        cast.SetContinuation(
+            inheritedContinuation || HasRemainingAtFrame(node, parts, frame));
         ResumeAfterCore(child, path, cast, depth + 1, stopBefore);
         if (cast.Suspended || depth <= stopBefore)
         {
             return;
         }
 
+        cast.SetContinuation(inheritedContinuation);
         cast.SetAbilityPath(path.Take(depth));
         switch (parts[0])
         {
@@ -6199,7 +6232,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "and":
                 var effects = Nodes(node.Argument).ToList();
-                var remaining = Remaining(parts, frame);
+                var remaining = ValidRemaining(node, parts, frame);
                 bool outerAndContinuation = cast.HasContinuation;
                 for (int position = 0; position < remaining.Count; position++)
                 {
@@ -6225,6 +6258,45 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
     }
 
+    private static bool HasRemainingAtFrame(
+        AbilityNode node, string[] parts, string frame)
+    {
+        return parts[0] switch
+        {
+            "seq" => ParseIndex(parts, frame) < Nodes(node.Argument).Count() - 1,
+            "and" => ValidRemaining(node, parts, frame).Count > 0,
+            "then" when parts[1] == "effect" => DependentContinues(parts, frame, true),
+            "otherwise" when parts[1] == "effect" =>
+                DependentContinues(parts, frame, false),
+            _ => false,
+        };
+    }
+
+    private static bool DependentContinues(string[] parts, string frame, bool onFull)
+    {
+        if (parts.Length < 3
+            || !Enum.TryParse(parts[2], out ResolutionOutcome outcome))
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation frame '{frame}' has no resolution outcome");
+        }
+        return outcome == (onFull ? ResolutionOutcome.Full : ResolutionOutcome.None);
+    }
+
+    private static List<int> ValidRemaining(
+        AbilityNode node, string[] parts, string frame)
+    {
+        var effects = Nodes(node.Argument).ToList();
+        var remaining = Remaining(parts, frame);
+        if (remaining.Distinct().Count() != remaining.Count
+            || remaining.Any(index => index < 0 || index >= effects.Count))
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation frame '{frame}' has an invalid remaining order");
+        }
+        return remaining;
+    }
+
     private static List<int> Remaining(string[] parts, string frame)
     {
         if (parts.Length < 3 || string.IsNullOrEmpty(parts[2]))
@@ -6236,7 +6308,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return parts[2].Split(',').Select(value => int.Parse(
                 value, System.Globalization.CultureInfo.InvariantCulture)).ToList();
         }
-        catch (FormatException)
+        catch (Exception error) when (error is FormatException or OverflowException)
         {
             throw new RulesNotImplementedException(
                 $"ability continuation frame '{frame}' has an invalid remaining order");
@@ -6302,7 +6374,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             AbilityResults: new Dictionary<string, long>(cast.Results, StringComparer.Ordinal),
             AbilityOccurrence: cast.Occurrence,
             AbilityFace: cast.AbilityFace,
-            AbilityPlayer: cast.AbilityPlayer);
+            AbilityPlayer: cast.AbilityPlayer,
+            AbilityHasContinuation: cast.HasContinuation);
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
             cast.World.Agenda.ThenContinuation(continuation, cast.Occurrence);
@@ -6633,7 +6706,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 abilityPath: abilityPath, abilityFace: cast.AbilityFace,
                 abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
                 discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
-                finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer)
+                finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer,
+                abilityHasContinuation: cast.HasContinuation)
             : BasicPowers.CardThwart(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
                 cast.Trigger, cast.Events, abilityIndex: address.Index,
@@ -6647,7 +6721,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 abilityPath: abilityPath, abilityFace: cast.AbilityFace,
                 abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
                 discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
-                finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer);
+                finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer,
+                abilityHasContinuation: cast.HasContinuation);
         if (!scheduled)
         {
             return;
@@ -7156,7 +7231,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 AbilityResults: ActivationResults(cast),
                 AbilityOccurrence: cast.Occurrence,
                 AbilityFace: cast.AbilityFace,
-                AbilityPlayer: cast.AbilityPlayer));
+                AbilityPlayer: cast.AbilityPlayer,
+                AbilityHasContinuation: cast.HasContinuation));
             cast.WaitFor(activationIds);
             cast.Suspend();
         }

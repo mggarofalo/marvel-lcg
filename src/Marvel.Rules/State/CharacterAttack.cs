@@ -56,6 +56,7 @@ namespace Marvel.Rules.State;
 /// <param name="EachPlayerFrame">Whether this attack belongs to one each-player frame.</param>
 /// <param name="FinalPlayer">Whether that frame is the last chosen player.</param>
 /// <param name="AbilityPlayer">The player resolving the containing ability.</param>
+/// <param name="AbilityHasContinuation">Whether structural ancestor work remains.</param>
 public sealed record CharacterAttack(
     int Attacker,
     int Enemy,
@@ -78,4 +79,5 @@ public sealed record CharacterAttack(
     IReadOnlyList<int>? Discarded = null,
     bool EachPlayerFrame = false,
     bool FinalPlayer = false,
-    int AbilityPlayer = -1);
+    int AbilityPlayer = -1,
+    bool AbilityHasContinuation = false);

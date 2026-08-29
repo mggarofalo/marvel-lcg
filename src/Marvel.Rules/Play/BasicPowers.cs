@@ -244,7 +244,8 @@ public static class BasicPowers
         bool surgeGained = false, IReadOnlyList<string>? abilityPath = null,
         string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
         Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1)
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
+        bool abilityHasContinuation = false)
     {
         var attack = new CharacterAttack(
             attacker.ObjectId,
@@ -268,7 +269,8 @@ public static class BasicPowers
             discarded,
             eachPlayerFrame,
             finalPlayer,
-            abilityPlayer);
+            abilityPlayer,
+            abilityHasContinuation);
         world.CharacterAttack = attack;
         var step = new PhaseStep(
             Steps.CharacterAttacks,
@@ -306,7 +308,8 @@ public static class BasicPowers
         bool surgeGained = false, IReadOnlyList<string>? abilityPath = null,
         string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
         Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1)
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
+        bool abilityHasContinuation = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -331,7 +334,7 @@ public static class BasicPowers
             world, attacker, enemy, player, amount, source, moveFrom, overkill, trigger,
             abilityIndex, powerOrdinal, resumeFrom, finalStep, targets, nested, surgeGained,
             abilityPath, abilityFace, abilityResults, abilityOccurrence, discarded,
-            eachPlayerFrame, finalPlayer, abilityPlayer);
+            eachPlayerFrame, finalPlayer, abilityPlayer, abilityHasContinuation);
         return true;
     }
 
@@ -368,7 +371,8 @@ public static class BasicPowers
         bool surgeGained = false, IReadOnlyList<string>? abilityPath = null,
         string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
         Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1)
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
+        bool abilityHasContinuation = false)
     {
         var thwart = new CharacterThwart(
             thwarter.ObjectId,
@@ -391,7 +395,8 @@ public static class BasicPowers
             discarded,
             eachPlayerFrame,
             finalPlayer,
-            abilityPlayer);
+            abilityPlayer,
+            abilityHasContinuation);
         world.CharacterThwart = thwart;
         var step = new PhaseStep(
             Steps.CharacterThwarts,
@@ -647,7 +652,8 @@ public static class BasicPowers
         IReadOnlyList<string>? abilityPath = null, string abilityFace = "",
         IReadOnlyDictionary<string, long>? abilityResults = null,
         Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1)
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
+        bool abilityHasContinuation = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -673,7 +679,9 @@ public static class BasicPowers
             world, thwarter, scheme, player, amount, source, trigger, abilityIndex,
             powerOrdinal, resumeFrom, finalStep, targets, imminentThreat, nested,
             surgeGained, abilityPath, abilityFace, abilityResults, abilityOccurrence,
-            discarded, eachPlayerFrame, finalPlayer, abilityPlayer);
+            discarded, eachPlayerFrame, finalPlayer, abilityPlayer,
+            abilityHasContinuation);
+
         return true;
     }
 
