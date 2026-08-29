@@ -4907,7 +4907,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static List<TraceCard> TraceCards(
         AbilityValue value, Cast cast)
     {
-        bool dynamic = PotentialVillainSelector(value, cast);
+        bool dynamic = SelectorMembershipCanChange(value)
+            || PotentialVillainSelector(value, cast);
         var selected = dynamic
             ? TraceCandidateCards(value, cast)
             : Every(value, cast).ToList();
@@ -4999,6 +5000,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         };
     }
 
+    private static bool SelectorMembershipCanChange(AbilityValue value)
+    {
+        if (value is not AbilityValue.Map)
+        {
+            return false;
+        }
+        var node = Tree(value);
+        return node.Kind switch
+        {
+            "withTrait" or "enemiesWithTrait" or "minBy" or "maxBy"
+                or "withoutAnotherCopyAttached" => true,
+            "query" => node.Argument is AbilityValue.Word
+                { Value: "attackableEnemies" },
+            _ => false,
+        };
+    }
+
     private static AbilityValue? VillainSelector(
         AbilityValue value, Card resolved, Cast cast)
     {
@@ -5077,6 +5095,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 AbilityValue.Word { Value: "villain" } => villain,
                 AbilityValue.Word { Value: "enemies" } => villain
                     || kind == CardKind.Minion,
+                AbilityValue.Word { Value: "minions" } => kind == CardKind.Minion,
                 AbilityValue.Word { Value: "characters" } => villain
                     || kind is CardKind.Minion or CardKind.Hero
                         or CardKind.AlterEgo or CardKind.Ally,

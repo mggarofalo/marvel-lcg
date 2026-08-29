@@ -4621,6 +4621,66 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:traits.1")]
+    [Fact]
+    public void EarlierTraitGrantChangesAMinionOnlyTargetSet()
+    {
+        // Dynamic membership is not limited to sets that can contain the
+        // villain. Giving Shocker AERIAL adds it to the later minion-only set,
+        // so its damage is present for the move to the wounded hero.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "titled": "Shocker" },
+                  "trait": "AERIAL", "until": "EndOfRound"
+                } },
+                { "dealDamage": {
+                  "cards": { "withTrait": {
+                    "cards": { "query": "minions" }, "trait": "AERIAL"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Shocker" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01103",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "27163",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Fact]
     public void EarlierNumericGrantChangesALaterRankedTargetSet()
     {
