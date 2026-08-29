@@ -2719,7 +2719,7 @@ public sealed class ActionAbilityTests
         var runner = Runner(
             AuthoredCards.AuntMay,
             "Action",
-            """{ "eachPlayer": { "effect": { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } } } }""",
+            """{ "eachPlayer": { "effect": { "choose": { "options": [ { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] } } } }""",
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
 
@@ -2738,7 +2738,7 @@ public sealed class ActionAbilityTests
         var runner = Runner(
             AuthoredCards.AuntMay,
             "Action",
-            """{ "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } }""",
+            """{ "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } }""",
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
 

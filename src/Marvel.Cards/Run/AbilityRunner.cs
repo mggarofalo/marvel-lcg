@@ -3328,11 +3328,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
     private static bool CanInitiate(AbilityNode node, Cast cast)
     {
-        if (node.Kind == "eachPlayer"
-            && ContainsEachPlayer(Tree(node.Require("effect"))))
+        if (HasNestedEachPlayer(node))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' nests one each-player frame inside another, "
+                + "which is not implemented");
+        }
+        if (ContainsUnsupportedPower(node))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' suspends inside a labelled power, "
                 + "which is not implemented");
         }
         return node.Kind switch
@@ -3932,9 +3937,43 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool ContainsNode(AbilityNode node, string kind) =>
         node.Kind == kind || StructuralChildren(node).Any(child => ContainsNode(child, kind));
 
-    private static bool ContainsEachPlayer(AbilityNode node) =>
-        node.Kind == "eachPlayer"
-        || StructuralChildren(node).Any(ContainsEachPlayer);
+    private static bool HasNestedEachPlayer(AbilityNode node, bool inside = false)
+    {
+        if (inside && node.Kind == "eachPlayer")
+        {
+            return true;
+        }
+        bool within = inside || node.Kind == "eachPlayer";
+        return ContinuationChildren(node).Any(child => HasNestedEachPlayer(child, within));
+    }
+
+    private static bool ContainsUnsupportedPower(AbilityNode node)
+    {
+        if (node.Kind is "attack" or "thwart"
+            && SuspendsPowerEffect(Tree(node.Require("effect"))))
+        {
+            return true;
+        }
+        if (node.Kind == "thwartSchemes")
+        {
+            var power = Tree(node.Require("power"));
+            if (SuspendsPowerEffect(Tree(power.Require("effect"))))
+            {
+                return true;
+            }
+        }
+        return ContinuationChildren(node).Any(ContainsUnsupportedPower);
+    }
+
+    private static IEnumerable<AbilityNode> ContinuationChildren(AbilityNode node) =>
+        node.Kind switch
+        {
+            "choose" => Nodes(node.Require("options")),
+            "chooseCard" or "eachPlayer" => [Tree(node.Require("effect"))],
+            "payOrEffect" or "payOrExhaust" => [Tree(node.Require("otherwise"))],
+            "thwartSchemes" => [Tree(node.Require("power"))],
+            _ => StructuralChildren(node),
+        };
 
     private static bool ContainsFirstActivation(AbilityNode node) =>
         (node.Kind is "enemyAttacks" or "enemySchemes"
@@ -4563,7 +4602,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "eachPlayer":
-                if (ContainsEachPlayer(Tree(node.Require("effect"))))
+                if (HasNestedEachPlayer(node))
                 {
                     throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' nests one each-player frame inside another, "
