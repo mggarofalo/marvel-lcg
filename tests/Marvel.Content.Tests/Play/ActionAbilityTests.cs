@@ -3048,6 +3048,35 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void EachPlayerPreflightIncludesDefeatFromEarlierFrames()
+    {
+        // Damage tokens equal to remaining hit points defeat a minion. A later
+        // player's title test therefore sees a different in-play board.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "titleInPlay": "Hydra Mercenary" }, "then": { "dealDamage": { "cards": { "titled": "Hydra Mercenary" }, "amount": 3 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        Card? minion = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(0, minion!.Damage);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
+    }
+
     [Rule("rr:choose-option")]
     [Fact]
     public void AChoiceContinuationPreservesEarlierEffectResults()
