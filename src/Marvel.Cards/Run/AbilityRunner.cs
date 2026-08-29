@@ -4360,6 +4360,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         Dictionary<int, long> Health, HashSet<int> Discarded,
         Dictionary<int, long> Threat, Dictionary<int, HashSet<string>> Traits,
         Dictionary<(int Card, string Field), long> Modifiers,
+        Dictionary<int, int> Engagement,
         int CurrentVillain,
         int VillainStagesDrawn, bool Finished);
 
@@ -4374,7 +4375,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             IReadOnlyList<DamageTraceState> states =
                 [new(new Dictionary<int, long>(), target.Damage, [], new(), new(),
                     TraceUnavailableMinions(cast), new(),
-                    new(), new(), villain, 0, false)];
+                    new(), new(), new(), villain, 0, false)];
             for (int frame = 0; frame < frames; frame++)
             {
                 var next = new List<DamageTraceState>();
@@ -4430,6 +4431,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             pair => pair.Key,
             pair => new HashSet<string>(pair.Value, StringComparer.Ordinal));
         var modifiers = new Dictionary<(int Card, string Field), long>(state.Modifiers);
+        var engagement = new Dictionary<int, int>(state.Engagement);
         int currentVillain = state.CurrentVillain;
         int villainStagesDrawn = state.VillainStagesDrawn;
         bool finished = state.Finished;
@@ -4497,14 +4499,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             int from = transfer.FromVillain is { } fromSelector
                 ? TraceSelectorIncludesCard(
                     fromSelector, transfer.From, currentVillain,
-                    cast, discarded, traits, modifiers)
+                    cast, discarded, traits, modifiers, engagement)
                     is int tracedFrom ? tracedFrom
                     : int.MinValue
                 : transfer.From;
             int to = transfer.ToVillain is { } toSelector
                 ? TraceSelectorIncludesCard(
                     toSelector, transfer.To, currentVillain,
-                    cast, discarded, traits, modifiers)
+                    cast, discarded, traits, modifiers, engagement)
                     is int tracedTo ? tracedTo
                     : int.MinValue
                 : transfer.To;
@@ -4515,6 +4517,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             if (transfer.EntersPlay)
             {
                 discarded.Remove(to);
+                engagement[to] = Resolver(cast);
                 tough[to] = Math.Max(
                     CurrentTough(to),
                     cast.World.Facts.PrintedValue(
@@ -4625,7 +4628,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         return new DamageTraceState(
             damage, peak, state.Players, tough, health, discarded, threat,
-            traits, modifiers, currentVillain, villainStagesDrawn, finished);
+            traits, modifiers, engagement,
+            currentVillain, villainStagesDrawn, finished);
     }
 
     private static long AfterForcedDamageReplacements(
@@ -4912,6 +4916,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (node.Kind == "putIntoPlay"
             && TraceCardNamed(node.Require("card"), cast) is { } entering)
         {
+            if (cast.Abilities is AbilityRunner runner
+                && runner.On(entering.Card).Any(ability =>
+                    ability.Trigger.Timing == AbilityType.Constant))
+            {
+                // The card is intentionally not moved while eligibility is
+                // traced, so its constant abilities are not active in the
+                // unchanged World. Refuse that continuation before mutation
+                // rather than rank later selectors against a plausible lie.
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' puts '{entering.Card.FaceId}' into play "
+                    + "before a repeated continuation reads its constant abilities, "
+                    + "which is not implemented");
+            }
             return [new DamageTransfer(
                 0, entering.Card.ObjectId, 0, EntersPlay: true)];
         }
@@ -5086,7 +5103,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static int? TraceSelectorIncludesCard(
         AbilityValue value, int bound, int currentVillain, Cast cast,
         HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers)
+        Dictionary<(int Card, string Field), long> modifiers,
+        Dictionary<int, int> engagement)
     {
         int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
         int candidateId = bound == boardVillain ? currentVillain : bound;
@@ -5096,7 +5114,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         var candidate = cast.World.Cards[candidateId];
         return TraceSelectorMatches(
-            value, candidate, currentVillain, cast, discarded, traits, modifiers)
+            value, candidate, currentVillain, cast, discarded, traits, modifiers,
+            engagement)
             ? candidateId
             : null;
     }
@@ -5104,7 +5123,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool TraceSelectorMatches(
         AbilityValue value, Card candidate, int currentVillain, Cast cast,
         HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers)
+        Dictionary<(int Card, string Field), long> modifiers,
+        Dictionary<int, int> engagement)
     {
         if (value is not AbilityValue.Map)
         {
@@ -5125,7 +5145,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     || kind is CardKind.Minion or CardKind.Hero
                         or CardKind.AlterEgo or CardKind.Ally,
                 AbilityValue.Word { Value: "attackableEnemies" } => villain
-                    ? VillainIsAttackableInTrace(cast, candidate, discarded)
+                    ? VillainIsAttackableInTrace(
+                        cast, candidate, discarded, engagement)
                     : kind == CardKind.Minion
                         && CanTakeDamageInTrace(cast, candidate, discarded),
                 _ => Every(value, cast).Any(card =>
@@ -5138,22 +5159,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 candidate, Word(node.Argument), cast, discarded, traits),
             "withTrait" => TraceSelectorMatches(
                     node.Require("cards"), candidate, currentVillain,
-                    cast, discarded, traits, modifiers)
+                    cast, discarded, traits, modifiers, engagement)
                 && TraceHasTrait(
                     candidate, Word(node.Require("trait")), cast, discarded, traits),
             "withoutAnotherCopyAttached" => TraceSelectorMatches(
                     node.Argument, candidate, currentVillain,
-                    cast, discarded, traits, modifiers)
+                    cast, discarded, traits, modifiers, engagement)
                 && !AnotherCopyAttachedInTrace(candidate, cast, discarded),
             "minBy" or "maxBy" => TraceRankedSelectorIncludesCard(
                 node, candidate, currentVillain, cast, discarded, traits,
-                modifiers),
+                modifiers, engagement),
             _ => false,
         };
     }
 
     private static bool VillainIsAttackableInTrace(
-        Cast cast, Card current, HashSet<int> discarded)
+        Cast cast, Card current, HashSet<int> discarded,
+        Dictionary<int, int> engagement)
     {
         int player = Resolver(cast);
         bool guarded = cast.World
@@ -5162,7 +5184,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 && FacedownDrones.Kind(enemy, cast.World.Facts) == CardKind.Minion
                 && StateFields.Modified(
                     cast.World, enemy, "guard", cast.World.Facts,
-                    cast.World.Players) > 0);
+                    cast.World.Players) > 0)
+            || engagement.Any(pair => pair.Value == player
+                && !discarded.Contains(pair.Key)
+                && StateFields.Modified(
+                    cast.World, cast.World.Cards[pair.Key], "guard",
+                    cast.World.Facts, cast.World.Players) > 0);
         return !guarded && CanTakeDamageInTrace(cast, current, discarded);
     }
 
@@ -5307,11 +5334,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool TraceRankedSelectorIncludesCard(
         AbilityNode node, Card candidate, int currentVillain, Cast cast,
         HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers)
+        Dictionary<(int Card, string Field), long> modifiers,
+        Dictionary<int, int> engagement)
     {
         if (!TraceSelectorMatches(
                 node.Require("of"), candidate, currentVillain,
-                cast, discarded, traits, modifiers)
+                cast, discarded, traits, modifiers, engagement)
             || TraceModified(candidate, "permanent", cast, discarded) > 0)
         {
             return false;
@@ -5326,7 +5354,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             .Where(card => !discarded.Contains(card.ObjectId)
                 && TraceSelectorMatches(
                     node.Require("of"), card, currentVillain,
-                    cast, discarded, traits, modifiers)
+                    cast, discarded, traits, modifiers, engagement)
                 && TraceModified(card, "permanent", cast, discarded) <= 0)
             .ToList();
         string key = Word(node.Require("by"));
