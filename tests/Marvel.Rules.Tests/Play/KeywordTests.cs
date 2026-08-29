@@ -1008,7 +1008,9 @@ public sealed class KeywordTests
         // A cyclic hosted component has no root to discard first. It is
         // refused explicitly rather than pruning every candidate as somebody
         // else's child and leaving active Uses cards at zero counters.
-        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("permanentish", ("Permanent", "1"));
         var world = Board(printed);
         var first = world.CreateCard(
             "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
@@ -1247,12 +1249,11 @@ public sealed class KeywordTests
     [Rule("rr:permanent.5")]
     [Rule("rr:uses-x-type.1")]
     [Fact]
-    public void AUsesCascadeCommitsOneSnapshotAcrossSurvivingConstants()
+    public void AUsesCascadePreflightsTheProjectedSurvivingConstants()
     {
-        // S restores U1 and U2. Surviving B would grant Permanent to A after
-        // U1's event is written, but the Rules Reference gives no order among
-        // the zero-counter discards, so the engine commits the snapshot that
-        // was preflighted before any of them moved.
+        // S restores U1 and U2. With both projected absent, surviving B grants
+        // Permanent to A on U2. The unsupported host loss is therefore refused
+        // before S or either Uses root moves.
         var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
         var world = Board(printed);
         var source = world.CreateCard(
@@ -1271,13 +1272,14 @@ public sealed class KeywordTests
             source.ObjectId, first.ObjectId, second.ObjectId,
             surviving.ObjectId, attachment.ObjectId);
 
-        Discard.Card(world, source, "test", []);
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Discard.Card(world, source, "test", []));
 
-        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.SupportsArea, source.Area.Type);
         Assert.Equal(DeckType.SupportsArea, surviving.Area.Type);
-        Assert.Equal(DeckType.EncounterDiscardPile, first.Area.Type);
-        Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
-        Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, first.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, second.Area.Type);
+        Assert.Equal(second.ObjectId, attachment.Area.Host);
     }
 
     [Rule("rr:ability.9")]
@@ -1288,7 +1290,9 @@ public sealed class KeywordTests
         // S's loss ending appears to restore U during preflight, but surviving
         // B supplies the same loss as soon as S is actually absent. U still
         // lacks Uses at the commit boundary and therefore is not discarded.
-        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("permanentish", ("Permanent", "1"));
         var world = Board(printed);
         var source = world.CreateCard(
             "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
@@ -1316,7 +1320,9 @@ public sealed class KeywordTests
         // S appears to restore U2, and suppressing U2 during preflight appears
         // to restore U3. Once S is absent, U2's own replacement loss keeps U2
         // in play, so its loss on U3 also remains and neither root departs.
-        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("permanentish", ("Permanent", "1"));
         var world = Board(printed);
         var source = world.CreateCard(
             "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
@@ -1325,6 +1331,9 @@ public sealed class KeywordTests
             "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
         var third = world.CreateCard(
             "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var permanent = world.CreateCard(
+            "permanentish", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, second.ObjectId));
         world.Abilities = new ReplacementUsesLossCascade(
             source.ObjectId, second.ObjectId, third.ObjectId);
 
@@ -1333,8 +1342,37 @@ public sealed class KeywordTests
         Assert.Equal(DeckType.DiscardPile, source.Area.Type);
         Assert.Equal(DeckType.SideSchemesArea, second.Area.Type);
         Assert.Equal(DeckType.SideSchemesArea, third.Area.Type);
+        Assert.Equal(second.ObjectId, permanent.Area.Host);
         Assert.True(Characteristics.IsLost(world, second, "uses"));
         Assert.True(Characteristics.IsLost(world, third, "uses"));
+    }
+
+    [Rule("rr:ability.9")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void AQualifiedUsesDepartureStaysLatchedDuringProjection()
+    {
+        // S makes U lose Uses, while U grants B the trait that disables B's
+        // replacement loss. With S projected absent U qualifies; projecting U
+        // absent next removes the trait, but that consequence cannot revoke a
+        // departure whose zero-counter condition already qualified.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var bridge = world.CreateCard(
+            "bridge", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var uses = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        world.Abilities = new LatchedUsesDeparture(
+            source.ObjectId, uses.ObjectId, bridge.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, uses.Area.Type);
+        Assert.Equal(DeckType.SupportsArea, bridge.Area.Type);
     }
 
     [Rule("rr:ability.5")]
@@ -1961,6 +1999,41 @@ public sealed class KeywordTests
                 effects.Add(Loss(second, second));
             }
             return effects;
+        }
+
+        private static ContinuousEffect Loss(int source, int affected) => new(
+            EffectSource.ConstantAbility,
+            Characteristics.LossOf("uses"),
+            Card: source,
+            Affects: affected,
+            Lasts: Duration.WhileInPlay);
+    }
+
+    private sealed class LatchedUsesDeparture(
+        int source, int uses, int bridge) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return [Loss(source, uses)];
+            }
+            if (card.ObjectId == uses)
+            {
+                return
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Traits.Granted + "ENABLED",
+                        Card: uses,
+                        Affects: bridge,
+                        Lasts: Duration.WhileInPlay),
+                ];
+            }
+            return card.ObjectId == bridge
+                && !Traits.Has(world, card, "ENABLED", world.Facts)
+                    ? [Loss(bridge, uses)]
+                    : [];
         }
 
         private static ContinuousEffect Loss(int source, int affected) => new(

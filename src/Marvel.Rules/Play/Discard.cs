@@ -149,6 +149,15 @@ public static class Discard
             }
         }
 
+        PreflightProjectedAttachments(world, host, descendants);
+    }
+
+    /// <summary>
+    /// Validate a hosted tree whose cards are temporarily projected out of play.
+    /// </summary>
+    internal static void PreflightProjectedAttachments(
+        World world, State.Card host, IEnumerable<State.Card> descendants)
+    {
         if (descendants.FirstOrDefault(attached => StateFields.Modified(
                 world, attached, "permanent", world.Facts, world.Players) > 0)
             is { } permanent)

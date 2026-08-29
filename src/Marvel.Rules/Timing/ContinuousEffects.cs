@@ -567,6 +567,7 @@ public sealed class ContinuousEffects(World world)
         }
 
         int firstSuppressed = suppressedConstants.Count;
+        bool simulationEnded = false;
         try
         {
             var planned = new List<Card>();
@@ -610,25 +611,9 @@ public sealed class ContinuousEffects(World world)
                 }
             }
 
-            // Preflight under the complete post-departure constant set. This
-            // makes a refusal atomic even when a later restored Uses card, or
-            // one of its hosted cards, would restore another zero-use card.
-            if (includeHostedCards)
-            {
-                foreach (var source in sources)
-                {
-                    Discard.PreflightAttachments(world, source);
-                }
-            }
-
             var roots = restored
                 .Where(card => !HasHostedAncestor(card, plannedIds))
                 .ToArray();
-            foreach (var card in roots)
-            {
-                Discard.PreflightAttachments(world, card);
-            }
-
             var rootTrees = roots.ToDictionary(
                 root => root.ObjectId,
                 root => planned
@@ -636,13 +621,121 @@ public sealed class ContinuousEffects(World world)
                         || HasHostedAncestor(card, [root.ObjectId]))
                     .Select(card => card.ObjectId)
                     .ToArray());
-            return new ConstantEnding(
-                this, roots, [.. plannedIds], [.. definiteIds], rootTrees);
+            var definiteTrees = sources
+                .Where(source => definiteIds.Contains(source.ObjectId))
+                .ToDictionary(
+                    source => source.ObjectId,
+                    source => planned
+                        .Where(card => definiteIds.Contains(card.ObjectId)
+                            && (card.ObjectId == source.ObjectId
+                                || HasHostedAncestor(card, [source.ObjectId])))
+                        .Select(card => card.ObjectId)
+                        .ToArray());
+
+            // The derived-effect simulation has found every tentative cascade
+            // root. End it before projecting physical absence, so constants
+            // are now derived from the projected board itself.
+            suppressedConstants.RemoveRange(
+                firstSuppressed, suppressedConstants.Count - firstSuppressed);
+            simulationEnded = true;
+
+            var selected = PreflightSelectedDepartures(
+                roots, definiteIds, definiteTrees, rootTrees);
+            var departures = definiteIds
+                .Concat(selected.SelectMany(card => rootTrees[card.ObjectId]))
+                .Distinct()
+                .ToArray();
+            return new ConstantEnding(this, selected, departures);
         }
         finally
         {
-            suppressedConstants.RemoveRange(
-                firstSuppressed, suppressedConstants.Count - firstSuppressed);
+            if (!simulationEnded)
+            {
+                suppressedConstants.RemoveRange(
+                    firstSuppressed, suppressedConstants.Count - firstSuppressed);
+            }
+        }
+    }
+
+    private Card[] PreflightSelectedDepartures(
+        Card[] roots,
+        IReadOnlySet<int> definiteIds,
+        Dictionary<int, int[]> definiteTrees,
+        Dictionary<int, int[]> rootTrees)
+    {
+        var selected = new HashSet<int>();
+        while (true)
+        {
+            var projected = definiteIds
+                .Concat(selected.SelectMany(id => rootTrees[id]))
+                .Distinct()
+                .ToArray();
+            using var projection = ProjectOut(projected);
+
+            var newlyEligible = roots.Where(card =>
+                    !selected.Contains(card.ObjectId)
+                    && DeckTypes.IsInPlay(card.Area.Type)
+                    && !Characteristics.IsLost(world, card, "uses"))
+                .Select(card => card.ObjectId)
+                .ToArray();
+            if (newlyEligible.Length > 0)
+            {
+                selected.UnionWith(newlyEligible);
+                continue;
+            }
+
+            foreach (var (root, tree) in definiteTrees)
+            {
+                Discard.PreflightProjectedAttachments(
+                    world, world.Cards[root], tree.Skip(1).Select(id => world.Cards[id]));
+            }
+            foreach (int root in selected)
+            {
+                Discard.PreflightProjectedAttachments(
+                    world,
+                    world.Cards[root],
+                    rootTrees[root].Skip(1).Select(id => world.Cards[id]));
+            }
+
+            return roots.Where(card => selected.Contains(card.ObjectId)).ToArray();
+        }
+    }
+
+    private ProjectionScope ProjectOut(IReadOnlyList<int> ids)
+    {
+        var cards = ids.Select(id => world.Cards[id]).Distinct().ToArray();
+        var orders = cards.Select(card => card.Area)
+            .Distinct()
+            .ToDictionary(area => area, area => area.Cards.ToArray());
+        var detached = new Area(-1, DeckType.RemovedArea, -1, PlayArea.Villains, -1);
+        foreach (var card in cards)
+        {
+            card.Area.Remove(card);
+            card.ProjectTo(detached);
+        }
+        return new ProjectionScope(orders);
+    }
+
+    private sealed class ProjectionScope(
+        IReadOnlyDictionary<Area, Card[]> orders) : IDisposable
+    {
+        private bool disposed;
+
+        public void Dispose()
+        {
+            if (disposed)
+            {
+                return;
+            }
+            foreach (var (area, order) in orders)
+            {
+                area.Replace(order);
+                foreach (var card in order)
+                {
+                    card.ProjectTo(area);
+                }
+            }
+            disposed = true;
         }
     }
 
@@ -694,42 +787,10 @@ public sealed class ContinuousEffects(World world)
 
     private void CompleteConstantsEnding(
         IReadOnlyList<Card> restored,
-        IReadOnlyDictionary<int, int[]> rootTrees,
         string trigger,
         List<GameEvent> events)
     {
-        var candidateIds = rootTrees.Values.SelectMany(ids => ids).ToHashSet();
-        var selected = new HashSet<int>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        while (true)
-        {
-            SetTentativeDepartures(
-                candidateIds,
-                selected.SelectMany(id => rootTrees[id]).ToHashSet());
-            var next = restored.Where(card =>
-                    DeckTypes.IsInPlay(card.Area.Type)
-                    && !Characteristics.IsLost(world, card, "uses"))
-                .Select(card => card.ObjectId)
-                .ToHashSet();
-            if (next.SetEquals(selected))
-            {
-                break;
-            }
-
-            string state = string.Join(',', next.Order());
-            if (!seen.Add(state))
-            {
-                throw new RulesNotImplementedException(
-                    "the restored Uses departures do not settle on one simultaneous set");
-            }
-            selected = next;
-        }
-
-        SetTentativeDepartures(
-            candidateIds,
-            selected.SelectMany(id => rootTrees[id]).ToHashSet());
-        var departingNow = restored.Where(card => selected.Contains(card.ObjectId)).ToArray();
-        foreach (var card in departingNow.Where(card =>
+        foreach (var card in restored.Where(card =>
             DeckTypes.IsInPlay(card.Area.Type)))
         {
             Discard.Card(world, card, trigger, events);
@@ -739,43 +800,28 @@ public sealed class ContinuousEffects(World world)
     /// <summary>Whether a card is part of one preflighted departure snapshot.</summary>
     internal bool IsDeparting(Card card) => departing.Contains(card.ObjectId);
 
-    private void SetTentativeDepartures(
-        IReadOnlySet<int> candidates, IReadOnlySet<int> selected)
-    {
-        departing.ExceptWith(candidates);
-        departing.UnionWith(selected);
-    }
-
     /// <summary>A preflighted set of state-based changes after constants end.</summary>
     public sealed class ConstantEnding
     {
         private readonly ContinuousEffects effects;
         private readonly IReadOnlyList<Card> restored;
         private readonly IReadOnlyList<int> departures;
-        private readonly IReadOnlyList<int> definiteDepartures;
-        private readonly IReadOnlyDictionary<int, int[]> rootTrees;
         private bool completed;
 
         internal ConstantEnding(
             ContinuousEffects effects,
             IReadOnlyList<Card> restored,
-            IReadOnlyList<int> departures,
-            IReadOnlyList<int>? definiteDepartures = null,
-            IReadOnlyDictionary<int, int[]>? rootTrees = null)
+            IReadOnlyList<int> departures)
         {
             this.effects = effects;
             this.restored = restored;
             this.departures = departures;
-            this.definiteDepartures = definiteDepartures ?? [];
-            this.rootTrees = rootTrees
-                ?? new Dictionary<int, int[]>();
         }
 
         /// <summary>
         /// Mark the whole preflighted cascade as one departure while it is applied.
         /// </summary>
-        public IDisposable Begin() =>
-            effects.BeginDepartures(definiteDepartures, departures);
+        public IDisposable Begin() => effects.BeginDepartures(departures);
 
         /// <summary>Apply the preflighted changes after the source has left play.</summary>
         public void Complete(string trigger, List<GameEvent> events)
@@ -787,19 +833,22 @@ public sealed class ContinuousEffects(World world)
                 return;
             }
 
-            effects.CompleteConstantsEnding(restored, rootTrees, trigger, events);
+            effects.CompleteConstantsEnding(restored, trigger, events);
             completed = true;
         }
     }
 
-    private DepartureScope BeginDepartures(
-        IReadOnlyList<int> definiteCards, IReadOnlyList<int> allCards)
+    private DepartureScope BeginDepartures(IReadOnlyList<int> cards)
     {
-        foreach (int card in definiteCards)
+        var added = new List<int>();
+        foreach (int card in cards)
         {
-            departing.Add(card);
+            if (departing.Add(card))
+            {
+                added.Add(card);
+            }
         }
-        return new DepartureScope(departing, allCards);
+        return new DepartureScope(departing, added);
     }
 
     private sealed class DepartureScope(HashSet<int> departing, IReadOnlyList<int> cards)
