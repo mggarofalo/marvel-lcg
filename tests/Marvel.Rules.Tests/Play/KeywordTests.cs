@@ -1124,6 +1124,35 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:ability.5")]
+    [Rule("rr:attach-to.1")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void DiscardingAHostedConstantCanCascadeToItsAcyclicHost()
+    {
+        // S is already in the departure plan when ending its constant restores
+        // its host H. Walking H's hosted tree reaches S again by deduplication,
+        // not by an ancestor cycle; both cards still move exactly once.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var host = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var source = world.CreateCard(
+            "temp", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, host.ObjectId));
+        world.Abilities = new ConstantUsesLoss(source.ObjectId, host.ObjectId);
+        var events = new List<GameEvent>();
+
+        Discard.Card(world, source, "test", events);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, host.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, source.Area.Type);
+        Assert.Single(events.OfType<CardsMoved>(), moved =>
+            moved.Cards.Any(landing => landing.Card == host.ObjectId));
+        Assert.Single(events.OfType<CardsMoved>(), moved =>
+            moved.Cards.Any(landing => landing.Card == source.ObjectId));
+    }
+
+    [Rule("rr:ability.5")]
     [Rule("rr:permanent.5")]
     [Rule("rr:uses-x-type.1")]
     [Fact]

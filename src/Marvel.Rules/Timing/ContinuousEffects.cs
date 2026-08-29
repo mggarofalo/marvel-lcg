@@ -651,14 +651,29 @@ public sealed class ContinuousEffects(World world)
     private void AddDeparture(
         Card root, bool includeHostedCards, List<Card> planned, HashSet<int> plannedIds)
     {
-        var pending = new Stack<Card>();
-        pending.Push(root);
-        while (pending.TryPop(out var card))
+        var path = new HashSet<int>();
+        var pending = new Stack<(Card Card, bool Exit)>();
+        pending.Push((root, false));
+        while (pending.TryPop(out var frame))
         {
-            if (!plannedIds.Add(card.ObjectId))
+            var card = frame.Card;
+            if (frame.Exit)
+            {
+                path.Remove(card.ObjectId);
+                continue;
+            }
+
+            if (path.Contains(card.ObjectId))
             {
                 throw new RulesNotImplementedException(
                     $"attachment {card.ObjectId} forms a hosting cycle");
+            }
+            if (!plannedIds.Add(card.ObjectId))
+            {
+                // Another root already planned this complete subtree. Sharing
+                // a plan is not a hosting cycle; only revisiting the current
+                // ancestor path is.
+                continue;
             }
 
             planned.Add(card);
@@ -667,12 +682,14 @@ public sealed class ContinuousEffects(World world)
                 continue;
             }
 
+            path.Add(card.ObjectId);
+            pending.Push((card, true));
             foreach (var child in world.Areas
                          .Where(area => area.Host == card.ObjectId)
                          .SelectMany(area => area.Cards)
                          .Reverse())
             {
-                pending.Push(child);
+                pending.Push((child, false));
             }
         }
     }
