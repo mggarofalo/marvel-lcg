@@ -4090,7 +4090,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool BindingCanChange(AbilityValue value) => value switch
     {
-        AbilityValue.Word { Value: "chosen" or "powerTargets" } => true,
+        AbilityValue.Word word => word.Value.Contains(
+                "chosen", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(word.Value, "powerTargets", StringComparison.Ordinal),
         AbilityValue.List list => list.Values.Any(BindingCanChange),
         AbilityValue.Map map => map.Entries.Values.Any(BindingCanChange),
         _ => false,

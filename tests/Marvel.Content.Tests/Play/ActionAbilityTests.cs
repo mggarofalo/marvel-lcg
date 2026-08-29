@@ -2928,6 +2928,24 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Fact]
+    public void ChosenPlayerBindingIsPreflightedAfterSelection()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "identities" }, "effect": { "if": { "test": { "inForm": { "player": "chosenPlayer", "form": "hero" } }, "then": { "draw": { "player": "chosenPlayer", "count": 1 } }, "else": { "draw": { "player": "chosenPlayer", "count": 1 } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
     [Rule("rr:each-player.1")]
     [Fact]
     public void EachPlayerPreflightIncludesMutationsFromEarlierFrames()
