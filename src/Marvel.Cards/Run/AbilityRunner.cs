@@ -4311,19 +4311,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             TotalDamageTo(
                 target, repeatedEffect, cast, assumed, binding),
             frames);
-        var moved = MoveDamageBudgetsTo(
+        long availableMoves = TotalMovedDamageTo(
             target, repeatedEffect, cast, assumed, binding, frames);
-        long availableMoves = SaturatingSum(0, moved.Select(each =>
-        {
-            var source = cast.World.Cards[each.Key];
-            long replenished = SaturatingMultiply(
-                TotalDamageTo(
-                    source, repeatedEffect, cast, assumed, binding),
-                frames);
-            long available = SaturatingSum(source.Damage, [replenished]);
-            return Math.Min(
-                available, SaturatingMultiply(each.Value, frames));
-        }));
         return SaturatingSum(ordinary, [availableMoves]);
     }
 
@@ -4382,19 +4371,69 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 target, child, cast, assumed, binding));
     }
 
-    private static IReadOnlyDictionary<int, long> MoveDamageBudgetsTo(
-        Card target, AbilityNode node, Cast cast, RepeatedChange assumed,
-        bool binding, int frames)
-    {
-        var own = new Dictionary<int, long>();
-        if (node.Kind == "moveDamage"
-            && Every(node.Require("to"), cast).Any(card =>
-                card.ObjectId == target.ObjectId)
-            && Find(node.Require("from"), cast) is { } source)
-        {
-            own[source.ObjectId] = Amount(node.Require("amount"), cast);
-        }
+    private readonly record struct DamageTransfer(
+        int From, int To, long Amount, bool CountsAsMovedDamage);
 
+    private sealed record DamageTraceState(
+        Dictionary<int, long> Damage, long Moved);
+
+    private static long TotalMovedDamageTo(
+        Card target, AbilityNode repeatedEffect, Cast cast,
+        RepeatedChange assumed, bool binding, int frames)
+    {
+        var traces = DamageTraces(repeatedEffect, cast, assumed, binding);
+        IReadOnlyList<DamageTraceState> states =
+            [new(new Dictionary<int, long>(), 0)];
+        for (int frame = 0; frame < frames; frame++)
+        {
+            states =
+            [
+                .. states.SelectMany(state => traces.Select(trace =>
+                    ApplyDamageTrace(state, trace, target, cast))),
+            ];
+        }
+        return states.Select(state => state.Moved).DefaultIfEmpty(0).Max();
+    }
+
+    private static DamageTraceState ApplyDamageTrace(
+        DamageTraceState state, IReadOnlyList<DamageTransfer> trace,
+        Card target, Cast cast)
+    {
+        var damage = new Dictionary<int, long>(state.Damage);
+        long moved = state.Moved;
+        long Current(int card) => damage.TryGetValue(card, out long amount)
+            ? amount
+            : cast.World.Cards[card].Damage;
+
+        foreach (var transfer in trace)
+        {
+            if (transfer.From < 0)
+            {
+                damage[transfer.To] = SaturatingSum(
+                    Current(transfer.To), [transfer.Amount]);
+                continue;
+            }
+
+            long available = Current(transfer.From);
+            long amount = Math.Min(available, transfer.Amount);
+            damage[transfer.From] = available - amount;
+            if (transfer.To >= 0)
+            {
+                damage[transfer.To] = SaturatingSum(
+                    Current(transfer.To), [amount]);
+                if (transfer.CountsAsMovedDamage
+                    && transfer.To == target.ObjectId)
+                {
+                    moved = SaturatingSum(moved, [amount]);
+                }
+            }
+        }
+        return new DamageTraceState(damage, moved);
+    }
+
+    private static IReadOnlyList<IReadOnlyList<DamageTransfer>> DamageTraces(
+        AbilityNode node, Cast cast, RepeatedChange assumed, bool binding)
+    {
         if (node.Kind == "if")
         {
             var test = Tree(node.Require("test"));
@@ -4404,38 +4443,74 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 : node.Field(Test(test, cast) ? "then" : "else") is { } active
                     ? [active]
                     : [];
-            return branches
-                .Select(branch => MoveDamageBudgetsTo(
-                    target, Tree(branch!), cast, assumed, binding, frames))
-                .Append(own)
-                .MaxBy(budget => CappedMoveDamage(budget, cast, frames))!;
+            return
+            [
+                .. branches.SelectMany(branch => DamageTraces(
+                    Tree(branch!), cast, assumed, binding)),
+            ];
         }
 
-        var children = MutationChildren(node)
-            .Select(child => MoveDamageBudgetsTo(
-                target, child, cast, assumed, binding, frames))
-            .ToList();
         if (node.Kind == "choose")
         {
-            return children.Append(own)
-                .MaxBy(budget => CappedMoveDamage(budget, cast, frames))!;
+            return
+            [
+                .. MutationChildren(node).SelectMany(child =>
+                    DamageTraces(child, cast, assumed, binding)),
+            ];
         }
+
+        var own = DamageTransfers(node, cast);
+        var children = MutationChildren(node).ToList();
+        IReadOnlyList<IReadOnlyList<DamageTransfer>> traces = [own];
         foreach (var child in children)
         {
-            foreach (var (sourceId, amount) in child)
-            {
-                own[sourceId] = SaturatingSum(
-                    own.GetValueOrDefault(sourceId), [amount]);
-            }
+            var next = DamageTraces(child, cast, assumed, binding);
+            traces =
+            [
+                .. traces.SelectMany(prefix => next.Select(suffix =>
+                    (IReadOnlyList<DamageTransfer>)[.. prefix, .. suffix])),
+            ];
         }
-        return own;
+        return traces;
     }
 
-    private static long CappedMoveDamage(
-        IReadOnlyDictionary<int, long> budget, Cast cast, int frames) =>
-        SaturatingSum(0, budget.Select(each => Math.Min(
-            cast.World.Cards[each.Key].Damage,
-            SaturatingMultiply(each.Value, frames))));
+    private static IReadOnlyList<DamageTransfer> DamageTransfers(
+        AbilityNode node, Cast cast)
+    {
+        if (node.Kind is "dealDamage" or "indirectDamage")
+        {
+            string field = node.Kind == "dealDamage" ? "cards" : "among";
+            return
+            [
+                .. Every(node.Require(field), cast).Select(card =>
+                    new DamageTransfer(
+                        -1, card.ObjectId,
+                        Amount(node.Require("amount"), cast), false)),
+            ];
+        }
+        if (node.Kind == "replaceThreatWithDamage"
+            && Find(node.Require("card"), cast) is { } replaced)
+        {
+            return [new DamageTransfer(
+                -1, replaced.ObjectId,
+                cast.Occurrence.Threat?.Remaining ?? long.MaxValue, false)];
+        }
+        if (node.Kind == "heal"
+            && Find(node.Require("card"), cast) is { } healed)
+        {
+            return [new DamageTransfer(
+                healed.ObjectId, -1, Amount(node.Require("amount"), cast), false)];
+        }
+        if (node.Kind == "moveDamage"
+            && Find(node.Require("from"), cast) is { } from
+            && Find(node.Require("to"), cast) is { } to)
+        {
+            return [new DamageTransfer(
+                from.ObjectId, to.ObjectId,
+                Amount(node.Require("amount"), cast), true)];
+        }
+        return [];
+    }
 
     private static long MutationTotal(
         AbilityNode node, Cast cast, RepeatedChange assumed, bool binding,

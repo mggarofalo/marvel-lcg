@@ -3610,7 +3610,7 @@ public sealed class ActionAbilityTests
               "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
               "then": { "moveDamage": {
                 "from": { "query": "villain" },
-                "to": { "query": "heroes" },
+                "to": { "titled": "Spider-Man" },
                 "amount": 1
               } },
               "else": { "attack": {
@@ -3625,6 +3625,103 @@ public sealed class ActionAbilityTests
             {
                 source = InPlay(board, AuthoredCards.AuntMay);
                 board.TheCardIn(DeckType.VillainArea)!.TakeDamage(1);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void DamageBeforeAMoveReplenishesItsRepeatedSource()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "titled": "Hydra Mercenary" }, "amount": 2 } },
+                { "discard": "this" },
+                { "if": {
+                  "test": { "not": { "titleInPlay": "Aunt May" } },
+                  "then": { "moveDamage": {
+                    "from": { "titled": "Hydra Mercenary" },
+                    "to": { "titled": "Spider-Man" },
+                    "amount": 2
+                  } },
+                  "else": { "moveDamage": {
+                    "from": { "query": "villain" },
+                    "to": { "titled": "Spider-Man" },
+                    "amount": 1
+                  } }
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+        Card? minion = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.TheCardIn(DeckType.VillainArea)!.TakeDamage(1);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+        Assert.Equal(0, minion!.Damage);
+        Assert.Equal(8, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void DamageAfterAMoveIsAvailableOnlyToLaterRepeatedFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } },
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
                 board.Seats[0].IdentityCard.TakeDamage(8);
             },
             hero: true,
