@@ -2793,6 +2793,35 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
     }
 
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void DelayedPowerThatWouldSuspendRaisesBeforeTheActionCost()
+    {
+        // The delayed subtree is still the action's effect. Preflight must see
+        // its labeled attack before any cost is paid or activation state changes.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "afterActivation": { "effect": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Activation = new EnemyActivation(
+                    board.TheCardIn(DeckType.VillainArea)!.ObjectId,
+                    Player: 0,
+                    Attacking: true,
+                    Id: 41);
+            },
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
     [Rule("rr:choose-option")]
     [Fact]
     public void AChoiceContinuationPreservesEarlierEffectResults()
