@@ -4144,10 +4144,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var valid = schemes.Where(scheme =>
             scheme.Tokens.GetValueOrDefault("k_threat") > 0
-            && cast.Abilities.CanRemoveThreat(cast.World, scheme)
-            && !(scheme.Area.Type == DeckType.MainSchemesArea
-                && IsPlayerCard(cast)
-                && MainScheme.Crisis(cast.World, cast.World.Facts)));
+            && CanRemoveThreatFrom(node, cast, scheme));
         return CombinedOutcomes(valid.Select(scheme => ResolutionOfAmount(
             scheme.Tokens.GetValueOrDefault("k_threat"), wanted)));
     }
@@ -6260,12 +6257,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return scheme is not null
             && scheme.Tokens.GetValueOrDefault("k_threat") > 0
             && Amount(node.Require("amount"), cast) > 0
-            && (node.Field("overridesCannot") is AbilityValue.Word { Value: "true" }
-                || cast.Abilities.CanRemoveThreat(cast.World, scheme))
-            && !(scheme.Area.Type == DeckType.MainSchemesArea
-                && IsPlayerCard(cast)
-                && MainScheme.Crisis(cast.World, cast.World.Facts));
+            && CanRemoveThreatFrom(node, cast, scheme);
     }
+
+    private static bool CanRemoveThreatFrom(AbilityNode node, Cast cast, Card scheme) =>
+        (OverridesThreatRemovalProhibition(node)
+            || cast.Abilities.CanRemoveThreat(cast.World, scheme))
+        && (IgnoresCrisis(node)
+            || scheme.Area.Type != DeckType.MainSchemesArea
+            || !IsPlayerCard(cast)
+            || !MainScheme.Crisis(cast.World, cast.World.Facts));
+
+    private static bool OverridesThreatRemovalProhibition(AbilityNode node) =>
+        node.Field("overridesCannot") is AbilityValue.Word { Value: "true" };
+
+    private static bool IgnoresCrisis(AbilityNode node) =>
+        node.Field("ignoresCrisis") is AbilityValue.Word { Value: "true" };
 
     /// <summary>Whether at least one named player can draw a card.</summary>
     private static bool CanDraw(AbilityNode node, Cast cast) =>
@@ -6988,11 +6995,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             var schemes = PowerEvery(node.Require("scheme"), cast, reachability);
             var valid = schemes.Where(scheme =>
                 PowerThreat(reachability, scheme) > 0
-                && (node.Field("overridesCannot") is AbilityValue.Word { Value: "true" }
+                && (OverridesThreatRemovalProhibition(node)
                     || cast.Abilities.CanRemoveThreat(cast.World, scheme))
-                && !(scheme.Area.Type == DeckType.MainSchemesArea
+                && (IgnoresCrisis(node)
+                    || !(scheme.Area.Type == DeckType.MainSchemesArea
                     && IsPlayerCard(cast)
-                    && PowerCrisis(reachability, cast)));
+                    && PowerCrisis(reachability, cast))));
             return [CombinedOutcomes(valid.Select(scheme => ResolutionOfAmount(
                 PowerThreat(reachability, scheme), wanted)))];
         }
@@ -7271,9 +7279,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             foreach (var scheme in PowerEvery(
                 node.Require("scheme"), cast, reachability))
             {
-                if (!(node.Field("overridesCannot") is AbilityValue.Word { Value: "true" })
+                if (!OverridesThreatRemovalProhibition(node)
                     && !cast.Abilities.CanRemoveThreat(cast.World, scheme)
-                    || scheme.Area.Type == DeckType.MainSchemesArea
+                    || !IgnoresCrisis(node)
+                        && scheme.Area.Type == DeckType.MainSchemesArea
                         && IsPlayerCard(cast)
                         && PowerCrisis(state, cast))
                 {
@@ -12455,7 +12464,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // `rr:crisis-icon.1`: player cards cannot remove threat from the main
             // scheme while a crisis icon is in play. Encounter effects are not
             // player cards and remain able to do so.
-            if (scheme.Area.Type == DeckType.MainSchemesArea
+            if (!IgnoresCrisis(node)
+                && scheme.Area.Type == DeckType.MainSchemesArea
                 && IsPlayerCard(cast)
                 && MainScheme.Crisis(cast.World, cast.World.Facts))
             {
@@ -12472,8 +12482,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 "Remove_Threat",
                 cast.Events,
                 by: Resolver(cast),
-                overridesCannot: node.Field("overridesCannot")
-                    is AbilityValue.Word { Value: "true" });
+                overridesCannot: OverridesThreatRemovalProhibition(node));
         }
     }
 

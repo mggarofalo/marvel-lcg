@@ -820,6 +820,12 @@ player's identity only while that face is up. `rr:form-change-form.4` and `.5`
 make the opposite-form reference interact with no card; use `you` when printed
 text means the identity in either form.
 
+**Threat-removal exceptions are scoped.** A `removeThreat` instruction may
+carry `"ignoresCrisis": "true"` only when the printed instruction says it
+ignores crisis icons. `"overridesCannot": "true"` is reserved for an explicit
+exception to another threat-removal prohibition. Neither is inferred from an
+ordinary permission to remove threat.
+
 **`{ "perPlayer": n }` counts eliminated players.** `rr:player-elimination.6`:
 "effects that refer to the players in the game ignore eliminated players,
 **except for the per player icon**." So this multiplies by `World.Players` and

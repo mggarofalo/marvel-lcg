@@ -7112,6 +7112,54 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:cannot.3")]
+    [Rule("rr:crisis-icon.1")]
+    [Rule("rr:then")]
+    [Fact]
+    public void ExplicitCrisisExceptionIsHonoredByInitiationResolutionAndThen()
+    {
+        // Crisis says a player card cannot remove threat from the main scheme.
+        // This exact instruction says it ignores crisis, so the explicit card
+        // exception wins and the fully resolved removal permits its `then`.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "then": {
+              "effect": { "removeThreat": {
+                "scheme": { "query": "mainScheme" },
+                "amount": 1,
+                "ignoresCrisis": "true"
+              } },
+              "then": { "draw": { "player": "you", "count": 1 } }
+            } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var crisis = board.CreateCard(
+                    "01108", board.AreaOf(DeckType.SideSchemesArea));
+                crisis.PlaceTokens("k_threat", 1);
+                board.TheCardIn(DeckType.MainSchemesArea)!
+                    .PlaceTokens("k_threat", 2);
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(
+            1,
+            world.TheCardIn(DeckType.MainSchemesArea)!
+                .Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
     [Rule("rr:permanent.5")]
     [Rule("rr:labeled-ability.4")]
     [Fact]
