@@ -50,7 +50,18 @@ public sealed class Card
     public int Incarnation { get; private set; }
 
     /// <summary>The seat that owns this card, or -1 for the scenario.</summary>
-    public int Owner { get; }
+    public int Owner { get; private set; }
+
+    /// <summary>Makes a linked card the property of the player who controls it.</summary>
+    /// <remarks>
+    /// <c>rr:linked-card-title.4</c> changes ownership, not merely control.
+    /// Nothing else changes a card's printed owner after creation.
+    /// </remarks>
+    public void TransferLinkedOwnership(int player)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(player);
+        Owner = player;
+    }
 
     /// <summary>Where the card is.</summary>
     public Area Area { get; private set; } = null!;

@@ -12,7 +12,7 @@ own "equivalent to the following constant ability" line.
 | keyword | the ability it is equivalent to | where |
 |---|---|---|
 | **Alliance** | any player may help pay this card's costs | `CardPlay.Paying` |
-| **Linked (title)** | set aside during setup | `Blueprints.SetAside` |
+| **Linked (title)** | one product set per bringing deck is set aside; control transfers ownership | `Blueprints.From`, `Reveal.EnterPlay` |
 | **Assault** | a basic thwart against this scheme uses ATK instead of THW | `BasicPowers` |
 | **Form** | grants an identity a unique form | [forms.md](forms.md) |
 | **Guard** | the engaged player cannot attack any villain | `BasicPowers.Attackable` |
@@ -62,7 +62,6 @@ zero.
 |---|---|---|
 | **Permanent** | 86 | set aside — "except by card abilities **in the same set**" needs the effect's set, not just the card's |
 | **Setup** | 39 | set aside — the "Put Setup Cards Into Play" step is not written |
-| **Linked** | 14 | set aside — the card that names them does not fetch them yet |
 
 ### Teamwork's two statements disagree
 

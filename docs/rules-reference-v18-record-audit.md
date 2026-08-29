@@ -108,8 +108,8 @@ items.
 | `rr:additional` | Redirect or summary | — | This record redirects readers to Alteration Effect; the destination carries the rule. |
 | `rr:after` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:all-purpose-counter` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
-| `rr:all-purpose-counter.1` | Unimplemented behavior | MARVEL-292 | The counter and scheme-state work item owns references that treat every all-purpose counter as a token. |
-| `rr:all-purpose-counter.2` | Unimplemented behavior | MARVEL-292 | The counter and scheme-state work item owns how a printed counter reference selects compatible counters. |
+| `rr:all-purpose-counter.1` | Executable and cited | — | Typed counters share the card's token inventory, and a behavior test directly cites this record. |
+| `rr:all-purpose-counter.2` | Executable and cited | — | Generic counter references count every typed pool and spend an unambiguous pool; behavior tests directly cite this record. |
 | `rr:all-purpose-counter.3` | Unimplemented behavior | MARVEL-271 | The lifecycle work item owns counter identity and type when a counter moves between cards. |
 | `rr:alliance` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:alliance.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -661,12 +661,12 @@ items.
 | `rr:leaves-play.2.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:limit` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:limit.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:linked-card-title` | Unimplemented behavior | MARVEL-292 | The counter and scheme-state work item owns this executable rule. |
-| `rr:linked-card-title.1` | Unimplemented behavior | MARVEL-292 | The counter and scheme-state work item owns this executable rule. |
-| `rr:linked-card-title.2` | Unimplemented behavior | MARVEL-292 | The counter and scheme-state work item owns this executable rule. |
-| `rr:linked-card-title.3` | Unimplemented behavior | MARVEL-292 | The counter and scheme-state work item owns this executable rule. |
-| `rr:linked-card-title.3.1` | Unimplemented behavior | MARVEL-292 | The counter and scheme-state work item owns this executable rule. |
-| `rr:linked-card-title.4` | Unimplemented behavior | MARVEL-292 | The counter and scheme-state work item owns this executable rule. |
+| `rr:linked-card-title` | Executable and cited | — | Printed link resolution is covered by directly cited setup behavior tests. |
+| `rr:linked-card-title.1` | Executable and cited | — | Linked product cards are routed to the set-aside area in a directly cited behavior test. |
+| `rr:linked-card-title.2` | Executable and cited | — | The cited setup test proves linked cards are excluded from their bringing decks. |
+| `rr:linked-card-title.3` | Executable and cited | — | The cited setup test creates one product quantity per bringing deck. |
+| `rr:linked-card-title.3.1` | Executable and cited | — | The cited setup test deduplicates repeated bringing cards within one deck. |
+| `rr:linked-card-title.4` | Executable and cited | — | A directly cited entry test transfers linked-card ownership to its controller. |
 | `rr:look-looked-at` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:look-looked-at.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:look-looked-at.1.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
@@ -680,7 +680,7 @@ items.
 | `rr:main-scheme-main-scheme-deck.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:main-scheme-main-scheme-deck.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:main-scheme-main-scheme-deck.2.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:main-scheme-main-scheme-deck.2.2` | Unimplemented behavior | MARVEL-292 | The counter and scheme-state work item owns card effects that advance a scheme without completing it. |
+| `rr:main-scheme-main-scheme-deck.2.2` | Executable and cited | — | Directly cited card-effect tests advance the deck without setting completion and fail before an unsupported transition. |
 | `rr:main-scheme-main-scheme-deck.3` | Covered by a narrower rule | — | The directly cited three enumerated steps state the advance procedure precisely. |
 | `rr:main-scheme-main-scheme-deck.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:main-scheme-main-scheme-deck.5` | Executable and cited | — | A behavior test directly cites this record. |

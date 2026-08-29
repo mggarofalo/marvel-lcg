@@ -122,20 +122,20 @@ engine behaviour the deal order does implement, because it is the one that is
 decidable from the dataset: the branch reads the hero spec and nothing else.
 Everything else in this shape is a card script and waits for phase 5.
 
-### What the deal order does not cover yet
+### What the deal order derives from printed cards
 
 Measured over **48 boards** — 24 heroes against `rhino`, 24 scenarios against
 `spider_man`, comparing the declared order against the names the engine actually
 passes to `CardFactory.GenerateCard` — **38 reproduce it exactly**. The ten that
 do not fall into three classes, and only the first is data:
 
-**Linked cards.** A card whose attributes carry `Linked` is created into the
-aside deck *before* the card that names it (`factory.py:create_linked_faces`),
-so it takes the lower id. Fourteen cards have the attribute and it is in
-`datasets/cards/` already — `51036` Redemption names *Show of Empathy*,
-`53034` Captain America's Shield names `53023`. Note the two spellings: the
-engine resolves the value as a name *or* an id (`CardsDB.FindCardPaper`). This
-belongs with the card data rather than here, and lands with it.
+**Linked cards.** `Blueprints.From` reads the generated card attributes and
+creates one copy of every linked product card for each deck containing the card
+that brings it. Linked cards are inserted deterministically before the first
+bringing card and routed to the set-aside area, so they do not count toward deck
+size. The printed link may name a title, a qualified title such as `Titania
+minion`, or a face id. When a player later takes control, `Reveal.EnterPlay`
+also makes that player the linked card's owner.
 
 **Setup abilities on a card.** Doctor Strange's Invocation cards appear right
 after his identity, put there by an ability firing on `WhenPlayerSelectHero`.

@@ -69,6 +69,32 @@ public sealed class CardCatalog : ICardFacts
         return cards.ContainsKey(faceId);
     }
 
+    /// <inheritdoc/>
+    public IReadOnlyList<string> LinkedCards(string bringingFaceId)
+    {
+        ArgumentNullException.ThrowIfNull(bringingFaceId);
+        var bringing = Find(bringingFaceId);
+        string typed = $"{bringing.Title} {KindWord(bringing.Kind)}";
+        return
+        [
+            .. cards
+                .Where(entry => entry.Value.Attributes.TryGetValue(
+                        "Linked", out string? linked)
+                    && (string.Equals(linked, bringingFaceId, StringComparison.Ordinal)
+                        || string.Equals(linked, bringing.Title, StringComparison.Ordinal)
+                        || string.Equals(linked, typed, StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+                .Select(entry => entry.Key),
+        ];
+    }
+
+    private static string KindWord(CardKind kind) => kind switch
+    {
+        CardKind.EncounterVillain => "villain",
+        CardKind.EncounterSideScheme => "side scheme",
+        _ => kind.ToString().ToLowerInvariant(),
+    };
+
     /// <inheritdoc />
     public CardKind Kind(string faceId) => Find(faceId).Kind;
 
