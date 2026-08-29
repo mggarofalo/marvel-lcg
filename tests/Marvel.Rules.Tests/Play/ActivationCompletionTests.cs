@@ -9,6 +9,40 @@ namespace Marvel.Rules.Tests.Play;
 
 public sealed class ActivationCompletionTests
 {
+    [Fact]
+    public void AbilityContinuationAggregatesEveryActivationInAgendaData()
+    {
+        // The field names and structural path are engine save-format choices.
+        // Nothing lives only in an AbilityRunner instance while the attacks wait.
+        var agenda = new Agenda();
+        int first = agenda.ThenActivation(
+            new PhaseStep(Steps.Attack, 1, 2, Subject: 1, Seat: 0));
+        int second = agenda.ThenActivation(
+            new PhaseStep(Steps.Attack, 1, 2, Subject: 2, Seat: 0));
+        agenda.AfterActivations([first, second], new PhaseStep(
+            Steps.ResumeAbility, 1, 2, Subject: 9, Seat: 0,
+            AbilityOrdinal: 3,
+            AbilityPath: ["seq:1", "then:then"],
+            AbilityResults: new Dictionary<string, long> { ["earlier"] = 4 }));
+
+        Assert.Equal(
+            [Steps.Attack, Steps.Attack],
+            agenda.Outstanding.Select(step => step.What));
+        Assert.Null(agenda.CompleteActivationWait(new EnemyActivation(
+            1, 0, Attacking: true, first, Made: true, DamageDealt: 2)));
+
+        var resumed = agenda.CompleteActivationWait(new EnemyActivation(
+            2, 0, Attacking: true, second, Made: false, DamageDealt: 0));
+
+        Assert.NotNull(resumed);
+        Assert.Equal(3, resumed.Value.AbilityOrdinal);
+        Assert.Equal(["seq:1", "then:then"], resumed.Value.AbilityPath);
+        Assert.Equal(4, resumed.Value.AbilityResults!["earlier"]);
+        Assert.Equal(1, resumed.Value.AbilityResults["activationMade"]);
+        Assert.Equal(2, resumed.Value.AbilityResults["activationDamage"]);
+        Assert.Equal(0, resumed.Value.AbilityResults["activationThreat"]);
+    }
+
     [Rule("rr:activation.8")]
     [Fact]
     public void AnActivationInitiatedDuringAnotherWaitsForItsCompletion()

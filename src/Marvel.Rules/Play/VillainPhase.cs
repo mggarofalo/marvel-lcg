@@ -299,8 +299,8 @@ public interface ICardAbilities : IWindowAbilities
     /// <summary>Resolves one persisted frame of an "each player" effect.</summary>
     /// <remarks>
     /// Rules owns the chosen order and the saveable frame. The card interpreter
-    /// owns the effect tree and reconstructs it from the source, ability tier
-    /// and top-level position each time a frame runs. A fresh call per seat is
+    /// owns the effect tree and reconstructs it from the source, exact ability,
+    /// and structural path each time a frame runs. A fresh call per seat is
     /// what keeps form-dependent choices and effect-local results isolated.
     /// </remarks>
     IReadOnlyList<GameEvent> ResolveEachPlayer(
@@ -308,6 +308,11 @@ public interface ICardAbilities : IWindowAbilities
         Timing.AbilityType? tier, bool finalStep, bool finalPlayer) =>
         throw new RulesNotImplementedException(
             $"card '{source.FaceId}' has no implemented each-player continuation");
+
+    /// <summary>Resume card text after its persisted enemy-activation wait.</summary>
+    IReadOnlyList<GameEvent> ResumeAbility(World world, PhaseStep continuation) =>
+        throw new RulesNotImplementedException(
+            $"card ability {continuation.AbilityOrdinal} has no implemented activation continuation");
 
     /// <summary>
     /// The question a suspended ability is waiting on —
@@ -323,9 +328,8 @@ public interface ICardAbilities : IWindowAbilities
     /// <param name="source">The card whose ability is waiting.</param>
     /// <param name="player">The seat resolving it.</param>
     /// <param name="stoppedAt">
-    /// Where the ability stopped — the step of its top-level sequence to pick
-    /// up at. An ability can ask more than once, so <i>which</i> choice is
-    /// waiting is part of the question.
+    /// Legacy top-level resume index. New continuations also carry the exact
+    /// ability ordinal and structural path on their agenda step.
     /// </param>
     /// <param name="tier">
     /// Which of the card's abilities stopped, or null when the card has only
@@ -521,6 +525,10 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> ActivationCompleted(
         World world, EnemyActivation result) => [];
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> ResumeAbility(
+        World world, PhaseStep continuation) => [];
 
     /// <inheritdoc/>
     public virtual bool CanRemoveThreat(World world, Card scheme) => true;
@@ -770,6 +778,10 @@ public static class VillainPhase
             case Steps.CompleteAttackActivation:
             case Steps.CompleteSchemeActivation:
                 CompleteActivation(world, abilities, step, events);
+                break;
+
+            case Steps.ResumeAbility:
+                events.AddRange(abilities.ResumeAbility(world, step));
                 break;
 
             case Steps.FinalizeCharacterDefeat:

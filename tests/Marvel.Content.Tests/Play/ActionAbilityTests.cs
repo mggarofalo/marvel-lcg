@@ -2040,20 +2040,26 @@ public sealed class ActionAbilityTests
 
     [Rule("rr:and.1")]
     [Fact]
-    public void AndWithAReachableNestedSuspenderRaisesBeforeChangingTheBoard()
+    public void AndResumesAfterAReachableNestedSuspender()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
             "Action",
             """{ "and": [ { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "exhaust": "this" }, "else": { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } } } }, { "draw": { "player": "you", "count": 1 } } ] }""");
         Card? source = null;
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            hero: true,
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
     [Rule("rr:then")]
@@ -2347,7 +2353,7 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
-    public void ADependentEffectThatWouldSuspendRaisesBeforeChangingTheBoard()
+    public void ADependentEffectResumesAfterItsChoice()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2355,17 +2361,21 @@ public sealed class ActionAbilityTests
             """{ "then": { "effect": { "choose": { "options": [ { "exhaust": "this" }, { "draw": { "player": "you", "count": 1 } } ] } }, "then": { "discard": "this" } } }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, _) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("suspends for a player choice", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
-        Assert.Equal(DeckType.SupportsArea, source.Area.Type);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(0));
+
+        Assert.Equal(DeckType.DiscardPile, source!.Area.Type);
     }
 
     [Fact]
-    public void ADependentEachPlayerEffectRaisesBeforeChangingTheBoard()
+    public void ADependentEachPlayerEffectResumesTheAbility()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2374,34 +2384,48 @@ public sealed class ActionAbilityTests
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void ADependentFirstActivationRaisesBeforePayingForAnOuterContinuation()
+    public void ADependentFirstActivationPersistsItsOuterContinuation()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
-            "Action",
+            "WhenRevealed",
             """{ "seq": [ { "then": { "effect": { "draw": { "player": "you", "count": 1 } }, "then": { "enemyAttacks": { "enemies": { "query": "villain" }, "first": "true" } } } }, { "draw": { "player": "you", "count": 1 } } ] }""",
-            cost: """{ "exhaust": "this" }""");
+            eventName: Steps.CardRevealed);
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (_, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        runner.WhenRevealed(world, source!, 0);
+        var attack = Assert.Single(
+            world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
+
+        runner.ActivationCompleted(world, new EnemyActivation(
+            attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: false));
+
         Assert.True(source!.Ready);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void AnUnsupportedChoiceOptionRaisesBeforePayingTheActionCost()
+    public void AChoiceOptionCanSuspendInsideAnd()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2410,16 +2434,25 @@ public sealed class ActionAbilityTests
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(1));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void ACostCannotSwitchAnIfIntoAnUnsupportedBranchAfterPreflight()
+    public void ACostCanSwitchAnIfIntoAResumableBranch()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2428,12 +2461,20 @@ public sealed class ActionAbilityTests
             cost: """{ "discard": "this" }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.Equal(DeckType.DiscardPile, source!.Area.Type);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
@@ -2492,7 +2533,7 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
-    public void ACostCannotActivateAnUnsupportedOtherwiseBranch()
+    public void ACostCanActivateAResumableOtherwiseBranch()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2501,16 +2542,23 @@ public sealed class ActionAbilityTests
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(0));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void AnEarlierStepCannotActivateAnUnsupportedOtherwiseBranch()
+    public void AnEarlierStepCanActivateAResumableOtherwiseBranch()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2518,16 +2566,23 @@ public sealed class ActionAbilityTests
             """{ "seq": [ { "exhaust": "this" }, { "otherwise": { "effect": { "exhaust": "this" }, "otherwise": { "choose": { "options": [ { "draw": { "player": "you", "count": 1 } }, { "heal": { "card": "you", "amount": 1 } } ] } } } } ] }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(0));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void ANestedSequencePreservesAnEarlierMutationBoundary()
+    public void ANestedSequenceResumesPastAnEarlierMutationBoundary()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2535,16 +2590,23 @@ public sealed class ActionAbilityTests
             """{ "seq": [ { "exhaust": "this" }, { "seq": [ { "otherwise": { "effect": { "exhaust": "this" }, "otherwise": { "choose": { "options": [ { "draw": { "player": "you", "count": 1 } }, { "heal": { "card": "you", "amount": 1 } } ] } } } } ] } ] }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(0));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void ADirectSequencePreflightsBeforeItsFirstMutation()
+    public void ADirectSequencePersistsItsNestedContinuationAfterItsFirstMutation()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2557,11 +2619,12 @@ public sealed class ActionAbilityTests
             abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => runner.WhenRevealed(world, source!, 0));
+        runner.WhenRevealed(world, source!, 0);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        Assert.Equal(Steps.ChooseOption, waiting.What);
+        Assert.Equal(["seq:1"], waiting.AbilityPath);
     }
 
     [Fact]
@@ -2639,21 +2702,29 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
-    public void AFirstActivationCannotRunBeforeTheRestOfASequence()
+    public void AFirstActivationResumesTheRestOfASequence()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
-            "Action",
+            "WhenRevealed",
             """{ "seq": [ { "enemyAttacks": { "enemies": { "query": "villain" }, "first": "true" } }, { "draw": { "player": "you", "count": 1 } } ] }""",
-            cost: """{ "exhaust": "this" }""");
+            eventName: Steps.CardRevealed);
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (_, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
 
-        Assert.Contains("first and then continues", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        runner.WhenRevealed(world, source!, 0);
+        var attack = Assert.Single(
+            world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+
+        runner.ActivationCompleted(world, new EnemyActivation(
+            attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: false));
+
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
