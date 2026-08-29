@@ -2946,6 +2946,35 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Rule("rr:then")]
+    [Fact]
+    public void ChosenTargetCanMakeADependentContinuationReachable()
+    {
+        // "Then" resolves only after its predecessor resolves in full. Binding
+        // the threatened scheme makes that predecessor reachable and mutable.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "thwartableSchemes" }, "effect": { "then": { "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } }, "then": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? scheme = null;
+        long threat = -1;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                scheme = board.TheCardIn(DeckType.MainSchemesArea)!;
+                threat = scheme.Tokens.GetValueOrDefault("k_threat");
+            },
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(threat, scheme!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
     [Rule("rr:each-player.1")]
     [Fact]
     public void EachPlayerPreflightIncludesMutationsFromEarlierFrames()
@@ -2965,6 +2994,58 @@ public sealed class ActionAbilityTests
 
         Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Fact]
+    public void EachPlayerDrawDoesNotDestabilizeEveryPlayersHeroForm()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void ACardTitleContainingChosenIsNotAChoiceBinding()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "chooseCard": {
+              "from": { "query": "attackableEnemies" },
+              "effect": { "if": {
+                "test": { "titleInPlay": "Kang's Chosen" },
+                "then": { "attack": {
+                  "target": "chosen",
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } },
+                "else": { "draw": { "player": "you", "count": 1 } }
+              } }
+            } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
     [Rule("rr:choose-option")]

@@ -3939,7 +3939,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool HasNestedEachPlayer(
         AbilityNode node, Cast cast, bool inside = false, bool stateMayChange = false,
-        bool bindingMayChange = false)
+        bool bindingMayChange = false, AbilityNode? repeatedEffect = null)
     {
         if (inside && node.Kind == "eachPlayer")
         {
@@ -3956,7 +3956,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.RestorePlayer(player);
                     if (HasNestedEachPlayer(
                         Tree(node.Require("effect")), cast, inside: true,
-                        stateMayChange || players.Count > 1, bindingMayChange))
+                        stateMayChange, bindingMayChange,
+                        players.Count > 1 ? Tree(node.Require("effect")) : repeatedEffect))
                     {
                         return true;
                     }
@@ -3969,14 +3970,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
         bool within = inside || node.Kind == "eachPlayer";
-        return GuardChildren(node, cast, stateMayChange, bindingMayChange).Any(child =>
+        return GuardChildren(
+            node, cast, stateMayChange, bindingMayChange, repeatedEffect).Any(child =>
             HasNestedEachPlayer(
-                child.Node, cast, within, child.StateMayChange, child.BindingMayChange));
+                child.Node, cast, within, child.StateMayChange,
+                child.BindingMayChange, repeatedEffect));
     }
 
     private static bool ContainsUnsupportedPower(
         AbilityNode node, Cast cast, bool stateMayChange = false,
-        bool bindingMayChange = false)
+        bool bindingMayChange = false, AbilityNode? repeatedEffect = null)
     {
         if (node.Kind == "eachPlayer")
         {
@@ -3989,7 +3992,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.RestorePlayer(player);
                     if (ContainsUnsupportedPower(
                         Tree(node.Require("effect")), cast,
-                        stateMayChange || players.Count > 1, bindingMayChange))
+                        stateMayChange, bindingMayChange,
+                        players.Count > 1 ? Tree(node.Require("effect")) : repeatedEffect))
                     {
                         return true;
                     }
@@ -4014,15 +4018,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 return true;
             }
         }
-        return GuardChildren(node, cast, stateMayChange, bindingMayChange).Any(child =>
+        return GuardChildren(
+            node, cast, stateMayChange, bindingMayChange, repeatedEffect).Any(child =>
             ContainsUnsupportedPower(
-                child.Node, cast, child.StateMayChange, child.BindingMayChange));
+                child.Node, cast, child.StateMayChange,
+                child.BindingMayChange, repeatedEffect));
     }
 
     /// <summary>Executable children that can be reached after an ability is offered.</summary>
     private static IEnumerable<(
         AbilityNode Node, bool StateMayChange, bool BindingMayChange)> GuardChildren(
-        AbilityNode node, Cast cast, bool stateMayChange, bool bindingMayChange)
+        AbilityNode node, Cast cast, bool stateMayChange, bool bindingMayChange,
+        AbilityNode? repeatedEffect)
     {
         if (node.Kind == "seq")
         {
@@ -4040,7 +4047,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             var test = Tree(node.Require("test"));
             bool canSwitch = stateMayChange
                 || cast.PaymentMayMutate && PaymentCanChange(test)
-                || bindingMayChange && BindingCanChange(test.Argument);
+                || bindingMayChange && BindingCanChange(test.Argument)
+                || repeatedEffect is not null
+                    && RepeatedEffectCanChange(test, repeatedEffect);
             var branches = canSwitch
                 ? Branches.Select(node.Field).Where(value => value is not null)
                 : node.Field(Test(test, cast) ? "then" : "else") is { } active
@@ -4059,6 +4068,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             bool answered = ActiveChoices(effect, cast).Any();
             bool dependentCanRun = stateMayChange
                 || cast.PaymentMayMutate
+                || bindingMayChange
                 || answered
                 || ResolutionOf(effect, cast) == required;
             bool predecessorMayMutate = stateMayChange
@@ -4090,13 +4100,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool BindingCanChange(AbilityValue value) => value switch
     {
-        AbilityValue.Word word => word.Value.Contains(
-                "chosen", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(word.Value, "powerTargets", StringComparison.Ordinal),
+        AbilityValue.Word word => word.Value is "chosen" or "chosenPlayer"
+            or "powerTargets" or "enemiesEngagedWithChosenPlayer"
+            or "topmostTechInChosenDiscard",
         AbilityValue.List list => list.Values.Any(BindingCanChange),
         AbilityValue.Map map => map.Entries.Values.Any(BindingCanChange),
         _ => false,
     };
+
+    private static bool RepeatedEffectCanChange(AbilityNode test, AbilityNode effect) =>
+        test.Kind switch
+        {
+            "and" or "or" => Nodes(test.Argument).Any(child =>
+                RepeatedEffectCanChange(child, effect)),
+            "not" => RepeatedEffectCanChange(Tree(test.Argument), effect),
+            "inForm" => ContainsContinuationNode(effect, "changeForm"),
+            "titleInPlay" => ZoneChangingKinds.Any(kind =>
+                ContainsContinuationNode(effect, kind)),
+            "finalStep" or "paidWithResource" or "threatCause" => false,
+            _ => true,
+        };
+
+    private static readonly string[] ZoneChangingKinds =
+    [
+        "discard", "removeFromGame", "returnToHand", "putIntoPlay",
+        "addToHand", "shuffleInto", "reveal",
+    ];
+
+    private static bool ContainsContinuationNode(AbilityNode node, string kind) =>
+        node.Kind == kind
+        || ContinuationChildren(node).Any(child => ContainsContinuationNode(child, kind));
 
     private static IEnumerable<AbilityNode> ContinuationChildren(AbilityNode node) =>
         node.Kind switch
