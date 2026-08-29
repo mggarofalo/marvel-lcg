@@ -1954,6 +1954,730 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);
     }
 
+    [Rule("rr:and")]
+    [Rule("rr:and.1")]
+    [Rule("rr:and.2")]
+    [Rule("rr:first-player.3")]
+    [Fact]
+    public void AndEffectsResolveIndependentlyInsideOneAbility()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "and": [ { "dealDamage": { "cards": "you", "amount": 1 } }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Tough);
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        Assert.Equal(Question.Order, game.Pending.Asking);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        // Tough independently prevents the damage effect. The draw connected
+        // by “and” still resolves, and no response prompt separated the two.
+        Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Tough));
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:first-player.3")]
+    [Fact]
+    public void FirstPlayerChoosesTheOrderOfAndEffects()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "and": [ { "exhaust": "this" }, { "ready": "this" } ] }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [1, 0]));
+
+        Assert.False(source!.Ready);
+    }
+
+    [Rule("rr:first-player.3")]
+    [Fact]
+    public void AndOrderResumesThroughTheActiveConditionBranch()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "and": [ { "exhaust": "this" }, { "ready": "this" } ] }, "else": { "and": [ { "draw": { "player": "you", "count": 1 } }, { "heal": { "card": "you", "amount": 1 } } ] } } }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [1, 0]));
+
+        Assert.False(source!.Ready);
+    }
+
+    [Rule("rr:and.1")]
+    [Fact]
+    public void AndWithAReachableNestedSuspenderRaisesBeforeChangingTheBoard()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "and": [ { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "exhaust": "this" }, "else": { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } } } }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:then")]
+    [Rule("rr:then.1")]
+    [Rule("rr:then.2")]
+    [Rule("rr:resolve.1")]
+    [Theory]
+    [InlineData(2, true)]
+    [InlineData(1, false)]
+    public void ThenRequiresThePrecedingEffectToResolveInFull(
+        int threat, bool draws)
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "then": { "effect": { "removeThreat": { "scheme": { "query": "mainScheme" }, "amount": 2 } }, "then": { "draw": { "player": "you", "count": 1 } } } }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.TheCardIn(DeckType.MainSchemesArea)!
+                    .PlaceTokens("k_threat", threat);
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(0, world.TheCardIn(DeckType.MainSchemesArea)!
+            .Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(held + (draws ? 1 : 0), world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:then.2")]
+    [Fact]
+    public void ThenIgnoresCharactersThatAreNotValidExhaustTargets()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "then": { "effect": { "exhaust": { "query": "charactersYouControl" } }, "then": { "draw": { "player": "you", "count": 1 } } } }""");
+        Card? source = null;
+        Card? ally = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                ally = board.CreateCard(
+                    "01002",
+                    board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                ally.Exhaust();
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(world.Seats[0].IdentityCard.Ready);
+        Assert.False(ally!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:then.2")]
+    [Fact]
+    public void ThenIgnoresSchemesThatAreNotValidThreatTargets()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "then": { "effect": { "removeThreat": { "scheme": { "query": "sideSchemes" }, "amount": 2 } }, "then": { "draw": { "player": "you", "count": 1 } } } }""");
+        Card? source = null;
+        Card? empty = null;
+        Card? threatened = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                empty = board.CreateCard("01107", board.AreaOf(DeckType.SideSchemesArea));
+                threatened = board.CreateCard("01108", board.AreaOf(DeckType.SideSchemesArea));
+                threatened.PlaceTokens("k_threat", 2);
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(0, empty!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(0, threatened!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void AThreatPlacementBeforeThenRaisesBeforeChangingTheBoard()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "then": { "effect": { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("none/partial/full", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:otherwise")]
+    [Rule("rr:otherwise.1")]
+    [Rule("rr:otherwise.1.2")]
+    [Rule("rr:otherwise.2")]
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(1, false)]
+    public void OtherwiseRequiresThePrecedingEffectToResolveNotAtAll(
+        int threat, bool draws)
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            // `effect` explicitly delimits the preceding effect. That preserves
+            // rr:otherwise.2's semicolon/sentence boundary without recovering
+            // punctuation after printed text has become an ability tree.
+            """{ "otherwise": { "effect": { "removeThreat": { "scheme": { "query": "mainScheme" }, "amount": 2 } }, "otherwise": { "draw": { "player": "you", "count": 1 } } } }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.TheCardIn(DeckType.MainSchemesArea)!
+                    .PlaceTokens("k_threat", threat);
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(0, world.TheCardIn(DeckType.MainSchemesArea)!
+            .Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(held + (draws ? 1 : 0), world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:otherwise.1.2")]
+    [Fact]
+    public void OtherwiseResolvesWhenThreatRemovalIsProhibited()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "otherwise": { "effect": { "removeThreat": { "scheme": { "titled": "Countdown to Oblivion" }, "amount": 2 } }, "otherwise": { "draw": { "player": "you", "count": 1 } } } }""",
+            includeAuthored: true);
+        Card? source = null;
+        Card? scheme = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                scheme = board.CreateCard("01139b", board.AreaOf(DeckType.SideSchemesArea));
+                scheme.PlaceTokens("k_threat", 2);
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(2, scheme!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:otherwise")]
+    [Fact]
+    public void OtherwiseTreatsAMissingPrecedingTargetAsNoResolution()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "otherwise": { "effect": { "discard": { "titled": "Missing Card" } }, "otherwise": { "draw": { "player": "you", "count": 1 } } } }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:otherwise.1.1")]
+    [Fact]
+    public void OtherwiseResolvesWhenThePrecedingConditionIsFalse()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "otherwise": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "exhaust": "this" } } }, "otherwise": { "draw": { "player": "you", "count": 1 } } } }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:otherwise.1.2")]
+    [Fact]
+    public void AnUnusedOtherwiseBranchDoesNotAskForItsChoice()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "otherwise": { "effect": { "removeThreat": { "scheme": { "query": "mainScheme" }, "amount": 2 } }, "otherwise": { "choose": { "options": [ { "exhaust": "this" }, { "draw": { "player": "you", "count": 1 } } ] } } } }""",
+            limit: 1);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.TheCardIn(DeckType.MainSchemesArea)!
+                    .PlaceTokens("k_threat", 1);
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(0, world.TheCardIn(DeckType.MainSchemesArea)!
+            .Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:then.1")]
+    [Fact]
+    public void AChoiceInAnInactiveConditionBranchDoesNotSuspendThen()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "then": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "exhaust": "this" }, "else": { "choose": { "options": [ { "draw": { "player": "you", "count": 1 } }, { "heal": { "card": "you", "amount": 1 } } ] } } } }, "then": { "draw": { "player": "you", "count": 1 } } } }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void ADependentEffectThatWouldSuspendRaisesBeforeChangingTheBoard()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "then": { "effect": { "choose": { "options": [ { "exhaust": "this" }, { "draw": { "player": "you", "count": 1 } } ] } }, "then": { "discard": "this" } } }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("suspends for a player choice", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.SupportsArea, source.Area.Type);
+    }
+
+    [Fact]
+    public void ADependentEachPlayerEffectRaisesBeforeChangingTheBoard()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "then": { "effect": { "draw": { "player": "you", "count": 1 } }, "then": { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void ADependentFirstActivationRaisesBeforePayingForAnOuterContinuation()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "then": { "effect": { "draw": { "player": "you", "count": 1 } }, "then": { "enemyAttacks": { "enemies": { "query": "villain" }, "first": "true" } } } }, { "draw": { "player": "you", "count": 1 } } ] }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void AnUnsupportedChoiceOptionRaisesBeforePayingTheActionCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "choose": { "options": [ { "draw": { "player": "you", "count": 1 } }, { "and": [ { "draw": { "player": "you", "count": 1 } }, { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } } ] } ] } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void ACostCannotSwitchAnIfIntoAnUnsupportedBranchAfterPreflight()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "and": [ { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] } } }""",
+            cost: """{ "discard": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Fact]
+    public void ACostCannotSwitchAnIfIntoAnUnknownDependentOutcome()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "then": { "effect": { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } } } }""",
+            cost: """{ "discard": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("none/partial/full resolution", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Fact]
+    public void ACostCannotSwitchADependentPredecessorToAnUnknownOutcome()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "then": { "effect": { "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } } } }, "then": { "draw": { "player": "you", "count": 1 } } } }""",
+            cost: """{ "discard": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("none/partial/full resolution", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Fact]
+    public void AnEarlierStepCannotSwitchADependentPredecessorToAnUnknownOutcome()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "changeForm": { "player": "you", "to": "alterEgo" } }, { "then": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "alterEgo" } }, "then": { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }, "else": { "draw": { "player": "you", "count": 1 } } } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("none/partial/full resolution", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void ACostCannotActivateAnUnsupportedOtherwiseBranch()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "otherwise": { "effect": { "exhaust": "this" }, "otherwise": { "choose": { "options": [ { "draw": { "player": "you", "count": 1 } }, { "heal": { "card": "you", "amount": 1 } } ] } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void AnEarlierStepCannotActivateAnUnsupportedOtherwiseBranch()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "exhaust": "this" }, { "otherwise": { "effect": { "exhaust": "this" }, "otherwise": { "choose": { "options": [ { "draw": { "player": "you", "count": 1 } }, { "heal": { "card": "you", "amount": 1 } } ] } } } } ] }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void ANestedSequencePreservesAnEarlierMutationBoundary()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "exhaust": "this" }, { "seq": [ { "otherwise": { "effect": { "exhaust": "this" }, "otherwise": { "choose": { "options": [ { "draw": { "player": "you", "count": 1 } }, { "heal": { "card": "you", "amount": 1 } } ] } } } } ] } ] }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void ADirectSequencePreflightsBeforeItsFirstMutation()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "WhenRevealed",
+            """{ "seq": [ { "draw": { "player": "you", "count": 1 } }, { "and": [ { "draw": { "player": "you", "count": 1 } }, { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } } ] } ] }""",
+            eventName: Steps.CardRevealed);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => runner.WhenRevealed(world, source!, 0));
+
+        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void ADirectLastingEffectCannotBeginOutsideItsPeriod()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "WhenRevealed",
+            """{ "grantUntil": { "card": "this", "trait": "AERIAL", "until": "EndOfAttack" } }""",
+            eventName: Steps.CardRevealed);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => runner.WhenRevealed(world, source!, 0));
+
+        Assert.Contains("outside its named period", thrown.Message, StringComparison.Ordinal);
+        Assert.Empty(world.Effects.Active());
+    }
+
+    [Fact]
+    public void PaymentCannotSwitchIntoALastingEffectOutsideItsPeriod()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "grantUntil": { "card": "you", "trait": "AERIAL", "until": "EndOfAttack" } } } }""",
+            cost: """{ "discard": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("outside its named period", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Fact]
+    public void AStableFormBranchIgnoresAnUnreachableLastingConstraint()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "grantUntil": { "card": "this", "trait": "AERIAL", "until": "EndOfAttack" } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void PaymentCannotSwitchIntoALastingEffectWithNoTarget()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "grantUntil": { "card": "attachedTo", "trait": "AERIAL", "until": "EndOfRound" } } } }""",
+            cost: """{ "discard": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("no target after payment", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Fact]
+    public void AFirstActivationCannotRunBeforeTheRestOfASequence()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "enemyAttacks": { "enemies": { "query": "villain" }, "first": "true" } }, { "draw": { "player": "you", "count": 1 } } ] }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("first and then continues", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void AChoiceCannotOfferALastingEffectOutsideItsPeriod()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "choose": { "options": [ { "grantUntil": { "card": "this", "keyword": "attack", "amount": 1, "until": "EndOfAttack" } }, { "draw": { "player": "you", "count": 1 } } ] } }""");
+        Card? source = null;
+
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        var option = Assert.Single(game.Pending!.Affordances);
+        Assert.Equal(1, option.Id);
+    }
+
     [Rule("rr:initiating-abilities.step.5")]
     [Fact]
     public void AResourceCostInsideASequenceIsAdvertised()

@@ -420,9 +420,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
                     var eligibility = new Cast(
                         world, card, occurrence, controller, [], this);
+                    eligibility.SetPaymentMayMutate(
+                        ability.Cost is not null
+                        || world.Facts.Kind(card.FaceId) == CardKind.Event);
                     if ((ability.When is not null && !Test(ability.When, eligibility))
-                        || (HasInitiationConstraint(ability.Effect)
-                            && !CanInitiate(ability.Effect, eligibility)))
+                        || (controller >= 0 && !CanInitiate(ability.Effect, eligibility)))
                     {
                         continue;
                     }
@@ -509,6 +511,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             Tier = found.Trigger.Timing,
         };
+        cast.SetPaymentMayMutate(
+            found.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event);
 
         // **A forced ability is resolved, never offered, and so never priced.**
         // `rr:forced.1` makes it resolve when its condition is met, which is
@@ -528,6 +532,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             throw new RulesNotImplementedException(
                 $"event '{card.FaceId}' has both a printed resource cost and an ability "
                 + "cost, whose combined payment is not represented");
+        }
+
+        if (resolving >= 0 && !CanInitiate(found.Effect, cast))
+        {
+            throw new RulesNotImplementedException(
+                $"'{card.FaceId}' cannot initiate this ability in the current state");
         }
 
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
@@ -875,7 +885,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool ProhibitsDamage(AbilityNode node, Cast cast, Card source) =>
         node.Kind switch
         {
-            "seq" => Nodes(node.Argument).Any(step => ProhibitsDamage(step, cast, source)),
+            "seq" or "and" => Nodes(node.Argument)
+                .Any(step => ProhibitsDamage(step, cast, source)),
             "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
                 is { } branch && ProhibitsDamage(Tree(branch), cast, source),
             "preventDamageFrom" => cast.World.Facts.Kind(source.FaceId)
@@ -1503,8 +1514,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <summary>Whether an action can pass every initiation check right now.</summary>
     private bool ActionAvailable(
-        World world, Card card, CardAbility ability, int player, Cast eligibility) =>
-        MayInitiate(world, ability, card, player)
+        World world, Card card, CardAbility ability, int player, Cast eligibility)
+    {
+        eligibility.SetPaymentMayMutate(
+            ability.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event);
+        return MayInitiate(world, ability, card, player)
         // Printed event cost plus an arrow cost is one simultaneous payment.
         // The current prompt carries only one resource selection, so refuse
         // this shape before either payment can mutate state. MARVEL-288 owns
@@ -1514,6 +1528,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         && InForm(world, player, ability.Trigger.Form)
         && (ability.When is null || Test(ability.When, eligibility))
         && CanInitiate(ability.Effect, eligibility);
+    }
 
     private static bool HasUnsupportedCombinedEventCost(
         World world, Card card, CardAbility ability) =>
@@ -2474,11 +2489,37 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
 
-        var choice = Choice(source, stoppedAt, tier);
+        var choice = Choice(world, source, player, stoppedAt, tier);
 
         if (choice.Kind == "indirectDamage")
         {
             return Sharing(world, source, player, choice, tier);
+        }
+
+        if (choice.Kind == "and")
+        {
+            int count = Nodes(choice.Argument).Count();
+            return new Prompt(
+                Player: world.FirstPlayer,
+                Asking: Question.Order,
+                When: TimingPriority.Untimed,
+                Trigger: Steps.CardRevealed,
+                Label: $"{source.FaceId}: order simultaneous effects",
+                Cancellable: false,
+                Affordances:
+                [
+                    new Affordance(
+                        source.ObjectId,
+                        "Order",
+                        source.ObjectId,
+                        world.FirstPlayer,
+                        "simultaneous effects",
+                        new TargetRequest(
+                            Enumerable.Range(0, count).ToList(),
+                            count,
+                            count,
+                            Rule: "rr:first-player.3")),
+                ]);
         }
 
         bool cards = choice.Kind == "chooseCard";
@@ -2774,7 +2815,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(input);
 
-        var choice = Choice(source, stoppedAt, tier);
+        var choice = Choice(world, source, player, stoppedAt, tier);
         var continuation = world.Agenda.Current is { What: Steps.ChooseOption, Plan: true }
             && world.Agenda.Occurrence is { } live
             && live.Is(Steps.TurnAction)
@@ -2795,6 +2836,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             (tier is null || ability.Trigger.Timing == tier)
             && ability.Effect.Kind == "seq"
             && Nodes(ability.Effect.Argument).Count() > stoppedAt));
+
+        if (choice.Kind == "and")
+        {
+            var effects = Nodes(choice.Argument).ToList();
+            var legal = Enumerable.Range(0, effects.Count).ToHashSet();
+            if (input.IsDecline
+                || input.Affordance != source.ObjectId
+                || input.Targets.Count != effects.Count
+                || input.Targets.Distinct().Count() != effects.Count
+                || input.Targets.Any(index => !legal.Contains(index)))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires one permutation of all "
+                    + $"{effects.Count} simultaneous effects");
+            }
+
+            foreach (int index in input.Targets)
+            {
+                Run(effects[index], cast);
+            }
+
+            return Continue(source, cast, stoppedAt);
+        }
 
         if (choice.Kind == "resolveSpecials")
         {
@@ -3061,10 +3125,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// sequence is the explicit decline branch used to express “may”.
     /// </para>
     /// </remarks>
-    private static bool OptionIsLegal(AbilityNode option, Cast cast) =>
-        IsPlayerCard(cast)
+    private static bool OptionIsLegal(AbilityNode option, Cast cast)
+    {
+        // Eligibility and support are separate questions. Preserve the
+        // printed-option legality rules below, but make an unsupported option
+        // raise while the enclosing ability is still being offered.
+        bool canInitiate = CanInitiate(option, cast);
+        return canInitiate && (IsPlayerCard(cast)
             ? CanPartiallyResolve(option, cast)
-            : HasRequiredTargets(option, cast);
+            : HasRequiredTargets(option, cast));
+    }
 
     /// <summary>Whether the source has a player-card face.</summary>
     private static bool IsPlayerCard(Cast cast) =>
@@ -3104,9 +3174,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Whether every card target required by an effect exists.</summary>
     private static bool HasRequiredTargets(AbilityNode node, Cast cast) => node.Kind switch
     {
-        "seq" => Nodes(node.Argument).All(step => HasRequiredTargets(step, cast)),
+        "seq" or "and" => Nodes(node.Argument).All(step => HasRequiredTargets(step, cast)),
         "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
             is not { } branch || HasRequiredTargets(Tree(branch), cast),
+        "then" => HasRequiredTargets(Tree(node.Require("effect")), cast)
+            && (ResolutionOf(Tree(node.Require("effect")), cast) != ResolutionOutcome.Full
+                || HasRequiredTargets(Tree(node.Require("then")), cast)),
+        "otherwise" => ResolutionOf(Tree(node.Require("effect")), cast) switch
+        {
+            ResolutionOutcome.None => HasRequiredTargets(
+                Tree(node.Require("otherwise")), cast),
+            _ => HasRequiredTargets(Tree(node.Require("effect")), cast),
+        },
         "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
         "chooseCard" => Every(node.Require("from"), cast).Count > 0,
         "removeFromGame" or "exhaust" or "ready" or "reveal" or "returnToHand" =>
@@ -3149,11 +3228,203 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
     private static bool CanInitiate(AbilityNode node, Cast cast) => node.Kind switch
     {
-        "seq" => Nodes(node.Argument).All(step => CanInitiate(step, cast)),
-        "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
-            is not { } branch || CanInitiate(Tree(branch), cast),
+        "seq" => CanInitiateSequence(node, cast),
+        "and" => CanInitiateAnd(node, cast),
+        "if" => CanInitiateIf(node, cast),
+        "then" => CanInitiateDependent(
+            node, cast, ResolutionOutcome.Full, "then"),
+        "otherwise" => CanInitiateDependent(
+            node, cast, ResolutionOutcome.None, "otherwise"),
+        _ => CanInitiateLeaf(node, cast),
+    };
+
+    private static bool CanInitiateSequence(AbilityNode node, Cast cast)
+    {
+        var steps = Nodes(node.Argument).ToList();
+        bool outerContinuation = cast.HasContinuation;
+        bool outerPriorMutation = cast.PriorStepMayMutate;
+        try
+        {
+            for (int step = 0; step < steps.Count; step++)
+            {
+                cast.SetContinuation(outerContinuation || step < steps.Count - 1);
+                cast.SetPriorStepMayMutate(outerPriorMutation || step > 0);
+                if (step > 0)
+                {
+                    PreflightDependentOutcomesAfterMutation(steps[step], cast);
+                }
+                if (!CanInitiate(steps[step], cast))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        finally
+        {
+            cast.SetContinuation(outerContinuation);
+            cast.SetPriorStepMayMutate(outerPriorMutation);
+        }
+    }
+
+    private static void PreflightDependentOutcomesAfterMutation(
+        AbilityNode node, Cast cast)
+    {
+        if (node.Kind is "then" or "otherwise")
+        {
+            PreflightResolutionBranches(
+                Tree(node.Require("effect")), cast, allBranches: true);
+        }
+
+        var children = node.Kind switch
+        {
+            "choose" => Nodes(node.Require("options")),
+            "eachPlayer" => [Tree(node.Require("effect"))],
+            _ => StructuralChildren(node),
+        };
+        foreach (var child in children)
+        {
+            PreflightDependentOutcomesAfterMutation(child, cast);
+        }
+    }
+
+    private static bool CanInitiateIf(AbilityNode node, Cast cast)
+    {
+        // Payment happens after an action is offered and can change the facts
+        // tested by the branch. Validate every structurally reachable
+        // continuation boundary now, while no cost has been paid, then use
+        // only the currently active branch for ordinary target eligibility.
+        var test = Tree(node.Require("test"));
+        bool paymentCanSwitch = cast.PaymentMayMutate && PaymentCanChange(test);
+        bool stateCanSwitch = cast.PriorStepMayMutate || paymentCanSwitch;
+        foreach (var branch in Branches.Select(node.Field).Where(value => value is not null))
+        {
+            PreflightContinuationBoundaries(Tree(branch!), cast);
+            if (stateCanSwitch)
+            {
+                PreflightDependentOutcomesAfterMutation(Tree(branch!), cast);
+                PreflightInitiationConstraints(
+                    Tree(branch!), cast, requireCurrentTargets: paymentCanSwitch);
+            }
+        }
+
+        return node.Field(Test(test, cast) ? "then" : "else")
+            is not { } active || CanInitiate(Tree(active), cast);
+    }
+
+    private static void PreflightContinuationBoundaries(AbilityNode node, Cast cast)
+    {
+        if (node.Kind == "seq")
+        {
+            var steps = Nodes(node.Argument).ToList();
+            bool outerContinuation = cast.HasContinuation;
+            try
+            {
+                for (int step = 0; step < steps.Count; step++)
+                {
+                    cast.SetContinuation(outerContinuation || step < steps.Count - 1);
+                    PreflightContinuationBoundaries(steps[step], cast);
+                }
+            }
+            finally
+            {
+                cast.SetContinuation(outerContinuation);
+            }
+            return;
+        }
+
+        if (node.Kind == "and")
+        {
+            _ = CanInitiateAnd(node, cast);
+            return;
+        }
+
+        if (node.Kind is "then" or "otherwise")
+        {
+            var effect = Tree(node.Require("effect"));
+            var dependent = Tree(node.Require(node.Kind));
+            if (Choices(effect).Any()
+                || EachPlayers(dependent).Any()
+                || ContainsNode(dependent, "placeThreat")
+                || Choices(dependent).Any()
+                || (cast.HasContinuation && ContainsFirstActivation(dependent)))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' uses '{node.Kind}' around text that needs "
+                    + "a nested continuation");
+            }
+        }
+
+        var children = node.Kind switch
+        {
+            "choose" => Nodes(node.Require("options")),
+            "eachPlayer" => [Tree(node.Require("effect"))],
+            _ => StructuralChildren(node),
+        };
+        foreach (var child in children)
+        {
+            PreflightContinuationBoundaries(child, cast);
+        }
+    }
+
+    private static void PreflightInitiationConstraints(
+        AbilityNode node, Cast cast, bool requireCurrentTargets)
+    {
+        if (node.Kind == "grantUntil" && !LastingPeriodIsOpen(node, cast))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' reaches a lasting effect outside its named period");
+        }
+        if (node.Kind == "grantUntil"
+            && requireCurrentTargets
+            && Find(node.Require("card"), cast) is null)
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' may reach a lasting effect with no target after payment");
+        }
+
+        var children = node.Kind switch
+        {
+            "choose" => Nodes(node.Require("options")),
+            "eachPlayer" => [Tree(node.Require("effect"))],
+            _ => StructuralChildren(node),
+        };
+        foreach (var child in children)
+        {
+            PreflightInitiationConstraints(child, cast, requireCurrentTargets);
+        }
+    }
+
+    private static bool CanInitiateAnd(AbilityNode node, Cast cast)
+    {
+        var effects = Nodes(node.Argument).ToList();
+        if (effects.SelectMany(Choices).Any()
+            || effects.Any(SuspendsInsideAnd))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' resolves effects joined by 'and' and one "
+                + "of them needs a nested continuation");
+        }
+
+        return effects.All(effect => CanInitiate(effect, cast));
+    }
+
+    private static bool CanInitiateDependent(
+        AbilityNode node, Cast cast, ResolutionOutcome required, string branch)
+    {
+        var effect = Tree(node.Require("effect"));
+        var outcome = EnsureDependentSupported(
+            node, cast, effect, Tree(node.Require(branch)), required);
+        return outcome == required
+            ? CanInitiate(Tree(node.Require(branch)), cast)
+            : CanInitiate(effect, cast);
+    }
+
+    private static bool CanInitiateLeaf(AbilityNode node, Cast cast) => node.Kind switch
+    {
         "chooseCard" => Every(node.Require("from"), cast).Count > 0,
-        "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
+        "choose" => CanInitiateChoice(node, cast),
         "thwartDifferentSchemes" => Every(node.Require("schemes"), cast).Count > 0,
         "legalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
                 card.ObjectId != cast.Source.ObjectId)
@@ -3161,12 +3432,41 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "thwartSchemes" => Every(node.Require("schemes"), cast).Count > 0,
         "attack" => Find(node.Require("target"), cast) is not { } enemy
             || cast.World.Abilities.CanTakeDamage(cast.World, enemy, cast.Source),
+        "enemyAttacks" or "enemySchemes" => CanInitiateActivation(node, cast),
         "defense" => Attack.CanUseDefenseAbility(cast.World, cast.Player)
             && CanInitiate(Tree(node.Require("effect")), cast),
-        "grantUntil" => LastingPeriodIsOpen(node, cast)
-            && Find(node.Require("card"), cast) is not null,
+        // A missing dynamic target gets the resolver's specific exception
+        // (for example, no activating enemy). When the target exists, the
+        // lasting period itself is an initiation constraint.
+        "grantUntil" => Find(node.Require("card"), cast) is not null
+            ? LastingPeriodIsOpen(node, cast)
+            : !IsPlayerCard(cast)
+                && !cast.PaymentMayMutate
+                && !cast.PriorStepMayMutate,
         _ => true,
     };
+
+    private static bool CanInitiateChoice(AbilityNode node, Cast cast)
+    {
+        var options = Nodes(node.Require("options")).ToList();
+        foreach (var option in options)
+        {
+            _ = CanInitiate(option, cast);
+        }
+
+        return options.Any(option => OptionIsLegal(option, cast));
+    }
+
+    private static bool CanInitiateActivation(AbilityNode node, Cast cast)
+    {
+        if (cast.HasContinuation && ContainsFirstActivation(node))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' resolves an activation first and then continues");
+        }
+
+        return true;
+    }
 
     private static bool LastingPeriodIsOpen(AbilityNode node, Cast cast) =>
         Word(node.Require("until")) switch
@@ -3186,17 +3486,45 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool HasInitiationConstraint(AbilityNode node) =>
         HasLabelledPower(node)
         || node.Kind == "grantUntil"
-        || (node.Kind == "seq" && Nodes(node.Argument).Any(HasInitiationConstraint));
+        || StructuralChildren(node).Any(HasInitiationConstraint);
+
+    private static IEnumerable<AbilityNode> StructuralChildren(AbilityNode node) =>
+        node.Kind switch
+        {
+            "seq" or "and" => Nodes(node.Argument),
+            "if" => Branches.Select(node.Field).Where(value => value is not null)
+                .Select(value => Tree(value!)),
+            "then" =>
+            [
+                Tree(node.Require("effect")),
+                Tree(node.Require("then")),
+            ],
+            "otherwise" =>
+            [
+                Tree(node.Require("effect")),
+                Tree(node.Require("otherwise")),
+            ],
+            "defense" or "delayUntil" => [Tree(node.Require("effect"))],
+            _ => [],
+        };
 
     /// <summary>Whether a player-card option can change the current state.</summary>
     private static bool CanPartiallyResolve(AbilityNode node, Cast cast)
     {
         return node.Kind switch
         {
-            "seq" => !Nodes(node.Argument).Any()
+            "seq" or "and" => !Nodes(node.Argument).Any()
                 || Nodes(node.Argument).Any(step => CanPartiallyResolve(step, cast)),
             "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
                 is { } branch && CanPartiallyResolve(Tree(branch), cast),
+            "then" => ResolutionOf(Tree(node.Require("effect")), cast)
+                is not ResolutionOutcome.None,
+            "otherwise" => ResolutionOf(Tree(node.Require("effect")), cast) switch
+            {
+                ResolutionOutcome.None => CanPartiallyResolve(
+                    Tree(node.Require("otherwise")), cast),
+                _ => true,
+            },
             "defense" => CanPartiallyResolve(Tree(node.Require("effect")), cast),
             "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
             "chooseCard" => Every(node.Require("from"), cast).Count > 0,
@@ -3255,6 +3583,228 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "resolution is not implemented"),
         };
     }
+
+    /// <summary>How completely one effect can resolve on the current board.</summary>
+    /// <remarks>
+    /// <para>
+    /// This is the distinction the printed dependency words need:
+    /// <c>rr:then</c> requires <see cref="ResolutionOutcome.Full"/>, while
+    /// <c>rr:otherwise.1.2</c> permits its branch only for
+    /// <see cref="ResolutionOutcome.None"/>. A partial effect takes neither.
+    /// </para>
+    /// <para>
+    /// It is deliberately a closed vocabulary. A node whose outcome has not
+    /// been made explicit raises before the preceding effect mutates the board;
+    /// guessing “full” would silently resolve dependent text that should not
+    /// happen.
+    /// </para>
+    /// </remarks>
+    private static ResolutionOutcome ResolutionOf(AbilityNode node, Cast cast)
+    {
+        if (node.Kind is "choose" or "chooseCard" or "indirectDamage"
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
+            or "chooseDiscardToShuffle" or "thwartDifferentSchemes" or "makeTheCall"
+            or "legalPractice" or "payOrEffect")
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' uses '{node.Kind}' before dependent text and it "
+                + "suspends for a player choice");
+        }
+
+        return node.Kind switch
+        {
+            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+                is { } branch
+                    ? ResolutionOf(Tree(branch), cast)
+                    : ResolutionOutcome.None,
+            "changeForm" => Forms.In(
+                    cast.World,
+                    cast.World.Seats[Seat(node.Require("player"), cast)],
+                    cast.World.Facts,
+                    Word(node.Require("to")))
+                ? ResolutionOutcome.None
+                : ResolutionOutcome.Full,
+            "exhaust" => ResolutionOfCards(
+                Every(node.Argument, cast), card => card.Ready),
+            "ready" => ResolutionOfCards(
+                Every(node.Argument, cast), card => !card.Ready),
+            "discard" => Find(node.Field("card") ?? node.Argument, cast) is not null
+                ? ResolutionOutcome.Full
+                : ResolutionOutcome.None,
+            "draw" => CombinedOutcomes(Seats(node.Require("player"), cast).Select(player =>
+                ResolutionOfAmount(
+                    cast.World.Seats[player].Deck.Cards.Count
+                    + cast.World.AreaOf(
+                        DeckType.DiscardPile, PlayArea.Of(player)).Cards.Count,
+                    Number(node.Require("count"))))),
+            "heal" => ResolutionOfAmount(
+                Find(node.Require("card"), cast)?.Damage ?? 0,
+                Amount(node.Require("amount"), cast)),
+            "removeThreat" => ResolutionOfThreat(node, cast),
+            _ => throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' uses '{node.Kind}' before dependent text, whose "
+                + "none/partial/full resolution is not implemented"),
+        };
+    }
+
+    private static ResolutionOutcome CombinedOutcomes(
+        IEnumerable<ResolutionOutcome> values)
+    {
+        var outcomes = values.ToList();
+        if (outcomes.Count == 0 || outcomes.All(outcome => outcome == ResolutionOutcome.None))
+        {
+            return ResolutionOutcome.None;
+        }
+
+        return outcomes.All(outcome => outcome == ResolutionOutcome.Full)
+            ? ResolutionOutcome.Full
+            : ResolutionOutcome.Partial;
+    }
+
+    private static ResolutionOutcome ResolutionOfCards(
+        IReadOnlyList<Card> cards, Func<Card, bool> affected)
+    {
+        // `rr:target.4.1`: a multi-target effect does not resolve against
+        // invalid elements. Completeness is therefore measured across the
+        // targets the effect can affect, not every element named by "each".
+        return cards.Any(affected)
+            ? ResolutionOutcome.Full
+            : ResolutionOutcome.None;
+    }
+
+    private static ResolutionOutcome ResolutionOfAmount(long available, long wanted)
+    {
+        if (available <= 0 || wanted <= 0)
+        {
+            return ResolutionOutcome.None;
+        }
+
+        return available >= wanted
+            ? ResolutionOutcome.Full
+            : ResolutionOutcome.Partial;
+    }
+
+    private static ResolutionOutcome ResolutionOfThreat(AbilityNode node, Cast cast)
+    {
+        var schemes = Every(node.Require("scheme"), cast);
+        long wanted = Amount(node.Require("amount"), cast);
+        if (schemes.Count == 0 || wanted <= 0)
+        {
+            return ResolutionOutcome.None;
+        }
+
+        var valid = schemes.Where(scheme =>
+            scheme.Tokens.GetValueOrDefault("k_threat") > 0
+            && cast.Abilities.CanRemoveThreat(cast.World, scheme)
+            && !(scheme.Area.Type == DeckType.MainSchemesArea
+                && IsPlayerCard(cast)
+                && MainScheme.Crisis(cast.World, cast.World.Facts)));
+        return CombinedOutcomes(valid.Select(scheme => ResolutionOfAmount(
+            scheme.Tokens.GetValueOrDefault("k_threat"), wanted)));
+    }
+
+    private static void ResolveDependent(
+        AbilityNode node, Cast cast, ResolutionOutcome required, string branch)
+    {
+        var effect = Tree(node.Require("effect"));
+        var dependent = Tree(node.Require(branch));
+        var outcome = EnsureDependentSupported(node, cast, effect, dependent, required);
+
+        // A supported predecessor classified as `None` changes no state. Some
+        // low-level resolvers deliberately reject a missing target when used
+        // alone; dependency words make that absence an expected outcome, so
+        // do not turn an advertised `otherwise` fallback into an exception.
+        if (outcome != ResolutionOutcome.None)
+        {
+            Run(effect, cast);
+        }
+        if (outcome == required)
+        {
+            Run(dependent, cast);
+        }
+    }
+
+    private static ResolutionOutcome EnsureDependentSupported(
+        AbilityNode node,
+        Cast cast,
+        AbilityNode effect,
+        AbilityNode dependent,
+        ResolutionOutcome required)
+    {
+        PreflightResolutionBranches(effect, cast);
+
+        if (ActiveChoices(effect, cast).Any())
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' uses '{node.Kind}' around an effect that suspends "
+                + "for a player choice");
+        }
+
+        var outcome = ResolutionOf(effect, cast);
+        bool activeChoice = outcome == required && ActiveChoices(dependent, cast).Any();
+        if (activeChoice)
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' uses '{node.Kind}' around an effect that suspends "
+                + "for a player choice");
+        }
+        bool stateMayChange = cast.PaymentMayMutate || cast.PriorStepMayMutate;
+        if ((outcome == required || stateMayChange)
+            && (EachPlayers(dependent).Any()
+                || ContainsNode(dependent, "placeThreat")
+                || (cast.HasContinuation && ContainsFirstActivation(dependent))
+                || ((required == ResolutionOutcome.Full || stateMayChange)
+                    && Choices(dependent).Any())))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' uses '{node.Kind}' before dependent text that "
+                + "needs a nested continuation");
+        }
+
+        return outcome;
+    }
+
+    private static void PreflightResolutionBranches(
+        AbilityNode node, Cast cast, bool allBranches = false)
+    {
+        if (node.Kind == "if")
+        {
+            var test = Tree(node.Require("test"));
+            var branches = allBranches || cast.PriorStepMayMutate || PaymentCanChange(test)
+                ? Branches.Select(node.Field).Where(value => value is not null)
+                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                    ? [active]
+                    : [];
+            foreach (var branch in branches)
+            {
+                PreflightResolutionBranches(Tree(branch!), cast, allBranches);
+            }
+            return;
+        }
+
+        _ = ResolutionOf(node, cast);
+    }
+
+    private static bool PaymentCanChange(AbilityNode test) => test.Kind switch
+    {
+        "and" or "or" => Nodes(test.Argument).Any(PaymentCanChange),
+        "not" => PaymentCanChange(Tree(test.Argument)),
+
+        // Paying an ability cannot change identity form. Other predicates may
+        // read the chosen resources, the source's in-play status, or another
+        // fact changed by an authored cost, so their branches are preflighted
+        // conservatively.
+        "inForm" => false,
+        _ => true,
+    };
+
+    private static bool ContainsNode(AbilityNode node, string kind) =>
+        node.Kind == kind || StructuralChildren(node).Any(child => ContainsNode(child, kind));
+
+    private static bool ContainsFirstActivation(AbilityNode node) =>
+        (node.Kind is "enemyAttacks" or "enemySchemes"
+            && node.Field("first") is AbilityValue.Word { Value: "true" })
+        || StructuralChildren(node).Any(ContainsFirstActivation);
 
     /// <summary>Whether this player-card effect can remove any threat.</summary>
     private static bool CanRemoveThreat(AbilityNode node, Cast cast)
@@ -3350,7 +3900,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// and it is charged by name: a second one would make which of them is
     /// waiting a guess.
     /// </remarks>
-    private AbilityNode Choice(Card source, int stoppedAt, AbilityType? tier)
+    private AbilityNode Choice(
+        World world, Card source, int player, int stoppedAt, AbilityType? tier)
     {
         // **Which ability, when a card has a choice in more than one.** The
         // step carries the tier that suspended, because the card and the
@@ -3361,8 +3912,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var written = On(source)
             .Where(ability => tier is null || ability.Trigger.Timing == tier)
             .ToList();
+        var cast = Resuming(world, source, player, tier);
 
-        if (written.Count > 1 && written.Count(a => Choices(a.Effect).Any()) > 1)
+        if (written.Count > 1
+            && written.Count(a => ActiveChoices(a.Effect, cast).Any()) > 1)
         {
             // Two choices at one tier on one card. The tier is as fine as the
             // step gets, so this is the next thing to carry rather than
@@ -3374,19 +3927,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var effect = written
             .Select(ability => ability.Effect)
-            .FirstOrDefault(tree => Choices(tree).Any())
+            .FirstOrDefault(tree => ActiveChoices(tree, cast).Any())
             ?? throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has no choice waiting on an answer");
 
         if (effect.Kind != "seq")
         {
-            return Choices(effect).Single();
+            return ActiveChoices(effect, cast).Single();
         }
 
         var steps = Nodes(effect.Argument).ToList();
         if (stoppedAt >= 1 && stoppedAt <= steps.Count)
         {
-            var nested = Choices(steps[stoppedAt - 1]).ToList();
+            var nested = ActiveChoices(steps[stoppedAt - 1], cast).ToList();
             if (nested.Count == 1)
             {
                 return nested[0];
@@ -3400,10 +3953,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Every <c>choose</c> node in one effect tree.</summary>
     private static IEnumerable<AbilityNode> Choices(AbilityNode node)
     {
-        if (node.Kind is "choose" or "chooseCard" or "indirectDamage"
-            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
-            or "chooseDiscardToShuffle" or "thwartDifferentSchemes" or "makeTheCall"
-            or "legalPractice" or "payOrEffect")
+        if ((node.Kind == "and" && Nodes(node.Argument).Skip(1).Any())
+            || IsChoice(node))
         {
             yield return node;
             yield break;
@@ -3411,11 +3962,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var children = node.Kind switch
         {
-            "seq" => Nodes(node.Argument),
+            "seq" or "and" => Nodes(node.Argument),
             "if" => Branches
                 .Select(node.Field)
                 .Where(branch => branch is not null)
                 .Select(branch => Tree(branch!)),
+            "then" =>
+            [
+                Tree(node.Require("effect")),
+                Tree(node.Require("then")),
+            ],
+            "otherwise" =>
+            [
+                Tree(node.Require("effect")),
+                Tree(node.Require("otherwise")),
+            ],
             "eachPlayer" => [Tree(node.Require("effect"))],
             "defense" => [Tree(node.Require("effect"))],
             _ => [],
@@ -3426,6 +3987,80 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             yield return found;
         }
     }
+
+    private static bool IsChoice(AbilityNode node) =>
+        node.Kind is "choose" or "chooseCard" or "indirectDamage"
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
+            or "chooseDiscardToShuffle" or "thwartDifferentSchemes" or "makeTheCall"
+            or "legalPractice" or "payOrEffect";
+
+    /// <summary>Choice nodes on the control-flow path that can execute now.</summary>
+    private static IEnumerable<AbilityNode> ActiveChoices(AbilityNode node, Cast cast)
+    {
+        if (node.Kind == "and" && Nodes(node.Argument).Skip(1).Any())
+        {
+            yield return node;
+            yield break;
+        }
+
+        if (IsChoice(node))
+        {
+            if (node.Kind != "indirectDamage"
+                || Assignable(node.Require("among"), cast).Count > 1)
+            {
+                yield return node;
+            }
+            yield break;
+        }
+
+        if (node.Kind is "then" or "otherwise")
+        {
+            var preceding = Tree(node.Require("effect"));
+            var precedingChoices = ActiveChoices(preceding, cast).ToList();
+            foreach (var found in precedingChoices)
+            {
+                yield return found;
+            }
+            if (precedingChoices.Count > 0)
+            {
+                yield break;
+            }
+
+            var required = node.Kind == "then"
+                ? ResolutionOutcome.Full
+                : ResolutionOutcome.None;
+            if (ResolutionOf(preceding, cast) == required)
+            {
+                foreach (var found in ActiveChoices(
+                    Tree(node.Require(node.Kind)), cast))
+                {
+                    yield return found;
+                }
+            }
+            yield break;
+        }
+
+        var children = node.Kind switch
+        {
+            "seq" or "and" => Nodes(node.Argument),
+            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+                is { } branch ? [Tree(branch)] : [],
+            "eachPlayer" => [Tree(node.Require("effect"))],
+            "defense" => [Tree(node.Require("effect"))],
+            _ => [],
+        };
+
+        foreach (var found in children.SelectMany(child => ActiveChoices(child, cast)))
+        {
+            yield return found;
+        }
+    }
+
+    private static bool SuspendsInsideAnd(AbilityNode node) =>
+        node.Kind is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
+            or "placeThreat" or "enemyAttacks" or "enemySchemes"
+            or "then" or "otherwise"
+        || StructuralChildren(node).Any(SuspendsInsideAnd);
 
     private static IEnumerable<AbilityNode> PowerNodes(AbilityNode node, string power)
     {
@@ -3481,9 +4116,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         IEnumerable<AbilityNode> children = node.Kind switch
         {
-            "seq" => Nodes(node.Argument),
+            "seq" or "and" => Nodes(node.Argument),
             "if" => Branches.Select(node.Field).Where(value => value is not null)
                 .Select(value => Tree(value!)),
+            "then" =>
+            [
+                Tree(node.Require("effect")),
+                Tree(node.Require("then")),
+            ],
+            "otherwise" =>
+            [
+                Tree(node.Require("effect")),
+                Tree(node.Require("otherwise")),
+            ],
             _ => [],
         };
         foreach (var found in children.SelectMany(EachPlayers))
@@ -3728,6 +4373,39 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             case "seq":
                 Sequence(node, cast, from: 0);
+                break;
+
+            case "and":
+                // `rr:and` makes the effects simultaneous and independent;
+                // `rr:first-player.3` gives their order to the first player.
+                // A suspending child needs a persisted nested continuation,
+                // which MARVEL-293 owns, so reject that shape before asking or
+                // changing the board.
+                var simultaneous = Nodes(node.Argument).ToList();
+                if (simultaneous.SelectMany(Choices).Any()
+                    || simultaneous.Any(SuspendsInsideAnd))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' resolves effects joined by 'and' and one "
+                        + "of them suspends before the ordered group can finish");
+                }
+                if (simultaneous.Count <= 1)
+                {
+                    foreach (var effect in simultaneous)
+                    {
+                        Run(effect, cast);
+                    }
+                    break;
+                }
+                SuspendForChoice(cast);
+                break;
+
+            case "then":
+                ResolveDependent(node, cast, ResolutionOutcome.Full, "then");
+                break;
+
+            case "otherwise":
+                ResolveDependent(node, cast, ResolutionOutcome.None, "otherwise");
                 break;
 
             case "eachPlayer":
@@ -4505,6 +5183,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         switch (node.Kind)
         {
             case "seq":
+            case "and":
                 foreach (var step in Nodes(node.Argument))
                 {
                     Grants(step, cast, found);
@@ -4577,7 +5256,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         return node.Kind switch
         {
-            "seq" => Nodes(node.Argument).Any(step =>
+            "seq" or "and" => Nodes(node.Argument).Any(step =>
                 ProhibitsThreatRemoval(step, cast, scheme)),
             "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
                 is { } branch && ProhibitsThreatRemoval(Tree(branch), cast, scheme),
@@ -4656,6 +5335,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         if (node.Field("trait") is { } gained)
         {
+            EnsureLastingPeriodOpen(node, cast);
             cast.World.Effects.Register(new ContinuousEffect(
                 EffectSource.LastingEffect,
                 Kind: Rules.State.Traits.Granted + Word(gained),
@@ -4680,6 +5360,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "keyword or field the engine reads modifiers into");
         }
 
+        EnsureLastingPeriodOpen(node, cast);
+
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: keyword,
@@ -4687,6 +5369,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
             Lasts: Duration.UntilEndOf(Word(node.Require("until")))));
+    }
+
+    private static void EnsureLastingPeriodOpen(AbilityNode node, Cast cast)
+    {
+        if (!LastingPeriodIsOpen(node, cast))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' begins a lasting effect outside its named period");
+        }
     }
 
     // `rr:delayed-effect.1` -- an effect that resolves "after their specified
@@ -5158,6 +5849,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void Sequence(AbilityNode node, Cast cast, int from)
     {
+        if (from == 0)
+        {
+            _ = CanInitiateSequence(node, cast);
+        }
+
         var steps = Nodes(node.Argument).ToList();
         bool outerContinuation = cast.HasContinuation;
         for (int step = from; step < steps.Count; step++)
@@ -6966,6 +7662,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ? list.Values
             : throw new AbilityException($"{AbilityNode.Describe(value)} is not a list");
 
+    private enum ResolutionOutcome
+    {
+        None,
+        Partial,
+        Full,
+    }
+
     /// <summary>What one ability is resolving against.</summary>
     /// <param name="World">The board.</param>
     /// <param name="Source">The card whose text this is.</param>
@@ -7020,6 +7723,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public string Payment { get; private set; } = string.Empty;
 
         public void PaidWith(string resources) => Payment = resources;
+
+        /// <summary>Whether initiation payment may change outcome-relevant state.</summary>
+        public bool PaymentMayMutate { get; private set; }
+
+        public void SetPaymentMayMutate(bool value) => PaymentMayMutate = value;
+
+        /// <summary>Whether an earlier sequence step may have changed the board.</summary>
+        public bool PriorStepMayMutate { get; private set; }
+
+        public void SetPriorStepMayMutate(bool value) => PriorStepMayMutate = value;
 
         /// <summary>Cards discarded earlier in this resolution, in order.</summary>
         public List<Card> Discarded { get; } = [];
