@@ -4161,6 +4161,117 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
+    public void SideSchemeDefeatCanRemoveARepeatedDamageProhibition()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "removeThreat": {
+                  "scheme": { "titled": "Legions of Hydra" }, "amount": 1
+                } },
+                { "dealDamage": {
+                  "cards": { "titled": "Madame Hydra" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Madame Hydra" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        World? world = null;
+        Card? source = null;
+        Card? legions = null;
+        Card? madame = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                legions = board.CreateCard(
+                    "01180", board.AreaOf(DeckType.SideSchemesArea));
+                legions.PlaceTokens("k_threat", 1);
+                madame = board.CreateCard(
+                    "01181",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(1, legions!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(0, madame!.Damage);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void MinionDefeatCanRemoveARepeatedDamageProhibition()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "drones" }, "amount": 100 } },
+                { "dealDamage": { "cards": { "titled": "Ultron" }, "amount": 1 } },
+                { "moveDamage": {
+                  "from": { "titled": "Ultron" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        World? world = null;
+        Card? source = null;
+        Card? drone = null;
+        Card? ultron = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                ultron = board.CreateCard(
+                    "01136", board.AreaOf(DeckType.VillainArea));
+                drone = FacedownDrones.EngageTop(
+                    board, 0, "test", "Create_Drone", []);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.NotNull(drone);
+        Assert.Equal(0, drone!.Damage);
+        Assert.Equal(0, ultron!.Damage);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
     public void BoundedThreatRemovalCannotDefeatADistantSideScheme()
     {
         var runner = Runner(
