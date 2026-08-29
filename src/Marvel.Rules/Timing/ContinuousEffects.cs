@@ -685,12 +685,14 @@ public sealed class ContinuousEffects(World world)
         IReadOnlyList<Card> restored, string trigger, List<GameEvent> events)
     {
         foreach (var card in restored.Where(card =>
-            DeckTypes.IsInPlay(card.Area.Type)
-            && !Characteristics.IsLost(world, card, "uses")))
+            DeckTypes.IsInPlay(card.Area.Type)))
         {
             Discard.Card(world, card, trigger, events);
         }
     }
+
+    /// <summary>Whether a card is part of one preflighted departure snapshot.</summary>
+    internal bool IsDeparting(Card card) => departing.Contains(card.ObjectId);
 
     /// <summary>A preflighted set of state-based changes after constants end.</summary>
     public sealed class ConstantEnding

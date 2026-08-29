@@ -103,7 +103,16 @@ public static class Discard
         World world, State.Card host, string trigger, List<GameEvent> events)
     {
         var direct = AttachedTo(world, host.ObjectId);
-        PreflightAttachments(world, host, direct);
+        if (!world.Effects.IsDeparting(host))
+        {
+            PreflightAttachments(world, host, direct);
+        }
+
+        // The engine commits a preflighted restored-Uses cascade as one state
+        // snapshot. The Rules Reference does not order those simultaneous
+        // zero-counter discards. Re-reading attachment legality between the
+        // sequential event writes would let an intermediate board contradict
+        // the snapshot that was proved before anything moved.
 
         foreach (var attached in direct)
         {

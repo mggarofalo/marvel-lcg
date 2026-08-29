@@ -1243,6 +1243,43 @@ public sealed class KeywordTests
         Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
     }
 
+    [Rule("rr:ability.9")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void AUsesCascadeCommitsOneSnapshotAcrossSurvivingConstants()
+    {
+        // S restores U1 and U2. Surviving B would grant Permanent to A after
+        // U1's event is written, but the Rules Reference gives no order among
+        // the zero-counter discards, so the engine commits the snapshot that
+        // was preflighted before any of them moved.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var surviving = world.CreateCard(
+            "bridge", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, second.ObjectId));
+        world.Abilities = new UsesLossWithDormantPermanent(
+            source.ObjectId, first.ObjectId, second.ObjectId,
+            surviving.ObjectId, attachment.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.SupportsArea, surviving.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, first.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
+    }
+
     [Rule("rr:ability.5")]
     [Rule("rr:permanent.5")]
     [Rule("rr:uses-x-type.1")]
@@ -1764,9 +1801,30 @@ public sealed class KeywordTests
         }
     }
 
-    private sealed class UsesLossWithDormantPermanent(
-        int source, int first, int second, int attachment) : NoCardAbilities
+    private sealed class UsesLossWithDormantPermanent : NoCardAbilities
     {
+        private readonly int source;
+        private readonly int first;
+        private readonly int second;
+        private readonly int grantor;
+        private readonly int attachment;
+
+        public UsesLossWithDormantPermanent(
+            int source, int first, int second, int attachment)
+            : this(source, first, second, second, attachment)
+        {
+        }
+
+        public UsesLossWithDormantPermanent(
+            int source, int first, int second, int grantor, int attachment)
+        {
+            this.source = source;
+            this.first = first;
+            this.second = second;
+            this.grantor = grantor;
+            this.attachment = attachment;
+        }
+
         public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
         {
             if (card.ObjectId == source)
@@ -1788,7 +1846,7 @@ public sealed class KeywordTests
                 ];
             }
 
-            return card.ObjectId == second
+            return card.ObjectId == grantor
                 && !DeckTypes.IsInPlay(world.Cards[first].Area.Type)
                     ?
                     [
@@ -1796,7 +1854,7 @@ public sealed class KeywordTests
                             EffectSource.ConstantAbility,
                             "permanent",
                             Amount: 1,
-                            Card: second,
+                            Card: grantor,
                             Affects: attachment,
                             Lasts: Duration.WhileInPlay),
                     ]
