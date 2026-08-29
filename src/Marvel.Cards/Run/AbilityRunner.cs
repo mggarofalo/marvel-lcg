@@ -3938,7 +3938,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         node.Kind == kind || StructuralChildren(node).Any(child => ContainsNode(child, kind));
 
     private static bool HasNestedEachPlayer(
-        AbilityNode node, Cast cast, bool inside = false, bool stateMayChange = false)
+        AbilityNode node, Cast cast, bool inside = false, bool stateMayChange = false,
+        bool bindingMayChange = false)
     {
         if (inside && node.Kind == "eachPlayer")
         {
@@ -3949,11 +3950,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             int original = cast.Player;
             try
             {
-                foreach (int player in cast.World.PlayerOrder)
+                var players = cast.World.PlayerOrder.ToList();
+                foreach (int player in players)
                 {
                     cast.RestorePlayer(player);
                     if (HasNestedEachPlayer(
-                        Tree(node.Require("effect")), cast, inside: true, stateMayChange))
+                        Tree(node.Require("effect")), cast, inside: true,
+                        stateMayChange || players.Count > 1, bindingMayChange))
                     {
                         return true;
                     }
@@ -3966,23 +3969,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
         bool within = inside || node.Kind == "eachPlayer";
-        return GuardChildren(node, cast, stateMayChange).Any(child =>
-            HasNestedEachPlayer(child.Node, cast, within, child.StateMayChange));
+        return GuardChildren(node, cast, stateMayChange, bindingMayChange).Any(child =>
+            HasNestedEachPlayer(
+                child.Node, cast, within, child.StateMayChange, child.BindingMayChange));
     }
 
     private static bool ContainsUnsupportedPower(
-        AbilityNode node, Cast cast, bool stateMayChange = false)
+        AbilityNode node, Cast cast, bool stateMayChange = false,
+        bool bindingMayChange = false)
     {
         if (node.Kind == "eachPlayer")
         {
             int original = cast.Player;
             try
             {
-                foreach (int player in cast.World.PlayerOrder)
+                var players = cast.World.PlayerOrder.ToList();
+                foreach (int player in players)
                 {
                     cast.RestorePlayer(player);
                     if (ContainsUnsupportedPower(
-                        Tree(node.Require("effect")), cast, stateMayChange))
+                        Tree(node.Require("effect")), cast,
+                        stateMayChange || players.Count > 1, bindingMayChange))
                     {
                         return true;
                     }
@@ -4007,36 +4014,40 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 return true;
             }
         }
-        return GuardChildren(node, cast, stateMayChange).Any(child =>
-            ContainsUnsupportedPower(child.Node, cast, child.StateMayChange));
+        return GuardChildren(node, cast, stateMayChange, bindingMayChange).Any(child =>
+            ContainsUnsupportedPower(
+                child.Node, cast, child.StateMayChange, child.BindingMayChange));
     }
 
     /// <summary>Executable children that can be reached after an ability is offered.</summary>
-    private static IEnumerable<(AbilityNode Node, bool StateMayChange)> GuardChildren(
-        AbilityNode node, Cast cast, bool stateMayChange)
+    private static IEnumerable<(
+        AbilityNode Node, bool StateMayChange, bool BindingMayChange)> GuardChildren(
+        AbilityNode node, Cast cast, bool stateMayChange, bool bindingMayChange)
     {
         if (node.Kind == "seq")
         {
             return Nodes(node.Argument).Select((child, index) =>
-                (child, stateMayChange || index > 0));
+                (child, stateMayChange || index > 0, bindingMayChange));
         }
         if (node.Kind == "and")
         {
             var children = Nodes(node.Argument).ToList();
             return children.Select(child =>
-                (child, stateMayChange || children.Count > 1));
+                (child, stateMayChange || children.Count > 1, bindingMayChange));
         }
         if (node.Kind == "if")
         {
             var test = Tree(node.Require("test"));
             bool canSwitch = stateMayChange
-                || cast.PaymentMayMutate && PaymentCanChange(test);
+                || cast.PaymentMayMutate && PaymentCanChange(test)
+                || bindingMayChange && BindingCanChange(test.Argument);
             var branches = canSwitch
                 ? Branches.Select(node.Field).Where(value => value is not null)
                 : node.Field(Test(test, cast) ? "then" : "else") is { } active
                     ? [active]
                     : [];
-            return branches.Select(value => (Tree(value!), stateMayChange));
+            return branches.Select(value =>
+                (Tree(value!), stateMayChange, bindingMayChange));
         }
         if (node.Kind is "then" or "otherwise")
         {
@@ -4055,17 +4066,35 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 || node.Kind == "then"
                 || answered;
             return dependentCanRun
-                ? [(effect, stateMayChange), (dependent, predecessorMayMutate)]
-                : [(effect, stateMayChange)];
+                ? [
+                    (effect, stateMayChange, bindingMayChange),
+                    (dependent, predecessorMayMutate, bindingMayChange),
+                ]
+                : [(effect, stateMayChange, bindingMayChange)];
         }
-        if (node.Kind is "chooseCard" or "afterActivation" or "delayUntil"
-            or "payOrEffect" or "payOrExhaust" or "thwartSchemes"
+        if (node.Kind is "chooseCard" or "thwartSchemes"
             or "thwartDifferentSchemes" or "legalPractice")
         {
-            return ContinuationChildren(node).Select(child => (child, true));
+            return ContinuationChildren(node).Select(child =>
+                (child, stateMayChange, true));
         }
-        return ContinuationChildren(node).Select(child => (child, stateMayChange));
+        if (node.Kind is "afterActivation" or "delayUntil" or "defense"
+            or "payOrEffect" or "payOrExhaust")
+        {
+            return ContinuationChildren(node).Select(child =>
+                (child, true, bindingMayChange));
+        }
+        return ContinuationChildren(node).Select(child =>
+            (child, stateMayChange, bindingMayChange));
     }
+
+    private static bool BindingCanChange(AbilityValue value) => value switch
+    {
+        AbilityValue.Word { Value: "chosen" or "powerTargets" } => true,
+        AbilityValue.List list => list.Values.Any(BindingCanChange),
+        AbilityValue.Map map => map.Entries.Values.Any(BindingCanChange),
+        _ => false,
+    };
 
     private static IEnumerable<AbilityNode> ContinuationChildren(AbilityNode node) =>
         node.Kind switch

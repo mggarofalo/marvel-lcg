@@ -2910,6 +2910,45 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
     }
 
+    [Fact]
+    public void ChosenCardDoesNotDestabilizeAnUnrelatedFormBranch()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": "chosen", "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void EachPlayerPreflightIncludesMutationsFromEarlierFrames()
+    {
+        // The first player can remove the source before another player's frame
+        // tests whether its title remains in play.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "discard": "this" }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
     [Rule("rr:choose-option")]
     [Fact]
     public void AChoiceContinuationPreservesEarlierEffectResults()
