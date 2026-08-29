@@ -3965,6 +3965,102 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void HealthGrantedBeforeRepeatedDamageRaisesItsLethalThreshold()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "titled": "Spider-Man" },
+                  "keyword": "health", "amount": 1, "until": "EndOfRound"
+                } },
+                { "dealDamage": {
+                  "cards": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void ProhibitedMoveLeavesDamageForALaterRepeatedMove()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Madame Hydra" },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        World? world = null;
+        Card? source = null;
+        Card? villain = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01180", board.AreaOf(DeckType.SideSchemesArea));
+                board.CreateCard(
+                    "01181",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                villain = board.TheCardIn(DeckType.VillainArea)!;
+                villain.TakeDamage(1);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(1, villain!.Damage);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Fact]
     public void BoundedThreatRemovalCannotDefeatADistantSideScheme()
     {

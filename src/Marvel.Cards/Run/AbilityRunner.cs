@@ -4343,11 +4343,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private readonly record struct DamageTransfer(
-        int From, int To, long Amount, bool GrantsTough = false);
+        int From, int To, long Amount, bool GrantsTough = false,
+        bool GrantsHealth = false);
 
     private sealed record DamageTraceState(
-        Dictionary<int, long> Damage, long PeakTargetDamage,
-        HashSet<int> Players, Dictionary<int, int> Tough);
+        Dictionary<int, long> Damage, long PeakTargetPressure,
+        HashSet<int> Players, Dictionary<int, int> Tough,
+        Dictionary<int, long> Health);
 
     private static long PeakRepeatedDamageOn(
         Card target, AbilityNode repeatedEffect, Cast cast,
@@ -4357,7 +4359,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         try
         {
             IReadOnlyList<DamageTraceState> states =
-                [new(new Dictionary<int, long>(), target.Damage, [], new())];
+                [new(new Dictionary<int, long>(), target.Damage, [], new(), new())];
             for (int frame = 0; frame < frames; frame++)
             {
                 var next = new List<DamageTraceState>();
@@ -4382,7 +4384,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
                 states = next;
             }
-            return states.Select(state => state.PeakTargetDamage)
+            return states.Select(state => state.PeakTargetPressure)
                 .DefaultIfEmpty(target.Damage)
                 .Max();
         }
@@ -4398,16 +4400,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         var damage = new Dictionary<int, long>(state.Damage);
         var tough = new Dictionary<int, int>(state.Tough);
-        long peak = state.PeakTargetDamage;
+        var health = new Dictionary<int, long>(state.Health);
+        long peak = state.PeakTargetPressure;
         long Current(int card) => damage.TryGetValue(card, out long amount)
             ? amount
             : cast.World.Cards[card].Damage;
         int CurrentTough(int card) => tough.TryGetValue(card, out int count)
             ? count
             : Statuses.Count(cast.World, cast.World.Cards[card], Statuses.Tough);
+        long HealthBonus(int card) => health.GetValueOrDefault(card);
+        void ObserveTarget() => peak = Math.Max(
+            peak, Current(target.ObjectId) - HealthBonus(target.ObjectId));
 
         foreach (var transfer in trace)
         {
+            if (transfer.GrantsHealth)
+            {
+                health[transfer.To] = SaturatingSum(
+                    HealthBonus(transfer.To), [transfer.Amount]);
+                ObserveTarget();
+                continue;
+            }
             if (transfer.GrantsTough)
             {
                 tough[transfer.To] = Math.Max(1, CurrentTough(transfer.To));
@@ -4422,7 +4435,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
                 damage[transfer.To] = SaturatingSum(
                     Current(transfer.To), [transfer.Amount]);
-                peak = Math.Max(peak, Current(target.ObjectId));
+                ObserveTarget();
                 continue;
             }
 
@@ -4441,9 +4454,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         Current(transfer.To), [amount]);
                 }
             }
-            peak = Math.Max(peak, Current(target.ObjectId));
+            ObserveTarget();
         }
-        return new DamageTraceState(damage, peak, state.Players, tough);
+        return new DamageTraceState(
+            damage, peak, state.Players, tough, health);
     }
 
     private static IReadOnlyList<IReadOnlyList<DamageTransfer>> DamageTraces(
@@ -4518,7 +4532,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         if (node.Kind == "moveDamage"
             && Find(node.Require("from"), cast) is { } from
-            && Find(node.Require("to"), cast) is { } to)
+            && Find(node.Require("to"), cast) is { } to
+            && cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
         {
             return [new DamageTransfer(
                 from.ObjectId, to.ObjectId,
@@ -4532,6 +4547,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .. Every(node.Require("card"), cast).Select(card =>
                     new DamageTransfer(0, card.ObjectId, 0, GrantsTough: true)),
             ];
+        }
+        if (node.Kind == "grantUntil"
+            && node.Field("keyword") is { } granted
+            && Word(granted) == "health"
+            && Find(node.Require("card"), cast) is { } healthier)
+        {
+            return [new DamageTransfer(
+                0, healthier.ObjectId,
+                node.Field("amount") is { } amount ? Amount(amount, cast) : 0,
+                GrantsHealth: true)];
         }
         return [];
     }
