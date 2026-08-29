@@ -1895,7 +1895,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             world, world.Facts, world.Seats[player], card).Amount;
         string pool = string.Concat(EventGenerators(world, card, player, effect)
             .SelectMany(source => source.Generates));
-        return Resources.Pays(pool, cost, Resources.Required(card.FaceId, world.Facts));
+        return Resources.Pays(pool, cost, Resources.Required(world, card, world.Facts));
     }
 
     /// <summary>
@@ -2015,7 +2015,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return new CostOption(
             Target: card.ObjectId,
             Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            Rule: Resources.Required(card.FaceId, world.Facts) is { Length: > 0 } required
+            Rule: Resources.Required(world, card, world.Facts) is { Length: > 0 } required
                 ? [required]
                 : null,
             Sources: EventGenerators(world, card, player, effect));
@@ -2039,7 +2039,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var adjusted = CardPlay.CostOf(
             world, world.Facts, world.Seats[player], card);
-        string required = Resources.Required(card.FaceId, world.Facts);
+        string required = Resources.Required(world, card, world.Facts);
         // Group by what a source generates. Paid-resource outcomes cannot
         // distinguish two identities producing the same letters. Any source
         // that can participate safely has a witness consisting of that source
@@ -2160,7 +2160,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         string generated = string.Concat(generators
             .Where(source => selected.Contains(source.Effect))
             .Select(source => source.Generates));
-        string required = Resources.Required(card.FaceId, cast.World.Facts);
+        string required = Resources.Required(cast.World, card, cast.World.Facts);
         if (!Resources.Pays(generated, adjusted.Amount, required))
         {
             throw new RulesNotImplementedException(
@@ -2809,7 +2809,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Where(candidate => Resources.Pays(
                     string.Concat(candidate.Sources.Select(generator => generator.Generates)),
                     Resources.Cost(candidate.Ally.FaceId, world.Facts, world.Players) ?? 0,
-                    Resources.Required(candidate.Ally.FaceId, world.Facts)))
+                    Resources.Required(world, candidate.Ally, world.Facts)))
                 .Select(candidate => new Affordance(
                     candidate.Ally.ObjectId,
                     ChooseVerb,
@@ -2823,7 +2823,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                             (Resources.Cost(
                                 candidate.Ally.FaceId, world.Facts, world.Players) ?? 0).ToString(
                                 System.Globalization.CultureInfo.InvariantCulture),
-                            Resources.Required(candidate.Ally.FaceId, world.Facts)
+                            Resources.Required(world, candidate.Ally, world.Facts)
                                 is { Length: > 0 } rule
                                 ? [rule]
                                 : null,
@@ -3210,7 +3210,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             long cost = Resources.Cost(ally.FaceId, world.Facts, world.Players) ?? 0;
             CardPlay.Spend(
                 world, world.Facts, [world.Seats[player].Hand], input.Spent,
-                cost, Resources.Required(ally.FaceId, world.Facts),
+                cost, Resources.Required(world, ally, world.Facts),
                 source.ObjectId, player, cast.Events, payingFor: ally);
             CardPlay.PutAllyIntoPlay(
                 world, world.Facts, cast.Abilities, ally, player, cast.Trigger, cast.Events);
@@ -4942,8 +4942,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     throw new RulesNotImplementedException(
                         $"attachment {hosted.ObjectId} forms a hosting cycle");
                 }
-                if (cast.World.Facts.PrintedValue(
-                        hosted.FaceId, "Permanent", cast.World.Players) > 0)
+                if (StateFields.Modified(
+                        cast.World, hosted, "permanent",
+                        cast.World.Facts, cast.World.Players) > 0)
                 {
                     // Match Discard.Attachments' complete-tree preflight so
                     // eligibility refuses before an action cost can mutate.
@@ -5047,8 +5048,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 damage[next.ObjectId] = 0;
                 tough[next.ObjectId] = Math.Max(
                     carriedTough,
-                    cast.World.Facts.PrintedValue(
-                        next.FaceId, "Toughness", cast.World.Players) > 0 ? 1 : 0);
+                    StateFields.Modified(
+                        cast.World, next, "toughness",
+                        cast.World.Facts, cast.World.Players) > 0 ? 1 : 0);
                 return;
             }
             if ((card.Area.Type is DeckType.EngagedEnemiesArea
@@ -5160,10 +5162,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 engagement[to] = Resolver(cast);
                 int enteredTough = Math.Max(
                     CurrentTough(to),
-                    cast.World.Facts.PrintedValue(
-                        cast.World.Cards[to].FaceId,
-                        "Toughness",
-                        cast.World.Players) > 0 ? 1 : 0);
+                    StateFields.Modified(
+                        cast.World, cast.World.Cards[to], "toughness",
+                        cast.World.Facts, cast.World.Players) > 0 ? 1 : 0);
                 int liveTough = Statuses.Count(
                     cast.World, cast.World.Cards[to], Statuses.Tough);
                 if (enteredTough == liveTough)
@@ -7340,8 +7341,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Discarded = discarded,
                 Engagement = engagement,
             };
-            if (cast.World.Facts.PrintedValue(
-                    card.FaceId, "Toughness", cast.World.Players) > 0)
+            if (StateFields.Modified(
+                    cast.World, card, "toughness",
+                    cast.World.Facts, cast.World.Players) > 0)
             {
                 var firstIdentity = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
                 state = SetPowerTough(state, card, true, firstIdentity, cast);
@@ -7978,8 +7980,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 throw new RulesNotImplementedException(
                     $"attachment {hosted.ObjectId} forms a hosting cycle");
             }
-            if (cast.World.Facts.PrintedValue(
-                    hosted.FaceId, "Permanent", cast.World.Players) > 0)
+                if (StateFields.Modified(
+                        cast.World, hosted, "permanent",
+                        cast.World.Facts, cast.World.Players) > 0)
             {
                 throw new RulesNotImplementedException(
                     $"permanent attachment {hosted.ObjectId} lost host "
@@ -8058,8 +8061,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             var card = cast.World.Cards[cardId];
             if (DeckTypes.IsInPlay(card.Area.Type)
                 && cast.World.Facts.Kind(card.FaceId) == CardKind.Attachment
-                && cast.World.Facts.PrintedValue(
-                    card.FaceId, "Permanent", cast.World.Players) > 0)
+                && StateFields.Modified(
+                    cast.World, card, "permanent",
+                    cast.World.Facts, cast.World.Players) > 0)
             {
                 throw new RulesNotImplementedException(
                     $"card {cardId} is a permanent attachment on an eliminated "
@@ -8194,8 +8198,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             VillainStagesDrawn = state.VillainStagesDrawn + 1,
         };
         advanced = SetPowerDamage(advanced, next, 0, first, cast);
-        bool printedTough = cast.World.Facts.PrintedValue(
-            next.FaceId, "Toughness", cast.World.Players) > 0;
+        bool printedTough = StateFields.Modified(
+            cast.World, next, "toughness",
+            cast.World.Facts, cast.World.Players) > 0;
         return SetPowerTough(
             advanced, next, carriesTough || printedTough, first, cast);
     }
@@ -9891,7 +9896,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Rules.Play.Discard.Attachments(
                         cast.World, added, cast.Trigger, cast.Events);
                 }
-                if (cast.World.Facts.Attributes(added.FaceId).ContainsKey("Linked"))
+                if (!Characteristics.IsLost(cast.World, added, "linked")
+                    && cast.World.Facts.Attributes(added.FaceId).ContainsKey("Linked"))
                 {
                     // rr:linked-card-title.4 changes ownership at the moment
                     // the player takes control. A linked ally added from the
@@ -11059,6 +11065,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         });
 
         if (CounterCount(cast.Source, "allPurpose") == 0
+            && !Characteristics.IsLost(cast.World, cast.Source, "uses")
             && Reveal.Uses(cast.World.Facts.Attributes(cast.Source.FaceId)).Count > 0)
         {
             Rules.Play.Discard.Card(cast.World, cast.Source, cast.Trigger, cast.Events);
@@ -13112,7 +13119,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.World, cast.Player, cast.Source, ally)
                 .Select(source => source.Generates)),
             Resources.Cost(ally.FaceId, cast.World.Facts, cast.World.Players) ?? 0,
-            Resources.Required(ally.FaceId, cast.World.Facts)));
+            Resources.Required(cast.World, ally, cast.World.Facts)));
 
     /// <summary>The resources available while paying one Make the Call candidate's cost.</summary>
     private static IReadOnlyList<ResourceSource> MakeTheCallSources(

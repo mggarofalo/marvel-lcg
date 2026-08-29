@@ -35,6 +35,27 @@ public sealed class KeywordTests
         Assert.True(Statuses.Has(world, minion, Statuses.Tough));
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:toughness.1")]
+    [Fact]
+    public void ACharacterThatLosesToughnessEntersPlayWithoutAToughStatusCard()
+    {
+        // A lost keyword does not function even though it remains printed.
+        // Toughness therefore provides no forced response when this minion
+        // enters play.
+        var printed = new Printed().With("minion", ("Toughness", "1"), ("HP", "3"));
+        var world = Board(printed);
+        var minion = world.CreateCard("minion", world.AreaOf(DeckType.RevealingArea));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("toughness"),
+            Affects: minion.ObjectId));
+
+        Reveal.Resolve(world, printed, minion, 0, []);
+
+        Assert.False(Statuses.Has(world, minion, Statuses.Tough));
+    }
+
     [Rule("rr:tough.2")]
     [Rule("rr:tough.3")]
     [Fact]
@@ -96,6 +117,29 @@ public sealed class KeywordTests
 
         Assert.Equal(
             expected, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:incite-x")]
+    [Fact]
+    public void ACardThatLosesIncitePlacesNoThreatAndProvidesNoAbility()
+    {
+        // Incite remains printed but no longer functions. Both the reveal
+        // effect and the occurrence ledger must agree that there is no
+        // keyword-provided ability to resolve.
+        var printed = new Printed().With("treachery", ("Incite", "2"));
+        var world = Board(printed);
+        var card = world.CreateCard("treachery", world.AreaOf(DeckType.RevealingArea));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("incite"),
+            Affects: card.ObjectId));
+
+        Reveal.Keywords(world, printed, new NoCardAbilities(), card, 0, []);
+
+        Assert.Equal(
+            0, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Empty(Reveal.KeywordAbilities(world, printed, card, 0));
     }
 
     [Rule("rr:incite-x")]
@@ -243,6 +287,26 @@ public sealed class KeywordTests
         Assert.Equal(3, scheme.Tokens["k_threat"]);
         Assert.Equal(
             0, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:hinder-x")]
+    [Fact]
+    public void ACardThatLosesHinderEntersPlayWithoutItsThreat()
+    {
+        // Hinder remains printed, but the lost keyword does not contribute its
+        // entry threat.
+        var printed = new Printed().With("sideScheme", ("Hinder", "3"));
+        var world = Board(printed);
+        var scheme = world.CreateCard("sideScheme", world.AreaOf(DeckType.RevealingArea));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("hinder"),
+            Affects: scheme.ObjectId));
+
+        Reveal.Resolve(world, printed, scheme, 0, []);
+
+        Assert.Equal(0, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
 
     [Rule("rr:side-scheme")]
@@ -723,6 +787,32 @@ public sealed class KeywordTests
         Assert.False(world.Agenda.IsBusy);
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:teamwork")]
+    [Fact]
+    public void AMinionThatLosesTeamworkDoesNotActivate()
+    {
+        // Teamwork remains printed, but the lost keyword supplies no forced
+        // response when a matching minion is already in play.
+        var printed = new Printed()
+            .With("acolyte", ("Teamwork", "ACOLYTE"), ("ATK", "2"), ("HP", "3"))
+            .With("friend", ("HP", "3"))
+            .Trait("acolyte", "ACOLYTE")
+            .Trait("friend", "ACOLYTE");
+        var world = Board(printed);
+        var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
+        world.CreateCard("friend", engaged);
+        var arriving = world.CreateCard("acolyte", engaged);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("teamwork"),
+            Affects: arriving.ObjectId));
+
+        Reveal.Teamwork(world, printed, arriving, 0, round: 1);
+
+        Assert.False(world.Agenda.IsBusy);
+    }
+
     [Rule("rr:teamwork")]
     [Rule("rr:activation.1")]
     [Fact]
@@ -808,6 +898,48 @@ public sealed class KeywordTests
         Reveal.Resolve(world, printed, card, 0, []);
 
         Assert.Equal(3, card.Tokens["c_web"]);
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:uses-x-type")]
+    [Fact]
+    public void ACardThatLosesUsesEntersPlayWithoutItsCounters()
+    {
+        // The composite value remains printed, but the lost Uses keyword no
+        // longer places its counters as the card enters play.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var card = world.CreateCard("sideScheme", world.AreaOf(DeckType.RevealingArea));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: card.ObjectId));
+
+        Reveal.Resolve(world, printed, card, 0, []);
+
+        Assert.Equal(0, card.Tokens.GetValueOrDefault("c_web"));
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:linked-card-title.4")]
+    [Fact]
+    public void ACardThatLosesLinkedDoesNotTransferPrintedOwnership()
+    {
+        // Linked remains printed, but its ownership rule does not function
+        // while the keyword is lost.
+        var printed = new Printed().With("support", ("Linked", "Parent"));
+        var world = Board(printed);
+        var support = world.CreateCard(
+            "support",
+            world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: -1));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("linked"),
+            Affects: support.ObjectId));
+
+        Reveal.EnterPlay(world, printed, support, []);
+
+        Assert.Equal(-1, support.Owner);
     }
 
     [Rule("rr:uses-x-type")]

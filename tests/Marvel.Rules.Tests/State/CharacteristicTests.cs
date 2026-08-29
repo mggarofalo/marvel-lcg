@@ -50,6 +50,27 @@ public sealed class CharacteristicTests
         Assert.Contains("Ranged", facts.Attributes(card.FaceId).Keys);
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:loses.1")]
+    [Fact]
+    public void AStateSnapshotReportsALostPrintedFieldAsInactive()
+    {
+        // The characteristic remains in printed facts, while the live state
+        // sent to a client reports how the card currently functions.
+        var (world, facts, card) = Board();
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("toughness"),
+            Affects: card.ObjectId));
+
+        var fields = StateFields.For(
+            card, facts, players: 1, inPlay: true, hasHeldPools: true,
+            hasFirstPlayerToken: false, world);
+
+        Assert.Equal(0, fields["toughness"]);
+        Assert.Equal(1, facts.PrintedValue(card.FaceId, "Toughness", 1));
+    }
+
     [Rule("rr:loses.2")]
     [Fact]
     public void ACharacteristicCannotBeRegainedWhileItsLossIsActive()
@@ -101,6 +122,7 @@ public sealed class CharacteristicTests
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["Ranged"] = "1",
+                ["Toughness"] = "1",
             };
 
         public long PrintedValue(

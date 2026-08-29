@@ -116,8 +116,9 @@ public static class Discard
             }
         }
 
-        if (descendants.FirstOrDefault(attached => world.Facts.PrintedValue(
-                attached.FaceId, "Permanent", world.Players) > 0) is { } permanent)
+        if (descendants.FirstOrDefault(attached => StateFields.Modified(
+                world, attached, "permanent", world.Facts, world.Players) > 0)
+            is { } permanent)
         {
             // `rr:permanent.5` resolves the attachment's attach-to text again
             // and removes it only if no valid target exists. Preflight the

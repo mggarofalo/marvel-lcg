@@ -618,6 +618,30 @@ public sealed class CardPlayTests
         Assert.Equal(DeckType.DiscardPile, paying.Area.Type);
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:requirement-resources")]
+    [Fact]
+    public void ACardThatLosesRequirementCanUseAnyResourceType()
+    {
+        // Requirement remains printed, but its resource restriction does not
+        // function while the keyword is lost.
+        var printed = Cards();
+        var world = Board(printed);
+        Empty(world);
+        var mental = InHand(world, "mental");
+        var card = InHand(world, "demanding");
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("requirement"),
+            Affects: card.ObjectId));
+
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
+        CardPlay.Play(
+            world, printed, new Silent(), world.Seats[0], card, [mental.ObjectId], []);
+
+        Assert.Equal(DeckType.DiscardPile, mental.Area.Type);
+    }
+
     [Rule("rr:team-up")]
     [Fact]
     public void ATeamUpCardNeedsBothOfTheCharactersItNames()
@@ -636,6 +660,24 @@ public sealed class CardPlayTests
         Assert.Null(CardPlay.Price(world, printed, world.Seats[0], card));
 
         world.CreateCard("Wasp", allies);
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:team-up")]
+    [Fact]
+    public void ACardThatLosesTeamUpDoesNotRequireTheNamedCharacters()
+    {
+        // Team-Up remains printed, but the play restriction it supplies does
+        // not function while the keyword is lost.
+        var printed = Cards();
+        var world = Board(printed);
+        var card = InHand(world, "swarm");
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("team-up"),
+            Affects: card.ObjectId));
+
         Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
     }
 
@@ -776,6 +818,26 @@ public sealed class CardPlayTests
         Assert.Equal(DeckType.DiscardPile, mine.Area.Type);
         Assert.Equal(DeckType.DiscardPile, theirs.Area.Type);
         Assert.NotSame(mine.Area, theirs.Area);
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:alliance")]
+    [Fact]
+    public void ACardThatLosesAllianceCannotUseAnotherPlayersResources()
+    {
+        // Alliance remains printed, but while the keyword is lost only the
+        // playing player's hand can contribute to the payment.
+        var printed = Cards();
+        var world = Table(printed);
+        world.CreateCard("res", world.Seats[0].Hand);
+        world.CreateCard("res", world.Seats[1].Hand);
+        var card = world.CreateCard("together", world.Seats[0].Hand);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("alliance"),
+            Affects: card.ObjectId));
+
+        Assert.Null(CardPlay.Price(world, printed, world.Seats[0], card));
     }
 
     [Rule("rr:cost.3")]
