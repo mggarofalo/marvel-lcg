@@ -5332,6 +5332,81 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:attachment.1")]
+    [Fact]
+    public void ReenteringAMinionDoesNotKeepItsDiscardedAttachmentModifier()
+    {
+        // An attachment modifies the character it is attached to. Discarding
+        // Hydra Mercenary also discards Gobbler Glider, so the re-entered
+        // minion has ATK 1 and is the sole minimum below Rhino's ATK 2.
+        var runner = ReenteredAttachmentRankRunner("minBy");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "30027",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, mercenary.Area.PlayArea,
+                        mercenary.ObjectId));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:attachment.1")]
+    [Fact]
+    public void DiscardedHostedModifierCannotHideALethalRankedContinuation()
+    {
+        // Neurological Implants gives its attached minion +2 ATK only while
+        // attached. Once Hydra Mercenary and the attachment are discarded,
+        // re-entered Hydra is ATK 1 and Rhino is the maximum-ATK enemy whose
+        // damage makes the unsupported later frame reachable.
+        var runner = ReenteredAttachmentRankRunner("maxBy");
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+        Card? implants = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                implants = board.CreateCard(
+                    "04119",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, mercenary.Area.PlayArea,
+                        mercenary.ObjectId));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, mercenary!.Area.Type);
+        Assert.Equal(mercenary.ObjectId, implants!.Area.Host);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:ability.step.1")]
     [Fact]
     public void EnteringConstantAbilityRaisesBeforeARepeatedEffectMutates()
@@ -6006,6 +6081,37 @@ public sealed class ActionAbilityTests
             } },
             { "dealDamage": {
               "cards": { "query": "attackableEnemies" }, "amount": 1
+            } },
+            { "moveDamage": {
+              "from": { "query": "villain" },
+              "to": { "titled": "Spider-Man" }, "amount": 1
+            } }
+          ] },
+          "else": { "attack": {
+            "target": { "query": "villain" },
+            "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+          } }
+        } } } }
+        """);
+
+    private static Marvel.Cards.Run.AbilityRunner ReenteredAttachmentRankRunner(
+        string rank) => Runner(
+        AuthoredCards.AuntMay,
+        "Action",
+        $$"""
+        { "eachPlayer": { "effect": { "if": {
+          "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+          "then": { "seq": [
+            { "discard": { "titled": "Hydra Mercenary" } },
+            { "putIntoPlay": {
+              "card": { "titled": "Hydra Mercenary" },
+              "where": "engagedWithYou"
+            } },
+            { "dealDamage": {
+              "cards": { "{{rank}}": {
+                "of": { "query": "enemies" }, "by": "attack"
+              } },
+              "amount": 1
             } },
             { "moveDamage": {
               "from": { "query": "villain" },

@@ -4448,6 +4448,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         long CurrentThreat(int card) => threat.TryGetValue(card, out long amount)
             ? amount
             : cast.World.Cards[card].Tokens.GetValueOrDefault("k_threat");
+        void LeavePlay(int cardId)
+        {
+            discarded.Add(cardId);
+            tough[cardId] = 0;
+            engagement.Remove(cardId);
+            foreach (var hosted in cast.World.Areas
+                .Where(area => area.Host == cardId)
+                .SelectMany(area => area.Cards)
+                .ToList())
+            {
+                LeavePlay(hosted.ObjectId);
+            }
+        }
         void ResolveCharacterDefeat(int cardId)
         {
             var card = cast.World.Cards[cardId];
@@ -4486,8 +4499,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 && Current(cardId) >= Damage.Health(
                     cast.World, cast.World.Facts, card) + HealthBonus(cardId))
             {
-                discarded.Add(cardId);
-                engagement.Remove(cardId);
+                LeavePlay(cardId);
             }
         }
 
@@ -4553,9 +4565,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             if (transfer.Discards)
             {
-                discarded.Add(to);
-                tough[to] = 0;
-                engagement.Remove(to);
+                LeavePlay(to);
                 continue;
             }
             if (transfer.GrantsHealth)
