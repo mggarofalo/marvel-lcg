@@ -4346,8 +4346,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         int From, int To, long Amount, bool GrantsTough = false,
         bool GrantsHealth = false, bool DealsDamage = false,
         bool Discards = false, bool RemovesThreat = false,
-        bool PlacesThreat = false, bool FromVillain = false,
-        bool ToVillain = false);
+        bool PlacesThreat = false, AbilityValue? FromVillain = null,
+        AbilityValue? ToVillain = null);
 
     private sealed record DamageTraceState(
         Dictionary<int, long> Damage, long PeakTargetPressure,
@@ -4474,8 +4474,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
             }
 
-            int from = transfer.FromVillain ? currentVillain : transfer.From;
-            int to = transfer.ToVillain ? currentVillain : transfer.To;
+            int from = transfer.FromVillain is { } fromSelector
+                ? TraceSelectorIncludesVillain(
+                    fromSelector, currentVillain, cast, discarded)
+                    ? currentVillain
+                    : int.MinValue
+                : transfer.From;
+            int to = transfer.ToVillain is { } toSelector
+                ? TraceSelectorIncludesVillain(
+                    toSelector, currentVillain, cast, discarded)
+                    ? currentVillain
+                    : int.MinValue
+                : transfer.To;
+            if (from == int.MinValue || to == int.MinValue)
+            {
+                continue;
+            }
             if (transfer.RemovesThreat || transfer.PlacesThreat)
             {
                 long current = CurrentThreat(to);
@@ -4756,7 +4770,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         -1, card.ObjectId,
                         Amount(node.Require("amount"), cast),
                         DealsDamage: true,
-                        ToVillain: TracksCurrentVillain(
+                        ToVillain: VillainSelector(
                             node.Require(field), card, cast))),
             ];
         }
@@ -4767,7 +4781,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 -1, replaced.ObjectId,
                 cast.Occurrence.Threat?.Remaining ?? long.MaxValue,
                 DealsDamage: true,
-                ToVillain: TracksCurrentVillain(
+                ToVillain: VillainSelector(
                     node.Require("card"), replaced, cast))];
         }
         if (node.Kind == "heal"
@@ -4775,7 +4789,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return [new DamageTransfer(
                 healed.ObjectId, -1, Amount(node.Require("amount"), cast),
-                FromVillain: TracksCurrentVillain(
+                FromVillain: VillainSelector(
                     node.Require("card"), healed, cast))];
         }
         if (node.Kind == "moveDamage"
@@ -4786,9 +4800,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 from.ObjectId, to.ObjectId,
                 Amount(node.Require("amount"), cast),
                 DealsDamage: true,
-                FromVillain: TracksCurrentVillain(
+                FromVillain: VillainSelector(
                     node.Require("from"), from, cast),
-                ToVillain: TracksCurrentVillain(
+                ToVillain: VillainSelector(
                     node.Require("to"), to, cast))];
         }
         if (node.Kind == "giveStatus"
@@ -4799,7 +4813,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .. Every(node.Require("card"), cast).Select(card =>
                     new DamageTransfer(
                         0, card.ObjectId, 0, GrantsTough: true,
-                        ToVillain: TracksCurrentVillain(
+                        ToVillain: VillainSelector(
                             node.Require("card"), card, cast))),
             ];
         }
@@ -4812,7 +4826,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 0, healthier.ObjectId,
                 node.Field("amount") is { } amount ? Amount(amount, cast) : 0,
                 GrantsHealth: true,
-                ToVillain: TracksCurrentVillain(
+                ToVillain: VillainSelector(
                     node.Require("card"), healthier, cast))];
         }
         if (node.Kind == "discard")
@@ -4823,7 +4837,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .. Every(cards, cast).Select(card =>
                     new DamageTransfer(
                         0, card.ObjectId, 0, Discards: true,
-                        ToVillain: TracksCurrentVillain(cards, card, cast))),
+                        ToVillain: VillainSelector(cards, card, cast))),
             ];
         }
         if (node.Kind is "removeThreat" or "placeThreat")
@@ -4842,12 +4856,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return [];
     }
 
-    private static bool TracksCurrentVillain(
+    private static AbilityValue? VillainSelector(
         AbilityValue value, Card resolved, Cast cast)
     {
         var current = cast.World.TheCardIn(DeckType.VillainArea);
         if (current is null || resolved.ObjectId != current.ObjectId
             || value is not AbilityValue.Map)
+        {
+            return null;
+        }
+        return SelectorCanTrackVillain(value, current, cast) ? value : null;
+    }
+
+    private static bool SelectorCanTrackVillain(
+        AbilityValue value, Card current, Cast cast)
+    {
+        if (value is not AbilityValue.Map)
         {
             return false;
         }
@@ -4863,14 +4887,112 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.World, current, Word(node.Argument), cast.World.Facts),
             "withTrait" => Rules.State.Traits.Has(
                     cast.World, current, Word(node.Require("trait")), cast.World.Facts)
-                && TracksCurrentVillain(
-                    node.Require("cards"), resolved, cast),
-            "withoutAnotherCopyAttached" => TracksCurrentVillain(
-                node.Argument, resolved, cast),
-            "minBy" or "maxBy" => TracksCurrentVillain(
-                node.Require("of"), resolved, cast),
+                && SelectorCanTrackVillain(
+                    node.Require("cards"), current, cast),
+            "withoutAnotherCopyAttached" => SelectorCanTrackVillain(
+                node.Argument, current, cast),
+            "minBy" or "maxBy" => SelectorCanTrackVillain(
+                node.Require("of"), current, cast),
             _ => false,
         };
+    }
+
+    private static bool TraceSelectorIncludesVillain(
+        AbilityValue value, int currentVillain, Cast cast,
+        HashSet<int> discarded)
+    {
+        if (currentVillain < 0 || discarded.Contains(currentVillain)
+            || value is not AbilityValue.Map)
+        {
+            return false;
+        }
+
+        var current = cast.World.Cards[currentVillain];
+        var node = Tree(value);
+        return node.Kind switch
+        {
+            "query" => node.Argument switch
+            {
+                AbilityValue.Word { Value: "villain" or "enemies" or "characters" } => true,
+                AbilityValue.Word { Value: "attackableEnemies" } =>
+                    CanTakeDamageInTrace(cast, current, discarded),
+                _ => false,
+            },
+            "titled" => string.Equals(
+                Word(node.Argument), cast.World.Facts.Title(current.FaceId),
+                StringComparison.Ordinal),
+            "enemiesWithTrait" => Rules.State.Traits.Has(
+                cast.World, current, Word(node.Argument), cast.World.Facts),
+            "withTrait" => TraceSelectorIncludesVillain(
+                    node.Require("cards"), currentVillain, cast, discarded)
+                && Rules.State.Traits.Has(
+                    cast.World, current, Word(node.Require("trait")), cast.World.Facts),
+            "withoutAnotherCopyAttached" => TraceSelectorIncludesVillain(
+                    node.Argument, currentVillain, cast, discarded)
+                && !AnotherCopyAttachedInTrace(current, cast, discarded),
+            "minBy" or "maxBy" => TraceRankedSelectorIncludesVillain(
+                node, current, cast, discarded),
+            _ => false,
+        };
+    }
+
+    private static bool AnotherCopyAttachedInTrace(
+        Card current, Cast cast, HashSet<int> discarded)
+    {
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        string sourceTitle = cast.World.Facts.Title(cast.Source.FaceId);
+        bool carried = boardVillain >= 0 && string.Equals(
+            cast.World.Facts.Title(cast.World.Cards[boardVillain].FaceId),
+            cast.World.Facts.Title(current.FaceId), StringComparison.Ordinal);
+        return cast.World.Areas
+            .Where(area => area.Host == current.ObjectId
+                || carried && area.Host == boardVillain)
+            .SelectMany(area => area.Cards)
+            .Any(attached => attached.ObjectId != cast.Source.ObjectId
+                && !discarded.Contains(attached.ObjectId)
+                && string.Equals(
+                    cast.World.Facts.Title(attached.FaceId), sourceTitle,
+                    StringComparison.Ordinal));
+    }
+
+    private static bool TraceRankedSelectorIncludesVillain(
+        AbilityNode node, Card current, Cast cast, HashSet<int> discarded)
+    {
+        if (!TraceSelectorIncludesVillain(
+                node.Require("of"), current.ObjectId, cast, discarded)
+            || StateFields.Modified(
+                cast.World, current, "permanent", cast.World.Facts,
+                cast.World.Players) > 0)
+        {
+            return false;
+        }
+
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        var candidates = Every(node.Require("of"), cast)
+            .Where(card => card.ObjectId != boardVillain
+                && !discarded.Contains(card.ObjectId)
+                && StateFields.Modified(
+                    cast.World, card, "permanent", cast.World.Facts,
+                    cast.World.Players) <= 0)
+            .Append(current)
+            .ToList();
+        string key = Word(node.Require("by"));
+        long Rank(Card card) => key switch
+        {
+            "cost" => cast.World.Facts.PrintedValue(
+                card.FaceId, "Cost", cast.World.Players),
+            "attack" => StateFields.Modified(
+                cast.World, card, "attack", cast.World.Facts,
+                cast.World.Players),
+            "printedHealth" => cast.World.Facts.PrintedValue(
+                card.FaceId, "HP", cast.World.Players),
+            _ => throw new AbilityException(
+                $"'{key}' is not a value cards can be ranked by"),
+        };
+        long extreme = node.Kind == "minBy"
+            ? candidates.Min(Rank)
+            : candidates.Max(Rank);
+        return Rank(current) == extreme;
     }
 
     private static long MutationTotal(

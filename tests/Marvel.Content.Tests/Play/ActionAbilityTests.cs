@@ -4367,6 +4367,103 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:villain-defeat.4")]
+    [Fact]
+    public void ATitleSelectorDoesNotFollowADifferentVillainCharacter()
+    {
+        // A different-title stage is not Rhino. The live title selector finds
+        // nothing after Ultron replaces Rhino, so it cannot put damage on
+        // Ultron for the following move to carry to the wounded hero.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 100 } },
+                { "dealDamage": { "cards": { "titled": "Rhino" }, "amount": 1 } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01136", board.AreaOf(DeckType.VillainDeck));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:villain-defeat.2")]
+    [Fact]
+    public void ARankedSelectorIsRecomputedForTheNewVillainStage()
+    {
+        // Rhino I and Shocker tie for the lowest attack, but Rhino II does
+        // not. The selector is evaluated after the stage changes, so only
+        // Shocker receives the point and the new villain has none to move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 100 } },
+                { "dealDamage": {
+                  "cards": { "minBy": {
+                    "of": { "query": "enemies" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01103",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:damage.step.1")]
     [Rule("rr:replacement-effect.1")]
     [Fact]
