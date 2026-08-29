@@ -306,7 +306,8 @@ public sealed class ContinuousEffects(World world)
                 {
                     foreach (var card in world.Cards)
                     {
-                        if (DeckTypes.IsInPlay(card.Area.Type))
+                        if (DeckTypes.IsInPlay(card.Area.Type)
+                            && !departing.Contains(card.ObjectId))
                         {
                             found.AddRange(world.Abilities.Constant(world, card));
                         }
@@ -625,8 +626,7 @@ public sealed class ContinuousEffects(World world)
                 Discard.PreflightAttachments(world, card);
             }
 
-            var constants = suppressedConstants[firstSuppressed..].ToArray();
-            return new ConstantEnding(this, roots, [.. plannedIds], constants);
+            return new ConstantEnding(this, roots, [.. plannedIds]);
         }
         finally
         {
@@ -698,25 +698,22 @@ public sealed class ContinuousEffects(World world)
         private readonly ContinuousEffects effects;
         private readonly IReadOnlyList<Card> restored;
         private readonly IReadOnlyList<int> departures;
-        private readonly IReadOnlyList<ContinuousEffect> constants;
         private bool completed;
 
         internal ConstantEnding(
             ContinuousEffects effects,
             IReadOnlyList<Card> restored,
-            IReadOnlyList<int> departures,
-            IReadOnlyList<ContinuousEffect>? constants = null)
+            IReadOnlyList<int> departures)
         {
             this.effects = effects;
             this.restored = restored;
             this.departures = departures;
-            this.constants = constants ?? [];
         }
 
         /// <summary>
         /// Mark the whole preflighted cascade as one departure while it is applied.
         /// </summary>
-        public IDisposable Begin() => effects.BeginDepartures(departures, constants);
+        public IDisposable Begin() => effects.BeginDepartures(departures);
 
         /// <summary>Apply the preflighted changes after the source has left play.</summary>
         public void Complete(string trigger, List<GameEvent> events)
@@ -733,35 +730,14 @@ public sealed class ContinuousEffects(World world)
         }
     }
 
-    private DepartureScope BeginDepartures(
-        IReadOnlyList<int> cards, IReadOnlyList<ContinuousEffect> constants)
+    private DepartureScope BeginDepartures(IReadOnlyList<int> cards)
     {
         var added = cards.Where(departing.Add).ToArray();
-        suppressedConstants.AddRange(constants);
-        return new DepartureScope(this, added, constants);
+        return new DepartureScope(departing, added);
     }
 
-    private void EndDepartures(
-        IReadOnlyList<int> cards, IReadOnlyList<ContinuousEffect> constants)
-    {
-        foreach (int card in cards)
-        {
-            departing.Remove(card);
-        }
-        foreach (var effect in constants.Reverse())
-        {
-            int index = suppressedConstants.FindLastIndex(candidate => candidate == effect);
-            if (index >= 0)
-            {
-                suppressedConstants.RemoveAt(index);
-            }
-        }
-    }
-
-    private sealed class DepartureScope(
-        ContinuousEffects effects,
-        IReadOnlyList<int> cards,
-        IReadOnlyList<ContinuousEffect> constants) : IDisposable
+    private sealed class DepartureScope(HashSet<int> departing, IReadOnlyList<int> cards)
+        : IDisposable
     {
         private bool disposed;
 
@@ -771,7 +747,10 @@ public sealed class ContinuousEffects(World world)
             {
                 return;
             }
-            effects.EndDepartures(cards, constants);
+            foreach (int card in cards)
+            {
+                departing.Remove(card);
+            }
             disposed = true;
         }
     }

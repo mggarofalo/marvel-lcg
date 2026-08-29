@@ -1211,6 +1211,38 @@ public sealed class KeywordTests
         Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
     }
 
+    [Rule("rr:ability.9")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ADepartingCardCannotActivateANewConditionalConstantMidCommit()
+    {
+        // S restores U1 and U2. U2's Permanent grant is dormant until U1 is
+        // absent, but U2 is itself already departing and therefore cannot
+        // activate a new constant between the two preflighted moves.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, second.ObjectId));
+        world.Abilities = new UsesLossWithDormantPermanent(
+            source.ObjectId, first.ObjectId, second.ObjectId, attachment.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, first.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
+    }
+
     [Rule("rr:ability.5")]
     [Rule("rr:permanent.5")]
     [Rule("rr:uses-x-type.1")]
@@ -1729,6 +1761,46 @@ public sealed class KeywordTests
                         Lasts: Duration.WhileInPlay),
                 ]
                 : [];
+        }
+    }
+
+    private sealed class UsesLossWithDormantPermanent(
+        int source, int first, int second, int attachment) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: source,
+                        Affects: first,
+                        Lasts: Duration.WhileInPlay),
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: source,
+                        Affects: second,
+                        Lasts: Duration.WhileInPlay),
+                ];
+            }
+
+            return card.ObjectId == second
+                && !DeckTypes.IsInPlay(world.Cards[first].Area.Type)
+                    ?
+                    [
+                        new ContinuousEffect(
+                            EffectSource.ConstantAbility,
+                            "permanent",
+                            Amount: 1,
+                            Card: second,
+                            Affects: attachment,
+                            Lasts: Duration.WhileInPlay),
+                    ]
+                    : [];
         }
     }
 }
