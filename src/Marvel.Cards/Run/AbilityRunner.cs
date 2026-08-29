@@ -3971,7 +3971,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "choose" => Nodes(node.Require("options")),
             "chooseCard" or "eachPlayer" => [Tree(node.Require("effect"))],
             "payOrEffect" or "payOrExhaust" => [Tree(node.Require("otherwise"))],
-            "thwartSchemes" => [Tree(node.Require("power"))],
+            "thwartSchemes" or "thwartDifferentSchemes" or "legalPractice" =>
+                [Tree(node.Require("power"))],
             _ => StructuralChildren(node),
         };
 
