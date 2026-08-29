@@ -88,12 +88,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 ability.Trigger.Event, Steps.CardEntersPlay,
                 StringComparison.Ordinal)))
         {
-            Run(
-                ability.Effect,
-                new Cast(world, card, occurrence, ControllerOf(world, card), events, this)
-                {
-                    Tier = ability.Trigger.Timing,
-                });
+            var cast = new Cast(
+                world, card, occurrence, ControllerOf(world, card), events, this)
+            {
+                Tier = ability.Trigger.Timing,
+            };
+            TrackResolution(cast, ability);
+            Run(ability.Effect, cast);
+            cast.CompleteResolution();
         }
 
         return events;
@@ -114,17 +116,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     ability.Trigger.Event, "WhenActivationCompleted",
                     StringComparison.Ordinal)))
             {
-                Run(
-                    ability.Effect,
-                    new Cast(
-                        world, enemy,
-                        new Occurrence(
-                            0, ["WhenActivationCompleted"],
-                            Actor: enemy.ObjectId, Player: result.Player),
-                        result.Player, events, this)
-                    {
-                        Tier = ability.Trigger.Timing,
-                    });
+                var cast = new Cast(
+                    world, enemy,
+                    new Occurrence(
+                        0, ["WhenActivationCompleted"],
+                        Actor: enemy.ObjectId, Player: result.Player),
+                    result.Player, events, this)
+                {
+                    Tier = ability.Trigger.Timing,
+                };
+                TrackResolution(cast, ability);
+                Run(ability.Effect, cast);
+                cast.CompleteResolution();
             }
         }
 
@@ -190,7 +193,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         };
         cast.RestoreAbility(
             continuation.AbilityOrdinal, path, continuation.AbilityFace);
+        cast.TrackResolution(continuation.AbilityOrdinal);
         RestorePersisted(cast, continuation);
+        if (cast.Results.GetValueOrDefault("activationMade") > 0)
+        {
+            cast.ResolveEffect();
+        }
         RestorePathBindings(cast, path);
         var root = AbilityAt(
             source, continuation.Tier, continuation.AbilityOrdinal,
@@ -202,6 +210,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             stopBefore: continuation.EachPlayerFrame && !continuation.FinalPlayer
                 ? eachPlayer
                 : -1);
+        cast.CompleteResolution();
         DiscardEvent(source, cast);
         return cast.Events;
     }
@@ -296,6 +305,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             .ToList()
             .IndexOf(ability);
         cast.RestoreAbility(ordinal, abilityPath ?? [], abilityFace);
+        cast.TrackResolution(ordinal);
         Run(effect, cast);
 
         if (power == BasicPowers.AttackVerb)
@@ -327,6 +337,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             Sequence(ability.Effect, cast, resumeFrom);
         }
+        cast.CompleteResolution();
         DiscardEvent(source, cast);
     }
 
@@ -596,16 +607,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         PayEvent(card, paying, cast, found.Effect);
         Pay(found.Cost, paying, chosen, cast);
         Use(world, card, found);
+        if (world.Facts.Kind(card.FaceId) == CardKind.Event)
+        {
+            occurrence.BeginCard(card.ObjectId, [ability]);
+        }
+        cast.RestoreAbility(ability.Ordinal, []);
+        cast.TrackResolution(ability.Ordinal);
         Run(found.Effect, cast);
+        cast.CompleteResolution();
         DiscardEvent(card, cast);
         return events;
     }
 
     /// <inheritdoc/>
-    public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
+    public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) =>
+        WhenRevealed(
+            world, card, player,
+            new Occurrence(0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player));
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> WhenRevealed(
+        World world, Card card, int player, Occurrence occurrence)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(occurrence);
 
         if (!book.Authored.Contains(card.FaceId))
         {
@@ -616,48 +642,88 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + $"this engine has {book.Authored.Count} authored card(s)");
         }
 
+        var reveals = On(card)
+            .Where(ability => ability.Trigger.Timing == AbilityType.WhenRevealed)
+            .Select((ability, ordinal) => (Ability: ability, Ordinal: ordinal))
+            .Where(entry => string.Equals(
+                entry.Ability.Trigger.Event, Steps.CardRevealed,
+                StringComparison.Ordinal))
+            .ToList();
+        var addresses = reveals.Select(entry => new PendingAbility(
+            card.ObjectId, AbilityType.WhenRevealed, player, entry.Ordinal)).ToList();
+        if (world.Facts.Kind(card.FaceId) == CardKind.Treachery)
+        {
+            occurrence.BeginCard(card.ObjectId, addresses);
+        }
+
         var events = new List<GameEvent>();
-        var cancellation = world.Effects.Active().FirstOrDefault(effect =>
-            string.Equals(effect.Kind, "cancelWhenRevealed", StringComparison.Ordinal)
-            && effect.Affects == card.ObjectId);
-        bool mayBeCanceled = world.Facts.Kind(card.FaceId)
-            is not (CardKind.EncounterVillain or CardKind.MainScheme);
-        if (mayBeCanceled
-            && cancellation is not null
-            && world.Effects.Use(cancellation))
+        if (CancelWhenRevealed(world, card, player, occurrence))
         {
             return events;
         }
-
-        // `rr:reveal` is the occurrence; the card is not in play while it
-        // resolves, which is why this does not go through `Waiting`.
-        var occurrence = new Occurrence(
-            0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player);
 
         // One reveal can contain several authored abilities. A non-numeric
         // keyword gained by more than one of them is still one keyword, so the
         // casts share which keyword grants have already resolved.
         var gainedKeywords = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var ability in On(card))
+        foreach (var (ability, ordinal) in reveals)
         {
             // `rr:ability.step.3` -- "When Revealed" *is* the occurrence, not a
             // window around it. An interrupt or a response to a card being
             // revealed is a different ability and reaches the board through
             // `Waiting`, so matching on the condition alone would run it twice.
-            if (ability.Trigger.Timing == AbilityType.WhenRevealed
-                && string.Equals(ability.Trigger.Event, Steps.CardRevealed, StringComparison.Ordinal))
+            var cast = new Cast(world, card, occurrence, player, events, this)
             {
-                Run(
-                    ability.Effect,
-                    new Cast(world, card, occurrence, player, events, this)
-                    {
-                        Tier = ability.Trigger.Timing,
-                        GainedKeywords = gainedKeywords,
-                    });
-            }
+                Tier = ability.Trigger.Timing,
+                GainedKeywords = gainedKeywords,
+            };
+            cast.RestoreAbility(ordinal, []);
+            cast.TrackResolution(ordinal);
+            Run(ability.Effect, cast);
+            cast.CompleteResolution();
         }
 
         return events;
+    }
+
+    /// <inheritdoc/>
+    public bool CancelWhenRevealed(
+        World world, Card card, int player, Occurrence occurrence)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(occurrence);
+
+        var authored = On(card)
+            .Where(ability => ability.Trigger.Timing == AbilityType.WhenRevealed)
+            .Select((ability, ordinal) => (ability, ordinal))
+            .Where(entry => string.Equals(
+                entry.ability.Trigger.Event, Steps.CardRevealed,
+                StringComparison.Ordinal))
+            .Select(entry => new PendingAbility(
+                card.ObjectId, AbilityType.WhenRevealed, player, entry.ordinal));
+        var addresses = authored
+            .Concat(Reveal.KeywordAbilities(world, world.Facts, card, player))
+            .ToList();
+        var cancellation = world.Effects.Active().FirstOrDefault(effect =>
+            string.Equals(effect.Kind, "cancelWhenRevealed", StringComparison.Ordinal)
+            && effect.Affects == card.ObjectId);
+        bool mayBeCanceled = world.Facts.Kind(card.FaceId)
+            is not (CardKind.EncounterVillain or CardKind.MainScheme);
+        if (!mayBeCanceled || cancellation is null || !world.Effects.Use(cancellation))
+        {
+            return false;
+        }
+
+        if (world.Facts.Kind(card.FaceId) == CardKind.Treachery)
+        {
+            occurrence.BeginCard(card.ObjectId, addresses);
+        }
+        foreach (var address in addresses)
+        {
+            occurrence.Cancel(address);
+        }
+        return true;
     }
 
     /// <inheritdoc/>
@@ -694,17 +760,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var occurrence = new Occurrence(
             0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player);
 
-        foreach (var ability in boosts)
+        foreach (var (ability, ordinal) in boosts.Select((ability, ordinal) =>
+                     (ability, ordinal)))
         {
             // `rr:ability` puts a "Boost" ability at the occurrence tier, like
             // "When Revealed": it is the thing happening rather than a window
             // around it, so there is nothing to offer and nothing to decline.
-            Run(
-                ability.Effect,
-                new Cast(world, card, occurrence, player, events, this)
-                {
-                    Tier = ability.Trigger.Timing,
-                });
+            var cast = new Cast(world, card, occurrence, player, events, this)
+            {
+                Tier = ability.Trigger.Timing,
+            };
+            cast.RestoreAbility(ordinal, []);
+            cast.TrackResolution(ordinal);
+            Run(ability.Effect, cast);
+            cast.CompleteResolution();
         }
 
         return events;
@@ -732,7 +801,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         };
         if (CanInitiate(ability.Effect, cast))
         {
+            cast.RestoreAbility(0, []);
+            cast.TrackResolution(0);
             Run(ability.Effect, cast);
+            cast.CompleteResolution();
         }
         return events;
     }
@@ -991,7 +1063,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Tier = ability.Trigger.Timing,
             };
 
+            TrackResolution(cast, ability);
             Run(ability.Effect, cast);
+            cast.CompleteResolution();
 
             // An ability that touched the damage says so; one that did nothing
             // to it leaves it alone. `rr:damage.step.1` holds abilities that
@@ -1169,12 +1243,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             if (ability.Trigger.Timing == AbilityType.Setup)
             {
-                Run(
-                    ability.Effect,
-                    new Cast(world, card, occurrence, card.Owner, events, this)
-                    {
-                        Tier = ability.Trigger.Timing,
-                    });
+                var cast = new Cast(world, card, occurrence, card.Owner, events, this)
+                {
+                    Tier = ability.Trigger.Timing,
+                };
+                TrackResolution(cast, ability);
+                Run(ability.Effect, cast);
+                cast.CompleteResolution();
             }
         }
 
@@ -1239,6 +1314,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         RestorePersisted(cast, step);
         cast.RestoreAbility(
             ordinal, [.. parentPath, "eachPlayer:effect"], step?.AbilityFace);
+        cast.TrackResolution(ordinal);
         RestorePathBindings(cast, parentPath);
         cast.At(stoppedAt - 1);
         cast.SetContinuation(finalPlayer && (step?.AbilityHasContinuation
@@ -1251,6 +1327,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             cast.SetContinuation(false);
             ResumeAfter(outer, parentPath, cast);
         }
+        cast.CompleteResolution();
         return cast.Events;
     }
 
@@ -1365,12 +1442,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // single one a window would take.
         foreach (var ability in written)
         {
-            Run(
-                ability.Effect,
-                new Cast(world, card, occurrence, card.Owner, events, this)
-                {
-                    Tier = ability.Trigger.Timing,
-                });
+            var cast = new Cast(world, card, occurrence, card.Owner, events, this)
+            {
+                Tier = ability.Trigger.Timing,
+            };
+            TrackResolution(cast, ability);
+            Run(ability.Effect, cast);
+            cast.CompleteResolution();
         }
 
         // `rr:forced.6` -- "each forced ability must resolve as completely as
@@ -1533,7 +1611,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         PayEvent(card, paying, cast, found.Effect);
         Pay(found.Cost, paying, chosen, cast);
         Use(world, card, found);
+        if (world.Facts.Kind(card.FaceId) == CardKind.Event)
+        {
+            occurrence.BeginCard(card.ObjectId, [ability]);
+        }
+        cast.RestoreAbility(ability.Ordinal, []);
+        cast.TrackResolution(ability.Ordinal);
         Run(found.Effect, cast);
+        cast.CompleteResolution();
         DiscardEvent(card, cast);
         return events;
     }
@@ -2912,6 +2997,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             cast.RestoreAbility(current.AbilityOrdinal, path, current.AbilityFace);
             RestorePathBindings(cast, path);
         }
+        if (cast.AbilityOrdinal >= 0)
+        {
+            cast.TrackResolution(cast.AbilityOrdinal);
+        }
         cast.At(Math.Max(0, stoppedAt - 1));
         cast.SetContinuation(persisted?.AbilityHasContinuation ?? On(source).Any(ability =>
             (tier is null || ability.Trigger.Timing == tier)
@@ -2972,6 +3061,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Steps.ResolveSpecial, round, index + 1, Subject: id, Seat: player,
                     Plan: true, FinalStep: index == input.Targets.Count - 1));
             }
+            if (input.Targets.Count > 0)
+            {
+                cast.ResolveEffect();
+            }
 
             return Continue(source, cast, stoppedAt);
         }
@@ -2982,6 +3075,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 string required = Word(choice.Require("resources"));
                 CardPlay.Spend(world, world.Facts, [world.Seats[player].Hand], input.Spent,
                     required.Length, required, -1, player, cast.Events);
+                cast.ResolveEffect();
             }
             else if (input.Affordance == 1)
             {
@@ -3006,6 +3100,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 CardPlay.Spend(
                     world, world.Facts, [world.Seats[player].Hand], input.Spent,
                     required.Length, required, itself: -1, player, cast.Events);
+                cast.ResolveEffect();
             }
             else if (input.Affordance == 1)
             {
@@ -3048,6 +3143,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Rules.Play.Discard.Card(world, card, cast.Trigger, cast.Events);
                 }
             }
+            cast.ResolveEffect();
 
             return Continue(source, cast, stoppedAt);
         }
@@ -3074,6 +3170,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 World.MoveToTop(card, world.Seats[player].Deck);
             }
             world.Shuffle(world.Seats[player].Deck);
+            cast.ResolveEffect();
             return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "thwartDifferentSchemes")
@@ -3111,6 +3208,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 source.ObjectId, player, cast.Events, payingFor: ally);
             CardPlay.PutAllyIntoPlay(
                 world, world.Facts, cast.Abilities, ally, player, cast.Trigger, cast.Events);
+            cast.ResolveEffect();
             return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "legalPractice")
@@ -3136,6 +3234,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
                 Rules.Play.Discard.Card(world, card, CardPlay.Verb, cast.Events);
             }
+            cast.ResolveEffect();
             cast.Choose(scheme);
             SchedulePower(
                 Tree(choice.Require("power")), cast, BasicPowers.ThwartVerb,
@@ -6190,6 +6289,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ResumeAfter(
                 root, cast.AbilityPath, cast,
                 stopBefore: cast.EachPlayerFrame && !cast.FinalPlayer ? eachPlayer : -1);
+            cast.CompleteResolution();
             DiscardEvent(source, cast);
             return cast.Events;
         }
@@ -6207,6 +6307,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Sequence(effect, cast, from);
             }
             DiscardEvent(source, cast);
+            cast.CompleteResolution();
             return cast.Events;
         }
 
@@ -6216,6 +6317,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         DiscardEvent(source, cast);
+        cast.CompleteResolution();
 
         return cast.Events;
     }
@@ -9453,6 +9555,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static void Run(AbilityNode node, Cast cast)
     {
+        int eventsBefore = cast.Events.Count;
         switch (node.Kind)
         {
             case "seq":
@@ -9548,6 +9651,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         $"'{cast.Source.FaceId}' cannot find the card receiving counters");
                 long beforeCounters = counterCard.Tokens.GetValueOrDefault("c_" + counter);
                 long placedCounters = Amount(node.Require("count"), cast);
+                if (placedCounters < 0)
+                {
+                    throw new AbilityException("'placeCounters' needs a non-negative 'count'");
+                }
+                if (placedCounters == 0)
+                {
+                    break;
+                }
                 counterCard.PlaceTokens("c_" + counter, placedCounters);
                 cast.Events.Add(new FieldSet(
                     counterCard.ObjectId, "c_" + counter,
@@ -9559,10 +9670,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "preventDamage":
                 PreventDamage(node, cast);
+                cast.ResolveEffect();
                 break;
 
             case "cancelWhenRevealed":
                 CancelWhenRevealed(cast);
+                cast.ResolveEffect();
                 break;
 
             case "dealEncounterCards":
@@ -9730,6 +9843,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.Source.ObjectId, cast.Player, cast.Tier,
                     Tree(node.Require("effect")),
                     cast.Altered?.ObjectId ?? -1));
+                cast.ResolveEffect();
                 break;
 
             case "if":
@@ -9765,6 +9879,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "alsoAttackEachOtherHero":
                 Attack.AlsoResolveAgainstEachOtherHero(cast.World);
+                cast.ResolveEffect();
                 break;
 
             case "attachTo":
@@ -9773,6 +9888,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "grantUntil":
                 GrantUntil(node, cast);
+                cast.ResolveEffect();
                 break;
 
             case "grantCharactersControlledBy":
@@ -9783,16 +9899,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         Amount(node.Require("amount"), cast),
                         Word(node.Require("until")));
                 }
+                cast.ResolveEffect();
                 break;
 
             case "reduceNextCardCost":
                 CardPlay.ReduceNextCardCost(
                     cast.World, cast.Source, Seat(node.Require("player"), cast),
                     Amount(node.Require("amount"), cast));
+                cast.ResolveEffect();
                 break;
 
             case "delayUntil":
                 DelayUntil(node, cast);
+                cast.ResolveEffect();
                 break;
 
             case "discard":
@@ -9884,6 +10003,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "preventThreat":
                 PreventThreat(node, cast);
+                cast.ResolveEffect();
                 break;
 
             case "replaceThreatWithDamage":
@@ -9916,7 +10036,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 // shuffle that entire deck." A step of the card rather than
                 // part of the search, because "upon completion" is after the
                 // player has answered which card they took.
-                cast.World.Shuffle(Area(Word(node.Argument), cast));
+                if (cast.World.Shuffle(Area(Word(node.Argument), cast)))
+                {
+                    cast.ResolveEffect();
+                }
                 break;
 
             case "draw":
@@ -9934,7 +10057,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     $"'{cast.Source.FaceId}' uses the effect node '{node.Kind}', "
                     + "which is not implemented");
         }
+        if (cast.Events.Count > eventsBefore && EventMeansEffectApplied(node.Kind))
+        {
+            cast.ResolveEffect();
+        }
     }
+
+    private static bool EventMeansEffectApplied(string kind) => kind is not (
+        "seq" or "and" or "then" or "otherwise" or "eachPlayer" or "if"
+        or "forEach" or "eachTime" or "choose" or "chooseCard"
+        or "resolveSpecials" or "payOrExhaust" or "payOrEffect"
+        or "chooseTopForHand" or "chooseDiscardToShuffle"
+        or "thwartDifferentSchemes" or "makeTheCall" or "legalPractice"
+        or "attack" or "defense" or "thwart" or "thwartSchemes"
+        or "placeThreat" or "enemyAttacks" or "enemySchemes");
 
     private static bool Test(AbilityNode node, Cast cast) => node.Kind switch
     {
@@ -10816,6 +10952,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Index: cast.Player,
             Subject: card.ObjectId,
             Seat: cast.Player));
+        cast.ResolveEffect();
     }
 
     /// <summary>
@@ -10830,6 +10967,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static void ShuffleInto(AbilityNode node, Cast cast)
     {
         var deck = Area(Word(node.Require("deck")), cast);
+        bool applied = false;
         foreach (var card in Every(node.Require("cards"), cast))
         {
             var from = card.Area;
@@ -10840,9 +10978,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 Trigger = cast.Trigger, Verb = "Shuffle_Into",
             });
+            applied = true;
         }
 
-        cast.World.Shuffle(deck);
+        applied |= cast.World.Shuffle(deck);
+        if (applied)
+        {
+            cast.ResolveEffect();
+        }
     }
 
     /// <summary>
@@ -10896,7 +11039,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "not implemented");
         }
 
-        if (found.Count == 1)
+        bool applied = found.Count == 1;
+        if (applied)
         {
             cast.World.Agenda.Then(new PhaseStep(
                 Steps.RevealEncounterCard,
@@ -10914,7 +11058,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // which is a wire format.
         foreach (var deck in areas.Where(area => area.Type == DeckType.EncounterDeck))
         {
-            cast.World.Shuffle(deck);
+            applied |= cast.World.Shuffle(deck);
+        }
+        if (applied)
+        {
+            cast.ResolveEffect();
         }
     }
 
@@ -11299,6 +11447,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private IEnumerable<CardAbility> AbilitiesOn(Card source, string? face) =>
         string.IsNullOrEmpty(face) ? On(source) : book.On(face);
+
+    private void TrackResolution(Cast cast, CardAbility ability)
+    {
+        var sameTier = AbilitiesOn(cast.Source, cast.AbilityFace)
+            .Where(candidate => candidate.Trigger.Timing == ability.Trigger.Timing)
+            .ToList();
+        int ordinal = sameTier.FindIndex(candidate => ReferenceEquals(candidate, ability));
+        if (ordinal < 0)
+        {
+            ordinal = sameTier.IndexOf(ability);
+        }
+        if (ordinal < 0)
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot identify the ability whose resolution is tracked");
+        }
+        cast.RestoreAbility(ordinal, []);
+        cast.TrackResolution(ordinal);
+    }
 
     private CardAbility AbilityAt(
         Card source, AbilityType? tier, int ordinal, string? face = null) =>
@@ -12123,6 +12290,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
 
+        long amount = Amount(node.Require("amount"), cast);
+        if (amount <= 0)
+        {
+            return;
+        }
+
         if (cast.HasContinuation)
         {
             throw new RulesNotImplementedException(
@@ -12131,8 +12304,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         Threat.Schedule(
-            cast.World, schemes, cast.Source, Amount(node.Require("amount"), cast),
-            ThreatCause.CardAbility, cast.Trigger, cast.Player);
+            cast.World, schemes, cast.Source, amount,
+            ThreatCause.CardAbility, cast.Trigger, cast.Player,
+            cast.ResolutionAbility, cast.Occurrence);
         cast.Suspend();
     }
 
@@ -12150,10 +12324,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would replace threat that is not imminent");
         long damage = placement.Remaining;
-        placement.Replace();
         var target = Find(node.Require("card"), cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' replaces threat with damage to a card that is not there");
+        placement.Replace();
+        cast.ResolveEffect();
         Damage.Deal(
             cast.World, cast.World.Facts, cast.Source, target, damage,
             cast.Trigger, "Deal_Damage", cast.Events);
@@ -12580,7 +12755,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
 
-        if (cast.HasContinuation && activationIds.Count > 0)
+        if (activationIds.Count > 0)
         {
             cast.World.Agenda.AfterActivations(activationIds, new PhaseStep(
                 Steps.ResumeAbility,
@@ -13632,9 +13807,46 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             int ordinal, IReadOnlyList<string> path, string? face = null)
         {
             AbilityOrdinal = ordinal;
-            AbilityFace = face ?? string.Empty;
+            if (face is not null)
+            {
+                AbilityFace = face;
+            }
             AbilityPath.Clear();
             AbilityPath.AddRange(path);
+        }
+
+        private PendingAbility? resolutionAbility;
+
+        /// <summary>The exact ability whose status this cast updates.</summary>
+        public PendingAbility? ResolutionAbility => resolutionAbility;
+
+        /// <summary>Begin tracking the exact ability whose tree this cast runs.</summary>
+        public void TrackResolution(int ordinal)
+        {
+            if (Tier is not { } tier)
+            {
+                return;
+            }
+            resolutionAbility = new PendingAbility(Source.ObjectId, tier, Player, ordinal);
+            Occurrence.Begin(resolutionAbility.Value);
+        }
+
+        /// <summary>Record that one effect in the tracked ability applied.</summary>
+        public void ResolveEffect()
+        {
+            if (resolutionAbility is { } ability)
+            {
+                Occurrence.Resolve(ability);
+            }
+        }
+
+        /// <summary>Finish a tracked ability unless it remains suspended.</summary>
+        public void CompleteResolution()
+        {
+            if (!Suspended && resolutionAbility is { } ability)
+            {
+                Occurrence.Complete(ability);
+            }
         }
 
         public void SetAbilityPath(IEnumerable<string> path)

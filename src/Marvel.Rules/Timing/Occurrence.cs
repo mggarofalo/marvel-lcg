@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Marvel.Rules.Timing;
 
 /// <summary>Which of an occurrence's two windows is open.</summary>
@@ -9,6 +11,29 @@ public enum WindowKind
     /// <summary>After it has resolved — <c>rr:response</c>.</summary>
     Response,
 }
+
+/// <summary>Whether rule-defined resolution is still pending, succeeded, or did not occur.</summary>
+public enum ResolutionStatus
+{
+    /// <summary>The ability or card has initiated but has not finished.</summary>
+    Pending,
+
+    /// <summary>At least one required child effect or ability resolved.</summary>
+    Resolved,
+
+    /// <summary>Completion or cancellation left no resolved child.</summary>
+    Unresolved,
+}
+
+/// <summary>Resolution state for a card or one exact ability on it.</summary>
+/// <param name="Card">The source card's object id.</param>
+/// <param name="Ability">The ability type, or null when this entry is for the card.</param>
+/// <param name="Ordinal">The same-type ability ordinal, or -1 for a card entry.</param>
+/// <param name="Status">Its current rule-defined status.</param>
+/// <param name="Applied">Whether at least one child effect has applied so far.</param>
+public sealed record ResolutionEntry(
+    int Card, AbilityType? Ability, int Ordinal, ResolutionStatus Status,
+    bool Applied = false);
 
 /// <summary>
 /// One thing happening in the game, and the two windows around it.
@@ -35,52 +60,80 @@ public enum WindowKind
 /// let one interrupt fire twice against what the rules call one moment.
 /// </para>
 /// </remarks>
-/// <param name="Id">Distinguishes this occurrence from another of the same shape.</param>
-/// <param name="Conditions">
-/// The triggering conditions this occurrence is known to create when it is
-/// scheduled. More than one is the <c>rr:triggering-condition.2</c> case, and
-/// they still share these windows. <b>More can be added while it happens</b> —
-/// see the property of the same name.
-/// </param>
-/// <param name="Subject">
-/// The card this is happening to or because of, or <c>-1</c>. An enemy for an
-/// activation, the revealed card for a reveal.
-/// </param>
-/// <param name="Player">
-/// The seat it concerns, or <c>-1</c>. A card cannot answer "when the villain
-/// attacks <b>you</b>" without it — <c>rr:attack-enemy-activation.1.4</c> makes
-/// that phrase mean the attacked <i>player</i>, whichever character was
-/// targeted.
-/// </param>
-/// <param name="Actor">
-/// The card performing the occurrence — an attacker or thwarter — or <c>-1</c>.
-/// </param>
-/// <param name="Target">
-/// The game element it acts on — an attacked character or thwarted scheme — or <c>-1</c>.
-/// </param>
-/// <param name="ActorFacts">Stable classifications and relationships for <paramref name="Actor"/>.</param>
-/// <param name="TargetFacts">Stable classifications and relationships for <paramref name="Target"/>.</param>
-/// <param name="Threat">The imminent threat assignment, when this is one.</param>
-public sealed record Occurrence(
-    int Id,
-    IReadOnlyList<string> Conditions,
-    int Subject = -1,
-    int Player = -1,
-    int Actor = -1,
-    int Target = -1,
-    OccurrenceCard? ActorFacts = null,
-    OccurrenceCard? TargetFacts = null,
-    State.ThreatPlacement? Threat = null)
+public sealed record Occurrence
 {
+    /// <summary>Creates one saveable occurrence.</summary>
+    /// <param name="Id">Distinguishes this occurrence from another of the same shape.</param>
+    /// <param name="Conditions">Its triggering conditions.</param>
+    /// <param name="Subject">The card this happens to or because of.</param>
+    /// <param name="Player">The seat it concerns.</param>
+    /// <param name="Actor">The card performing it.</param>
+    /// <param name="Target">The game element acted on.</param>
+    /// <param name="ActorFacts">Stable facts about the actor.</param>
+    /// <param name="TargetFacts">Stable facts about the target.</param>
+    /// <param name="Threat">The imminent threat assignment, when present.</param>
+    /// <param name="Resolutions">Persisted ability and card resolution state.</param>
+    [JsonConstructor]
+    public Occurrence(
+        int Id,
+        IReadOnlyList<string> Conditions,
+        int Subject = -1,
+        int Player = -1,
+        int Actor = -1,
+        int Target = -1,
+        OccurrenceCard? ActorFacts = null,
+        OccurrenceCard? TargetFacts = null,
+        State.ThreatPlacement? Threat = null,
+        IReadOnlyList<ResolutionEntry>? Resolutions = null)
+    {
+        ArgumentNullException.ThrowIfNull(Conditions);
+        this.Id = Id;
+        this.Subject = Subject;
+        this.Player = Player;
+        this.Actor = Actor;
+        this.Target = Target;
+        this.ActorFacts = ActorFacts;
+        this.TargetFacts = TargetFacts;
+        this.Threat = Threat;
+        conditions = [.. Conditions];
+        resolutions = [.. Resolutions ?? []];
+    }
+
+    /// <summary>Distinguishes this occurrence from another of the same shape.</summary>
+    public int Id { get; }
+
+    /// <summary>The card this is happening to or because of, or -1.</summary>
+    public int Subject { get; }
+
+    /// <summary>The player this occurrence concerns, or -1.</summary>
+    public int Player { get; }
+
+    /// <summary>The card performing this occurrence, or -1.</summary>
+    public int Actor { get; }
+
+    /// <summary>The game element acted on, or -1.</summary>
+    public int Target { get; }
+
+    /// <summary>Stable facts about <see cref="Actor"/>.</summary>
+    public OccurrenceCard? ActorFacts { get; }
+
+    /// <summary>Stable facts about <see cref="Target"/>.</summary>
+    public OccurrenceCard? TargetFacts { get; }
+
+    /// <summary>The imminent threat placement, when this occurrence is one.</summary>
+    public State.ThreatPlacement? Threat { get; }
+
     private readonly HashSet<(WindowKind Window, int Card)> spent = [];
 
     // The positional parameter of the same name, copied. Inside this body
     // `Conditions` is the constructor's argument; outside it is the property
     // below, which is this list. The two are the same set until something adds
     // to it -- see `Also`.
-    private readonly List<string> conditions = [.. Conditions];
+    private readonly List<string> conditions;
 
     private readonly List<State.Defeated> defeats = [];
+
+    private readonly List<ResolutionEntry> resolutions;
 
     /// <summary>An occurrence creating a single triggering condition.</summary>
     /// <param name="id">Distinguishes this occurrence from another of the same shape.</param>
@@ -204,6 +257,153 @@ public sealed record Occurrence(
     /// cleared after it, and the clearing is what nobody remembers.
     /// </remarks>
     public IReadOnlyList<State.Defeated> Defeats => defeats;
+
+    /// <summary>Ability and card resolution state accumulated in this occurrence.</summary>
+    /// <remarks>
+    /// These are data because a resolution can cross a player prompt, an enemy
+    /// activation, and a save boundary before the occurrence reaches its
+    /// response window. The address spelling is the engine's choice; the
+    /// resolved/unresolved distinction is <c>rr:resolve.2-.8</c>.
+    /// </remarks>
+    public IReadOnlyList<ResolutionEntry> Resolutions => resolutions;
+
+    /// <summary>Begin resolving one exact triggered ability.</summary>
+    public void Begin(PendingAbility ability)
+    {
+        int found = ResolutionIndex(ability);
+        if (found < 0)
+        {
+            resolutions.Add(new ResolutionEntry(
+                ability.Card, ability.Type, ability.Ordinal,
+                ability.Type == AbilityType.Constant
+                    ? ResolutionStatus.Unresolved
+                    : ResolutionStatus.Pending));
+        }
+    }
+
+    /// <summary>Begin resolving an event or treachery and all of its abilities.</summary>
+    public void BeginCard(int card, IReadOnlyList<PendingAbility> abilities)
+    {
+        if (resolutions.All(entry => entry.Card != card || entry.Ability is not null))
+        {
+            resolutions.Add(new ResolutionEntry(
+                card, null, -1, ResolutionStatus.Pending));
+        }
+        foreach (var ability in abilities)
+        {
+            Begin(ability);
+        }
+        RefreshCard(card);
+    }
+
+    /// <summary>Record that at least one effect applied while the ability remains in progress.</summary>
+    public void Resolve(PendingAbility ability)
+    {
+        int found = ResolutionIndex(ability);
+        if (found < 0)
+        {
+            Begin(ability);
+            found = ResolutionIndex(ability);
+        }
+        if (ability.Type != AbilityType.Constant)
+        {
+            resolutions[found] = resolutions[found] with
+            {
+                Applied = true,
+                Status = resolutions[found].Status == ResolutionStatus.Unresolved
+                    ? ResolutionStatus.Resolved
+                    : resolutions[found].Status,
+            };
+            RefreshCard(ability.Card);
+        }
+    }
+
+    /// <summary>Finish an ability whose effects did or did not apply.</summary>
+    public void Complete(PendingAbility ability)
+    {
+        int found = ResolutionIndex(ability);
+        if (found < 0)
+        {
+            Begin(ability);
+            found = ResolutionIndex(ability);
+        }
+        if (resolutions[found].Status == ResolutionStatus.Pending)
+        {
+            resolutions[found] = resolutions[found] with
+            {
+                Status = resolutions[found].Applied
+                    ? ResolutionStatus.Resolved
+                    : ResolutionStatus.Unresolved,
+            };
+        }
+        RefreshCard(ability.Card);
+    }
+
+    /// <summary>Cancel an ability before any of its effects resolve.</summary>
+    public void Cancel(PendingAbility ability)
+    {
+        Set(ability, ResolutionStatus.Unresolved, applied: false);
+        RefreshCard(ability.Card);
+    }
+
+    /// <summary>The current status of an exact ability; absent abilities are unresolved.</summary>
+    public ResolutionStatus StatusOf(PendingAbility ability)
+    {
+        int found = ResolutionIndex(ability);
+        return found < 0 ? ResolutionStatus.Unresolved : resolutions[found].Status;
+    }
+
+    /// <summary>The current status of a card; absent cards are unresolved.</summary>
+    public ResolutionStatus CardStatus(int card) => resolutions.FirstOrDefault(entry =>
+        entry.Card == card && entry.Ability is null)?.Status
+        ?? ResolutionStatus.Unresolved;
+
+    private int ResolutionIndex(PendingAbility ability) => resolutions.FindIndex(entry =>
+        entry.Card == ability.Card
+        && entry.Ability == ability.Type
+        && entry.Ordinal == ability.Ordinal);
+
+    private void Set(
+        PendingAbility ability, ResolutionStatus status, bool applied = false)
+    {
+        if (ability.Type == AbilityType.Constant)
+        {
+            status = ResolutionStatus.Unresolved;
+        }
+        int found = ResolutionIndex(ability);
+        if (found < 0)
+        {
+            resolutions.Add(new ResolutionEntry(
+                ability.Card, ability.Type, ability.Ordinal, status, applied));
+        }
+        else
+        {
+            resolutions[found] = resolutions[found] with
+            {
+                Status = status,
+                Applied = applied,
+            };
+        }
+    }
+
+    private void RefreshCard(int card)
+    {
+        int cardEntry = resolutions.FindIndex(entry =>
+            entry.Card == card && entry.Ability is null);
+        if (cardEntry < 0)
+        {
+            return;
+        }
+
+        var abilities = resolutions.Where(entry =>
+            entry.Card == card && entry.Ability is not null).ToList();
+        var status = abilities.Any(entry => entry.Status == ResolutionStatus.Resolved)
+            ? ResolutionStatus.Resolved
+            : abilities.Any(entry => entry.Status == ResolutionStatus.Pending)
+                ? ResolutionStatus.Pending
+                : ResolutionStatus.Unresolved;
+        resolutions[cardEntry] = resolutions[cardEntry] with { Status = status };
+    }
 
     /// <summary>
     /// The one card this occurrence defeated, or null.
