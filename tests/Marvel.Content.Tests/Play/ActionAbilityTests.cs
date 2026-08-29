@@ -4528,6 +4528,129 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:villain-defeat.3.2")]
+    [Fact]
+    public void CarriedAttachmentTraitsApplyToTheNewVillainStage()
+    {
+        // Attachments and their constant abilities carry to a same-title
+        // stage. Flight therefore still gives Rhino II AERIAL before the
+        // filtered damage resolves, leaving a point for the following move.
+        var runner = RepeatedDynamicTargetRunner(
+            """{ "query": "villain" }""",
+            """{ "withTrait": { "cards": { "query": "villain" }, "trait": "AERIAL" } }""",
+            includeAuthored: true);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                board.CreateCard(
+                    "40151",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, villain.Area.PlayArea,
+                        villain.ObjectId));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:traits.1")]
+    [Fact]
+    public void EarlierTraitGrantChangesALaterDynamicTargetSet()
+    {
+        // A granted trait is immediately part of what later card abilities
+        // query. Granting Rhino AERIAL makes both it and the already-AERIAL
+        // Vulture targets before the villain's point is moved to the hero.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "query": "villain" },
+                  "trait": "AERIAL", "until": "EndOfRound"
+                } },
+                { "dealDamage": {
+                  "cards": { "withTrait": {
+                    "cards": { "query": "enemies" }, "trait": "AERIAL"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "27163",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void RankedSelectorCanDropAnInitiallySelectedNonVillain()
+    {
+        // Sandman begins as the maximum attack enemy, but Ultron's next stage
+        // exceeds him. The live maximum drops Sandman, so no damage is present
+        // on him for the following move and the ability remains legal.
+        var runner = RepeatedDynamicTargetRunner(
+            """{ "query": "villain" }""",
+            """{ "maxBy": { "of": { "query": "enemies" }, "by": "attack" } }""",
+            """{ "titled": "Sandman" }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01136", board.AreaOf(DeckType.VillainDeck));
+                board.CreateCard(
+                    "01102",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:damage.step.1")]
     [Rule("rr:replacement-effect.1")]
     [Fact]
@@ -5119,7 +5242,9 @@ public sealed class ActionAbilityTests
     }
 
     private static Marvel.Cards.Run.AbilityRunner RepeatedDynamicTargetRunner(
-        string firstTarget, string secondTarget) => Runner(
+        string firstTarget, string secondTarget,
+        string moveSource = """{ "query": "villain" }""",
+        bool includeAuthored = false) => Runner(
         AuthoredCards.AuntMay,
         "Action",
         $$"""
@@ -5129,7 +5254,7 @@ public sealed class ActionAbilityTests
             { "dealDamage": { "cards": {{firstTarget}}, "amount": 100 } },
             { "dealDamage": { "cards": {{secondTarget}}, "amount": 1 } },
             { "moveDamage": {
-              "from": { "query": "villain" },
+              "from": {{moveSource}},
               "to": { "titled": "Spider-Man" },
               "amount": 1
             } }
@@ -5139,7 +5264,8 @@ public sealed class ActionAbilityTests
             "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
           } }
         } } } }
-        """);
+        """,
+        includeAuthored: includeAuthored);
 
     /// <summary>
     /// A game past the mulligan, on the first player's turn.
