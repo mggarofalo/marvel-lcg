@@ -4296,12 +4296,35 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var cards = Every(targets, cast);
         return cards.Any(card => cast.World.PlayerOrder.Any(player =>
                 cast.World.Seats[player].IdentityCard == card)
-            && CanExhaust(
-                TotalDamageTo(
-                    card, repeatedEffect, cast, assumed, binding),
-                damagingFrames,
-                Damage.Health(cast.World, cast.World.Facts, card) - card.Damage))
+            && TotalRepeatedDamageTo(
+                card, repeatedEffect, cast, assumed, binding,
+                damagingFrames)
+                >= Damage.Health(cast.World, cast.World.Facts, card) - card.Damage)
             || cards.Count == 0 && binding && BindingCanChange(targets);
+    }
+
+    private static long TotalRepeatedDamageTo(
+        Card target, AbilityNode repeatedEffect, Cast cast,
+        RepeatedChange assumed, bool binding, int frames)
+    {
+        long ordinary = SaturatingMultiply(
+            TotalDamageTo(
+                target, repeatedEffect, cast, assumed, binding),
+            frames);
+        var moved = MoveDamageBudgetsTo(
+            target, repeatedEffect, cast, assumed, binding, frames);
+        long availableMoves = SaturatingSum(0, moved.Select(each =>
+        {
+            var source = cast.World.Cards[each.Key];
+            long replenished = SaturatingMultiply(
+                TotalDamageTo(
+                    source, repeatedEffect, cast, assumed, binding),
+                frames);
+            long available = SaturatingSum(source.Damage, [replenished]);
+            return Math.Min(
+                available, SaturatingMultiply(each.Value, frames));
+        }));
+        return SaturatingSum(ordinary, [availableMoves]);
     }
 
     private static bool RebindsToEachPlayer(AbilityValue targets) => targets switch
@@ -4347,12 +4370,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     node.Kind == "dealDamage" ? "cards" : "among"), cast)
                     .Any(card => card.ObjectId == target.ObjectId) =>
                 Amount(node.Require("amount"), cast),
-            "moveDamage"
-                when Every(node.Require("to"), cast)
-                    .Any(card => card.ObjectId == target.ObjectId) =>
-                Math.Min(
-                    Find(node.Require("from"), cast)?.Damage ?? 0,
-                    Amount(node.Require("amount"), cast)),
             "replaceThreatWithDamage"
                 when Every(node.Require("card"), cast)
                     .Any(card => card.ObjectId == target.ObjectId) =>
@@ -4364,6 +4381,61 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             child => TotalDamageTo(
                 target, child, cast, assumed, binding));
     }
+
+    private static IReadOnlyDictionary<int, long> MoveDamageBudgetsTo(
+        Card target, AbilityNode node, Cast cast, RepeatedChange assumed,
+        bool binding, int frames)
+    {
+        var own = new Dictionary<int, long>();
+        if (node.Kind == "moveDamage"
+            && Every(node.Require("to"), cast).Any(card =>
+                card.ObjectId == target.ObjectId)
+            && Find(node.Require("from"), cast) is { } source)
+        {
+            own[source.ObjectId] = Amount(node.Require("amount"), cast);
+        }
+
+        if (node.Kind == "if")
+        {
+            var test = Tree(node.Require("test"));
+            var branches = RepeatedTestCanChange(test, assumed)
+                    || binding && BindingCanChange(test.Argument)
+                ? Branches.Select(node.Field).Where(value => value is not null)
+                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                    ? [active]
+                    : [];
+            return branches
+                .Select(branch => MoveDamageBudgetsTo(
+                    target, Tree(branch!), cast, assumed, binding, frames))
+                .Append(own)
+                .MaxBy(budget => CappedMoveDamage(budget, cast, frames))!;
+        }
+
+        var children = MutationChildren(node)
+            .Select(child => MoveDamageBudgetsTo(
+                target, child, cast, assumed, binding, frames))
+            .ToList();
+        if (node.Kind == "choose")
+        {
+            return children.Append(own)
+                .MaxBy(budget => CappedMoveDamage(budget, cast, frames))!;
+        }
+        foreach (var child in children)
+        {
+            foreach (var (sourceId, amount) in child)
+            {
+                own[sourceId] = SaturatingSum(
+                    own.GetValueOrDefault(sourceId), [amount]);
+            }
+        }
+        return own;
+    }
+
+    private static long CappedMoveDamage(
+        IReadOnlyDictionary<int, long> budget, Cast cast, int frames) =>
+        SaturatingSum(0, budget.Select(each => Math.Min(
+            cast.World.Cards[each.Key].Damage,
+            SaturatingMultiply(each.Value, frames))));
 
     private static long MutationTotal(
         AbilityNode node, Cast cast, RepeatedChange assumed, bool binding,
@@ -4409,6 +4481,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         return own;
     }
+
+    private static long SaturatingMultiply(long amount, int times) =>
+        amount > 0 && times > 0 && amount > long.MaxValue / times
+            ? long.MaxValue
+            : amount * times;
 
     private static bool CanExhaust(
         long amountPerFrame, int frames, long remaining) =>
