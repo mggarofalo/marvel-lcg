@@ -2801,6 +2801,38 @@ public sealed class ActionAbilityTests
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }
 
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void EachPlayerReconstructionUsesTheOriginatingIdentityFace()
+    {
+        var runner = Runner(
+            AuthoredCards.SpiderMan,
+            "WhenRevealed",
+            """{ "seq": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] }""",
+            eventName: Steps.CardRevealed);
+        var (_, world) = Playing(_ => { }, hero: true, abilities: runner);
+        var identity = world.Seats[0].IdentityCard;
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.WhenRevealed(world, identity, 0);
+        var frame = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.ResolveEachPlayer);
+        for (int advances = 0;
+             world.Agenda.Current?.What != Steps.ResolveEachPlayer && advances < 20;
+             advances++)
+        {
+            world.Agenda.Advance();
+        }
+        Assert.Equal(Steps.ResolveEachPlayer, world.Agenda.Current?.What);
+
+        runner.ResolveEachPlayer(
+            world, identity, frame.Seat, frame.Index, frame.Tier,
+            frame.FinalStep, frame.FinalPlayer);
+
+        Assert.Equal("01001b", identity.FaceId);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
+    }
+
     [Fact]
     public void ADirectLastingEffectCannotBeginOutsideItsPeriod()
     {

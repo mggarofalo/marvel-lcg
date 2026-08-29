@@ -1193,10 +1193,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         World world, Card source, int player, int stoppedAt,
         AbilityType? tier, bool finalStep, bool finalPlayer)
     {
-        var written = On(source)
+        var step = world.Agenda.Current;
+        var written = AbilitiesOn(source, step?.AbilityFace)
             .Where(ability => tier is null || ability.Trigger.Timing == tier)
             .ToList();
-        var step = world.Agenda.Current;
         int ordinal = step is { What: Steps.ResolveEachPlayer, AbilityOrdinal: >= 0 }
             ? step.Value.AbilityOrdinal
             : written.FindIndex(ability => EachPlayers(ability.Effect).Any());
