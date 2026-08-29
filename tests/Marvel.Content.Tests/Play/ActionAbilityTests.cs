@@ -3496,6 +3496,45 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Fact]
+    public void InactiveRemovalBranchDoesNotInflateARepeatedMutationBudget()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "titleInPlay": "Bomb Scare" },
+              "then": { "removeThreat": {
+                "scheme": { "titled": "Bomb Scare" }, "amount": 1
+              } },
+              "else": { "seq": [
+                { "removeThreat": {
+                  "scheme": { "titled": "Bomb Scare" }, "amount": 100
+                } },
+                { "attack": {
+                  "target": { "query": "villain" },
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } }
+              ] }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var scheme = board.CreateCard(
+                    "01109", board.AreaOf(DeckType.SideSchemesArea));
+                scheme.PlaceTokens("k_threat", 3);
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
     [Rule("rr:each-player.1")]
     [Fact]
     public void RepeatedMutationAnalysisFlowsThroughOnePlayersSequence()

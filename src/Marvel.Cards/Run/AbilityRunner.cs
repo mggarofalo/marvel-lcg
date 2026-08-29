@@ -4300,10 +4300,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 candidate.ObjectId == scheme.ObjectId)
                 ? Amount(node.Require("amount"), cast)
                 : 0;
-        return SaturatingSum(
-            own,
-            MutationChildren(node).Select(child =>
-                TotalThreatRemoved(scheme, child, cast)));
+        return MutationTotal(
+            node, cast, own,
+            child => TotalThreatRemoved(scheme, child, cast));
     }
 
     private static long TotalDamageTo(
@@ -4328,10 +4327,43 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.Occurrence.Threat?.Remaining ?? long.MaxValue,
             _ => 0,
         };
-        return SaturatingSum(
-            own,
-            MutationChildren(node).Select(child =>
-                TotalDamageTo(target, child, cast)));
+        return MutationTotal(
+            node, cast, own,
+            child => TotalDamageTo(target, child, cast));
+    }
+
+    private static long MutationTotal(
+        AbilityNode node, Cast cast, long own,
+        Func<AbilityNode, long> childAmount)
+    {
+        if (node.Kind == "if")
+        {
+            var test = Tree(node.Require("test"));
+            if (BindingCanChange(test.Argument))
+            {
+                long possible = Branches.Select(node.Field)
+                    .Where(value => value is not null)
+                    .Select(value => childAmount(Tree(value!)))
+                    .DefaultIfEmpty(0)
+                    .Max();
+                return SaturatingSum(own, [possible]);
+            }
+
+            bool passes = Test(test, cast);
+            long active = node.Field(passes ? "then" : "else") is { } branch
+                ? childAmount(Tree(branch))
+                : 0;
+            return SaturatingSum(own, [active]);
+        }
+
+        var amounts = MutationChildren(node).Select(childAmount).ToList();
+
+        // The engine chooses one option. Ordered and simultaneous children all
+        // resolve, so only those amounts combine.
+        long descendants = node.Kind == "choose"
+            ? amounts.DefaultIfEmpty(0).Max()
+            : SaturatingSum(0, amounts);
+        return SaturatingSum(own, [descendants]);
     }
 
     private static long SaturatingSum(long own, IEnumerable<long> rest)
