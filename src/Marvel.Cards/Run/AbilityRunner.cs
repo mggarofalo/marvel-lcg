@@ -257,10 +257,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{source.FaceId}' ability {abilityIndex} has no {power.ToLowerInvariant()} "
                 + $"wrapper {powerOrdinal}");
         var effect = Tree(wrapper.Require("effect"));
-        if (Choices(effect).Any())
+        if (SuspendsPowerEffect(effect))
         {
             throw new RulesNotImplementedException(
-                $"'{source.FaceId}' asks a question inside a {power.ToLowerInvariant()}");
+                $"'{source.FaceId}' suspends inside a {power.ToLowerInvariant()}, "
+                + "which is not implemented");
         }
 
         var cast = new Cast(
@@ -2919,9 +2920,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 int index = input.Targets[position];
                 string remaining = string.Join(',', input.Targets.Skip(position + 1));
+                string completed = string.Join(',', input.Targets.Take(position));
                 cast.SetContinuation(
                     outerContinuation || position < input.Targets.Count - 1);
-                RunChild(effects[index], $"and:{index}:{remaining}", cast);
+                RunChild(effects[index], $"and:{index}:{remaining}:{completed}", cast);
                 if (cast.Suspended)
                 {
                     return cast.Events;
@@ -3324,17 +3326,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     };
 
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
-    private static bool CanInitiate(AbilityNode node, Cast cast) => node.Kind switch
+    private static bool CanInitiate(AbilityNode node, Cast cast)
     {
-        "seq" => CanInitiateSequence(node, cast),
-        "and" => CanInitiateAnd(node, cast),
-        "if" => CanInitiateIf(node, cast),
-        "then" => CanInitiateDependent(
-            node, cast, ResolutionOutcome.Full, "then"),
-        "otherwise" => CanInitiateDependent(
-            node, cast, ResolutionOutcome.None, "otherwise"),
-        _ => CanInitiateLeaf(node, cast),
-    };
+        if (node.Kind == "eachPlayer"
+            && ContainsEachPlayer(Tree(node.Require("effect"))))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' nests one each-player frame inside another, "
+                + "which is not implemented");
+        }
+        return node.Kind switch
+        {
+            "seq" => CanInitiateSequence(node, cast),
+            "and" => CanInitiateAnd(node, cast),
+            "if" => CanInitiateIf(node, cast),
+            "then" => CanInitiateDependent(
+                node, cast, ResolutionOutcome.Full, "then"),
+            "otherwise" => CanInitiateDependent(
+                node, cast, ResolutionOutcome.None, "otherwise"),
+            _ => CanInitiateLeaf(node, cast),
+        };
+    }
 
     private static bool CanInitiateSequence(AbilityNode node, Cast cast)
     {
@@ -3534,7 +3546,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         "legalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
                 card.ObjectId != cast.Source.ObjectId)
             && Every(node.Require("schemes"), cast).Count > 0,
+        "thwartSchemes" when SuspendsPowerEffect(
+            Tree(Tree(node.Require("power")).Require("effect"))) =>
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' suspends inside a labelled power, "
+                + "which is not implemented"),
         "thwartSchemes" => Every(node.Require("schemes"), cast).Count > 0,
+        "attack" or "thwart" when SuspendsPowerEffect(Tree(node.Require("effect"))) =>
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' suspends inside a labelled power, "
+                + "which is not implemented"),
         "attack" => Find(node.Require("target"), cast) is not { } enemy
             || cast.World.Abilities.CanTakeDamage(cast.World, enemy, cast.Source),
         "enemyAttacks" or "enemySchemes" => CanInitiateActivation(node, cast),
@@ -3911,6 +3932,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool ContainsNode(AbilityNode node, string kind) =>
         node.Kind == kind || StructuralChildren(node).Any(child => ContainsNode(child, kind));
 
+    private static bool ContainsEachPlayer(AbilityNode node) =>
+        node.Kind == "eachPlayer"
+        || StructuralChildren(node).Any(ContainsEachPlayer);
+
     private static bool ContainsFirstActivation(AbilityNode node) =>
         (node.Kind is "enemyAttacks" or "enemySchemes"
             && node.Field("first") is AbilityValue.Word { Value: "true" })
@@ -4194,6 +4219,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool SuspendsInsideAnd(AbilityNode node) =>
         node.Kind == "placeThreat"
         || StructuralChildren(node).Any(SuspendsInsideAnd);
+
+    private static bool SuspendsPowerEffect(AbilityNode node) =>
+        Choices(node).Any()
+        || node.Kind is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
+            or "placeThreat" or "enemyAttacks" or "enemySchemes"
+        || StructuralChildren(node).Any(SuspendsPowerEffect);
 
     private static IEnumerable<AbilityNode> PowerNodes(AbilityNode node, string power)
     {
@@ -4516,7 +4547,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     foreach (var effect in simultaneous)
                     {
-                        RunChild(effect, $"and:{simultaneous.IndexOf(effect)}:", cast);
+                        RunChild(effect, $"and:{simultaneous.IndexOf(effect)}::", cast);
                     }
                     break;
                 }
@@ -4532,6 +4563,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "eachPlayer":
+                if (ContainsEachPlayer(Tree(node.Require("effect"))))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' nests one each-player frame inside another, "
+                        + "which is not implemented");
+                }
                 EachPlayerEffects.Schedule(
                     cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep,
                     cast.GainedKeywords.Contains("surge"), AbilityOrdinal(node, cast),
@@ -6233,14 +6270,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             case "and":
                 var effects = Nodes(node.Argument).ToList();
                 var remaining = ValidRemaining(node, parts, frame);
+                var completed = Completed(parts, frame);
+                completed.Add(ParseIndex(parts, frame));
                 bool outerAndContinuation = cast.HasContinuation;
                 for (int position = 0; position < remaining.Count; position++)
                 {
                     int index = remaining[position];
                     string after = string.Join(',', remaining.Skip(position + 1));
+                    string before = string.Join(',', completed.Concat(remaining.Take(position)));
                     cast.SetContinuation(
                         outerAndContinuation || position < remaining.Count - 1);
-                    RunChild(effects[index], $"and:{index}:{after}", cast);
+                    RunChild(effects[index], $"and:{index}:{after}:{before}", cast);
                     if (cast.Suspended)
                     {
                         return;
@@ -6288,8 +6328,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         var effects = Nodes(node.Argument).ToList();
         var remaining = Remaining(parts, frame);
-        if (remaining.Distinct().Count() != remaining.Count
-            || remaining.Any(index => index < 0 || index >= effects.Count))
+        var completed = Completed(parts, frame);
+        var completeOrder = completed
+            .Append(ParseIndex(parts, frame))
+            .Concat(remaining)
+            .ToList();
+        if (completeOrder.Count != effects.Count
+            || completeOrder.Distinct().Count() != effects.Count
+            || completeOrder.Any(index => index < 0 || index >= effects.Count))
         {
             throw new RulesNotImplementedException(
                 $"ability continuation frame '{frame}' has an invalid remaining order");
@@ -6298,14 +6344,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private static List<int> Remaining(string[] parts, string frame)
+        => OrderPart(parts, 2, frame);
+
+    private static List<int> Completed(string[] parts, string frame)
     {
-        if (parts.Length < 3 || string.IsNullOrEmpty(parts[2]))
+        if (parts.Length < 4)
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation frame '{frame}' has no completed order");
+        }
+        return OrderPart(parts, 3, frame);
+    }
+
+    private static List<int> OrderPart(string[] parts, int position, string frame)
+    {
+        if (parts.Length <= position || string.IsNullOrEmpty(parts[position]))
         {
             return [];
         }
         try
         {
-            return parts[2].Split(',').Select(value => int.Parse(
+            return parts[position].Split(',').Select(value => int.Parse(
                 value, System.Globalization.CultureInfo.InvariantCulture)).ToList();
         }
         catch (Exception error) when (error is FormatException or OverflowException)
@@ -6665,10 +6724,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         IReadOnlyList<Card> targets, long powerAmount)
     {
         var effect = Tree(node.Require("effect"));
-        if (Choices(effect).Any())
+        if (SuspendsPowerEffect(effect))
         {
             throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' asks a question inside a {power.ToLowerInvariant()}");
+                $"'{cast.Source.FaceId}' suspends inside a {power.ToLowerInvariant()}, "
+                + "which is not implemented");
         }
 
         var abilities = AbilitiesOn(cast.Source, cast.AbilityFace).ToList();

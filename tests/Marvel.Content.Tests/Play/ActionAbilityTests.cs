@@ -2712,6 +2712,45 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
     }
 
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void NestedEachPlayerFramesRaiseBeforeTheActionCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("nests one each-player", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void ACardPowerThatWouldSuspendRaisesBeforeTheActionCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
     [Rule("rr:choose-option")]
     [Fact]
     public void AChoiceContinuationPreservesEarlierEffectResults()
@@ -2879,7 +2918,7 @@ public sealed class ActionAbilityTests
         var forged = new PhaseStep(
             Steps.ResumeAbility, 1, 2, Subject: source!.ObjectId, Seat: 0,
             Tier: AbilityType.Action, AbilityOrdinal: 0,
-            AbilityPath: ["and:0:1,99"], AbilityFace: source.FaceId,
+            AbilityPath: ["and:0:0,1:"], AbilityFace: source.FaceId,
             AbilityHasContinuation: true);
 
         Assert.Throws<RulesNotImplementedException>(
