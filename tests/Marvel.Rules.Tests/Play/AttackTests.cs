@@ -74,6 +74,7 @@ public sealed class AttackTests
         var printed = Printed(atk: 2, boost: 3);
         var world = Board(printed);
         var boost = world.AreaOf(DeckType.EncounterDeck).Cards[^1];
+        world.CreateCard("amplify", world.AreaOf(DeckType.SideSchemesArea));
         world.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Characteristics.LossOf("boost_const"),
@@ -929,6 +930,7 @@ public sealed class AttackTests
                 {
                     ["Boost"] = boost.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 },
+                ["amplify"] = new(StringComparer.Ordinal) { ["Amplify"] = "1" },
                 ["hero"] = new(StringComparer.Ordinal)
                 {
                     ["HP"] = "10",
@@ -943,6 +945,7 @@ public sealed class AttackTests
             ["hero"] = CardKind.Hero,
             ["villain"] = CardKind.EncounterVillain,
             ["boost"] = CardKind.Treachery,
+            ["amplify"] = CardKind.EncounterSideScheme,
             ["ally"] = CardKind.Ally,
             ["alter"] = CardKind.AlterEgo,
         };

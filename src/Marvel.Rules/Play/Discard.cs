@@ -98,6 +98,25 @@ public static class Discard
         World world, State.Card host, string trigger, List<GameEvent> events)
     {
         var direct = AttachedTo(world, host.ObjectId);
+        PreflightAttachments(world, host, direct);
+
+        foreach (var attached in direct)
+        {
+            Card(world, attached, trigger, events);
+        }
+    }
+
+    /// <summary>Prove that every hosted card can leave before moving any of them.</summary>
+    public static void PreflightAttachments(World world, State.Card host)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(host);
+        PreflightAttachments(world, host, AttachedTo(world, host.ObjectId));
+    }
+
+    private static void PreflightAttachments(
+        World world, State.Card host, IReadOnlyList<State.Card> direct)
+    {
         var descendants = new List<State.Card>();
         var pending = new Stack<State.Card>(direct.AsEnumerable().Reverse());
         var seen = new HashSet<int> { host.ObjectId };
@@ -126,11 +145,6 @@ public static class Discard
             throw new RulesNotImplementedException(
                 $"permanent attachment {permanent.ObjectId} lost host "
                 + $"{host.ObjectId}, and rr:permanent.5 is not implemented");
-        }
-
-        foreach (var attached in direct)
-        {
-            Card(world, attached, trigger, events);
         }
     }
 

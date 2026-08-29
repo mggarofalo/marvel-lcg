@@ -524,9 +524,11 @@ public static class Attack
             // an enemy activation**, add one additional boost icon to that card
             // for each amplify icon in play." Per card, so two boost cards with
             // one amplify icon in play gain one each.
-            long icons = StateFields.Modified(
-                    world, boost, "boost_const", facts, world.Players)
-                + MainScheme.Amplify(world, facts);
+            long icons = Characteristics.IsLost(world, boost, "boost_const")
+                ? 0
+                : StateFields.Modified(
+                        world, boost, "boost_const", facts, world.Players)
+                    + MainScheme.Amplify(world, facts);
             if (icons > 0)
             {
                 // Which value and for how long is the only place the two

@@ -154,6 +154,7 @@ public sealed record ContinuousEffect(
 public sealed class ContinuousEffects(World world)
 {
     private readonly List<Entry> entries = [];
+    private readonly HashSet<Entry> suppressed = [];
 
     // While constants are settling, a nested read sees the previous complete
     // pass. See `Constant` -- this is iteration state, not cached game state.
@@ -244,7 +245,11 @@ public sealed class ContinuousEffects(World world)
     /// </remarks>
     public IReadOnlyList<ContinuousEffect> Active()
     {
-        var registered = entries.Select(entry => entry.Effect).Where(InForce).ToList();
+        var registered = entries
+            .Where(entry => !suppressed.Contains(entry))
+            .Select(entry => entry.Effect)
+            .Where(InForce)
+            .ToList();
         return deriving
             ? [.. registered, .. assumedConstants]
             : [.. registered, .. Constant()];
@@ -332,12 +337,7 @@ public sealed class ContinuousEffects(World world)
         ArgumentNullException.ThrowIfNull(timingPoint);
         var expired = entries.Where(entry => string.Equals(
             entry.Effect.Lasts?.Until, timingPoint, StringComparison.Ordinal)).ToList();
-        foreach (var entry in expired)
-        {
-            entries.Remove(entry);
-        }
-        ReconcileRestoredUses(
-            expired.Select(entry => entry.Effect), timingPoint, events);
+        End(expired, timingPoint, events);
         return expired.Count;
     }
 
@@ -372,12 +372,13 @@ public sealed class ContinuousEffects(World world)
 
         if (entry.Remaining is int remaining)
         {
-            entry.Remaining = remaining - 1;
-            if (entry.Remaining <= 0)
+            if (remaining <= 1)
             {
-                entries.Remove(entry);
-                ReconcileRestoredUses(
-                    [entry.Effect], "continuous effect used", events: null);
+                End([entry], "continuous effect used", events: null);
+            }
+            else
+            {
+                entry.Remaining = remaining - 1;
             }
         }
 
@@ -408,22 +409,12 @@ public sealed class ContinuousEffects(World world)
                 entry.Effect.Lasts?.OnCondition, condition, StringComparison.Ordinal))
             .ToList();
 
-        foreach (var entry in due)
+        var ending = due.Where(entry => entry.Remaining is null or <= 1).ToList();
+        End(ending, condition, events: null);
+        foreach (var entry in due.Except(ending))
         {
-            if (entry.Remaining is null or <= 1)
-            {
-                entries.Remove(entry);
-            }
-            else
-            {
-                entry.Remaining -= 1;
-            }
+            entry.Remaining -= 1;
         }
-
-        ReconcileRestoredUses(
-            due.Where(entry => !entries.Contains(entry)).Select(entry => entry.Effect),
-            condition,
-            events: null);
 
         return [.. due.Select(entry => entry.Effect)];
     }
@@ -444,35 +435,92 @@ public sealed class ContinuousEffects(World world)
 
     private void Remove(Entry entry)
     {
-        if (entries.Remove(entry))
+        if (entries.Contains(entry))
         {
-            ReconcileRestoredUses(
-                [entry.Effect], "continuous effect ended", events: null);
+            End([entry], "continuous effect ended", events: null);
         }
     }
 
-    private void ReconcileRestoredUses(
-        IEnumerable<ContinuousEffect> ended,
+    private void End(
+        List<Entry> ending,
         string trigger,
         List<GameEvent>? events)
     {
-        if (!ended.Any(effect => string.Equals(
-                effect.Kind, Characteristics.LossOf("uses"), StringComparison.Ordinal)))
+        if (ending.Count == 0)
         {
             return;
         }
 
+        Card[] candidates = LostUsesCandidates(ending);
+        Card[] restoredUses;
+        suppressed.UnionWith(ending);
+        try
+        {
+            restoredUses = RestoredUsesAfter(candidates);
+            foreach (var card in restoredUses)
+            {
+                Discard.PreflightAttachments(world, card);
+            }
+        }
+        finally
+        {
+            suppressed.ExceptWith(ending);
+        }
+
+        foreach (var entry in ending)
+        {
+            entries.Remove(entry);
+        }
+
         var sink = events ?? [];
-        foreach (var card in world.Cards.Where(card =>
-            DeckTypes.IsInPlay(card.Area.Type)
-            && !Characteristics.IsLost(world, card, "uses")
-            && Reveal.Uses(world.Facts.Attributes(card.FaceId)).Count > 0
-            && card.Tokens
-                .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
-                .Sum(pair => pair.Value) == 0).ToArray())
+        foreach (var card in restoredUses.Where(card => DeckTypes.IsInPlay(card.Area.Type)))
         {
             Discard.Card(world, card, trigger, sink);
         }
+    }
+
+    private Card[] LostUsesCandidates(List<Entry> ending)
+    {
+        if (!ending.Any(entry => string.Equals(
+                entry.Effect.Kind,
+                Characteristics.LossOf("uses"),
+                StringComparison.Ordinal)))
+        {
+            return [];
+        }
+
+        return world.Cards.Where(card =>
+            DeckTypes.IsInPlay(card.Area.Type)
+            && !FacedownDrones.Is(card)
+            && Characteristics.IsLost(world, card, "uses")
+            && Reveal.Uses(world.Facts.Attributes(card.FaceId)).Count > 0
+            && card.Tokens
+                .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
+                .Sum(pair => pair.Value) == 0).ToArray();
+    }
+
+    private Card[] RestoredUsesAfter(Card[] candidates)
+    {
+        var restored = candidates
+            .Where(card => !Characteristics.IsLost(world, card, "uses"))
+            .ToArray();
+        var restoredIds = restored.Select(card => card.ObjectId).ToHashSet();
+        return restored.Where(card => !HasHostedAncestor(card, restoredIds)).ToArray();
+    }
+
+    private bool HasHostedAncestor(Card card, HashSet<int> candidates)
+    {
+        int host = card.Area.Host;
+        var seen = new HashSet<int>();
+        while (host >= 0 && seen.Add(host))
+        {
+            if (candidates.Contains(host))
+            {
+                return true;
+            }
+            host = host < world.Cards.Count ? world.Cards[host].Area.Host : -1;
+        }
+        return false;
     }
 
     /// <summary>One registered effect and its remaining uses.</summary>
@@ -520,8 +568,8 @@ public sealed class ContinuousEffects(World world)
                 return;
             }
 
-            disposed = true;
             effects.Remove(entry);
+            disposed = true;
         }
     }
 }

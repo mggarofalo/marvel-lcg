@@ -958,6 +958,79 @@ public sealed class KeywordTests
         }
     }
 
+    [Rule("rr:uses-x-type.1")]
+    [Rule("rr:permanent.5")]
+    [Fact]
+    public void RestoringUsesPreflightsEveryDiscardBeforeEndingAnyLoss()
+    {
+        // Both Uses constants would become active at the same timing point.
+        // A Permanent attachment makes the second discard unsupported, so the
+        // complete transition refuses before either card or either loss moves.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("permanentish", ("Permanent", "1"));
+        var world = Board(printed);
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.RevealingArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.RevealingArea));
+        var duration = Duration.UntilEndOf(TimingPoints.EndOfPlayerPhase);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: first.ObjectId,
+            Lasts: duration));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: second.ObjectId,
+            Lasts: duration));
+        Reveal.Resolve(world, printed, first, 0, []);
+        Reveal.Resolve(world, printed, second, 0, []);
+        var attachment = world.CreateCard(
+            "permanentish",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, second.ObjectId));
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            world.Effects.Expire(TimingPoints.EndOfPlayerPhase, []));
+
+        Assert.Equal(2, world.Effects.Registered.Count);
+        Assert.Equal(DeckType.SideSchemesArea, first.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, second.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, attachment.Area.Type);
+    }
+
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void RestoringAnotherCardsUsesIgnoresAFacedownDroneUnderlyingUsesCard()
+    {
+        // A facedown encounter card has no active printed attributes. Ending a
+        // different card's Uses loss must not expose and apply the player card
+        // text hidden beneath a Drone.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("playerUses", ("Uses", "3,charge"));
+        var world = Board(printed);
+        world.CreateCard("playerUses", world.Seats[0].Deck);
+        var drone = Assert.IsType<Card>(
+            FacedownDrones.EngageTop(world, 0, "test", "Drone", []));
+        var card = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.RevealingArea));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: card.ObjectId,
+            Lasts: Duration.UntilEndOf(TimingPoints.EndOfPlayerPhase)));
+        Reveal.Resolve(world, printed, card, 0, []);
+
+        world.Effects.Expire(TimingPoints.EndOfPlayerPhase, []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
+        Assert.Equal(DeckType.EngagedEnemiesArea, drone.Area.Type);
+        Assert.True(FacedownDrones.Is(drone));
+    }
+
     [Rule("rr:loses")]
     [Rule("rr:linked-card-title.4")]
     [Fact]
