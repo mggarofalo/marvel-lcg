@@ -5103,7 +5103,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     ? VillainIsAttackableInTrace(cast, candidate, discarded)
                     : kind == CardKind.Minion
                         && CanTakeDamageInTrace(cast, candidate, discarded),
-                _ => false,
+                _ => Every(value, cast).Any(card =>
+                    card.ObjectId == candidate.ObjectId),
             },
             "titled" => string.Equals(
                 Word(node.Argument), cast.World.Facts.Title(candidate.FaceId),

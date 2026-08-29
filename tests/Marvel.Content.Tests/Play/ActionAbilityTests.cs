@@ -4816,6 +4816,59 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Fact]
+    public void RankedPlayerCharacterSelectorRetainsItsControllerScope()
+    {
+        // The dynamic rank is over characters the resolving player controls,
+        // not over enemies. Hulk is in that set and has the highest attack, so
+        // its damage is available for the following move to Spider-Man.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": {
+                  "cards": { "maxBy": {
+                    "of": { "query": "charactersYouControl" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Hulk" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01050",
+                    board.AreaOf(
+                        DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:damage.step.1")]
     [Rule("rr:replacement-effect.1")]
     [Fact]
