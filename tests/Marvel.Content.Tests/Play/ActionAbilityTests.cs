@@ -65,10 +65,16 @@ public sealed class ActionAbilityTests
             },
             hero: hero,
             abilities: runner);
-        var action = Assert.Single(
-            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
-
-        game.Resolve(Decision.Take(action.Id));
+        var action = game.Pending!.Affordances.SingleOrDefault(
+            option => option.AnchorId == source!.ObjectId);
+        if (hero)
+        {
+            Assert.Null(action);
+        }
+        else
+        {
+            game.Resolve(Decision.Take(Assert.IsType<Affordance>(action).Id));
+        }
 
         Assert.Equal(remainingDamage, world.Seats[0].IdentityCard.Damage);
     }
@@ -3341,6 +3347,1222 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Fact]
+    public void SequenceFormReachabilityWaitsForAChosenPlayerBinding()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "if": {
+                  "test": { "inForm": {
+                    "player": "chosenPlayer", "form": "hero"
+                  } },
+                  "then": { "changeForm": {
+                    "player": "chosenPlayer", "to": "alterEgo"
+                  } },
+                  "else": { "draw": {
+                    "player": "chosenPlayer", "count": 1
+                  } }
+                } }
+              } },
+              { "if": {
+                "test": { "inForm": {
+                  "player": "chosenPlayer", "form": "alterEgo"
+                } },
+                "then": { "draw": {
+                  "player": "chosenPlayer", "count": 1
+                } },
+                "else": { "draw": {
+                  "player": "chosenPlayer", "count": 1
+                } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void LaterChosenPlayerTargetsAreCheckedAgainstTheOfferedCandidates()
+    {
+        // “The act of choosing a game element … makes that game element a
+        // target.” Both offered identities have an engaged enemy, so the
+        // continuation has a valid target whichever identity is selected.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "dealDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              } },
+              { "dealDamage": {
+                "cards": { "query": "enemiesEngagedWithChosenPlayer" },
+                "amount": 1
+              } }
+            ] }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "01167",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:target.2.2")]
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void AChosenEnemyCanTargetALaterAttackWrapper()
+    {
+        // The earlier choice establishes the target used by the later labelled
+        // attack. Every offered enemy is currently attackable and damageable.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "attackableEnemies" },
+                "effect": { "seq": [] }
+              } },
+              { "attack": {
+                "target": "chosen",
+                "effect": { "dealAttackDamage": {
+                  "cards": "chosen", "amount": 1
+                } }
+              } }
+            ] }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:choose-option.2")]
+    [Rule("rr:guard")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void ContinuationFilteringRemovesUnsafeEarlierBindingCandidates()
+    {
+        // A player-card option may be chosen if it can resolve at least
+        // partially. Choosing the no-op option preserves the first selected
+        // enemy, so the Guard-protected villain is removed from the first
+        // prompt while the minion path keeps the costed action legal.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "enemies" },
+                "effect": { "seq": [] }
+              } },
+              { "choose": { "options": [
+                { "chooseCard": {
+                  "from": { "query": "attackableMinions" },
+                  "effect": { "seq": [] }
+                } },
+                { "seq": [] }
+              ] } },
+              { "attack": {
+                "target": "chosen",
+                "effect": { "dealAttackDamage": {
+                  "cards": "chosen", "amount": 1
+                } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? minion = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true,
+            abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.Id == minion!.ObjectId);
+        Assert.DoesNotContain(
+            game.Pending.Affordances, option => option.Id == villain.ObjectId);
+    }
+
+    [Rule("rr:choose-option.2")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void ANoOpOptionCanPreserveTheAbsenceOfABinding()
+    {
+        // The empty option is legal as a decline branch, but it leaves
+        // `chosen` unanswered. A later attack requiring that target therefore
+        // makes the whole costed action unsafe to initiate.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "choose": { "options": [
+                { "chooseCard": {
+                  "from": { "query": "attackableMinions" },
+                  "effect": { "seq": [] }
+                } },
+                { "seq": [] }
+              ] } },
+              { "attack": {
+                "target": "chosen",
+                "effect": { "dealAttackDamage": {
+                  "cards": "chosen", "amount": 1
+                } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true,
+            abilities: runner);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void AnEmptyEachPlayerFramePreservesAnEarlierBinding()
+    {
+        // “Each player” frames resolve in the order chosen by the first
+        // player. A frame with no legal minion is a no-op, so it preserves the
+        // enemy selected before the frame instead of erasing that target.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "attackableEnemies" },
+                "effect": { "seq": [] }
+              } },
+              { "eachPlayer": { "effect": { "chooseCard": {
+                "from": { "query": "minionsEngagedWithYou" },
+                "effect": { "seq": [] }
+              } } } },
+              { "attack": {
+                "target": "chosen",
+                "effect": { "dealAttackDamage": {
+                  "cards": "chosen", "amount": 1
+                } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:target.2.2")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void ASelectorCanDependOnEveryEarlierBindingCandidate()
+    {
+        // The first target determines which engaged area the second selector
+        // reads. Every offered identity has a legal minion, so preflight must
+        // evaluate the selector once under each possible earlier binding.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "seq": [] }
+              } },
+              { "chooseCard": {
+                "from": { "query": "enemiesEngagedWithChosenPlayer" },
+                "effect": { "seq": [] }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "01167",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:target.2")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void AnEarlierPromptFiltersBindingsWithNoLegalContinuation()
+    {
+        // At least one identity has a valid target for the later choice, so
+        // the action can initiate. The identity without one is not a legal
+        // target of the unresolved ability and must not be offered.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "seq": [] }
+              } },
+              { "chooseCard": {
+                "from": { "query": "enemiesEngagedWithChosenPlayer" },
+                "effect": { "seq": [] }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Id == world.Seats[0].IdentityCard.ObjectId);
+        Assert.DoesNotContain(
+            game.Pending.Affordances,
+            option => option.Id == world.Seats[1].IdentityCard.ObjectId);
+    }
+
+    [Rule("rr:choose-option.1")]
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void AnUnavailableOptionDoesNotCreateAnEmptyBindingOutcome()
+    {
+        // The minion option has no valid target and is unavailable. Only the
+        // villain option can run, and it supplies the target for the attack
+        // that follows, so the unavailable branch contributes no empty path.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "choose": { "options": [
+                { "chooseCard": {
+                  "from": { "query": "attackableMinions" },
+                  "effect": { "seq": [] }
+                } },
+                { "chooseCard": {
+                  "from": { "query": "attackableEnemies" },
+                  "effect": { "seq": [] }
+                } }
+              ] } },
+              { "attack": {
+                "target": "chosen",
+                "effect": { "dealAttackDamage": {
+                  "cards": "chosen", "amount": 1
+                } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:choose-option.1")]
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void AnOptionPromptFiltersBranchesThatCannotSatisfyTheContinuation()
+    {
+        // Both nested selectors are locally legal, but the enemy branch leaves
+        // no player for the later draw. The outer option itself is therefore
+        // unavailable; the costed prompt must expose only the identity branch.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "choose": { "options": [
+                { "chooseCard": {
+                  "from": { "query": "identities" },
+                  "effect": { "seq": [] }
+                } },
+                { "chooseCard": {
+                  "from": { "query": "attackableEnemies" },
+                  "effect": { "seq": [] }
+                } }
+              ] } },
+              { "draw": { "player": "chosenPlayer", "count": 1 } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Contains(game.Pending!.Affordances, option => option.Id == 0);
+        Assert.DoesNotContain(game.Pending.Affordances, option => option.Id == 1);
+    }
+
+    [Rule("rr:choose-option.1")]
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void SuffixValidationReplacesThePreOptionCandidateState()
+    {
+        // The first prompt binds an identity. The enemy option would replace
+        // it with the villain, which cannot supply the chosen player required
+        // by the final engaged-enemy selector. Recursive suffix validation must
+        // use that post-option villain, not the stale identity candidate list.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "seq": [] }
+              } },
+              { "choose": { "options": [
+                { "chooseCard": {
+                  "from": { "query": "attackableEnemies" },
+                  "effect": { "seq": [] }
+                } },
+                { "seq": [] }
+              ] } },
+              { "chooseCard": {
+                "from": { "query": "enemiesEngagedWithChosenPlayer" },
+                "effect": { "seq": [] }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(world.Seats[0].IdentityCard.ObjectId));
+
+        Assert.DoesNotContain(game.Pending!.Affordances, option => option.Id == 0);
+        Assert.Contains(game.Pending.Affordances, option => option.Id == 1);
+    }
+
+    [Rule("rr:target.2.2")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void SuffixValidationUsesTheActiveBranchForEachConcreteBinding()
+    {
+        // Each identity has a legal target in only the branch selected by that
+        // identity's form. Once suffix validation installs one candidate, the
+        // binding is concrete: requiring both branches would reject every
+        // identity after the source had already paid its exhaust cost.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "seq": [] }
+              } },
+              { "if": {
+                "test": { "inForm": {
+                  "player": "chosenPlayer", "form": "hero"
+                } },
+                "then": { "chooseCard": {
+                  "from": { "query": "topmostTechInChosenDiscard" },
+                  "effect": { "seq": [] }
+                } },
+                "else": { "chooseCard": {
+                  "from": { "query": "enemiesEngagedWithChosenPlayer" },
+                  "effect": { "seq": [] }
+                } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? tech = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                tech = board.CreateCard(
+                    "01007",
+                    board.AreaOf(
+                        DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+                board.CreateCard(
+                    "01167",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(source!.Ready);
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Id == world.Seats[0].IdentityCard.ObjectId);
+        Assert.Contains(
+            game.Pending.Affordances,
+            option => option.Id == world.Seats[1].IdentityCard.ObjectId);
+
+        game.Resolve(Decision.Take(world.Seats[0].IdentityCard.ObjectId));
+
+        Assert.Contains(game.Pending!.Affordances, option => option.Id == tech!.ObjectId);
+    }
+
+    [Rule("rr:target.2.2")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void AChoiceEffectContributesItsFinalBindingToTheContinuation()
+    {
+        // The nested enemy choice replaces the identity chosen by the outer
+        // prompt. It leaves no chosen player for the later draw, so the costed
+        // action must be refused before it exhausts its source.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "chooseCard": {
+                  "from": { "query": "attackableEnemies" },
+                  "effect": { "seq": [] }
+                } }
+              } },
+              { "draw": { "player": "chosenPlayer", "count": 1 } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:then")]
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void ADependentContinuationFiltersItsPredecessorPrompt()
+    {
+        // The predecessor resolves fully after either identity is selected,
+        // so “then” reaches the engaged-enemy choice. Only player 0 supplies a
+        // target there and only that identity may be offered before payment.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "then": {
+              "effect": { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "draw": {
+                  "player": "you", "count": 1
+                } }
+              } },
+              "then": { "chooseCard": {
+                "from": { "query": "enemiesEngagedWithChosenPlayer" },
+                "effect": { "seq": [] }
+              } }
+            } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Id == world.Seats[0].IdentityCard.ObjectId);
+        Assert.DoesNotContain(
+            game.Pending.Affordances,
+            option => option.Id == world.Seats[1].IdentityCard.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void ANonFinalEachPlayerPromptIgnoresTheOuterContinuation()
+    {
+        // Only the final frame's binding reaches the outer continuation. The
+        // first player's own mandatory choice therefore remains available even
+        // though that player's binding could not satisfy the later selector.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "eachPlayer": { "effect": { "chooseCard": {
+                "from": "you", "effect": { "seq": [] }
+              } } } },
+              { "chooseCard": {
+                "from": { "query": "enemiesEngagedWithChosenPlayer" },
+                "effect": { "seq": [] }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01167",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        Assert.Equal(Question.Order, game.Pending.Asking);
+        game.Resolve(new Decision(order.Id,
+        [
+            world.Seats[0].IdentityCard.ObjectId,
+            world.Seats[1].IdentityCard.ObjectId,
+        ]));
+
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Id == world.Seats[0].IdentityCard.ObjectId);
+    }
+
+    [Rule("rr:then")]
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void ANestedDependentChoiceIsRejectedBeforeItsCost()
+    {
+        // The outer answer does not determine whether the complete predecessor
+        // resolved: its nested choice and any later siblings still have to run.
+        // Until that aggregate outcome is modelled, fail before paying a cost.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "then": {
+              "effect": { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "chooseCard": {
+                  "from": { "query": "identities" },
+                  "effect": { "draw": { "player": "you", "count": 1 } }
+                } }
+              } },
+              "then": { "draw": {
+                "player": "chosenPlayer", "count": 1
+              } }
+            } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("multiple-stage player choices", refused.Message);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:then")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void SiblingChoicesBeforeDependentTextAreRejectedBeforeTheirCost()
+    {
+        // The first answer cannot classify the complete predecessor while a
+        // sibling choice and a later effect remain unresolved. Fail closed
+        // before exhaustion rather than recording the first leaf's outcome.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "then": {
+              "effect": { "seq": [
+                { "chooseCard": {
+                  "from": { "query": "identities" },
+                  "effect": { "draw": { "player": "you", "count": 1 } }
+                } },
+                { "chooseCard": {
+                  "from": { "query": "identities" },
+                  "effect": { "draw": { "player": "you", "count": 1 } }
+                } },
+                { "heal": { "card": "you", "amount": 1 } }
+              ] },
+              "then": { "draw": { "player": "chosenPlayer", "count": 1 } }
+            } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("multiple-stage player choices", refused.Message);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void AnEmptyEachPlayerOutcomeInvalidatesAChosenPlayerDraw()
+    {
+        // Player 0 has a hero target and player 1 does not. If player 1's frame
+        // resolves last, the outer draw has no chosen player; unlike a card
+        // prompt, the order decision cannot filter out that reachable outcome.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "eachPlayer": { "effect": { "chooseCard": {
+                "from": "yourHero",
+                "effect": { "seq": [] }
+              } } } },
+              { "draw": { "player": "chosenPlayer", "count": 1 } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:target.2")]
+    [Fact]
+    public void AMixedBindingPromptKeepsTheDrawablePlayerPath()
+    {
+        // The selector includes an identity and the villain. At least one path
+        // supplies the player required by the later draw, so the action is
+        // legal and the scenario-owned character is filtered from its prompt.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "characters" },
+                "effect": { "seq": [] }
+              } },
+              { "draw": { "player": "chosenPlayer", "count": 1 } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Id == world.Seats[0].IdentityCard.ObjectId);
+        Assert.DoesNotContain(
+            game.Pending.Affordances, option => option.Id == villain.ObjectId);
+    }
+
+    [Rule("rr:for-each.3")]
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void AnEarlyForEachPromptAccountsForTheLaterIteration()
+    {
+        // The first iteration may choose player 0 even though only player 1 can
+        // satisfy the outer selector: the second iteration asks again and its
+        // answer is the binding that reaches the continuation.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "forEach": {
+                "count": 2,
+                "effect": { "chooseCard": {
+                  "from": { "query": "identities" },
+                  "effect": { "seq": [] }
+                } }
+              } },
+              { "chooseCard": {
+                "from": { "query": "enemiesEngagedWithChosenPlayer" },
+                "effect": { "seq": [] }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01167",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Id == world.Seats[0].IdentityCard.ObjectId);
+    }
+
+    [Rule("rr:alteration-effect")]
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void AnEachTimePromptKeepsTheOuterFilterWhenLaterBodiesAreSkipped()
+    {
+        // The first discarded card matches and asks for a character; the next
+        // card is not Kree, so no later prompt will replace that binding. The
+        // first prompt must therefore apply the outer chosen-player draw and
+        // exclude the scenario-owned villain before the cost is exposed.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "WhenRevealed",
+            """
+            { "seq": [
+              { "eachTime": {
+                "effect": { "discardTop": {
+                  "from": "encounterDeck", "count": 2
+                } },
+                "when": { "cardSet": {
+                  "card": "that", "set": "kree_fanatic"
+                } },
+                "then": { "chooseCard": {
+                  "from": { "query": "characters" },
+                  "effect": { "seq": [] }
+                } }
+              } },
+              { "draw": { "player": "chosenPlayer", "count": 1 } }
+            ] }
+            """,
+            eventName: Steps.CardRevealed);
+        var world = WorldSetup.Deal(
+            Cards,
+            Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
+            ["Spider-Man"],
+            12345);
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var removed = world.AreaOf(DeckType.RemovedArea);
+        foreach (var card in deck.Cards.ToList())
+        {
+            World.MoveToTop(card, removed);
+        }
+        world.CreateCard(AuthoredCards.ImTough, deck);
+        world.CreateCard("90001", deck);
+        var source = world.CreateCard(
+            AuthoredCards.AuntMay, world.AreaOf(DeckType.RevealingArea));
+        world.Abilities = runner;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var events = runner.WhenRevealed(world, source, 0).ToList();
+        var prompt = Sequence.Work(world, Cards, runner, events)!;
+
+        Assert.Contains(
+            prompt.Affordances,
+            option => option.Id == world.Seats[0].IdentityCard.ObjectId);
+        Assert.DoesNotContain(
+            prompt.Affordances, option => option.Id == villain.ObjectId);
+    }
+
+    [Rule("rr:choose-game-element.3")]
+    [Rule("rr:activation.8")]
+    [Fact]
+    public void AChosenPlayerBindingSurvivesAnActivationContinuation()
+    {
+        // The selection is part of the unresolved ability when an activation
+        // “resolves after the current … ability.” Resuming that same ability
+        // must retain which identity the player selected.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "chooseCard": {
+              "from": { "query": "identities" },
+              "effect": { "seq": [
+                { "enemyAttacks": { "enemies": { "query": "villain" } } },
+                { "draw": { "player": "chosenPlayer", "count": 1 } }
+              ] }
+            } }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        int held = world.Seats[1].Hand.Cards.Count;
+        var action = Assert.Single(
+            runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
+        runner.Act(world, action, [], []);
+        var choice = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
+        runner.Chose(
+            world, source!, 0, choice.Index,
+            Decision.Take(world.Seats[1].IdentityCard.ObjectId), choice.Tier);
+        var attack = Assert.Single(
+            world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
+        runner.ActivationCompleted(world, new EnemyActivation(
+            attack.Subject, attack.Seat, Attacking: true,
+            attack.ActivationId, Made: false));
+
+        Assert.Equal(held + 1, world.Seats[1].Hand.Cards.Count);
+    }
+
+    [Rule("rr:choose-game-element.3")]
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void ALabelledPowerRestoresTheOuterChosenBindingBeforeContinuing()
+    {
+        // The attack's villain target is not the identity selected by the
+        // outer ability. The power uses its target while resolving, then the
+        // unresolved outer sentence again refers to the selected player.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "seq": [] }
+              } },
+              { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "seq": [
+                  { "dealAttackDamage": {
+                    "cards": { "query": "villain" }, "amount": 1
+                  } },
+                  { "draw": { "player": "chosenPlayer", "count": 1 } }
+                ] }
+              } }
+            ] }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        int held = world.Seats[1].Hand.Cards.Count;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        long damage = villain.Damage;
+        var action = Assert.Single(
+            runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
+        runner.Act(world, action, [], []);
+        var choice = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
+
+        runner.Chose(
+            world, source!, 0, choice.Index,
+            Decision.Take(world.Seats[1].IdentityCard.ObjectId), choice.Tier);
+        var attack = Assert.Single(
+            world.Agenda.Outstanding,
+            step => step.What == Steps.CharacterAttacks);
+        runner.ResolveCardAttack(
+            world, attack.CharacterAttack!, attack.OccurrenceOf(world, Cards), []);
+
+        Assert.Equal(damage + 1, villain.Damage);
+        Assert.Equal(held + 1, world.Seats[1].Hand.Cards.Count);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:target.3.9")]
+    [Fact]
+    public void EveryEachPlayerFrameContributesLaterBindingCandidates()
+    {
+        // The first player decides the frame order. The final frame can bind
+        // either player's engaged minion, so the later attack must account for
+        // Madame Hydra's “cannot take damage” prohibition before paying costs.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "eachPlayer": { "effect": { "chooseCard": {
+                "from": { "query": "minionsEngagedWithYou" },
+                "effect": { "seq": [] }
+              } } } },
+              { "attack": {
+                "target": "chosen",
+                "effect": { "dealAttackDamage": {
+                  "cards": "chosen", "amount": 1
+                } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            includeAuthored: true);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "01181",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+                var legions = board.CreateCard(
+                    "01180", board.AreaOf(DeckType.SideSchemesArea));
+                legions.PlaceTokens("k_threat", 1);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void AnEmptyFinalEachPlayerFrameRemainsAReachableBindingOutcome()
+    {
+        // Every player frame restores the binding from before “each player.”
+        // If the player with no minion resolves last, no target is persisted
+        // for the later attack and the cost must not be paid first.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "eachPlayer": { "effect": { "chooseCard": {
+                "from": { "query": "minionsEngagedWithYou" },
+                "effect": { "seq": [] }
+              } } } },
+              { "attack": {
+                "target": "chosen",
+                "effect": { "dealAttackDamage": {
+                  "cards": "chosen", "amount": 1
+                } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.DoesNotContain(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:choose-game-element.3")]
+    [Rule("rr:target.3.9")]
+    [Fact]
+    public void NestedChoiceCandidatesReplaceTheOuterChosenPlayerDuringValidation()
+    {
+        // Candidate validation must read the identity currently being offered,
+        // not the hero chosen by the outer question. The alter-ego candidate
+        // reaches an attack targeting that identity and is therefore illegal.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "chooseCard": {
+              "from": { "query": "identities" },
+              "effect": { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "if": {
+                  "test": { "inForm": {
+                    "player": "chosenPlayer", "form": "hero"
+                  } },
+                  "then": { "draw": {
+                    "player": "chosenPlayer", "count": 1
+                  } },
+                  "else": { "attack": {
+                    "target": "chosen",
+                    "effect": { "dealAttackDamage": {
+                      "cards": "chosen", "amount": 1
+                    } }
+                  } }
+                } }
+              } }
+            } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(world.Seats[0].IdentityCard.ObjectId));
+
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Id == world.Seats[0].IdentityCard.ObjectId);
+        Assert.DoesNotContain(
+            game.Pending.Affordances,
+            option => option.Id == world.Seats[1].IdentityCard.ObjectId);
+    }
+
     [Rule("rr:then")]
     [Fact]
     public void ChosenTargetCanMakeADependentContinuationReachable()
@@ -5252,6 +6474,135 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Rule("rr:choose-game-element.3")]
+    [Rule("rr:form-change-form.2")]
+    [Rule("rr:target.3.3")]
+    [Fact]
+    public void ChosenPlayerRestorationKeepsEveryOtherFormOutcomeReachable()
+    {
+        // A choice must be made among “eligible game elements.” Restoring the
+        // chosen identity to hero form changes only that identity; another
+        // identity that a prior option changed can remain in alter-ego form.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "choose": { "options": [
+                { "changeForm": {
+                  "player": "firstPlayer", "to": "alterEgo"
+                } },
+                { "changeForm": { "player": "you", "to": "alterEgo" } }
+              ] } },
+              { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "changeForm": {
+                  "player": "chosenPlayer", "to": "hero"
+                } }
+              } },
+              { "if": {
+                "test": { "inForm": {
+                  "player": "firstPlayer", "form": "hero"
+                } },
+                "then": { "thwart": {
+                  "target": { "query": "mainScheme" },
+                  "effect": { "removeThreat": {
+                    "scheme": { "query": "mainScheme" },
+                    "amount": 1, "ignoresCrisis": "true"
+                  } }
+                } },
+                "else": { "thwart": {
+                  "target": { "query": "mainScheme" },
+                  "effect": { "removeThreat": {
+                    "scheme": { "query": "mainScheme" }, "amount": 1
+                  } }
+                } }
+              } }
+            ] }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.FirstPlayer = 1;
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+                var crisis = board.CreateCard(
+                    "01108", board.AreaOf(DeckType.SideSchemesArea));
+                crisis.PlaceTokens("k_threat", 1);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Rule("rr:form-change-form.2")]
+    [Rule("rr:target.3.3")]
+    [Fact]
+    public void EveryLegalEachPlayerOrderContributesFormReachability()
+    {
+        // “The first player decides the order” for an each-player effect. If
+        // player one resolves first, both identities can change form; the
+        // later target check must include that legal ordering.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "eachPlayer": { "effect": { "if": {
+                "test": { "inForm": {
+                  "player": "firstPlayer", "form": "hero"
+                } },
+                "then": { "changeForm": {
+                  "player": "you", "to": "alterEgo"
+                } },
+                "else": { "seq": [] }
+              } } } },
+              { "if": {
+                "test": { "inForm": {
+                  "player": "you", "form": "hero"
+                } },
+                "then": { "thwart": {
+                  "target": { "query": "mainScheme" },
+                  "effect": { "removeThreat": {
+                    "scheme": { "query": "mainScheme" },
+                    "amount": 1, "ignoresCrisis": "true"
+                  } }
+                } },
+                "else": { "thwart": {
+                  "target": { "query": "mainScheme" },
+                  "effect": { "removeThreat": {
+                    "scheme": { "query": "mainScheme" }, "amount": 1
+                  } }
+                } }
+              } }
+            ] }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                board.Seats[0].IdentityCard.TurnTo("01001a");
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+                source = board.CreateCard(
+                    AuthoredCards.AuntMay,
+                    board.AreaOf(
+                        DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+                var crisis = board.CreateCard(
+                    "01108", board.AreaOf(DeckType.SideSchemesArea));
+                crisis.PlaceTokens("k_threat", 1);
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 1), ability => ability.Card == source!.ObjectId);
+    }
+
     [Rule("rr:damage.2")]
     [Rule("rr:labeled-ability.4")]
     [Fact]
@@ -7077,12 +8428,14 @@ public sealed class ActionAbilityTests
         Assert.Equal(guard.ObjectId, permanent!.Area.Host);
     }
 
-    [Rule("rr:lasting-effects")]
     [Rule("rr:guard.1")]
-    [Rule("rr:labeled-ability.4")]
+    [Rule("rr:target.3.8")]
     [Fact]
-    public void LabelledHealthGrantKeepsGuardAliveAtPrintedLethalDamage()
+    public void GuardMakesTheVillainInvalidBeforeTracingALabelledAttack()
     {
+        // Guard says “The engaged player cannot attack any villain,” and a
+        // target that cannot be attacked is not valid for an attack-labeled
+        // ability. Later effects cannot first remove that initiation limit.
         var runner = Runner(
             AuthoredCards.AuntMay,
             "Action",
@@ -7131,7 +8484,7 @@ public sealed class ActionAbilityTests
             heroes: ["spider_man", "captain_marvel"],
             abilities: runner);
 
-        Assert.Contains(
+        Assert.DoesNotContain(
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
@@ -7606,10 +8959,10 @@ public sealed class ActionAbilityTests
             "Action",
             """
             { "attack": {
-              "target": { "query": "villain" },
+              "target": { "titled": "Shocker" },
               "effect": { "seq": [
                 { "dealDamage": {
-                  "cards": { "titled": "Hydra Mercenary" }, "amount": 100
+                  "cards": { "query": "minionsEngagedWithYou" }, "amount": 100
                 } },
                 { "dealAttackDamage": {
                   "cards": { "query": "villain" }, "amount": 1
@@ -7620,29 +8973,31 @@ public sealed class ActionAbilityTests
             cost: """{ "exhaust": "this" }""",
             includeAuthored: true);
         Card? source = null;
-        Card? guard = null;
+        Card? minion = null;
         Card? tracer = null;
 
         var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(
             board =>
             {
                 source = InPlay(board, AuthoredCards.AuntMay);
-                guard = board.CreateCard(
-                    "01101",
+                minion = board.CreateCard(
+                    "01103",
                     board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
                 tracer = board.CreateCard(
                     "01007",
                     board.AreaOf(
-                        DeckType.UpgradesArea, guard.Area.PlayArea,
-                        guard.ObjectId, 0));
+                        DeckType.UpgradesArea, minion.Area.PlayArea,
+                        minion.ObjectId, 0));
+                board.TheCardIn(DeckType.MainSchemesArea)!
+                    .PlaceTokens("k_threat", 1);
             },
             hero: true,
             abilities: runner));
 
         Assert.Contains("defeat-triggered ability", refused.Message);
         Assert.True(source!.Ready);
-        Assert.Equal(0, guard!.Damage);
-        Assert.Equal(guard.ObjectId, tracer!.Area.Host);
+        Assert.Equal(0, minion!.Damage);
+        Assert.Equal(minion.ObjectId, tracer!.Area.Host);
     }
 
     [Rule("rr:damage.step.7")]
@@ -7658,11 +9013,11 @@ public sealed class ActionAbilityTests
             "Action",
             """
             { "attack": {
-              "target": { "query": "villain" },
+              "target": { "titled": "Hydra Mercenary" },
               "effect": { "seq": [
                 { "discard": { "titled": "Spider-Tracer" } },
                 { "dealDamage": {
-                  "cards": { "titled": "Hydra Mercenary" }, "amount": 100
+                  "cards": { "query": "minionsEngagedWithYou" }, "amount": 100
                 } },
                 { "dealAttackDamage": {
                   "cards": { "query": "villain" }, "amount": 1
@@ -7688,6 +9043,8 @@ public sealed class ActionAbilityTests
                     board.AreaOf(
                         DeckType.UpgradesArea, guard.Area.PlayArea,
                         guard.ObjectId, 0));
+                board.TheCardIn(DeckType.MainSchemesArea)!
+                    .PlaceTokens("k_threat", 1);
             },
             hero: true,
             abilities: runner);
@@ -7970,15 +9327,14 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
-    [Rule("rr:ability.step.1")]
-    [Rule("rr:hit-points.2.3")]
-    [Rule("rr:labeled-ability.4")]
+    [Rule("rr:guard.1")]
+    [Rule("rr:target.3.8")]
     [Fact]
-    public void UnchangedThreatPredicateKeepsItsConstantHealthInTheTrace()
+    public void GuardPreventsTracingAnOtherwiseSafeLabelledAttack()
     {
-        // Removing one threat from ten leaves Gene Pool at nine, so Infinite
-        // Soldier still satisfies "at least 9" and retains its +3 hit points.
-        // The trace can therefore continue without refusing the action.
+        // Guard says “The engaged player cannot attack any villain,” and a
+        // target that cannot be attacked is not valid for an attack-labeled
+        // ability. Trace safety cannot make the current target legal.
         var runner = Runner(
             AuthoredCards.AuntMay,
             "Action",
@@ -8018,7 +9374,7 @@ public sealed class ActionAbilityTests
             hero: true,
             abilities: runner);
 
-        Assert.Contains(
+        Assert.DoesNotContain(
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
         Assert.Equal(10, pool!.Tokens.GetValueOrDefault("k_threat"));
         Assert.Equal(0, soldier!.Damage);
@@ -9464,29 +10820,29 @@ public sealed class ActionAbilityTests
         Assert.Equal(0, villain!.Damage);
     }
 
-    [Rule("rr:modifiers.1")]
-    [Rule("rr:villain-defeat.4")]
-    [Rule("rr:labeled-ability.4")]
+    [Rule("rr:referential-ability.step.3")]
     [Fact]
-    public void RemovedNumericTargetCanRebindToSameTitle()
+    public void PlayerCardReferenceDoesNotTrackSameTitledEncounterCards()
     {
-        // The first Hydra is the live title match. Discarding it makes the
-        // damaged second copy the match, activating the villain grant.
+        // A player card's ambiguous title reference resolves only among player
+        // cards. Neither Shocker is therefore the numeric target, so
+        // removing one cannot retarget the reference to the other. The
+        // independently valid villain target keeps the action initiable.
         var runner = SameTitleNumericRebindingVillainGrantRunner();
         Card? source = null;
         Card? first = null;
         Card? villain = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, _) = Playing(
             board =>
             {
                 source = InPlay(board, AuthoredCards.AuntMay);
                 first = board.CreateCard(
-                    "01101",
+                    "01103",
                     board.AreaOf(
                         DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
                 var second = board.CreateCard(
-                    "01101",
+                    "01103",
                     board.AreaOf(
                         DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
                 second.TakeDamage(1);
@@ -9498,9 +10854,12 @@ public sealed class ActionAbilityTests
             },
             hero: true,
             abilities: runner,
-            scenario: "klaw"));
+            scenario: "klaw");
 
-        Assert.Contains("retargeting constant", thrown.Message);
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb
+                && option.AnchorId == source!.ObjectId);
         Assert.True(source!.Ready);
         Assert.Equal(DeckType.EngagedEnemiesArea, first!.Area.Type);
         Assert.Equal(0, villain!.Damage);
@@ -9927,22 +11286,22 @@ public sealed class ActionAbilityTests
         Assert.False(Statuses.Has(world!, scientist, Statuses.Stunned));
     }
 
-    [Rule("rr:vulnerable.1")]
-    [Rule("rr:status-cards.1")]
-    [Rule("rr:labeled-ability.4")]
+    [Rule("rr:target.4")]
+    [Rule("rr:target.4.1")]
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void ReenteredVulnerableCharacterUsesFreshStatusInventory(bool repeated)
+    public void EmptyFinalStatusGroupDoesNotInvalidateEarlierTargets(bool repeated)
     {
-        // Each Stunned grant discards the Vulnerable scientist. Re-entering it
-        // does not restore a discarded status, so the second grant discards it
-        // again and leaves no target for the final effect. Refusal precedes cost.
+        // The earlier status effects have a valid target. The final effect's
+        // empty group is simply skipped: an ability that targets multiple game
+        // elements can initiate with one valid target and does not resolve
+        // against an element that is no longer valid.
         var runner = ReenteredVulnerableStatusRunner(repeated);
         Card? source = null;
         Card? scientist = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, _) = Playing(
             board =>
             {
                 source = InPlay(board, AuthoredCards.AuntMay);
@@ -9953,9 +11312,10 @@ public sealed class ActionAbilityTests
             },
             hero: true,
             heroes: ["spider_man", "captain_marvel"],
-            abilities: runner));
+            abilities: runner);
 
-        Assert.Contains("give a status", thrown.Message);
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
         Assert.True(source!.Ready);
         Assert.Equal(DeckType.EngagedEnemiesArea, scientist!.Area.Type);
     }
@@ -13039,6 +14399,7 @@ public sealed class ActionAbilityTests
             board =>
             {
                 tenacity = InPlay(board, "01093");
+                board.Seats[0].IdentityCard.Exhaust();
                 Physical(board, 1);
             },
             hero: true);
@@ -13863,7 +15224,7 @@ public sealed class ActionAbilityTests
             false,
             """
             { "seq": [
-              { "discard": { "titled": "Hydra Mercenary" } },
+              { "discard": { "titled": "Shocker" } },
               { "dealDamage": {
                 "cards": { "query": "villain" }, "amount": 100
               } },
@@ -13874,7 +15235,7 @@ public sealed class ActionAbilityTests
             """,
             """
             { "atLeast": {
-              "value": { "damageOn": { "titled": "Hydra Mercenary" } },
+              "value": { "damageOn": { "titled": "Shocker" } },
               "count": 1
             } }
             """);

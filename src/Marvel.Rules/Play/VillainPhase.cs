@@ -196,6 +196,17 @@ public interface ICardAbilities : IWindowAbilities
     /// <param name="source">The card the damage comes from.</param>
     bool CanTakeDamage(World world, Card target, Card source);
 
+    /// <summary>Whether a card can be readied by this source.</summary>
+    /// <remarks>
+    /// <c>rr:target.3.5</c>: a card that another ability says cannot perform
+    /// the requested game function is not a valid target for that function.
+    /// This is a constant prohibition, parallel to <see cref="CanTakeDamage"/>.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="target">The card that would ready.</param>
+    /// <param name="source">The card whose ability would ready it.</param>
+    bool CanReady(World world, Card target, Card source) => true;
+
     /// <summary>
     /// Step 1 of dealing damage — <c>rr:damage.step.1</c>.
     /// </summary>
@@ -584,6 +595,9 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual bool CanTakeDamage(World world, Card target, Card source) => true;
+
+    /// <inheritdoc/>
+    public virtual bool CanReady(World world, Card target, Card source) => true;
 
     /// <inheritdoc/>
     public virtual long WouldBeDealt(

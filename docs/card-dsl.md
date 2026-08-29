@@ -593,7 +593,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Costs | `spend` (resource letters), `spendEnergyX` (a positive player-chosen X), `exhaust`, `discardFromHand` (a count) |
 | Control | `seq`, `and`, `if`, `then`, `otherwise`, `forEach`, `eachTime`, `choose`, `chooseCard`, `chooseTopForHand`, `chooseDiscardToShuffle`, `thwartDifferentSchemes`, `makeTheCall`, `legalPractice`, `payOrExhaust`, `payOrEffect`, `eachPlayer`, `resolveSpecials`, `afterActivation` |
 | Tests | `and`, `or`, `not`, `exists`, `canMakeTheCall`, `canLegalPractice`, `canAutomaticThwart`, `hasStatus`, `hasTrait`, `cardSet`, `isTitle`, `inForm`, `activationIs`, `atLeast`, `titleInPlay`, `attackDamaged`, `discardedWithResource`, `paidWithResource`, `defeatedByYou`, `wasDefeated`, `heroDefended`, `undefendedAttack`, `inExpertMode`, `isKind`, `defeatedBy`, `threatCause`, `finalStep` |
-| Actions | `giveStatus`, `giveAdditionalBoost`, `alsoAttackEachOtherHero`, `attachTo`, `discard`, `discardHandWithResource`, `draw`, `drawToHandSize`, `drawToPrintedHandSize`, `dealEncounterCards`, `dealEncounterCard`, `createDrones`, `placeCounters`, `advanceMainScheme`, `grant`, `grantEach`, `grantUntil`, `grantCharactersControlledBy`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `attack`, `thwart`, `thwartSchemes`, `power`, `dealDamage`, `dealAttackDamage`, `moveDamage`, `moveAttackDamage`, `placeThreat`, `placeAccelerationToken`, `removeThreat`, `preventThreat`, `replaceThreatWithDamage`, `preventThreatRemoval`, `preventDamageFrom`, `preventDamageWhile`, `reduceNextCardCost`, `heal`, `search`, `addToHand`, `returnOwnedToHand`, `exhaust`, `ready`, `revealTop`, `reveal`, `shuffleInto`, `shuffle`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `putIntoPlay`, `returnToHand`, `soakDamage`, `generate`, `generateTopDiscard`, `doubleResourceFor`, `requireAllyDefender` |
+| Actions | `giveStatus`, `giveAdditionalBoost`, `alsoAttackEachOtherHero`, `attachTo`, `discard`, `discardHandWithResource`, `draw`, `drawToHandSize`, `drawToPrintedHandSize`, `dealEncounterCards`, `dealEncounterCard`, `createDrones`, `placeCounters`, `advanceMainScheme`, `grant`, `grantEach`, `grantUntil`, `grantCharactersControlledBy`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `attack`, `thwart`, `thwartSchemes`, `power`, `dealDamage`, `dealAttackDamage`, `moveDamage`, `moveAttackDamage`, `placeThreat`, `placeAccelerationToken`, `removeThreat`, `preventThreat`, `replaceThreatWithDamage`, `preventThreatRemoval`, `preventDamageFrom`, `preventDamageWhile`, `preventReady`, `reduceNextCardCost`, `heal`, `search`, `addToHand`, `returnOwnedToHand`, `exhaust`, `ready`, `revealTop`, `reveal`, `shuffleInto`, `shuffle`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `putIntoPlay`, `returnToHand`, `soakDamage`, `generate`, `generateTopDiscard`, `doubleResourceFor`, `requireAllyDefender` |
 | Node fields | `card`, `cards`, `player`, `amount`, `count`, `status`, `keyword`, `trait`, `title`, `area`, `areas`, `until`, `within`, `condition`, `effect`, `options`, `from`, `among`, `onto`, `enemies`, `against` (including `engagedHero`), `engagedWith`, `first`, `where`, `scheme`, `sourceKind`, `sourceTrait`, `to`, `of`, `by`, `automaticTarget` |
 | Queries | `query: villain`, `query: mainScheme`, `query: minions`, `query: attackableEnemies`, `query: attackableMinions`, `query: schemes`, `query: thwartableSchemes`, `query: powerTargets`, `query: drones`, `query: dronesEngagedWithYou`, `query: minionsEngagedWithYou`, `query: enemiesEngagedWithChosenPlayer`, `query: heroes`, `query: identities`, `query: identitiesWithinPerPlayerLimit`, `query: identitiesWithTechInDiscard`, `query: topmostTechInChosenDiscard`, `query: characters`, `query: heroesAndAllies`, `query: charactersYouControl`, `query: alliesYouControl`, `query: upgradesYouControl`, `query: blackPantherUpgrades`, `query: supportsYouControl`, `query: upgradesAndSupportsYouControl`, `query: attachedToThis`, `query: identitySpecificInYourHand`, `query: yourAsideMinion`, `query: yourAsideSideScheme`, `query: yourAsidePile`, `query: sideSchemes`; `withTrait` filters another card collection |
 | Card sources | `cardsIn { area | areas, kind, trait, title }` over `encounterDeck` and `encounterDiscardPile`; `enemiesWithTrait`; `titled`; `withoutAnotherCopyAttached`; `minBy` / `maxBy` over a query, `by` `cost`, `attack`, or `printedHealth` |
@@ -601,6 +601,28 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Players | `you`, `controller`, `trigger.player`, `engagedPlayer` for an engaged minion, `firstPlayer`, and `chosenPlayer` after choosing an identity |
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "result": "activationMade" }`, `{ "result": "activationDamage" }`, `{ "result": "activationThreat" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
 | Bindings | `this`, `that`, `you`, `yourHero`, `yourAlterEgo`, `chosen`, `attachedTo`, `trigger.subject`, `trigger.actor`, `trigger.target`, `defeated`, `activatingEnemy`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game`; attack roles `this`, `attachedTo`, `you`, `villain`, `minion`, `hero`, `ally`, `friendly`, `enemy` |
+
+**Target legality is one analysis shared by offering and execution.** It has
+three answers: the tree requires no current target, requires one and has none,
+or has at least one valid target. Structural nodes combine those answers with
+`rr:target.2`'s “at least one” rule, so one valid effect is enough even when a
+sibling cannot affect its target. Collection effects filter invalid elements
+again while resolving. Draw is valid only while the named player's deck holds a
+card; search is valid when its named searchable area exists, whether or not the
+search will find a match; and `delayUntil` contributes no current target because
+its target belongs to a future occurrence.
+
+**`titled` is a referential-ability selector when a title is shared.** A unique
+physical card in play needs no disambiguation, including titles printed on its
+other faces. Otherwise the source itself wins, then cards associated with the
+same identity, then player cards for a player-card source or encounter cards for
+an encounter-card source. The Rules Reference defines that precedence. Mapping
+the dataset's base set, `_nemesis`, and the five authored side-deck suffixes
+into one identity association is the engine's choice. The winning tier is
+selected before current-face legality is applied, so an inactive identity face
+cannot fall through to an unrelated lower-tier card. A collection effect may
+receive every currently valid card in the winning tier; a node that requires
+exactly one refuses an ambiguous winning tier rather than picking by area order.
 
 An ability with more than one printed parenthetical carries one envelope field,
 for example `"labels": ["attack", "defense", "thwart"]`. The interpreter

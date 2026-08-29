@@ -405,6 +405,7 @@ public sealed class KeywordTests
 
     [Rule("rr:patrol")]
     [Rule("rr:patrol.1")]
+    [Rule("rr:target.3.9")]
     [Fact]
     public void PatrolStopsTheMainSchemeBeingThwartedButNotASideScheme()
     {

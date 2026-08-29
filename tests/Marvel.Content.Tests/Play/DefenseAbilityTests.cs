@@ -54,6 +54,7 @@ public sealed class DefenseAbilityTests
         var firstPlayers = DefenseCard(world, 0);
         var secondPlayers = DefenseCard(world, 1);
         world.CreateCard("01087", world.Seats[1].Deck);
+        world.CreateCard("01087", world.Seats[1].Deck);
         var occurrence = AttackWindow(world, villain);
 
         var taken = Assert.Single(

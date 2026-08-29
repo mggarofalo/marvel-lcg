@@ -205,6 +205,42 @@ public sealed class CoreCombatResponseTests
         Assert.False(DeckTypes.IsInPlay(indomitable.Area.Type));
     }
 
+    [Rule("rr:target.3.8")]
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void GuardRejectsCounterPunchBeforeTheEventLeavesHand()
+    {
+        // Guard makes the villain an invalid attack target for the engaged
+        // player. Counter-Punch names the attacking villain directly rather
+        // than querying attackable enemies, so its envelope must enforce the
+        // same target restriction before the event is paid or scheduled.
+        var world = Board("01001a");
+        var hero = world.Seats[0].IdentityCard;
+        var enemy = world.TheCardIn(DeckType.VillainArea)!;
+        world.CreateCard(
+            "01101",
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var counterPunch = world.CreateCard("01077", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        world.FinishedAttack = new EnemyAttack(
+            enemy.ObjectId, 0, hero.ObjectId,
+            Defender: hero.ObjectId, BasicDefense: true);
+        var occurrence = Occurrence.ForAttack(
+            1, [Steps.AttackEnds], world, Cards,
+            enemy.ObjectId, hero.ObjectId, 0);
+
+        Assert.DoesNotContain(
+            runner.Waiting(world, occurrence, WindowKind.Response),
+            ability => ability.Card == counterPunch.ObjectId);
+        Assert.Throws<RulesNotImplementedException>(() => runner.Resolve(
+            world, occurrence,
+            new PendingAbility(counterPunch.ObjectId, AbilityType.Response, 0), [], []));
+
+        Assert.Equal(DeckType.HandsArea, counterPunch.Area.Type);
+        Assert.Equal(0, enemy.Damage);
+    }
+
     private static World Board(string heroFace)
     {
         var world = new World(Cards, players: 1);
