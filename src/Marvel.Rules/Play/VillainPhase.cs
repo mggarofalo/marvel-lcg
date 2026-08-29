@@ -821,7 +821,7 @@ public static class VillainPhase
                 break;
 
             case Steps.EndSchemeEarly:
-                EndSchemeEarly(world);
+                EndSchemeEarly(world, events);
                 break;
 
             case Steps.Attack:
@@ -1357,7 +1357,7 @@ public static class VillainPhase
         // says "this activation" was given for *this* scheme and must not
         // survive into somebody's attack -- `rr:activation` makes a scheme an
         // activation, and `rr:activation.6` gives an activation an end.
-        world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.Effects.Expire(TimingPoints.EndOfActivation, events);
         if (world.Activation is { } activation)
         {
             world.FinishedActivation = activation with { ThreatPlaced = placed };
@@ -1366,9 +1366,9 @@ public static class VillainPhase
     }
 
     /// <summary>Ends a scheme without placing threat when its minion left play.</summary>
-    private static void EndSchemeEarly(World world)
+    private static void EndSchemeEarly(World world, List<GameEvent> events)
     {
-        world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.Effects.Expire(TimingPoints.EndOfActivation, events);
         world.FinishedActivation = world.Activation;
         world.Activation = null;
     }

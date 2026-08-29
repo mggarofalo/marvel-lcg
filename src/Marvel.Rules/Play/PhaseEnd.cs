@@ -307,7 +307,7 @@ public static class PhaseEnd
             // by its ending is gone -- rr:lasting-effects.5.
             foreach (var timingPoint in expiring)
             {
-                world.Effects.Expire(timingPoint);
+                world.Effects.Expire(timingPoint, events);
             }
 
             // Delayed effects waiting on this moment resolve here, "before

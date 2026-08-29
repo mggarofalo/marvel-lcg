@@ -1,3 +1,4 @@
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 
@@ -324,12 +325,20 @@ public sealed class ContinuousEffects(World world)
     /// everything lasting "until the end of the round" ends.
     /// </remarks>
     /// <param name="timingPoint">The point that has been reached.</param>
+    /// <param name="events">Where to record state changes caused by restored constants.</param>
     /// <returns>How many effects ended.</returns>
-    public int Expire(string timingPoint)
+    public int Expire(string timingPoint, List<GameEvent>? events = null)
     {
         ArgumentNullException.ThrowIfNull(timingPoint);
-        return entries.RemoveAll(entry =>
-            string.Equals(entry.Effect.Lasts?.Until, timingPoint, StringComparison.Ordinal));
+        var expired = entries.Where(entry => string.Equals(
+            entry.Effect.Lasts?.Until, timingPoint, StringComparison.Ordinal)).ToList();
+        foreach (var entry in expired)
+        {
+            entries.Remove(entry);
+        }
+        ReconcileRestoredUses(
+            expired.Select(entry => entry.Effect), timingPoint, events);
+        return expired.Count;
     }
 
     /// <summary>
@@ -367,6 +376,8 @@ public sealed class ContinuousEffects(World world)
             if (entry.Remaining <= 0)
             {
                 entries.Remove(entry);
+                ReconcileRestoredUses(
+                    [entry.Effect], "continuous effect used", events: null);
             }
         }
 
@@ -409,6 +420,11 @@ public sealed class ContinuousEffects(World world)
             }
         }
 
+        ReconcileRestoredUses(
+            due.Where(entry => !entries.Contains(entry)).Select(entry => entry.Effect),
+            condition,
+            events: null);
+
         return [.. due.Select(entry => entry.Effect)];
     }
 
@@ -426,7 +442,38 @@ public sealed class ContinuousEffects(World world)
             && DeckTypes.IsInPlay(world.Cards[card].Area.Type);
     }
 
-    private void Remove(Entry entry) => entries.Remove(entry);
+    private void Remove(Entry entry)
+    {
+        if (entries.Remove(entry))
+        {
+            ReconcileRestoredUses(
+                [entry.Effect], "continuous effect ended", events: null);
+        }
+    }
+
+    private void ReconcileRestoredUses(
+        IEnumerable<ContinuousEffect> ended,
+        string trigger,
+        List<GameEvent>? events)
+    {
+        if (!ended.Any(effect => string.Equals(
+                effect.Kind, Characteristics.LossOf("uses"), StringComparison.Ordinal)))
+        {
+            return;
+        }
+
+        var sink = events ?? [];
+        foreach (var card in world.Cards.Where(card =>
+            DeckTypes.IsInPlay(card.Area.Type)
+            && !Characteristics.IsLost(world, card, "uses")
+            && Reveal.Uses(world.Facts.Attributes(card.FaceId)).Count > 0
+            && card.Tokens
+                .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
+                .Sum(pair => pair.Value) == 0).ToArray())
+        {
+            Discard.Card(world, card, trigger, sink);
+        }
+    }
 
     /// <summary>One registered effect and its remaining uses.</summary>
     /// <remarks>

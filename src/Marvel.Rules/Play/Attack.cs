@@ -763,12 +763,12 @@ public static class Attack
 
     private static void Finish(World world, List<GameEvent> events)
     {
-        world.Effects.Expire(TimingPoints.EndOfAttack);
+        world.Effects.Expire(TimingPoints.EndOfAttack, events);
 
         // An attack is one of the two kinds of activation -- `rr:activation` --
         // so anything bounded by "this activation" ends here too, and there is
         // no longer an activating enemy for a card to name.
-        world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.Effects.Expire(TimingPoints.EndOfActivation, events);
         world.FinishedActivation = world.Activation;
         world.Activation = null;
         DelayedEffects.Occur(world, Steps.AttackEnds, events);

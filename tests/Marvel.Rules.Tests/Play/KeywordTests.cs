@@ -921,6 +921,44 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:loses")]
+    [Rule("rr:uses-x-type.1")]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RegainingUsesWithNoCountersImmediatelyDiscardsTheCard(bool expires)
+    {
+        // Uses is a constant ability: as soon as the loss ends, its live
+        // zero-counter condition discards the card. This is true whether a
+        // duration expires normally or the registration ends early.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var card = world.CreateCard("sideScheme", world.AreaOf(DeckType.RevealingArea));
+        var loss = world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: card.ObjectId,
+            Lasts: Duration.UntilEndOf(TimingPoints.EndOfPlayerPhase)));
+        Reveal.Resolve(world, printed, card, 0, []);
+        var events = new List<GameEvent>();
+
+        if (expires)
+        {
+            world.Effects.Expire(TimingPoints.EndOfPlayerPhase, events);
+        }
+        else
+        {
+            loss.Dispose();
+        }
+
+        Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
+        if (expires)
+        {
+            Assert.Contains(events.OfType<CardsMoved>(), moved =>
+                moved.Cards.Any(landing => landing.Card == card.ObjectId));
+        }
+    }
+
+    [Rule("rr:loses")]
     [Rule("rr:linked-card-title.4")]
     [Fact]
     public void ACardThatLosesLinkedDoesNotTransferPrintedOwnership()
