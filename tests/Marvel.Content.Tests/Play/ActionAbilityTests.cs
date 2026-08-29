@@ -2627,6 +2627,180 @@ public sealed class ActionAbilityTests
         Assert.Equal(["seq:1"], waiting.AbilityPath);
     }
 
+    [Rule("rr:and.1")]
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void AnOrderedCardAttackResumesTheRemainingSimultaneousEffect()
+    {
+        // The first player chooses the order of the independent effects. The
+        // attack has its own agenda procedure, so the later draw must wait for
+        // that procedure and then resume from the exact `and` branch.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "and": [ { "attack": { "target": { "query": "villain" }, "effect": { "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.Equal(1, villain.Damage);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void LeavingTheFinalEachPlayerFrameRestoresTheOriginalResolver()
+    {
+        // Each frame reads "you" as that frame's player. Text after the frame
+        // belongs to the player resolving the ability, not whichever player
+        // the first player put last in the chosen order.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        int firstHeld = world.Seats[0].Hand.Cards.Count;
+        int secondHeld = world.Seats[1].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(
+            order.Id,
+            [world.Seats[0].IdentityCard.ObjectId, world.Seats[1].IdentityCard.ObjectId]));
+
+        Assert.Equal(firstHeld + 2, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(secondHeld + 1, world.Seats[1].Hand.Cards.Count);
+    }
+
+    [Rule("rr:and.1")]
+    [Fact]
+    public void UnsupportedThreatPlacementOrderingRaisesBeforeTheActionCost()
+    {
+        // Threat placement has its own interrupt and response windows. Until
+        // that agenda record carries a structural card continuation, accepting
+        // an order that places it first would silently skip the later effect.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "and": [ { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }, { "draw": { "player": "you", "count": 1 } } ] }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("threat placement continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:choose-option")]
+    [Fact]
+    public void AChoiceContinuationPreservesEarlierEffectResults()
+    {
+        // "This way" is scoped to the one ability resolution. Asking a
+        // question cannot replace that resolution with a fresh result map.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "heal": { "card": "you", "amount": 1 } }, { "choose": { "options": [ { "exhaust": "this" }, { "ready": "this" } ] } }, { "if": { "test": { "atLeast": { "value": { "result": "healed" }, "count": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(1);
+            },
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(0));
+
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void PayOrExhaustContinuesTheContainingSequence()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "payOrExhaust": { "resources": "YBR", "otherwise": { "exhaust": "this" } } }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(1));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:activation.7")]
+    [Fact]
+    public void SequentialActivationWaitsUseTheOriginatingFaceAndFreshResults()
+    {
+        // The first attack changes neither the identity's current face nor the
+        // authored face that owns this ability. Its damage result must not leak
+        // into the second wait's later condition.
+        var runner = Runner(
+            AuthoredCards.SpiderMan,
+            "WhenRevealed",
+            """{ "seq": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "enemyAttacks": { "enemies": { "query": "villain" } } }, { "enemyAttacks": { "enemies": { "query": "villain" } } }, { "if": { "test": { "atLeast": { "value": { "result": "activationDamage" }, "count": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""",
+            eventName: Steps.CardRevealed);
+        var (_, world) = Playing(_ => { }, hero: true, abilities: runner);
+        var identity = world.Seats[0].IdentityCard;
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.WhenRevealed(world, identity, 0);
+        Assert.Equal("01001b", identity.FaceId);
+        var first = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.Attack);
+
+        runner.ActivationCompleted(world, new EnemyActivation(
+            first.Subject, first.Seat, Attacking: true, first.ActivationId,
+            Made: true, DamageDealt: 2));
+        var second = Assert.Single(
+            world.Agenda.Outstanding,
+            step => step.What == Steps.Attack && step.ActivationId != first.ActivationId);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+
+        runner.ActivationCompleted(world, new EnemyActivation(
+            second.Subject, second.Seat, Attacking: true, second.ActivationId,
+            Made: true, DamageDealt: 0));
+
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+    }
+
     [Fact]
     public void ADirectLastingEffectCannotBeginOutsideItsPeriod()
     {

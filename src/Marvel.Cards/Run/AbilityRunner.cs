@@ -176,20 +176,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             world, source, continuation.Seat, continuation.Tier, continuation.FinalStep,
             continuation.AbilityOccurrence) with
         {
+            EachPlayerFrame = continuation.EachPlayerFrame,
+            FinalPlayer = continuation.FinalPlayer,
+            AbilityPlayer = continuation.AbilityPlayer,
             EventTrigger = continuation.Trigger,
             GainedKeywords = continuation.SurgeGained
                 ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal),
         };
-        cast.RestoreAbility(continuation.AbilityOrdinal, path);
-        foreach (var (name, value) in continuation.AbilityResults
-            ?? new Dictionary<string, long>(StringComparer.Ordinal))
-        {
-            cast.Results[name] = value;
-        }
+        cast.RestoreAbility(
+            continuation.AbilityOrdinal, path, continuation.AbilityFace);
+        RestorePersisted(cast, continuation);
         var root = AbilityAt(
-            source, continuation.Tier, continuation.AbilityOrdinal).Effect;
-        ResumeAfter(root, path, cast);
+            source, continuation.Tier, continuation.AbilityOrdinal,
+            continuation.AbilityFace).Effect;
+        int eachPlayer = path.ToList().FindIndex(frame =>
+            frame.StartsWith("eachPlayer:", StringComparison.Ordinal));
+        ResumeAfter(
+            root, path, cast,
+            stopBefore: continuation.EachPlayerFrame && !continuation.FinalPlayer
+                ? eachPlayer
+                : -1);
         DiscardEvent(source, cast);
         return cast.Events;
     }
@@ -202,7 +209,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             attack.PowerOrdinal, attack.ResumeFrom, attack.FinalStep,
             attack.Targets ?? [attack.Enemy], attack.Amount, null,
             attack.Trigger, attack.SurgeGained, occurrence, events,
-            BasicPowers.AttackVerb);
+            BasicPowers.AttackVerb, attack.AbilityPath, attack.AbilityFace,
+            attack.AbilityResults, attack.AbilityOccurrence, attack.Discarded,
+            attack.EachPlayerFrame, attack.FinalPlayer, attack.AbilityPlayer);
 
     /// <inheritdoc/>
     public void ResolveCardThwart(
@@ -212,7 +221,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             thwart.PowerOrdinal, thwart.ResumeFrom, thwart.FinalStep,
             thwart.Targets ?? [thwart.Scheme], thwart.Amount, thwart.ImminentThreat,
             thwart.Trigger, thwart.SurgeGained, occurrence, events,
-            BasicPowers.ThwartVerb);
+            BasicPowers.ThwartVerb, thwart.AbilityPath, thwart.AbilityFace,
+            thwart.AbilityResults, thwart.AbilityOccurrence, thwart.Discarded,
+            thwart.EachPlayerFrame, thwart.FinalPlayer, thwart.AbilityPlayer);
 
     private void ResolvePower(
         World world, int sourceId, int targetId, int player, int abilityIndex,
@@ -220,7 +231,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         long powerAmount, ThreatPlacement? imminentThreat, string eventTrigger,
         bool surgeGained,
         Occurrence occurrence,
-        List<GameEvent> events, string power)
+        List<GameEvent> events, string power, IReadOnlyList<string>? abilityPath = null,
+        string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
+        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1)
     {
         if (sourceId < 0 || sourceId >= world.Cards.Count)
         {
@@ -229,7 +243,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var source = world.Cards[sourceId];
-        var abilities = On(source).ToList();
+        var abilities = AbilitiesOn(source, abilityFace).ToList();
         var ability = abilities.ElementAtOrDefault(abilityIndex)
             ?? throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has no ability {abilityIndex} for its "
@@ -247,7 +261,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var cast = new Cast(
-            world, source, occurrence, player, events, this)
+            world, source, abilityOccurrence ?? occurrence, player, events, this)
         {
             Tier = ability.Trigger.Timing,
             FinalStep = finalStep,
@@ -256,10 +270,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ImminentThreat = imminentThreat,
             EventTrigger = eventTrigger,
             PowerTargets = [.. targets.Select(id => world.Cards[id])],
+            EachPlayerFrame = eachPlayerFrame,
+            FinalPlayer = finalPlayer,
+            AbilityPlayer = abilityPlayer,
             GainedKeywords = surgeGained
                 ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal),
         };
+        int ordinal = abilities
+            .Where(candidate => candidate.Trigger.Timing == ability.Trigger.Timing)
+            .ToList()
+            .IndexOf(ability);
+        cast.RestoreAbility(ordinal, abilityPath ?? [], abilityFace);
+        RestorePersisted(cast, discarded, abilityResults);
         cast.Choose(world.Cards[targetId]);
         Run(effect, cast);
 
@@ -275,7 +298,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
 
-        if (resumeFrom >= 0)
+        if (!cast.Suspended && abilityPath is not null)
+        {
+            int eachPlayer = abilityPath.ToList().FindIndex(frame =>
+                frame.StartsWith("eachPlayer:", StringComparison.Ordinal));
+            ResumeAfter(
+                ability.Effect, abilityPath, cast,
+                stopBefore: eachPlayerFrame && !finalPlayer ? eachPlayer : -1);
+        }
+        else if (!cast.Suspended && resumeFrom >= 0)
         {
             if (ability.Effect.Kind != "seq")
             {
@@ -1186,12 +1217,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             EachPlayerFrame = true,
             FinalPlayer = finalPlayer,
+            AbilityPlayer = step?.AbilityPlayer ?? player,
             GainedKeywords = world.Agenda.Current is
                 { What: Steps.ResolveEachPlayer, SurgeGained: true }
                     ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                     : new HashSet<string>(StringComparer.Ordinal),
         };
-        cast.RestoreAbility(ordinal, [.. parentPath, "eachPlayer:effect"]);
+        cast.RestoreAbility(
+            ordinal, [.. parentPath, "eachPlayer:effect"], step?.AbilityFace);
         cast.At(stoppedAt - 1);
         cast.SetContinuation(finalPlayer && outer.Kind == "seq"
             && stoppedAt < Nodes(outer.Argument).Count());
@@ -1199,6 +1232,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (!cast.Suspended && finalPlayer)
         {
             cast.SetAbilityPath(parentPath);
+            cast.RestorePlayer(cast.AbilityPlayer);
             ResumeAfter(outer, parentPath, cast);
         }
         return cast.Events;
@@ -2828,25 +2862,30 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(input);
 
         var choice = Choice(world, source, player, stoppedAt, tier);
+        var persisted = ContinuationStep(world, source, stoppedAt, tier);
         var continuation = world.Agenda.Current is { What: Steps.ChooseOption, Plan: true }
             && world.Agenda.Occurrence is { } live
             && live.Is(Steps.TurnAction)
                 ? live
                 : null;
-        var cast = Resuming(world, source, player, tier, finalStep, continuation) with
+        var cast = Resuming(
+            world, source, player, tier, finalStep,
+            persisted?.AbilityOccurrence ?? continuation) with
         {
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
+            AbilityPlayer = persisted?.AbilityPlayer ?? player,
             EventTrigger = eventTrigger,
             GainedKeywords = world.Agenda.Current is
                 { What: Steps.ChooseOption, SurgeGained: true }
                     ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                     : new HashSet<string>(StringComparer.Ordinal),
         };
-        if (ContinuationStep(world, source, stoppedAt, tier) is
+        RestorePersisted(cast, persisted);
+        if (persisted is
             { AbilityOrdinal: >= 0, AbilityPath: { } path } current)
         {
-            cast.RestoreAbility(current.AbilityOrdinal, path);
+            cast.RestoreAbility(current.AbilityOrdinal, path, current.AbilityFace);
         }
         cast.At(Math.Max(0, stoppedAt - 1));
         cast.SetContinuation(On(source).Any(ability =>
@@ -2869,16 +2908,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     + $"{effects.Count} simultaneous effects");
             }
 
+            bool outerContinuation = cast.HasContinuation;
             for (int position = 0; position < input.Targets.Count; position++)
             {
                 int index = input.Targets[position];
                 string remaining = string.Join(',', input.Targets.Skip(position + 1));
+                cast.SetContinuation(
+                    outerContinuation || position < input.Targets.Count - 1);
                 RunChild(effects[index], $"and:{index}:{remaining}", cast);
                 if (cast.Suspended)
                 {
                     return cast.Events;
                 }
             }
+            cast.SetContinuation(outerContinuation);
 
             return Continue(source, cast, stoppedAt);
         }
@@ -2952,7 +2995,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     $"'{source.FaceId}' offers spend or exhaust, not option {input.Affordance}");
             }
 
-            return cast.Events;
+            return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "chooseTopForHand")
         {
@@ -3432,6 +3475,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool CanInitiateAnd(AbilityNode node, Cast cast)
     {
         var effects = Nodes(node.Argument).ToList();
+        if (effects.Count > 1 && effects.Any(SuspendsInsideAnd))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' orders simultaneous effects around a threat "
+                + "placement continuation, which is not implemented");
+        }
         return effects.All(effect => CanInitiate(effect, cast));
     }
 
@@ -3873,7 +3922,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         if (cast.AbilityOrdinal >= 0 && cast.AbilityPath.Count > 0)
         {
-            var root = AbilityAt(source, cast.Tier, cast.AbilityOrdinal).Effect;
+            var root = AbilityAt(
+                source, cast.Tier, cast.AbilityOrdinal, cast.AbilityFace).Effect;
             int eachPlayer = cast.AbilityPath.FindIndex(frame =>
                 frame.StartsWith("eachPlayer:", StringComparison.Ordinal));
             ResumeAfter(
@@ -3952,17 +4002,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // and its "Boost" chooses between two effects, and picking the first
         // ability with a choice in it would resume the wrong one -- silently,
         // and with a legal-looking question about the wrong cards.
-        var written = On(source)
+        var persisted = ContinuationStep(world, source, stoppedAt, tier);
+        var written = AbilitiesOn(source, persisted?.AbilityFace)
             .Where(ability => tier is null || ability.Trigger.Timing == tier)
             .ToList();
-        var cast = Resuming(world, source, player, tier);
-        if (ContinuationStep(world, source, stoppedAt, tier) is
+        var cast = Resuming(
+            world, source, player, tier,
+            continuation: persisted?.AbilityOccurrence);
+        RestorePersisted(cast, persisted);
+        if (persisted is
             { AbilityOrdinal: >= 0, AbilityPath: { } path } step)
         {
             var ability = written.ElementAtOrDefault(step.AbilityOrdinal)
                 ?? throw new RulesNotImplementedException(
                     $"'{source.FaceId}' has no '{tier}' ability {step.AbilityOrdinal}");
-            cast.RestoreAbility(step.AbilityOrdinal, path);
+            cast.RestoreAbility(step.AbilityOrdinal, path, step.AbilityFace);
             var exact = NodeAtPath(ability.Effect, path);
             return ActiveChoices(exact, cast).SingleOrDefault()
                 ?? throw new RulesNotImplementedException(
@@ -4112,9 +4166,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private static bool SuspendsInsideAnd(AbilityNode node) =>
-        node.Kind is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
-            or "placeThreat" or "enemyAttacks" or "enemySchemes"
-            or "then" or "otherwise"
+        node.Kind == "placeThreat"
         || StructuralChildren(node).Any(SuspendsInsideAnd);
 
     private static IEnumerable<AbilityNode> PowerNodes(AbilityNode node, string power)
@@ -4457,7 +4509,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 EachPlayerEffects.Schedule(
                     cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep,
                     cast.GainedKeywords.Contains("surge"), AbilityOrdinal(node, cast),
-                    [.. cast.AbilityPath]);
+                    [.. cast.AbilityPath], cast.AbilityFace, cast.Player);
                 cast.Suspend();
                 break;
 
@@ -5932,7 +5984,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var runner = (AbilityRunner)cast.Abilities;
-        var written = runner.On(cast.Source)
+        var written = runner.AbilitiesOn(cast.Source, cast.AbilityFace)
             .Where(ability => cast.Tier is null || ability.Trigger.Timing == cast.Tier)
             .ToList();
         var matches = written
@@ -5947,12 +5999,41 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{cast.Source.FaceId}' cannot identify the exact ability that suspended");
     }
 
-    private CardAbility AbilityAt(Card source, AbilityType? tier, int ordinal) =>
-        On(source)
+    private IEnumerable<CardAbility> AbilitiesOn(Card source, string? face) =>
+        string.IsNullOrEmpty(face) ? On(source) : book.On(face);
+
+    private CardAbility AbilityAt(
+        Card source, AbilityType? tier, int ordinal, string? face = null) =>
+        AbilitiesOn(source, face)
             .Where(ability => tier is null || ability.Trigger.Timing == tier)
             .ElementAtOrDefault(ordinal)
         ?? throw new RulesNotImplementedException(
             $"'{source.FaceId}' has no '{tier}' ability {ordinal}");
+
+    private static void RestorePersisted(Cast cast, PhaseStep? continuation)
+    {
+        if (continuation is not { } step)
+        {
+            return;
+        }
+        RestorePersisted(cast, step.Discarded, step.AbilityResults);
+    }
+
+    private static void RestorePersisted(
+        Cast cast, IReadOnlyList<int>? discarded,
+        IReadOnlyDictionary<string, long>? results)
+    {
+        cast.Discarded.Clear();
+        if (discarded is not null)
+        {
+            cast.Discarded.AddRange(discarded.Select(id => cast.World.Cards[id]));
+        }
+        foreach (var (name, value) in results
+            ?? new Dictionary<string, long>(StringComparer.Ordinal))
+        {
+            cast.Results[name] = value;
+        }
+    }
 
     private static AbilityNode? TryNodeAtPath(
         AbilityNode root, IReadOnlyList<string> path)
@@ -5962,7 +6043,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return NodeAtPath(root, path);
         }
         catch (Exception error) when (error is AbilityException
-            or ArgumentOutOfRangeException or InvalidOperationException)
+            or ArgumentOutOfRangeException or InvalidOperationException
+            or RulesNotImplementedException)
         {
             return null;
         }
@@ -5990,6 +6072,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private static AbilityNode NodeAtPath(
+        AbilityNode root, IReadOnlyList<string> path)
+    {
+        try
+        {
+            return NodeAtPathCore(root, path);
+        }
+        catch (Exception error) when (error is AbilityException
+            or ArgumentOutOfRangeException or IndexOutOfRangeException
+            or InvalidOperationException or FormatException)
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation path '{string.Join("/", path)}' is invalid");
+        }
+    }
+
+    private static AbilityNode NodeAtPathCore(
         AbilityNode root, IReadOnlyList<string> path, int offset = 0)
     {
         var node = root;
@@ -6018,6 +6116,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         AbilityNode node, IReadOnlyList<string> path, Cast cast, int depth = 0,
         int stopBefore = -1)
     {
+        try
+        {
+            ResumeAfterCore(node, path, cast, depth, stopBefore);
+        }
+        catch (Exception error) when (error is AbilityException
+            or ArgumentOutOfRangeException or IndexOutOfRangeException
+            or InvalidOperationException or FormatException)
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation path '{string.Join("/", path)}' is invalid");
+        }
+    }
+
+    private static void ResumeAfterCore(
+        AbilityNode node, IReadOnlyList<string> path, Cast cast, int depth = 0,
+        int stopBefore = -1)
+    {
         if (depth >= path.Count)
         {
             return;
@@ -6040,7 +6155,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"ability continuation frame '{frame}' is not implemented"),
         };
 
-        ResumeAfter(child, path, cast, depth + 1, stopBefore);
+        ResumeAfterCore(child, path, cast, depth + 1, stopBefore);
         if (cast.Suspended || depth <= stopBefore)
         {
             return;
@@ -6051,15 +6166,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             case "seq":
                 var steps = Nodes(node.Argument).ToList();
+                bool outerContinuation = cast.HasContinuation;
                 for (int index = ParseIndex(parts, frame) + 1; index < steps.Count; index++)
                 {
                     cast.At(index);
+                    cast.SetContinuation(outerContinuation || index < steps.Count - 1);
                     RunChild(steps[index], $"seq:{index}", cast);
                     if (cast.Suspended)
                     {
                         return;
                     }
                 }
+                cast.SetContinuation(outerContinuation);
                 break;
 
             case "then" when parts[1] == "effect":
@@ -6082,15 +6200,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             case "and":
                 var effects = Nodes(node.Argument).ToList();
                 var remaining = Remaining(parts, frame);
+                bool outerAndContinuation = cast.HasContinuation;
                 for (int position = 0; position < remaining.Count; position++)
                 {
                     int index = remaining[position];
                     string after = string.Join(',', remaining.Skip(position + 1));
+                    cast.SetContinuation(
+                        outerAndContinuation || position < remaining.Count - 1);
                     RunChild(effects[index], $"and:{index}:{after}", cast);
                     if (cast.Suspended)
                     {
                         return;
                     }
+                }
+                cast.SetContinuation(outerAndContinuation);
+                break;
+
+            case "eachPlayer":
+                if (cast.AbilityPlayer >= 0)
+                {
+                    cast.RestorePlayer(cast.AbilityPlayer);
                 }
                 break;
         }
@@ -6169,7 +6298,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             SurgeGained: cast.GainedKeywords.Contains("surge"),
             Discarded: [.. cast.Discarded.Select(card => card.ObjectId)],
             AbilityOrdinal: AbilityOrdinal(node, cast),
-            AbilityPath: [.. cast.AbilityPath]);
+            AbilityPath: [.. cast.AbilityPath],
+            AbilityResults: new Dictionary<string, long>(cast.Results, StringComparer.Ordinal),
+            AbilityOccurrence: cast.Occurrence,
+            AbilityFace: cast.AbilityFace,
+            AbilityPlayer: cast.AbilityPlayer);
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
             cast.World.Agenda.ThenContinuation(continuation, cast.Occurrence);
@@ -6465,7 +6598,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{cast.Source.FaceId}' asks a question inside a {power.ToLowerInvariant()}");
         }
 
-        var abilities = On(cast.Source).ToList();
+        var abilities = AbilitiesOn(cast.Source, cast.AbilityFace).ToList();
         var addresses = abilities
             .Select((ability, index) => (Ability: ability, Index: index))
             .Where(candidate => cast.Tier is null
@@ -6484,6 +6617,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var address = addresses[0];
         int resumeFrom = cast.HasContinuation ? cast.Position + 1 : -1;
+        IReadOnlyList<string>? abilityPath = cast.HasContinuation
+            ? [.. cast.AbilityPath]
+            : null;
+        var abilityResults = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
+        var discarded = cast.Discarded.Select(card => card.ObjectId).ToList();
         bool scheduled = power == BasicPowers.AttackVerb
             ? BasicPowers.CardAttack(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
@@ -6491,7 +6629,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 powerOrdinal: address.Ordinal, resumeFrom: resumeFrom,
                 finalStep: cast.FinalStep,
                 targets: [.. targets.Select(card => card.ObjectId)], nested: true,
-                surgeGained: cast.GainedKeywords.Contains("surge"))
+                surgeGained: cast.GainedKeywords.Contains("surge"),
+                abilityPath: abilityPath, abilityFace: cast.AbilityFace,
+                abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
+                discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
+                finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer)
             : BasicPowers.CardThwart(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
                 cast.Trigger, cast.Events, abilityIndex: address.Index,
@@ -6501,7 +6643,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 imminentThreat: cast.Occurrence.Threat,
                 automaticTarget: node.Field("automaticTarget") is not null,
                 nested: true,
-                surgeGained: cast.GainedKeywords.Contains("surge"));
+                surgeGained: cast.GainedKeywords.Contains("surge"),
+                abilityPath: abilityPath, abilityFace: cast.AbilityFace,
+                abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
+                discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
+                finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer);
         if (!scheduled)
         {
             return;
@@ -7000,17 +7146,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Seat: cast.Player,
                 Tier: cast.Tier,
                 FinalStep: cast.FinalStep,
+                FinalPlayer: cast.FinalPlayer,
+                EachPlayerFrame: cast.EachPlayerFrame,
                 Trigger: cast.Trigger,
                 SurgeGained: cast.GainedKeywords.Contains("surge"),
                 Discarded: [.. cast.Discarded.Select(card => card.ObjectId)],
                 AbilityOrdinal: AbilityOrdinal(node, cast),
                 AbilityPath: [.. cast.AbilityPath],
-                AbilityResults: new Dictionary<string, long>(
-                    cast.Results, StringComparer.Ordinal),
-                AbilityOccurrence: cast.Occurrence));
+                AbilityResults: ActivationResults(cast),
+                AbilityOccurrence: cast.Occurrence,
+                AbilityFace: cast.AbilityFace,
+                AbilityPlayer: cast.AbilityPlayer));
             cast.WaitFor(activationIds);
             cast.Suspend();
         }
+    }
+
+    private static Dictionary<string, long> ActivationResults(Cast cast)
+    {
+        var results = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
+        results.Remove("activationMade");
+        results.Remove("activationDamage");
+        results.Remove("activationThreat");
+        return results;
     }
 
     /// <summary>Propagate one reveal-scoped Surge gain to work already suspended.</summary>
@@ -7910,7 +8068,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <param name="World">The board.</param>
     /// <param name="Source">The card whose text this is.</param>
     /// <param name="Occurrence">What it is timed to.</param>
-    /// <param name="Player">The seat resolving it.</param>
+    /// <param name="InitialPlayer">The seat resolving its first structural frame.</param>
     /// <param name="Events">Where to record what it did.</param>
     /// <param name="Abilities">
     /// The runner itself, for the rules that run more cards. A main scheme this
@@ -7919,9 +8077,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// interpreter that is running it.
     /// </param>
     private sealed record Cast(
-        World World, Card Source, Occurrence Occurrence, int Player, List<GameEvent> Events,
+        World World, Card Source, Occurrence Occurrence, int InitialPlayer,
+        List<GameEvent> Events,
         ICardAbilities Abilities)
     {
+        /// <summary>The seat whose perspective the current structural frame uses.</summary>
+        public int Player { get; private set; } = InitialPlayer;
+
+        /// <summary>The resolver to restore after leaving an each-player frame.</summary>
+        public int AbilityPlayer { get; init; } = InitialPlayer;
+
+        public void RestorePlayer(int player) => Player = player;
+
         /// <summary>The trigger string this ability's events carry.</summary>
         /// <remarks>
         /// A constant ability resolves against no occurrence and so has none.
@@ -8000,11 +8167,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <summary>The exact authored ability and structural route being resolved.</summary>
         public int AbilityOrdinal { get; private set; } = -1;
 
+        public string AbilityFace { get; private set; } = Source.FaceId;
+
         public List<string> AbilityPath { get; } = [];
 
-        public void RestoreAbility(int ordinal, IReadOnlyList<string> path)
+        public void RestoreAbility(
+            int ordinal, IReadOnlyList<string> path, string? face = null)
         {
             AbilityOrdinal = ordinal;
+            AbilityFace = face ?? string.Empty;
             AbilityPath.Clear();
             AbilityPath.AddRange(path);
         }

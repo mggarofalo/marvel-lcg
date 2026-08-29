@@ -27,7 +27,8 @@ public static class EachPlayerEffects
     public static void Schedule(
         World world, Card source, int stoppedAt, AbilityType? tier = null,
         bool finalStep = false, bool surgeGained = false, int abilityOrdinal = -1,
-        IReadOnlyList<string>? abilityPath = null)
+        IReadOnlyList<string>? abilityPath = null, string abilityFace = "",
+        int abilityPlayer = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
@@ -43,7 +44,7 @@ public static class EachPlayerEffects
         {
             ScheduleFrames(
                 world, source, stoppedAt, tier, finalStep, surgeGained, players,
-                abilityOrdinal, abilityPath);
+                abilityOrdinal, abilityPath, abilityFace, abilityPlayer);
             return;
         }
 
@@ -59,7 +60,9 @@ public static class EachPlayerEffects
             FinalStep: finalStep,
             SurgeGained: surgeGained,
             AbilityOrdinal: abilityOrdinal,
-            AbilityPath: abilityPath));
+            AbilityPath: abilityPath,
+            AbilityFace: abilityFace,
+            AbilityPlayer: abilityPlayer));
     }
 
     internal static Prompt Ordering(World world, PhaseStep step)
@@ -122,7 +125,9 @@ public static class EachPlayerEffects
             step.SurgeGained,
             input.Targets.Select(identity => candidates[identity]).ToList(),
             step.AbilityOrdinal,
-            step.AbilityPath);
+            step.AbilityPath,
+            step.AbilityFace,
+            step.AbilityPlayer);
     }
 
     internal static IReadOnlyList<GameEvent> Resolve(
@@ -156,7 +161,9 @@ public static class EachPlayerEffects
         bool surgeGained,
         List<int> players,
         int abilityOrdinal,
-        IReadOnlyList<string>? abilityPath)
+        IReadOnlyList<string>? abilityPath,
+        string abilityFace,
+        int abilityPlayer)
     {
         int round = world.Agenda.Current?.Round ?? 0;
         for (int position = 0; position < players.Count; position++)
@@ -175,7 +182,9 @@ public static class EachPlayerEffects
                 EachPlayerFrame: true,
                 SurgeGained: surgeGained,
                 AbilityOrdinal: abilityOrdinal,
-                AbilityPath: abilityPath));
+                AbilityPath: abilityPath,
+                AbilityFace: abilityFace,
+                AbilityPlayer: abilityPlayer));
         }
     }
 

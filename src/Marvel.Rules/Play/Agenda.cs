@@ -131,6 +131,8 @@ public enum Stage
 /// <param name="AbilityActivationIds">Activations one persisted ability is waiting for.</param>
 /// <param name="AbilityResults">Effect-local numeric bindings carried across that wait.</param>
 /// <param name="AbilityOccurrence">The occurrence the suspended ability is resolving in.</param>
+/// <param name="AbilityFace">The printed face whose authored ability suspended.</param>
+/// <param name="AbilityPlayer">The player resolving the containing ability.</param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
@@ -144,7 +146,8 @@ public readonly record struct PhaseStep(
     IReadOnlyList<string>? AbilityPath = null,
     IReadOnlyList<int>? AbilityActivationIds = null,
     IReadOnlyDictionary<string, long>? AbilityResults = null,
-    Occurrence? AbilityOccurrence = null)
+    Occurrence? AbilityOccurrence = null,
+    string AbilityFace = "", int AbilityPlayer = -1)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>

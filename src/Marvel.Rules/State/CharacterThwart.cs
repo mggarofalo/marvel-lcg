@@ -1,3 +1,5 @@
+using Marvel.Rules.Timing;
+
 namespace Marvel.Rules.State;
 
 /// <summary>
@@ -45,6 +47,14 @@ namespace Marvel.Rules.State;
 /// Whether the suspended source ability has already gained and resolved Surge.
 /// The field is engine continuation data rather than a rulebook term.
 /// </param>
+/// <param name="AbilityPath">The structural route to this thwart wrapper.</param>
+/// <param name="AbilityFace">The printed face whose authored ability scheduled the thwart.</param>
+/// <param name="AbilityResults">Effect-local numeric bindings carried across the thwart.</param>
+/// <param name="AbilityOccurrence">The occurrence the source ability is resolving in.</param>
+/// <param name="Discarded">Cards discarded earlier in the source ability, by object id.</param>
+/// <param name="EachPlayerFrame">Whether this thwart belongs to one each-player frame.</param>
+/// <param name="FinalPlayer">Whether that frame is the last chosen player.</param>
+/// <param name="AbilityPlayer">The player resolving the containing ability.</param>
 public sealed record CharacterThwart(
     int Thwarter,
     int Scheme,
@@ -58,4 +68,12 @@ public sealed record CharacterThwart(
     bool FinalStep = false,
     IReadOnlyList<int>? Targets = null,
     ThreatPlacement? ImminentThreat = null,
-    bool SurgeGained = false);
+    bool SurgeGained = false,
+    IReadOnlyList<string>? AbilityPath = null,
+    string AbilityFace = "",
+    IReadOnlyDictionary<string, long>? AbilityResults = null,
+    Occurrence? AbilityOccurrence = null,
+    IReadOnlyList<int>? Discarded = null,
+    bool EachPlayerFrame = false,
+    bool FinalPlayer = false,
+    int AbilityPlayer = -1);
