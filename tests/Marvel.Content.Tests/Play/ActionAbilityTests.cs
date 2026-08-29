@@ -4271,6 +4271,100 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:villain-defeat.2")]
+    [Fact]
+    public void ARepeatedFrameUsesTheNewVillainStageAfterDefeat()
+    {
+        // "Excess damage that is dealt to defeat a villain stage does not
+        // carry over to the new stage." The later move therefore reads zero
+        // damage from the newly revealed stage, not the defeated card's dial.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 100 } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:damage.step.1")]
+    [Rule("rr:replacement-effect.1")]
+    [Fact]
+    public void ForcedReplacementCanLeaveARepeatedMoveSourceEmpty()
+    {
+        // Damage replacement abilities resolve before damage is placed. Once
+        // Armored Rhino Suit puts that damage on itself "instead", "the effect
+        // is no longer considered imminent" and Rhino has nothing to move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                board.CreateCard(
+                    AuthoredCards.ArmoredSuit,
+                    board.AreaOf(
+                        DeckType.UpgradesArea, villain.Area.PlayArea,
+                        villain.ObjectId));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Fact]
     public void BoundedThreatRemovalCannotDefeatADistantSideScheme()
     {

@@ -4346,13 +4346,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         int From, int To, long Amount, bool GrantsTough = false,
         bool GrantsHealth = false, bool DealsDamage = false,
         bool Discards = false, bool RemovesThreat = false,
-        bool PlacesThreat = false);
+        bool PlacesThreat = false, bool FromVillain = false,
+        bool ToVillain = false);
 
     private sealed record DamageTraceState(
         Dictionary<int, long> Damage, long PeakTargetPressure,
         HashSet<int> Players, Dictionary<int, int> Tough,
         Dictionary<int, long> Health, HashSet<int> Discarded,
-        Dictionary<int, long> Threat);
+        Dictionary<int, long> Threat, int CurrentVillain,
+        int VillainStagesDrawn, bool Finished);
 
     private static long PeakRepeatedDamageOn(
         Card target, AbilityNode repeatedEffect, Cast cast,
@@ -4361,8 +4363,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         int original = cast.Player;
         try
         {
+            int villain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
             IReadOnlyList<DamageTraceState> states =
-                [new(new Dictionary<int, long>(), target.Damage, [], new(), new(), [], new())];
+                [new(new Dictionary<int, long>(), target.Damage, [], new(), new(), [], new(),
+                    villain, 0, false)];
             for (int frame = 0; frame < frames; frame++)
             {
                 var next = new List<DamageTraceState>();
@@ -4406,6 +4410,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var health = new Dictionary<int, long>(state.Health);
         var discarded = new HashSet<int>(state.Discarded);
         var threat = new Dictionary<int, long>(state.Threat);
+        int currentVillain = state.CurrentVillain;
+        int villainStagesDrawn = state.VillainStagesDrawn;
+        bool finished = state.Finished;
         long peak = state.PeakTargetPressure;
         long Current(int card) => damage.TryGetValue(card, out long amount)
             ? amount
@@ -4422,6 +4429,35 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         void ResolveCharacterDefeat(int cardId)
         {
             var card = cast.World.Cards[cardId];
+            if (cardId == currentVillain
+                && Current(cardId) >= Damage.Health(
+                    cast.World, cast.World.Facts, card) + HealthBonus(cardId))
+            {
+                discarded.Add(cardId);
+                var deck = cast.World.AreaOf(DeckType.VillainDeck);
+                int nextIndex = deck.Cards.Count - 1 - villainStagesDrawn;
+                if (nextIndex < 0)
+                {
+                    finished = true;
+                    return;
+                }
+
+                var next = deck.Cards[nextIndex];
+                villainStagesDrawn++;
+                int carriedTough = string.Equals(
+                        cast.World.Facts.Title(card.FaceId),
+                        cast.World.Facts.Title(next.FaceId),
+                        StringComparison.Ordinal)
+                    ? CurrentTough(cardId)
+                    : 0;
+                currentVillain = next.ObjectId;
+                damage[next.ObjectId] = 0;
+                tough[next.ObjectId] = Math.Max(
+                    carriedTough,
+                    cast.World.Facts.PrintedValue(
+                        next.FaceId, "Toughness", cast.World.Players) > 0 ? 1 : 0);
+                return;
+            }
             if (card.Area.Type is DeckType.EngagedEnemiesArea
                     or DeckType.AlliesArea
                 && Current(cardId) >= Damage.Health(
@@ -4433,84 +4469,165 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         foreach (var transfer in trace)
         {
+            if (finished)
+            {
+                break;
+            }
+
+            int from = transfer.FromVillain ? currentVillain : transfer.From;
+            int to = transfer.ToVillain ? currentVillain : transfer.To;
             if (transfer.RemovesThreat || transfer.PlacesThreat)
             {
-                long current = CurrentThreat(transfer.To);
+                long current = CurrentThreat(to);
                 long changed = transfer.PlacesThreat
                     ? SaturatingSum(current, [transfer.Amount])
                     : Math.Max(0, current - transfer.Amount);
-                threat[transfer.To] = changed;
+                threat[to] = changed;
                 if (transfer.RemovesThreat && changed == 0
-                    && cast.World.Cards[transfer.To].Area.Type
+                    && cast.World.Cards[to].Area.Type
                         == DeckType.SideSchemesArea)
                 {
-                    discarded.Add(transfer.To);
+                    discarded.Add(to);
                 }
                 continue;
             }
             if (transfer.Discards)
             {
-                discarded.Add(transfer.To);
+                discarded.Add(to);
                 continue;
             }
             if (transfer.GrantsHealth)
             {
-                health[transfer.To] = SaturatingSum(
-                    HealthBonus(transfer.To), [transfer.Amount]);
+                health[to] = SaturatingSum(
+                    HealthBonus(to), [transfer.Amount]);
                 ObserveTarget();
                 continue;
             }
             if (transfer.GrantsTough)
             {
-                tough[transfer.To] = Math.Max(1, CurrentTough(transfer.To));
+                tough[to] = Math.Max(1, CurrentTough(to));
                 continue;
             }
-            if (transfer.From < 0)
+            if (from < 0)
             {
                 if (transfer.DealsDamage
                     && !CanTakeDamageInTrace(
-                        cast, cast.World.Cards[transfer.To], discarded))
+                        cast, cast.World.Cards[to], discarded))
                 {
                     continue;
                 }
-                if (transfer.Amount > 0 && CurrentTough(transfer.To) > 0)
+                long incoming = transfer.DealsDamage
+                    ? AfterForcedDamageReplacements(
+                        cast, to, transfer.Amount, damage, discarded,
+                        currentVillain)
+                    : transfer.Amount;
+                if (incoming > 0 && CurrentTough(to) > 0)
                 {
-                    tough[transfer.To] = CurrentTough(transfer.To) - 1;
+                    tough[to] = CurrentTough(to) - 1;
                     continue;
                 }
-                damage[transfer.To] = SaturatingSum(
-                    Current(transfer.To), [transfer.Amount]);
-                ResolveCharacterDefeat(transfer.To);
+                damage[to] = SaturatingSum(Current(to), [incoming]);
+                ResolveCharacterDefeat(to);
                 ObserveTarget();
                 continue;
             }
 
-            long available = Current(transfer.From);
+            long available = Current(from);
             long amount = Math.Min(available, transfer.Amount);
-            if (transfer.To >= 0 && transfer.DealsDamage
+            if (to >= 0 && transfer.DealsDamage
                 && !CanTakeDamageInTrace(
-                    cast, cast.World.Cards[transfer.To], discarded))
+                    cast, cast.World.Cards[to], discarded))
             {
                 continue;
             }
-            damage[transfer.From] = available - amount;
-            if (transfer.To >= 0)
+            damage[from] = available - amount;
+            long landed = to >= 0 && transfer.DealsDamage
+                ? AfterForcedDamageReplacements(
+                    cast, to, amount, damage, discarded, currentVillain)
+                : amount;
+            if (to >= 0)
             {
-                if (amount > 0 && CurrentTough(transfer.To) > 0)
+                if (landed > 0 && CurrentTough(to) > 0)
                 {
-                    tough[transfer.To] = CurrentTough(transfer.To) - 1;
+                    tough[to] = CurrentTough(to) - 1;
                 }
                 else
                 {
-                    damage[transfer.To] = SaturatingSum(
-                        Current(transfer.To), [amount]);
-                    ResolveCharacterDefeat(transfer.To);
+                    damage[to] = SaturatingSum(Current(to), [landed]);
+                    ResolveCharacterDefeat(to);
                 }
             }
             ObserveTarget();
         }
         return new DamageTraceState(
-            damage, peak, state.Players, tough, health, discarded, threat);
+            damage, peak, state.Players, tough, health, discarded, threat,
+            currentVillain, villainStagesDrawn, finished);
+    }
+
+    private static long AfterForcedDamageReplacements(
+        Cast cast, int target, long amount, Dictionary<int, long> damage,
+        HashSet<int> discarded, int currentVillain)
+    {
+        if (amount <= 0 || cast.Abilities is not AbilityRunner runner)
+        {
+            return amount;
+        }
+
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        foreach (var area in cast.World.Areas.Where(area =>
+            area.Host == target
+            || target == currentVillain && area.Host == boardVillain
+                && currentVillain >= 0 && boardVillain >= 0
+                && string.Equals(
+                    cast.World.Facts.Title(cast.World.Cards[currentVillain].FaceId),
+                    cast.World.Facts.Title(cast.World.Cards[boardVillain].FaceId),
+                    StringComparison.Ordinal)))
+        {
+            foreach (var attachment in area.Cards.Where(card =>
+                !discarded.Contains(card.ObjectId)))
+            {
+                var replacement = runner.On(attachment).FirstOrDefault(ability =>
+                    ability.Trigger.Timing == AbilityType.ForcedInterrupt
+                    && ContainsEffect(ability.Effect, "soakDamage"));
+                if (replacement is null)
+                {
+                    continue;
+                }
+
+                long placed = SaturatingSum(
+                    damage.TryGetValue(attachment.ObjectId, out long traced)
+                        ? traced
+                        : attachment.Damage,
+                    [amount]);
+                damage[attachment.ObjectId] = placed;
+                long threshold = SoakDiscardThreshold(replacement.Effect);
+                if (threshold > 0 && placed >= threshold)
+                {
+                    discarded.Add(attachment.ObjectId);
+                }
+                return 0;
+            }
+        }
+        return amount;
+    }
+
+    private static bool ContainsEffect(AbilityNode node, string kind) =>
+        node.Kind == kind || MutationChildren(node).Any(child =>
+            ContainsEffect(child, kind));
+
+    private static long SoakDiscardThreshold(AbilityNode node)
+    {
+        if (node.Kind == "if"
+            && Tree(node.Require("test")) is { Kind: "atLeast" } test
+            && Tree(test.Require("value")) is { Kind: "damageOn" }
+            && node.Field("then") is { } then
+            && ContainsEffect(Tree(then), "discard"))
+        {
+            return Number(test.Require("count"));
+        }
+        return MutationChildren(node)
+            .Select(SoakDiscardThreshold)
+            .FirstOrDefault(threshold => threshold > 0);
     }
 
     private static bool CanTakeDamageInTrace(
@@ -4520,8 +4637,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return false;
         }
-        if (cast.Abilities is not AbilityRunner runner
-            || !DeckTypes.IsInPlay(target.Area.Type))
+        if (cast.Abilities is not AbilityRunner runner)
         {
             return cast.Abilities.CanTakeDamage(
                 cast.World, target, cast.Source);
@@ -4639,7 +4755,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     new DamageTransfer(
                         -1, card.ObjectId,
                         Amount(node.Require("amount"), cast),
-                        DealsDamage: true)),
+                        DealsDamage: true,
+                        ToVillain: QueriesVillain(node.Require(field)))),
             ];
         }
         if (node.Kind == "replaceThreatWithDamage"
@@ -4663,7 +4780,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [new DamageTransfer(
                 from.ObjectId, to.ObjectId,
                 Amount(node.Require("amount"), cast),
-                DealsDamage: true)];
+                DealsDamage: true,
+                FromVillain: QueriesVillain(node.Require("from")),
+                ToVillain: QueriesVillain(node.Require("to")))];
         }
         if (node.Kind == "giveStatus"
             && Word(node.Require("status")) == Statuses.Tough)
@@ -4708,6 +4827,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ];
         }
         return [];
+    }
+
+    private static bool QueriesVillain(AbilityValue value)
+    {
+        if (value is not AbilityValue.Map)
+        {
+            return false;
+        }
+        var node = Tree(value);
+        return node.Kind == "query"
+            && node.Argument is AbilityValue.Word { Value: "villain" };
     }
 
     private static long MutationTotal(
