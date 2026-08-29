@@ -4123,7 +4123,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     cast.RestorePlayer(player);
                     observed |= RepeatedChanges(
-                        effect, cast, assumed, binding: false, priorFrames);
+                        effect, cast, assumed, binding: false, priorFrames,
+                        effect);
                 }
                 assumed |= observed;
             }
@@ -4137,7 +4138,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static RepeatedChange RepeatedChanges(
         AbilityNode node, Cast cast, RepeatedChange assumed, bool binding,
-        int priorFrames)
+        int priorFrames, AbilityNode repeatedEffect)
     {
         if (node.Kind == "changeForm")
         {
@@ -4147,7 +4148,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             or "replaceThreatWithDamage")
         {
             return RepeatedChange.CardsInPlay
-                | (DamageCanChangePlayerOrder(node, cast, binding)
+                | (DamageCanChangePlayerOrder(
+                        node, cast, binding, repeatedEffect)
                     ? RepeatedChange.PlayerOrder
                     : RepeatedChange.None);
         }
@@ -4159,7 +4161,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return RepeatedChange.CardsInPlay | RepeatedChange.PlayerOrder;
         }
-        if (StableForCardsInPlay(node, cast, priorFrames))
+        if (StableForCardsInPlay(
+            node, cast, priorFrames, repeatedEffect))
         {
             return RepeatedChange.None;
         }
@@ -4169,7 +4172,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             foreach (var child in MutationChildren(node))
             {
                 var next = RepeatedChanges(
-                    child, cast, assumed | changes, binding, priorFrames);
+                    child, cast, assumed | changes, binding, priorFrames,
+                    repeatedEffect);
                 changes |= next;
             }
             return changes;
@@ -4184,7 +4188,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 foreach (var child in ordered)
                 {
                     changes |= RepeatedChanges(
-                        child, cast, assumed | changes, binding, priorFrames);
+                        child, cast, assumed | changes, binding, priorFrames,
+                        repeatedEffect);
                 }
                 if (changes == before)
                 {
@@ -4206,7 +4211,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 RepeatedChange.None,
                 (changes, branch) => changes
                     | RepeatedChanges(
-                        Tree(branch!), cast, assumed, binding, priorFrames));
+                        Tree(branch!), cast, assumed, binding, priorFrames,
+                        repeatedEffect));
         }
         if (node.Kind is "chooseCard" or "thwartSchemes"
             or "thwartDifferentSchemes" or "legalPractice")
@@ -4221,7 +4227,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return children.Aggregate(
             RepeatedChange.None,
             (changes, child) => changes
-                | RepeatedChanges(child, cast, assumed, binding, priorFrames));
+                | RepeatedChanges(
+                    child, cast, assumed, binding, priorFrames,
+                    repeatedEffect));
     }
 
     private static bool RepeatedTestCanChange(
@@ -4248,7 +4256,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private static bool StableForCardsInPlay(
-        AbilityNode node, Cast cast, int priorFrames) =>
+        AbilityNode node, Cast cast, int priorFrames,
+        AbilityNode repeatedEffect) =>
         node.Kind is "draw" or "drawToHandSize" or "drawToPrintedHandSize"
             or "exhaust" or "ready" or "heal" or "generate" or "giveStatus"
             or "gainSurge" or "preventDamage" or "preventThreat"
@@ -4257,11 +4266,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         || node.Kind == "removeThreat"
             && Every(node.Require("scheme"), cast) is { Count: > 0 } schemes
             && schemes.All(scheme => scheme.Area.Type == DeckType.MainSchemesArea
-                || Amount(node.Require("amount"), cast) * priorFrames
-                    < scheme.Tokens.GetValueOrDefault("k_threat"));
+                || !CanExhaust(
+                    TotalThreatRemoved(scheme, repeatedEffect, cast),
+                    priorFrames,
+                    scheme.Tokens.GetValueOrDefault("k_threat")));
 
     private static bool DamageCanChangePlayerOrder(
-        AbilityNode node, Cast cast, bool binding)
+        AbilityNode node, Cast cast, bool binding,
+        AbilityNode repeatedEffect)
     {
         AbilityValue targets = node.Kind switch
         {
@@ -4273,20 +4285,68 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{node.Kind}' is not a direct damage node"),
         };
         var cards = Every(targets, cast);
-        long amount = node.Kind switch
-        {
-            "dealDamage" or "indirectDamage" => Amount(node.Require("amount"), cast),
-            "moveDamage" => Math.Min(
-                Find(node.Require("from"), cast)?.Damage ?? 0,
-                Amount(node.Require("amount"), cast)),
-            "replaceThreatWithDamage" => cast.Occurrence.Threat?.Remaining ?? long.MaxValue,
-            _ => long.MaxValue,
-        };
         return cards.Any(card => cast.World.PlayerOrder.Any(player =>
                 cast.World.Seats[player].IdentityCard == card)
-            && amount >= Damage.Health(cast.World, cast.World.Facts, card) - card.Damage)
+            && TotalDamageTo(card, repeatedEffect, cast)
+                >= Damage.Health(cast.World, cast.World.Facts, card) - card.Damage)
             || cards.Count == 0 && binding && BindingCanChange(targets);
     }
+
+    private static long TotalThreatRemoved(
+        Card scheme, AbilityNode node, Cast cast)
+    {
+        long own = node.Kind == "removeThreat"
+            && Every(node.Require("scheme"), cast).Any(candidate =>
+                candidate.ObjectId == scheme.ObjectId)
+                ? Amount(node.Require("amount"), cast)
+                : 0;
+        return SaturatingSum(
+            own,
+            MutationChildren(node).Select(child =>
+                TotalThreatRemoved(scheme, child, cast)));
+    }
+
+    private static long TotalDamageTo(
+        Card target, AbilityNode node, Cast cast)
+    {
+        long own = node.Kind switch
+        {
+            "dealDamage" or "indirectDamage"
+                when Every(node.Require(
+                    node.Kind == "dealDamage" ? "cards" : "among"), cast)
+                    .Any(card => card.ObjectId == target.ObjectId) =>
+                Amount(node.Require("amount"), cast),
+            "moveDamage"
+                when Every(node.Require("to"), cast)
+                    .Any(card => card.ObjectId == target.ObjectId) =>
+                Math.Min(
+                    Find(node.Require("from"), cast)?.Damage ?? 0,
+                    Amount(node.Require("amount"), cast)),
+            "replaceThreatWithDamage"
+                when Every(node.Require("card"), cast)
+                    .Any(card => card.ObjectId == target.ObjectId) =>
+                cast.Occurrence.Threat?.Remaining ?? long.MaxValue,
+            _ => 0,
+        };
+        return SaturatingSum(
+            own,
+            MutationChildren(node).Select(child =>
+                TotalDamageTo(target, child, cast)));
+    }
+
+    private static long SaturatingSum(long own, IEnumerable<long> rest)
+    {
+        foreach (long amount in rest)
+        {
+            own = amount > long.MaxValue - own ? long.MaxValue : own + amount;
+        }
+        return own;
+    }
+
+    private static bool CanExhaust(
+        long amountPerFrame, int frames, long remaining) =>
+        amountPerFrame > 0 && frames > 0
+        && amountPerFrame >= (remaining + frames - 1) / frames;
 
     private static IEnumerable<AbilityNode> MutationChildren(AbilityNode node) =>
         node.Kind is "attack" or "thwart"
