@@ -1937,15 +1937,15 @@ public sealed class ActionAbilityTests
             "01017",
             "Action",
             """
-            { "seq": [
-              { "giveStatus": { "card": "you", "status": "stunned" } },
-              { "attack": {
-                "target": { "query": "villain" },
-                "effect": { "dealAttackDamage": {
+            { "attack": {
+              "target": { "query": "villain" },
+              "effect": { "seq": [
+                { "giveStatus": { "card": "you", "status": "stunned" } },
+                { "dealAttackDamage": {
                   "cards": { "query": "villain" }, "amount": 1
                 } }
-              } }
-            ] }
+              ] }
+            } }
             """,
             labels: "[ \"attack\" ]");
         Card? source = null;
@@ -2091,6 +2091,48 @@ public sealed class ActionAbilityTests
 
         Assert.Contains("saveable attack power", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
+    [Rule("rr:labeled-ability.2")]
+    [Fact]
+    public void EveryAttackEnvelopeBranchMustEnterTheLifecycle()
+    {
+        // An inactive branch cannot lend its attack node to the active branch.
+        // Here the hero-form path only draws, so the envelope would not be an
+        // attack on that path and is rejected before the exhaust cost.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """
+            { "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "draw": { "player": "you", "count": 1 } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "dealAttackDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              } }
+            } }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = board.CreateCard(
+                "01017",
+                board.AreaOf(
+                    DeckType.UpgradesArea, PlayArea.Of(0),
+                    board.Seats[0].IdentityCard.ObjectId, cardOwner: 0)),
+            hero: true);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
+
+        Assert.Throws<RulesNotImplementedException>(
+            () => runner.Act(world, forged, [], []));
+
+        Assert.True(source.Ready);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }
 
     [Rule("rr:lasting-effects.6")]

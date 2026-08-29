@@ -3486,8 +3486,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             bool attack = labels.Contains(BasicPowers.AttackVerb, StringComparer.Ordinal);
             bool thwart = labels.Contains(BasicPowers.ThwartVerb, StringComparer.Ordinal);
-            int attacks = PowerNodes(ability.Effect, BasicPowers.AttackVerb).Count();
-            int thwarts = PowerNodes(ability.Effect, BasicPowers.ThwartVerb).Count();
 
             if (attack && thwart)
             {
@@ -3495,13 +3493,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     $"'{cast.Source.FaceId}' has one ability labeled as both attack and "
                     + "thwart, whose single combined power occurrence is not implemented");
             }
-            if (attack && attacks != 1)
+            if (attack && !GuaranteesOneLabeledPower(
+                    ability.Effect, BasicPowers.AttackVerb))
             {
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' has an attack label without exactly one "
                     + "saveable attack power");
             }
-            if (thwart && thwarts != 1)
+            if (thwart && !GuaranteesOneLabeledPower(
+                    ability.Effect, BasicPowers.ThwartVerb))
             {
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' has a thwart label without exactly one "
@@ -3510,6 +3510,46 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         return true;
+    }
+
+    /// <summary>Whether every executable path enters one matching saveable power.</summary>
+    private static bool GuaranteesOneLabeledPower(AbilityNode node, string power)
+    {
+        if (string.Equals(
+            node.Kind, power.ToLowerInvariant(), StringComparison.Ordinal))
+        {
+            return PowerNodes(node, power).Count() == 1;
+        }
+
+        if (node.Kind == "chooseCard")
+        {
+            return GuaranteesOneLabeledPower(Tree(node.Require("effect")), power);
+        }
+
+        if (node.Kind == "choose")
+        {
+            var options = Nodes(node.Require("options")).ToList();
+            return options.Count >= 2
+                && options.All(option => GuaranteesOneLabeledPower(option, power));
+        }
+
+        if (node.Kind == "if")
+        {
+            return node.Field("then") is { } then
+                && node.Field("else") is { } otherwise
+                && GuaranteesOneLabeledPower(Tree(then), power)
+                && GuaranteesOneLabeledPower(Tree(otherwise), power);
+        }
+
+        if (node.Kind == "seq")
+        {
+            var steps = Nodes(node.Argument).ToList();
+            return steps.Count > 0
+                && GuaranteesOneLabeledPower(steps[0], power)
+                && steps.Skip(1).All(step => !PowerNodes(step, power).Any());
+        }
+
+        return false;
     }
 
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
