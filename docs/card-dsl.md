@@ -591,7 +591,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 |---|---|
 | Envelope | `trigger { event, alsoHappened, timing, subject, actor, target, form, player }`, `name`, `cost`, `limitPerRound`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. `actor` and `target` match explicit attack roles. |
 | Costs | `spend` (resource letters), `spendEnergyX` (a positive player-chosen X), `exhaust`, `discardFromHand` (a count) |
-| Control | `seq`, `and`, `if`, `then`, `otherwise`, `choose`, `chooseCard`, `chooseTopForHand`, `chooseDiscardToShuffle`, `thwartDifferentSchemes`, `makeTheCall`, `legalPractice`, `payOrExhaust`, `payOrEffect`, `eachPlayer`, `resolveSpecials`, `afterActivation` |
+| Control | `seq`, `and`, `if`, `then`, `otherwise`, `forEach`, `choose`, `chooseCard`, `chooseTopForHand`, `chooseDiscardToShuffle`, `thwartDifferentSchemes`, `makeTheCall`, `legalPractice`, `payOrExhaust`, `payOrEffect`, `eachPlayer`, `resolveSpecials`, `afterActivation` |
 | Tests | `and`, `or`, `not`, `exists`, `canMakeTheCall`, `canLegalPractice`, `canAutomaticThwart`, `hasStatus`, `hasTrait`, `isTitle`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `discardedWithResource`, `paidWithResource`, `defeatedByYou`, `wasDefeated`, `heroDefended`, `undefendedAttack`, `inExpertMode`, `isKind`, `defeatedBy`, `threatCause`, `finalStep` |
 | Actions | `giveStatus`, `giveAdditionalBoost`, `alsoAttackEachOtherHero`, `attachTo`, `discard`, `discardHandWithResource`, `draw`, `drawToHandSize`, `drawToPrintedHandSize`, `dealEncounterCards`, `createDrones`, `placeCounters`, `grant`, `grantEach`, `grantUntil`, `grantCharactersControlledBy`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `attack`, `thwart`, `thwartSchemes`, `power`, `dealDamage`, `dealAttackDamage`, `moveDamage`, `moveAttackDamage`, `placeThreat`, `placeAccelerationToken`, `removeThreat`, `preventThreat`, `replaceThreatWithDamage`, `preventThreatRemoval`, `preventDamageFrom`, `preventDamageWhile`, `reduceNextCardCost`, `heal`, `search`, `addToHand`, `returnOwnedToHand`, `exhaust`, `ready`, `revealTop`, `reveal`, `shuffleInto`, `shuffle`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `putIntoPlay`, `returnToHand`, `soakDamage`, `generate`, `generateTopDiscard`, `doubleResourceFor`, `requireAllyDefender` |
 | Node fields | `card`, `cards`, `player`, `amount`, `count`, `status`, `keyword`, `trait`, `title`, `area`, `areas`, `until`, `within`, `condition`, `effect`, `options`, `from`, `among`, `onto`, `enemies`, `against` (including `engagedHero`), `engagedWith`, `first`, `where`, `scheme`, `sourceKind`, `sourceTrait`, `to`, `of`, `by`, `automaticTarget` |
@@ -615,6 +615,17 @@ stores the eventual none/partial/full outcome in its continuation frame before
 the dependent branch is considered. An ordered `and` stores the chosen order
 and its remaining siblings when a child suspends, so answering that child does
 not rerun effects that already resolved.
+
+**Count-based `forEach` is `{ count, effect }`.** That spelling is the engine's
+choice; the rulebook defines the repeated behavior, not its wire form. Without
+a choice, direct damage and threat removal resolve once against one target with
+the multiplied amount. With a choice anywhere in the effect, each iteration is
+a persisted continuation frame: its answer resolves, the board updates, and
+only then is the next iteration's legal question derived. Amount expressions
+are evaluated as part of each chosen instance, so a continuous modifier read by
+the expression applies to every one. The earlier `{ in, as, do }` sketches are
+the collection-and-binding form and remain design sketches rather than an
+executable synonym.
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
