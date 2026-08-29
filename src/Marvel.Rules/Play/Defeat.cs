@@ -404,13 +404,15 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (FacedownDrones.BaseValue(card, facts, "Victory", world.Players) <= 0)
+        if (StateFields.Modified(world, card, "victory", facts, world.Players) <= 0)
         {
             return false;
         }
 
         var display = world.AreaOf(DeckType.VictoryDisplay);
         var from = card.Area;
+        var constantsEnding = world.Effects.PreflightConstantsEnding(card);
+        using var departure = constantsEnding.Begin();
         Discard.Attachments(world, card, trigger, events);
         World.MoveToTop(card, display);
         events.Add(new CardsMoved(
@@ -419,6 +421,7 @@ public static class Defeat
         {
             Trigger = trigger, Verb = "Victory",
         });
+        constantsEnding.Complete(trigger, events);
 
         return true;
     }
@@ -447,6 +450,9 @@ public static class Defeat
         bool carriesToFollowing = following is not null && string.Equals(
             facts.Title(villain.FaceId), facts.Title(following.FaceId),
             StringComparison.Ordinal);
+        var constantsEnding = world.Effects.PreflightConstantsEnding(
+            villain, includeHostedCards: !carriesToFollowing);
+        using var departure = constantsEnding.Begin();
         if (!carriesToFollowing)
         {
             // Same-title stages inherit hosted cards. Every other departure,
@@ -463,6 +469,7 @@ public static class Defeat
         {
             Trigger = trigger, Verb = "Defeat",
         });
+        constantsEnding.Complete(trigger, events);
 
         var next = deck.TakeTop();
         if (next is null)

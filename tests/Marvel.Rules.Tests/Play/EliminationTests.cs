@@ -1,6 +1,7 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -136,6 +137,31 @@ public sealed class EliminationTests
         // Step 3.3's "each other card in its owner's discard pile" is written
         // and unreachable on this model; see `Discard.Card`, which reads the
         // owner off the card.
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:player-elimination.step.4")]
+    [Fact]
+    public void ACardThatLosesPermanentIsDiscardedOnElimination()
+    {
+        // A lost Permanent characteristic no longer takes the keyword's
+        // remove-from-game branch. Step 4 first discards the card; the later
+        // removal of the whole play area does not erase that event ordering.
+        var printed = Cards().With("ally", ("Permanent", "1"));
+        var world = Board(printed, players: 2);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("permanent"),
+            Affects: ally.ObjectId));
+        var events = new List<GameEvent>();
+
+        Elimination.Eliminate(world, printed, 0, "test", events);
+
+        Assert.Contains(events.OfType<CardsMoved>(), moved =>
+            moved.To.Zone == nameof(DeckType.DiscardPile)
+            && moved.Cards.Any(landing => landing.Card == ally.ObjectId));
     }
 
     [Rule("rr:player-elimination.6")]

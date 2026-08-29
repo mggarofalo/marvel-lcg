@@ -30,7 +30,7 @@ public static class EachPlayerEffects
         IReadOnlyList<string>? abilityPath = null, string abilityFace = "",
         int abilityPlayer = -1, IReadOnlyDictionary<string, long>? abilityResults = null,
         Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool abilityHasContinuation = false)
+        bool abilityHasContinuation = false, int abilityActor = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
@@ -47,7 +47,8 @@ public static class EachPlayerEffects
             ScheduleFrames(
                 world, source, stoppedAt, tier, finalStep, surgeGained, players,
                 abilityOrdinal, abilityPath, abilityFace, abilityPlayer,
-                abilityResults, abilityOccurrence, discarded, abilityHasContinuation);
+                abilityResults, abilityOccurrence, discarded, abilityHasContinuation,
+                abilityActor);
             return;
         }
 
@@ -69,6 +70,7 @@ public static class EachPlayerEffects
             AbilityResults: abilityResults,
             AbilityOccurrence: abilityOccurrence,
             Discarded: discarded,
+            AbilityActor: abilityActor,
             AbilityHasContinuation: abilityHasContinuation));
     }
 
@@ -138,7 +140,8 @@ public static class EachPlayerEffects
             step.AbilityResults,
             step.AbilityOccurrence,
             step.Discarded,
-            step.AbilityHasContinuation);
+            step.AbilityHasContinuation,
+            step.AbilityActor);
     }
 
     internal static IReadOnlyList<GameEvent> Resolve(
@@ -178,7 +181,8 @@ public static class EachPlayerEffects
         IReadOnlyDictionary<string, long>? abilityResults,
         Occurrence? abilityOccurrence,
         IReadOnlyList<int>? discarded,
-        bool abilityHasContinuation)
+        bool abilityHasContinuation,
+        int abilityActor)
     {
         int round = world.Agenda.Current?.Round ?? 0;
         for (int position = 0; position < players.Count; position++)
@@ -203,6 +207,7 @@ public static class EachPlayerEffects
                 AbilityResults: abilityResults,
                 AbilityOccurrence: abilityOccurrence,
                 Discarded: discarded,
+                AbilityActor: abilityActor,
                 AbilityHasContinuation: abilityHasContinuation));
         }
     }

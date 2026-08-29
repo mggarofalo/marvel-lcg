@@ -95,8 +95,13 @@ public static class Attack
     /// <c>rr:defend-defense.4.1</c>, <c>.4.3</c>, and <c>.4.4</c>.
     /// </remarks>
     public static void BeginDefenseAbility(World world, int player)
+        => BeginDefenseAbility(world, player, world.Seats[player].IdentityCard);
+
+    /// <summary>Establish the roles for a defense performed by an attributed card.</summary>
+    public static void BeginDefenseAbility(World world, int player, Card performer)
     {
         ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(performer);
         if (world.Attack is not { } attack)
         {
             // `rr:defend-defense.4.8`: the label may resolve outside an attack
@@ -117,11 +122,20 @@ public static class Attack
             return;
         }
 
-        var identity = world.Seats[player].IdentityCard;
+        bool character = FacedownDrones.Kind(performer, world.Facts) is
+            CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;
+        if (!character)
+        {
+            // `rr:support.3` excludes support defenses from the identity. A
+            // support is not a character, so it performs the labeled effect
+            // without becoming the defending character of the attack.
+            return;
+        }
+
         world.Attack = attack with
         {
-            Defender = identity.ObjectId,
-            Target = identity.ObjectId,
+            Defender = performer.ObjectId,
+            Target = performer.ObjectId,
             Player = player,
             BasicDefense = false,
         };
@@ -279,7 +293,7 @@ public static class Attack
         // without the villainous keyword is attacking, **skip this step**" --
         // and skipping matters beyond the icons, because taking a card off the
         // encounter deck moves every later deal.
-        if (!Keywords.IsBoosted(enemy, facts, world.Players))
+        if (!Keywords.IsBoosted(world, enemy, facts, world.Players))
         {
             return;
         }
@@ -510,8 +524,11 @@ public static class Attack
             // an enemy activation**, add one additional boost icon to that card
             // for each amplify icon in play." Per card, so two boost cards with
             // one amplify icon in play gain one each.
-            long icons = facts.PrintedValue(boost.FaceId, "Boost", world.Players)
-                + MainScheme.Amplify(world, facts);
+            long icons = Characteristics.IsLost(world, boost, "boost_const")
+                ? 0
+                : StateFields.Modified(
+                        world, boost, "boost_const", facts, world.Players)
+                    + MainScheme.Amplify(world, facts);
             if (icons > 0)
             {
                 // Which value and for how long is the only place the two
@@ -696,8 +713,8 @@ public static class Attack
 
         if (attack.BasicDefense)
         {
-            amount -= facts.PrintedValue(
-                world.Cards[attack.Defender].FaceId, "DEF", world.Players);
+            amount -= StateFields.Modified(
+                world, world.Cards[attack.Defender], "defense", facts, world.Players);
         }
 
         return Math.Max(0, amount);
@@ -748,12 +765,12 @@ public static class Attack
 
     private static void Finish(World world, List<GameEvent> events)
     {
-        world.Effects.Expire(TimingPoints.EndOfAttack);
+        world.Effects.Expire(TimingPoints.EndOfAttack, events);
 
         // An attack is one of the two kinds of activation -- `rr:activation` --
         // so anything bounded by "this activation" ends here too, and there is
         // no longer an activating enemy for a card to name.
-        world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.Effects.Expire(TimingPoints.EndOfActivation, events);
         world.FinishedActivation = world.Activation;
         world.Activation = null;
         DelayedEffects.Occur(world, Steps.AttackEnds, events);

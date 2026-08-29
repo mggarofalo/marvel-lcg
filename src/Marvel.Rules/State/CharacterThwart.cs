@@ -55,6 +55,7 @@ namespace Marvel.Rules.State;
 /// <param name="EachPlayerFrame">Whether this thwart belongs to one each-player frame.</param>
 /// <param name="FinalPlayer">Whether that frame is the last chosen player.</param>
 /// <param name="AbilityPlayer">The player resolving the containing ability.</param>
+/// <param name="AbilityActor">The performer attributed to the containing labeled ability.</param>
 /// <param name="AbilityHasContinuation">Whether structural ancestor work remains.</param>
 public sealed record CharacterThwart(
     int Thwarter,
@@ -78,4 +79,5 @@ public sealed record CharacterThwart(
     bool EachPlayerFrame = false,
     bool FinalPlayer = false,
     int AbilityPlayer = -1,
+    int AbilityActor = -1,
     bool AbilityHasContinuation = false);

@@ -168,10 +168,15 @@ public static class Threat
     /// <param name="verb">What kind of change the event stream records.</param>
     /// <param name="events">Where to record what happened.</param>
     /// <param name="by">The seat whose character did it, or -1.</param>
+    /// <param name="overridesCannotFrom">
+    /// The source of the exact prohibition this instruction explicitly
+    /// overrides, or -1. Unrelated prohibitions remain in force.
+    /// </param>
     /// <returns>How much threat was removed.</returns>
     public static long Remove(
         World world, ICardFacts facts, ICardAbilities abilities, Card scheme, long amount,
-        string trigger, string verb, List<GameEvent> events, int by = -1)
+        string trigger, string verb, List<GameEvent> events, int by = -1,
+        int overridesCannotFrom = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -181,7 +186,8 @@ public static class Threat
 
         long held = scheme.Tokens.GetValueOrDefault("k_threat");
         long removed = Math.Min(held, Math.Max(0, amount));
-        if (removed == 0 || !abilities.CanRemoveThreat(world, scheme))
+        if (removed == 0
+            || !abilities.CanRemoveThreat(world, scheme, overridesCannotFrom))
         {
             return 0;
         }
@@ -266,7 +272,8 @@ public static class Threat
         ArgumentNullException.ThrowIfNull(events);
 
         long held = scheme.Tokens.GetValueOrDefault("k_threat");
-        long target = facts.PrintedValue(scheme.FaceId, "TargetThreat", world.Players);
+        long target = StateFields.Modified(
+            world, scheme, "target_threat", facts, world.Players);
         if (target <= 0 || held < target || scheme.Area.Type != DeckType.MainSchemesArea)
         {
             // A side scheme has a target threat value too, and reaching it does

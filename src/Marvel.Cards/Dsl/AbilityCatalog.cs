@@ -33,7 +33,7 @@ public static class AbilityCatalog
         new(StringComparer.Ordinal)
         {
             "name", "note", "trigger", "effect", "cost", "limitPerRound", "when",
-            "anyPlayer",
+            "anyPlayer", "labels",
         };
 
     private static readonly HashSet<string> TriggerKeys =
@@ -165,7 +165,46 @@ public static class AbilityCatalog
             element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
             element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null,
             element.TryGetProperty("when", out var condition) ? Node(condition, card) : null,
-            Flag(element, "anyPlayer", card));
+            Flag(element, "anyPlayer", card),
+            Labels(element, card));
+    }
+
+    private static List<string> Labels(JsonElement ability, string card)
+    {
+        if (!ability.TryGetProperty("labels", out var labels))
+        {
+            return [];
+        }
+        if (labels.ValueKind != JsonValueKind.Array)
+        {
+            throw new AbilityException($"'{card}' gives 'labels' a non-array value");
+        }
+
+        var parsed = new List<string>();
+        foreach (var label in labels.EnumerateArray())
+        {
+            if (label.ValueKind != JsonValueKind.String)
+            {
+                throw new AbilityException($"'{card}' gives 'labels' a non-string value");
+            }
+            string normalized = label.GetString()!.ToLowerInvariant() switch
+            {
+                "attack" => BasicPowers.AttackVerb,
+                "defense" => Attack.DefenseVerb,
+                "thwart" => BasicPowers.ThwartVerb,
+                var unknown => throw new AbilityException(
+                    $"'{card}' has unknown labeled-ability type '{unknown}'"),
+            };
+            if (!parsed.Contains(normalized, StringComparer.Ordinal))
+            {
+                parsed.Add(normalized);
+            }
+        }
+        if (parsed.Count == 0)
+        {
+            throw new AbilityException($"'{card}' gives 'labels' an empty array");
+        }
+        return parsed;
     }
 
     /// <summary>One explicit occurrence role matcher, or null.</summary>

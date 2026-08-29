@@ -210,7 +210,7 @@ public static class Elimination
             return;
         }
 
-        if (facts.PrintedValue(card.FaceId, "Permanent", world.Players) > 0)
+        if (StateFields.Modified(world, card, "permanent", facts, world.Players) > 0)
         {
             // `.1` and `.2`. A non-attachment permanent is removed from the
             // game; an attachment resolves its "attach to" text first, and that
@@ -235,6 +235,9 @@ public static class Elimination
 
     private static void Remove(World world, Card card, string trigger, List<GameEvent> events)
     {
+        var constantsEnding = world.Effects.PreflightConstantsEnding(card);
+        using var departure = constantsEnding.Begin();
+        Discard.Attachments(world, card, trigger, events);
         var removed = world.AreaOf(DeckType.RemovedArea);
         var from = card.Area;
         World.MoveToTop(card, removed);
@@ -244,6 +247,7 @@ public static class Elimination
         {
             Trigger = trigger, Verb = "Eliminate",
         });
+        constantsEnding.Complete(trigger, events);
     }
 
     /// <summary>

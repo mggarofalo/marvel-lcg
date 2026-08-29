@@ -94,7 +94,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Tier = ability.Trigger.Timing,
             };
             TrackResolution(cast, ability);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
         }
 
@@ -126,7 +126,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Tier = ability.Trigger.Timing,
                 };
                 TrackResolution(cast, ability);
-                Run(ability.Effect, cast);
+                Run(ability, cast);
                 cast.CompleteResolution();
             }
         }
@@ -146,6 +146,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     this)
                 {
                     Tier = effect.Tier,
+                    AbilityActor = effect.AbilityActor >= 0
+                        ? world.Cards[effect.AbilityActor]
+                        : null,
                 };
                 delayedCast.Results["activationDamage"] = result.DamageDealt;
                 delayedCast.Results["activationThreat"] = result.ThreatPlaced;
@@ -226,7 +229,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             BasicPowers.AttackVerb, attack.AbilityPath, attack.AbilityFace,
             attack.AbilityResults, attack.AbilityOccurrence, attack.Discarded,
             attack.EachPlayerFrame, attack.FinalPlayer, attack.AbilityPlayer,
-            attack.AbilityHasContinuation);
+            attack.AbilityHasContinuation, attack.AbilityActor);
 
     /// <inheritdoc/>
     public void ResolveCardThwart(
@@ -239,7 +242,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             BasicPowers.ThwartVerb, thwart.AbilityPath, thwart.AbilityFace,
             thwart.AbilityResults, thwart.AbilityOccurrence, thwart.Discarded,
             thwart.EachPlayerFrame, thwart.FinalPlayer, thwart.AbilityPlayer,
-            thwart.AbilityHasContinuation);
+            thwart.AbilityHasContinuation, thwart.AbilityActor);
 
     private void ResolvePower(
         World world, int sourceId, int targetId, int player, int abilityIndex,
@@ -251,7 +254,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
         Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
         bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
-        bool abilityHasContinuation = false)
+        bool abilityHasContinuation = false, int abilityActor = -1)
     {
         if (sourceId < 0 || sourceId >= world.Cards.Count)
         {
@@ -281,9 +284,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ImminentThreat = imminentThreat,
             EventTrigger = eventTrigger,
             PowerTargets = [.. targets.Select(id => world.Cards[id])],
+            PowerActor = occurrence.Actor >= 0 ? world.Cards[occurrence.Actor] : null,
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
             AbilityPlayer = abilityPlayer,
+            AbilityActor = abilityActor >= 0 ? world.Cards[abilityActor] : null,
             GainedKeywords = surgeGained
                 ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal),
@@ -310,7 +315,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         if (power == BasicPowers.AttackVerb)
         {
-            var attacker = world.Seats[player].IdentityCard;
+            var attacker = cast.PowerActor ?? world.Seats[player].IdentityCard;
             if (!Keywords.Has(world, attacker, Keywords.Ranged, world.Facts))
             {
                 foreach (var target in cast.Attacked.DistinctBy(card => card.ObjectId))
@@ -390,12 +395,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public bool CanRemoveThreat(World world, Card scheme)
+    public bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(scheme);
 
-        foreach (var card in world.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)))
+        foreach (var card in world.Cards.Where(card =>
+                     card.ObjectId != ignoredSource && DeckTypes.IsInPlay(card.Area.Type)))
         {
             foreach (var ability in On(card).Where(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
@@ -481,7 +487,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         ability.Cost is not null
                         || world.Facts.Kind(card.FaceId) == CardKind.Event);
                     if ((ability.When is not null && !Test(ability.When, eligibility))
-                        || (controller >= 0 && !CanInitiate(ability.Effect, eligibility)))
+                        || (controller >= 0 && !CanInitiate(ability, eligibility)))
                     {
                         continue;
                     }
@@ -591,7 +597,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "cost, whose combined payment is not represented");
         }
 
-        if (resolving >= 0 && !CanInitiate(found.Effect, cast))
+        if (resolving >= 0 && !CanInitiate(found, cast))
         {
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' cannot initiate this ability in the current state");
@@ -613,7 +619,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         cast.RestoreAbility(ability.Ordinal, []);
         cast.TrackResolution(ability.Ordinal);
-        Run(found.Effect, cast);
+        Run(found, cast);
         cast.CompleteResolution();
         DiscardEvent(card, cast);
         return events;
@@ -679,7 +685,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             };
             cast.RestoreAbility(ordinal, []);
             cast.TrackResolution(ordinal);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
         }
 
@@ -772,7 +778,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             };
             cast.RestoreAbility(ordinal, []);
             cast.TrackResolution(ordinal);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
         }
 
@@ -799,11 +805,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Tier = AbilityType.Special,
             FinalStep = finalStep,
         };
-        if (CanInitiate(ability.Effect, cast))
+        if (CanInitiate(ability, cast))
         {
             cast.RestoreAbility(0, []);
             cast.TrackResolution(0);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
         }
         return events;
@@ -1064,7 +1070,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             };
 
             TrackResolution(cast, ability);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
 
             // An ability that touched the damage says so; one that did nothing
@@ -1248,7 +1254,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Tier = ability.Trigger.Timing,
                 };
                 TrackResolution(cast, ability);
-                Run(ability.Effect, cast);
+                Run(ability, cast);
                 cast.CompleteResolution();
             }
         }
@@ -1447,7 +1453,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Tier = ability.Trigger.Timing,
             };
             TrackResolution(cast, ability);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
         }
 
@@ -1617,7 +1623,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         cast.RestoreAbility(ability.Ordinal, []);
         cast.TrackResolution(ability.Ordinal);
-        Run(found.Effect, cast);
+        Run(found, cast);
         cast.CompleteResolution();
         DiscardEvent(card, cast);
         return events;
@@ -1674,7 +1680,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         && Available(world, card, ability)
         && InForm(world, player, ability.Trigger.Form)
         && (ability.When is null || Test(ability.When, eligibility))
-        && CanInitiate(ability.Effect, eligibility);
+        && CanInitiate(ability, eligibility);
     }
 
     private static bool HasUnsupportedCombinedEventCost(
@@ -1889,7 +1895,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             world, world.Facts, world.Seats[player], card).Amount;
         string pool = string.Concat(EventGenerators(world, card, player, effect)
             .SelectMany(source => source.Generates));
-        return Resources.Pays(pool, cost, Resources.Required(card.FaceId, world.Facts));
+        return Resources.Pays(pool, cost, Resources.Required(world, card, world.Facts));
     }
 
     /// <summary>
@@ -2009,7 +2015,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return new CostOption(
             Target: card.ObjectId,
             Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            Rule: Resources.Required(card.FaceId, world.Facts) is { Length: > 0 } required
+            Rule: Resources.Required(world, card, world.Facts) is { Length: > 0 } required
                 ? [required]
                 : null,
             Sources: EventGenerators(world, card, player, effect));
@@ -2033,7 +2039,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var adjusted = CardPlay.CostOf(
             world, world.Facts, world.Seats[player], card);
-        string required = Resources.Required(card.FaceId, world.Facts);
+        string required = Resources.Required(world, card, world.Facts);
         // Group by what a source generates. Paid-resource outcomes cannot
         // distinguish two identities producing the same letters. Any source
         // that can participate safely has a witness consisting of that source
@@ -2154,7 +2160,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         string generated = string.Concat(generators
             .Where(source => selected.Contains(source.Effect))
             .Select(source => source.Generates));
-        string required = Resources.Required(card.FaceId, cast.World.Facts);
+        string required = Resources.Required(cast.World, card, cast.World.Facts);
         if (!Resources.Pays(generated, adjusted.Amount, required))
         {
             throw new RulesNotImplementedException(
@@ -2803,7 +2809,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Where(candidate => Resources.Pays(
                     string.Concat(candidate.Sources.Select(generator => generator.Generates)),
                     Resources.Cost(candidate.Ally.FaceId, world.Facts, world.Players) ?? 0,
-                    Resources.Required(candidate.Ally.FaceId, world.Facts)))
+                    Resources.Required(world, candidate.Ally, world.Facts)))
                 .Select(candidate => new Affordance(
                     candidate.Ally.ObjectId,
                     ChooseVerb,
@@ -2817,7 +2823,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                             (Resources.Cost(
                                 candidate.Ally.FaceId, world.Facts, world.Players) ?? 0).ToString(
                                 System.Globalization.CultureInfo.InvariantCulture),
-                            Resources.Required(candidate.Ally.FaceId, world.Facts)
+                            Resources.Required(world, candidate.Ally, world.Facts)
                                 is { Length: > 0 } rule
                                 ? [rule]
                                 : null,
@@ -3204,7 +3210,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             long cost = Resources.Cost(ally.FaceId, world.Facts, world.Players) ?? 0;
             CardPlay.Spend(
                 world, world.Facts, [world.Seats[player].Hand], input.Spent,
-                cost, Resources.Required(ally.FaceId, world.Facts),
+                cost, Resources.Required(world, ally, world.Facts),
                 source.ObjectId, player, cast.Events, payingFor: ally);
             CardPlay.PutAllyIntoPlay(
                 world, world.Facts, cast.Abilities, ally, player, cast.Trigger, cast.Events);
@@ -3446,6 +3452,117 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
             + "legality is not implemented"),
     };
+
+    /// <summary>Whether one authored ability can begin before any cost is paid.</summary>
+    private static bool CanInitiate(CardAbility ability, Cast cast)
+    {
+        if (!CanInitiateLabels(ability, cast))
+        {
+            return false;
+        }
+        cast.LabelsPreflighted = true;
+        return CanInitiate(ability.Effect, cast);
+    }
+
+    /// <summary>Whether an ability envelope can establish every labeled lifecycle.</summary>
+    private static bool CanInitiateLabels(CardAbility ability, Cast cast)
+    {
+        var labels = ability.Labels ?? [];
+        if (labels.Count == 0)
+        {
+            return true;
+        }
+
+        bool cancelled = LabeledAbilities.WouldBeCancelled(
+            cast.World, cast.World.Facts, Resolver(cast), cast.Source, labels);
+
+        foreach (string power in LabeledAbilities.Known)
+        {
+            if (!labels.Contains(power, StringComparer.Ordinal)
+                && PowerNodes(ability.Effect, power).Any())
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' contains a {power.ToLowerInvariant()} power "
+                    + "that is absent from its ability labels");
+            }
+        }
+
+        if (!cancelled
+            && labels.Contains(Attack.DefenseVerb, StringComparer.Ordinal)
+            && !Attack.CanUseDefenseAbility(cast.World, Resolver(cast)))
+        {
+            return false;
+        }
+
+        if (!cancelled)
+        {
+            bool attack = labels.Contains(BasicPowers.AttackVerb, StringComparer.Ordinal);
+            bool thwart = labels.Contains(BasicPowers.ThwartVerb, StringComparer.Ordinal);
+
+            if (attack && thwart)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has one ability labeled as both attack and "
+                    + "thwart, whose single combined power occurrence is not implemented");
+            }
+            if (attack && !GuaranteesOneLabeledPower(
+                    ability.Effect, BasicPowers.AttackVerb))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has an attack label without exactly one "
+                    + "saveable attack power");
+            }
+            if (thwart && !GuaranteesOneLabeledPower(
+                    ability.Effect, BasicPowers.ThwartVerb))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has a thwart label without exactly one "
+                    + "saveable thwart power");
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Whether every executable path enters one matching saveable power.</summary>
+    private static bool GuaranteesOneLabeledPower(AbilityNode node, string power)
+    {
+        if (string.Equals(
+            node.Kind, power.ToLowerInvariant(), StringComparison.Ordinal))
+        {
+            return PowerNodes(node, power).Count() == 1;
+        }
+
+        if (node.Kind == "chooseCard")
+        {
+            return GuaranteesOneLabeledPower(Tree(node.Require("effect")), power);
+        }
+
+        if (node.Kind == "choose")
+        {
+            var options = Nodes(node.Require("options")).ToList();
+            return options.Count >= 2
+                && options.All(option => GuaranteesOneLabeledPower(option, power));
+        }
+
+        if (node.Kind == "if")
+        {
+            return node.Field("then") is { } then
+                && node.Field("else") is { } otherwise
+                && GuaranteesOneLabeledPower(Tree(then), power)
+                && GuaranteesOneLabeledPower(Tree(otherwise), power);
+        }
+
+        if (node.Kind == "seq")
+        {
+            var steps = Nodes(node.Argument).ToList();
+            return steps.Count > 0
+                && GuaranteesOneLabeledPower(steps[0], power)
+                && steps.Skip(1).All(step => !PowerNodes(step, power).Any());
+        }
+
+        return false;
+    }
 
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
     private static bool CanInitiate(AbilityNode node, Cast cast)
@@ -4143,10 +4260,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var valid = schemes.Where(scheme =>
             scheme.Tokens.GetValueOrDefault("k_threat") > 0
-            && cast.Abilities.CanRemoveThreat(cast.World, scheme)
-            && !(scheme.Area.Type == DeckType.MainSchemesArea
-                && IsPlayerCard(cast)
-                && MainScheme.Crisis(cast.World, cast.World.Facts)));
+            && CanRemoveThreatFrom(node, cast, scheme));
         return CombinedOutcomes(valid.Select(scheme => ResolutionOfAmount(
             scheme.Tokens.GetValueOrDefault("k_threat"), wanted)));
     }
@@ -4664,7 +4778,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool RebindsToEachPlayer(AbilityValue targets) => targets switch
     {
-        AbilityValue.Word word => word.Value is "you" or "yourHero",
+        AbilityValue.Word word => word.Value is "you" or "yourHero" or "yourAlterEgo",
         AbilityValue.Map => RebindsToEachPlayer(Tree(targets)),
         _ => false,
     };
@@ -4828,8 +4942,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     throw new RulesNotImplementedException(
                         $"attachment {hosted.ObjectId} forms a hosting cycle");
                 }
-                if (cast.World.Facts.PrintedValue(
-                        hosted.FaceId, "Permanent", cast.World.Players) > 0)
+                if (StateFields.Modified(
+                        cast.World, hosted, "permanent",
+                        cast.World.Facts, cast.World.Players) > 0)
                 {
                     // Match Discard.Attachments' complete-tree preflight so
                     // eligibility refuses before an action cost can mutate.
@@ -4933,8 +5048,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 damage[next.ObjectId] = 0;
                 tough[next.ObjectId] = Math.Max(
                     carriedTough,
-                    cast.World.Facts.PrintedValue(
-                        next.FaceId, "Toughness", cast.World.Players) > 0 ? 1 : 0);
+                    StateFields.Modified(
+                        cast.World, next, "toughness",
+                        cast.World.Facts, cast.World.Players) > 0 ? 1 : 0);
                 return;
             }
             if ((card.Area.Type is DeckType.EngagedEnemiesArea
@@ -5046,10 +5162,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 engagement[to] = Resolver(cast);
                 int enteredTough = Math.Max(
                     CurrentTough(to),
-                    cast.World.Facts.PrintedValue(
-                        cast.World.Cards[to].FaceId,
-                        "Toughness",
-                        cast.World.Players) > 0 ? 1 : 0);
+                    StateFields.Modified(
+                        cast.World, cast.World.Cards[to], "toughness",
+                        cast.World.Facts, cast.World.Players) > 0 ? 1 : 0);
                 int liveTough = Statuses.Count(
                     cast.World, cast.World.Cards[to], Statuses.Tough);
                 if (enteredTough == liveTough)
@@ -6259,10 +6374,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return scheme is not null
             && scheme.Tokens.GetValueOrDefault("k_threat") > 0
             && Amount(node.Require("amount"), cast) > 0
-            && !(scheme.Area.Type == DeckType.MainSchemesArea
-                && IsPlayerCard(cast)
-                && MainScheme.Crisis(cast.World, cast.World.Facts));
+            && CanRemoveThreatFrom(node, cast, scheme);
     }
+
+    private static bool CanRemoveThreatFrom(AbilityNode node, Cast cast, Card scheme) =>
+        cast.Abilities.CanRemoveThreat(
+            cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
+        && (IgnoresCrisis(node)
+            || scheme.Area.Type != DeckType.MainSchemesArea
+            || !IsPlayerCard(cast)
+            || !MainScheme.Crisis(cast.World, cast.World.Facts));
+
+    private static int OverriddenThreatRemovalSource(AbilityNode node, Cast cast) =>
+        node.Field("overridesCannotFrom") is { } source
+            ? Find(source, cast)?.ObjectId ?? -1
+            : -1;
+
+    private static bool IgnoresCrisis(AbilityNode node) =>
+        node.Field("ignoresCrisis") is AbilityValue.Word { Value: "true" };
 
     /// <summary>Whether at least one named player can draw a card.</summary>
     private static bool CanDraw(AbilityNode node, Cast cast) =>
@@ -6985,10 +7114,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             var schemes = PowerEvery(node.Require("scheme"), cast, reachability);
             var valid = schemes.Where(scheme =>
                 PowerThreat(reachability, scheme) > 0
-                && cast.Abilities.CanRemoveThreat(cast.World, scheme)
-                && !(scheme.Area.Type == DeckType.MainSchemesArea
+                && cast.Abilities.CanRemoveThreat(
+                    cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
+                && (IgnoresCrisis(node)
+                    || !(scheme.Area.Type == DeckType.MainSchemesArea
                     && IsPlayerCard(cast)
-                    && PowerCrisis(reachability, cast)));
+                    && PowerCrisis(reachability, cast))));
             return [CombinedOutcomes(valid.Select(scheme => ResolutionOfAmount(
                 PowerThreat(reachability, scheme), wanted)))];
         }
@@ -7210,8 +7341,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Discarded = discarded,
                 Engagement = engagement,
             };
-            if (cast.World.Facts.PrintedValue(
-                    card.FaceId, "Toughness", cast.World.Players) > 0)
+            if (StateFields.Modified(
+                    cast.World, card, "toughness",
+                    cast.World.Facts, cast.World.Players) > 0)
             {
                 var firstIdentity = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
                 state = SetPowerTough(state, card, true, firstIdentity, cast);
@@ -7267,8 +7399,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             foreach (var scheme in PowerEvery(
                 node.Require("scheme"), cast, reachability))
             {
-                if (!cast.Abilities.CanRemoveThreat(cast.World, scheme)
-                    || scheme.Area.Type == DeckType.MainSchemesArea
+                if (!cast.Abilities.CanRemoveThreat(
+                        cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
+                    || !IgnoresCrisis(node)
+                        && scheme.Area.Type == DeckType.MainSchemesArea
                         && IsPlayerCard(cast)
                         && PowerCrisis(state, cast))
                 {
@@ -7846,8 +7980,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 throw new RulesNotImplementedException(
                     $"attachment {hosted.ObjectId} forms a hosting cycle");
             }
-            if (cast.World.Facts.PrintedValue(
-                    hosted.FaceId, "Permanent", cast.World.Players) > 0)
+                if (StateFields.Modified(
+                        cast.World, hosted, "permanent",
+                        cast.World.Facts, cast.World.Players) > 0)
             {
                 throw new RulesNotImplementedException(
                     $"permanent attachment {hosted.ObjectId} lost host "
@@ -7926,8 +8061,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             var card = cast.World.Cards[cardId];
             if (DeckTypes.IsInPlay(card.Area.Type)
                 && cast.World.Facts.Kind(card.FaceId) == CardKind.Attachment
-                && cast.World.Facts.PrintedValue(
-                    card.FaceId, "Permanent", cast.World.Players) > 0)
+                && StateFields.Modified(
+                    cast.World, card, "permanent",
+                    cast.World.Facts, cast.World.Players) > 0)
             {
                 throw new RulesNotImplementedException(
                     $"card {cardId} is a permanent attachment on an eliminated "
@@ -8062,8 +8198,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             VillainStagesDrawn = state.VillainStagesDrawn + 1,
         };
         advanced = SetPowerDamage(advanced, next, 0, first, cast);
-        bool printedTough = cast.World.Facts.PrintedValue(
-            next.FaceId, "Toughness", cast.World.Players) > 0;
+        bool printedTough = StateFields.Modified(
+            cast.World, next, "toughness",
+            cast.World.Facts, cast.World.Players) > 0;
         return SetPowerTough(
             advanced, next, carriesTough || printedTough, first, cast);
     }
@@ -8867,16 +9004,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ulong formsMayChange,
         out long count)
     {
-        if (selector is AbilityValue.Word { Value: "yourHero" })
+        if (selector is AbilityValue.Word { Value: "yourHero" or "yourAlterEgo" } formSelector)
         {
             int seat = Resolver(cast);
             var identity = cast.World.Seats[seat].IdentityCard;
-            bool liveHero = Forms.In(
-                cast.World, cast.World.Seats[seat], cast.World.Facts, Forms.Hero);
-            bool tracedHero = SeatMayChange(formsMayChange, seat)
-                ? !liveHero
-                : liveHero;
-            count = tracedHero && !discarded.Contains(identity.ObjectId) ? 1 : 0;
+            string form = formSelector.Value == "yourHero" ? Forms.Hero : Forms.AlterEgo;
+            bool liveForm = Forms.In(
+                cast.World, cast.World.Seats[seat], cast.World.Facts, form);
+            bool tracedForm = SeatMayChange(formsMayChange, seat) ? !liveForm : liveForm;
+            count = tracedForm && !discarded.Contains(identity.ObjectId) ? 1 : 0;
             return true;
         }
         if (selector is AbilityValue.Map { Entries.Count: 1 }
@@ -8929,7 +9065,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool CountSelectorFormsMayChange(
         AbilityValue selector, Cast cast, ulong formsMayChange)
     {
-        if (selector is AbilityValue.Word { Value: "yourHero" })
+        if (selector is AbilityValue.Word { Value: "yourHero" or "yourAlterEgo" })
         {
             return SeatMayChange(formsMayChange, Resolver(cast));
         }
@@ -9555,6 +9691,40 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     // ---- the effect tree ---------------------------------------------------
 
+    private static void Run(CardAbility ability, Cast cast)
+    {
+        var labels = ability.Labels ?? [];
+        if (labels.Count > 0)
+        {
+            if (!cast.LabelsPreflighted)
+            {
+                if (!CanInitiateLabels(ability, cast))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' cannot initiate its labeled ability "
+                        + "in the current state");
+                }
+                cast.LabelsPreflighted = true;
+            }
+
+            var performer = LabeledAbilities.Begin(
+                cast.World, cast.World.Facts, Resolver(cast), cast.Source,
+                labels, cast.Events);
+            if (performer is null)
+            {
+                return;
+            }
+
+            cast.AbilityActor = performer;
+            if (labels.Contains(Attack.DefenseVerb, StringComparer.Ordinal))
+            {
+                Attack.BeginDefenseAbility(cast.World, Resolver(cast), performer);
+            }
+        }
+
+        Run(ability.Effect, cast);
+    }
+
     private static void Run(AbilityNode node, Cast cast)
     {
         int eventsBefore = cast.Events.Count;
@@ -9600,7 +9770,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     [.. cast.AbilityPath], cast.AbilityFace, cast.Player,
                     new Dictionary<string, long>(cast.Results, StringComparer.Ordinal),
                     cast.Occurrence, [.. cast.Discarded.Select(card => card.ObjectId)],
-                    cast.HasContinuation);
+                    cast.HasContinuation, cast.AbilityActor?.ObjectId ?? -1);
                 cast.Suspend();
                 break;
 
@@ -9716,17 +9886,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "addToHand":
+            {
                 var added = Find(node.Argument, cast)
                     ?? throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' cannot find the card added to hand");
                 var oldArea = added.Area;
                 var newHand = cast.World.Seats[cast.Player].Hand;
+                var addedConstantsEnding = cast.World.Effects.PreflightConstantsEnding(added);
+                using var addedDeparture = addedConstantsEnding.Begin();
                 if (DeckTypes.IsInPlay(oldArea.Type))
                 {
                     Rules.Play.Discard.Attachments(
                         cast.World, added, cast.Trigger, cast.Events);
                 }
-                if (cast.World.Facts.Attributes(added.FaceId).ContainsKey("Linked"))
+                if (!Characteristics.IsLost(cast.World, added, "linked")
+                    && cast.World.Facts.Attributes(added.FaceId).ContainsKey("Linked"))
                 {
                     // rr:linked-card-title.4 changes ownership at the moment
                     // the player takes control. A linked ally added from the
@@ -9740,9 +9914,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     Trigger = cast.Trigger, Verb = "Add_To_Hand",
                 });
+                addedConstantsEnding.Complete(cast.Trigger, cast.Events);
                 break;
+            }
 
             case "returnOwnedToHand":
+            {
                 var returned = Find(node.Argument, cast)
                     ?? throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' cannot find the card returned to hand");
@@ -9753,6 +9930,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
                 var returnedFrom = returned.Area;
                 var ownersHand = cast.World.Seats[returned.Owner].Hand;
+                var returnedConstantsEnding =
+                    cast.World.Effects.PreflightConstantsEnding(returned);
+                using var returnedDeparture = returnedConstantsEnding.Begin();
                 if (DeckTypes.IsInPlay(returnedFrom.Type))
                 {
                     Rules.Play.Discard.Attachments(
@@ -9765,7 +9945,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     Trigger = cast.Trigger, Verb = "Return",
                 });
+                returnedConstantsEnding.Complete(cast.Trigger, cast.Events);
                 break;
+            }
 
             case "discardAtRandom":
                 DiscardAtRandom(node, cast);
@@ -9855,7 +10037,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 waiting.Add(new ActivationEffect(
                     cast.Source.ObjectId, cast.Player, cast.Tier,
                     Tree(node.Require("effect")),
-                    cast.Altered?.ObjectId ?? -1));
+                    cast.Altered?.ObjectId ?? -1,
+                    cast.AbilityActor?.ObjectId ?? -1));
                 cast.ResolveEffect();
                 break;
 
@@ -9987,8 +10170,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "defense":
-                Attack.BeginDefenseAbility(cast.World, cast.Player);
-                RunChild(Tree(node.Require("effect")), "defense:effect", cast);
+                var defender = cast.AbilityActor ?? LabeledAbilities.Begin(
+                    cast.World, cast.World.Facts, Resolver(cast), cast.Source,
+                    [Attack.DefenseVerb], cast.Events);
+                if (defender is not null)
+                {
+                    if (cast.AbilityActor is null)
+                    {
+                        Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
+                    }
+                    RunChild(Tree(node.Require("effect")), "defense:effect", cast);
+                }
                 break;
 
             case "thwart":
@@ -10471,8 +10663,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     found.Add(Grant(node, cast, grantTarget));
                 }
-                else if (!string.Equals(
-                    Word(node.Require("card")), "yourHero", StringComparison.Ordinal))
+                else if (Word(node.Require("card")) is not ("yourHero" or "yourAlterEgo"))
                 {
                     throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' card {cast.Source.ObjectId} in "
@@ -10765,6 +10956,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var from = card.Area;
         var removed = cast.World.AreaOf(DeckType.RemovedArea);
+        var constantsEnding = cast.World.Effects.PreflightConstantsEnding(card);
+        using var departure = constantsEnding.Begin();
+        if (DeckTypes.IsInPlay(from.Type))
+        {
+            Rules.Play.Discard.Attachments(
+                cast.World, card, cast.Trigger, cast.Events);
+        }
         World.MoveToTop(card, removed);
         cast.Events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(removed),
@@ -10772,6 +10970,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             Trigger = cast.Trigger, Verb = "Remove_From_Game",
         });
+        constantsEnding.Complete(cast.Trigger, cast.Events);
     }
 
     /// <summary>
@@ -10885,6 +11084,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         });
 
         if (CounterCount(cast.Source, "allPurpose") == 0
+            && !Characteristics.IsLost(cast.World, cast.Source, "uses")
             && Reveal.Uses(cast.World.Facts.Attributes(cast.Source.FaceId)).Count > 0)
         {
             Rules.Play.Discard.Card(cast.World, cast.Source, cast.Trigger, cast.Events);
@@ -11580,6 +11780,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
         RestorePersisted(cast, step.Discarded, step.AbilityResults);
+        cast.AbilityActor = step.AbilityActor >= 0
+            ? cast.World.Cards[step.AbilityActor]
+            : null;
     }
 
     private static void RestorePersisted(
@@ -12008,6 +12211,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             AbilityOccurrence: cast.Occurrence,
             AbilityFace: cast.AbilityFace,
             AbilityPlayer: cast.AbilityPlayer,
+            AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
             AbilityHasContinuation: cast.HasContinuation);
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
@@ -12218,7 +12422,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Damage from an attack event performed by the resolving identity.</summary>
     private static void DealAttackDamage(AbilityNode node, Cast cast)
     {
-        var attacker = cast.World.Seats[Resolver(cast)].IdentityCard;
+        var attacker = cast.PowerActor
+            ?? cast.AbilityActor
+            ?? cast.World.Seats[Resolver(cast)].IdentityCard;
         ContinuousEffect? temporaryOverkill = null;
         if (node.Field("overkill") is not null)
         {
@@ -12272,7 +12478,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var damaged = Damage.Attack(
             cast.World,
             cast.World.Facts,
-            cast.World.Seats[Resolver(cast)].IdentityCard,
+            cast.PowerActor
+                ?? cast.AbilityActor
+                ?? cast.World.Seats[Resolver(cast)].IdentityCard,
             cast.Source,
             to,
             amount,
@@ -12342,7 +12550,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
                 discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
                 finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer,
-                abilityHasContinuation: cast.HasContinuation)
+                abilityHasContinuation: cast.HasContinuation,
+                performer: cast.AbilityActor)
             : BasicPowers.CardThwart(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
                 cast.Trigger, cast.Events, abilityIndex: address.Index,
@@ -12357,7 +12566,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
                 discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
                 finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer,
-                abilityHasContinuation: cast.HasContinuation);
+                abilityHasContinuation: cast.HasContinuation,
+                performer: cast.AbilityActor);
         if (!scheduled)
         {
             return;
@@ -12446,7 +12656,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // `rr:crisis-icon.1`: player cards cannot remove threat from the main
             // scheme while a crisis icon is in play. Encounter effects are not
             // player cards and remain able to do so.
-            if (scheme.Area.Type == DeckType.MainSchemesArea
+            if (!IgnoresCrisis(node)
+                && scheme.Area.Type == DeckType.MainSchemesArea
                 && IsPlayerCard(cast)
                 && MainScheme.Crisis(cast.World, cast.World.Facts))
             {
@@ -12462,7 +12673,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.Trigger,
                 "Remove_Threat",
                 cast.Events,
-                by: Resolver(cast));
+                by: Resolver(cast),
+                overridesCannotFrom: OverriddenThreatRemovalSource(node, cast));
         }
     }
 
@@ -12530,6 +12742,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             var from = card.Area;
             var hand = cast.World.Seats[card.Owner].Hand;
+            var constantsEnding = cast.World.Effects.PreflightConstantsEnding(card);
+            using var departure = constantsEnding.Begin();
             if (DeckTypes.IsInPlay(from.Type))
             {
                 Rules.Play.Discard.Attachments(
@@ -12544,6 +12758,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 Trigger = cast.Trigger, Verb = "Return",
             });
+            constantsEnding.Complete(cast.Trigger, cast.Events);
             cast.Events.Add(new CardDetached(card.ObjectId, from.Host)
             {
                 Trigger = cast.Trigger, Verb = "Return",
@@ -12875,6 +13090,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 AbilityOccurrence: cast.Occurrence,
                 AbilityFace: cast.AbilityFace,
                 AbilityPlayer: cast.AbilityPlayer,
+                AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
                 AbilityHasContinuation: cast.HasContinuation));
             cast.WaitFor(activationIds);
             cast.Suspend();
@@ -12925,7 +13141,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.World, cast.Player, cast.Source, ally)
                 .Select(source => source.Generates)),
             Resources.Cost(ally.FaceId, cast.World.Facts, cast.World.Players) ?? 0,
-            Resources.Required(ally.FaceId, cast.World.Facts)));
+            Resources.Required(cast.World, ally, cast.World.Facts)));
 
     /// <summary>The resources available while paying one Make the Call candidate's cost.</summary>
     private static IReadOnlyList<ResourceSource> MakeTheCallSources(
@@ -13534,6 +13750,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ? cast.World.Seats[Resolver(cast)].IdentityCard
             : null,
 
+        // The other half of the form-specific reference. `rr:form-change-form.4`
+        // says a hero-form identity is not its alter-ego for card abilities,
+        // just as `.5` says an alter-ego-form identity is not its hero.
+        "yourAlterEgo" => Forms.In(
+            cast.World, cast.World.Seats[Resolver(cast)], cast.World.Facts, Forms.AlterEgo)
+            ? cast.World.Seats[Resolver(cast)].IdentityCard
+            : null,
+
         // `rr:you-your.5`: "if a card ability places a status card on 'you'
         // (such as 'you are stunned'), the player resolving that card ability
         // places that status card on their identity." `rr:you-your` opens with
@@ -13999,6 +14223,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <summary>Every game element selected for this labelled power.</summary>
         public IReadOnlyList<Card> PowerTargets { get; init; } = [];
 
+        /// <summary>The card attributed as performer of the labelled power.</summary>
+        public Card? PowerActor { get; init; }
+
+        /// <summary>The performer attributed by an ability-envelope label.</summary>
+        public Card? AbilityActor { get; set; }
+
+        /// <summary>Whether this fresh cast passed envelope legality before resolution.</summary>
+        public bool LabelsPreflighted { get; set; }
+
         /// <summary>A numeric result carried into this labelled power.</summary>
         public long PowerAmount { get; init; } = -1;
 
@@ -14020,5 +14253,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private sealed record ActivationEffect(
-        int Source, int Player, AbilityType? Tier, AbilityNode Effect, int Altered);
+        int Source, int Player, AbilityType? Tier, AbilityNode Effect, int Altered,
+        int AbilityActor);
 }

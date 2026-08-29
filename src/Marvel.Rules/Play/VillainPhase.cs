@@ -60,8 +60,11 @@ public interface ICardAbilities : IWindowAbilities
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="scheme">The scheme threat would be removed from.</param>
+    /// <param name="ignoredSource">
+    /// One explicitly overridden prohibition source, or -1.
+    /// </param>
     /// <returns>Whether the removal is permitted.</returns>
-    bool CanRemoveThreat(World world, Card scheme) => true;
+    bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => true;
 
     /// <summary>
     /// The resources a card in hand generates toward the current payment.
@@ -546,7 +549,7 @@ public class NoCardAbilities : ICardAbilities
         World world, PhaseStep continuation) => [];
 
     /// <inheritdoc/>
-    public virtual bool CanRemoveThreat(World world, Card scheme) => true;
+    public virtual bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => true;
 
     /// <inheritdoc/>
     public virtual string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
@@ -818,7 +821,7 @@ public static class VillainPhase
                 break;
 
             case Steps.EndSchemeEarly:
-                EndSchemeEarly(world);
+                EndSchemeEarly(world, events);
                 break;
 
             case Steps.Attack:
@@ -1354,7 +1357,7 @@ public static class VillainPhase
         // says "this activation" was given for *this* scheme and must not
         // survive into somebody's attack -- `rr:activation` makes a scheme an
         // activation, and `rr:activation.6` gives an activation an end.
-        world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.Effects.Expire(TimingPoints.EndOfActivation, events);
         if (world.Activation is { } activation)
         {
             world.FinishedActivation = activation with { ThreatPlaced = placed };
@@ -1363,9 +1366,9 @@ public static class VillainPhase
     }
 
     /// <summary>Ends a scheme without placing threat when its minion left play.</summary>
-    private static void EndSchemeEarly(World world)
+    private static void EndSchemeEarly(World world, List<GameEvent> events)
     {
-        world.Effects.Expire(TimingPoints.EndOfActivation);
+        world.Effects.Expire(TimingPoints.EndOfActivation, events);
         world.FinishedActivation = world.Activation;
         world.Activation = null;
     }

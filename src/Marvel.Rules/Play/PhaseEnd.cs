@@ -81,7 +81,8 @@ public static class PhaseEnd
 
             foreach (var card in area.Cards.ToList())
             {
-                if (facts.PrintedValue(card.FaceId, "Temporary", world.Players) > 0)
+                if (StateFields.Modified(
+                        world, card, "temporary", facts, world.Players) > 0)
                 {
                     Discard.Card(world, card, "end of round", events);
                 }
@@ -306,7 +307,7 @@ public static class PhaseEnd
             // by its ending is gone -- rr:lasting-effects.5.
             foreach (var timingPoint in expiring)
             {
-                world.Effects.Expire(timingPoint);
+                world.Effects.Expire(timingPoint, events);
             }
 
             // Delayed effects waiting on this moment resolve here, "before

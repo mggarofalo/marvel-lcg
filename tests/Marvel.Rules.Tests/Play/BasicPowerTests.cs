@@ -319,6 +319,7 @@ public sealed class BasicPowerTests
     }
 
     [Rule("rr:cannot")]
+    [Rule("rr:cannot.2")]
     [Rule("rr:thwart.1.1")]
     [Fact]
     public void ACharacterCannotInitiateAThwartAgainstAProtectedScheme()
@@ -350,7 +351,9 @@ public sealed class BasicPowerTests
         var world = Board(printed);
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         scheme.PlaceTokens("k_threat", 3);
-        var abilities = new ProtectedScheme(scheme.ObjectId);
+        var prohibition = world.CreateCard(
+            "upgrade", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var abilities = new ProtectedScheme(scheme.ObjectId, prohibition.ObjectId);
         world.Abilities = abilities;
         var events = new List<GameEvent>();
 
@@ -360,6 +363,56 @@ public sealed class BasicPowerTests
         Assert.Equal(0, removed);
         Assert.Equal(3, scheme.Tokens["k_threat"]);
         Assert.Empty(events);
+    }
+
+    [Rule("rr:cannot.3")]
+    [Fact]
+    public void ExplicitCardTextCanOverrideAThreatRemovalProhibition()
+    {
+        // "An ability can override a rule with the word 'cannot' in it if the
+        // ability has an explicit exception to that rule." The override is an
+        // explicit property of this instruction and names the exact card whose
+        // prohibition it overrides; an ordinary permission names none.
+        var printed = new Printed();
+        var world = Board(printed);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 3);
+        var prohibition = world.CreateCard(
+            "upgrade", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var abilities = new ProtectedScheme(scheme.ObjectId, prohibition.ObjectId);
+
+        long removed = Threat.Remove(
+            world, printed, abilities, scheme, 2, "test", "Remove_Threat", [],
+            overridesCannotFrom: prohibition.ObjectId);
+
+        Assert.Equal(2, removed);
+        Assert.Equal(1, scheme.Tokens["k_threat"]);
+    }
+
+    [Rule("rr:cannot.1")]
+    [Fact]
+    public void ExplicitExceptionToOneProhibitionDoesNotOverrideAnother()
+    {
+        // "Cannot is absolute" for every prohibition the card text does not
+        // explicitly override. Naming one source leaves the other source's
+        // independent prohibition in force.
+        var printed = new Printed();
+        var world = Board(printed);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 3);
+        var first = world.CreateCard(
+            "upgrade", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var second = world.CreateCard(
+            "upgrade", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var abilities = new ProtectedScheme(
+            scheme.ObjectId, first.ObjectId, second.ObjectId);
+
+        long removed = Threat.Remove(
+            world, printed, abilities, scheme, 2, "test", "Remove_Threat", [],
+            overridesCannotFrom: first.ObjectId);
+
+        Assert.Equal(0, removed);
+        Assert.Equal(3, scheme.Tokens["k_threat"]);
     }
 
     [Rule("rr:recover-recovery")]
@@ -674,10 +727,12 @@ public sealed class BasicPowerTests
     private static int[] Ids(IReadOnlyList<Card> cards) =>
         [.. cards.Select(card => card.ObjectId).Order()];
 
-    private sealed class ProtectedScheme(int scheme) : NoCardAbilities
+    private sealed class ProtectedScheme(int scheme, params int[] sources) : NoCardAbilities
     {
-        public override bool CanRemoveThreat(World world, Card candidate) =>
-            candidate.ObjectId != scheme;
+        public override bool CanRemoveThreat(
+            World world, Card candidate, int ignoredSource = -1) =>
+            candidate.ObjectId != scheme
+            || sources.Length > 0 && sources.All(source => source == ignoredSource);
     }
 
     private sealed class RecordingCardPowers : NoCardAbilities

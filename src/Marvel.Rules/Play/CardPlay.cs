@@ -201,7 +201,7 @@ public static class CardPlay
         ArgumentNullException.ThrowIfNull(seat);
         ArgumentNullException.ThrowIfNull(card);
 
-        return facts.PrintedValue(card.FaceId, "Alliance", world.Players) > 0
+        return StateFields.Modified(world, card, "alliance", facts, world.Players) > 0
             ? [.. world.PlayerOrder.Select(index => world.Seats[index])]
             : [seat];
     }
@@ -264,7 +264,7 @@ public static class CardPlay
         // count -- `rr:requirement-resources` makes a card with a requirement
         // unplayable without those resources, however many cards are in hand.
         string pool = string.Concat(sources.SelectMany(source => source.Generates));
-        return !Resources.Pays(pool, cost, Resources.Required(card.FaceId, facts))
+        return !Resources.Pays(pool, cost, Resources.Required(world, card, facts))
             ? null
             : new CostOption(
                 Target: card.ObjectId,
@@ -326,7 +326,7 @@ public static class CardPlay
         var hands = Paying(world, facts, seat, card).Select(player => player.Hand).ToList();
 
         Spend(
-            world, facts, hands, paying, adjusted.Amount, Resources.Required(card.FaceId, facts),
+            world, facts, hands, paying, adjusted.Amount, Resources.Required(world, card, facts),
             card.ObjectId, seat.Index, events, payingFor: card);
 
         // Steps 6 and 7. The card is played: it enters play, or it is an event
@@ -372,7 +372,7 @@ public static class CardPlay
         // `rr:requirement-resources.2`: ignoring the cost generates and pays
         // no resources, so a printed requirement makes this permission
         // unusable. Refuse before the card leaves its hand.
-        if (Resources.Required(card.FaceId, facts).Length > 0)
+        if (Resources.Required(world, card, facts).Length > 0)
         {
             throw new RulesNotImplementedException(
                 $"card '{card.FaceId}' has a resource requirement and cannot be played "
@@ -621,7 +621,8 @@ public static class CardPlay
     /// </remarks>
     private static bool TeamedUp(World world, ICardFacts facts, Card card)
     {
-        if (!facts.Attributes(card.FaceId).TryGetValue("TeamUp", out string? named))
+        if (Characteristics.IsLost(world, card, "team-up")
+            || !facts.Attributes(card.FaceId).TryGetValue("TeamUp", out string? named))
         {
             return true;
         }

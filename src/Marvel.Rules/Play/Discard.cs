@@ -35,6 +35,9 @@ public static class Discard
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
+        var constantsEnding = world.Effects.PreflightConstantsEnding(card);
+        using var departure = constantsEnding.Begin();
+
         // `rr:attach-to.1`: "if the game element an attachment is attached to
         // leaves play, the attachment is discarded." Snapshot the areas because
         // discarding an attachment moves it and can itself detach hosted cards.
@@ -64,6 +67,8 @@ public static class Discard
         {
             Trigger = trigger, Verb = "Discard",
         });
+
+        constantsEnding.Complete(trigger, events);
 
         // `rr:player-deck.4`: a deck that emptied beside an empty discard pile
         // "does not reset until there is at least one card in the player's
@@ -98,6 +103,34 @@ public static class Discard
         World world, State.Card host, string trigger, List<GameEvent> events)
     {
         var direct = AttachedTo(world, host.ObjectId);
+        if (!world.Effects.IsDeparting(host))
+        {
+            PreflightAttachments(world, host, direct);
+        }
+
+        // The engine commits a preflighted restored-Uses cascade as one state
+        // snapshot. The Rules Reference does not order those simultaneous
+        // zero-counter discards. Re-reading attachment legality between the
+        // sequential event writes would let an intermediate board contradict
+        // the snapshot that was proved before anything moved.
+
+        foreach (var attached in direct)
+        {
+            Card(world, attached, trigger, events);
+        }
+    }
+
+    /// <summary>Prove that every hosted card can leave before moving any of them.</summary>
+    public static void PreflightAttachments(World world, State.Card host)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(host);
+        PreflightAttachments(world, host, AttachedTo(world, host.ObjectId));
+    }
+
+    private static void PreflightAttachments(
+        World world, State.Card host, IReadOnlyList<State.Card> direct)
+    {
         var descendants = new List<State.Card>();
         var pending = new Stack<State.Card>(direct.AsEnumerable().Reverse());
         var seen = new HashSet<int> { host.ObjectId };
@@ -116,8 +149,18 @@ public static class Discard
             }
         }
 
-        if (descendants.FirstOrDefault(attached => world.Facts.PrintedValue(
-                attached.FaceId, "Permanent", world.Players) > 0) is { } permanent)
+        PreflightProjectedAttachments(world, host, descendants);
+    }
+
+    /// <summary>
+    /// Validate a hosted tree whose cards are temporarily projected out of play.
+    /// </summary>
+    internal static void PreflightProjectedAttachments(
+        World world, State.Card host, IEnumerable<State.Card> descendants)
+    {
+        if (descendants.FirstOrDefault(attached => StateFields.Modified(
+                world, attached, "permanent", world.Facts, world.Players) > 0)
+            is { } permanent)
         {
             // `rr:permanent.5` resolves the attachment's attach-to text again
             // and removes it only if no valid target exists. Preflight the
@@ -125,11 +168,6 @@ public static class Discard
             throw new RulesNotImplementedException(
                 $"permanent attachment {permanent.ObjectId} lost host "
                 + $"{host.ObjectId}, and rr:permanent.5 is not implemented");
-        }
-
-        foreach (var attached in direct)
-        {
-            Card(world, attached, trigger, events);
         }
     }
 

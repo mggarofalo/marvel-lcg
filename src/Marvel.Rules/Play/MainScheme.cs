@@ -175,6 +175,8 @@ public static class MainScheme
 
         // Step 1. Attached cards are discarded before the card leaves, so that
         // a client sees them go rather than vanishing with their host.
+        var constantsEnding = world.Effects.PreflightConstantsEnding(scheme);
+        using var departure = constantsEnding.Begin();
         Discard.Attachments(world, scheme, trigger, events);
 
         long carried = scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
@@ -187,6 +189,7 @@ public static class MainScheme
         {
             Trigger = trigger, Verb = "Advance",
         });
+        constantsEnding.Complete(trigger, events);
 
         // Step 2. The A side first, and its ability, before anything is placed.
         var area2 = world.AreaOf(DeckType.MainSchemesArea);

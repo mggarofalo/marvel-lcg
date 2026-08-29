@@ -154,10 +154,12 @@ public static class StateFields
     // ever passed through the boosting area.
     private static readonly Dictionary<string, string> PrintedFrom = new(StringComparer.Ordinal)
     {
+        ["alliance"] = "Alliance",
         ["attack"] = "ATK",
         ["scheme"] = "SCH",
         ["thwart"] = "THW",
         ["guard"] = "Guard",
+        ["hinder"] = "Hinder",
         ["boost_const"] = "Boost",
         ["recover"] = "REC",
         ["defense"] = "DEF",
@@ -404,6 +406,11 @@ public static class StateFields
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
 
+        if (Characteristics.IsLost(world, card, field))
+        {
+            return 0;
+        }
+
         if (PrintedFrom.TryGetValue(field, out string? printedAttribute)
             && PowerAttributes.Contains(printedAttribute)
             && !HasUsablePrintedPower(facts, card.FaceId, printedAttribute))
@@ -444,7 +451,9 @@ public static class StateFields
             long value = FacedownDrones.BaseValue(card, facts, attribute, players);
             if (world is not null)
             {
-                value += Adjustments(world, card, field, facts, players);
+                value = Characteristics.IsLost(world, card, field)
+                    ? 0
+                    : value + Adjustments(world, card, field, facts, players);
             }
 
             fields[field] = value;

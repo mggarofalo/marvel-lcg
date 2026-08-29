@@ -131,13 +131,17 @@ public static class Resources
     /// prints <c>YBR</c>, one of each of energy, mental and physical.
     /// </para>
     /// </remarks>
-    /// <param name="faceId">A printed card id.</param>
+    /// <param name="world">The board carrying gained and lost characteristics.</param>
+    /// <param name="card">The card whose requirement is being enforced.</param>
     /// <param name="facts">The printed card data.</param>
     /// <returns>The required letters, or an empty string.</returns>
-    public static string Required(string faceId, ICardFacts facts)
+    public static string Required(World world, Card card, ICardFacts facts)
     {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
-        return facts.Attributes(faceId).TryGetValue("Requirement", out string? printed)
+        return !Characteristics.IsLost(world, card, "requirement")
+            && facts.Attributes(card.FaceId).TryGetValue("Requirement", out string? printed)
             ? printed
             : string.Empty;
     }

@@ -35,6 +35,27 @@ public sealed class KeywordTests
         Assert.True(Statuses.Has(world, minion, Statuses.Tough));
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:toughness.1")]
+    [Fact]
+    public void ACharacterThatLosesToughnessEntersPlayWithoutAToughStatusCard()
+    {
+        // A lost keyword does not function even though it remains printed.
+        // Toughness therefore provides no forced response when this minion
+        // enters play.
+        var printed = new Printed().With("minion", ("Toughness", "1"), ("HP", "3"));
+        var world = Board(printed);
+        var minion = world.CreateCard("minion", world.AreaOf(DeckType.RevealingArea));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("toughness"),
+            Affects: minion.ObjectId));
+
+        Reveal.Resolve(world, printed, minion, 0, []);
+
+        Assert.False(Statuses.Has(world, minion, Statuses.Tough));
+    }
+
     [Rule("rr:tough.2")]
     [Rule("rr:tough.3")]
     [Fact]
@@ -96,6 +117,29 @@ public sealed class KeywordTests
 
         Assert.Equal(
             expected, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:incite-x")]
+    [Fact]
+    public void ACardThatLosesIncitePlacesNoThreatAndProvidesNoAbility()
+    {
+        // Incite remains printed but no longer functions. Both the reveal
+        // effect and the occurrence ledger must agree that there is no
+        // keyword-provided ability to resolve.
+        var printed = new Printed().With("treachery", ("Incite", "2"));
+        var world = Board(printed);
+        var card = world.CreateCard("treachery", world.AreaOf(DeckType.RevealingArea));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("incite"),
+            Affects: card.ObjectId));
+
+        Reveal.Keywords(world, printed, new NoCardAbilities(), card, 0, []);
+
+        Assert.Equal(
+            0, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Empty(Reveal.KeywordAbilities(world, printed, card, 0));
     }
 
     [Rule("rr:incite-x")]
@@ -243,6 +287,26 @@ public sealed class KeywordTests
         Assert.Equal(3, scheme.Tokens["k_threat"]);
         Assert.Equal(
             0, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:hinder-x")]
+    [Fact]
+    public void ACardThatLosesHinderEntersPlayWithoutItsThreat()
+    {
+        // Hinder remains printed, but the lost keyword does not contribute its
+        // entry threat.
+        var printed = new Printed().With("sideScheme", ("Hinder", "3"));
+        var world = Board(printed);
+        var scheme = world.CreateCard("sideScheme", world.AreaOf(DeckType.RevealingArea));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("hinder"),
+            Affects: scheme.ObjectId));
+
+        Reveal.Resolve(world, printed, scheme, 0, []);
+
+        Assert.Equal(0, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
 
     [Rule("rr:side-scheme")]
@@ -471,6 +535,36 @@ public sealed class KeywordTests
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:attack-enemy-activation.step.1")]
+    [Fact]
+    public void AMinionThatLosesVillainousTakesNoBoostCard()
+    {
+        // A card that "loses a characteristic" no longer has its printed
+        // Villainous keyword. The activation therefore skips the boost-card
+        // step exactly like a minion that never printed the keyword.
+        var printed = new Printed()
+            .With("hero", ("HP", "10"))
+            .With("minion", ("ATK", "1"), ("HP", "3"), ("Villainous", "1"));
+        var world = Board(printed);
+        world.Seats[0].IdentityCard.TurnTo("hero");
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("villainous"),
+            Affects: minion.ObjectId));
+
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: minion.ObjectId, Seat: 0), []);
+        Undefended(world, printed);
+
+        Assert.Single(world.AreaOf(DeckType.EncounterDeck).Cards);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:scheme-enemy-activation.step.1")]
     [Fact]
     public void AMinionWithoutVillainousSchemesWithoutABoostCard()
@@ -511,7 +605,9 @@ public sealed class KeywordTests
         var world = Board(printed);
         var enemy = world.CreateCard(faceId, world.AreaOf(DeckType.EngagedEnemiesArea));
 
-        Assert.Equal(boosted, Marvel.Rules.Timing.Keywords.IsBoosted(enemy, printed, 1));
+        Assert.Equal(
+            boosted,
+            Marvel.Rules.Timing.Keywords.IsBoosted(world, enemy, printed, 1));
     }
 
     [Rule("rr:temporary")]
@@ -569,6 +665,30 @@ public sealed class KeywordTests
         Assert.DoesNotContain(
             world.AreaOf(DeckType.EncounterDiscardPile).Cards,
             card => card.ObjectId == minion.ObjectId);
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:victory-x.2")]
+    [Fact]
+    public void ADefeatedCardThatLosesVictoryIsDiscarded()
+    {
+        // Losing Victory removes the replacement destination. The defeated
+        // minion therefore goes to the encounter discard pile, not the victory
+        // display its printed keyword would otherwise name.
+        var printed = new Printed().With("minion", ("HP", "1"), ("Victory", "2"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("victory"),
+            Affects: minion.ObjectId));
+        Agendas.Happening(world);
+
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Empty(world.AreaOf(DeckType.VictoryDisplay).Cards);
     }
 
     [Rule("rr:quickstrike")]
@@ -667,6 +787,32 @@ public sealed class KeywordTests
         Assert.False(world.Agenda.IsBusy);
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:teamwork")]
+    [Fact]
+    public void AMinionThatLosesTeamworkDoesNotActivate()
+    {
+        // Teamwork remains printed, but the lost keyword supplies no forced
+        // response when a matching minion is already in play.
+        var printed = new Printed()
+            .With("acolyte", ("Teamwork", "ACOLYTE"), ("ATK", "2"), ("HP", "3"))
+            .With("friend", ("HP", "3"))
+            .Trait("acolyte", "ACOLYTE")
+            .Trait("friend", "ACOLYTE");
+        var world = Board(printed);
+        var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
+        world.CreateCard("friend", engaged);
+        var arriving = world.CreateCard("acolyte", engaged);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("teamwork"),
+            Affects: arriving.ObjectId));
+
+        Reveal.Teamwork(world, printed, arriving, 0, round: 1);
+
+        Assert.False(world.Agenda.IsBusy);
+    }
+
     [Rule("rr:teamwork")]
     [Rule("rr:activation.1")]
     [Fact]
@@ -752,6 +898,647 @@ public sealed class KeywordTests
         Reveal.Resolve(world, printed, card, 0, []);
 
         Assert.Equal(3, card.Tokens["c_web"]);
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:uses-x-type")]
+    [Fact]
+    public void ACardThatLosesUsesEntersPlayWithoutItsCounters()
+    {
+        // The composite value remains printed, but the lost Uses keyword no
+        // longer places its counters as the card enters play.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var card = world.CreateCard("sideScheme", world.AreaOf(DeckType.RevealingArea));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: card.ObjectId));
+
+        Reveal.Resolve(world, printed, card, 0, []);
+
+        Assert.Equal(0, card.Tokens.GetValueOrDefault("c_web"));
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:uses-x-type.1")]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RegainingUsesWithNoCountersImmediatelyDiscardsTheCard(bool expires)
+    {
+        // Uses is a constant ability: as soon as the loss ends, its live
+        // zero-counter condition discards the card. This is true whether a
+        // duration expires normally or the registration ends early.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var card = world.CreateCard("sideScheme", world.AreaOf(DeckType.RevealingArea));
+        var loss = world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: card.ObjectId,
+            Lasts: Duration.UntilEndOf(TimingPoints.EndOfPlayerPhase)));
+        Reveal.Resolve(world, printed, card, 0, []);
+        var events = new List<GameEvent>();
+
+        if (expires)
+        {
+            world.Effects.Expire(TimingPoints.EndOfPlayerPhase, events);
+        }
+        else
+        {
+            loss.Dispose();
+        }
+
+        Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
+        if (expires)
+        {
+            Assert.Contains(events.OfType<CardsMoved>(), moved =>
+                moved.Cards.Any(landing => landing.Card == card.ObjectId));
+        }
+    }
+
+    [Rule("rr:uses-x-type.1")]
+    [Rule("rr:permanent.5")]
+    [Fact]
+    public void RestoringUsesPreflightsEveryDiscardBeforeEndingAnyLoss()
+    {
+        // Both Uses constants would become active at the same timing point.
+        // A Permanent attachment makes the second discard unsupported, so the
+        // complete transition refuses before either card or either loss moves.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("permanentish", ("Permanent", "1"));
+        var world = Board(printed);
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.RevealingArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.RevealingArea));
+        var duration = Duration.UntilEndOf(TimingPoints.EndOfPlayerPhase);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: first.ObjectId,
+            Lasts: duration));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: second.ObjectId,
+            Lasts: duration));
+        Reveal.Resolve(world, printed, first, 0, []);
+        Reveal.Resolve(world, printed, second, 0, []);
+        var attachment = world.CreateCard(
+            "permanentish",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, second.ObjectId));
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            world.Effects.Expire(TimingPoints.EndOfPlayerPhase, []));
+
+        Assert.Equal(2, world.Effects.Registered.Count);
+        Assert.Equal(DeckType.SideSchemesArea, first.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, second.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, attachment.Area.Type);
+    }
+
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void RestoringUsesRefusesAHostingCycleBeforeEndingEitherLoss()
+    {
+        // A cyclic hosted component has no root to discard first. It is
+        // refused explicitly rather than pruning every candidate as somebody
+        // else's child and leaving active Uses cards at zero counters.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("permanentish", ("Permanent", "1"));
+        var world = Board(printed);
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        World.MoveToTop(first, world.AreaOf(
+            DeckType.UpgradesArea, PlayArea.Villains, second.ObjectId));
+        World.MoveToTop(second, world.AreaOf(
+            DeckType.UpgradesArea, PlayArea.Villains, first.ObjectId));
+        var duration = Duration.UntilEndOf(TimingPoints.EndOfPlayerPhase);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: first.ObjectId,
+            Lasts: duration));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: second.ObjectId,
+            Lasts: duration));
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() =>
+            world.Effects.Expire(TimingPoints.EndOfPlayerPhase, []));
+
+        Assert.Contains("hosting cycle", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(2, world.Effects.Registered.Count);
+        Assert.Equal(second.ObjectId, first.Area.Host);
+        Assert.Equal(first.ObjectId, second.Area.Host);
+    }
+
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void RestoringAnotherCardsUsesIgnoresAFacedownDroneUnderlyingUsesCard()
+    {
+        // A facedown encounter card has no active printed attributes. Ending a
+        // different card's Uses loss must not expose and apply the player card
+        // text hidden beneath a Drone.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("playerUses", ("Uses", "3,charge"));
+        var world = Board(printed);
+        world.CreateCard("playerUses", world.Seats[0].Deck);
+        var drone = Assert.IsType<Card>(
+            FacedownDrones.EngageTop(world, 0, "test", "Drone", []));
+        var card = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.RevealingArea));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: card.ObjectId,
+            Lasts: Duration.UntilEndOf(TimingPoints.EndOfPlayerPhase)));
+        Reveal.Resolve(world, printed, card, 0, []);
+
+        world.Effects.Expire(TimingPoints.EndOfPlayerPhase, []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
+        Assert.Equal(DeckType.EngagedEnemiesArea, drone.Area.Type);
+        Assert.True(FacedownDrones.Is(drone));
+    }
+
+    [Rule("rr:ability.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void UsesRestoredWhenAConstantSourceLeavesImmediatelyDiscardsTheCard()
+    {
+        // A constant exists only while its source is in play. Its departure is
+        // preflighted as one transition, then the newly active zero-counter
+        // Uses constant discards the affected card.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var card = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.RevealingArea));
+        world.Abilities = new ConstantUsesLoss(source.ObjectId, card.ObjectId);
+        Reveal.Resolve(world, printed, card, 0, []);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
+    }
+
+    [Rule("rr:ability.5")]
+    [Rule("rr:attach-to.1")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void AHostedConstantCannotDiscardItsDepartingHostTwice()
+    {
+        // The attachment leaves immediately before its host. Ending its
+        // constant restores the host's zero-counter Uses, but the host is
+        // already part of the same departure and moves exactly once.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var host = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var source = world.CreateCard(
+            "temp", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, host.ObjectId));
+        world.Abilities = new ConstantUsesLoss(source.ObjectId, host.ObjectId);
+        var events = new List<GameEvent>();
+
+        Discard.Card(world, host, "test", events);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, host.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, source.Area.Type);
+        Assert.Single(events.OfType<CardsMoved>(), moved =>
+            moved.Cards.Any(landing => landing.Card == host.ObjectId));
+        Assert.Single(events.OfType<CardsMoved>(), moved =>
+            moved.Cards.Any(landing => landing.Card == source.ObjectId));
+    }
+
+    [Rule("rr:ability.5")]
+    [Rule("rr:attach-to.1")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void DiscardingAHostedConstantCanCascadeToItsAcyclicHost()
+    {
+        // S is already in the departure plan when ending its constant restores
+        // its host H. Walking H's hosted tree reaches S again by deduplication,
+        // not by an ancestor cycle; both cards still move exactly once.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var host = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var source = world.CreateCard(
+            "temp", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, host.ObjectId));
+        world.Abilities = new ConstantUsesLoss(source.ObjectId, host.ObjectId);
+        var events = new List<GameEvent>();
+
+        Discard.Card(world, source, "test", events);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, host.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, source.Area.Type);
+        Assert.Single(events.OfType<CardsMoved>(), moved =>
+            moved.Cards.Any(landing => landing.Card == host.ObjectId));
+        Assert.Single(events.OfType<CardsMoved>(), moved =>
+            moved.Cards.Any(landing => landing.Card == source.ObjectId));
+    }
+
+    [Rule("rr:ability.9")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ADependentConstantEndingRestoresUsesAndDiscardsTheCard()
+    {
+        // S grants B a trait, and B conditionally makes U lose Uses while it
+        // has that trait. S authors no Uses loss itself, but its departure
+        // still disables B's condition and restores U at zero counters.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var bridge = world.CreateCard(
+            "bridge", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var uses = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        world.Abilities = new DependentConstantUsesLoss(
+            source.ObjectId, bridge.ObjectId, uses.ObjectId);
+        Assert.True(Characteristics.IsLost(world, uses, "uses"));
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, uses.Area.Type);
+    }
+
+    [Rule("rr:ability.5")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void AConstantDeparturePreflightsActiveCrossRootPermanent()
+    {
+        // S restores U1 and U2 together. U2 grants Permanent to A on U1 while
+        // both roots are still in play immediately before the simultaneous
+        // departure, so the unsupported host loss is refused atomically.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, first.ObjectId));
+        world.Abilities = new UsesLossWithDependentPermanent(
+            source.ObjectId, first.ObjectId, second.ObjectId, attachment.ObjectId);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Discard.Card(world, source, "test", []));
+
+        Assert.Equal(DeckType.SupportsArea, source.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, first.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, second.Area.Type);
+        Assert.Equal(first.ObjectId, attachment.Area.Host);
+    }
+
+    [Rule("rr:ability.9")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ADepartingCardCannotActivateANewConditionalConstantMidCommit()
+    {
+        // S restores U1 and U2. U2's Permanent grant is dormant until U1 is
+        // absent, but U2 is itself already departing and therefore cannot
+        // activate a new constant between the two preflighted moves.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, second.ObjectId));
+        world.Abilities = new UsesLossWithDormantPermanent(
+            source.ObjectId, first.ObjectId, second.ObjectId, attachment.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, first.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
+    }
+
+    [Rule("rr:ability.9")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void AUsesCascadeDoesNotActivateAPostCascadePermanentEarly()
+    {
+        // S restores U1 and U2. Surviving B grants Permanent to A only after
+        // U1 is absent, which is after the simultaneous Uses roots qualified;
+        // the sequential event writes cannot activate it between their moves.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var surviving = world.CreateCard(
+            "bridge", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, second.ObjectId));
+        world.Abilities = new UsesLossWithDormantPermanent(
+            source.ObjectId, first.ObjectId, second.ObjectId,
+            surviving.ObjectId, attachment.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.SupportsArea, surviving.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, first.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
+    }
+
+    [Rule("rr:ability.9")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ASourceDepartureCanActivateASurvivingReplacementUsesLoss()
+    {
+        // S's loss ending appears to restore U during preflight, but surviving
+        // B supplies the same loss as soon as S is actually absent. U still
+        // lacks Uses at the commit boundary and therefore is not discarded.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("permanentish", ("Permanent", "1"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var surviving = world.CreateCard(
+            "bridge", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var uses = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        world.Abilities = new UsesLossWithSurvivingReplacement(
+            source.ObjectId, surviving.ObjectId, uses.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.SupportsArea, surviving.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, uses.Area.Type);
+        Assert.True(Characteristics.IsLost(world, uses, "uses"));
+    }
+
+    [Rule("rr:ability.9")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ARejectedUsesRootKeepsItsDependentRootFromDeparting()
+    {
+        // S appears to restore U2, and suppressing U2 during preflight appears
+        // to restore U3. Once S is absent, U2's own replacement loss keeps U2
+        // in play, so its loss on U3 also remains and neither root departs.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("permanentish", ("Permanent", "1"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var third = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var permanent = world.CreateCard(
+            "permanentish", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, second.ObjectId));
+        world.Abilities = new ReplacementUsesLossCascade(
+            source.ObjectId, second.ObjectId, third.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, second.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, third.Area.Type);
+        Assert.Equal(second.ObjectId, permanent.Area.Host);
+        Assert.True(Characteristics.IsLost(world, second, "uses"));
+        Assert.True(Characteristics.IsLost(world, third, "uses"));
+    }
+
+    [Rule("rr:ability.9")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void AQualifiedUsesDepartureStaysLatchedDuringProjection()
+    {
+        // S makes U lose Uses, while U grants B the trait that disables B's
+        // replacement loss. With S projected absent U qualifies; projecting U
+        // absent next removes the trait, but that consequence cannot revoke a
+        // departure whose zero-counter condition already qualified.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var bridge = world.CreateCard(
+            "bridge", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var uses = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        world.Abilities = new LatchedUsesDeparture(
+            source.ObjectId, uses.ObjectId, bridge.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, uses.Area.Type);
+        Assert.Equal(DeckType.SupportsArea, bridge.Area.Type);
+    }
+
+    [Rule("rr:ability.9")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ProjectedAbsenceCanDiscoverAUsesRestoration()
+    {
+        // B makes U lose Uses only while S is in play. S authors no constant
+        // itself, so suppressing emitted source effects cannot discover U;
+        // projecting S absent must include every predeparture lost Uses card.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var bridge = world.CreateCard(
+            "bridge", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var uses = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        world.Abilities = new PresenceDependentUsesLoss(
+            source.ObjectId, bridge.ObjectId, uses.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.SupportsArea, bridge.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, uses.Area.Type);
+    }
+
+    [Rule("rr:ability.5")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ProjectedAttachmentLegalityKeepsSelfConstantsActive()
+    {
+        // S restores H's zero-counter Uses. A is hosted by H and its own
+        // constant makes A Permanent while it remains in play, so preflight
+        // must refuse before projecting A away disables that constant.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var host = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, host.ObjectId));
+        world.Abilities = new UsesLossWithSelfPermanentAttachment(
+            source.ObjectId, host.ObjectId, attachment.ObjectId);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Discard.Card(world, source, "test", []));
+
+        Assert.Equal(DeckType.SupportsArea, source.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, host.Area.Type);
+        Assert.Equal(host.ObjectId, attachment.Area.Host);
+    }
+
+    [Rule("rr:ability.5")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void AConstantDeparturePreflightsTheCompleteUsesCascade()
+    {
+        // S restores U1 and U2; discarding U2 would restore U3, whose
+        // Permanent attachment cannot yet be resolved. The complete cascade
+        // is refused before S, U1, or U2 moves or emits an event.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("permanentish", ("Permanent", "1"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var third = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var permanent = world.CreateCard(
+            "permanentish", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, third.ObjectId));
+        world.Abilities = new ConstantUsesLoss(
+            (source.ObjectId, first.ObjectId),
+            (source.ObjectId, second.ObjectId),
+            (second.ObjectId, third.ObjectId));
+        var events = new List<GameEvent>();
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Discard.Card(world, source, "test", events));
+
+        Assert.Equal(DeckType.SupportsArea, source.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, first.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, second.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, third.Area.Type);
+        Assert.Equal(third.ObjectId, permanent.Area.Host);
+        Assert.Empty(events);
+    }
+
+    [Rule("rr:lasting-effects.1")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ExpiringLossesPreflightTheCompleteConstantUsesCascade()
+    {
+        // The two lasting losses end together and restore U1 and U2. U2's
+        // ensuing departure would restore U3, whose Permanent attachment is
+        // unsupported, so neither registration ends and no card moves.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"))
+            .With("permanentish", ("Permanent", "1"));
+        var world = Board(printed);
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var third = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var permanent = world.CreateCard(
+            "permanentish", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, third.ObjectId));
+        var duration = Duration.UntilEndOf(TimingPoints.EndOfPlayerPhase);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: first.ObjectId,
+            Lasts: duration));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: second.ObjectId,
+            Lasts: duration));
+        world.Abilities = new ConstantUsesLoss(second.ObjectId, third.ObjectId);
+        var events = new List<GameEvent>();
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            world.Effects.Expire(TimingPoints.EndOfPlayerPhase, events));
+
+        Assert.Equal(2, world.Effects.Registered.Count);
+        Assert.Equal(DeckType.SideSchemesArea, first.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, second.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, third.Area.Type);
+        Assert.Equal(third.ObjectId, permanent.Area.Host);
+        Assert.Empty(events);
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:linked-card-title.4")]
+    [Fact]
+    public void ACardThatLosesLinkedDoesNotTransferPrintedOwnership()
+    {
+        // Linked remains printed, but its ownership rule does not function
+        // while the keyword is lost.
+        var printed = new Printed().With("support", ("Linked", "Parent"));
+        var world = Board(printed);
+        var support = world.CreateCard(
+            "support",
+            world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: -1));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("linked"),
+            Affects: support.ObjectId));
+
+        Reveal.EnterPlay(world, printed, support, []);
+
+        Assert.Equal(-1, support.Owner);
     }
 
     [Rule("rr:uses-x-type")]
@@ -1064,5 +1851,302 @@ public sealed class KeywordTests
         /// <summary>Stated directly rather than as stars inside ATK/THW.</summary>
         public long ConsequentialDamage(string faceId, string attribute) =>
             attribute == "ATK" ? PrintedValue(faceId, "AtkIcons", 1) : 0;
+    }
+
+    private sealed class ConstantUsesLoss : NoCardAbilities
+    {
+        private readonly IReadOnlyList<(int Source, int Affected)> losses;
+
+        public ConstantUsesLoss(int source, int affected)
+            : this((source, affected))
+        {
+        }
+
+        public ConstantUsesLoss(params (int Source, int Affected)[] losses)
+        {
+            this.losses = losses;
+        }
+
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card) =>
+        [
+            .. losses
+                .Where(loss => loss.Source == card.ObjectId)
+                .Select(loss => new ContinuousEffect(
+                    EffectSource.ConstantAbility,
+                    Characteristics.LossOf("uses"),
+                    Card: loss.Source,
+                    Affects: loss.Affected,
+                    Lasts: Duration.WhileInPlay)),
+        ];
+    }
+
+    private sealed class DependentConstantUsesLoss(
+        int source, int bridge, int affected) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Traits.Granted + "ENABLED",
+                        Card: source,
+                        Affects: bridge,
+                        Lasts: Duration.WhileInPlay),
+                ];
+            }
+
+            return card.ObjectId == bridge
+                && Traits.Has(world, card, "ENABLED", world.Facts)
+                    ?
+                    [
+                        new ContinuousEffect(
+                            EffectSource.ConstantAbility,
+                            Characteristics.LossOf("uses"),
+                            Card: bridge,
+                            Affects: affected,
+                            Lasts: Duration.WhileInPlay),
+                    ]
+                    : [];
+        }
+    }
+
+    private sealed class UsesLossWithDependentPermanent(
+        int source, int first, int second, int attachment) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: source,
+                        Affects: first,
+                        Lasts: Duration.WhileInPlay),
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: source,
+                        Affects: second,
+                        Lasts: Duration.WhileInPlay),
+                ];
+            }
+
+            return card.ObjectId == second
+                ?
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        "permanent",
+                        Amount: 1,
+                        Card: second,
+                        Affects: attachment,
+                        Lasts: Duration.WhileInPlay),
+                ]
+                : [];
+        }
+    }
+
+    private sealed class UsesLossWithDormantPermanent : NoCardAbilities
+    {
+        private readonly int source;
+        private readonly int first;
+        private readonly int second;
+        private readonly int grantor;
+        private readonly int attachment;
+
+        public UsesLossWithDormantPermanent(
+            int source, int first, int second, int attachment)
+            : this(source, first, second, second, attachment)
+        {
+        }
+
+        public UsesLossWithDormantPermanent(
+            int source, int first, int second, int grantor, int attachment)
+        {
+            this.source = source;
+            this.first = first;
+            this.second = second;
+            this.grantor = grantor;
+            this.attachment = attachment;
+        }
+
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: source,
+                        Affects: first,
+                        Lasts: Duration.WhileInPlay),
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: source,
+                        Affects: second,
+                        Lasts: Duration.WhileInPlay),
+                ];
+            }
+
+            return card.ObjectId == grantor
+                && !DeckTypes.IsInPlay(world.Cards[first].Area.Type)
+                    ?
+                    [
+                        new ContinuousEffect(
+                            EffectSource.ConstantAbility,
+                            "permanent",
+                            Amount: 1,
+                            Card: grantor,
+                            Affects: attachment,
+                            Lasts: Duration.WhileInPlay),
+                    ]
+                    : [];
+        }
+    }
+
+    private sealed class UsesLossWithSurvivingReplacement(
+        int source, int surviving, int affected) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            bool loses = card.ObjectId == source
+                || card.ObjectId == surviving
+                && !DeckTypes.IsInPlay(world.Cards[source].Area.Type);
+            return loses
+                ?
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: card.ObjectId,
+                        Affects: affected,
+                        Lasts: Duration.WhileInPlay),
+                ]
+                : [];
+        }
+    }
+
+    private sealed class ReplacementUsesLossCascade(
+        int source, int second, int third) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return [Loss(source, second)];
+            }
+            if (card.ObjectId != second)
+            {
+                return [];
+            }
+
+            var effects = new List<ContinuousEffect> { Loss(second, third) };
+            if (!DeckTypes.IsInPlay(world.Cards[source].Area.Type))
+            {
+                effects.Add(Loss(second, second));
+            }
+            return effects;
+        }
+
+        private static ContinuousEffect Loss(int source, int affected) => new(
+            EffectSource.ConstantAbility,
+            Characteristics.LossOf("uses"),
+            Card: source,
+            Affects: affected,
+            Lasts: Duration.WhileInPlay);
+    }
+
+    private sealed class LatchedUsesDeparture(
+        int source, int uses, int bridge) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return [Loss(source, uses)];
+            }
+            if (card.ObjectId == uses)
+            {
+                return
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Traits.Granted + "ENABLED",
+                        Card: uses,
+                        Affects: bridge,
+                        Lasts: Duration.WhileInPlay),
+                ];
+            }
+            return card.ObjectId == bridge
+                && !Traits.Has(world, card, "ENABLED", world.Facts)
+                    ? [Loss(bridge, uses)]
+                    : [];
+        }
+
+        private static ContinuousEffect Loss(int source, int affected) => new(
+            EffectSource.ConstantAbility,
+            Characteristics.LossOf("uses"),
+            Card: source,
+            Affects: affected,
+            Lasts: Duration.WhileInPlay);
+    }
+
+    private sealed class PresenceDependentUsesLoss(
+        int presence, int bridge, int affected) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card) =>
+            card.ObjectId == bridge
+            && DeckTypes.IsInPlay(world.Cards[presence].Area.Type)
+                ?
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: bridge,
+                        Affects: affected,
+                        Lasts: Duration.WhileInPlay),
+                ]
+                : [];
+    }
+
+    private sealed class UsesLossWithSelfPermanentAttachment(
+        int source, int host, int attachment) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: source,
+                        Affects: host,
+                        Lasts: Duration.WhileInPlay),
+                ];
+            }
+            return card.ObjectId == attachment
+                ?
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        "permanent",
+                        Amount: 1,
+                        Card: attachment,
+                        Affects: attachment,
+                        Lasts: Duration.WhileInPlay),
+                ]
+                : [];
+        }
     }
 }

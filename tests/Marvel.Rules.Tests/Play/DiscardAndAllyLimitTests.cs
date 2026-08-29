@@ -83,6 +83,33 @@ public sealed class DiscardAndAllyLimitTests
         Assert.Equal(DeckType.AlliesArea, host.Area.Type);
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:attach-to.1")]
+    [Fact]
+    public void AHostedCardThatLosesPermanentIsDiscardedWithItsHost()
+    {
+        // Permanent remains printed but no longer functions, so the ordinary
+        // attachment rule discards this card when its host leaves play.
+        var facts = new Facts();
+        var world = Board(facts);
+        var host = world.CreateCard(
+            "ally",
+            world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var permanent = world.CreateCard(
+            "permanent",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId, cardOwner: 0));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("permanent"),
+            Affects: permanent.ObjectId));
+
+        Discard.Card(world, host, "Defeat", []);
+
+        Assert.Equal(DeckType.DiscardPile, host.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, permanent.Area.Type);
+    }
+
     [Rule("rr:permanent.5")]
     [Fact]
     public void ANestedPermanentRefusesTheWholeHostMoveBeforeAnythingChanges()

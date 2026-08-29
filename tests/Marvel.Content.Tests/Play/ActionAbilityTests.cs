@@ -37,6 +37,42 @@ public sealed class ActionAbilityTests
     private static readonly CardCatalog Cards =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:form-change-form.4")]
+    [Theory]
+    [InlineData(true, 2)]
+    [InlineData(false, 1)]
+    public void AlterEgoReferencesOnlyAffectAnIdentityInAlterEgoForm(
+        bool hero, int remainingDamage)
+    {
+        // "While a player is in hero form, card abilities that interact with
+        // their alter-ego do not interact with their identity." The explicit
+        // alter-ego selector therefore has no target in hero form and names the
+        // same physical identity card after it changes to alter-ego form.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """{ "heal": { "card": "yourAlterEgo", "amount": 1 } }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                board.Seats[0].IdentityCard.TakeDamage(2);
+            },
+            hero: hero,
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(remainingDamage, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:player-turn.5")]
     [Rule("rr:support.2")]
     [Fact]
@@ -1813,7 +1849,7 @@ public sealed class ActionAbilityTests
     public void ACancelledLimitedAttackStillUsesItsLimit()
     {
         var runner = Runner(
-            AuthoredCards.AuntMay,
+            "01017",
             "Action",
             """{ "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": 1 } } } } } }""",
             limit: 1);
@@ -1821,7 +1857,11 @@ public sealed class ActionAbilityTests
         var (game, world) = Playing(
             board =>
             {
-                source = InPlay(board, AuthoredCards.AuntMay);
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
                 Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
             },
             hero: true,
@@ -1838,6 +1878,319 @@ public sealed class ActionAbilityTests
         Assert.Equal(0, villain.Damage);
         Assert.DoesNotContain(
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:labeled-ability.5")]
+    [Rule("rr:labeled-ability.6")]
+    [Rule("rr:labeled-ability.6.2")]
+    [Fact]
+    public void MultiLabeledAbilityCancelsOnceAfterCostsAndBeforeAnyEffect()
+    {
+        // Crosscounter's attack/defense/thwart labels are one ability. A stun
+        // or confusion cancels the whole post-arrow effect, removes every
+        // matching status, and leaves the already-paid exhaustion cost paid.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "exhaust": "this" }""",
+            limit: 1,
+            labels: "[ \"attack\", \"defense\", \"thwart\" ]");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
+                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Confused);
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+        Assert.False(Statuses.Has(
+            world, world.Seats[0].IdentityCard, Statuses.Stunned));
+        Assert.False(Statuses.Has(
+            world, world.Seats[0].IdentityCard, Statuses.Confused));
+    }
+
+    [Rule("rr:labeled-ability.2")]
+    [Rule("rr:labeled-ability.6")]
+    [Rule("rr:retaliate-x.1")]
+    [Fact]
+    public void LabeledPowerDoesNotBeginAgainDuringItsEffect()
+    {
+        // A labeled ability is canceled "when the player initiates" it. The
+        // stun gained after initiation therefore remains in play and cannot
+        // retroactively cancel the attack child of the already-running ability.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """
+            { "attack": {
+              "target": { "query": "villain" },
+              "effect": { "seq": [
+                { "giveStatus": { "card": "you", "status": "stunned" } },
+                { "dealAttackDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              ] }
+            } }
+            """,
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                board.Effects.Register(new ContinuousEffect(
+                    EffectSource.LastingEffect,
+                    Kind: "retaliate",
+                    Amount: 1,
+                    Card: villain.ObjectId,
+                    Affects: villain.ObjectId));
+            },
+            hero: true,
+            abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.True(Statuses.Has(
+            world, world.Seats[0].IdentityCard, Statuses.Stunned));
+        Assert.Equal(1, villain.Damage);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:labeled-ability.1")]
+    [Rule("rr:upgrade.4")]
+    [Rule("rr:piercing.1")]
+    [Fact]
+    public void LabeledPerformerSurvivesAChoiceContinuation()
+    {
+        // An upgrade attached to "another friendly character" attributes its
+        // labeled ability to that character. The chosen ally remains the
+        // performer after the prompt, so its Piercing discards each Tough card.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """
+            { "chooseCard": {
+              "from": { "query": "attackableEnemies" },
+              "effect": { "attack": {
+                "target": "chosen",
+                "effect": { "dealAttackDamage": {
+                  "cards": "chosen", "amount": 1
+                } }
+              } }
+            } }
+            """,
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        Card? ally = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                ally = board.CreateCard(
+                    AuthoredCards.BlackCat,
+                    board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0), ally.ObjectId, cardOwner: 0));
+                board.Effects.Register(new ContinuousEffect(
+                    EffectSource.LastingEffect,
+                    Kind: Keywords.Piercing,
+                    Card: ally.ObjectId,
+                    Affects: ally.ObjectId));
+            },
+            hero: true,
+            abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Statuses.Give(world, villain, Statuses.Tough);
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(villain.ObjectId));
+
+        Assert.False(Statuses.Has(world, villain, Statuses.Tough));
+        Assert.Equal(1, villain.Damage);
+    }
+
+    [Rule("rr:labeled-ability.2")]
+    [Fact]
+    public void AttackEnvelopeWithoutAPowerLifecycleFailsBeforeCosts()
+    {
+        // The whole labeled ability "is considered to be an attack". A raw
+        // damage effect has no saveable attack occurrence for interrupts,
+        // responses, or Retaliate, so this unsupported shape is refused before
+        // its exhaust cost instead of resolving as plausible non-attack damage.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """{ "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } }""",
+            cost: """{ "exhaust": "this" }""",
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = board.CreateCard(
+                "01017",
+                board.AreaOf(
+                    DeckType.UpgradesArea, PlayArea.Of(0),
+                    board.Seats[0].IdentityCard.ObjectId, cardOwner: 0)),
+            hero: true);
+        var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => runner.Act(world, forged, [], []));
+
+        Assert.Contains("saveable attack power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source.Ready);
+        Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
+    [Rule("rr:labeled-ability.2")]
+    [Fact]
+    public void AutomaticAttackEnvelopeCannotBypassLifecyclePreflight()
+    {
+        // Automatic entry points use the same envelope gate as Actions. A When
+        // Revealed ability with raw attack damage therefore raises before the
+        // damage instead of bypassing the attack occurrence and Retaliate.
+        var runner = Runner(
+            "01017",
+            "WhenRevealed",
+            """{ "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } }""",
+            eventName: Steps.CardRevealed,
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = board.CreateCard(
+                "01017", board.AreaOf(DeckType.RevealingArea)),
+            hero: true);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => runner.WhenRevealed(world, source!, 0));
+
+        Assert.Contains("saveable attack power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
+    [Rule("rr:labeled-ability.2")]
+    [Fact]
+    public void EveryAttackEnvelopeBranchMustEnterTheLifecycle()
+    {
+        // An inactive branch cannot lend its attack node to the active branch.
+        // Here the hero-form path only draws, so the envelope would not be an
+        // attack on that path and is rejected before the exhaust cost.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """
+            { "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "draw": { "player": "you", "count": 1 } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "dealAttackDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              } }
+            } }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = board.CreateCard(
+                "01017",
+                board.AreaOf(
+                    DeckType.UpgradesArea, PlayArea.Of(0),
+                    board.Seats[0].IdentityCard.ObjectId, cardOwner: 0)),
+            hero: true);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
+
+        Assert.Throws<RulesNotImplementedException>(
+            () => runner.Act(world, forged, [], []));
+
+        Assert.True(source.Ready);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:labeled-ability.5")]
+    [Rule("rr:labeled-ability.6")]
+    [Fact]
+    public void EnvelopeCannotHideAnUndeclaredPower()
+    {
+        // The envelope's labels are the whole set. An attack-only ability may
+        // not append a thwart that skips Confused merely because the attack
+        // already persisted its performer into the continuation.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """
+            { "seq": [
+              { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "dealAttackDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              } },
+              { "thwart": {
+                "target": { "query": "mainScheme" },
+                "effect": { "removeThreat": {
+                  "scheme": { "query": "mainScheme" }, "amount": 1
+                } }
+              } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                Statuses.Give(
+                    board, board.Seats[0].IdentityCard, Statuses.Confused);
+            },
+            hero: true);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long threat = scheme.Tokens.GetValueOrDefault("k_threat");
+        var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => runner.Act(world, forged, [], []));
+
+        Assert.Contains("absent from its ability labels", thrown.Message);
+        Assert.True(source.Ready);
+        Assert.True(Statuses.Has(
+            world, world.Seats[0].IdentityCard, Statuses.Confused));
+        Assert.Equal(0, villain.Damage);
+        Assert.Equal(threat, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
 
     [Rule("rr:lasting-effects.6")]
@@ -7070,6 +7423,54 @@ public sealed class ActionAbilityTests
         Assert.Equal(1, main!.Tokens.GetValueOrDefault("k_threat"));
         Assert.Equal(0, villain!.Damage);
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:cannot.3")]
+    [Rule("rr:crisis-icon.1")]
+    [Rule("rr:then")]
+    [Fact]
+    public void ExplicitCrisisExceptionIsHonoredByInitiationResolutionAndThen()
+    {
+        // Crisis says a player card cannot remove threat from the main scheme.
+        // This exact instruction says it ignores crisis, so the explicit card
+        // exception wins and the fully resolved removal permits its `then`.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "then": {
+              "effect": { "removeThreat": {
+                "scheme": { "query": "mainScheme" },
+                "amount": 1,
+                "ignoresCrisis": "true"
+              } },
+              "then": { "draw": { "player": "you", "count": 1 } }
+            } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var crisis = board.CreateCard(
+                    "01108", board.AreaOf(DeckType.SideSchemesArea));
+                crisis.PlaceTokens("k_threat", 1);
+                board.TheCardIn(DeckType.MainSchemesArea)!
+                    .PlaceTokens("k_threat", 2);
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(
+            1,
+            world.TheCardIn(DeckType.MainSchemesArea)!
+                .Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
     [Rule("rr:permanent.5")]
@@ -12740,7 +13141,8 @@ public sealed class ActionAbilityTests
         string? player = null,
         long? limit = null,
         bool anyPlayer = false,
-        bool includeAuthored = false)
+        bool includeAuthored = false,
+        string? labels = null)
     {
         var local = Marvel.Cards.Dsl.AbilityCatalog.Parse(
             $$"""
@@ -12749,6 +13151,7 @@ public sealed class ActionAbilityTests
                 {{(cost is null ? string.Empty : $"\"cost\": {cost},")}}
                 {{(limit is null ? string.Empty : $"\"limitPerRound\": {limit.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)},")}}
                 {{(anyPlayer ? "\"anyPlayer\": true," : string.Empty)}}
+                {{(labels is null ? string.Empty : $"\"labels\": {labels},")}}
                 "effect": {{effect}}
             } ] } ] }
             """);

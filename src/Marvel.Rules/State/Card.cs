@@ -202,4 +202,9 @@ public sealed class Card
         FaceUp = !DeckTypes.FaceDownOnEntry(area.Type);
         HasRegisteredTokens |= DeckTypes.GrantsTokenPool(area.Type);
     }
+
+    // Preflight can project a departure without creating a new incarnation,
+    // turning a face, or registering token pools. The projection is always
+    // restored before control returns to gameplay code.
+    internal void ProjectTo(Area area) => Area = area;
 }

@@ -123,7 +123,7 @@ public static class Reveal
         // `Threat.Place` and not inline, because threat that reaches the
         // scheme's target completes it whatever put it there -- and this used
         // to place it and not look.
-        long incite = facts.PrintedValue(card.FaceId, "Incite", world.Players);
+        long incite = StateFields.Modified(world, card, "incite", facts, world.Players);
         long surge = StateFields.Modified(world, card, "surge", facts, world.Players);
         var keywordAbilities = KeywordAbilities(world, facts, card, player);
         PendingAbility? inciteAbility = keywordAbilities
@@ -188,7 +188,7 @@ public static class Reveal
         ArgumentNullException.ThrowIfNull(card);
 
         var abilities = new List<PendingAbility>();
-        if (facts.PrintedValue(card.FaceId, "Incite", world.Players) > 0)
+        if (StateFields.Modified(world, card, "incite", facts, world.Players) > 0)
         {
             abilities.Add(new PendingAbility(
                 card.ObjectId, AbilityType.WhenRevealed, player,
@@ -417,6 +417,7 @@ public static class Reveal
         ArgumentNullException.ThrowIfNull(card);
 
         if (card.Area.Type != DeckType.EngagedEnemiesArea
+            || Characteristics.IsLost(world, card, "teamwork")
             || !facts.Attributes(card.FaceId).TryGetValue("Teamwork", out string? trait))
         {
             return;
@@ -501,7 +502,8 @@ public static class Reveal
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (facts.Attributes(card.FaceId).ContainsKey("Linked")
+        if (!Characteristics.IsLost(world, card, "linked")
+            && facts.Attributes(card.FaceId).ContainsKey("Linked")
             && card.Area.PlayArea.IsPlayers)
         {
             card.TransferLinkedOwnership(card.Area.PlayArea.Player);
@@ -510,7 +512,7 @@ public static class Reveal
         // `rr:toughness.1`: "**Forced Response**: after this character enters
         // play, give it a tough status card." A status is a card, not a flag --
         // see `Statuses`.
-        if (facts.PrintedValue(card.FaceId, "Toughness", world.Players) > 0
+        if (StateFields.Modified(world, card, "toughness", facts, world.Players) > 0
             && !Statuses.Has(world, card, Statuses.Tough))
         {
             var status = Statuses.Give(world, card, Statuses.Tough);
@@ -531,7 +533,9 @@ public static class Reveal
         // the digest's `c_<name>` namespace, which
         // `docs/state-digest-v2.md` reserves for exactly this: "token, counter
         // and form keys come from game data, so the key set is open-ended".
-        if (Uses(facts.Attributes(card.FaceId)) is var (count, type) && count > 0)
+        if (!Characteristics.IsLost(world, card, "uses")
+            && Uses(facts.Attributes(card.FaceId)) is var (count, type)
+            && count > 0)
         {
             card.PlaceTokens("c_" + type, count);
             events.Add(new FieldSet(card.ObjectId, "c_" + type, 0, count)
@@ -542,7 +546,7 @@ public static class Reveal
 
         // `rr:hinder-x`: "a card with the hinder X keyword enters play with X
         // threat on it."
-        long hinder = facts.PrintedValue(card.FaceId, "Hinder", world.Players);
+        long hinder = StateFields.Modified(world, card, "hinder", facts, world.Players);
         if (hinder > 0)
         {
             card.PlaceTokens("k_threat", hinder);

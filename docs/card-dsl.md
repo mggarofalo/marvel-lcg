@@ -600,7 +600,18 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Dynamic amounts | `count`, `damageOn`, `countersOn`, `remainingHealth`, `powerAmount`, `discardedWithResource`, `printedResourceCountDiscarded`, `printedBoostIconsDiscarded`, `topEncounterDiscardBoostPlusOne`, `modified`, `perPlayer`; arithmetic `min`, `add`, `mul`; conditional `if` |
 | Players | `you`, `controller`, `trigger.player`, `engagedPlayer` for an engaged minion, `firstPlayer`, and `chosenPlayer` after choosing an identity |
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "result": "activationMade" }`, `{ "result": "activationDamage" }`, `{ "result": "activationThreat" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
-| Bindings | `this`, `that`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`, `trigger.actor`, `trigger.target`, `defeated`, `activatingEnemy`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game`; attack roles `this`, `attachedTo`, `you`, `villain`, `minion`, `hero`, `ally`, `friendly`, `enemy` |
+| Bindings | `this`, `that`, `you`, `yourHero`, `yourAlterEgo`, `chosen`, `attachedTo`, `trigger.subject`, `trigger.actor`, `trigger.target`, `defeated`, `activatingEnemy`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game`; attack roles `this`, `attachedTo`, `you`, `villain`, `minion`, `hero`, `ally`, `friendly`, `enemy` |
+
+An ability with more than one printed parenthetical carries one envelope field,
+for example `"labels": ["attack", "defense", "thwart"]`. The interpreter
+begins that label set once after costs; it does not nest three independent
+effect nodes, because one matching status cancels the entire ability and every
+matching status leaves together (`rr:labeled-ability.5` and `.6`).
+Every reachable path through an uncanceled `attack` or `thwart` envelope must
+enter exactly one matching `attack` or `thwart` power node so the agenda can
+open the required interrupt/response occurrence. A combined uncanceled `attack`/`thwart`
+envelope raises by name until the agenda can represent both labels as one
+occurrence; resolving it as two powers would silently turn one ability into two.
 
 **Dependency words preserve resolution outcomes.** `and` groups simultaneous,
 independent effects into one ability occurrence and asks the first player for
@@ -814,6 +825,18 @@ interact with their identity." So Shocker's *"Deal 1 damage to each hero"*
 passes over a player who has flipped down — a distinction that is invisible at
 one player and invisible again at two if the flipped-down player happens to be
 last, which is why the test has three with the alter-ego in the middle.
+
+**`yourHero` and `yourAlterEgo` are form-specific.** They name the resolving
+player's identity only while that face is up. `rr:form-change-form.4` and `.5`
+make the opposite-form reference interact with no card; use `you` when printed
+text means the identity in either form.
+
+**Threat-removal exceptions are scoped.** A `removeThreat` instruction may
+carry `"ignoresCrisis": "true"` only when the printed instruction says it
+ignores crisis icons. `"overridesCannotFrom": <card selector>` names the exact
+card-text prohibition an explicit exception overrides; every unrelated
+prohibition remains in force. Neither exception is inferred from an ordinary
+permission to remove threat.
 
 **`{ "perPlayer": n }` counts eliminated players.** `rr:player-elimination.6`:
 "effects that refer to the players in the game ignore eliminated players,
