@@ -9886,11 +9886,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "addToHand":
+            {
                 var added = Find(node.Argument, cast)
                     ?? throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' cannot find the card added to hand");
                 var oldArea = added.Area;
                 var newHand = cast.World.Seats[cast.Player].Hand;
+                var addedConstantsEnding = cast.World.Effects.PreflightConstantsEnding(added);
+                using var addedDeparture = addedConstantsEnding.Begin();
                 if (DeckTypes.IsInPlay(oldArea.Type))
                 {
                     Rules.Play.Discard.Attachments(
@@ -9911,9 +9914,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     Trigger = cast.Trigger, Verb = "Add_To_Hand",
                 });
+                addedConstantsEnding.Complete(cast.Trigger, cast.Events);
                 break;
+            }
 
             case "returnOwnedToHand":
+            {
                 var returned = Find(node.Argument, cast)
                     ?? throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' cannot find the card returned to hand");
@@ -9924,6 +9930,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
                 var returnedFrom = returned.Area;
                 var ownersHand = cast.World.Seats[returned.Owner].Hand;
+                var returnedConstantsEnding =
+                    cast.World.Effects.PreflightConstantsEnding(returned);
+                using var returnedDeparture = returnedConstantsEnding.Begin();
                 if (DeckTypes.IsInPlay(returnedFrom.Type))
                 {
                     Rules.Play.Discard.Attachments(
@@ -9936,7 +9945,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     Trigger = cast.Trigger, Verb = "Return",
                 });
+                returnedConstantsEnding.Complete(cast.Trigger, cast.Events);
                 break;
+            }
 
             case "discardAtRandom":
                 DiscardAtRandom(node, cast);
@@ -10945,6 +10956,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var from = card.Area;
         var removed = cast.World.AreaOf(DeckType.RemovedArea);
+        var constantsEnding = cast.World.Effects.PreflightConstantsEnding(card);
+        using var departure = constantsEnding.Begin();
+        if (DeckTypes.IsInPlay(from.Type))
+        {
+            Rules.Play.Discard.Attachments(
+                cast.World, card, cast.Trigger, cast.Events);
+        }
         World.MoveToTop(card, removed);
         cast.Events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(removed),
@@ -10952,6 +10970,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             Trigger = cast.Trigger, Verb = "Remove_From_Game",
         });
+        constantsEnding.Complete(cast.Trigger, cast.Events);
     }
 
     /// <summary>
@@ -12723,6 +12742,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             var from = card.Area;
             var hand = cast.World.Seats[card.Owner].Hand;
+            var constantsEnding = cast.World.Effects.PreflightConstantsEnding(card);
+            using var departure = constantsEnding.Begin();
             if (DeckTypes.IsInPlay(from.Type))
             {
                 Rules.Play.Discard.Attachments(
@@ -12737,6 +12758,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 Trigger = cast.Trigger, Verb = "Return",
             });
+            constantsEnding.Complete(cast.Trigger, cast.Events);
             cast.Events.Add(new CardDetached(card.ObjectId, from.Host)
             {
                 Trigger = cast.Trigger, Verb = "Return",

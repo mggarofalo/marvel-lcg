@@ -235,6 +235,9 @@ public static class Elimination
 
     private static void Remove(World world, Card card, string trigger, List<GameEvent> events)
     {
+        var constantsEnding = world.Effects.PreflightConstantsEnding(card);
+        using var departure = constantsEnding.Begin();
+        Discard.Attachments(world, card, trigger, events);
         var removed = world.AreaOf(DeckType.RemovedArea);
         var from = card.Area;
         World.MoveToTop(card, removed);
@@ -244,6 +247,7 @@ public static class Elimination
         {
             Trigger = trigger, Verb = "Eliminate",
         });
+        constantsEnding.Complete(trigger, events);
     }
 
     /// <summary>

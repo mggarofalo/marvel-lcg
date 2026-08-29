@@ -36,6 +36,7 @@ public static class Discard
         ArgumentNullException.ThrowIfNull(events);
 
         var constantsEnding = world.Effects.PreflightConstantsEnding(card);
+        using var departure = constantsEnding.Begin();
 
         // `rr:attach-to.1`: "if the game element an attachment is attached to
         // leaves play, the attachment is discarded." Snapshot the areas because

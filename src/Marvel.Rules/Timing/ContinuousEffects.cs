@@ -156,6 +156,7 @@ public sealed class ContinuousEffects(World world)
     private readonly List<Entry> entries = [];
     private readonly HashSet<Entry> suppressed = [];
     private readonly List<ContinuousEffect> suppressedConstants = [];
+    private readonly HashSet<int> departing = [];
 
     // While constants are settling, a nested read sees the previous complete
     // pass. See `Constant` -- this is iteration state, not cached game state.
@@ -473,15 +474,13 @@ public sealed class ContinuousEffects(World world)
         }
 
         Card[] candidates = LostUsesCandidates(ending);
-        Card[] restoredUses;
+        ConstantEnding constantsEnding;
         suppressed.UnionWith(ending);
         try
         {
-            restoredUses = RestoredUsesAfter(candidates);
-            foreach (var card in restoredUses)
-            {
-                Discard.PreflightAttachments(world, card);
-            }
+            var restoredUses = RestoredUsesAfter(candidates);
+            constantsEnding = PreflightDepartures(
+                restoredUses, includeHostedCards: true, moveRoots: true);
         }
         finally
         {
@@ -494,10 +493,8 @@ public sealed class ContinuousEffects(World world)
         }
 
         var sink = events ?? [];
-        foreach (var card in restoredUses.Where(card => DeckTypes.IsInPlay(card.Area.Type)))
-        {
-            Discard.Card(world, card, trigger, sink);
-        }
+        using var departure = constantsEnding.Begin();
+        constantsEnding.Complete(trigger, sink);
     }
 
     private Card[] LostUsesCandidates(List<Entry> ending)
@@ -561,36 +558,122 @@ public sealed class ContinuousEffects(World world)
     /// only for the simulated post-departure read, so a refusal leaves both the
     /// source and every affected card untouched.
     /// </remarks>
-    public ConstantEnding PreflightConstantsEnding(Card source)
+    public ConstantEnding PreflightConstantsEnding(
+        Card source, bool includeHostedCards = true)
     {
         ArgumentNullException.ThrowIfNull(source);
-        if (!DeckTypes.IsInPlay(source.Area.Type))
+        if (!DeckTypes.IsInPlay(source.Area.Type) || departing.Contains(source.ObjectId))
         {
-            return new ConstantEnding(this, []);
+            return new ConstantEnding(this, [], []);
         }
 
-        var ending = world.Abilities.Constant(world, source).ToArray();
-        var candidates = LostUsesCandidates(ending);
-        if (candidates.Length == 0)
+        return PreflightDepartures(
+            [source], includeHostedCards, moveRoots: false);
+    }
+
+    private ConstantEnding PreflightDepartures(
+        Card[] sources, bool includeHostedCards, bool moveRoots)
+    {
+        if (sources.Length == 0)
         {
-            return new ConstantEnding(this, []);
+            return new ConstantEnding(this, [], []);
         }
 
         int firstSuppressed = suppressedConstants.Count;
-        suppressedConstants.AddRange(ending);
         try
         {
-            var restored = RestoredUsesAfter(candidates);
-            foreach (var card in restored)
+            var planned = new List<Card>();
+            var plannedIds = new HashSet<int>();
+            foreach (var source in sources)
+            {
+                AddDeparture(source, includeHostedCards, planned, plannedIds);
+            }
+
+            var pending = new Queue<Card>(planned);
+            var restored = moveRoots ? sources.ToList() : [];
+            while (pending.Count > 0)
+            {
+                var layer = new List<Card>();
+                while (pending.TryDequeue(out var leaving))
+                {
+                    layer.Add(leaving);
+                }
+
+                var ending = layer
+                    .SelectMany(card => world.Abilities.Constant(world, card))
+                    .ToArray();
+                var candidates = LostUsesCandidates(ending);
+                suppressedConstants.AddRange(ending);
+
+                foreach (var card in RestoredUsesAfter(candidates))
+                {
+                    if (!plannedIds.Contains(card.ObjectId))
+                    {
+                        restored.Add(card);
+                        int before = planned.Count;
+                        AddDeparture(card, includeHostedCards: true, planned, plannedIds);
+                        foreach (var added in planned.Skip(before))
+                        {
+                            pending.Enqueue(added);
+                        }
+                    }
+                }
+            }
+
+            // Preflight under the complete post-departure constant set. This
+            // makes a refusal atomic even when a later restored Uses card, or
+            // one of its hosted cards, would restore another zero-use card.
+            if (includeHostedCards)
+            {
+                foreach (var source in sources)
+                {
+                    Discard.PreflightAttachments(world, source);
+                }
+            }
+
+            var roots = restored
+                .Where(card => !HasHostedAncestor(card, plannedIds))
+                .ToArray();
+            foreach (var card in roots)
             {
                 Discard.PreflightAttachments(world, card);
             }
-            return new ConstantEnding(this, restored);
+
+            return new ConstantEnding(this, roots, [.. plannedIds]);
         }
         finally
         {
             suppressedConstants.RemoveRange(
                 firstSuppressed, suppressedConstants.Count - firstSuppressed);
+        }
+    }
+
+    private void AddDeparture(
+        Card root, bool includeHostedCards, List<Card> planned, HashSet<int> plannedIds)
+    {
+        var pending = new Stack<Card>();
+        pending.Push(root);
+        while (pending.TryPop(out var card))
+        {
+            if (!plannedIds.Add(card.ObjectId))
+            {
+                throw new RulesNotImplementedException(
+                    $"attachment {card.ObjectId} forms a hosting cycle");
+            }
+
+            planned.Add(card);
+            if (!includeHostedCards)
+            {
+                continue;
+            }
+
+            foreach (var child in world.Areas
+                         .Where(area => area.Host == card.ObjectId)
+                         .SelectMany(area => area.Cards)
+                         .Reverse())
+            {
+                pending.Push(child);
+            }
         }
     }
 
@@ -610,13 +693,23 @@ public sealed class ContinuousEffects(World world)
     {
         private readonly ContinuousEffects effects;
         private readonly IReadOnlyList<Card> restored;
+        private readonly IReadOnlyList<int> departures;
         private bool completed;
 
-        internal ConstantEnding(ContinuousEffects effects, IReadOnlyList<Card> restored)
+        internal ConstantEnding(
+            ContinuousEffects effects,
+            IReadOnlyList<Card> restored,
+            IReadOnlyList<int> departures)
         {
             this.effects = effects;
             this.restored = restored;
+            this.departures = departures;
         }
+
+        /// <summary>
+        /// Mark the whole preflighted cascade as one departure while it is applied.
+        /// </summary>
+        public IDisposable Begin() => effects.BeginDepartures(departures);
 
         /// <summary>Apply the preflighted changes after the source has left play.</summary>
         public void Complete(string trigger, List<GameEvent> events)
@@ -630,6 +723,31 @@ public sealed class ContinuousEffects(World world)
 
             effects.CompleteConstantsEnding(restored, trigger, events);
             completed = true;
+        }
+    }
+
+    private DepartureScope BeginDepartures(IReadOnlyList<int> cards)
+    {
+        var added = cards.Where(departing.Add).ToArray();
+        return new DepartureScope(departing, added);
+    }
+
+    private sealed class DepartureScope(HashSet<int> departing, IReadOnlyList<int> added)
+        : IDisposable
+    {
+        private bool disposed;
+
+        public void Dispose()
+        {
+            if (disposed)
+            {
+                return;
+            }
+            foreach (int card in added)
+            {
+                departing.Remove(card);
+            }
+            disposed = true;
         }
     }
 
