@@ -3142,6 +3142,81 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Rule("rr:each-player.1")]
+    [Rule("rr:form-change-form")]
+    [Fact]
+    public void RepeatedMutationAnalysisIncludesLabelledPowerEffects()
+    {
+        // The first player can order another hero first. That hero's attack
+        // flips the first player before the first player's own frame resolves.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } }
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void RepeatedMutationAnalysisReachesAFixedPoint()
+    {
+        // One frame removes the title, making a form change reachable; that
+        // form change makes the unsupported third-frame branch reachable.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "titleInPlay": "Aunt May" },
+              "then": { "discard": "this" },
+              "else": { "if": {
+                "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+                "then": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } },
+                "else": { "attack": {
+                  "target": { "query": "villain" },
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
     [Rule("rr:choose-option")]
     [Fact]
     public void AChoiceContinuationPreservesEarlierEffectResults()

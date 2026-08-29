@@ -4109,35 +4109,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     };
 
     private static bool RepeatedEffectCanChange(
-        AbilityNode test, AbilityNode effect, Cast cast) =>
-        test.Kind switch
-        {
-            "and" or "or" => Nodes(test.Argument).Any(child =>
-                RepeatedEffectCanChange(child, effect, cast)),
-            "not" => RepeatedEffectCanChange(Tree(test.Argument), effect, cast),
-            "inForm" => AnyPlayersRepeatedEffectCanChange(
-                effect, cast, ActiveEffectCanChangeForm),
-            "titleInPlay" => AnyPlayersRepeatedEffectCanChange(
-                effect, cast, ActiveEffectCanChangeCardsInPlay),
-            "finalStep" or "paidWithResource" or "threatCause" => false,
-            _ => true,
-        };
-
-    private static bool AnyPlayersRepeatedEffectCanChange(
-        AbilityNode effect, Cast cast, Func<AbilityNode, Cast, bool> canChange)
+        AbilityNode test, AbilityNode effect, Cast cast)
     {
         int original = cast.Player;
         try
         {
-            foreach (int player in cast.World.PlayerOrder)
+            var assumed = RepeatedChange.None;
+            while (true)
             {
-                cast.RestorePlayer(player);
-                if (canChange(effect, cast))
+                var observed = RepeatedChange.None;
+                foreach (int player in cast.World.PlayerOrder)
                 {
-                    return true;
+                    cast.RestorePlayer(player);
+                    observed |= RepeatedChanges(effect, cast, assumed, binding: false);
                 }
+                var expanded = assumed | observed;
+                if (expanded == assumed)
+                {
+                    return RepeatedTestCanChange(test, expanded);
+                }
+                assumed = expanded;
             }
-            return false;
         }
         finally
         {
@@ -4145,50 +4137,64 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
     }
 
-    private static bool ActiveEffectCanChangeForm(AbilityNode node, Cast cast)
+    private static RepeatedChange RepeatedChanges(
+        AbilityNode node, Cast cast, RepeatedChange assumed, bool binding)
     {
         if (node.Kind == "changeForm")
         {
-            return true;
+            return RepeatedChange.Form | RepeatedChange.CardsInPlay;
+        }
+        if (StableForCardsInPlay(node))
+        {
+            return RepeatedChange.None;
+        }
+        if (node.Kind == "if")
+        {
+            var test = Tree(node.Require("test"));
+            var branches = RepeatedTestCanChange(test, assumed)
+                    || binding && BindingCanChange(test.Argument)
+                ? Branches.Select(node.Field).Where(value => value is not null)
+                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                    ? [active]
+                    : [];
+            return branches.Aggregate(
+                RepeatedChange.None,
+                (changes, branch) => changes
+                    | RepeatedChanges(Tree(branch!), cast, assumed, binding));
         }
         if (node.Kind is "chooseCard" or "thwartSchemes"
             or "thwartDifferentSchemes" or "legalPractice")
         {
-            return ContinuationChildren(node).Any(PotentialEffectCanChangeForm);
+            binding = true;
         }
-        return ActiveEffectChildren(node, cast).Any(child =>
-            ActiveEffectCanChangeForm(child, cast));
+        var children = MutationChildren(node).ToList();
+        if (children.Count == 0)
+        {
+            return RepeatedChange.CardsInPlay;
+        }
+        return children.Aggregate(
+            RepeatedChange.None,
+            (changes, child) => changes | RepeatedChanges(child, cast, assumed, binding));
     }
 
-    private static bool ActiveEffectCanChangeCardsInPlay(AbilityNode node, Cast cast)
-    {
-        if (StableForCardsInPlay(node))
+    private static bool RepeatedTestCanChange(
+        AbilityNode test, RepeatedChange changes) => test.Kind switch
         {
-            return false;
-        }
-        if (node.Kind is "chooseCard" or "thwartSchemes"
-            or "thwartDifferentSchemes" or "legalPractice")
-        {
-            return ContinuationChildren(node).Any(PotentialEffectCanChangeCardsInPlay);
-        }
-        var children = ActiveEffectChildren(node, cast).ToList();
-        return children.Count == 0
-            || children.Any(child => ActiveEffectCanChangeCardsInPlay(child, cast));
-    }
+            "and" or "or" => Nodes(test.Argument).Any(child =>
+                RepeatedTestCanChange(child, changes)),
+            "not" => RepeatedTestCanChange(Tree(test.Argument), changes),
+            "inForm" => changes.HasFlag(RepeatedChange.Form),
+            "titleInPlay" => changes.HasFlag(RepeatedChange.CardsInPlay),
+            "finalStep" or "paidWithResource" or "threatCause" => false,
+            _ => true,
+        };
 
-    private static bool PotentialEffectCanChangeForm(AbilityNode node) =>
-        node.Kind == "changeForm"
-        || ContinuationChildren(node).Any(PotentialEffectCanChangeForm);
-
-    private static bool PotentialEffectCanChangeCardsInPlay(AbilityNode node)
+    [Flags]
+    private enum RepeatedChange
     {
-        if (StableForCardsInPlay(node))
-        {
-            return false;
-        }
-        var children = ContinuationChildren(node).ToList();
-        return children.Count == 0
-            || children.Any(PotentialEffectCanChangeCardsInPlay);
+        None = 0,
+        Form = 1,
+        CardsInPlay = 2,
     }
 
     private static bool StableForCardsInPlay(AbilityNode node) =>
@@ -4198,15 +4204,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             or "cancelWhenRevealed" or "grantUntil"
             or "grantCharactersControlledBy" or "reduceNextCardCost";
 
-    private static IEnumerable<AbilityNode> ActiveEffectChildren(AbilityNode node, Cast cast)
-    {
-        if (node.Kind == "if")
-        {
-            return node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
-                is { } active ? [Tree(active)] : [];
-        }
-        return ContinuationChildren(node);
-    }
+    private static IEnumerable<AbilityNode> MutationChildren(AbilityNode node) =>
+        node.Kind is "attack" or "thwart"
+            ? [Tree(node.Require("effect"))]
+            : ContinuationChildren(node);
 
     private static IEnumerable<AbilityNode> ContinuationChildren(AbilityNode node) =>
         node.Kind switch
