@@ -575,6 +575,9 @@ public sealed class ContinuousEffects(World world)
             {
                 AddDeparture(source, includeHostedCards, planned, plannedIds);
             }
+            var definiteIds = moveRoots
+                ? new HashSet<int>()
+                : [.. plannedIds];
 
             var pending = new Queue<Card>(planned);
             var restored = moveRoots ? sources.ToList() : [];
@@ -626,7 +629,15 @@ public sealed class ContinuousEffects(World world)
                 Discard.PreflightAttachments(world, card);
             }
 
-            return new ConstantEnding(this, roots, [.. plannedIds]);
+            var rootTrees = roots.ToDictionary(
+                root => root.ObjectId,
+                root => planned
+                    .Where(card => card.ObjectId == root.ObjectId
+                        || HasHostedAncestor(card, [root.ObjectId]))
+                    .Select(card => card.ObjectId)
+                    .ToArray());
+            return new ConstantEnding(
+                this, roots, [.. plannedIds], [.. definiteIds], rootTrees);
         }
         finally
         {
@@ -682,16 +693,42 @@ public sealed class ContinuousEffects(World world)
     }
 
     private void CompleteConstantsEnding(
-        IReadOnlyList<Card> restored, string trigger, List<GameEvent> events)
+        IReadOnlyList<Card> restored,
+        IReadOnlyDictionary<int, int[]> rootTrees,
+        string trigger,
+        List<GameEvent> events)
     {
-        // The initiating source has now left, so surviving conditional
-        // constants that depend on its absence are in force. Decide the whole
-        // restored-Uses set once at that boundary; the roots themselves then
-        // leave as the one preflighted snapshot rather than affecting which
-        // later root qualifies.
-        var departingNow = restored.Where(card =>
-            DeckTypes.IsInPlay(card.Area.Type)
-            && !Characteristics.IsLost(world, card, "uses")).ToArray();
+        var candidateIds = rootTrees.Values.SelectMany(ids => ids).ToHashSet();
+        var selected = new HashSet<int>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        while (true)
+        {
+            SetTentativeDepartures(
+                candidateIds,
+                selected.SelectMany(id => rootTrees[id]).ToHashSet());
+            var next = restored.Where(card =>
+                    DeckTypes.IsInPlay(card.Area.Type)
+                    && !Characteristics.IsLost(world, card, "uses"))
+                .Select(card => card.ObjectId)
+                .ToHashSet();
+            if (next.SetEquals(selected))
+            {
+                break;
+            }
+
+            string state = string.Join(',', next.Order());
+            if (!seen.Add(state))
+            {
+                throw new RulesNotImplementedException(
+                    "the restored Uses departures do not settle on one simultaneous set");
+            }
+            selected = next;
+        }
+
+        SetTentativeDepartures(
+            candidateIds,
+            selected.SelectMany(id => rootTrees[id]).ToHashSet());
+        var departingNow = restored.Where(card => selected.Contains(card.ObjectId)).ToArray();
         foreach (var card in departingNow.Where(card =>
             DeckTypes.IsInPlay(card.Area.Type)))
         {
@@ -702,28 +739,43 @@ public sealed class ContinuousEffects(World world)
     /// <summary>Whether a card is part of one preflighted departure snapshot.</summary>
     internal bool IsDeparting(Card card) => departing.Contains(card.ObjectId);
 
+    private void SetTentativeDepartures(
+        IReadOnlySet<int> candidates, IReadOnlySet<int> selected)
+    {
+        departing.ExceptWith(candidates);
+        departing.UnionWith(selected);
+    }
+
     /// <summary>A preflighted set of state-based changes after constants end.</summary>
     public sealed class ConstantEnding
     {
         private readonly ContinuousEffects effects;
         private readonly IReadOnlyList<Card> restored;
         private readonly IReadOnlyList<int> departures;
+        private readonly IReadOnlyList<int> definiteDepartures;
+        private readonly IReadOnlyDictionary<int, int[]> rootTrees;
         private bool completed;
 
         internal ConstantEnding(
             ContinuousEffects effects,
             IReadOnlyList<Card> restored,
-            IReadOnlyList<int> departures)
+            IReadOnlyList<int> departures,
+            IReadOnlyList<int>? definiteDepartures = null,
+            IReadOnlyDictionary<int, int[]>? rootTrees = null)
         {
             this.effects = effects;
             this.restored = restored;
             this.departures = departures;
+            this.definiteDepartures = definiteDepartures ?? [];
+            this.rootTrees = rootTrees
+                ?? new Dictionary<int, int[]>();
         }
 
         /// <summary>
         /// Mark the whole preflighted cascade as one departure while it is applied.
         /// </summary>
-        public IDisposable Begin() => effects.BeginDepartures(departures);
+        public IDisposable Begin() =>
+            effects.BeginDepartures(definiteDepartures, departures);
 
         /// <summary>Apply the preflighted changes after the source has left play.</summary>
         public void Complete(string trigger, List<GameEvent> events)
@@ -735,15 +787,19 @@ public sealed class ContinuousEffects(World world)
                 return;
             }
 
-            effects.CompleteConstantsEnding(restored, trigger, events);
+            effects.CompleteConstantsEnding(restored, rootTrees, trigger, events);
             completed = true;
         }
     }
 
-    private DepartureScope BeginDepartures(IReadOnlyList<int> cards)
+    private DepartureScope BeginDepartures(
+        IReadOnlyList<int> definiteCards, IReadOnlyList<int> allCards)
     {
-        var added = cards.Where(departing.Add).ToArray();
-        return new DepartureScope(departing, added);
+        foreach (int card in definiteCards)
+        {
+            departing.Add(card);
+        }
+        return new DepartureScope(departing, allCards);
     }
 
     private sealed class DepartureScope(HashSet<int> departing, IReadOnlyList<int> cards)

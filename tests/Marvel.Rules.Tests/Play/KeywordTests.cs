@@ -1308,6 +1308,35 @@ public sealed class KeywordTests
         Assert.True(Characteristics.IsLost(world, uses, "uses"));
     }
 
+    [Rule("rr:ability.9")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ARejectedUsesRootKeepsItsDependentRootFromDeparting()
+    {
+        // S appears to restore U2, and suppressing U2 during preflight appears
+        // to restore U3. Once S is absent, U2's own replacement loss keeps U2
+        // in play, so its loss on U3 also remains and neither root departs.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var third = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        world.Abilities = new ReplacementUsesLossCascade(
+            source.ObjectId, second.ObjectId, third.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, second.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, third.Area.Type);
+        Assert.True(Characteristics.IsLost(world, second, "uses"));
+        Assert.True(Characteristics.IsLost(world, third, "uses"));
+    }
+
     [Rule("rr:ability.5")]
     [Rule("rr:permanent.5")]
     [Rule("rr:uses-x-type.1")]
@@ -1910,5 +1939,35 @@ public sealed class KeywordTests
                 ]
                 : [];
         }
+    }
+
+    private sealed class ReplacementUsesLossCascade(
+        int source, int second, int third) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            if (card.ObjectId == source)
+            {
+                return [Loss(source, second)];
+            }
+            if (card.ObjectId != second)
+            {
+                return [];
+            }
+
+            var effects = new List<ContinuousEffect> { Loss(second, third) };
+            if (!DeckTypes.IsInPlay(world.Cards[source].Area.Type))
+            {
+                effects.Add(Loss(second, second));
+            }
+            return effects;
+        }
+
+        private static ContinuousEffect Loss(int source, int affected) => new(
+            EffectSource.ConstantAbility,
+            Characteristics.LossOf("uses"),
+            Card: source,
+            Affects: affected,
+            Lasts: Duration.WhileInPlay);
     }
 }
