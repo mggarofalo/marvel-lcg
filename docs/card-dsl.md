@@ -591,7 +591,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 |---|---|
 | Envelope | `trigger { event, alsoHappened, timing, subject, actor, target, form, player }`, `name`, `cost`, `limitPerRound`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. `actor` and `target` match explicit attack roles. |
 | Costs | `spend` (resource letters), `spendEnergyX` (a positive player-chosen X), `exhaust`, `discardFromHand` (a count) |
-| Control | `seq`, `if`, `choose`, `chooseCard`, `chooseTopForHand`, `chooseDiscardToShuffle`, `thwartDifferentSchemes`, `makeTheCall`, `legalPractice`, `payOrExhaust`, `payOrEffect`, `eachPlayer`, `resolveSpecials`, `afterActivation` |
+| Control | `seq`, `and`, `if`, `then`, `otherwise`, `choose`, `chooseCard`, `chooseTopForHand`, `chooseDiscardToShuffle`, `thwartDifferentSchemes`, `makeTheCall`, `legalPractice`, `payOrExhaust`, `payOrEffect`, `eachPlayer`, `resolveSpecials`, `afterActivation` |
 | Tests | `and`, `or`, `not`, `exists`, `canMakeTheCall`, `canLegalPractice`, `canAutomaticThwart`, `hasStatus`, `hasTrait`, `isTitle`, `inForm`, `atLeast`, `titleInPlay`, `attackDamaged`, `discardedWithResource`, `paidWithResource`, `defeatedByYou`, `wasDefeated`, `heroDefended`, `undefendedAttack`, `inExpertMode`, `isKind`, `defeatedBy`, `threatCause`, `finalStep` |
 | Actions | `giveStatus`, `giveAdditionalBoost`, `alsoAttackEachOtherHero`, `attachTo`, `discard`, `discardHandWithResource`, `draw`, `drawToHandSize`, `drawToPrintedHandSize`, `dealEncounterCards`, `createDrones`, `placeCounters`, `grant`, `grantEach`, `grantUntil`, `grantCharactersControlledBy`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `attack`, `thwart`, `thwartSchemes`, `power`, `dealDamage`, `dealAttackDamage`, `moveDamage`, `moveAttackDamage`, `placeThreat`, `placeAccelerationToken`, `removeThreat`, `preventThreat`, `replaceThreatWithDamage`, `preventThreatRemoval`, `preventDamageFrom`, `preventDamageWhile`, `reduceNextCardCost`, `heal`, `search`, `addToHand`, `returnOwnedToHand`, `exhaust`, `ready`, `revealTop`, `reveal`, `shuffleInto`, `shuffle`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `putIntoPlay`, `returnToHand`, `soakDamage`, `generate`, `generateTopDiscard`, `doubleResourceFor`, `requireAllyDefender` |
 | Node fields | `card`, `cards`, `player`, `amount`, `count`, `status`, `keyword`, `trait`, `title`, `area`, `areas`, `until`, `within`, `condition`, `effect`, `options`, `from`, `among`, `onto`, `enemies`, `against` (including `engagedHero`), `engagedWith`, `first`, `where`, `scheme`, `sourceKind`, `sourceTrait`, `to`, `of`, `by`, `automaticTarget` |
@@ -601,6 +601,20 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Players | `you`, `controller`, `trigger.player`, `engagedPlayer` for an engaged minion, `firstPlayer`, and `chosenPlayer` after choosing an identity |
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "result": "activationMade" }`, `{ "result": "activationDamage" }`, `{ "result": "activationThreat" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
 | Bindings | `this`, `you`, `yourHero`, `chosen`, `attachedTo`, `trigger.subject`, `trigger.actor`, `trigger.target`, `defeated`, `activatingEnemy`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game`; attack roles `this`, `attachedTo`, `you`, `villain`, `minion`, `hero`, `ally`, `friendly`, `enemy` |
+
+**Dependency words preserve resolution outcomes.** `and` groups simultaneous,
+independent effects into one ability occurrence and asks the first player for
+their resolution order. `then` and `otherwise` each carry an explicit `effect`
+plus their named dependent branch.
+The runner classifies that preceding effect as not resolved, partially resolved,
+or fully resolved: `then` takes its branch only after full resolution, while
+`otherwise` takes its branch only after no resolution. The explicit `effect`
+field also records which sentence or semicolon-delimited unit the printed
+dependency word refers to. A preceding effect that suspends for a player choice
+raises before changing the board; MARVEL-293 owns the resumable continuation
+needed to preserve its eventual resolution outcome. The same issue owns an
+ordered `and` child that suspends; that shape raises before the order prompt or
+any board mutation because its remaining siblings need the same continuation.
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
