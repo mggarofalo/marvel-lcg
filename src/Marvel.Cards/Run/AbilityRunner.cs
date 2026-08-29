@@ -3456,10 +3456,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Whether one authored ability can begin before any cost is paid.</summary>
     private static bool CanInitiate(CardAbility ability, Cast cast)
     {
+        if (!CanInitiateLabels(ability, cast))
+        {
+            return false;
+        }
+        cast.LabelsPreflighted = true;
+        return CanInitiate(ability.Effect, cast);
+    }
+
+    /// <summary>Whether an ability envelope can establish every labeled lifecycle.</summary>
+    private static bool CanInitiateLabels(CardAbility ability, Cast cast)
+    {
         var labels = ability.Labels ?? [];
         if (labels.Count == 0)
         {
-            return CanInitiate(ability.Effect, cast);
+            return true;
         }
 
         bool cancelled = LabeledAbilities.WouldBeCancelled(
@@ -3498,7 +3509,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
 
-        return CanInitiate(ability.Effect, cast);
+        return true;
     }
 
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
@@ -9628,6 +9639,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var labels = ability.Labels ?? [];
         if (labels.Count > 0)
         {
+            if (!cast.LabelsPreflighted)
+            {
+                if (!CanInitiateLabels(ability, cast))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' cannot initiate its labeled ability "
+                        + "in the current state");
+                }
+                cast.LabelsPreflighted = true;
+            }
+
             var performer = LabeledAbilities.Begin(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source,
                 labels, cast.Events);
@@ -14125,6 +14147,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         /// <summary>The performer attributed by an ability-envelope label.</summary>
         public Card? AbilityActor { get; set; }
+
+        /// <summary>Whether this fresh cast passed envelope legality before resolution.</summary>
+        public bool LabelsPreflighted { get; set; }
 
         /// <summary>A numeric result carried into this labelled power.</summary>
         public long PowerAmount { get; init; } = -1;

@@ -2067,6 +2067,32 @@ public sealed class ActionAbilityTests
         Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
+    [Rule("rr:labeled-ability.2")]
+    [Fact]
+    public void AutomaticAttackEnvelopeCannotBypassLifecyclePreflight()
+    {
+        // Automatic entry points use the same envelope gate as Actions. A When
+        // Revealed ability with raw attack damage therefore raises before the
+        // damage instead of bypassing the attack occurrence and Retaliate.
+        var runner = Runner(
+            "01017",
+            "WhenRevealed",
+            """{ "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } }""",
+            eventName: Steps.CardRevealed,
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = board.CreateCard(
+                "01017", board.AreaOf(DeckType.RevealingArea)),
+            hero: true);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => runner.WhenRevealed(world, source!, 0));
+
+        Assert.Contains("saveable attack power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
     [Rule("rr:lasting-effects.6")]
     [Fact]
     public void AnUntilEndOfAttackEffectCannotBeginOutsideAnAttack()
