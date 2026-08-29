@@ -5160,7 +5160,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         string grantedKind = Rules.State.Traits.Granted + trait;
         if (cast.World.Effects.Active().Any(effect =>
             effect.Affects == current.ObjectId
-            && (effect.Card is not int source || !discarded.Contains(source))
+            && (effect.Source != EffectSource.ConstantAbility
+                || effect.Card is not int source || !discarded.Contains(source))
             && string.Equals(effect.Kind, grantedKind, StringComparison.Ordinal)))
         {
             return true;
@@ -5199,16 +5200,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         Card current, string field, Cast cast, HashSet<int> discarded,
         Dictionary<(int Card, string Field), long>? modifiers = null)
     {
-        long value = StateFields.Modified(
-                cast.World, current, field, cast.World.Facts, cast.World.Players)
-            + (modifiers?.GetValueOrDefault((current.ObjectId, field)) ?? 0);
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        if (current.ObjectId == boardVillain)
-        {
-            return value;
-        }
-
-        var carried = TraceCarriedAttachments(current, cast, discarded);
         string? printed = field switch
         {
             "attack" => "ATK+",
@@ -5216,6 +5207,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "thwart" => "THW+",
             _ => null,
         };
+        long value = StateFields.Modified(
+                cast.World, current, field, cast.World.Facts, cast.World.Players)
+            + (modifiers?.GetValueOrDefault((current.ObjectId, field)) ?? 0);
+        if (printed is not null)
+        {
+            value -= cast.World.Areas
+                .Where(area => area.Host == current.ObjectId)
+                .SelectMany(area => area.Cards)
+                .Where(card => discarded.Contains(card.ObjectId))
+                .Sum(card => cast.World.Facts.PrintedValue(
+                    card.FaceId, printed, cast.World.Players));
+        }
+        value -= cast.World.Effects.Active()
+            .Where(effect => string.Equals(
+                    effect.Kind, field, StringComparison.Ordinal)
+                && effect.AppliesTo(cast.World, current)
+                && effect.Source == EffectSource.ConstantAbility
+                && effect.Card is int source && discarded.Contains(source))
+            .Sum(effect => effect.Amount);
+
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        if (current.ObjectId == boardVillain)
+        {
+            return value;
+        }
+
+        var carried = TraceCarriedAttachments(current, cast, discarded);
         if (printed is not null)
         {
             value += carried.Sum(card => cast.World.Facts.PrintedValue(
@@ -5258,11 +5276,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (!TraceSelectorMatches(
                 node.Require("of"), candidate, currentVillain,
                 cast, discarded, traits, modifiers)
-            || (candidate.ObjectId == currentVillain
-                    ? TraceModified(candidate, "permanent", cast, discarded)
-                    : StateFields.Modified(
-                        cast.World, candidate, "permanent", cast.World.Facts,
-                        cast.World.Players)) > 0)
+            || TraceModified(candidate, "permanent", cast, discarded) > 0)
         {
             return false;
         }
@@ -5277,23 +5291,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 && TraceSelectorMatches(
                     node.Require("of"), card, currentVillain,
                     cast, discarded, traits, modifiers)
-                && (card.ObjectId == currentVillain
-                    ? TraceModified(card, "permanent", cast, discarded)
-                    : StateFields.Modified(
-                        cast.World, card, "permanent", cast.World.Facts,
-                        cast.World.Players)) <= 0)
+                && TraceModified(card, "permanent", cast, discarded) <= 0)
             .ToList();
         string key = Word(node.Require("by"));
         long Rank(Card card) => key switch
         {
             "cost" => cast.World.Facts.PrintedValue(
                 card.FaceId, "Cost", cast.World.Players),
-            "attack" => card.ObjectId == currentVillain
-                ? TraceModified(card, "attack", cast, discarded, modifiers)
-                : StateFields.Modified(
-                    cast.World, card, "attack", cast.World.Facts,
-                    cast.World.Players)
-                    + modifiers.GetValueOrDefault((card.ObjectId, "attack")),
+            "attack" => TraceModified(
+                card, "attack", cast, discarded, modifiers),
             "printedHealth" => cast.World.Facts.PrintedValue(
                 card.FaceId, "HP", cast.World.Players),
             _ => throw new AbilityException(
