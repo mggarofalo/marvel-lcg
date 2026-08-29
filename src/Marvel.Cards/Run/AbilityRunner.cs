@@ -4149,7 +4149,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return RepeatedChange.CardsInPlay
                 | (DamageCanChangePlayerOrder(
-                        node, cast, binding, repeatedEffect)
+                        node, cast, binding, repeatedEffect, assumed,
+                        priorFrames)
                     ? RepeatedChange.PlayerOrder
                     : RepeatedChange.None);
         }
@@ -4162,7 +4163,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return RepeatedChange.CardsInPlay | RepeatedChange.PlayerOrder;
         }
         if (StableForCardsInPlay(
-            node, cast, priorFrames, repeatedEffect))
+            node, cast, priorFrames, repeatedEffect, assumed, binding))
         {
             return RepeatedChange.None;
         }
@@ -4257,7 +4258,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool StableForCardsInPlay(
         AbilityNode node, Cast cast, int priorFrames,
-        AbilityNode repeatedEffect) =>
+        AbilityNode repeatedEffect, RepeatedChange assumed,
+        bool binding) =>
         node.Kind is "draw" or "drawToHandSize" or "drawToPrintedHandSize"
             or "exhaust" or "ready" or "heal" or "generate" or "giveStatus"
             or "gainSurge" or "preventDamage" or "preventThreat"
@@ -4267,13 +4269,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             && Every(node.Require("scheme"), cast) is { Count: > 0 } schemes
             && schemes.All(scheme => scheme.Area.Type == DeckType.MainSchemesArea
                 || !CanExhaust(
-                    TotalThreatRemoved(scheme, repeatedEffect, cast),
+                    // An earlier ordered mutation can switch a branch before
+                    // this leaf is reached in the same repeated frame.
+                    TotalThreatRemoved(
+                        scheme, repeatedEffect, cast, assumed, binding),
                     priorFrames,
                     scheme.Tokens.GetValueOrDefault("k_threat")));
 
     private static bool DamageCanChangePlayerOrder(
         AbilityNode node, Cast cast, bool binding,
-        AbilityNode repeatedEffect)
+        AbilityNode repeatedEffect, RepeatedChange assumed,
+        int priorFrames)
     {
         AbilityValue targets = node.Kind switch
         {
@@ -4284,16 +4290,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             _ => throw new InvalidOperationException(
                 $"'{node.Kind}' is not a direct damage node"),
         };
+        int damagingFrames = targets is AbilityValue.Word { Value: "you" }
+            ? 1
+            : priorFrames;
         var cards = Every(targets, cast);
         return cards.Any(card => cast.World.PlayerOrder.Any(player =>
                 cast.World.Seats[player].IdentityCard == card)
-            && TotalDamageTo(card, repeatedEffect, cast)
-                >= Damage.Health(cast.World, cast.World.Facts, card) - card.Damage)
+            && CanExhaust(
+                TotalDamageTo(
+                    card, repeatedEffect, cast, assumed, binding),
+                damagingFrames,
+                Damage.Health(cast.World, cast.World.Facts, card) - card.Damage))
             || cards.Count == 0 && binding && BindingCanChange(targets);
     }
 
     private static long TotalThreatRemoved(
-        Card scheme, AbilityNode node, Cast cast)
+        Card scheme, AbilityNode node, Cast cast,
+        RepeatedChange assumed = RepeatedChange.None, bool binding = false)
     {
         long own = node.Kind == "removeThreat"
             && Every(node.Require("scheme"), cast).Any(candidate =>
@@ -4301,12 +4314,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 ? Amount(node.Require("amount"), cast)
                 : 0;
         return MutationTotal(
-            node, cast, own,
-            child => TotalThreatRemoved(scheme, child, cast));
+            node, cast, assumed, binding, own,
+            child => TotalThreatRemoved(
+                scheme, child, cast, assumed, binding));
     }
 
     private static long TotalDamageTo(
-        Card target, AbilityNode node, Cast cast)
+        Card target, AbilityNode node, Cast cast, RepeatedChange assumed,
+        bool binding)
     {
         long own = node.Kind switch
         {
@@ -4328,18 +4343,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             _ => 0,
         };
         return MutationTotal(
-            node, cast, own,
-            child => TotalDamageTo(target, child, cast));
+            node, cast, assumed, binding, own,
+            child => TotalDamageTo(
+                target, child, cast, assumed, binding));
     }
 
     private static long MutationTotal(
-        AbilityNode node, Cast cast, long own,
+        AbilityNode node, Cast cast, RepeatedChange assumed, bool binding,
+        long own,
         Func<AbilityNode, long> childAmount)
     {
         if (node.Kind == "if")
         {
             var test = Tree(node.Require("test"));
-            if (BindingCanChange(test.Argument))
+            if (RepeatedTestCanChange(test, assumed)
+                || binding && BindingCanChange(test.Argument))
             {
                 long possible = Branches.Select(node.Field)
                     .Where(value => value is not null)

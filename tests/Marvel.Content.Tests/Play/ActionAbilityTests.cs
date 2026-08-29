@@ -3473,6 +3473,91 @@ public sealed class ActionAbilityTests
         Assert.Equal(0, world.FirstPlayer);
     }
 
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void OrderedMutationCanExposeLethalDamageWithinARepeatedFrame()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "discard": "this" },
+                { "if": {
+                  "test": { "not": { "titleInPlay": "Aunt May" } },
+                  "then": { "dealDamage": { "cards": "you", "amount": 2 } },
+                  "else": { "draw": { "player": "you", "count": 1 } }
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+        Assert.Equal(8, world!.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, world.FirstPlayer);
+    }
+
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void DamageToFixedTargetsAccumulatesAcrossRepeatedFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "dealDamage": {
+                "cards": { "query": "identities" }, "amount": 1
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(8, world!.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, world.FirstPlayer);
+    }
+
     [Fact]
     public void BoundedThreatRemovalCannotDefeatADistantSideScheme()
     {
