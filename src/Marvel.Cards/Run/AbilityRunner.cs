@@ -5039,7 +5039,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             if (node.Kind == "enemiesWithTrait"
                 || node.Kind == "query" && node.Argument is AbilityValue.Word
-                    { Value: "enemies" or "attackableEnemies" })
+                    { Value: "enemies" or "attackableEnemies"
+                        or "minionsEngagedWithYou" or "dronesEngagedWithYou"
+                        or "enemiesEngagedWithChosenPlayer" })
             {
                 return
                 [
@@ -5105,7 +5107,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "withTrait" or "enemiesWithTrait" or "minBy" or "maxBy"
                 or "withoutAnotherCopyAttached" => true,
             "query" => node.Argument is AbilityValue.Word
-                { Value: "attackableEnemies" },
+                { Value: "attackableEnemies" or "minionsEngagedWithYou"
+                    or "dronesEngagedWithYou"
+                    or "enemiesEngagedWithChosenPlayer" },
             _ => false,
         };
     }
@@ -5200,6 +5204,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         cast, candidate, discarded, engagement)
                     : kind == CardKind.Minion
                         && CanTakeDamageInTrace(cast, candidate, discarded),
+                AbilityValue.Word { Value: "minionsEngagedWithYou" } =>
+                    kind == CardKind.Minion
+                    && TraceEngagedWith(candidate, cast.Player, engagement),
+                AbilityValue.Word { Value: "dronesEngagedWithYou" } =>
+                    FacedownDrones.Is(candidate)
+                    && TraceEngagedWith(candidate, Resolver(cast), engagement),
+                AbilityValue.Word { Value: "enemiesEngagedWithChosenPlayer" } =>
+                    kind == CardKind.Minion
+                    && cast.Chosen is { Owner: >= 0 } chosen
+                    && TraceEngagedWith(candidate, chosen.Owner, engagement),
                 _ => Every(value, cast).Any(card =>
                     card.ObjectId == candidate.ObjectId),
             },
@@ -5223,6 +5237,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             _ => false,
         };
     }
+
+    private static bool TraceEngagedWith(
+        Card card, int player, Dictionary<int, int> engagement) =>
+        engagement.TryGetValue(card.ObjectId, out int traced)
+            ? traced == player
+            : card.Area.Type == DeckType.EngagedEnemiesArea
+                && card.Area.PlayArea == PlayArea.Of(player);
 
     private static bool VillainIsAttackableInTrace(
         Cast cast, Card current, HashSet<int> discarded,

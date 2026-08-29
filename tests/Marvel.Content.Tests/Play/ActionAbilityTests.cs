@@ -5268,6 +5268,77 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:engage.1")]
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void EngagementRelativeQueriesUseTheTraceLocalPlayer()
+    {
+        // Engagement is the player's play area at runtime. During eligibility,
+        // trace-local entry is that area's synthetic equivalent: after the
+        // hero re-engages Hydra, minionsEngagedWithYou must find and defeat it,
+        // exposing Rhino before the lethal move and unsupported third frame.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": {
+                "player": "firstPlayer", "form": "alterEgo"
+              } },
+              "then": { "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "seq": [
+                  { "discard": { "titled": "Hydra Mercenary" } },
+                  { "putIntoPlay": {
+                    "card": { "titled": "Hydra Mercenary" },
+                    "where": "engagedWithYou"
+                  } },
+                  { "dealDamage": {
+                    "cards": { "query": "minionsEngagedWithYou" }, "amount": 3
+                  } },
+                  { "dealDamage": {
+                    "cards": { "query": "attackableEnemies" }, "amount": 1
+                  } },
+                  { "moveDamage": {
+                    "from": { "query": "villain" },
+                    "to": { "titled": "Spider-Man" }, "amount": 1
+                  } }
+                ] }
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, mercenary!, Statuses.Tough);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+            },
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(PlayArea.Of(0), mercenary!.Area.PlayArea);
+        Assert.True(Statuses.Has(world!, mercenary, Statuses.Tough));
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:guard.1")]
     [Rule("rr:damage.step.7")]
     [Fact]
