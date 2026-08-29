@@ -4450,15 +4450,44 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             : cast.World.Cards[card].Tokens.GetValueOrDefault("k_threat");
         void LeavePlay(int cardId)
         {
-            discarded.Add(cardId);
-            tough[cardId] = 0;
-            engagement.Remove(cardId);
-            foreach (var hosted in cast.World.Areas
+            var leaving = new List<int> { cardId };
+            var pending = new Stack<Card>(cast.World.Areas
                 .Where(area => area.Host == cardId)
                 .SelectMany(area => area.Cards)
-                .ToList())
+                .Reverse());
+            var seen = new HashSet<int> { cardId };
+            while (pending.TryPop(out var hosted))
             {
-                LeavePlay(hosted.ObjectId);
+                if (!seen.Add(hosted.ObjectId))
+                {
+                    throw new RulesNotImplementedException(
+                        $"attachment {hosted.ObjectId} forms a hosting cycle");
+                }
+                if (cast.World.Facts.PrintedValue(
+                        hosted.FaceId, "Permanent", cast.World.Players) > 0)
+                {
+                    // Match Discard.Attachments' complete-tree preflight so
+                    // eligibility refuses before an action cost can mutate.
+                    throw new RulesNotImplementedException(
+                        $"permanent attachment {hosted.ObjectId} lost host "
+                        + $"{cardId}, and rr:permanent.5 is not implemented");
+                }
+
+                leaving.Add(hosted.ObjectId);
+                foreach (var child in cast.World.Areas
+                    .Where(area => area.Host == hosted.ObjectId)
+                    .SelectMany(area => area.Cards)
+                    .Reverse())
+                {
+                    pending.Push(child);
+                }
+            }
+
+            foreach (int leavingId in leaving)
+            {
+                discarded.Add(leavingId);
+                tough[leavingId] = 0;
+                engagement.Remove(leavingId);
             }
         }
         void ResolveCharacterDefeat(int cardId)

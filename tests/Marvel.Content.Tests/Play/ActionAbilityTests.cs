@@ -5407,6 +5407,69 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:permanent.5")]
+    [Fact]
+    public void PermanentHostedDescendantRaisesBeforeAnActionCostMutates()
+    {
+        // When a permanent attachment loses its host, its attach-to text must
+        // resolve and it is removed only if no valid target exists. That path
+        // is explicitly unimplemented, so the complete hosted tree is checked
+        // before exhausting the action source or discarding its host.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "discard": { "titled": "Hydra Mercenary" } },
+                { "dealDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+        Card? navigator = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                navigator = board.CreateCard(
+                    "27189a",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, mercenary.Area.PlayArea,
+                        mercenary.ObjectId));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("rr:permanent.5 is not implemented", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, mercenary!.Area.Type);
+        Assert.Equal(mercenary.ObjectId, navigator!.Area.Host);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:ability.step.1")]
     [Fact]
     public void EnteringConstantAbilityRaisesBeforeARepeatedEffectMutates()
