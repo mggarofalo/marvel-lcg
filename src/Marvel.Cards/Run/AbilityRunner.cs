@@ -4306,15 +4306,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static long TotalRepeatedDamageTo(
         Card target, AbilityNode repeatedEffect, Cast cast,
         RepeatedChange assumed, bool binding, int frames)
-    {
-        long ordinary = SaturatingMultiply(
-            TotalDamageTo(
-                target, repeatedEffect, cast, assumed, binding),
-            frames);
-        long availableMoves = TotalMovedDamageTo(
-            target, repeatedEffect, cast, assumed, binding, frames);
-        return SaturatingSum(ordinary, [availableMoves]);
-    }
+        => PeakRepeatedDamageOn(
+            target, repeatedEffect, cast, assumed, binding, frames)
+            - target.Damage;
 
     private static bool RebindsToEachPlayer(AbilityValue targets) => targets switch
     {
@@ -4348,42 +4342,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 scheme, child, cast, assumed, binding));
     }
 
-    private static long TotalDamageTo(
-        Card target, AbilityNode node, Cast cast, RepeatedChange assumed,
-        bool binding)
-    {
-        long own = node.Kind switch
-        {
-            "dealDamage" or "indirectDamage"
-                when Every(node.Require(
-                    node.Kind == "dealDamage" ? "cards" : "among"), cast)
-                    .Any(card => card.ObjectId == target.ObjectId) =>
-                Amount(node.Require("amount"), cast),
-            "replaceThreatWithDamage"
-                when Every(node.Require("card"), cast)
-                    .Any(card => card.ObjectId == target.ObjectId) =>
-                cast.Occurrence.Threat?.Remaining ?? long.MaxValue,
-            _ => 0,
-        };
-        return MutationTotal(
-            node, cast, assumed, binding, own,
-            child => TotalDamageTo(
-                target, child, cast, assumed, binding));
-    }
-
     private readonly record struct DamageTransfer(
-        int From, int To, long Amount, bool CountsAsMovedDamage);
+        int From, int To, long Amount);
 
     private sealed record DamageTraceState(
-        Dictionary<int, long> Damage, long Moved);
+        Dictionary<int, long> Damage, long PeakTargetDamage);
 
-    private static long TotalMovedDamageTo(
+    private static long PeakRepeatedDamageOn(
         Card target, AbilityNode repeatedEffect, Cast cast,
         RepeatedChange assumed, bool binding, int frames)
     {
         var traces = DamageTraces(repeatedEffect, cast, assumed, binding);
         IReadOnlyList<DamageTraceState> states =
-            [new(new Dictionary<int, long>(), 0)];
+            [new(new Dictionary<int, long>(), target.Damage)];
         for (int frame = 0; frame < frames; frame++)
         {
             states =
@@ -4392,7 +4363,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     ApplyDamageTrace(state, trace, target, cast))),
             ];
         }
-        return states.Select(state => state.Moved).DefaultIfEmpty(0).Max();
+        return states.Select(state => state.PeakTargetDamage)
+            .DefaultIfEmpty(target.Damage)
+            .Max();
     }
 
     private static DamageTraceState ApplyDamageTrace(
@@ -4400,7 +4373,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         Card target, Cast cast)
     {
         var damage = new Dictionary<int, long>(state.Damage);
-        long moved = state.Moved;
+        long peak = state.PeakTargetDamage;
         long Current(int card) => damage.TryGetValue(card, out long amount)
             ? amount
             : cast.World.Cards[card].Damage;
@@ -4411,6 +4384,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 damage[transfer.To] = SaturatingSum(
                     Current(transfer.To), [transfer.Amount]);
+                peak = Math.Max(peak, Current(target.ObjectId));
                 continue;
             }
 
@@ -4421,14 +4395,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 damage[transfer.To] = SaturatingSum(
                     Current(transfer.To), [amount]);
-                if (transfer.CountsAsMovedDamage
-                    && transfer.To == target.ObjectId)
-                {
-                    moved = SaturatingSum(moved, [amount]);
-                }
             }
+            peak = Math.Max(peak, Current(target.ObjectId));
         }
-        return new DamageTraceState(damage, moved);
+        return new DamageTraceState(damage, peak);
     }
 
     private static IReadOnlyList<IReadOnlyList<DamageTransfer>> DamageTraces(
@@ -4485,7 +4455,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .. Every(node.Require(field), cast).Select(card =>
                     new DamageTransfer(
                         -1, card.ObjectId,
-                        Amount(node.Require("amount"), cast), false)),
+                        Amount(node.Require("amount"), cast))),
             ];
         }
         if (node.Kind == "replaceThreatWithDamage"
@@ -4493,13 +4463,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return [new DamageTransfer(
                 -1, replaced.ObjectId,
-                cast.Occurrence.Threat?.Remaining ?? long.MaxValue, false)];
+                cast.Occurrence.Threat?.Remaining ?? long.MaxValue)];
         }
         if (node.Kind == "heal"
             && Find(node.Require("card"), cast) is { } healed)
         {
             return [new DamageTransfer(
-                healed.ObjectId, -1, Amount(node.Require("amount"), cast), false)];
+                healed.ObjectId, -1, Amount(node.Require("amount"), cast))];
         }
         if (node.Kind == "moveDamage"
             && Find(node.Require("from"), cast) is { } from
@@ -4507,7 +4477,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return [new DamageTransfer(
                 from.ObjectId, to.ObjectId,
-                Amount(node.Require("amount"), cast), true)];
+                Amount(node.Require("amount"), cast))];
         }
         return [];
     }
@@ -4556,11 +4526,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         return own;
     }
-
-    private static long SaturatingMultiply(long amount, int times) =>
-        amount > 0 && times > 0 && amount > long.MaxValue / times
-            ? long.MaxValue
-            : amount * times;
 
     private static bool CanExhaust(
         long amountPerFrame, int frames, long remaining) =>

@@ -3733,6 +3733,83 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
+    public void DamageMovedAwayDoesNotAccumulateAcrossRepeatedFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "titled": "Spider-Man" }, "amount": 1 } },
+                { "moveDamage": {
+                  "from": { "titled": "Spider-Man" },
+                  "to": { "query": "villain" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void DamageHealedAfterEachMoveDoesNotAccumulateAcrossFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } },
+                { "heal": { "card": { "titled": "Spider-Man" }, "amount": 1 } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.TheCardIn(DeckType.VillainArea)!.TakeDamage(3);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
     public void BoundedThreatRemovalCannotDefeatADistantSideScheme()
     {
         var runner = Runner(
