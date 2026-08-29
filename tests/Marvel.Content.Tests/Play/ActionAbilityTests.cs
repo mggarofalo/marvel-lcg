@@ -5340,6 +5340,65 @@ public sealed class ActionAbilityTests
     }
 
     [Rule("rr:guard.1")]
+    [Rule("rr:lasting-effects.1")]
+    [Fact]
+    public void TraceLocalGuardImmediatelyProtectsTheVillain()
+    {
+        // Guard means the engaged player cannot attack the villain, and a
+        // lasting effect persists for its specified duration. Granting Sandman
+        // Guard therefore removes Rhino from attackableEnemies before damage,
+        // leaving no villain damage for the later move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "titled": "Sandman" },
+                  "keyword": "guard", "amount": 1,
+                  "until": "EndOfPlayerPhase"
+                } },
+                { "dealDamage": {
+                  "cards": { "query": "attackableEnemies" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+                ] }
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01102",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:guard.1")]
     [Rule("rr:damage.step.7")]
     [Fact]
     public void DefeatingATraceEnteredGuardImmediatelyExposesTheVillain()

@@ -5201,7 +5201,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         or CardKind.AlterEgo or CardKind.Ally,
                 AbilityValue.Word { Value: "attackableEnemies" } => villain
                     ? VillainIsAttackableInTrace(
-                        cast, candidate, discarded, engagement)
+                        cast, candidate, discarded, modifiers, engagement)
                     : kind == CardKind.Minion
                         && CanTakeDamageInTrace(cast, candidate, discarded),
                 AbilityValue.Word { Value: "minionsEngagedWithYou" } =>
@@ -5247,6 +5247,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool VillainIsAttackableInTrace(
         Cast cast, Card current, HashSet<int> discarded,
+        Dictionary<(int Card, string Field), long> modifiers,
         Dictionary<int, int> engagement)
     {
         int player = Resolver(cast);
@@ -5255,14 +5256,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             .Cards.Any(enemy => !discarded.Contains(enemy.ObjectId)
                 && !engagement.ContainsKey(enemy.ObjectId)
                 && FacedownDrones.Kind(enemy, cast.World.Facts) == CardKind.Minion
-                && StateFields.Modified(
-                    cast.World, enemy, "guard", cast.World.Facts,
-                    cast.World.Players) > 0)
+                && TraceModified(
+                    enemy, "guard", cast, discarded, modifiers) > 0)
             || engagement.Any(pair => pair.Value == player
                 && !discarded.Contains(pair.Key)
-                && StateFields.Modified(
-                    cast.World, cast.World.Cards[pair.Key], "guard",
-                    cast.World.Facts, cast.World.Players) > 0);
+                && TraceModified(
+                    cast.World.Cards[pair.Key], "guard",
+                    cast, discarded, modifiers) > 0);
         return !guarded && CanTakeDamageInTrace(cast, current, discarded);
     }
 
