@@ -3217,6 +3217,81 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
     }
 
+    [Fact]
+    public void RepeatedMutationAnalysisIsBoundedByRemainingFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "titleInPlay": "Aunt May" },
+              "then": { "discard": "this" },
+              "else": { "if": {
+                "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+                "then": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } },
+                "else": { "attack": {
+                  "target": { "query": "villain" },
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void RemovingThreatDoesNotChangeWhichTitlesAreInPlay()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "removeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void LethalDamageCanMoveTheFirstPlayerBindingBetweenFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "inForm": { "player": "firstPlayer", "form": "hero" } }, "then": { "dealDamage": { "cards": "you", "amount": 99 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(0, world!.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, world.FirstPlayer);
+    }
+
     [Rule("rr:choose-option")]
     [Fact]
     public void AChoiceContinuationPreservesEarlierEffectResults()

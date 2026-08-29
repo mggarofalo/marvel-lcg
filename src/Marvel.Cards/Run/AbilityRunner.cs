@@ -4115,7 +4115,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         try
         {
             var assumed = RepeatedChange.None;
-            while (true)
+            int priorFrames = Math.Max(0, cast.World.PlayerOrder.Count() - 1);
+            for (int frame = 0; frame < priorFrames; frame++)
             {
                 var observed = RepeatedChange.None;
                 foreach (int player in cast.World.PlayerOrder)
@@ -4123,13 +4124,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.RestorePlayer(player);
                     observed |= RepeatedChanges(effect, cast, assumed, binding: false);
                 }
-                var expanded = assumed | observed;
-                if (expanded == assumed)
-                {
-                    return RepeatedTestCanChange(test, expanded);
-                }
-                assumed = expanded;
+                assumed |= observed;
             }
+            return RepeatedTestCanChange(test, assumed);
         }
         finally
         {
@@ -4143,6 +4140,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (node.Kind == "changeForm")
         {
             return RepeatedChange.Form | RepeatedChange.CardsInPlay;
+        }
+        if (node.Kind is "dealDamage" or "dealAttackDamage"
+            or "moveAttackDamage" or "indirectDamage")
+        {
+            return RepeatedChange.CardsInPlay | RepeatedChange.PlayerOrder;
         }
         if (StableForCardsInPlay(node))
         {
@@ -4183,7 +4185,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "and" or "or" => Nodes(test.Argument).Any(child =>
                 RepeatedTestCanChange(child, changes)),
             "not" => RepeatedTestCanChange(Tree(test.Argument), changes),
-            "inForm" => changes.HasFlag(RepeatedChange.Form),
+            "inForm" => changes.HasFlag(RepeatedChange.Form)
+                || changes.HasFlag(RepeatedChange.PlayerOrder)
+                    && Word(test.Require("player")) != AbilityPlayers.You,
             "titleInPlay" => changes.HasFlag(RepeatedChange.CardsInPlay),
             "finalStep" or "paidWithResource" or "threatCause" => false,
             _ => true,
@@ -4195,6 +4199,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         None = 0,
         Form = 1,
         CardsInPlay = 2,
+        PlayerOrder = 4,
     }
 
     private static bool StableForCardsInPlay(AbilityNode node) =>
@@ -4202,7 +4207,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             or "exhaust" or "ready" or "heal" or "generate" or "giveStatus"
             or "gainSurge" or "preventDamage" or "preventThreat"
             or "cancelWhenRevealed" or "grantUntil"
-            or "grantCharactersControlledBy" or "reduceNextCardCost";
+            or "grantCharactersControlledBy" or "reduceNextCardCost"
+            or "removeThreat";
 
     private static IEnumerable<AbilityNode> MutationChildren(AbilityNode node) =>
         node.Kind is "attack" or "thwart"
