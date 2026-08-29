@@ -2887,6 +2887,29 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
     }
 
+    [Rule("rr:choose-game-element.3")]
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void ChosenCardContextIsPreflightedBeforeTheActionCost()
+    {
+        // The choice binds "chosen" before its effect resolves. Every branch
+        // that binding can open must be checked before the cost is paid.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "if": { "test": { "exists": "chosen" }, "then": { "attack": { "target": "chosen", "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } }, "else": { "draw": { "player": "you", "count": 1 } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
     [Rule("rr:choose-option")]
     [Fact]
     public void AChoiceContinuationPreservesEarlierEffectResults()

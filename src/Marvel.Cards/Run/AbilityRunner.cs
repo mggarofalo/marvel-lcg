@@ -4058,6 +4058,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 ? [(effect, stateMayChange), (dependent, predecessorMayMutate)]
                 : [(effect, stateMayChange)];
         }
+        if (node.Kind is "chooseCard" or "afterActivation" or "delayUntil"
+            or "payOrEffect" or "payOrExhaust" or "thwartSchemes"
+            or "thwartDifferentSchemes" or "legalPractice")
+        {
+            return ContinuationChildren(node).Select(child => (child, true));
+        }
         return ContinuationChildren(node).Select(child => (child, stateMayChange));
     }
 
