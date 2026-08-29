@@ -4115,11 +4115,35 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "and" or "or" => Nodes(test.Argument).Any(child =>
                 RepeatedEffectCanChange(child, effect, cast)),
             "not" => RepeatedEffectCanChange(Tree(test.Argument), effect, cast),
-            "inForm" => ActiveEffectCanChangeForm(effect, cast),
-            "titleInPlay" => ActiveEffectCanChangeCardsInPlay(effect, cast),
+            "inForm" => AnyPlayersRepeatedEffectCanChange(
+                effect, cast, ActiveEffectCanChangeForm),
+            "titleInPlay" => AnyPlayersRepeatedEffectCanChange(
+                effect, cast, ActiveEffectCanChangeCardsInPlay),
             "finalStep" or "paidWithResource" or "threatCause" => false,
             _ => true,
         };
+
+    private static bool AnyPlayersRepeatedEffectCanChange(
+        AbilityNode effect, Cast cast, Func<AbilityNode, Cast, bool> canChange)
+    {
+        int original = cast.Player;
+        try
+        {
+            foreach (int player in cast.World.PlayerOrder)
+            {
+                cast.RestorePlayer(player);
+                if (canChange(effect, cast))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        finally
+        {
+            cast.RestorePlayer(original);
+        }
+    }
 
     private static bool ActiveEffectCanChangeForm(AbilityNode node, Cast cast)
     {
@@ -4127,24 +4151,52 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return true;
         }
+        if (node.Kind is "chooseCard" or "thwartSchemes"
+            or "thwartDifferentSchemes" or "legalPractice")
+        {
+            return ContinuationChildren(node).Any(PotentialEffectCanChangeForm);
+        }
         return ActiveEffectChildren(node, cast).Any(child =>
             ActiveEffectCanChangeForm(child, cast));
     }
 
     private static bool ActiveEffectCanChangeCardsInPlay(AbilityNode node, Cast cast)
     {
-        if (node.Kind is "draw" or "drawToHandSize" or "drawToPrintedHandSize"
-            or "exhaust" or "ready" or "heal" or "generate" or "giveStatus"
-            or "gainSurge" or "preventDamage" or "preventThreat"
-            or "cancelWhenRevealed" or "grantUntil"
-            or "grantCharactersControlledBy" or "reduceNextCardCost")
+        if (StableForCardsInPlay(node))
         {
             return false;
+        }
+        if (node.Kind is "chooseCard" or "thwartSchemes"
+            or "thwartDifferentSchemes" or "legalPractice")
+        {
+            return ContinuationChildren(node).Any(PotentialEffectCanChangeCardsInPlay);
         }
         var children = ActiveEffectChildren(node, cast).ToList();
         return children.Count == 0
             || children.Any(child => ActiveEffectCanChangeCardsInPlay(child, cast));
     }
+
+    private static bool PotentialEffectCanChangeForm(AbilityNode node) =>
+        node.Kind == "changeForm"
+        || ContinuationChildren(node).Any(PotentialEffectCanChangeForm);
+
+    private static bool PotentialEffectCanChangeCardsInPlay(AbilityNode node)
+    {
+        if (StableForCardsInPlay(node))
+        {
+            return false;
+        }
+        var children = ContinuationChildren(node).ToList();
+        return children.Count == 0
+            || children.Any(PotentialEffectCanChangeCardsInPlay);
+    }
+
+    private static bool StableForCardsInPlay(AbilityNode node) =>
+        node.Kind is "draw" or "drawToHandSize" or "drawToPrintedHandSize"
+            or "exhaust" or "ready" or "heal" or "generate" or "giveStatus"
+            or "gainSurge" or "preventDamage" or "preventThreat"
+            or "cancelWhenRevealed" or "grantUntil"
+            or "grantCharactersControlledBy" or "reduceNextCardCost";
 
     private static IEnumerable<AbilityNode> ActiveEffectChildren(AbilityNode node, Cast cast)
     {

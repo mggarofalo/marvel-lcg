@@ -3077,6 +3077,71 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
     }
 
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void EachPlayerPreflightUnionsEveryPlayersActiveMutationPath()
+    {
+        // The first player chooses the order. A hero can discard the source
+        // before an alter-ego's different branch tests whether it remains.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "discard": "this" },
+              "else": { "if": {
+                "test": { "titleInPlay": "Aunt May" },
+                "then": { "draw": { "player": "you", "count": 1 } },
+                "else": { "attack": {
+                  "target": { "query": "villain" },
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Fact]
+    public void RepeatedMutationAnalysisDoesNotReadAnUnansweredChosenPlayer()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "titleInPlay": "Aunt May" },
+              "then": { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "if": {
+                  "test": { "inForm": { "player": "chosenPlayer", "form": "hero" } },
+                  "then": { "draw": { "player": "chosenPlayer", "count": 1 } },
+                  "else": { "draw": { "player": "chosenPlayer", "count": 1 } }
+                } }
+              } },
+              "else": { "draw": { "player": "you", "count": 1 } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
     [Rule("rr:choose-option")]
     [Fact]
     public void AChoiceContinuationPreservesEarlierEffectResults()
