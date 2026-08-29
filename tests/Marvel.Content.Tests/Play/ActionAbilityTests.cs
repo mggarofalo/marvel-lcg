@@ -4988,6 +4988,65 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:dash-value.3")]
+    [Fact]
+    public void ATraceLocalModifierCannotChangeADashPowerForRanking()
+    {
+        // A referenced dash is "treated as having a value of 0" and "cannot
+        // be modified." Giving alter-ego Carol +5 ATK therefore leaves Hulk
+        // as the maximum-ATK character and makes his damage available for the
+        // lethal move that follows.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "titled": "Carol Danvers" },
+                  "keyword": "attack", "amount": 5, "until": "EndOfRound"
+                } },
+                { "dealDamage": {
+                  "cards": { "maxBy": {
+                    "of": { "query": "characters" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Hulk" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01050",
+                    board.AreaOf(
+                        DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:damage.step.1")]
     [Rule("rr:replacement-effect.1")]
     [Fact]

@@ -5200,6 +5200,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         Card current, string field, Cast cast, HashSet<int> discarded,
         Dictionary<(int Card, string Field), long>? modifiers = null)
     {
+        if (StateFields.FilledFrom.TryGetValue(field, out string? attribute)
+            && attribute is "ATK" or "THW" or "DEF" or "REC" or "SCH"
+            && !StateFields.HasUsablePrintedPower(
+                cast.World.Facts, current.FaceId, attribute))
+        {
+            // `rr:dash-value.3`: a referenced dash is an unmodifiable zero.
+            // Match StateFields.Modified's early return before applying either
+            // trace-local or carried modifiers.
+            return 0;
+        }
+
         string? printed = field switch
         {
             "attack" => "ATK+",
