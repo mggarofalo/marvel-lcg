@@ -411,6 +411,7 @@ public static class Defeat
 
         var display = world.AreaOf(DeckType.VictoryDisplay);
         var from = card.Area;
+        var constantsEnding = world.Effects.PreflightConstantsEnding(card);
         Discard.Attachments(world, card, trigger, events);
         World.MoveToTop(card, display);
         events.Add(new CardsMoved(
@@ -419,6 +420,7 @@ public static class Defeat
         {
             Trigger = trigger, Verb = "Victory",
         });
+        constantsEnding.Complete(trigger, events);
 
         return true;
     }

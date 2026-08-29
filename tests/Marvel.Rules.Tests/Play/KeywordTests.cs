@@ -1003,6 +1003,44 @@ public sealed class KeywordTests
 
     [Rule("rr:uses-x-type.1")]
     [Fact]
+    public void RestoringUsesRefusesAHostingCycleBeforeEndingEitherLoss()
+    {
+        // A cyclic hosted component has no root to discard first. It is
+        // refused explicitly rather than pruning every candidate as somebody
+        // else's child and leaving active Uses cards at zero counters.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var first = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var second = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        World.MoveToTop(first, world.AreaOf(
+            DeckType.UpgradesArea, PlayArea.Villains, second.ObjectId));
+        World.MoveToTop(second, world.AreaOf(
+            DeckType.UpgradesArea, PlayArea.Villains, first.ObjectId));
+        var duration = Duration.UntilEndOf(TimingPoints.EndOfPlayerPhase);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: first.ObjectId,
+            Lasts: duration));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("uses"),
+            Affects: second.ObjectId,
+            Lasts: duration));
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() =>
+            world.Effects.Expire(TimingPoints.EndOfPlayerPhase, []));
+
+        Assert.Contains("hosting cycle", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(2, world.Effects.Registered.Count);
+        Assert.Equal(second.ObjectId, first.Area.Host);
+        Assert.Equal(first.ObjectId, second.Area.Host);
+    }
+
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
     public void RestoringAnotherCardsUsesIgnoresAFacedownDroneUnderlyingUsesCard()
     {
         // A facedown encounter card has no active printed attributes. Ending a
@@ -1029,6 +1067,31 @@ public sealed class KeywordTests
         Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
         Assert.Equal(DeckType.EngagedEnemiesArea, drone.Area.Type);
         Assert.True(FacedownDrones.Is(drone));
+    }
+
+    [Rule("rr:ability.5")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void UsesRestoredWhenAConstantSourceLeavesImmediatelyDiscardsTheCard()
+    {
+        // A constant exists only while its source is in play. Its departure is
+        // preflighted as one transition, then the newly active zero-counter
+        // Uses constant discards the affected card.
+        var printed = new Printed()
+            .With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var card = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.RevealingArea));
+        world.Abilities = new ConstantUsesLoss(source.ObjectId, card.ObjectId);
+        Reveal.Resolve(world, printed, card, 0, []);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
     }
 
     [Rule("rr:loses")]
@@ -1363,5 +1426,21 @@ public sealed class KeywordTests
         /// <summary>Stated directly rather than as stars inside ATK/THW.</summary>
         public long ConsequentialDamage(string faceId, string attribute) =>
             attribute == "ATK" ? PrintedValue(faceId, "AtkIcons", 1) : 0;
+    }
+
+    private sealed class ConstantUsesLoss(int source, int affected) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card) =>
+            card.ObjectId == source
+                ?
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: source,
+                        Affects: affected,
+                        Lasts: Duration.WhileInPlay),
+                ]
+                : [];
     }
 }

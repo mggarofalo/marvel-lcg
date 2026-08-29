@@ -35,6 +35,8 @@ public static class Discard
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
+        var constantsEnding = world.Effects.PreflightConstantsEnding(card);
+
         // `rr:attach-to.1`: "if the game element an attachment is attached to
         // leaves play, the attachment is discarded." Snapshot the areas because
         // discarding an attachment moves it and can itself detach hosted cards.
@@ -64,6 +66,8 @@ public static class Discard
         {
             Trigger = trigger, Verb = "Discard",
         });
+
+        constantsEnding.Complete(trigger, events);
 
         // `rr:player-deck.4`: a deck that emptied beside an empty discard pile
         // "does not reset until there is at least one card in the player's

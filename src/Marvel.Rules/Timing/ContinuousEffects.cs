@@ -155,6 +155,7 @@ public sealed class ContinuousEffects(World world)
 {
     private readonly List<Entry> entries = [];
     private readonly HashSet<Entry> suppressed = [];
+    private readonly List<ContinuousEffect> suppressedConstants = [];
 
     // While constants are settling, a nested read sees the previous complete
     // pass. See `Constant` -- this is iteration state, not cached game state.
@@ -250,9 +251,29 @@ public sealed class ContinuousEffects(World world)
             .Select(entry => entry.Effect)
             .Where(InForce)
             .ToList();
-        return deriving
-            ? [.. registered, .. assumedConstants]
-            : [.. registered, .. Constant()];
+        var constants = ExcludingSuppressedConstants(
+            deriving ? assumedConstants : Constant());
+        return [.. registered, .. constants];
+    }
+
+    private IReadOnlyList<ContinuousEffect> ExcludingSuppressedConstants(
+        IReadOnlyList<ContinuousEffect> constants)
+    {
+        if (suppressedConstants.Count == 0)
+        {
+            return constants;
+        }
+
+        var visible = constants.ToList();
+        foreach (var suppressedEffect in suppressedConstants)
+        {
+            int index = visible.FindIndex(effect => effect == suppressedEffect);
+            if (index >= 0)
+            {
+                visible.RemoveAt(index);
+            }
+        }
+        return visible;
     }
 
     /// <summary>What every constant ability in play is doing right now.</summary>
@@ -480,9 +501,12 @@ public sealed class ContinuousEffects(World world)
     }
 
     private Card[] LostUsesCandidates(List<Entry> ending)
+        => LostUsesCandidates(ending.Select(entry => entry.Effect));
+
+    private Card[] LostUsesCandidates(IEnumerable<ContinuousEffect> ending)
     {
-        if (!ending.Any(entry => string.Equals(
-                entry.Effect.Kind,
+        if (!ending.Any(effect => string.Equals(
+                effect.Kind,
                 Characteristics.LossOf("uses"),
                 StringComparison.Ordinal)))
         {
@@ -511,16 +535,102 @@ public sealed class ContinuousEffects(World world)
     private bool HasHostedAncestor(Card card, HashSet<int> candidates)
     {
         int host = card.Area.Host;
-        var seen = new HashSet<int>();
-        while (host >= 0 && seen.Add(host))
+        var seen = new HashSet<int> { card.ObjectId };
+        bool candidateAncestor = false;
+        while (host >= 0)
         {
+            if (!seen.Add(host))
+            {
+                throw new RulesNotImplementedException(
+                    $"attachment {host} forms a hosting cycle");
+            }
             if (candidates.Contains(host))
             {
-                return true;
+                candidateAncestor = true;
             }
             host = host < world.Cards.Count ? world.Cards[host].Area.Host : -1;
         }
-        return false;
+        return candidateAncestor;
+    }
+
+    /// <summary>
+    /// Prove the state-based changes caused by one card's constants ending.
+    /// </summary>
+    /// <remarks>
+    /// The source is still in play while this runs. Its constants are hidden
+    /// only for the simulated post-departure read, so a refusal leaves both the
+    /// source and every affected card untouched.
+    /// </remarks>
+    public ConstantEnding PreflightConstantsEnding(Card source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (!DeckTypes.IsInPlay(source.Area.Type))
+        {
+            return new ConstantEnding(this, []);
+        }
+
+        var ending = world.Abilities.Constant(world, source).ToArray();
+        var candidates = LostUsesCandidates(ending);
+        if (candidates.Length == 0)
+        {
+            return new ConstantEnding(this, []);
+        }
+
+        int firstSuppressed = suppressedConstants.Count;
+        suppressedConstants.AddRange(ending);
+        try
+        {
+            var restored = RestoredUsesAfter(candidates);
+            foreach (var card in restored)
+            {
+                Discard.PreflightAttachments(world, card);
+            }
+            return new ConstantEnding(this, restored);
+        }
+        finally
+        {
+            suppressedConstants.RemoveRange(
+                firstSuppressed, suppressedConstants.Count - firstSuppressed);
+        }
+    }
+
+    private void CompleteConstantsEnding(
+        IReadOnlyList<Card> restored, string trigger, List<GameEvent> events)
+    {
+        foreach (var card in restored.Where(card =>
+            DeckTypes.IsInPlay(card.Area.Type)
+            && !Characteristics.IsLost(world, card, "uses")))
+        {
+            Discard.Card(world, card, trigger, events);
+        }
+    }
+
+    /// <summary>A preflighted set of state-based changes after constants end.</summary>
+    public sealed class ConstantEnding
+    {
+        private readonly ContinuousEffects effects;
+        private readonly IReadOnlyList<Card> restored;
+        private bool completed;
+
+        internal ConstantEnding(ContinuousEffects effects, IReadOnlyList<Card> restored)
+        {
+            this.effects = effects;
+            this.restored = restored;
+        }
+
+        /// <summary>Apply the preflighted changes after the source has left play.</summary>
+        public void Complete(string trigger, List<GameEvent> events)
+        {
+            ArgumentNullException.ThrowIfNull(trigger);
+            ArgumentNullException.ThrowIfNull(events);
+            if (completed)
+            {
+                return;
+            }
+
+            effects.CompleteConstantsEnding(restored, trigger, events);
+            completed = true;
+        }
     }
 
     /// <summary>One registered effect and its remaining uses.</summary>
