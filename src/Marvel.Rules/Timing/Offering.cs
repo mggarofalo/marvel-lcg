@@ -121,13 +121,19 @@ public static class Offering
     /// <param name="kind">Which window.</param>
     /// <param name="events">Where to record what resolved.</param>
     /// <param name="scope">Which cards may contribute abilities.</param>
+    /// <param name="priorityResolved">
+    /// Rechecked before each ability is considered. Returns true when a
+    /// higher-priority rules effect has replaced the occurrence, so no further
+    /// abilities in this window may initiate.
+    /// </param>
     public static Prompt? Work(
         World world,
         IWindowAbilities abilities,
         Occurrence occurrence,
         WindowKind kind,
         List<GameEvent> events,
-        WindowAbilityScope scope = WindowAbilityScope.AllCards)
+        WindowAbilityScope scope = WindowAbilityScope.AllCards,
+        Func<bool>? priorityResolved = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(abilities);
@@ -145,6 +151,15 @@ public static class Offering
         // *further* abilities.
         while (true)
         {
+            // A forced authored ability can create a status-card replacement.
+            // Status cards have priority over the remaining authored tier, so
+            // the caller must get a chance to consume that replacement before
+            // this loop re-reads and offers another ability.
+            if (priorityResolved?.Invoke() == true)
+            {
+                return null;
+            }
+
             var waiting = abilities.Waiting(world, occurrence, kind);
             if (scope == WindowAbilityScope.EncounterCardsOnly)
             {

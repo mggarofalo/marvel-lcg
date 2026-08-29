@@ -112,10 +112,24 @@ public static class Sequence
                 // an attack that never happened may resolve. Basic and card
                 // attacks spend their stun before they reach the agenda; this
                 // is the enemy-activation path.
-                if (kind == WindowKind.Interrupt
-                    && step.What == Steps.Attack
-                    && BasicPowers.Cancelled(
-                        world, facts, world.Cards[step.Subject], Statuses.Stunned, events))
+                bool statusCancelled = false;
+                bool ResolvePriorityStatus()
+                {
+                    statusCancelled = kind == WindowKind.Interrupt
+                        && step.What == Steps.Attack
+                        && BasicPowers.Cancelled(
+                            world, facts, world.Cards[step.Subject], Statuses.Stunned, events);
+                    return statusCancelled;
+                }
+
+                if (Offering.Work(
+                    world, abilities, occurrence, kind, events, scope,
+                    ResolvePriorityStatus) is { } asked)
+                {
+                    return asked;
+                }
+
+                if (statusCancelled)
                 {
                     world.PendingAdditionalAttackPlayers = [];
                     if (world.Windows.Current is not null)
@@ -124,11 +138,6 @@ public static class Sequence
                     }
                     world.Agenda.Cancel(occurrence);
                     continue;
-                }
-
-                if (Offering.Work(world, abilities, occurrence, kind, events, scope) is { } asked)
-                {
-                    return asked;
                 }
 
                 world.Agenda.Advance(occurrence);
