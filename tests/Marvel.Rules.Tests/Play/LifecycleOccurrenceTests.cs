@@ -182,7 +182,9 @@ public sealed class LifecycleOccurrenceTests
         public IReadOnlyList<string> Traits(string faceId) => [];
 
         public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
-            new Dictionary<string, string>(StringComparer.Ordinal);
+            faceId == "ally"
+                ? new Dictionary<string, string>(StringComparer.Ordinal) { ["Cost"] = "0" }
+                : new Dictionary<string, string>(StringComparer.Ordinal);
 
         public long PrintedValue(
             string faceId, string attribute, int players, long fallback = 0) =>

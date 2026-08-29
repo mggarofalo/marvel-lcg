@@ -876,7 +876,9 @@ public static class Attack
         // rr:defend-defense.2 -- the basic defense power belongs to a hero. An
         // alter-ego has no DEF and cannot make one, and an exhausted hero has
         // nothing left to exhaust.
-        if (identity.Ready && facts.Kind(identity.FaceId) == CardKind.Hero)
+        if (identity.Ready
+            && facts.Kind(identity.FaceId) == CardKind.Hero
+            && BasicPowers.CanUsePower(facts, identity, "DEF"))
         {
             candidates.Add(identity);
         }

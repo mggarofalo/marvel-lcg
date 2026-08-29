@@ -1,6 +1,7 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -17,6 +18,80 @@ namespace Marvel.Rules.Tests.Play;
 /// </remarks>
 public sealed class BasicPowerTests
 {
+    [Rule("rr:dash-value.2")]
+    [Fact]
+    public void ACharacterCannotExhaustToUseADashPower()
+    {
+        // A dash means the power cannot be used. It is not a modifiable zero:
+        // the attempted attack is rejected before the hero exhausts.
+        var printed = new Printed()
+            .With("hero", ("ATK", "–"))
+            .With("villain", ("HP", "10"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+
+        Assert.Throws<RulesNotImplementedException>(
+            () => BasicPowers.BasicAttack(world, printed, 0, villain, []));
+        Assert.True(hero.Ready);
+        Assert.Equal(0, villain.Damage);
+    }
+
+    [Rule("rr:dash-value.3")]
+    [Fact]
+    public void AReferencedDashIsAnUnmodifiableZero()
+    {
+        var printed = new Printed().With("hero", ("ATK", "–"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "attack",
+            Amount: 4,
+            Card: hero.ObjectId,
+            Affects: hero.ObjectId));
+
+        Assert.Equal(0, StateFields.Modified(world, hero, "attack", printed, world.Players));
+    }
+
+    [Rule("rr:dash-value.3")]
+    [Fact]
+    public void AnOmittedDashPowerIsAnUnmodifiableZero()
+    {
+        // The generated dataset omits a basic-power field when the printed
+        // card shows a dash. A modifier cannot turn that dash into a number.
+        var printed = new Printed();
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "thwart",
+            Amount: 4,
+            Card: hero.ObjectId,
+            Affects: hero.ObjectId));
+
+        Assert.False(BasicPowers.CanUsePower(printed, hero, "THW"));
+        Assert.Equal(0, StateFields.Modified(world, hero, "thwart", printed, world.Players));
+    }
+
+    [Rule("rr:star-icon.5")]
+    [Fact]
+    public void AnUndefinedStarPowerHasAValueOfZero()
+    {
+        // With no card-text definition for the star, the referenced power is
+        // zero rather than an invented value.
+        var printed = new Printed()
+            .With("hero", ("ATK", "*"))
+            .With("villain", ("HP", "10"));
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+
+        BasicPowers.BasicAttack(world, printed, 0, villain, []);
+        Agendas.Finish(world, printed);
+
+        Assert.Equal(0, villain.Damage);
+    }
+
     [Rule("rr:attack-player-ability-type.1")]
     [Fact]
     public void ABasicAttackExhaustsAndDealsTheCharactersAttackValue()

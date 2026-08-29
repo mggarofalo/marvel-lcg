@@ -15,6 +15,7 @@ public sealed class CoreCombatResponseTests
 
     [Rule("rr:attack-player-ability-type")]
     [Rule("rr:draw-drawing-cards")]
+    [Rule("rr:cost.3.1")]
     [Fact]
     public void PhotonicBlastsDamageAndEnergyDrawKeepTheTurnActionTrigger()
     {

@@ -35,6 +35,26 @@ public sealed class PlayerPhaseEndTests
         Assert.Equal(5, world.Seats[1].Hand.Cards.Count);
     }
 
+    [Rule("rr:hand-size.1")]
+    [Fact]
+    public void HandSizeIsCheckedAgainAfterEveryCardDrawn()
+    {
+        // Model a continuous modifier whose result changes when the first
+        // card enters the hand. The draw began with a hand size of five, but
+        // after one card the current size is one, so the sequence stops there.
+        World? board = null;
+        var printed = new Printed()
+            .With("identity", ("HS", "5"))
+            .WithHandSize(() => board!.Seats[0].Hand.Cards.Count == 0 ? 5 : 1);
+        board = Board(printed, players: 1, deck: 10);
+        var events = new List<GameEvent>();
+
+        PhaseEnd.DrawToHandSize(board, printed, events);
+
+        Assert.Single(board.Seats[0].Hand.Cards);
+        Assert.Single(events.OfType<CardsMoved>());
+    }
+
     [Rule("rr:end-of-player-phase.step.2")]
     [Fact]
     public void AHandAtOrOverItsSizeDrawsNothing()
@@ -334,6 +354,14 @@ public sealed class PlayerPhaseEndTests
         private readonly Dictionary<string, Dictionary<string, string>> attributes =
             new(StringComparer.Ordinal);
 
+        private Func<long>? handSize;
+
+        public Printed WithHandSize(Func<long> current)
+        {
+            handSize = current;
+            return this;
+        }
+
         public Printed With(string faceId, params (string Key, string Value)[] values)
         {
             var table = attributes.TryGetValue(faceId, out var found)
@@ -361,10 +389,17 @@ public sealed class PlayerPhaseEndTests
                 ? found
                 : new Dictionary<string, string>(StringComparer.Ordinal);
 
-        public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) =>
-            Attributes(faceId).TryGetValue(attribute, out string? value)
-            && long.TryParse(value, out long number)
-                ? number
-                : fallback;
+        public long PrintedValue(string faceId, string attribute, int players, long fallback = 0)
+        {
+            if (faceId == "identity" && attribute == "HS" && handSize is not null)
+            {
+                return handSize();
+            }
+
+            return Attributes(faceId).TryGetValue(attribute, out string? value)
+                && long.TryParse(value, out long number)
+                    ? number
+                    : fallback;
+        }
     }
 }

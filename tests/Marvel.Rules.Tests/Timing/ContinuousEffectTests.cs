@@ -444,7 +444,9 @@ public sealed class ContinuousEffectTests
         public IReadOnlyList<string> Traits(string faceId) => [];
 
         public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
-            new Dictionary<string, string>(StringComparer.Ordinal);
+            faceId is "identity" or "ally"
+                ? new Dictionary<string, string>(StringComparer.Ordinal) { ["ATK"] = "0" }
+                : new Dictionary<string, string>(StringComparer.Ordinal);
 
         public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) =>
             fallback;

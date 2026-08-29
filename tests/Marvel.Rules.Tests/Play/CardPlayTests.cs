@@ -20,6 +20,7 @@ namespace Marvel.Rules.Tests.Play;
 public sealed class CardPlayTests
 {
     [Rule("rr:resource.3")]
+    [Rule("rr:cost.4")]
     [Theory]
     // "A number of resources equal to (or greater than) the card's cost must be
     // generated. For most cards, any type (or mix of types) of resources can be
@@ -35,8 +36,47 @@ public sealed class CardPlayTests
         Assert.Equal(pays, Resources.Pays(generated, cost));
     }
 
+    [Rule("rr:cost.4.1")]
+    [Fact]
+    public void ResourcesBeyondTheCostAreGeneratedButNotPaidForIt()
+    {
+        // Ordering is the payer's allocation: the first icon pays this
+        // one-resource cost and the second is overpayment, not a second
+        // resource paid for the card.
+        Assert.Equal("Y", Resources.Paid("YB", cost: 1));
+
+        // A requirement is allocated before the unrestricted remainder.
+        Assert.Equal("YR", Resources.Paid("YBR", cost: 2, required: "R"));
+    }
+
+    [Rule("rr:cost.4.2")]
+    [Rule("rr:resource.5")]
+    [Fact]
+    public void AnExcessResourceIsLostAfterTheCostIsPaid()
+    {
+        // The resource card generates two wilds toward a cost of one. It is
+        // discarded as the generator, and the excess cannot carry into the
+        // next card's cost.
+        var printed = Cards();
+        var world = Board(printed);
+        var first = InHand(world, "ally");
+        var second = InHand(world, "ally");
+        int doubleWild = Pay(world, "res");
+
+        CardPlay.Play(world, printed, new Silent(), world.Seats[0], first, [doubleWild], []);
+
+        Assert.Equal(DeckType.DiscardPile, world.Cards[doubleWild].Area.Type);
+        Assert.Throws<RulesNotImplementedException>(() => CardPlay.Play(
+            world, printed, new Silent(), world.Seats[0], second, [], []));
+        Assert.Same(world.Seats[0].Hand, second.Area);
+    }
+
     [Rule("rr:resource.2")]
     [Rule("rr:resource.4")]
+    [Rule("rr:wild-resource")]
+    [Rule("rr:wild-resource.1")]
+    [Rule("rr:wild-resource.1.1")]
+    [Rule("rr:wild-resource.2")]
     [Rule("rr:energy-resource")]
     [Rule("rr:energy-resource.1")]
     [Rule("rr:energy-resource.2")]
@@ -57,6 +97,7 @@ public sealed class CardPlayTests
     [InlineData("RR", "B", false)]
     // "Wild resources can be used as their type or any of the other types."
     [InlineData("GG", "B", true)]
+    [InlineData("GG", "BR", true)]
     [InlineData("BG", "BB", true)]
     [InlineData("BR", "BB", false)]
     public void AWildResourceStandsInForAnyType(string generated, string required, bool pays)
@@ -74,19 +115,74 @@ public sealed class CardPlayTests
         Assert.True(Resources.Pays("BG", 2, "BR"));
     }
 
-    [Rule("rr:cost.2")]
+    [Rule("rr:wild-resource.3")]
+    [Fact]
+    public void APrintedWildIsNotAnotherTypeOutsidePayingACost()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var doubleWild = world.Cards[Pay(world, "res")];
+
+        Assert.Equal(2, Resources.PrintedCount([doubleWild], Resources.Wild, printed));
+        Assert.Equal(0, Resources.PrintedCount([doubleWild], Resources.Mental, printed));
+    }
+
+    [Rule("rr:non-numerical-variable.1")]
     [Fact]
     public void ACostThatIsNotANumberSaysSoRatherThanReadingAsZero()
     {
-        // A cost of `X` (`rr:initiating-abilities.step.3`, the player chooses
-        // the value) and the per-player icon (`rr:cost.2`) are both printed in
-        // this field. Reading either as zero would make the card free.
+        // For a cost of X the player chooses or card text defines X before
+        // modifiers apply. Reading an unsupported X as zero would silently
+        // make the card free.
         var printed = new Printed().With("odd", ("Cost", "X"));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => Resources.Cost("odd", printed));
 
         Assert.Contains("is not a number", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Rule("rr:cost.2")]
+    [Rule("rr:cost.2.1")]
+    [Rule("rr:per-player-icon.1")]
+    [Fact]
+    public void APerPlayerCostUsesTheStartingCountThenReducesTheTotal()
+    {
+        // A per-player resource cost is multiplied by the number who started
+        // the scenario. A reduction applies to that total, and eliminating a
+        // player does not change it: three times two, less one, stays five.
+        var printed = Cards().With("scaling", ("Cost", "2*"));
+        var world = new World(printed, players: 3);
+        for (int player = 0; player < 3; player++)
+        {
+            world.CreateSeat($"p{player}");
+            world.Seats[player].IdentityCard =
+                world.CreateCard("identity", world.Seats[player].Hero);
+        }
+        var card = world.CreateCard("scaling", world.Seats[0].Hand);
+        var source = world.CreateCard(
+            "support", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.Seats[2].Eliminated = true;
+        CardPlay.ReduceNextCardCost(world, source, player: 0, amount: 1);
+
+        Assert.Equal(5, CardPlay.CostOf(world, printed, world.Seats[0], card).Amount);
+    }
+
+    [Rule("rr:dash-value.1")]
+    [Fact]
+    public void ACardWithADashCostCannotBePlayedForZero()
+    {
+        // A dash cost means the card cannot be played and may only enter play
+        // through another effect. Treating it as a missing numeric value would
+        // turn the restriction into a free card.
+        var printed = Cards().With("dash", ("Cost", "–"));
+        var world = Board(printed);
+        var card = InHand(world, "dash");
+
+        Assert.Null(CardPlay.Price(world, printed, world.Seats[0], card));
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.Play(world, printed, new Silent(), world.Seats[0], card, [], []));
+        Assert.Same(world.Seats[0].Hand, card.Area);
     }
 
     [Rule("rr:play-put-into-play")]
@@ -190,6 +286,72 @@ public sealed class CardPlayTests
         CardPlay.Play(world, printed, new Silent(), seat, ally, [spent.ObjectId], []);
 
         Assert.Equal(DeckType.DiscardPile, spent.Area.Type);
+    }
+
+    [Rule("rr:ignore")]
+    [Rule("rr:ignore.1")]
+    [Fact]
+    public void IgnoringAResourceCostPaysZeroAndStillPlaysTheCard()
+    {
+        // The support costs two, and the hand contains no generators. The
+        // permission treats the cost as absent, so no payment is made and the
+        // card still enters play normally.
+        var printed = Cards().With("costly", ("Cost", "2"));
+        var world = Board(printed);
+        var support = InHand(world, "costly");
+
+        CardPlay.PlayIgnoringResourceCost(
+            world, printed, new Silent(), world.Seats[0], support, []);
+
+        Assert.Equal(DeckType.UpgradesArea, support.Area.Type);
+        Assert.Empty(world.AreaOf(
+            DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0).Cards);
+    }
+
+    [Rule("rr:requirement-resources.2")]
+    [Fact]
+    public void AResourceRequirementCannotBeIgnored()
+    {
+        // Ignoring a cost pays no resources, so the required physical cannot
+        // be paid. The refusal happens before the card leaves the hand.
+        var printed = Cards();
+        var world = Board(printed);
+        var card = InHand(world, "demanding");
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.PlayIgnoringResourceCost(
+                world, printed, new Silent(), world.Seats[0], card, []));
+        Assert.Same(world.Seats[0].Hand, card.Area);
+    }
+
+    [Fact]
+    public void AnEventCannotUseTheNonEventIgnoredCostEntryPoint()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var card = InHand(world, "event");
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.PlayIgnoringResourceCost(
+                world, printed, new Silent(), world.Seats[0], card, []));
+
+        Assert.Same(world.Seats[0].Hand, card.Area);
+    }
+
+    [Rule("rr:dash-value.1")]
+    [Fact]
+    public void AnOmittedCostCannotBePlayedForZero()
+    {
+        // Generated card data omits the Cost field for a card whose printed
+        // dash says it cannot be played. Missing is not an implicit zero.
+        var printed = Cards();
+        var world = Board(printed);
+        var card = InHand(world, "uncosted");
+
+        Assert.Null(CardPlay.Price(world, printed, world.Seats[0], card));
+        Assert.Throws<RulesNotImplementedException>(() => CardPlay.Play(
+            world, printed, new Silent(), world.Seats[0], card, [], []));
+        Assert.Same(world.Seats[0].Hand, card.Area);
     }
 
     [Rule("rr:initiating-abilities.step.3")]
@@ -350,6 +512,7 @@ public sealed class CardPlayTests
         Assert.DoesNotContain(world.Agenda.Outstanding, step => step.What == Steps.CardPlayed);
     }
 
+    [Rule("rr:resource-ability.1.1")]
     [Fact]
     public void AConditionalGeneratorSeesTheCardBeingPaidForInOfferAndResolution()
     {
@@ -575,6 +738,9 @@ public sealed class CardPlayTests
         Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], card));
     }
 
+    [Rule("rr:alliance")]
+    [Rule("rr:alliance.1")]
+    [Rule("rr:alliance.2")]
     [Fact]
     public void AnAllianceCardCanBePaidForByTheWholeTable()
     {
@@ -695,6 +861,8 @@ public sealed class CardPlayTests
 
     [Rule("rr:form-change-form.7")]
     [Rule("rr:play-put-into-play.1")]
+    [Rule("rr:play-restrictions-and-permissions")]
+    [Rule("rr:play-restrictions-and-permissions.1")]
     [Fact]
     public void AFormOnlyCardNeedsThatForm()
     {
@@ -867,6 +1035,8 @@ public sealed class CardPlayTests
         Assert.Equal(villain.ObjectId, upgrade.Area.Host);
     }
 
+    [Rule("rr:max-maximum")]
+    [Rule("rr:max-maximum.3")]
     [Fact]
     public void MaxPerPlayerRemovesTheCardFromOffersAndRejectsForgedPlay()
     {
@@ -882,6 +1052,7 @@ public sealed class CardPlayTests
             CardPlay.Play(world, printed, new Silent(), world.Seats[0], copy, [], []));
     }
 
+    [Rule("rr:max-maximum.3")]
     [Fact]
     public void MaxPerPlayerUsesTheChosenUpgradeController()
     {
@@ -905,6 +1076,43 @@ public sealed class CardPlayTests
         CardPlay.Play(
             world, printed, abilities, world.Seats[0], copy, [], [], [second.ObjectId]);
         Assert.Equal(1, copy.Area.PlayArea.Player);
+    }
+
+    [Rule("rr:max-maximum")]
+    [Rule("rr:max-maximum.4")]
+    [Fact]
+    public void MaxPerGameElementIsCheckedForEachAttachmentTarget()
+    {
+        // “Max 1 per ally” is a limit on each host, not on the controller's
+        // play area. A second copy cannot attach to the first ally, while the
+        // same title remains legal on a different ally.
+        var printed = Cards().With(
+            "limited", ("Cost", "0"), ("MaxPerUnit", "1"),
+            ("MaxPerUnitKind", "ally"));
+        var world = Board(printed);
+        var first = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var second = world.CreateCard(
+            "bruiser", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard(
+            "limited",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), first.ObjectId, cardOwner: 0));
+        var copy = InHand(world, "limited");
+        var abilities = new Targets(first.ObjectId, second.ObjectId);
+        world.Abilities = abilities;
+
+        Assert.NotNull(CardPlay.Price(world, printed, world.Seats[0], copy));
+        Assert.Equal(
+            [second.ObjectId],
+            CardPlay.LegalAttachmentTargets(
+                world, printed, world.Seats[0], copy, abilities));
+        Assert.Throws<RulesNotImplementedException>(() => CardPlay.Play(
+            world, printed, abilities, world.Seats[0], copy, [], [], [first.ObjectId]));
+
+        CardPlay.Play(
+            world, printed, abilities, world.Seats[0], copy, [], [], [second.ObjectId]);
+        Assert.Equal(second.ObjectId, copy.Area.Host);
     }
 
     /// <summary>One object id of a card in hand with the given face.</summary>
