@@ -272,7 +272,8 @@ public static class Threat
         ArgumentNullException.ThrowIfNull(events);
 
         long held = scheme.Tokens.GetValueOrDefault("k_threat");
-        long target = facts.PrintedValue(scheme.FaceId, "TargetThreat", world.Players);
+        long target = StateFields.Modified(
+            world, scheme, "target_threat", facts, world.Players);
         if (target <= 0 || held < target || scheme.Area.Type != DeckType.MainSchemesArea)
         {
             // A side scheme has a target threat value too, and reaching it does

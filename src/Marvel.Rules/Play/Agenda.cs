@@ -231,7 +231,8 @@ public readonly record struct PhaseStep(
             return new Occurrence(id, Conditions);
         }
 
-        long amount = facts.PrintedValue(scheme.FaceId, "EscalationThreat", world.Players)
+        long amount = StateFields.Modified(
+                world, scheme, "escalation_threat", facts, world.Players)
             + MainScheme.Acceleration(world, facts);
         if (amount <= 0)
         {

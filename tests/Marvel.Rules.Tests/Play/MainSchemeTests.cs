@@ -137,6 +137,52 @@ public sealed class MainSchemeTests
         Assert.Equal(Outcome.VillainWins, world.Result);
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:villain-phase.step.1")]
+    [Fact]
+    public void AMainSchemeThatLosesItsEscalationFieldPlacesNoBaseThreat()
+    {
+        // The escalation field remains printed, but the lost characteristic
+        // contributes no threat during step one of the villain phase.
+        var printed = new Printed()
+            .With("scheme", ("EscalationThreat", "3"), ("TargetThreat", "99"));
+        var world = Board(printed, stages: 1);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("escalation_threat"),
+            Affects: scheme.ObjectId));
+
+        Run(world, printed, []);
+
+        Assert.Equal(0, scheme.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:modifiers")]
+    [Rule("rr:main-scheme-main-scheme-deck.2")]
+    [Fact]
+    public void AModifiedTargetThreatControlsWhenTheMainSchemeCompletes()
+    {
+        // The completion threshold is the scheme's live target value. Raising
+        // printed three to five keeps it in play at four and completes it at
+        // five.
+        var printed = new Printed().With("scheme", ("TargetThreat", "3"));
+        var world = Board(printed, stages: 1);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "target_threat",
+            Amount: 2,
+            Affects: scheme.ObjectId));
+
+        Threat.Place(world, printed, new Silent(), scheme, 4, "test", []);
+        Assert.Equal(Outcome.Unfinished, world.Result);
+        Assert.Equal(DeckType.MainSchemesArea, scheme.Area.Type);
+
+        Threat.Place(world, printed, new Silent(), scheme, 1, "test", []);
+        Assert.Equal(Outcome.VillainWins, world.Result);
+    }
+
     [Rule("rr:villain-phase.step.1")]
     [Rule("rr:acceleration-icon")]
     [Rule("rr:acceleration-icon.1")]
