@@ -487,7 +487,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         ability.Cost is not null
                         || world.Facts.Kind(card.FaceId) == CardKind.Event);
                     if ((ability.When is not null && !Test(ability.When, eligibility))
-                        || (controller >= 0 && !CanInitiate(ability.Effect, eligibility)))
+                        || (controller >= 0 && !CanInitiate(ability, eligibility)))
                     {
                         continue;
                     }
@@ -597,7 +597,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "cost, whose combined payment is not represented");
         }
 
-        if (resolving >= 0 && !CanInitiate(found.Effect, cast))
+        if (resolving >= 0 && !CanInitiate(found, cast))
         {
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' cannot initiate this ability in the current state");
@@ -805,7 +805,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Tier = AbilityType.Special,
             FinalStep = finalStep,
         };
-        if (CanInitiate(ability.Effect, cast))
+        if (CanInitiate(ability, cast))
         {
             cast.RestoreAbility(0, []);
             cast.TrackResolution(0);
@@ -1680,7 +1680,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         && Available(world, card, ability)
         && InForm(world, player, ability.Trigger.Form)
         && (ability.When is null || Test(ability.When, eligibility))
-        && CanInitiate(ability.Effect, eligibility);
+        && CanInitiate(ability, eligibility);
     }
 
     private static bool HasUnsupportedCombinedEventCost(
@@ -3452,6 +3452,54 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
             + "legality is not implemented"),
     };
+
+    /// <summary>Whether one authored ability can begin before any cost is paid.</summary>
+    private static bool CanInitiate(CardAbility ability, Cast cast)
+    {
+        var labels = ability.Labels ?? [];
+        if (labels.Count == 0)
+        {
+            return CanInitiate(ability.Effect, cast);
+        }
+
+        bool cancelled = LabeledAbilities.WouldBeCancelled(
+            cast.World, cast.World.Facts, Resolver(cast), cast.Source, labels);
+        if (!cancelled
+            && labels.Contains(Attack.DefenseVerb, StringComparer.Ordinal)
+            && !Attack.CanUseDefenseAbility(cast.World, Resolver(cast)))
+        {
+            return false;
+        }
+
+        if (!cancelled)
+        {
+            bool attack = labels.Contains(BasicPowers.AttackVerb, StringComparer.Ordinal);
+            bool thwart = labels.Contains(BasicPowers.ThwartVerb, StringComparer.Ordinal);
+            int attacks = PowerNodes(ability.Effect, BasicPowers.AttackVerb).Count();
+            int thwarts = PowerNodes(ability.Effect, BasicPowers.ThwartVerb).Count();
+
+            if (attack && thwart)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has one ability labeled as both attack and "
+                    + "thwart, whose single combined power occurrence is not implemented");
+            }
+            if (attack && attacks != 1)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has an attack label without exactly one "
+                    + "saveable attack power");
+            }
+            if (thwart && thwarts != 1)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has a thwart label without exactly one "
+                    + "saveable thwart power");
+            }
+        }
+
+        return CanInitiate(ability.Effect, cast);
+    }
 
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
     private static bool CanInitiate(AbilityNode node, Cast cast)
@@ -10031,12 +10079,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "defense":
-                var defender = LabeledAbilities.Begin(
+                var defender = cast.AbilityActor ?? LabeledAbilities.Begin(
                     cast.World, cast.World.Facts, Resolver(cast), cast.Source,
                     [Attack.DefenseVerb], cast.Events);
                 if (defender is not null)
                 {
-                    Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
+                    if (cast.AbilityActor is null)
+                    {
+                        Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
+                    }
                     RunChild(Tree(node.Require("effect")), "defense:effect", cast);
                 }
                 break;

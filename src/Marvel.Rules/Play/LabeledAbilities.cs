@@ -107,4 +107,25 @@ public static class LabeledAbilities
 
         return cancelled ? null : performer;
     }
+
+    /// <summary>Whether one of an ability's labels is currently canceled by status.</summary>
+    public static bool WouldBeCancelled(
+        World world, ICardFacts facts, int player, Card source,
+        IEnumerable<string> labels)
+    {
+        ArgumentNullException.ThrowIfNull(labels);
+
+        var normalized = labels.Distinct(StringComparer.Ordinal).ToList();
+        if (normalized.Count == 0 || normalized.Any(label => !Known.Contains(label)))
+        {
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' has an unknown or empty labeled-ability type");
+        }
+
+        var performer = Performer(world, facts, player, source);
+        return normalized.Contains(BasicPowers.AttackVerb, StringComparer.Ordinal)
+                && Statuses.Afflicted(world, facts, performer, Statuses.Stunned)
+            || normalized.Contains(BasicPowers.ThwartVerb, StringComparer.Ordinal)
+                && Statuses.Afflicted(world, facts, performer, Statuses.Confused);
+    }
 }

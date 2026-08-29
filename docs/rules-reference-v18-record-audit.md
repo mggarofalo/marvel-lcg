@@ -641,7 +641,7 @@ items.
 | `rr:labeled-ability.3` | Executable and cited | — | A behavior test directly attributes a defense-labeled event to the identity. |
 | `rr:labeled-ability.3.1` | Executable and cited | — | Defense resolution uses the attributed performer when establishing the defender role. |
 | `rr:labeled-ability.4` | Executable and cited | — | A behavior test directly attributes a thwart-labeled event to the identity. |
-| `rr:labeled-ability.5` | Executable and cited | — | A behavior test begins one ability carrying both attack and thwart labels. |
+| `rr:labeled-ability.5` | Executable and cited | — | One envelope carries every label through attribution and cancellation; an uncanceled combined attack/thwart raises before costs rather than becoming two abilities. |
 | `rr:labeled-ability.6` | Executable and cited | — | A behavior test proves one matching status cancels the entire multi-labeled effect. |
 | `rr:labeled-ability.6.1` | Executable and cited | — | A canceled labeled ability returns no performer, so no labeled act begins. |
 | `rr:labeled-ability.6.2` | Executable and cited | — | A behavior test removes both stunned and confused from an attack/thwart ability. |

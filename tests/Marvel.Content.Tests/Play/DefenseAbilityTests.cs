@@ -68,6 +68,43 @@ public sealed class DefenseAbilityTests
         Assert.Contains(waiting, ability => ability.Card == secondPlayers.ObjectId);
     }
 
+    [Rule("rr:labeled-ability.3.1")]
+    [Rule("rr:defend-defense.4.6")]
+    [Fact]
+    public void IllegalEnvelopeDefenseIsRefusedBeforeItsCost()
+    {
+        // Once another player is defending, this player "cannot defend" the
+        // attack. A top-level defense label is therefore absent from the offer,
+        // and forging it is rejected before its exhaust cost changes the board.
+        var (world, _, first, _, villain) = Board();
+        var source = DefenseCard(world, 1);
+        world.Attack = world.Attack! with
+        {
+            Defender = first.ObjectId,
+            Target = first.ObjectId,
+            Player = 0,
+        };
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01081", "abilities": [ {
+              "trigger": { "event": "WhenBoostCardGiven", "timing": "Interrupt", "subject": "game" },
+              "labels": [ "defense" ],
+              "cost": { "exhaust": "this" },
+              "effect": { "draw": { "player": "you", "count": 1 } }
+            } ] } ] }
+            """));
+        var occurrence = AttackWindow(world, villain);
+
+        Assert.DoesNotContain(
+            runner.Waiting(world, occurrence, WindowKind.Interrupt),
+            ability => ability.Card == source.ObjectId);
+
+        var forged = new PendingAbility(source.ObjectId, AbilityType.Interrupt, 1, 0);
+        Assert.Throws<RulesNotImplementedException>(
+            () => runner.Resolve(world, occurrence, forged, [], []));
+        Assert.True(source.Ready);
+    }
+
     [Rule("rr:defend-defense.4.2")]
     [Fact]
     public void TheIdentityIsDefendingBeforeTheDefenseEffectResolves()

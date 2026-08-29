@@ -607,6 +607,11 @@ for example `"labels": ["attack", "defense", "thwart"]`. The interpreter
 begins that label set once after costs; it does not nest three independent
 effect nodes, because one matching status cancels the entire ability and every
 matching status leaves together (`rr:labeled-ability.5` and `.6`).
+An uncanceled `attack` or `thwart` envelope must also contain exactly one
+matching `attack` or `thwart` power node so the agenda can open the required
+interrupt/response occurrence. A combined uncanceled `attack`/`thwart`
+envelope raises by name until the agenda can represent both labels as one
+occurrence; resolving it as two powers would silently turn one ability into two.
 
 **Dependency words preserve resolution outcomes.** `and` groups simultaneous,
 independent effects into one ability occurrence and asks the first player for

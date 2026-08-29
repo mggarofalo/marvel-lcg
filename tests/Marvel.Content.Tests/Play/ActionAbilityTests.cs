@@ -1894,6 +1894,7 @@ public sealed class ActionAbilityTests
             "Action",
             """{ "draw": { "player": "you", "count": 1 } }""",
             cost: """{ "exhaust": "this" }""",
+            limit: 1,
             labels: "[ \"attack\", \"defense\", \"thwart\" ]");
         Card? source = null;
         var (game, world) = Playing(
@@ -1923,7 +1924,9 @@ public sealed class ActionAbilityTests
             world, world.Seats[0].IdentityCard, Statuses.Confused));
     }
 
+    [Rule("rr:labeled-ability.2")]
     [Rule("rr:labeled-ability.6")]
+    [Rule("rr:retaliate-x.1")]
     [Fact]
     public void LabeledPowerDoesNotBeginAgainDuringItsEffect()
     {
@@ -1947,11 +1950,21 @@ public sealed class ActionAbilityTests
             labels: "[ \"attack\" ]");
         Card? source = null;
         var (game, world) = Playing(
-            board => source = board.CreateCard(
-                "01017",
-                board.AreaOf(
-                    DeckType.UpgradesArea, PlayArea.Of(0),
-                    board.Seats[0].IdentityCard.ObjectId, cardOwner: 0)),
+            board =>
+            {
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                board.Effects.Register(new ContinuousEffect(
+                    EffectSource.LastingEffect,
+                    Kind: "retaliate",
+                    Amount: 1,
+                    Card: villain.ObjectId,
+                    Affects: villain.ObjectId));
+            },
             hero: true,
             abilities: runner);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
@@ -1963,6 +1976,7 @@ public sealed class ActionAbilityTests
         Assert.True(Statuses.Has(
             world, world.Seats[0].IdentityCard, Statuses.Stunned));
         Assert.Equal(1, villain.Damage);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
     }
 
     [Rule("rr:labeled-ability.1")]
@@ -1980,8 +1994,11 @@ public sealed class ActionAbilityTests
             """
             { "chooseCard": {
               "from": { "query": "attackableEnemies" },
-              "effect": { "dealAttackDamage": {
-                "cards": "chosen", "amount": 1
+              "effect": { "attack": {
+                "target": "chosen",
+                "effect": { "dealAttackDamage": {
+                  "cards": "chosen", "amount": 1
+                } }
               } }
             } }
             """,
@@ -2016,6 +2033,38 @@ public sealed class ActionAbilityTests
 
         Assert.False(Statuses.Has(world, villain, Statuses.Tough));
         Assert.Equal(1, villain.Damage);
+    }
+
+    [Rule("rr:labeled-ability.2")]
+    [Fact]
+    public void AttackEnvelopeWithoutAPowerLifecycleFailsBeforeCosts()
+    {
+        // The whole labeled ability "is considered to be an attack". A raw
+        // damage effect has no saveable attack occurrence for interrupts,
+        // responses, or Retaliate, so this unsupported shape is refused before
+        // its exhaust cost instead of resolving as plausible non-attack damage.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """{ "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } }""",
+            cost: """{ "exhaust": "this" }""",
+            labels: "[ \"attack\" ]");
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = board.CreateCard(
+                "01017",
+                board.AreaOf(
+                    DeckType.UpgradesArea, PlayArea.Of(0),
+                    board.Seats[0].IdentityCard.ObjectId, cardOwner: 0)),
+            hero: true);
+        var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => runner.Act(world, forged, [], []));
+
+        Assert.Contains("saveable attack power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source.Ready);
+        Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
     [Rule("rr:lasting-effects.6")]
