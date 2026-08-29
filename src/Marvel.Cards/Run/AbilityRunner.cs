@@ -4349,6 +4349,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         bool PlacesThreat = false, AbilityValue? FromVillain = null,
         AbilityValue? ToVillain = null);
 
+    private readonly record struct TraceCard(
+        Card Card, AbilityValue? VillainSelector);
+
     private sealed record DamageTraceState(
         Dictionary<int, long> Damage, long PeakTargetPressure,
         HashSet<int> Players, Dictionary<int, int> Tough,
@@ -4765,79 +4768,72 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             string field = node.Kind == "dealDamage" ? "cards" : "among";
             return
             [
-                .. Every(node.Require(field), cast).Select(card =>
+                .. TraceCards(node.Require(field), cast).Select(target =>
                     new DamageTransfer(
-                        -1, card.ObjectId,
+                        -1, target.Card.ObjectId,
                         Amount(node.Require("amount"), cast),
                         DealsDamage: true,
-                        ToVillain: VillainSelector(
-                            node.Require(field), card, cast))),
+                        ToVillain: target.VillainSelector)),
             ];
         }
         if (node.Kind == "replaceThreatWithDamage"
-            && Find(node.Require("card"), cast) is { } replaced)
+            && TraceCardNamed(node.Require("card"), cast) is { } replaced)
         {
             return [new DamageTransfer(
-                -1, replaced.ObjectId,
+                -1, replaced.Card.ObjectId,
                 cast.Occurrence.Threat?.Remaining ?? long.MaxValue,
                 DealsDamage: true,
-                ToVillain: VillainSelector(
-                    node.Require("card"), replaced, cast))];
+                ToVillain: replaced.VillainSelector)];
         }
         if (node.Kind == "heal"
-            && Find(node.Require("card"), cast) is { } healed)
+            && TraceCardNamed(node.Require("card"), cast) is { } healed)
         {
             return [new DamageTransfer(
-                healed.ObjectId, -1, Amount(node.Require("amount"), cast),
-                FromVillain: VillainSelector(
-                    node.Require("card"), healed, cast))];
+                healed.Card.ObjectId, -1, Amount(node.Require("amount"), cast),
+                FromVillain: healed.VillainSelector)];
         }
         if (node.Kind == "moveDamage"
-            && Find(node.Require("from"), cast) is { } from
-            && Find(node.Require("to"), cast) is { } to)
+            && TraceCardNamed(node.Require("from"), cast) is { } from
+            && TraceCardNamed(node.Require("to"), cast) is { } to)
         {
             return [new DamageTransfer(
-                from.ObjectId, to.ObjectId,
+                from.Card.ObjectId, to.Card.ObjectId,
                 Amount(node.Require("amount"), cast),
                 DealsDamage: true,
-                FromVillain: VillainSelector(
-                    node.Require("from"), from, cast),
-                ToVillain: VillainSelector(
-                    node.Require("to"), to, cast))];
+                FromVillain: from.VillainSelector,
+                ToVillain: to.VillainSelector)];
         }
         if (node.Kind == "giveStatus"
             && Word(node.Require("status")) == Statuses.Tough)
         {
             return
             [
-                .. Every(node.Require("card"), cast).Select(card =>
+                .. TraceCards(node.Require("card"), cast).Select(target =>
                     new DamageTransfer(
-                        0, card.ObjectId, 0, GrantsTough: true,
-                        ToVillain: VillainSelector(
-                            node.Require("card"), card, cast))),
+                        0, target.Card.ObjectId, 0, GrantsTough: true,
+                        ToVillain: target.VillainSelector)),
             ];
         }
         if (node.Kind == "grantUntil"
             && node.Field("keyword") is { } granted
             && Word(granted) == "health"
-            && Find(node.Require("card"), cast) is { } healthier)
+            && TraceCardNamed(node.Require("card"), cast) is { } healthier)
         {
             return [new DamageTransfer(
-                0, healthier.ObjectId,
+                0, healthier.Card.ObjectId,
                 node.Field("amount") is { } amount ? Amount(amount, cast) : 0,
                 GrantsHealth: true,
-                ToVillain: VillainSelector(
-                    node.Require("card"), healthier, cast))];
+                ToVillain: healthier.VillainSelector)];
         }
         if (node.Kind == "discard")
         {
             AbilityValue cards = node.Field("card") ?? node.Argument;
             return
             [
-                .. Every(cards, cast).Select(card =>
+                .. TraceCards(cards, cast).Select(target =>
                     new DamageTransfer(
-                        0, card.ObjectId, 0, Discards: true,
-                        ToVillain: VillainSelector(cards, card, cast))),
+                        0, target.Card.ObjectId, 0, Discards: true,
+                        ToVillain: target.VillainSelector)),
             ];
         }
         if (node.Kind is "removeThreat" or "placeThreat")
@@ -4854,6 +4850,45 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ];
         }
         return [];
+    }
+
+    private static List<TraceCard> TraceCards(
+        AbilityValue value, Cast cast)
+    {
+        var selected = Every(value, cast);
+        var current = cast.World.TheCardIn(DeckType.VillainArea);
+        var traced = selected.Select(card => new TraceCard(
+            card, VillainSelector(value, card, cast))).ToList();
+        if (current is not null
+            && selected.All(card => card.ObjectId != current.ObjectId)
+            && PotentialVillainSelector(value, cast))
+        {
+            traced.Insert(0, new TraceCard(current, value));
+        }
+        return traced;
+    }
+
+    private static TraceCard? TraceCardNamed(
+        AbilityValue value, Cast cast)
+    {
+        if (Find(value, cast) is { } found)
+        {
+            return new TraceCard(found, VillainSelector(value, found, cast));
+        }
+        var current = cast.World.TheCardIn(DeckType.VillainArea);
+        return current is not null && PotentialVillainSelector(value, cast)
+            ? new TraceCard(current, value)
+            : null;
+    }
+
+    private static bool PotentialVillainSelector(
+        AbilityValue value, Cast cast)
+    {
+        var current = cast.World.TheCardIn(DeckType.VillainArea);
+        return current is not null
+            && new[] { current }
+                .Concat(cast.World.AreaOf(DeckType.VillainDeck).Cards)
+                .Any(stage => SelectorCanTrackVillain(value, stage, cast));
     }
 
     private static AbilityValue? VillainSelector(
@@ -4915,7 +4950,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 AbilityValue.Word { Value: "villain" or "enemies" or "characters" } => true,
                 AbilityValue.Word { Value: "attackableEnemies" } =>
-                    CanTakeDamageInTrace(cast, current, discarded),
+                    VillainIsAttackableInTrace(cast, current, discarded),
                 _ => false,
             },
             "titled" => string.Equals(
@@ -4934,6 +4969,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 node, current, cast, discarded),
             _ => false,
         };
+    }
+
+    private static bool VillainIsAttackableInTrace(
+        Cast cast, Card current, HashSet<int> discarded)
+    {
+        int player = Resolver(cast);
+        bool guarded = cast.World
+            .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player))
+            .Cards.Any(enemy => !discarded.Contains(enemy.ObjectId)
+                && FacedownDrones.Kind(enemy, cast.World.Facts) == CardKind.Minion
+                && StateFields.Modified(
+                    cast.World, enemy, "guard", cast.World.Facts,
+                    cast.World.Players) > 0);
+        return !guarded && CanTakeDamageInTrace(cast, current, discarded);
     }
 
     private static bool AnotherCopyAttachedInTrace(

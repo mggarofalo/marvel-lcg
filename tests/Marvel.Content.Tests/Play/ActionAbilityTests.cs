@@ -4464,6 +4464,70 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:villain-defeat.2")]
+    [Fact]
+    public void ARankedSelectorCanGainTheNewVillainStage()
+    {
+        // Rhino I is below Sandman's attack, while Rhino II ties it. The live
+        // maximum therefore gains the new stage after the defeat; its damage
+        // must be visible to the following move before the action is offered.
+        var runner = RepeatedDynamicTargetRunner(
+            """{ "query": "villain" }""",
+            """{ "maxBy": { "of": { "query": "enemies" }, "by": "attack" } }""");
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01102",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void DefeatingGuardCanMakeTheVillainADynamicDamageTarget()
+    {
+        // "The engaged player cannot attack any villain" only while Guard is
+        // present. Defeating Hydra Mercenary makes Rhino attackable before the
+        // next effect resolves, so the subsequent move has damage to carry.
+        var runner = RepeatedDynamicTargetRunner(
+            """{ "titled": "Hydra Mercenary" }""",
+            """{ "query": "attackableEnemies" }""");
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:damage.step.1")]
     [Rule("rr:replacement-effect.1")]
     [Fact]
@@ -5053,6 +5117,29 @@ public sealed class ActionAbilityTests
             AuthoredCards.Book.AttachTo);
         return new Marvel.Cards.Run.AbilityRunner(book);
     }
+
+    private static Marvel.Cards.Run.AbilityRunner RepeatedDynamicTargetRunner(
+        string firstTarget, string secondTarget) => Runner(
+        AuthoredCards.AuntMay,
+        "Action",
+        $$"""
+        { "eachPlayer": { "effect": { "if": {
+          "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+          "then": { "seq": [
+            { "dealDamage": { "cards": {{firstTarget}}, "amount": 100 } },
+            { "dealDamage": { "cards": {{secondTarget}}, "amount": 1 } },
+            { "moveDamage": {
+              "from": { "query": "villain" },
+              "to": { "titled": "Spider-Man" },
+              "amount": 1
+            } }
+          ] },
+          "else": { "attack": {
+            "target": { "query": "villain" },
+            "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+          } }
+        } } } }
+        """);
 
     /// <summary>
     /// A game past the mulligan, on the first player's turn.
