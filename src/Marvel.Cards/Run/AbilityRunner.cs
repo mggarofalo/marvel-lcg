@@ -4756,7 +4756,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         -1, card.ObjectId,
                         Amount(node.Require("amount"), cast),
                         DealsDamage: true,
-                        ToVillain: QueriesVillain(node.Require(field)))),
+                        ToVillain: TracksCurrentVillain(
+                            node.Require(field), card, cast))),
             ];
         }
         if (node.Kind == "replaceThreatWithDamage"
@@ -4765,13 +4766,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [new DamageTransfer(
                 -1, replaced.ObjectId,
                 cast.Occurrence.Threat?.Remaining ?? long.MaxValue,
-                DealsDamage: true)];
+                DealsDamage: true,
+                ToVillain: TracksCurrentVillain(
+                    node.Require("card"), replaced, cast))];
         }
         if (node.Kind == "heal"
             && Find(node.Require("card"), cast) is { } healed)
         {
             return [new DamageTransfer(
-                healed.ObjectId, -1, Amount(node.Require("amount"), cast))];
+                healed.ObjectId, -1, Amount(node.Require("amount"), cast),
+                FromVillain: TracksCurrentVillain(
+                    node.Require("card"), healed, cast))];
         }
         if (node.Kind == "moveDamage"
             && Find(node.Require("from"), cast) is { } from
@@ -4781,8 +4786,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 from.ObjectId, to.ObjectId,
                 Amount(node.Require("amount"), cast),
                 DealsDamage: true,
-                FromVillain: QueriesVillain(node.Require("from")),
-                ToVillain: QueriesVillain(node.Require("to")))];
+                FromVillain: TracksCurrentVillain(
+                    node.Require("from"), from, cast),
+                ToVillain: TracksCurrentVillain(
+                    node.Require("to"), to, cast))];
         }
         if (node.Kind == "giveStatus"
             && Word(node.Require("status")) == Statuses.Tough)
@@ -4790,7 +4797,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return
             [
                 .. Every(node.Require("card"), cast).Select(card =>
-                    new DamageTransfer(0, card.ObjectId, 0, GrantsTough: true)),
+                    new DamageTransfer(
+                        0, card.ObjectId, 0, GrantsTough: true,
+                        ToVillain: TracksCurrentVillain(
+                            node.Require("card"), card, cast))),
             ];
         }
         if (node.Kind == "grantUntil"
@@ -4801,7 +4811,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return [new DamageTransfer(
                 0, healthier.ObjectId,
                 node.Field("amount") is { } amount ? Amount(amount, cast) : 0,
-                GrantsHealth: true)];
+                GrantsHealth: true,
+                ToVillain: TracksCurrentVillain(
+                    node.Require("card"), healthier, cast))];
         }
         if (node.Kind == "discard")
         {
@@ -4810,7 +4822,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             [
                 .. Every(cards, cast).Select(card =>
                     new DamageTransfer(
-                        0, card.ObjectId, 0, Discards: true)),
+                        0, card.ObjectId, 0, Discards: true,
+                        ToVillain: TracksCurrentVillain(cards, card, cast))),
             ];
         }
         if (node.Kind is "removeThreat" or "placeThreat")
@@ -4829,15 +4842,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return [];
     }
 
-    private static bool QueriesVillain(AbilityValue value)
+    private static bool TracksCurrentVillain(
+        AbilityValue value, Card resolved, Cast cast)
     {
-        if (value is not AbilityValue.Map)
+        var current = cast.World.TheCardIn(DeckType.VillainArea);
+        if (current is null || resolved.ObjectId != current.ObjectId
+            || value is not AbilityValue.Map)
         {
             return false;
         }
         var node = Tree(value);
-        return node.Kind == "query"
-            && node.Argument is AbilityValue.Word { Value: "villain" };
+        return node.Kind switch
+        {
+            "query" => node.Argument is AbilityValue.Word { Value: "villain" },
+            "titled" => string.Equals(
+                Word(node.Argument), cast.World.Facts.Title(current.FaceId),
+                StringComparison.Ordinal),
+            _ => false,
+        };
     }
 
     private static long MutationTotal(
