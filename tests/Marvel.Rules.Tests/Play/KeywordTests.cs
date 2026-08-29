@@ -1280,6 +1280,34 @@ public sealed class KeywordTests
         Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
     }
 
+    [Rule("rr:ability.9")]
+    [Rule("rr:uses-x-type.1")]
+    [Fact]
+    public void ASourceDepartureCanActivateASurvivingReplacementUsesLoss()
+    {
+        // S's loss ending appears to restore U during preflight, but surviving
+        // B supplies the same loss as soon as S is actually absent. U still
+        // lacks Uses at the commit boundary and therefore is not discarded.
+        var printed = new Printed().With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var source = world.CreateCard(
+            "temp", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        var surviving = world.CreateCard(
+            "bridge", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var uses = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        world.Abilities = new UsesLossWithSurvivingReplacement(
+            source.ObjectId, surviving.ObjectId, uses.ObjectId);
+
+        Discard.Card(world, source, "test", []);
+
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.SupportsArea, surviving.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, uses.Area.Type);
+        Assert.True(Characteristics.IsLost(world, uses, "uses"));
+    }
+
     [Rule("rr:ability.5")]
     [Rule("rr:permanent.5")]
     [Rule("rr:uses-x-type.1")]
@@ -1859,6 +1887,28 @@ public sealed class KeywordTests
                             Lasts: Duration.WhileInPlay),
                     ]
                     : [];
+        }
+    }
+
+    private sealed class UsesLossWithSurvivingReplacement(
+        int source, int surviving, int affected) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
+        {
+            bool loses = card.ObjectId == source
+                || card.ObjectId == surviving
+                && !DeckTypes.IsInPlay(world.Cards[source].Area.Type);
+            return loses
+                ?
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        Characteristics.LossOf("uses"),
+                        Card: card.ObjectId,
+                        Affects: affected,
+                        Lasts: Duration.WhileInPlay),
+                ]
+                : [];
         }
     }
 }

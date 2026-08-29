@@ -684,7 +684,15 @@ public sealed class ContinuousEffects(World world)
     private void CompleteConstantsEnding(
         IReadOnlyList<Card> restored, string trigger, List<GameEvent> events)
     {
-        foreach (var card in restored.Where(card =>
+        // The initiating source has now left, so surviving conditional
+        // constants that depend on its absence are in force. Decide the whole
+        // restored-Uses set once at that boundary; the roots themselves then
+        // leave as the one preflighted snapshot rather than affecting which
+        // later root qualifies.
+        var departingNow = restored.Where(card =>
+            DeckTypes.IsInPlay(card.Area.Type)
+            && !Characteristics.IsLost(world, card, "uses")).ToArray();
+        foreach (var card in departingNow.Where(card =>
             DeckTypes.IsInPlay(card.Area.Type)))
         {
             Discard.Card(world, card, trigger, events);
