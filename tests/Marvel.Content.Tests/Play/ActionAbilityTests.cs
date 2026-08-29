@@ -4062,6 +4062,105 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
+    public void ProhibitedDamageCannotReplenishARepeatedMoveSource()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": {
+                  "cards": { "titled": "Madame Hydra" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Madame Hydra" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01180", board.AreaOf(DeckType.SideSchemesArea));
+                board.CreateCard(
+                    "01181",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void EarlierDiscardCanRemoveARepeatedMoveProhibition()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "if": {
+                  "test": { "titleInPlay": "Legions of Hydra" },
+                  "then": { "discard": { "titled": "Legions of Hydra" } }
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Madame Hydra" },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01180", board.AreaOf(DeckType.SideSchemesArea));
+                board.CreateCard(
+                    "01181",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.TheCardIn(DeckType.VillainArea)!.TakeDamage(1);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
     public void BoundedThreatRemovalCannotDefeatADistantSideScheme()
     {
         var runner = Runner(
