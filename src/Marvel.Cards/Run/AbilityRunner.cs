@@ -4141,12 +4141,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return RepeatedChange.Form | RepeatedChange.CardsInPlay;
         }
-        if (node.Kind is "dealDamage" or "dealAttackDamage"
-            or "moveAttackDamage" or "indirectDamage")
+        if (node.Kind is "dealDamage" or "indirectDamage" or "moveDamage"
+            or "replaceThreatWithDamage")
+        {
+            return RepeatedChange.CardsInPlay
+                | (DamageCanChangePlayerOrder(node, cast, binding)
+                    ? RepeatedChange.PlayerOrder
+                    : RepeatedChange.None);
+        }
+        if (node.Kind is "dealAttackDamage" or "moveAttackDamage")
+        {
+            return RepeatedChange.CardsInPlay;
+        }
+        if (node.Kind == "enemyAttacks")
         {
             return RepeatedChange.CardsInPlay | RepeatedChange.PlayerOrder;
         }
-        if (StableForCardsInPlay(node))
+        if (StableForCardsInPlay(node, cast))
         {
             return RepeatedChange.None;
         }
@@ -4202,13 +4213,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         PlayerOrder = 4,
     }
 
-    private static bool StableForCardsInPlay(AbilityNode node) =>
+    private static bool StableForCardsInPlay(AbilityNode node, Cast cast) =>
         node.Kind is "draw" or "drawToHandSize" or "drawToPrintedHandSize"
             or "exhaust" or "ready" or "heal" or "generate" or "giveStatus"
             or "gainSurge" or "preventDamage" or "preventThreat"
             or "cancelWhenRevealed" or "grantUntil"
             or "grantCharactersControlledBy" or "reduceNextCardCost"
-            or "removeThreat";
+        || node.Kind == "removeThreat"
+            && Every(node.Require("scheme"), cast) is { Count: > 0 } schemes
+            && schemes.All(scheme => scheme.Area.Type == DeckType.MainSchemesArea);
+
+    private static bool DamageCanChangePlayerOrder(
+        AbilityNode node, Cast cast, bool binding)
+    {
+        AbilityValue targets = node.Kind switch
+        {
+            "dealDamage" => node.Require("cards"),
+            "indirectDamage" => node.Require("among"),
+            "moveDamage" => node.Require("to"),
+            "replaceThreatWithDamage" => node.Require("card"),
+            _ => throw new InvalidOperationException(
+                $"'{node.Kind}' is not a direct damage node"),
+        };
+        var cards = Every(targets, cast);
+        return cards.Any(card => cast.World.PlayerOrder.Any(player =>
+                cast.World.Seats[player].IdentityCard == card))
+            || cards.Count == 0 && binding && BindingCanChange(targets);
+    }
 
     private static IEnumerable<AbilityNode> MutationChildren(AbilityNode node) =>
         node.Kind is "attack" or "thwart"
