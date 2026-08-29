@@ -293,7 +293,7 @@ public static class Attack
         // without the villainous keyword is attacking, **skip this step**" --
         // and skipping matters beyond the icons, because taking a card off the
         // encounter deck moves every later deal.
-        if (!Keywords.IsBoosted(enemy, facts, world.Players))
+        if (!Keywords.IsBoosted(world, enemy, facts, world.Players))
         {
             return;
         }

@@ -210,7 +210,7 @@ public static class Elimination
             return;
         }
 
-        if (facts.PrintedValue(card.FaceId, "Permanent", world.Players) > 0)
+        if (StateFields.Modified(world, card, "permanent", facts, world.Players) > 0)
         {
             // `.1` and `.2`. A non-attachment permanent is removed from the
             // game; an attachment resolves its "attach to" text first, and that

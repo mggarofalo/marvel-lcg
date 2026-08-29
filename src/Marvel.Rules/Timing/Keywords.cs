@@ -116,15 +116,18 @@ public static class Keywords
     /// deck moves every later deal.
     /// </para>
     /// </remarks>
+    /// <param name="world">The board carrying gained and lost characteristics.</param>
     /// <param name="card">The activating enemy.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="players">How many players are in the game.</param>
-    public static bool IsBoosted(State.Card card, State.ICardFacts facts, int players)
+    public static bool IsBoosted(
+        State.World world, State.Card card, State.ICardFacts facts, int players)
     {
+        ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
 
         return State.FacedownDrones.Kind(card, facts) != State.CardKind.Minion
-            || State.FacedownDrones.BaseValue(card, facts, "Villainous", players) > 0;
+            || State.StateFields.Modified(world, card, "villainous", facts, players) > 0;
     }
 }

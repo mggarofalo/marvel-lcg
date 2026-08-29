@@ -471,6 +471,36 @@ public sealed class KeywordTests
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:attack-enemy-activation.step.1")]
+    [Fact]
+    public void AMinionThatLosesVillainousTakesNoBoostCard()
+    {
+        // A card that "loses a characteristic" no longer has its printed
+        // Villainous keyword. The activation therefore skips the boost-card
+        // step exactly like a minion that never printed the keyword.
+        var printed = new Printed()
+            .With("hero", ("HP", "10"))
+            .With("minion", ("ATK", "1"), ("HP", "3"), ("Villainous", "1"));
+        var world = Board(printed);
+        world.Seats[0].IdentityCard.TurnTo("hero");
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("villainous"),
+            Affects: minion.ObjectId));
+
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: minion.ObjectId, Seat: 0), []);
+        Undefended(world, printed);
+
+        Assert.Single(world.AreaOf(DeckType.EncounterDeck).Cards);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:scheme-enemy-activation.step.1")]
     [Fact]
     public void AMinionWithoutVillainousSchemesWithoutABoostCard()
@@ -511,7 +541,9 @@ public sealed class KeywordTests
         var world = Board(printed);
         var enemy = world.CreateCard(faceId, world.AreaOf(DeckType.EngagedEnemiesArea));
 
-        Assert.Equal(boosted, Marvel.Rules.Timing.Keywords.IsBoosted(enemy, printed, 1));
+        Assert.Equal(
+            boosted,
+            Marvel.Rules.Timing.Keywords.IsBoosted(world, enemy, printed, 1));
     }
 
     [Rule("rr:temporary")]
@@ -569,6 +601,30 @@ public sealed class KeywordTests
         Assert.DoesNotContain(
             world.AreaOf(DeckType.EncounterDiscardPile).Cards,
             card => card.ObjectId == minion.ObjectId);
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:victory-x.2")]
+    [Fact]
+    public void ADefeatedCardThatLosesVictoryIsDiscarded()
+    {
+        // Losing Victory removes the replacement destination. The defeated
+        // minion therefore goes to the encounter discard pile, not the victory
+        // display its printed keyword would otherwise name.
+        var printed = new Printed().With("minion", ("HP", "1"), ("Victory", "2"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("victory"),
+            Affects: minion.ObjectId));
+        Agendas.Happening(world);
+
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Empty(world.AreaOf(DeckType.VictoryDisplay).Cards);
     }
 
     [Rule("rr:quickstrike")]

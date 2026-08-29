@@ -43,7 +43,7 @@ public sealed class FacedownDroneTests
         Assert.Equal(1, FacedownDrones.BaseValue(drone, facts, "SCH", world.Players));
         Assert.Equal(1, StateFields.Modified(world, drone, "attack", facts, world.Players));
         Assert.Equal(1, Damage.Health(world, facts, drone));
-        Assert.False(Keywords.IsBoosted(drone, facts, world.Players));
+        Assert.False(Keywords.IsBoosted(world, drone, facts, world.Players));
         Assert.Contains(drone, BasicPowers.Attackable(world, facts, 1));
 
         var record = world.Digest().Cards.Single(card => card.Id == drone.ObjectId);

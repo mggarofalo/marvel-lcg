@@ -404,7 +404,7 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (FacedownDrones.BaseValue(card, facts, "Victory", world.Players) <= 0)
+        if (StateFields.Modified(world, card, "victory", facts, world.Players) <= 0)
         {
             return false;
         }
