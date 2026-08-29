@@ -580,8 +580,25 @@ public sealed class ContinuousEffects(World world)
                 ? new HashSet<int>()
                 : [.. plannedIds];
 
-            var pending = new Queue<Card>(planned);
             var restored = moveRoots ? sources.ToList() : [];
+            var restoredIds = restored.Select(card => card.ObjectId).ToHashSet();
+            foreach (var card in LostUsesCandidates())
+            {
+                if (definiteIds.Contains(card.ObjectId))
+                {
+                    continue;
+                }
+                if (restoredIds.Add(card.ObjectId))
+                {
+                    restored.Add(card);
+                }
+                if (!plannedIds.Contains(card.ObjectId))
+                {
+                    AddDeparture(card, includeHostedCards: true, planned, plannedIds);
+                }
+            }
+
+            var pending = new Queue<Card>(planned);
             while (pending.Count > 0)
             {
                 var layer = new List<Card>();
@@ -598,9 +615,13 @@ public sealed class ContinuousEffects(World world)
 
                 foreach (var card in RestoredUsesAfter(candidates))
                 {
-                    if (!plannedIds.Contains(card.ObjectId))
+                    if (!definiteIds.Contains(card.ObjectId)
+                        && restoredIds.Add(card.ObjectId))
                     {
                         restored.Add(card);
+                    }
+                    if (!plannedIds.Contains(card.ObjectId))
+                    {
                         int before = planned.Count;
                         AddDeparture(card, includeHostedCards: true, planned, plannedIds);
                         foreach (var added in planned.Skip(before))
@@ -611,9 +632,7 @@ public sealed class ContinuousEffects(World world)
                 }
             }
 
-            var roots = restored
-                .Where(card => !HasHostedAncestor(card, plannedIds))
-                .ToArray();
+            var roots = restored.Distinct().ToArray();
             var rootTrees = roots.ToDictionary(
                 root => root.ObjectId,
                 root => planned
@@ -670,34 +689,48 @@ public sealed class ContinuousEffects(World world)
                 .Concat(selected.SelectMany(id => rootTrees[id]))
                 .Distinct()
                 .ToArray();
-            using var projection = ProjectOut(projected);
-
-            var newlyEligible = roots.Where(card =>
-                    !selected.Contains(card.ObjectId)
-                    && DeckTypes.IsInPlay(card.Area.Type)
-                    && !Characteristics.IsLost(world, card, "uses"))
-                .Select(card => card.ObjectId)
-                .ToArray();
+            int[] newlyEligible;
+            using (ProjectOut(projected))
+            {
+                newlyEligible = roots.Where(card =>
+                        !selected.Contains(card.ObjectId)
+                        && DeckTypes.IsInPlay(card.Area.Type)
+                        && !Characteristics.IsLost(world, card, "uses"))
+                    .Select(card => card.ObjectId)
+                    .ToArray();
+            }
             if (newlyEligible.Length > 0)
             {
                 selected.UnionWith(newlyEligible);
                 continue;
             }
 
+            var selectedRoots = roots.Where(card => selected.Contains(card.ObjectId))
+                .Where(card => !HasHostedAncestor(card, selected))
+                .ToArray();
+
+            // A hosted card is still in play when attachment legality is
+            // checked immediately before its host leaves. Do not project that
+            // tree away: its own constant can make it Permanent. Definite
+            // source trees are checked on the current board; tentative Uses
+            // roots are checked with only the initiating source projected.
             foreach (var (root, tree) in definiteTrees)
             {
                 Discard.PreflightProjectedAttachments(
                     world, world.Cards[root], tree.Skip(1).Select(id => world.Cards[id]));
             }
-            foreach (int root in selected)
+            using (ProjectOut([.. definiteIds]))
             {
-                Discard.PreflightProjectedAttachments(
-                    world,
-                    world.Cards[root],
-                    rootTrees[root].Skip(1).Select(id => world.Cards[id]));
+                foreach (var root in selectedRoots)
+                {
+                    Discard.PreflightProjectedAttachments(
+                        world,
+                        root,
+                        rootTrees[root.ObjectId].Skip(1).Select(id => world.Cards[id]));
+                }
             }
 
-            return roots.Where(card => selected.Contains(card.ObjectId)).ToArray();
+            return selectedRoots;
         }
     }
 
