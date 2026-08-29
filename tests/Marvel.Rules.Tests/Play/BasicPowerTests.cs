@@ -319,6 +319,7 @@ public sealed class BasicPowerTests
     }
 
     [Rule("rr:cannot")]
+    [Rule("rr:cannot.2")]
     [Rule("rr:thwart.1.1")]
     [Fact]
     public void ACharacterCannotInitiateAThwartAgainstAProtectedScheme()
@@ -360,6 +361,28 @@ public sealed class BasicPowerTests
         Assert.Equal(0, removed);
         Assert.Equal(3, scheme.Tokens["k_threat"]);
         Assert.Empty(events);
+    }
+
+    [Rule("rr:cannot.3")]
+    [Fact]
+    public void ExplicitCardTextCanOverrideAThreatRemovalProhibition()
+    {
+        // "An ability can override a rule with the word 'cannot' in it if the
+        // ability has an explicit exception to that rule." The override is an
+        // explicit property of this instruction; an ordinary permission uses
+        // the default false value and loses under `rr:cannot.2`.
+        var printed = new Printed();
+        var world = Board(printed);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 3);
+        var abilities = new ProtectedScheme(scheme.ObjectId);
+
+        long removed = Threat.Remove(
+            world, printed, abilities, scheme, 2, "test", "Remove_Threat", [],
+            overridesCannot: true);
+
+        Assert.Equal(2, removed);
+        Assert.Equal(1, scheme.Tokens["k_threat"]);
     }
 
     [Rule("rr:recover-recovery")]

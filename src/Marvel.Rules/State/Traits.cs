@@ -48,9 +48,15 @@ public static class Traits
         ArgumentNullException.ThrowIfNull(facts);
 
         var printed = FacedownDrones.InherentTraits(card, facts);
+        var active = world.Effects.Active();
+        var lost = active
+            .Where(effect => effect.AppliesTo(world, card)
+                && effect.Kind.StartsWith(Characteristics.Lost + Granted, StringComparison.Ordinal))
+            .Select(effect => effect.Kind[(Characteristics.Lost + Granted).Length..])
+            .ToHashSet(StringComparer.Ordinal);
         List<string>? all = null;
 
-        foreach (var effect in world.Effects.Active())
+        foreach (var effect in active)
         {
             if (effect.Affects != card.ObjectId
                 || !effect.Kind.StartsWith(Granted, StringComparison.Ordinal))
@@ -59,6 +65,10 @@ public static class Traits
             }
 
             string gained = effect.Kind[Granted.Length..];
+            if (lost.Contains(gained))
+            {
+                continue;
+            }
             all ??= [.. printed];
             if (!all.Contains(gained, StringComparer.Ordinal))
             {
@@ -69,7 +79,14 @@ public static class Traits
         // The printed list unchanged when nothing was granted, which is the
         // common case by a very long way: one allocation per card per ask would
         // be paid on every trait question in the game.
-        return all ?? printed;
+        if (lost.Count == 0)
+        {
+            return all ?? printed;
+        }
+
+        all ??= [.. printed];
+        all.RemoveAll(lost.Contains);
+        return all;
     }
 
     /// <summary>Whether a card has one trait, printed or granted.</summary>

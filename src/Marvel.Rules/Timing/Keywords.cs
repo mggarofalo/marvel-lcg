@@ -76,6 +76,11 @@ public static class Keywords
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
 
+        if (State.Characteristics.IsLost(world, card, keyword))
+        {
+            return false;
+        }
+
         foreach (var effect in world.Effects.Active())
         {
             if (string.Equals(effect.Kind, keyword, StringComparison.Ordinal)

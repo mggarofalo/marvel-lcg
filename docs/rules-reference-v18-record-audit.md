@@ -237,8 +237,8 @@ items.
 | `rr:cancel.5.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:cannot` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:cannot.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:cannot.2` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns precedence between conflicting rules. |
-| `rr:cannot.3` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns explicit card-text overrides of prohibitions. |
+| `rr:cannot.2` | Executable and cited | — | A behavior test directly proves an ordinary permission cannot override a prohibition. |
+| `rr:cannot.3` | Executable and cited | — | A behavior test directly proves an explicitly marked card instruction can override a prohibition. |
 | `rr:card-ability` | Redirect or summary | — | This record redirects readers to Ability; the destination carries the rule. |
 | `rr:card-types` | Not enforceable by an engine | — | This record defines the term; the following clauses and dedicated entries carry the decisions. |
 | `rr:card-types.1` | Redirect or summary | — | This record lists the dedicated player-card type entries. |
@@ -486,14 +486,14 @@ items.
 | `rr:form-change-form.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:form-change-form.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:form-change-form.3` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:form-change-form.4` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns form-specific identity references. |
+| `rr:form-change-form.4` | Executable and cited | — | A behavior test directly proves an alter-ego reference has no identity target in hero form. |
 | `rr:form-change-form.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:form-change-form.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:form-change-form.6.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:form-change-form.6.2` | Unimplemented behavior | MARVEL-271 | The lifecycle work item owns changing additional forms and preserving the identity flip budget. |
 | `rr:form-change-form.7` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:friendly` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:gains` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
+| `rr:gains` | Executable and cited | — | A behavior test distinguishes runtime possession of gained traits and keywords from printed characteristics. |
 | `rr:game-element` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:game-element.1` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:game-element.2` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
@@ -635,16 +635,16 @@ items.
 | `rr:keywords.27` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
 | `rr:keywords.28` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
 | `rr:keywords.29` | Redirect or summary | — | This overview lists rules that the dedicated glossary entries state precisely. |
-| `rr:labeled-ability` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:labeled-ability.1` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:labeled-ability.2` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:labeled-ability.3` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:labeled-ability.3.1` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:labeled-ability.4` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:labeled-ability.5` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:labeled-ability.6` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:labeled-ability.6.1` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:labeled-ability.6.2` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
+| `rr:labeled-ability` | Executable and cited | — | Labeled abilities share one attributed-performer and cancellation primitive, directly covered by behavior tests. |
+| `rr:labeled-ability.1` | Executable and cited | — | A behavior test begins attribution after costs and returns the performing card. |
+| `rr:labeled-ability.2` | Executable and cited | — | A behavior test directly attributes an attack-labeled event to the identity. |
+| `rr:labeled-ability.3` | Executable and cited | — | A behavior test directly attributes a defense-labeled event to the identity. |
+| `rr:labeled-ability.3.1` | Executable and cited | — | Defense resolution uses the attributed performer when establishing the defender role. |
+| `rr:labeled-ability.4` | Executable and cited | — | A behavior test directly attributes a thwart-labeled event to the identity. |
+| `rr:labeled-ability.5` | Executable and cited | — | A behavior test begins one ability carrying both attack and thwart labels. |
+| `rr:labeled-ability.6` | Executable and cited | — | A behavior test proves one matching status cancels the entire multi-labeled effect. |
+| `rr:labeled-ability.6.1` | Executable and cited | — | A canceled labeled ability returns no performer, so no labeled act begins. |
+| `rr:labeled-ability.6.2` | Executable and cited | — | A behavior test removes both stunned and confused from an attack/thwart ability. |
 | `rr:lasting-effects` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:lasting-effects.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:lasting-effects.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -670,9 +670,9 @@ items.
 | `rr:look-looked-at` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:look-looked-at.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
 | `rr:look-looked-at.1.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:loses` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:loses.1` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
-| `rr:loses.2` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns this executable rule. |
+| `rr:loses` | Executable and cited | — | Runtime trait, keyword, and field queries suppress a characteristic while its loss effect is active. |
+| `rr:loses.1` | Executable and cited | — | A behavior test proves printed facts retain a characteristic that runtime possession suppresses. |
+| `rr:loses.2` | Executable and cited | — | A behavior test proves later grants cannot restore a characteristic while its loss remains active. |
 | `rr:main-scheme-main-scheme-deck` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:main-scheme-main-scheme-deck.step.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:main-scheme-main-scheme-deck.step.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -932,7 +932,7 @@ items.
 | `rr:resource-ability.1.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:resource-card` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:resource-card.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:resource-card.2` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns effects that treat resources as spent by the identity. |
+| `rr:resource-card.2` | Executable and cited | — | The shared performer rule treats a controlled resource card as an extension of its identity, directly covered by a behavior test. |
 | `rr:resource-type` | Redirect or summary | — | This record redirects readers to Resource; the destination carries the rule. |
 | `rr:response` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:response.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -1037,7 +1037,7 @@ items.
 | `rr:support` | Not enforceable by an engine | — | This record names a printed card type; its clauses carry the executable support rules. |
 | `rr:support.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:support.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:support.3` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns support actions not being performed by the identity. |
+| `rr:support.3` | Executable and cited | — | A behavior test proves an in-play support performs its own labeled ability and does not consume the identity's status. |
 | `rr:surge` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:surge.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:surge.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -1142,7 +1142,7 @@ items.
 | `rr:upgrade.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:upgrade.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:upgrade.3.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:upgrade.4` | Unimplemented behavior | MARVEL-290 | The identity and characteristic-precedence work item owns when an upgrade's ability is performed by the identity. |
+| `rr:upgrade.4` | Executable and cited | — | A behavior test covers both identity extension and the different-friendly-character host exception. |
 | `rr:uses-x-type` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:uses-x-type.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:valid-target` | Redirect or summary | — | This record redirects readers to Target; the destination carries the rule. |

@@ -95,8 +95,13 @@ public static class Attack
     /// <c>rr:defend-defense.4.1</c>, <c>.4.3</c>, and <c>.4.4</c>.
     /// </remarks>
     public static void BeginDefenseAbility(World world, int player)
+        => BeginDefenseAbility(world, player, world.Seats[player].IdentityCard);
+
+    /// <summary>Establish the roles for a defense performed by an attributed card.</summary>
+    public static void BeginDefenseAbility(World world, int player, Card performer)
     {
         ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(performer);
         if (world.Attack is not { } attack)
         {
             // `rr:defend-defense.4.8`: the label may resolve outside an attack
@@ -117,11 +122,20 @@ public static class Attack
             return;
         }
 
-        var identity = world.Seats[player].IdentityCard;
+        bool character = FacedownDrones.Kind(performer, world.Facts) is
+            CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;
+        if (!character)
+        {
+            // `rr:support.3` excludes support defenses from the identity. A
+            // support is not a character, so it performs the labeled effect
+            // without becoming the defending character of the attack.
+            return;
+        }
+
         world.Attack = attack with
         {
-            Defender = identity.ObjectId,
-            Target = identity.ObjectId,
+            Defender = performer.ObjectId,
+            Target = performer.ObjectId,
             Player = player,
             BasicDefense = false,
         };

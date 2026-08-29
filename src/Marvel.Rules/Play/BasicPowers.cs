@@ -317,8 +317,9 @@ public static class BasicPowers
         ArgumentNullException.ThrowIfNull(enemy);
         ArgumentNullException.ThrowIfNull(events);
 
-        var attacker = world.Seats[player].IdentityCard;
-        if (Cancelled(world, facts, attacker, Statuses.Stunned, events))
+        var attacker = LabeledAbilities.Begin(
+            world, facts, player, source, [AttackVerb], events);
+        if (attacker is null)
         {
             return false;
         }
@@ -661,8 +662,9 @@ public static class BasicPowers
         ArgumentNullException.ThrowIfNull(scheme);
         ArgumentNullException.ThrowIfNull(events);
 
-        var thwarter = world.Seats[player].IdentityCard;
-        if (Cancelled(world, facts, thwarter, Statuses.Confused, events))
+        var thwarter = LabeledAbilities.Begin(
+            world, facts, player, source, [ThwartVerb], events);
+        if (thwarter is null)
         {
             return false;
         }

@@ -281,6 +281,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ImminentThreat = imminentThreat,
             EventTrigger = eventTrigger,
             PowerTargets = [.. targets.Select(id => world.Cards[id])],
+            PowerActor = occurrence.Actor >= 0 ? world.Cards[occurrence.Actor] : null,
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
             AbilityPlayer = abilityPlayer,
@@ -310,7 +311,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         if (power == BasicPowers.AttackVerb)
         {
-            var attacker = world.Seats[player].IdentityCard;
+            var attacker = cast.PowerActor ?? world.Seats[player].IdentityCard;
             if (!Keywords.Has(world, attacker, Keywords.Ranged, world.Facts))
             {
                 foreach (var target in cast.Attacked.DistinctBy(card => card.ObjectId))
@@ -4664,7 +4665,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool RebindsToEachPlayer(AbilityValue targets) => targets switch
     {
-        AbilityValue.Word word => word.Value is "you" or "yourHero",
+        AbilityValue.Word word => word.Value is "you" or "yourHero" or "yourAlterEgo",
         AbilityValue.Map => RebindsToEachPlayer(Tree(targets)),
         _ => false,
     };
@@ -6259,6 +6260,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return scheme is not null
             && scheme.Tokens.GetValueOrDefault("k_threat") > 0
             && Amount(node.Require("amount"), cast) > 0
+            && (node.Field("overridesCannot") is AbilityValue.Word { Value: "true" }
+                || cast.Abilities.CanRemoveThreat(cast.World, scheme))
             && !(scheme.Area.Type == DeckType.MainSchemesArea
                 && IsPlayerCard(cast)
                 && MainScheme.Crisis(cast.World, cast.World.Facts));
@@ -6985,7 +6988,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             var schemes = PowerEvery(node.Require("scheme"), cast, reachability);
             var valid = schemes.Where(scheme =>
                 PowerThreat(reachability, scheme) > 0
-                && cast.Abilities.CanRemoveThreat(cast.World, scheme)
+                && (node.Field("overridesCannot") is AbilityValue.Word { Value: "true" }
+                    || cast.Abilities.CanRemoveThreat(cast.World, scheme))
                 && !(scheme.Area.Type == DeckType.MainSchemesArea
                     && IsPlayerCard(cast)
                     && PowerCrisis(reachability, cast)));
@@ -7267,7 +7271,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             foreach (var scheme in PowerEvery(
                 node.Require("scheme"), cast, reachability))
             {
-                if (!cast.Abilities.CanRemoveThreat(cast.World, scheme)
+                if (!(node.Field("overridesCannot") is AbilityValue.Word { Value: "true" })
+                    && !cast.Abilities.CanRemoveThreat(cast.World, scheme)
                     || scheme.Area.Type == DeckType.MainSchemesArea
                         && IsPlayerCard(cast)
                         && PowerCrisis(state, cast))
@@ -8867,16 +8872,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ulong formsMayChange,
         out long count)
     {
-        if (selector is AbilityValue.Word { Value: "yourHero" })
+        if (selector is AbilityValue.Word { Value: "yourHero" or "yourAlterEgo" } formSelector)
         {
             int seat = Resolver(cast);
             var identity = cast.World.Seats[seat].IdentityCard;
-            bool liveHero = Forms.In(
-                cast.World, cast.World.Seats[seat], cast.World.Facts, Forms.Hero);
-            bool tracedHero = SeatMayChange(formsMayChange, seat)
-                ? !liveHero
-                : liveHero;
-            count = tracedHero && !discarded.Contains(identity.ObjectId) ? 1 : 0;
+            string form = formSelector.Value == "yourHero" ? Forms.Hero : Forms.AlterEgo;
+            bool liveForm = Forms.In(
+                cast.World, cast.World.Seats[seat], cast.World.Facts, form);
+            bool tracedForm = SeatMayChange(formsMayChange, seat) ? !liveForm : liveForm;
+            count = tracedForm && !discarded.Contains(identity.ObjectId) ? 1 : 0;
             return true;
         }
         if (selector is AbilityValue.Map { Entries.Count: 1 }
@@ -8929,7 +8933,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool CountSelectorFormsMayChange(
         AbilityValue selector, Cast cast, ulong formsMayChange)
     {
-        if (selector is AbilityValue.Word { Value: "yourHero" })
+        if (selector is AbilityValue.Word { Value: "yourHero" or "yourAlterEgo" })
         {
             return SeatMayChange(formsMayChange, Resolver(cast));
         }
@@ -9987,8 +9991,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "defense":
-                Attack.BeginDefenseAbility(cast.World, cast.Player);
-                RunChild(Tree(node.Require("effect")), "defense:effect", cast);
+                var defender = LabeledAbilities.Begin(
+                    cast.World, cast.World.Facts, Resolver(cast), cast.Source,
+                    [Attack.DefenseVerb], cast.Events);
+                if (defender is not null)
+                {
+                    Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
+                    RunChild(Tree(node.Require("effect")), "defense:effect", cast);
+                }
                 break;
 
             case "thwart":
@@ -10471,8 +10481,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     found.Add(Grant(node, cast, grantTarget));
                 }
-                else if (!string.Equals(
-                    Word(node.Require("card")), "yourHero", StringComparison.Ordinal))
+                else if (Word(node.Require("card")) is not ("yourHero" or "yourAlterEgo"))
                 {
                     throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' card {cast.Source.ObjectId} in "
@@ -12218,7 +12227,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Damage from an attack event performed by the resolving identity.</summary>
     private static void DealAttackDamage(AbilityNode node, Cast cast)
     {
-        var attacker = cast.World.Seats[Resolver(cast)].IdentityCard;
+        var attacker = cast.PowerActor ?? cast.World.Seats[Resolver(cast)].IdentityCard;
         ContinuousEffect? temporaryOverkill = null;
         if (node.Field("overkill") is not null)
         {
@@ -12272,7 +12281,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var damaged = Damage.Attack(
             cast.World,
             cast.World.Facts,
-            cast.World.Seats[Resolver(cast)].IdentityCard,
+            cast.PowerActor ?? cast.World.Seats[Resolver(cast)].IdentityCard,
             cast.Source,
             to,
             amount,
@@ -12462,7 +12471,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.Trigger,
                 "Remove_Threat",
                 cast.Events,
-                by: Resolver(cast));
+                by: Resolver(cast),
+                overridesCannot: node.Field("overridesCannot")
+                    is AbilityValue.Word { Value: "true" });
         }
     }
 
@@ -13534,6 +13545,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ? cast.World.Seats[Resolver(cast)].IdentityCard
             : null,
 
+        // The other half of the form-specific reference. `rr:form-change-form.4`
+        // says a hero-form identity is not its alter-ego for card abilities,
+        // just as `.5` says an alter-ego-form identity is not its hero.
+        "yourAlterEgo" => Forms.In(
+            cast.World, cast.World.Seats[Resolver(cast)], cast.World.Facts, Forms.AlterEgo)
+            ? cast.World.Seats[Resolver(cast)].IdentityCard
+            : null,
+
         // `rr:you-your.5`: "if a card ability places a status card on 'you'
         // (such as 'you are stunned'), the player resolving that card ability
         // places that status card on their identity." `rr:you-your` opens with
@@ -13998,6 +14017,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         /// <summary>Every game element selected for this labelled power.</summary>
         public IReadOnlyList<Card> PowerTargets { get; init; } = [];
+
+        /// <summary>The card attributed as performer of the labelled power.</summary>
+        public Card? PowerActor { get; init; }
 
         /// <summary>A numeric result carried into this labelled power.</summary>
         public long PowerAmount { get; init; } = -1;

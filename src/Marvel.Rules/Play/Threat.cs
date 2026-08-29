@@ -168,10 +168,15 @@ public static class Threat
     /// <param name="verb">What kind of change the event stream records.</param>
     /// <param name="events">Where to record what happened.</param>
     /// <param name="by">The seat whose character did it, or -1.</param>
+    /// <param name="overridesCannot">
+    /// Whether this exact card instruction explicitly overrides the prohibition.
+    /// An ordinary permission must leave this false.
+    /// </param>
     /// <returns>How much threat was removed.</returns>
     public static long Remove(
         World world, ICardFacts facts, ICardAbilities abilities, Card scheme, long amount,
-        string trigger, string verb, List<GameEvent> events, int by = -1)
+        string trigger, string verb, List<GameEvent> events, int by = -1,
+        bool overridesCannot = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -181,7 +186,8 @@ public static class Threat
 
         long held = scheme.Tokens.GetValueOrDefault("k_threat");
         long removed = Math.Min(held, Math.Max(0, amount));
-        if (removed == 0 || !abilities.CanRemoveThreat(world, scheme))
+        if (removed == 0
+            || !overridesCannot && !abilities.CanRemoveThreat(world, scheme))
         {
             return 0;
         }

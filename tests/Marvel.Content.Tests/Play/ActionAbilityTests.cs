@@ -37,6 +37,42 @@ public sealed class ActionAbilityTests
     private static readonly CardCatalog Cards =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:form-change-form.4")]
+    [Theory]
+    [InlineData(true, 2)]
+    [InlineData(false, 1)]
+    public void AlterEgoReferencesOnlyAffectAnIdentityInAlterEgoForm(
+        bool hero, int remainingDamage)
+    {
+        // "While a player is in hero form, card abilities that interact with
+        // their alter-ego do not interact with their identity." The explicit
+        // alter-ego selector therefore has no target in hero form and names the
+        // same physical identity card after it changes to alter-ego form.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """{ "heal": { "card": "yourAlterEgo", "amount": 1 } }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                board.Seats[0].IdentityCard.TakeDamage(2);
+            },
+            hero: hero,
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(remainingDamage, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:player-turn.5")]
     [Rule("rr:support.2")]
     [Fact]
@@ -1813,7 +1849,7 @@ public sealed class ActionAbilityTests
     public void ACancelledLimitedAttackStillUsesItsLimit()
     {
         var runner = Runner(
-            AuthoredCards.AuntMay,
+            "01017",
             "Action",
             """{ "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": 1 } } } } } }""",
             limit: 1);
@@ -1821,7 +1857,11 @@ public sealed class ActionAbilityTests
         var (game, world) = Playing(
             board =>
             {
-                source = InPlay(board, AuthoredCards.AuntMay);
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
                 Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
             },
             hero: true,

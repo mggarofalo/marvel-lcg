@@ -404,6 +404,11 @@ public static class StateFields
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
 
+        if (Characteristics.IsLost(world, card, field))
+        {
+            return 0;
+        }
+
         if (PrintedFrom.TryGetValue(field, out string? printedAttribute)
             && PowerAttributes.Contains(printedAttribute)
             && !HasUsablePrintedPower(facts, card.FaceId, printedAttribute))
