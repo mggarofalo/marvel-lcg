@@ -4290,7 +4290,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             _ => throw new InvalidOperationException(
                 $"'{node.Kind}' is not a direct damage node"),
         };
-        int damagingFrames = targets is AbilityValue.Word { Value: "you" }
+        int damagingFrames = RebindsToEachPlayer(targets)
             ? 1
             : priorFrames;
         var cards = Every(targets, cast);
@@ -4303,6 +4303,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Damage.Health(cast.World, cast.World.Facts, card) - card.Damage))
             || cards.Count == 0 && binding && BindingCanChange(targets);
     }
+
+    private static bool RebindsToEachPlayer(AbilityValue targets) => targets switch
+    {
+        AbilityValue.Word word => word.Value is "you" or "yourHero",
+        AbilityValue.Map when Tree(targets) is { Kind: "query" } query =>
+            query.Argument is AbilityValue.Word
+                { Value: "charactersYouControl" },
+        _ => false,
+    };
 
     private static long TotalThreatRemoved(
         Card scheme, AbilityNode node, Cast cast,
