@@ -4554,6 +4554,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             if (transfer.Discards)
             {
                 discarded.Add(to);
+                tough[to] = 0;
+                engagement.Remove(to);
                 continue;
             }
             if (transfer.GrantsHealth)

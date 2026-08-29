@@ -5267,6 +5267,71 @@ public sealed class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:status-cards.2")]
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void DiscardingAndReenteringAMinionDoesNotKeepHostedTough()
+    {
+        // A tough status card is placed on its character. Discarding Hydra
+        // Mercenary discards that hosted status too, so re-entering without
+        // printed Toughness leaves it vulnerable: three damage defeats it,
+        // Guard leaves, and the later lethal move is reachable.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "discard": { "titled": "Hydra Mercenary" } },
+                { "putIntoPlay": {
+                  "card": { "titled": "Hydra Mercenary" },
+                  "where": "engagedWithYou"
+                } },
+                { "dealDamage": {
+                  "cards": { "enemiesWithTrait": "HYDRA" }, "amount": 3
+                } },
+                { "dealDamage": {
+                  "cards": { "query": "attackableEnemies" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, mercenary!, Statuses.Tough);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, mercenary!.Area.Type);
+        Assert.True(Statuses.Has(world!, mercenary, Statuses.Tough));
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:ability.step.1")]
     [Fact]
     public void EnteringConstantAbilityRaisesBeforeARepeatedEffectMutates()
