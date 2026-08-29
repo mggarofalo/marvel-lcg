@@ -4347,6 +4347,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         bool GrantsHealth = false, bool DealsDamage = false,
         bool Discards = false, bool RemovesThreat = false,
         bool PlacesThreat = false, string? GrantsTrait = null,
+        string? GrantsField = null,
         AbilityValue? FromVillain = null, AbilityValue? ToVillain = null);
 
     private readonly record struct TraceCard(
@@ -4357,6 +4358,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         HashSet<int> Players, Dictionary<int, int> Tough,
         Dictionary<int, long> Health, HashSet<int> Discarded,
         Dictionary<int, long> Threat, Dictionary<int, HashSet<string>> Traits,
+        Dictionary<(int Card, string Field), long> Modifiers,
         int CurrentVillain,
         int VillainStagesDrawn, bool Finished);
 
@@ -4370,7 +4372,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             int villain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
             IReadOnlyList<DamageTraceState> states =
                 [new(new Dictionary<int, long>(), target.Damage, [], new(), new(), [], new(),
-                    new(), villain, 0, false)];
+                    new(), new(), villain, 0, false)];
             for (int frame = 0; frame < frames; frame++)
             {
                 var next = new List<DamageTraceState>();
@@ -4417,6 +4419,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var traits = state.Traits.ToDictionary(
             pair => pair.Key,
             pair => new HashSet<string>(pair.Value, StringComparer.Ordinal));
+        var modifiers = new Dictionary<(int Card, string Field), long>(state.Modifiers);
         int currentVillain = state.CurrentVillain;
         int villainStagesDrawn = state.VillainStagesDrawn;
         bool finished = state.Finished;
@@ -4484,14 +4487,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             int from = transfer.FromVillain is { } fromSelector
                 ? TraceSelectorIncludesCard(
                     fromSelector, transfer.From, currentVillain,
-                    cast, discarded, traits)
+                    cast, discarded, traits, modifiers)
                     is int tracedFrom ? tracedFrom
                     : int.MinValue
                 : transfer.From;
             int to = transfer.ToVillain is { } toSelector
                 ? TraceSelectorIncludesCard(
                     toSelector, transfer.To, currentVillain,
-                    cast, discarded, traits)
+                    cast, discarded, traits, modifiers)
                     is int tracedTo ? tracedTo
                     : int.MinValue
                 : transfer.To;
@@ -4534,6 +4537,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     traits[to] = gained;
                 }
                 gained.Add(gainedTrait);
+                continue;
+            }
+            if (transfer.GrantsField is { } gainedField)
+            {
+                var key = (to, gainedField);
+                modifiers[key] = SaturatingSum(
+                    modifiers.GetValueOrDefault(key), [transfer.Amount]);
                 continue;
             }
             if (transfer.GrantsTough)
@@ -4594,7 +4604,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         return new DamageTraceState(
             damage, peak, state.Players, tough, health, discarded, threat,
-            traits, currentVillain, villainStagesDrawn, finished);
+            traits, modifiers, currentVillain, villainStagesDrawn, finished);
     }
 
     private static long AfterForcedDamageReplacements(
@@ -4843,6 +4853,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ];
         }
         if (node.Kind == "grantUntil"
+            && node.Field("keyword") is { } grantedField
+            && Word(grantedField) != "health"
+            && TraceCards(node.Require("card"), cast) is { Count: > 0 } targets)
+        {
+            return
+            [
+                .. targets.Select(target => new DamageTransfer(
+                    0, target.Card.ObjectId,
+                    node.Field("amount") is { } amount ? Amount(amount, cast) : 1,
+                    GrantsField: Word(grantedField),
+                    ToVillain: target.VillainSelector)),
+            ];
+        }
+        if (node.Kind == "grantUntil"
             && node.Field("keyword") is { } granted
             && Word(granted) == "health"
             && TraceCardNamed(node.Require("card"), cast) is { } healthier)
@@ -5018,7 +5042,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static int? TraceSelectorIncludesCard(
         AbilityValue value, int bound, int currentVillain, Cast cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits)
+        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
+        Dictionary<(int Card, string Field), long> modifiers)
     {
         int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
         int candidateId = bound == boardVillain ? currentVillain : bound;
@@ -5028,14 +5053,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         var candidate = cast.World.Cards[candidateId];
         return TraceSelectorMatches(
-            value, candidate, currentVillain, cast, discarded, traits)
+            value, candidate, currentVillain, cast, discarded, traits, modifiers)
             ? candidateId
             : null;
     }
 
     private static bool TraceSelectorMatches(
         AbilityValue value, Card candidate, int currentVillain, Cast cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits)
+        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
+        Dictionary<(int Card, string Field), long> modifiers)
     {
         if (value is not AbilityValue.Map)
         {
@@ -5067,15 +5093,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 candidate, Word(node.Argument), cast, discarded, traits),
             "withTrait" => TraceSelectorMatches(
                     node.Require("cards"), candidate, currentVillain,
-                    cast, discarded, traits)
+                    cast, discarded, traits, modifiers)
                 && TraceHasTrait(
                     candidate, Word(node.Require("trait")), cast, discarded, traits),
             "withoutAnotherCopyAttached" => TraceSelectorMatches(
                     node.Argument, candidate, currentVillain,
-                    cast, discarded, traits)
+                    cast, discarded, traits, modifiers)
                 && !AnotherCopyAttachedInTrace(candidate, cast, discarded),
             "minBy" or "maxBy" => TraceRankedSelectorIncludesCard(
-                node, candidate, currentVillain, cast, discarded, traits),
+                node, candidate, currentVillain, cast, discarded, traits,
+                modifiers),
             _ => false,
         };
     }
@@ -5142,10 +5169,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private static long TraceModified(
-        Card current, string field, Cast cast, HashSet<int> discarded)
+        Card current, string field, Cast cast, HashSet<int> discarded,
+        Dictionary<(int Card, string Field), long>? modifiers = null)
     {
         long value = StateFields.Modified(
-            cast.World, current, field, cast.World.Facts, cast.World.Players);
+                cast.World, current, field, cast.World.Facts, cast.World.Players)
+            + (modifiers?.GetValueOrDefault((current.ObjectId, field)) ?? 0);
         int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
         if (current.ObjectId == boardVillain)
         {
@@ -5196,11 +5225,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool TraceRankedSelectorIncludesCard(
         AbilityNode node, Card candidate, int currentVillain, Cast cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits)
+        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
+        Dictionary<(int Card, string Field), long> modifiers)
     {
         if (!TraceSelectorMatches(
                 node.Require("of"), candidate, currentVillain,
-                cast, discarded, traits)
+                cast, discarded, traits, modifiers)
             || (candidate.ObjectId == currentVillain
                     ? TraceModified(candidate, "permanent", cast, discarded)
                     : StateFields.Modified(
@@ -5219,7 +5249,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             .Where(card => !discarded.Contains(card.ObjectId)
                 && TraceSelectorMatches(
                     node.Require("of"), card, currentVillain,
-                    cast, discarded, traits)
+                    cast, discarded, traits, modifiers)
                 && (card.ObjectId == currentVillain
                     ? TraceModified(card, "permanent", cast, discarded)
                     : StateFields.Modified(
@@ -5232,10 +5262,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "cost" => cast.World.Facts.PrintedValue(
                 card.FaceId, "Cost", cast.World.Players),
             "attack" => card.ObjectId == currentVillain
-                ? TraceModified(card, "attack", cast, discarded)
+                ? TraceModified(card, "attack", cast, discarded, modifiers)
                 : StateFields.Modified(
                     cast.World, card, "attack", cast.World.Facts,
-                    cast.World.Players),
+                    cast.World.Players)
+                    + modifiers.GetValueOrDefault((card.ObjectId, "attack")),
             "printedHealth" => cast.World.Facts.PrintedValue(
                 card.FaceId, "HP", cast.World.Players),
             _ => throw new AbilityException(

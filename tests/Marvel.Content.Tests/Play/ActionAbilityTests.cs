@@ -4622,6 +4622,62 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
+    public void EarlierNumericGrantChangesALaterRankedTargetSet()
+    {
+        // Rhino begins below Sandman's attack. The +2 ATK grant makes Rhino
+        // the unique maximum before the ranked damage resolves, leaving a
+        // point for the following move to carry to the wounded hero.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "query": "villain" },
+                  "keyword": "attack", "amount": 2, "until": "EndOfRound"
+                } },
+                { "dealDamage": {
+                  "cards": { "maxBy": {
+                    "of": { "query": "enemies" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01102",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
     public void RankedSelectorCanDropAnInitiallySelectedNonVillain()
     {
         // Sandman begins as the maximum attack enemy, but Ultron's next stage
