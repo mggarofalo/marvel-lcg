@@ -524,7 +524,8 @@ public static class Attack
             // an enemy activation**, add one additional boost icon to that card
             // for each amplify icon in play." Per card, so two boost cards with
             // one amplify icon in play gain one each.
-            long icons = facts.PrintedValue(boost.FaceId, "Boost", world.Players)
+            long icons = StateFields.Modified(
+                    world, boost, "boost_const", facts, world.Players)
                 + MainScheme.Amplify(world, facts);
             if (icons > 0)
             {
@@ -710,8 +711,8 @@ public static class Attack
 
         if (attack.BasicDefense)
         {
-            amount -= facts.PrintedValue(
-                world.Cards[attack.Defender].FaceId, "DEF", world.Players);
+            amount -= StateFields.Modified(
+                world, world.Cards[attack.Defender], "defense", facts, world.Players);
         }
 
         return Math.Max(0, amount);

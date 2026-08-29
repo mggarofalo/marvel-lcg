@@ -64,6 +64,26 @@ public sealed class AttackTests
         Assert.Empty(world.Effects.Active());
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:attack-enemy-activation.step.3.c")]
+    [Fact]
+    public void ABoostCardThatLosesItsBoostIconsAddsNothing()
+    {
+        // The icons remain printed, but a lost characteristic does not
+        // function. Only the villain's ATK reaches the damage calculation.
+        var printed = Printed(atk: 2, boost: 3);
+        var world = Board(printed);
+        var boost = world.AreaOf(DeckType.EncounterDeck).Cards[^1];
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("boost_const"),
+            Affects: boost.ObjectId));
+
+        Finish(world, printed);
+
+        Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:attack-enemy-activation.step.4")]
     [Rule("rr:attack-enemy-activation.step.5")]
     [Fact]
@@ -89,6 +109,57 @@ public sealed class AttackTests
         Attack.DealDamage(world, printed, []);
 
         Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:loses")]
+    [Rule("rr:defend-defense.2")]
+    [Fact]
+    public void AHeroThatLosesDefenseReducesNoAttackDamage()
+    {
+        // DEF remains printed, but the lost power does not function while the
+        // hero uses basic defense.
+        var printed = Printed(atk: 5, boost: 0, def: 3);
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var hero = world.Seats[0].IdentityCard;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("defense"),
+            Affects: hero.ObjectId));
+
+        long amount = Attack.Amount(
+            world, printed,
+            new EnemyAttack(
+                villain.ObjectId, Player: 0, Target: hero.ObjectId,
+                Defender: hero.ObjectId, BasicDefense: true));
+
+        Assert.Equal(5, amount);
+    }
+
+    [Rule("rr:modifiers")]
+    [Rule("rr:defend-defense.2")]
+    [Fact]
+    public void ModifiedDefenseReducesAttackDamageByItsLiveValue()
+    {
+        // The basic defense reduction is the hero's DEF value, including a
+        // continuous modifier currently changing that value.
+        var printed = Printed(atk: 5, boost: 0, def: 1);
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var hero = world.Seats[0].IdentityCard;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "defense",
+            Amount: 2,
+            Affects: hero.ObjectId));
+
+        long amount = Attack.Amount(
+            world, printed,
+            new EnemyAttack(
+                villain.ObjectId, Player: 0, Target: hero.ObjectId,
+                Defender: hero.ObjectId, BasicDefense: true));
+
+        Assert.Equal(2, amount);
     }
 
     [Rule("rr:attack-enemy-activation.step.3.d")]
