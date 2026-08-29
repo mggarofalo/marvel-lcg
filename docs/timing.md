@@ -356,6 +356,27 @@ lethal self-damage cost or defeats a target after a choice: the added defeat
 condition and the original `WhenActionTriggered` condition belong to one
 occurrence under `rr:triggering-condition.2`.
 
+The occurrence also carries a resolution ledger. `rr:resolve.2` says an
+ability resolves only when at least one of its effects applies; beginning the
+ability therefore creates a `Pending` entry, applying an effect marks it, and
+finishing turns it into `Resolved` or `Unresolved`. The entry is addressed by
+source card, ability type, and same-type ordinal so two printed abilities are
+never conflated. A suspended choice, scheduled power, enemy activation, or
+threat placement retains that address and the same occurrence. This is state,
+not event history: it must still be available when the response window opens
+and after a save is restored.
+
+Event and treachery entries aggregate their abilities as `rr:resolve.3-.4`
+requires: one resolved ability resolves the card, while an all-cancelled or
+all-no-op set leaves it unresolved under `.7-.8`. No card entry is created for
+another card kind, and a constant ability is always unresolved under `.5-.6`.
+Keyword-provided When Revealed abilities, including Incite and Surge, have
+stable engine-assigned addresses in the same ledger as authored abilities; a
+successful keyword effect therefore resolves a treachery even when its printed
+When Revealed text cannot change the board.
+The address spelling and the three status names are engine choices; the
+distinctions they preserve are the rulebook's.
+
 Threat placement carries its assignment on the occurrence: scheme, source,
 assigned and remaining amount, player and cause. `rr:prevent.2` changes the
 remaining amount in the interrupt window before any token is placed. The

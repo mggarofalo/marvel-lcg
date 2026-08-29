@@ -23,6 +23,9 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Reveal
 {
+    private const int InciteResolutionOrdinal = -1;
+    private const int SurgeResolutionOrdinal = -2;
+
     /// <summary>
     /// Gives a character a status, and resolves what follows —
     /// <c>rr:status-cards</c>.
@@ -106,9 +109,10 @@ public static class Reveal
     /// <param name="card">The card being revealed.</param>
     /// <param name="player">The seat revealing it.</param>
     /// <param name="events">Where to record what happened.</param>
+    /// <param name="occurrence">The reveal occurrence retaining resolution status.</param>
     public static void Keywords(
         World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
-        List<GameEvent> events)
+        List<GameEvent> events, Occurrence? occurrence = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -120,19 +124,83 @@ public static class Reveal
         // scheme's target completes it whatever put it there -- and this used
         // to place it and not look.
         long incite = facts.PrintedValue(card.FaceId, "Incite", world.Players);
+        long surge = StateFields.Modified(world, card, "surge", facts, world.Players);
+        var keywordAbilities = KeywordAbilities(world, facts, card, player);
+        PendingAbility? inciteAbility = keywordAbilities
+            .Where(ability => ability.Ordinal == InciteResolutionOrdinal)
+            .Select(ability => (PendingAbility?)ability)
+            .SingleOrDefault();
+        PendingAbility? surgeAbility = keywordAbilities
+            .Where(ability => ability.Ordinal == SurgeResolutionOrdinal)
+            .Select(ability => (PendingAbility?)ability)
+            .SingleOrDefault();
+        if (occurrence is not null && facts.Kind(card.FaceId) == CardKind.Treachery)
+        {
+            // Keyword-provided abilities have no authored-data ordinal. These
+            // stable negative addresses are the engine's spelling, kept apart
+            // from every printed/data-order ordinal used by the card DSL.
+            occurrence.BeginCard(
+                card.ObjectId,
+                keywordAbilities);
+        }
+
         if (incite > 0 && world.TheCardIn(DeckType.MainSchemesArea) is { } scheme)
         {
             Threat.Place(world, facts, abilities, scheme, incite, "incite", events);
+            CompleteKeyword(occurrence, inciteAbility, applied: true);
+        }
+        else
+        {
+            CompleteKeyword(occurrence, inciteAbility, applied: false);
         }
 
         // `rr:surge`: "the player resolving the card deals themself a facedown
         // encounter card from the top of the encounter deck." `rr:keywords.1`
         // makes additional non-numeric instances inert, so printed and gained
         // surge are read together and the one ability fires once when present.
+        if (surge > 0)
+        {
+            bool dealt = Deal.EncounterCard(world, player, "surge", events) is not null;
+            CompleteKeyword(occurrence, surgeAbility, dealt);
+        }
+    }
+
+    private static void CompleteKeyword(
+        Occurrence? occurrence, PendingAbility? ability, bool applied)
+    {
+        if (occurrence is null || ability is not { } pending)
+        {
+            return;
+        }
+        if (applied)
+        {
+            occurrence.Resolve(pending);
+        }
+        occurrence.Complete(pending);
+    }
+
+    /// <summary>The stable ledger addresses of keyword-provided reveal abilities.</summary>
+    public static IReadOnlyList<PendingAbility> KeywordAbilities(
+        World world, ICardFacts facts, Card card, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(card);
+
+        var abilities = new List<PendingAbility>();
+        if (facts.PrintedValue(card.FaceId, "Incite", world.Players) > 0)
+        {
+            abilities.Add(new PendingAbility(
+                card.ObjectId, AbilityType.WhenRevealed, player,
+                InciteResolutionOrdinal));
+        }
         if (StateFields.Modified(world, card, "surge", facts, world.Players) > 0)
         {
-            Deal.EncounterCard(world, player, "surge", events);
+            abilities.Add(new PendingAbility(
+                card.ObjectId, AbilityType.WhenRevealed, player,
+                SurgeResolutionOrdinal));
         }
+        return abilities;
     }
 
     /// <summary>

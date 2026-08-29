@@ -1535,6 +1535,18 @@ That is an engine save-format choice, not card text: an immediate encounter-deck
 reset can move a discarded card back into the deck, while "discarded this way"
 still names that same card when the ability resumes.
 
+Effect interpretation also reports whether anything applied. This is not
+coverage bookkeeping: `rr:resolve.2-.8` makes it gameplay state. Immediate
+nodes report an applied effect when their board operation succeeds. Structural
+nodes such as `seq`, `choose`, and `attack` do not claim their children's work;
+the leaf or scheduled continuation does. A prompt keeps the ability pending,
+and the persisted ability address lets the answer finish the same ledger entry.
+Likewise, a scheduled activation or threat placement finishes the entry only
+after it knows whether the activation happened or a positive amount landed.
+Removing Stunned instead of making an attack is a cancellation result, not a
+resolved attack effect, so structural scheduling events never count by
+themselves.
+
 The same slice adds `removeCounters` as a payable cost, `removeThreat` as an
 action, and the board queries `enemies` and `schemes`. An event action or
 interrupt is played from hand: its printed cost is paid before its tree runs,

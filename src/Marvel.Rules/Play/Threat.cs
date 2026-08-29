@@ -42,13 +42,17 @@ public static class Threat
     /// </remarks>
     public static void Schedule(
         World world, Card scheme, Card? source, long amount, ThreatCause cause,
-        string trigger, int player = -1) =>
-        Schedule(world, [scheme], source, amount, cause, trigger, player);
+        string trigger, int player = -1, PendingAbility? resolution = null,
+        Occurrence? abilityOccurrence = null) =>
+        Schedule(
+            world, [scheme], source, amount, cause, trigger, player,
+            resolution, abilityOccurrence);
 
     /// <summary>Schedule the same assignment on several schemes in board order.</summary>
     public static void Schedule(
         World world, IReadOnlyList<Card> schemes, Card? source, long amount,
-        ThreatCause cause, string trigger, int player = -1)
+        ThreatCause cause, string trigger, int player = -1,
+        PendingAbility? resolution = null, Occurrence? abilityOccurrence = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(schemes);
@@ -77,7 +81,10 @@ public static class Threat
                     Subject: scheme.ObjectId,
                     Seat: player,
                     Placement: new ThreatPlacement(
-                        scheme.ObjectId, source?.ObjectId ?? -1, amount, cause, trigger, player));
+                        scheme.ObjectId, source?.ObjectId ?? -1, amount, cause, trigger, player),
+                    Tier: resolution?.Type,
+                    AbilityOrdinal: resolution?.Ordinal ?? -1,
+                    AbilityOccurrence: abilityOccurrence);
             }),
         ];
 

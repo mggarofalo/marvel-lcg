@@ -367,17 +367,19 @@ public sealed class World
     /// after it.
     /// </remarks>
     /// <param name="area">The pile.</param>
-    public void Shuffle(Area area)
+    /// <returns>Whether Fisher-Yates ran and consumed the shared random stream.</returns>
+    public bool Shuffle(Area area)
     {
         ArgumentNullException.ThrowIfNull(area);
         if (area.Cards.Count < 2)
         {
-            return;
+            return false;
         }
 
         var order = area.Cards.ToList();
         Random.Shuffle(order);
         area.Replace(order);
+        return true;
     }
 
     /// <summary>Makes an empty game area.</summary>

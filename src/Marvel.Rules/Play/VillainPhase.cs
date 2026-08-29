@@ -94,6 +94,21 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player);
 
+    /// <summary>Resolves a reveal inside its saveable agenda occurrence.</summary>
+    /// <remarks>
+    /// The overload is the engine's persistence boundary for
+    /// <c>rr:resolve.2-.8</c>. Existing rules-only implementations may keep the
+    /// three-argument method; the card interpreter uses the occurrence to
+    /// retain ability and treachery status through suspension and responses.
+    /// </remarks>
+    IReadOnlyList<GameEvent> WhenRevealed(
+        World world, Card card, int player, Occurrence occurrence) =>
+        WhenRevealed(world, card, player);
+
+    /// <summary>Cancels every When Revealed ability before any one of them applies.</summary>
+    bool CancelWhenRevealed(
+        World world, Card card, int player, Occurrence occurrence) => false;
+
     /// <summary>
     /// Resolves a faceup boost card's "Boost" ability —
     /// <c>rr:boost-boost-icon.2</c>.
@@ -1216,9 +1231,24 @@ public static class VillainPhase
     private static void ApplyThreat(
         World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
     {
+        var step = world.Agenda.Current
+            ?? throw new InvalidOperationException("a threat step has no agenda item");
         var occurrence = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("a threat step has no occurrence");
-        Threat.Apply(world, facts, abilities, occurrence, events);
+        long placed = Threat.Apply(world, facts, abilities, occurrence, events);
+        if (step.AbilityOccurrence is { } abilityOccurrence
+            && step.Tier is { } tier
+            && step.AbilityOrdinal >= 0
+            && step.Placement is { Source: >= 0 } placement)
+        {
+            var ability = new PendingAbility(
+                placement.Source, tier, step.Seat, step.AbilityOrdinal);
+            if (placed > 0)
+            {
+                abilityOccurrence.Resolve(ability);
+            }
+            abilityOccurrence.Complete(ability);
+        }
     }
 
     /// <summary>An enemy schemes. <c>rr:scheme-enemy-activation</c>.</summary>
@@ -1480,8 +1510,13 @@ public static class VillainPhase
         // When Revealed text has exactly two. The prompt is not implemented, so
         // the order here is fixed and deterministic rather than chosen. See
         // MARVEL-187.
-        Reveal.Keywords(world, facts, abilities, card, player, events);
-        events.AddRange(abilities.WhenRevealed(world, card, player));
+        var occurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException("a reveal has no occurrence");
+        if (!abilities.CancelWhenRevealed(world, card, player, occurrence))
+        {
+            Reveal.Keywords(world, facts, abilities, card, player, events, occurrence);
+            events.AddRange(abilities.WhenRevealed(world, card, player, occurrence));
+        }
 
         // `rr:quickstrike.2` puts this after the card's own abilities, and it
         // is the one keyword that does something *after* them rather than
