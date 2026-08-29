@@ -4003,12 +4003,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             var required = node.Kind == "then"
                 ? ResolutionOutcome.Full
                 : ResolutionOutcome.None;
+            bool answered = ActiveChoices(effect, cast).Any();
             bool dependentCanRun = stateMayChange
                 || cast.PaymentMayMutate
-                || ActiveChoices(effect, cast).Any()
+                || answered
                 || ResolutionOf(effect, cast) == required;
+            bool predecessorMayMutate = stateMayChange
+                || cast.PaymentMayMutate
+                || node.Kind == "then"
+                || answered;
             return dependentCanRun
-                ? [(effect, stateMayChange), (dependent, stateMayChange)]
+                ? [(effect, stateMayChange), (dependent, predecessorMayMutate)]
                 : [(effect, stateMayChange)];
         }
         return ContinuationChildren(node).Select(child => (child, stateMayChange));

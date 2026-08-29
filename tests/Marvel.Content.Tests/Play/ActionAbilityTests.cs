@@ -2840,6 +2840,29 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Rule("rr:form-change-form")]
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void APredecessorMutationPreflightsEveryReachableDependentBranch()
+    {
+        // Changing form flips which dependent branch resolves. The unsupported
+        // labeled attack must be found before the form change or cost occurs.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "then": { "effect": { "changeForm": { "player": "you", "to": "alterEgo" } }, "then": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
     [Rule("rr:choose-option")]
     [Fact]
     public void AChoiceContinuationPreservesEarlierEffectResults()
