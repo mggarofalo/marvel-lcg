@@ -241,7 +241,11 @@ public static class BasicPowers
         string trigger = AttackVerb, int abilityIndex = -1, int powerOrdinal = 0,
         int resumeFrom = -1,
         bool finalStep = false, IReadOnlyList<int>? targets = null, bool nested = false,
-        bool surgeGained = false)
+        bool surgeGained = false, IReadOnlyList<string>? abilityPath = null,
+        string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
+        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
+        bool abilityHasContinuation = false)
     {
         var attack = new CharacterAttack(
             attacker.ObjectId,
@@ -257,7 +261,16 @@ public static class BasicPowers
             resumeFrom,
             finalStep,
             targets,
-            surgeGained);
+            surgeGained,
+            abilityPath,
+            abilityFace,
+            abilityResults,
+            abilityOccurrence,
+            discarded,
+            eachPlayerFrame,
+            finalPlayer,
+            abilityPlayer,
+            abilityHasContinuation);
         world.CharacterAttack = attack;
         var step = new PhaseStep(
             Steps.CharacterAttacks,
@@ -292,7 +305,11 @@ public static class BasicPowers
         int abilityIndex = -1, int powerOrdinal = 0, int resumeFrom = -1,
         bool finalStep = false,
         IReadOnlyList<int>? targets = null, bool nested = false,
-        bool surgeGained = false)
+        bool surgeGained = false, IReadOnlyList<string>? abilityPath = null,
+        string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
+        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
+        bool abilityHasContinuation = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -315,7 +332,9 @@ public static class BasicPowers
 
         InitiateAttack(
             world, attacker, enemy, player, amount, source, moveFrom, overkill, trigger,
-            abilityIndex, powerOrdinal, resumeFrom, finalStep, targets, nested, surgeGained);
+            abilityIndex, powerOrdinal, resumeFrom, finalStep, targets, nested, surgeGained,
+            abilityPath, abilityFace, abilityResults, abilityOccurrence, discarded,
+            eachPlayerFrame, finalPlayer, abilityPlayer, abilityHasContinuation);
         return true;
     }
 
@@ -349,7 +368,11 @@ public static class BasicPowers
         int powerOrdinal = 0, int resumeFrom = -1, bool finalStep = false,
         IReadOnlyList<int>? targets = null,
         ThreatPlacement? imminentThreat = null, bool nested = false,
-        bool surgeGained = false)
+        bool surgeGained = false, IReadOnlyList<string>? abilityPath = null,
+        string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
+        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
+        bool abilityHasContinuation = false)
     {
         var thwart = new CharacterThwart(
             thwarter.ObjectId,
@@ -364,7 +387,16 @@ public static class BasicPowers
             finalStep,
             targets,
             imminentThreat,
-            surgeGained);
+            surgeGained,
+            abilityPath,
+            abilityFace,
+            abilityResults,
+            abilityOccurrence,
+            discarded,
+            eachPlayerFrame,
+            finalPlayer,
+            abilityPlayer,
+            abilityHasContinuation);
         world.CharacterThwart = thwart;
         var step = new PhaseStep(
             Steps.CharacterThwarts,
@@ -616,7 +648,12 @@ public static class BasicPowers
         int powerOrdinal = 0, int resumeFrom = -1,
         bool finalStep = false, IReadOnlyList<int>? targets = null,
         ThreatPlacement? imminentThreat = null, bool automaticTarget = false,
-        bool nested = false, bool surgeGained = false)
+        bool nested = false, bool surgeGained = false,
+        IReadOnlyList<string>? abilityPath = null, string abilityFace = "",
+        IReadOnlyDictionary<string, long>? abilityResults = null,
+        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
+        bool abilityHasContinuation = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -641,7 +678,10 @@ public static class BasicPowers
         InitiateThwart(
             world, thwarter, scheme, player, amount, source, trigger, abilityIndex,
             powerOrdinal, resumeFrom, finalStep, targets, imminentThreat, nested,
-            surgeGained);
+            surgeGained, abilityPath, abilityFace, abilityResults, abilityOccurrence,
+            discarded, eachPlayerFrame, finalPlayer, abilityPlayer,
+            abilityHasContinuation);
+
         return true;
     }
 

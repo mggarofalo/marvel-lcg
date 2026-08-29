@@ -37,7 +37,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     // An activation is an agenda operation, while the sentence that initiated
     // it is a card operation. The stable agenda id is the join between them.
     // Entries live only until that activation's completion sentinel calls back.
-    private readonly Dictionary<int, ActivationContinuation> activations = [];
     private readonly Dictionary<int, List<ActivationEffect>> activationEffects = [];
 
     // Which printed faces carry a constant ability. `Constant` is asked about
@@ -152,43 +151,54 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
 
-        if (!activations.Remove(result.Id, out var continuation))
+        if (world.Agenda.CompleteActivationWait(result) is { } continuation)
         {
-            return events;
+            events.AddRange(ResumeAbility(world, continuation));
         }
 
-        continuation.Made += result.Made ? 1 : 0;
-        continuation.Damage += result.DamageDealt;
-        continuation.Threat += result.ThreatPlaced;
-        continuation.Remaining -= 1;
-        if (continuation.Remaining > 0)
+        return events;
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> ResumeAbility(World world, PhaseStep continuation)
+    {
+        var source = continuation.Subject >= 0 && continuation.Subject < world.Cards.Count
+            ? world.Cards[continuation.Subject]
+            : throw new RulesNotImplementedException(
+                $"activation continuation has no card at object id {continuation.Subject}");
+        if (continuation.AbilityOrdinal < 0 || continuation.AbilityPath is not { } path)
         {
-            return events;
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' has an incomplete activation continuation");
         }
 
-        var cast = new Cast(
-            world,
-            world.Cards[continuation.Source],
-            continuation.Occurrence,
-            continuation.Player,
-            events,
-            this)
+        var cast = Resuming(
+            world, source, continuation.Seat, continuation.Tier, continuation.FinalStep,
+            continuation.AbilityOccurrence) with
         {
-            Tier = continuation.Tier,
+            EachPlayerFrame = continuation.EachPlayerFrame,
+            FinalPlayer = continuation.FinalPlayer,
+            AbilityPlayer = continuation.AbilityPlayer,
+            EventTrigger = continuation.Trigger,
             GainedKeywords = continuation.SurgeGained
                 ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal),
         };
-        foreach (var (name, value) in continuation.Results)
-        {
-            cast.Results[name] = value;
-        }
-
-        cast.Results["activationMade"] = continuation.Made;
-        cast.Results["activationDamage"] = continuation.Damage;
-        cast.Results["activationThreat"] = continuation.Threat;
-        Sequence(continuation.Sequence, cast, continuation.Next);
-        return events;
+        cast.RestoreAbility(
+            continuation.AbilityOrdinal, path, continuation.AbilityFace);
+        RestorePersisted(cast, continuation);
+        var root = AbilityAt(
+            source, continuation.Tier, continuation.AbilityOrdinal,
+            continuation.AbilityFace).Effect;
+        int eachPlayer = path.ToList().FindIndex(frame =>
+            frame.StartsWith("eachPlayer:", StringComparison.Ordinal));
+        ResumeAfter(
+            root, path, cast,
+            stopBefore: continuation.EachPlayerFrame && !continuation.FinalPlayer
+                ? eachPlayer
+                : -1);
+        DiscardEvent(source, cast);
+        return cast.Events;
     }
 
     /// <inheritdoc/>
@@ -199,7 +209,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             attack.PowerOrdinal, attack.ResumeFrom, attack.FinalStep,
             attack.Targets ?? [attack.Enemy], attack.Amount, null,
             attack.Trigger, attack.SurgeGained, occurrence, events,
-            BasicPowers.AttackVerb);
+            BasicPowers.AttackVerb, attack.AbilityPath, attack.AbilityFace,
+            attack.AbilityResults, attack.AbilityOccurrence, attack.Discarded,
+            attack.EachPlayerFrame, attack.FinalPlayer, attack.AbilityPlayer,
+            attack.AbilityHasContinuation);
 
     /// <inheritdoc/>
     public void ResolveCardThwart(
@@ -209,7 +222,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             thwart.PowerOrdinal, thwart.ResumeFrom, thwart.FinalStep,
             thwart.Targets ?? [thwart.Scheme], thwart.Amount, thwart.ImminentThreat,
             thwart.Trigger, thwart.SurgeGained, occurrence, events,
-            BasicPowers.ThwartVerb);
+            BasicPowers.ThwartVerb, thwart.AbilityPath, thwart.AbilityFace,
+            thwart.AbilityResults, thwart.AbilityOccurrence, thwart.Discarded,
+            thwart.EachPlayerFrame, thwart.FinalPlayer, thwart.AbilityPlayer,
+            thwart.AbilityHasContinuation);
 
     private void ResolvePower(
         World world, int sourceId, int targetId, int player, int abilityIndex,
@@ -217,7 +233,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         long powerAmount, ThreatPlacement? imminentThreat, string eventTrigger,
         bool surgeGained,
         Occurrence occurrence,
-        List<GameEvent> events, string power)
+        List<GameEvent> events, string power, IReadOnlyList<string>? abilityPath = null,
+        string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
+        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
+        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
+        bool abilityHasContinuation = false)
     {
         if (sourceId < 0 || sourceId >= world.Cards.Count)
         {
@@ -226,7 +246,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var source = world.Cards[sourceId];
-        var abilities = On(source).ToList();
+        var abilities = AbilitiesOn(source, abilityFace).ToList();
         var ability = abilities.ElementAtOrDefault(abilityIndex)
             ?? throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has no ability {abilityIndex} for its "
@@ -237,14 +257,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{source.FaceId}' ability {abilityIndex} has no {power.ToLowerInvariant()} "
                 + $"wrapper {powerOrdinal}");
         var effect = Tree(wrapper.Require("effect"));
-        if (Choices(effect).Any())
+        if (SuspendsPowerEffect(effect))
         {
             throw new RulesNotImplementedException(
-                $"'{source.FaceId}' asks a question inside a {power.ToLowerInvariant()}");
+                $"'{source.FaceId}' suspends inside a {power.ToLowerInvariant()}, "
+                + "which is not implemented");
         }
 
         var cast = new Cast(
-            world, source, occurrence, player, events, this)
+            world, source, abilityOccurrence ?? occurrence, player, events, this)
         {
             Tier = ability.Trigger.Timing,
             FinalStep = finalStep,
@@ -253,10 +274,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ImminentThreat = imminentThreat,
             EventTrigger = eventTrigger,
             PowerTargets = [.. targets.Select(id => world.Cards[id])],
+            EachPlayerFrame = eachPlayerFrame,
+            FinalPlayer = finalPlayer,
+            AbilityPlayer = abilityPlayer,
             GainedKeywords = surgeGained
                 ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal),
         };
+        int ordinal = abilities
+            .Where(candidate => candidate.Trigger.Timing == ability.Trigger.Timing)
+            .ToList()
+            .IndexOf(ability);
+        cast.RestoreAbility(ordinal, abilityPath ?? [], abilityFace);
+        RestorePersisted(cast, discarded, abilityResults);
         cast.Choose(world.Cards[targetId]);
         Run(effect, cast);
 
@@ -272,7 +302,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
 
-        if (resumeFrom >= 0)
+        if (!cast.Suspended && abilityPath is not null)
+        {
+            int eachPlayer = abilityPath.ToList().FindIndex(frame =>
+                frame.StartsWith("eachPlayer:", StringComparison.Ordinal));
+            ResumeAfter(
+                ability.Effect, abilityPath, cast,
+                stopBefore: eachPlayerFrame && !finalPlayer ? eachPlayer : -1);
+        }
+        else if (!cast.Suspended && resumeFrom >= 0)
         {
             if (ability.Effect.Kind != "seq")
             {
@@ -1159,35 +1197,50 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         World world, Card source, int player, int stoppedAt,
         AbilityType? tier, bool finalStep, bool finalPlayer)
     {
-        var outer = On(source)
+        var step = world.Agenda.Current;
+        var written = AbilitiesOn(source, step?.AbilityFace)
             .Where(ability => tier is null || ability.Trigger.Timing == tier)
-            .Select(ability => ability.Effect)
-            .Single(effect => EachPlayers(effect).Any());
-        var each = outer.Kind == "seq"
-            ? Nodes(outer.Argument).ElementAt(stoppedAt - 1)
-            : outer;
+            .ToList();
+        int ordinal = step is { What: Steps.ResolveEachPlayer, AbilityOrdinal: >= 0 }
+            ? step.Value.AbilityOrdinal
+            : written.FindIndex(ability => EachPlayers(ability.Effect).Any());
+        var outer = written.ElementAtOrDefault(ordinal)?.Effect
+            ?? throw new RulesNotImplementedException(
+                $"'{source.FaceId}' has no reconstructable each-player ability");
+        var parentPath = step is { What: Steps.ResolveEachPlayer, AbilityPath: { } path }
+            ? path
+            : outer.Kind == "seq" ? [$"seq:{stoppedAt - 1}"] : [];
+        var each = NodeAtPath(outer, parentPath);
         if (each.Kind != "eachPlayer")
         {
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has no each-player frame at step {stoppedAt - 1}");
         }
 
-        var cast = Resolving(world, source, player, tier, finalStep) with
+        var cast = Resolving(
+            world, source, player, tier, finalStep, step?.AbilityOccurrence) with
         {
             EachPlayerFrame = true,
             FinalPlayer = finalPlayer,
+            AbilityPlayer = step?.AbilityPlayer ?? player,
             GainedKeywords = world.Agenda.Current is
                 { What: Steps.ResolveEachPlayer, SurgeGained: true }
                     ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                     : new HashSet<string>(StringComparer.Ordinal),
         };
+        RestorePersisted(cast, step);
+        cast.RestoreAbility(
+            ordinal, [.. parentPath, "eachPlayer:effect"], step?.AbilityFace);
         cast.At(stoppedAt - 1);
-        cast.SetContinuation(finalPlayer && outer.Kind == "seq"
-            && stoppedAt < Nodes(outer.Argument).Count());
+        cast.SetContinuation(finalPlayer && (step?.AbilityHasContinuation
+            ?? (outer.Kind == "seq" && stoppedAt < Nodes(outer.Argument).Count())));
         Run(Tree(each.Require("effect")), cast);
-        if (!cast.Suspended && finalPlayer && outer.Kind == "seq")
+        if (!cast.Suspended && finalPlayer)
         {
-            Sequence(outer, cast, stoppedAt);
+            cast.SetAbilityPath(parentPath);
+            cast.RestorePlayer(cast.AbilityPlayer);
+            cast.SetContinuation(false);
+            ResumeAfter(outer, parentPath, cast);
         }
         return cast.Events;
     }
@@ -2816,23 +2869,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(input);
 
         var choice = Choice(world, source, player, stoppedAt, tier);
+        var persisted = ContinuationStep(world, source, stoppedAt, tier);
         var continuation = world.Agenda.Current is { What: Steps.ChooseOption, Plan: true }
             && world.Agenda.Occurrence is { } live
             && live.Is(Steps.TurnAction)
                 ? live
                 : null;
-        var cast = Resuming(world, source, player, tier, finalStep, continuation) with
+        var cast = Resuming(
+            world, source, player, tier, finalStep,
+            persisted?.AbilityOccurrence ?? continuation) with
         {
             EachPlayerFrame = eachPlayerFrame,
             FinalPlayer = finalPlayer,
+            AbilityPlayer = persisted?.AbilityPlayer ?? player,
             EventTrigger = eventTrigger,
             GainedKeywords = world.Agenda.Current is
                 { What: Steps.ChooseOption, SurgeGained: true }
                     ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                     : new HashSet<string>(StringComparer.Ordinal),
         };
+        RestorePersisted(cast, persisted);
+        if (persisted is
+            { AbilityOrdinal: >= 0, AbilityPath: { } path } current)
+        {
+            cast.RestoreAbility(current.AbilityOrdinal, path, current.AbilityFace);
+        }
         cast.At(Math.Max(0, stoppedAt - 1));
-        cast.SetContinuation(On(source).Any(ability =>
+        cast.SetContinuation(persisted?.AbilityHasContinuation ?? On(source).Any(ability =>
             (tier is null || ability.Trigger.Timing == tier)
             && ability.Effect.Kind == "seq"
             && Nodes(ability.Effect.Argument).Count() > stoppedAt));
@@ -2852,10 +2915,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     + $"{effects.Count} simultaneous effects");
             }
 
-            foreach (int index in input.Targets)
+            bool outerContinuation = cast.HasContinuation;
+            for (int position = 0; position < input.Targets.Count; position++)
             {
-                Run(effects[index], cast);
+                int index = input.Targets[position];
+                string remaining = string.Join(',', input.Targets.Skip(position + 1));
+                string completed = string.Join(',', input.Targets.Take(position));
+                cast.SetContinuation(
+                    outerContinuation || position < input.Targets.Count - 1);
+                RunChild(effects[index], $"and:{index}:{remaining}:{completed}", cast);
+                if (cast.Suspended)
+                {
+                    return cast.Events;
+                }
             }
+            cast.SetContinuation(outerContinuation);
 
             return Continue(source, cast, stoppedAt);
         }
@@ -2881,7 +2955,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Plan: true, FinalStep: index == input.Targets.Count - 1));
             }
 
-            return cast.Events;
+            return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "payOrEffect")
         {
@@ -2893,7 +2967,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             else if (input.Affordance == 1)
             {
-                Run(Tree(choice.Require("otherwise")), cast);
+                RunChild(Tree(choice.Require("otherwise")), "choice:otherwise", cast);
+                if (cast.Suspended)
+                {
+                    return cast.Events;
+                }
             }
             else
             {
@@ -2913,7 +2991,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             else if (input.Affordance == 1)
             {
-                Run(Tree(choice.Require("otherwise")), cast);
+                RunChild(Tree(choice.Require("otherwise")), "choice:otherwise", cast);
+                if (cast.Suspended)
+                {
+                    return cast.Events;
+                }
             }
             else
             {
@@ -2921,7 +3003,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     $"'{source.FaceId}' offers spend or exhaust, not option {input.Affordance}");
             }
 
-            return cast.Events;
+            return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "chooseTopForHand")
         {
@@ -2949,7 +3031,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
             }
 
-            return cast.Events;
+            return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "chooseDiscardToShuffle")
         {
@@ -2974,7 +3056,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 World.MoveToTop(card, world.Seats[player].Deck);
             }
             world.Shuffle(world.Seats[player].Deck);
-            return cast.Events;
+            return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "thwartDifferentSchemes")
         {
@@ -3088,7 +3170,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 ?? throw new RulesNotImplementedException(
                     $"'{source.FaceId}' did not offer card {input.Affordance} to choose"));
 
-            Run(Tree(choice.Require("effect")), cast);
+            if (cast.HasPendingDependency)
+            {
+                cast.CompletePendingDependency(
+                    ResolutionOf(Tree(choice.Require("effect")), cast));
+            }
+            RunChild(Tree(choice.Require("effect")), "choice:effect", cast);
+            if (cast.Suspended)
+            {
+                return cast.Events;
+            }
             return Continue(source, cast, stoppedAt);
         }
 
@@ -3106,7 +3197,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 $"'{source.FaceId}' cannot choose illegal option {input.Affordance}");
         }
 
-        Run(options[input.Affordance], cast);
+        if (cast.HasPendingDependency)
+        {
+            cast.CompletePendingDependency(ResolutionOf(options[input.Affordance], cast));
+        }
+        RunChild(
+            options[input.Affordance], $"choice:option:{input.Affordance}", cast);
+        if (cast.Suspended)
+        {
+            return cast.Events;
+        }
         return Continue(source, cast, stoppedAt);
     }
 
@@ -3226,17 +3326,32 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     };
 
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
-    private static bool CanInitiate(AbilityNode node, Cast cast) => node.Kind switch
+    private static bool CanInitiate(AbilityNode node, Cast cast)
     {
-        "seq" => CanInitiateSequence(node, cast),
-        "and" => CanInitiateAnd(node, cast),
-        "if" => CanInitiateIf(node, cast),
-        "then" => CanInitiateDependent(
-            node, cast, ResolutionOutcome.Full, "then"),
-        "otherwise" => CanInitiateDependent(
-            node, cast, ResolutionOutcome.None, "otherwise"),
-        _ => CanInitiateLeaf(node, cast),
-    };
+        if (HasNestedEachPlayer(node, cast))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' nests one each-player frame inside another, "
+                + "which is not implemented");
+        }
+        if (ContainsUnsupportedPower(node, cast))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' suspends inside a labelled power, "
+                + "which is not implemented");
+        }
+        return node.Kind switch
+        {
+            "seq" => CanInitiateSequence(node, cast),
+            "and" => CanInitiateAnd(node, cast),
+            "if" => CanInitiateIf(node, cast),
+            "then" => CanInitiateDependent(
+                node, cast, ResolutionOutcome.Full, "then"),
+            "otherwise" => CanInitiateDependent(
+                node, cast, ResolutionOutcome.None, "otherwise"),
+            _ => CanInitiateLeaf(node, cast),
+        };
+    }
 
     private static bool CanInitiateSequence(AbilityNode node, Cast cast)
     {
@@ -3340,22 +3455,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
 
-        if (node.Kind is "then" or "otherwise")
-        {
-            var effect = Tree(node.Require("effect"));
-            var dependent = Tree(node.Require(node.Kind));
-            if (Choices(effect).Any()
-                || EachPlayers(dependent).Any()
-                || ContainsNode(dependent, "placeThreat")
-                || Choices(dependent).Any()
-                || (cast.HasContinuation && ContainsFirstActivation(dependent)))
-            {
-                throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' uses '{node.Kind}' around text that needs "
-                    + "a nested continuation");
-            }
-        }
-
         var children = node.Kind switch
         {
             "choose" => Nodes(node.Require("options")),
@@ -3399,21 +3498,40 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool CanInitiateAnd(AbilityNode node, Cast cast)
     {
         var effects = Nodes(node.Argument).ToList();
-        if (effects.SelectMany(Choices).Any()
-            || effects.Any(SuspendsInsideAnd))
+        if (effects.Count > 1 && effects.Any(SuspendsInsideAnd))
         {
             throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' resolves effects joined by 'and' and one "
-                + "of them needs a nested continuation");
+                $"'{cast.Source.FaceId}' orders simultaneous effects around a threat "
+                + "placement continuation, which is not implemented");
         }
-
-        return effects.All(effect => CanInitiate(effect, cast));
+        bool outerContinuation = cast.HasContinuation;
+        try
+        {
+            foreach (var effect in effects)
+            {
+                cast.SetContinuation(outerContinuation || effects.Count > 1);
+                if (!CanInitiate(effect, cast))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        finally
+        {
+            cast.SetContinuation(outerContinuation);
+        }
     }
 
     private static bool CanInitiateDependent(
         AbilityNode node, Cast cast, ResolutionOutcome required, string branch)
     {
         var effect = Tree(node.Require("effect"));
+        if (ActiveChoices(effect, cast).Any())
+        {
+            PreflightAnsweredOutcome(effect, cast);
+            return CanInitiate(effect, cast);
+        }
         var outcome = EnsureDependentSupported(
             node, cast, effect, Tree(node.Require(branch)), required);
         return outcome == required
@@ -3423,13 +3541,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool CanInitiateLeaf(AbilityNode node, Cast cast) => node.Kind switch
     {
+        "resolveSpecials" when cast.HasContinuation =>
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' continues after ordered Special abilities, "
+                + "which is not implemented"),
         "chooseCard" => Every(node.Require("from"), cast).Count > 0,
         "choose" => CanInitiateChoice(node, cast),
         "thwartDifferentSchemes" => Every(node.Require("schemes"), cast).Count > 0,
         "legalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
                 card.ObjectId != cast.Source.ObjectId)
             && Every(node.Require("schemes"), cast).Count > 0,
+        "thwartSchemes" when SuspendsPowerEffect(
+            Tree(Tree(node.Require("power")).Require("effect"))) =>
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' suspends inside a labelled power, "
+                + "which is not implemented"),
         "thwartSchemes" => Every(node.Require("schemes"), cast).Count > 0,
+        "attack" or "thwart" when SuspendsPowerEffect(Tree(node.Require("effect"))) =>
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' suspends inside a labelled power, "
+                + "which is not implemented"),
         "attack" => Find(node.Require("target"), cast) is not { } enemy
             || cast.World.Abilities.CanTakeDamage(cast.World, enemy, cast.Source),
         "enemyAttacks" or "enemySchemes" => CanInitiateActivation(node, cast),
@@ -3459,12 +3590,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool CanInitiateActivation(AbilityNode node, Cast cast)
     {
-        if (cast.HasContinuation && ContainsFirstActivation(node))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' resolves an activation first and then continues");
-        }
-
         return true;
     }
 
@@ -3613,6 +3738,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         return node.Kind switch
         {
+            "seq" or "and" => CombinedOutcomes(
+                Nodes(node.Argument).Select(effect => ResolutionOf(effect, cast))),
             "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
                 is { } branch
                     ? ResolutionOf(Tree(branch), cast)
@@ -3708,6 +3835,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         var effect = Tree(node.Require("effect"));
         var dependent = Tree(node.Require(branch));
+        if (ActiveChoices(effect, cast).Any())
+        {
+            PreflightAnsweredOutcome(effect, cast);
+            PreflightContinuationBoundaries(dependent, cast);
+            RunChild(effect, $"{node.Kind}:effect:Pending", cast);
+            return;
+        }
         var outcome = EnsureDependentSupported(node, cast, effect, dependent, required);
 
         // A supported predecessor classified as `None` changes no state. Some
@@ -3716,11 +3850,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // do not turn an advertised `otherwise` fallback into an exception.
         if (outcome != ResolutionOutcome.None)
         {
-            Run(effect, cast);
+            RunChild(effect, $"{node.Kind}:effect:{outcome}", cast);
         }
         if (outcome == required)
         {
-            Run(dependent, cast);
+            RunChild(dependent, $"{node.Kind}:{branch}", cast);
         }
     }
 
@@ -3733,28 +3867,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         PreflightResolutionBranches(effect, cast);
 
-        if (ActiveChoices(effect, cast).Any())
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' uses '{node.Kind}' around an effect that suspends "
-                + "for a player choice");
-        }
-
         var outcome = ResolutionOf(effect, cast);
-        bool activeChoice = outcome == required && ActiveChoices(dependent, cast).Any();
-        if (activeChoice)
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' uses '{node.Kind}' around an effect that suspends "
-                + "for a player choice");
-        }
         bool stateMayChange = cast.PaymentMayMutate || cast.PriorStepMayMutate;
         if ((outcome == required || stateMayChange)
-            && (EachPlayers(dependent).Any()
-                || ContainsNode(dependent, "placeThreat")
-                || (cast.HasContinuation && ContainsFirstActivation(dependent))
-                || ((required == ResolutionOutcome.Full || stateMayChange)
-                    && Choices(dependent).Any())))
+            && ContainsNode(dependent, "placeThreat"))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' uses '{node.Kind}' before dependent text that "
@@ -3762,6 +3878,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         return outcome;
+    }
+
+    private static void PreflightAnsweredOutcome(AbilityNode node, Cast cast)
+    {
+        if (node.Kind == "choose")
+        {
+            foreach (var option in Nodes(node.Require("options")))
+            {
+                _ = ResolutionOf(option, cast);
+            }
+            return;
+        }
+        if (node.Kind == "chooseCard")
+        {
+            _ = ResolutionOf(Tree(node.Require("effect")), cast);
+            return;
+        }
+        throw new RulesNotImplementedException(
+            $"'{cast.Source.FaceId}' uses '{node.Kind}' before dependent text, whose "
+            + "answered resolution outcome is not implemented");
     }
 
     private static void PreflightResolutionBranches(
@@ -3801,6 +3937,1584 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool ContainsNode(AbilityNode node, string kind) =>
         node.Kind == kind || StructuralChildren(node).Any(child => ContainsNode(child, kind));
 
+    private static bool HasNestedEachPlayer(
+        AbilityNode node, Cast cast, bool inside = false, bool stateMayChange = false,
+        bool bindingMayChange = false, AbilityNode? repeatedEffect = null)
+    {
+        if (inside && node.Kind == "eachPlayer")
+        {
+            return true;
+        }
+        if (node.Kind == "eachPlayer")
+        {
+            int original = cast.Player;
+            try
+            {
+                var players = cast.World.PlayerOrder.ToList();
+                foreach (int player in players)
+                {
+                    cast.RestorePlayer(player);
+                    if (HasNestedEachPlayer(
+                        Tree(node.Require("effect")), cast, inside: true,
+                        stateMayChange, bindingMayChange,
+                        players.Count > 1 ? Tree(node.Require("effect")) : repeatedEffect))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            finally
+            {
+                cast.RestorePlayer(original);
+            }
+        }
+        bool within = inside || node.Kind == "eachPlayer";
+        return GuardChildren(
+            node, cast, stateMayChange, bindingMayChange, repeatedEffect).Any(child =>
+            HasNestedEachPlayer(
+                child.Node, cast, within, child.StateMayChange,
+                child.BindingMayChange, repeatedEffect));
+    }
+
+    private static bool ContainsUnsupportedPower(
+        AbilityNode node, Cast cast, bool stateMayChange = false,
+        bool bindingMayChange = false, AbilityNode? repeatedEffect = null)
+    {
+        if (node.Kind == "eachPlayer")
+        {
+            int original = cast.Player;
+            try
+            {
+                var players = cast.World.PlayerOrder.ToList();
+                foreach (int player in players)
+                {
+                    cast.RestorePlayer(player);
+                    if (ContainsUnsupportedPower(
+                        Tree(node.Require("effect")), cast,
+                        stateMayChange, bindingMayChange,
+                        players.Count > 1 ? Tree(node.Require("effect")) : repeatedEffect))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            finally
+            {
+                cast.RestorePlayer(original);
+            }
+        }
+        if (node.Kind is "attack" or "thwart"
+            && SuspendsPowerEffect(Tree(node.Require("effect"))))
+        {
+            return true;
+        }
+        if (node.Kind == "thwartSchemes")
+        {
+            var power = Tree(node.Require("power"));
+            if (SuspendsPowerEffect(Tree(power.Require("effect"))))
+            {
+                return true;
+            }
+        }
+        return GuardChildren(
+            node, cast, stateMayChange, bindingMayChange, repeatedEffect).Any(child =>
+            ContainsUnsupportedPower(
+                child.Node, cast, child.StateMayChange,
+                child.BindingMayChange, repeatedEffect));
+    }
+
+    /// <summary>Executable children that can be reached after an ability is offered.</summary>
+    private static IEnumerable<(
+        AbilityNode Node, bool StateMayChange, bool BindingMayChange)> GuardChildren(
+        AbilityNode node, Cast cast, bool stateMayChange, bool bindingMayChange,
+        AbilityNode? repeatedEffect)
+    {
+        if (node.Kind == "seq")
+        {
+            return Nodes(node.Argument).Select((child, index) =>
+                (child, stateMayChange || index > 0, bindingMayChange));
+        }
+        if (node.Kind == "and")
+        {
+            var children = Nodes(node.Argument).ToList();
+            return children.Select(child =>
+                (child, stateMayChange || children.Count > 1, bindingMayChange));
+        }
+        if (node.Kind == "if")
+        {
+            var test = Tree(node.Require("test"));
+            bool canSwitch = stateMayChange
+                || cast.PaymentMayMutate && PaymentCanChange(test)
+                || bindingMayChange && BindingCanChange(test.Argument)
+                || repeatedEffect is not null
+                    && RepeatedEffectCanChange(test, repeatedEffect, cast);
+            var branches = canSwitch
+                ? Branches.Select(node.Field).Where(value => value is not null)
+                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                    ? [active]
+                    : [];
+            return branches.Select(value =>
+                (Tree(value!), stateMayChange, bindingMayChange));
+        }
+        if (node.Kind is "then" or "otherwise")
+        {
+            var effect = Tree(node.Require("effect"));
+            var dependent = Tree(node.Require(node.Kind));
+            var required = node.Kind == "then"
+                ? ResolutionOutcome.Full
+                : ResolutionOutcome.None;
+            bool answered = ActiveChoices(effect, cast).Any();
+            bool dependentCanRun = stateMayChange
+                || cast.PaymentMayMutate
+                || bindingMayChange
+                || answered
+                || ResolutionOf(effect, cast) == required;
+            bool predecessorMayMutate = stateMayChange
+                || cast.PaymentMayMutate
+                || node.Kind == "then"
+                || answered;
+            return dependentCanRun
+                ? [
+                    (effect, stateMayChange, bindingMayChange),
+                    (dependent, predecessorMayMutate, bindingMayChange),
+                ]
+                : [(effect, stateMayChange, bindingMayChange)];
+        }
+        if (node.Kind is "chooseCard" or "thwartSchemes"
+            or "thwartDifferentSchemes" or "legalPractice")
+        {
+            return ContinuationChildren(node).Select(child =>
+                (child, stateMayChange, true));
+        }
+        if (node.Kind is "afterActivation" or "delayUntil" or "defense"
+            or "payOrEffect" or "payOrExhaust")
+        {
+            return ContinuationChildren(node).Select(child =>
+                (child, true, bindingMayChange));
+        }
+        return ContinuationChildren(node).Select(child =>
+            (child, stateMayChange, bindingMayChange));
+    }
+
+    private static bool BindingCanChange(AbilityValue value) => value switch
+    {
+        AbilityValue.Word word => word.Value is "chosen" or "chosenPlayer"
+            or "powerTargets" or "enemiesEngagedWithChosenPlayer"
+            or "topmostTechInChosenDiscard",
+        AbilityValue.List list => list.Values.Any(BindingCanChange),
+        AbilityValue.Map map => map.Entries.Values.Any(BindingCanChange),
+        _ => false,
+    };
+
+    private static bool RepeatedEffectCanChange(
+        AbilityNode test, AbilityNode effect, Cast cast)
+    {
+        int original = cast.Player;
+        try
+        {
+            var assumed = RepeatedChange.None;
+            int priorFrames = Math.Max(0, cast.World.PlayerOrder.Count() - 1);
+            for (int frame = 0; frame < priorFrames; frame++)
+            {
+                var observed = RepeatedChange.None;
+                foreach (int player in cast.World.PlayerOrder)
+                {
+                    cast.RestorePlayer(player);
+                    observed |= RepeatedChanges(
+                        effect, cast, assumed, binding: false, priorFrames,
+                        effect);
+                }
+                assumed |= observed;
+            }
+            return RepeatedTestCanChange(test, assumed);
+        }
+        finally
+        {
+            cast.RestorePlayer(original);
+        }
+    }
+
+    private static RepeatedChange RepeatedChanges(
+        AbilityNode node, Cast cast, RepeatedChange assumed, bool binding,
+        int priorFrames, AbilityNode repeatedEffect)
+    {
+        if (node.Kind == "changeForm")
+        {
+            return RepeatedChange.Form | RepeatedChange.CardsInPlay;
+        }
+        if (node.Kind is "dealDamage" or "indirectDamage" or "moveDamage"
+            or "replaceThreatWithDamage")
+        {
+            return RepeatedChange.CardsInPlay
+                | (DamageCanChangePlayerOrder(
+                        node, cast, binding, repeatedEffect, assumed,
+                        priorFrames)
+                    ? RepeatedChange.PlayerOrder
+                    : RepeatedChange.None);
+        }
+        if (node.Kind is "dealAttackDamage" or "moveAttackDamage")
+        {
+            return RepeatedChange.CardsInPlay;
+        }
+        if (node.Kind == "enemyAttacks")
+        {
+            return RepeatedChange.CardsInPlay | RepeatedChange.PlayerOrder;
+        }
+        if (StableForCardsInPlay(
+            node, cast, priorFrames, repeatedEffect, assumed, binding))
+        {
+            return RepeatedChange.None;
+        }
+        if (node.Kind is "seq" or "then" or "otherwise")
+        {
+            var changes = RepeatedChange.None;
+            foreach (var child in MutationChildren(node))
+            {
+                var next = RepeatedChanges(
+                    child, cast, assumed | changes, binding, priorFrames,
+                    repeatedEffect);
+                changes |= next;
+            }
+            return changes;
+        }
+        if (node.Kind == "and")
+        {
+            var ordered = MutationChildren(node).ToList();
+            var changes = RepeatedChange.None;
+            for (int pass = 0; pass < ordered.Count; pass++)
+            {
+                var before = changes;
+                foreach (var child in ordered)
+                {
+                    changes |= RepeatedChanges(
+                        child, cast, assumed | changes, binding, priorFrames,
+                        repeatedEffect);
+                }
+                if (changes == before)
+                {
+                    break;
+                }
+            }
+            return changes;
+        }
+        if (node.Kind == "if")
+        {
+            var test = Tree(node.Require("test"));
+            var branches = RepeatedTestCanChange(test, assumed)
+                    || binding && BindingCanChange(test.Argument)
+                ? Branches.Select(node.Field).Where(value => value is not null)
+                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                    ? [active]
+                    : [];
+            return branches.Aggregate(
+                RepeatedChange.None,
+                (changes, branch) => changes
+                    | RepeatedChanges(
+                        Tree(branch!), cast, assumed, binding, priorFrames,
+                        repeatedEffect));
+        }
+        if (node.Kind is "chooseCard" or "thwartSchemes"
+            or "thwartDifferentSchemes" or "legalPractice")
+        {
+            binding = true;
+        }
+        var children = MutationChildren(node).ToList();
+        if (children.Count == 0)
+        {
+            return RepeatedChange.CardsInPlay;
+        }
+        return children.Aggregate(
+            RepeatedChange.None,
+            (changes, child) => changes
+                | RepeatedChanges(
+                    child, cast, assumed, binding, priorFrames,
+                    repeatedEffect));
+    }
+
+    private static bool RepeatedTestCanChange(
+        AbilityNode test, RepeatedChange changes) => test.Kind switch
+        {
+            "and" or "or" => Nodes(test.Argument).Any(child =>
+                RepeatedTestCanChange(child, changes)),
+            "not" => RepeatedTestCanChange(Tree(test.Argument), changes),
+            "inForm" => changes.HasFlag(RepeatedChange.Form)
+                || changes.HasFlag(RepeatedChange.PlayerOrder)
+                    && Word(test.Require("player")) != AbilityPlayers.You,
+            "titleInPlay" => changes.HasFlag(RepeatedChange.CardsInPlay),
+            "finalStep" or "paidWithResource" or "threatCause" => false,
+            _ => true,
+        };
+
+    [Flags]
+    private enum RepeatedChange
+    {
+        None = 0,
+        Form = 1,
+        CardsInPlay = 2,
+        PlayerOrder = 4,
+    }
+
+    private static bool StableForCardsInPlay(
+        AbilityNode node, Cast cast, int priorFrames,
+        AbilityNode repeatedEffect, RepeatedChange assumed,
+        bool binding) =>
+        node.Kind is "draw" or "drawToHandSize" or "drawToPrintedHandSize"
+            or "exhaust" or "ready" or "heal" or "generate" or "giveStatus"
+            or "gainSurge" or "preventDamage" or "preventThreat"
+            or "cancelWhenRevealed" or "grantUntil"
+            or "grantCharactersControlledBy" or "reduceNextCardCost"
+        || node.Kind == "removeThreat"
+            && Every(node.Require("scheme"), cast) is { Count: > 0 } schemes
+            && schemes.All(scheme => scheme.Area.Type == DeckType.MainSchemesArea
+                || !CanExhaust(
+                    // An earlier ordered mutation can switch a branch before
+                    // this leaf is reached in the same repeated frame.
+                    TotalThreatRemoved(
+                        scheme, repeatedEffect, cast, assumed, binding),
+                    priorFrames,
+                    scheme.Tokens.GetValueOrDefault("k_threat")));
+
+    private static bool DamageCanChangePlayerOrder(
+        AbilityNode node, Cast cast, bool binding,
+        AbilityNode repeatedEffect, RepeatedChange assumed,
+        int priorFrames)
+    {
+        AbilityValue targets = node.Kind switch
+        {
+            "dealDamage" => node.Require("cards"),
+            "indirectDamage" => node.Require("among"),
+            "moveDamage" => node.Require("to"),
+            "replaceThreatWithDamage" => node.Require("card"),
+            _ => throw new InvalidOperationException(
+                $"'{node.Kind}' is not a direct damage node"),
+        };
+        int damagingFrames = RebindsToEachPlayer(targets)
+            ? 1
+            : priorFrames;
+        var cards = Every(targets, cast);
+        return cards.Any(card => cast.World.PlayerOrder.Any(player =>
+                cast.World.Seats[player].IdentityCard == card)
+            && TotalRepeatedDamageTo(
+                card, repeatedEffect, cast, assumed, binding,
+                damagingFrames)
+                >= Damage.Health(cast.World, cast.World.Facts, card) - card.Damage)
+            || cards.Count == 0 && binding && BindingCanChange(targets);
+    }
+
+    private static long TotalRepeatedDamageTo(
+        Card target, AbilityNode repeatedEffect, Cast cast,
+        RepeatedChange assumed, bool binding, int frames)
+        => PeakRepeatedDamageOn(
+            target, repeatedEffect, cast, assumed, binding, frames)
+            - target.Damage;
+
+    private static bool RebindsToEachPlayer(AbilityValue targets) => targets switch
+    {
+        AbilityValue.Word word => word.Value is "you" or "yourHero",
+        AbilityValue.Map => RebindsToEachPlayer(Tree(targets)),
+        _ => false,
+    };
+
+    private static bool RebindsToEachPlayer(AbilityNode targets) => targets.Kind switch
+    {
+        "query" => targets.Argument is AbilityValue.Word
+            { Value: "charactersYouControl" },
+        "withTrait" => RebindsToEachPlayer(targets.Require("cards")),
+        "minBy" or "maxBy" => RebindsToEachPlayer(targets.Require("of")),
+        "withoutAnotherCopyAttached" => RebindsToEachPlayer(targets.Argument),
+        _ => false,
+    };
+
+    private static long TotalThreatRemoved(
+        Card scheme, AbilityNode node, Cast cast,
+        RepeatedChange assumed = RepeatedChange.None, bool binding = false)
+    {
+        long own = node.Kind == "removeThreat"
+            && Every(node.Require("scheme"), cast).Any(candidate =>
+                candidate.ObjectId == scheme.ObjectId)
+                ? Amount(node.Require("amount"), cast)
+                : 0;
+        return MutationTotal(
+            node, cast, assumed, binding, own,
+            child => TotalThreatRemoved(
+                scheme, child, cast, assumed, binding));
+    }
+
+    private readonly record struct DamageTransfer(
+        int From, int To, long Amount, bool GrantsTough = false,
+        bool GrantsHealth = false, bool DealsDamage = false,
+        bool Discards = false, bool EntersPlay = false,
+        bool RemovesThreat = false,
+        bool PlacesThreat = false, string? GrantsTrait = null,
+        string? GrantsField = null,
+        AbilityValue? FromVillain = null, AbilityValue? ToVillain = null);
+
+    private readonly record struct TraceCard(
+        Card Card, AbilityValue? VillainSelector);
+
+    private sealed record DamageTraceState(
+        Dictionary<int, long> Damage, long PeakTargetPressure,
+        HashSet<int> Players, Dictionary<int, int> Tough,
+        Dictionary<int, long> Health, HashSet<int> Discarded,
+        Dictionary<int, long> Threat, Dictionary<int, HashSet<string>> Traits,
+        Dictionary<(int Card, string Field), long> Modifiers,
+        Dictionary<int, int> Engagement,
+        int CurrentVillain,
+        int VillainStagesDrawn, bool Finished);
+
+    private static long PeakRepeatedDamageOn(
+        Card target, AbilityNode repeatedEffect, Cast cast,
+        RepeatedChange assumed, bool binding, int frames)
+    {
+        int original = cast.Player;
+        try
+        {
+            int villain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+            IReadOnlyList<DamageTraceState> states =
+                [new(new Dictionary<int, long>(), target.Damage, [], new(), new(),
+                    TraceUnavailableMinions(cast), new(),
+                    new(), new(), new(), villain, 0, false)];
+            for (int frame = 0; frame < frames; frame++)
+            {
+                var next = new List<DamageTraceState>();
+                foreach (var state in states)
+                {
+                    foreach (int player in cast.World.PlayerOrder.Where(player =>
+                        !state.Players.Contains(player)))
+                    {
+                        cast.RestorePlayer(player);
+                        var traces = DamageTraces(
+                            repeatedEffect, cast, assumed, binding);
+                        foreach (var trace in traces)
+                        {
+                            var advanced = ApplyDamageTrace(
+                                state, trace, target, cast);
+                            next.Add(advanced with
+                            {
+                                Players = [.. state.Players, player],
+                            });
+                        }
+                    }
+                }
+                states = next;
+            }
+            return states.Select(state => state.PeakTargetPressure)
+                .DefaultIfEmpty(target.Damage)
+                .Max();
+        }
+        finally
+        {
+            cast.RestorePlayer(original);
+        }
+    }
+
+    private static HashSet<int> TraceUnavailableMinions(Cast cast) =>
+        cast.World.Areas
+            .SelectMany(area => area.Cards)
+            .Where(card => card.Area.Type != DeckType.EngagedEnemiesArea
+                && FacedownDrones.Kind(card, cast.World.Facts) == CardKind.Minion)
+            .Select(card => card.ObjectId)
+            .ToHashSet();
+
+    private static DamageTraceState ApplyDamageTrace(
+        DamageTraceState state, IReadOnlyList<DamageTransfer> trace,
+        Card target, Cast cast)
+    {
+        var damage = new Dictionary<int, long>(state.Damage);
+        var tough = new Dictionary<int, int>(state.Tough);
+        var health = new Dictionary<int, long>(state.Health);
+        var discarded = new HashSet<int>(state.Discarded);
+        var threat = new Dictionary<int, long>(state.Threat);
+        var traits = state.Traits.ToDictionary(
+            pair => pair.Key,
+            pair => new HashSet<string>(pair.Value, StringComparer.Ordinal));
+        var modifiers = new Dictionary<(int Card, string Field), long>(state.Modifiers);
+        var engagement = new Dictionary<int, int>(state.Engagement);
+        int currentVillain = state.CurrentVillain;
+        int villainStagesDrawn = state.VillainStagesDrawn;
+        bool finished = state.Finished;
+        long peak = state.PeakTargetPressure;
+        long Current(int card) => damage.TryGetValue(card, out long amount)
+            ? amount
+            : cast.World.Cards[card].Damage;
+        int CurrentTough(int card) => tough.TryGetValue(card, out int count)
+            ? count
+            : Statuses.Count(cast.World, cast.World.Cards[card], Statuses.Tough);
+        long HealthBonus(int card) => health.GetValueOrDefault(card);
+        void ObserveTarget() => peak = Math.Max(
+            peak, Current(target.ObjectId) - HealthBonus(target.ObjectId));
+        long CurrentThreat(int card) => threat.TryGetValue(card, out long amount)
+            ? amount
+            : cast.World.Cards[card].Tokens.GetValueOrDefault("k_threat");
+        void LeavePlay(int cardId)
+        {
+            var leaving = new List<int> { cardId };
+            var pending = new Stack<Card>(cast.World.Areas
+                .Where(area => area.Host == cardId)
+                .SelectMany(area => area.Cards)
+                .Reverse());
+            var seen = new HashSet<int> { cardId };
+            while (pending.TryPop(out var hosted))
+            {
+                if (!seen.Add(hosted.ObjectId))
+                {
+                    throw new RulesNotImplementedException(
+                        $"attachment {hosted.ObjectId} forms a hosting cycle");
+                }
+                if (cast.World.Facts.PrintedValue(
+                        hosted.FaceId, "Permanent", cast.World.Players) > 0)
+                {
+                    // Match Discard.Attachments' complete-tree preflight so
+                    // eligibility refuses before an action cost can mutate.
+                    throw new RulesNotImplementedException(
+                        $"permanent attachment {hosted.ObjectId} lost host "
+                        + $"{cardId}, and rr:permanent.5 is not implemented");
+                }
+
+                leaving.Add(hosted.ObjectId);
+                foreach (var child in cast.World.Areas
+                    .Where(area => area.Host == hosted.ObjectId)
+                    .SelectMany(area => area.Cards)
+                    .Reverse())
+                {
+                    pending.Push(child);
+                }
+            }
+
+            foreach (int leavingId in leaving)
+            {
+                discarded.Add(leavingId);
+                tough[leavingId] = 0;
+                engagement.Remove(leavingId);
+            }
+        }
+        void ResolveCharacterDefeat(int cardId)
+        {
+            var card = cast.World.Cards[cardId];
+            if (cardId == currentVillain
+                && Current(cardId) >= Damage.Health(
+                    cast.World, cast.World.Facts, card) + HealthBonus(cardId))
+            {
+                discarded.Add(cardId);
+                var deck = cast.World.AreaOf(DeckType.VillainDeck);
+                int nextIndex = deck.Cards.Count - 1 - villainStagesDrawn;
+                if (nextIndex < 0)
+                {
+                    finished = true;
+                    return;
+                }
+
+                var next = deck.Cards[nextIndex];
+                villainStagesDrawn++;
+                int carriedTough = string.Equals(
+                        cast.World.Facts.Title(card.FaceId),
+                        cast.World.Facts.Title(next.FaceId),
+                        StringComparison.Ordinal)
+                    ? CurrentTough(cardId)
+                    : 0;
+                currentVillain = next.ObjectId;
+                damage[next.ObjectId] = 0;
+                tough[next.ObjectId] = Math.Max(
+                    carriedTough,
+                    cast.World.Facts.PrintedValue(
+                        next.FaceId, "Toughness", cast.World.Players) > 0 ? 1 : 0);
+                return;
+            }
+            if ((card.Area.Type is DeckType.EngagedEnemiesArea
+                    or DeckType.AlliesArea
+                    || engagement.ContainsKey(cardId))
+                && Current(cardId) >= Damage.Health(
+                    cast.World, cast.World.Facts, card) + HealthBonus(cardId))
+            {
+                LeavePlay(cardId);
+            }
+        }
+
+        foreach (var transfer in trace)
+        {
+            if (finished)
+            {
+                break;
+            }
+
+            int from = transfer.FromVillain is { } fromSelector
+                ? TraceSelectorIncludesCard(
+                    fromSelector, transfer.From, currentVillain,
+                    cast, discarded, traits, modifiers, engagement)
+                    is int tracedFrom ? tracedFrom
+                    : int.MinValue
+                : transfer.From;
+            int to = transfer.ToVillain is { } toSelector
+                ? TraceSelectorIncludesCard(
+                    toSelector, transfer.To, currentVillain,
+                    cast, discarded, traits, modifiers, engagement)
+                    is int tracedTo ? tracedTo
+                    : int.MinValue
+                : transfer.To;
+            if (from == int.MinValue || to == int.MinValue)
+            {
+                continue;
+            }
+            if (transfer.EntersPlay)
+            {
+                if (!discarded.Remove(to))
+                {
+                    // A repeated frame is reconstructed from the unchanged
+                    // World, so its branch may still contain the same entry.
+                    // Once trace-local play has made the card available, that
+                    // later transfer is a no-op and must not migrate its
+                    // engagement or restore its printed statuses.
+                    continue;
+                }
+                engagement[to] = Resolver(cast);
+                tough[to] = Math.Max(
+                    CurrentTough(to),
+                    cast.World.Facts.PrintedValue(
+                        cast.World.Cards[to].FaceId,
+                        "Toughness",
+                        cast.World.Players) > 0 ? 1 : 0);
+                continue;
+            }
+            if (transfer.RemovesThreat || transfer.PlacesThreat)
+            {
+                long current = CurrentThreat(to);
+                long changed = transfer.PlacesThreat
+                    ? SaturatingSum(current, [transfer.Amount])
+                    : Math.Max(0, current - transfer.Amount);
+                threat[to] = changed;
+                if (transfer.RemovesThreat && changed == 0
+                    && cast.World.Cards[to].Area.Type
+                        == DeckType.SideSchemesArea)
+                {
+                    discarded.Add(to);
+                }
+                continue;
+            }
+            if (transfer.Discards)
+            {
+                LeavePlay(to);
+                continue;
+            }
+            if (transfer.GrantsHealth)
+            {
+                health[to] = SaturatingSum(
+                    HealthBonus(to), [transfer.Amount]);
+                ObserveTarget();
+                continue;
+            }
+            if (transfer.GrantsTrait is { } gainedTrait)
+            {
+                if (!traits.TryGetValue(to, out var gained))
+                {
+                    gained = new HashSet<string>(StringComparer.Ordinal);
+                    traits[to] = gained;
+                }
+                gained.Add(gainedTrait);
+                continue;
+            }
+            if (transfer.GrantsField is { } gainedField)
+            {
+                var key = (to, gainedField);
+                modifiers[key] = SaturatingSum(
+                    modifiers.GetValueOrDefault(key), [transfer.Amount]);
+                continue;
+            }
+            if (transfer.GrantsTough)
+            {
+                tough[to] = Math.Max(1, CurrentTough(to));
+                continue;
+            }
+            if (from < 0)
+            {
+                if (transfer.DealsDamage
+                    && !CanTakeDamageInTrace(
+                        cast, cast.World.Cards[to], discarded))
+                {
+                    continue;
+                }
+                long incoming = transfer.DealsDamage
+                    ? AfterForcedDamageReplacements(
+                        cast, to, transfer.Amount, damage, discarded,
+                        currentVillain)
+                    : transfer.Amount;
+                if (incoming > 0 && CurrentTough(to) > 0)
+                {
+                    tough[to] = CurrentTough(to) - 1;
+                    continue;
+                }
+                damage[to] = SaturatingSum(Current(to), [incoming]);
+                ResolveCharacterDefeat(to);
+                ObserveTarget();
+                continue;
+            }
+
+            long available = Current(from);
+            long amount = Math.Min(available, transfer.Amount);
+            if (to >= 0 && transfer.DealsDamage
+                && !CanTakeDamageInTrace(
+                    cast, cast.World.Cards[to], discarded))
+            {
+                continue;
+            }
+            damage[from] = available - amount;
+            long landed = to >= 0 && transfer.DealsDamage
+                ? AfterForcedDamageReplacements(
+                    cast, to, amount, damage, discarded, currentVillain)
+                : amount;
+            if (to >= 0)
+            {
+                if (landed > 0 && CurrentTough(to) > 0)
+                {
+                    tough[to] = CurrentTough(to) - 1;
+                }
+                else
+                {
+                    damage[to] = SaturatingSum(Current(to), [landed]);
+                    ResolveCharacterDefeat(to);
+                }
+            }
+            ObserveTarget();
+        }
+        return new DamageTraceState(
+            damage, peak, state.Players, tough, health, discarded, threat,
+            traits, modifiers, engagement,
+            currentVillain, villainStagesDrawn, finished);
+    }
+
+    private static long AfterForcedDamageReplacements(
+        Cast cast, int target, long amount, Dictionary<int, long> damage,
+        HashSet<int> discarded, int currentVillain)
+    {
+        if (amount <= 0 || cast.Abilities is not AbilityRunner runner)
+        {
+            return amount;
+        }
+
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        foreach (var area in cast.World.Areas.Where(area =>
+            area.Host == target
+            || target == currentVillain && area.Host == boardVillain
+                && currentVillain >= 0 && boardVillain >= 0
+                && string.Equals(
+                    cast.World.Facts.Title(cast.World.Cards[currentVillain].FaceId),
+                    cast.World.Facts.Title(cast.World.Cards[boardVillain].FaceId),
+                    StringComparison.Ordinal)))
+        {
+            foreach (var attachment in area.Cards.Where(card =>
+                !discarded.Contains(card.ObjectId)))
+            {
+                var replacement = runner.On(attachment).FirstOrDefault(ability =>
+                    ability.Trigger.Timing == AbilityType.ForcedInterrupt
+                    && ContainsEffect(ability.Effect, "soakDamage"));
+                if (replacement is null)
+                {
+                    continue;
+                }
+
+                long placed = SaturatingSum(
+                    damage.TryGetValue(attachment.ObjectId, out long traced)
+                        ? traced
+                        : attachment.Damage,
+                    [amount]);
+                damage[attachment.ObjectId] = placed;
+                long threshold = SoakDiscardThreshold(replacement.Effect);
+                if (threshold > 0 && placed >= threshold)
+                {
+                    discarded.Add(attachment.ObjectId);
+                }
+                return 0;
+            }
+        }
+        return amount;
+    }
+
+    private static bool ContainsEffect(AbilityNode node, string kind) =>
+        node.Kind == kind || MutationChildren(node).Any(child =>
+            ContainsEffect(child, kind));
+
+    private static long SoakDiscardThreshold(AbilityNode node)
+    {
+        if (node.Kind == "if"
+            && Tree(node.Require("test")) is { Kind: "atLeast" } test
+            && Tree(test.Require("value")) is { Kind: "damageOn" }
+            && node.Field("then") is { } then
+            && ContainsEffect(Tree(then), "discard"))
+        {
+            return Number(test.Require("count"));
+        }
+        return MutationChildren(node)
+            .Select(SoakDiscardThreshold)
+            .FirstOrDefault(threshold => threshold > 0);
+    }
+
+    private static bool CanTakeDamageInTrace(
+        Cast cast, Card target, HashSet<int> discarded)
+    {
+        if (discarded.Contains(target.ObjectId))
+        {
+            return false;
+        }
+        if (cast.Abilities is not AbilityRunner runner)
+        {
+            return cast.Abilities.CanTakeDamage(
+                cast.World, target, cast.Source);
+        }
+
+        foreach (var ability in runner.On(target).Where(ability =>
+            ability.Trigger.Timing == AbilityType.Constant))
+        {
+            var constant = new Cast(
+                cast.World, target, new Occurrence(0, []),
+                ControllerOf(cast.World, target), [], runner);
+            if (ProhibitsDamageInTrace(
+                ability.Effect, constant, cast.Source, discarded))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static bool ProhibitsDamageInTrace(
+        AbilityNode node, Cast cast, Card source,
+        HashSet<int> discarded) => node.Kind switch
+        {
+            "seq" or "and" => Nodes(node.Argument).Any(step =>
+                ProhibitsDamageInTrace(step, cast, source, discarded)),
+            "if" => node.Field(
+                    TraceTest(Tree(node.Require("test")), cast, discarded)
+                        ? "then"
+                        : "else")
+                is { } branch && ProhibitsDamageInTrace(
+                    Tree(branch), cast, source, discarded),
+            "preventDamageFrom" => cast.World.Facts.Kind(source.FaceId)
+                    == Kind(Word(node.Require("sourceKind")))
+                && Rules.State.Traits.Has(
+                    cast.World, source, Word(node.Require("sourceTrait")),
+                    cast.World.Facts),
+            "preventDamageWhile" => TraceTest(
+                Tree(node.Require("condition")), cast, discarded),
+            _ => false,
+        };
+
+    private static bool TraceTest(
+        AbilityNode node, Cast cast, HashSet<int> discarded) => node.Kind switch
+        {
+            "and" => Nodes(node.Argument).All(test =>
+                TraceTest(test, cast, discarded)),
+            "or" => Nodes(node.Argument).Any(test =>
+                TraceTest(test, cast, discarded)),
+            "not" => !TraceTest(Tree(node.Argument), cast, discarded),
+            "exists" => Every(node.Argument, cast).Any(card =>
+                !discarded.Contains(card.ObjectId)),
+            "titleInPlay" => cast.World.Areas
+                .Where(area => DeckTypes.IsInPlay(area.Type))
+                .SelectMany(area => area.Cards)
+                .Any(card => !discarded.Contains(card.ObjectId)
+                    && string.Equals(
+                        cast.World.Facts.Title(card.FaceId),
+                        Word(node.Argument), StringComparison.Ordinal)),
+            _ => Test(node, cast),
+        };
+
+    private static IReadOnlyList<IReadOnlyList<DamageTransfer>> DamageTraces(
+        AbilityNode node, Cast cast, RepeatedChange assumed, bool binding)
+    {
+        if (node.Kind == "if")
+        {
+            var test = Tree(node.Require("test"));
+            var branches = RepeatedTestCanChange(test, assumed)
+                    || binding && BindingCanChange(test.Argument)
+                ? Branches.Select(node.Field).Where(value => value is not null)
+                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                    ? [active]
+                    : [];
+            return
+            [
+                .. branches.SelectMany(branch => DamageTraces(
+                    Tree(branch!), cast, assumed, binding)),
+            ];
+        }
+
+        if (node.Kind == "choose")
+        {
+            return
+            [
+                .. MutationChildren(node).SelectMany(child =>
+                    DamageTraces(child, cast, assumed, binding)),
+            ];
+        }
+
+        var own = DamageTransfers(node, cast);
+        var children = MutationChildren(node).ToList();
+        IReadOnlyList<IReadOnlyList<DamageTransfer>> traces = [own];
+        foreach (var child in children)
+        {
+            var next = DamageTraces(child, cast, assumed, binding);
+            traces =
+            [
+                .. traces.SelectMany(prefix => next.Select(suffix =>
+                    (IReadOnlyList<DamageTransfer>)[.. prefix, .. suffix])),
+            ];
+        }
+        return traces;
+    }
+
+    private static IReadOnlyList<DamageTransfer> DamageTransfers(
+        AbilityNode node, Cast cast)
+    {
+        if (node.Kind is "dealDamage" or "indirectDamage")
+        {
+            string field = node.Kind == "dealDamage" ? "cards" : "among";
+            return
+            [
+                .. TraceCards(node.Require(field), cast).Select(target =>
+                    new DamageTransfer(
+                        -1, target.Card.ObjectId,
+                        Amount(node.Require("amount"), cast),
+                        DealsDamage: true,
+                        ToVillain: target.VillainSelector)),
+            ];
+        }
+        if (node.Kind == "replaceThreatWithDamage"
+            && TraceCardNamed(node.Require("card"), cast) is { } replaced)
+        {
+            return [new DamageTransfer(
+                -1, replaced.Card.ObjectId,
+                cast.Occurrence.Threat?.Remaining ?? long.MaxValue,
+                DealsDamage: true,
+                ToVillain: replaced.VillainSelector)];
+        }
+        if (node.Kind == "heal"
+            && TraceCardNamed(node.Require("card"), cast) is { } healed)
+        {
+            return [new DamageTransfer(
+                healed.Card.ObjectId, -1, Amount(node.Require("amount"), cast),
+                FromVillain: healed.VillainSelector)];
+        }
+        if (node.Kind == "moveDamage"
+            && TraceCardNamed(node.Require("from"), cast) is { } from
+            && TraceCardNamed(node.Require("to"), cast) is { } to)
+        {
+            return [new DamageTransfer(
+                from.Card.ObjectId, to.Card.ObjectId,
+                Amount(node.Require("amount"), cast),
+                DealsDamage: true,
+                FromVillain: from.VillainSelector,
+                ToVillain: to.VillainSelector)];
+        }
+        if (node.Kind == "giveStatus"
+            && Word(node.Require("status")) == Statuses.Tough)
+        {
+            return
+            [
+                .. TraceCards(node.Require("card"), cast).Select(target =>
+                    new DamageTransfer(
+                        0, target.Card.ObjectId, 0, GrantsTough: true,
+                        ToVillain: target.VillainSelector)),
+            ];
+        }
+        if (node.Kind == "grantUntil"
+            && node.Field("trait") is { } gainedTrait)
+        {
+            return
+            [
+                .. TraceCards(node.Require("card"), cast).Select(target =>
+                    new DamageTransfer(
+                        0, target.Card.ObjectId, 0,
+                        GrantsTrait: Word(gainedTrait),
+                        ToVillain: target.VillainSelector)),
+            ];
+        }
+        if (node.Kind == "grantUntil"
+            && node.Field("keyword") is { } grantedField
+            && Word(grantedField) != "health"
+            && TraceCards(node.Require("card"), cast) is { Count: > 0 } targets)
+        {
+            return
+            [
+                .. targets.Select(target => new DamageTransfer(
+                    0, target.Card.ObjectId,
+                    node.Field("amount") is { } amount ? Amount(amount, cast) : 1,
+                    GrantsField: Word(grantedField),
+                    ToVillain: target.VillainSelector)),
+            ];
+        }
+        if (node.Kind == "grantUntil"
+            && node.Field("keyword") is { } granted
+            && Word(granted) == "health"
+            && TraceCardNamed(node.Require("card"), cast) is { } healthier)
+        {
+            return [new DamageTransfer(
+                0, healthier.Card.ObjectId,
+                node.Field("amount") is { } amount ? Amount(amount, cast) : 0,
+                GrantsHealth: true,
+                ToVillain: healthier.VillainSelector)];
+        }
+        if (node.Kind == "discard")
+        {
+            AbilityValue cards = node.Field("card") ?? node.Argument;
+            return
+            [
+                .. TraceCards(cards, cast).Select(target =>
+                    new DamageTransfer(
+                        0, target.Card.ObjectId, 0, Discards: true,
+                        ToVillain: target.VillainSelector)),
+            ];
+        }
+        if (node.Kind == "putIntoPlay"
+            && TraceCardNamed(node.Require("card"), cast) is { } entering)
+        {
+            if (cast.Abilities is AbilityRunner runner
+                && runner.On(entering.Card).Any(ability =>
+                    ability.Trigger.Timing == AbilityType.Constant))
+            {
+                // The card is intentionally not moved while eligibility is
+                // traced, so its constant abilities are not active in the
+                // unchanged World. Refuse that continuation before mutation
+                // rather than rank later selectors against a plausible lie.
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' puts '{entering.Card.FaceId}' into play "
+                    + "before a repeated continuation reads its constant abilities, "
+                    + "which is not implemented");
+            }
+            return [new DamageTransfer(
+                0, entering.Card.ObjectId, 0, EntersPlay: true)];
+        }
+        if (node.Kind is "removeThreat" or "placeThreat")
+        {
+            bool removes = node.Kind == "removeThreat";
+            return
+            [
+                .. Every(node.Require("scheme"), cast).Select(scheme =>
+                    new DamageTransfer(
+                        0, scheme.ObjectId,
+                        Amount(node.Require("amount"), cast),
+                        RemovesThreat: removes,
+                        PlacesThreat: !removes)),
+            ];
+        }
+        return [];
+    }
+
+    private static List<TraceCard> TraceCards(
+        AbilityValue value, Cast cast)
+    {
+        bool dynamic = SelectorMembershipCanChange(value)
+            || PotentialVillainSelector(value, cast);
+        var selected = dynamic
+            ? TraceCandidateCards(value, cast)
+            : Every(value, cast).ToList();
+        var current = cast.World.TheCardIn(DeckType.VillainArea);
+        var traced = selected.Select(card => new TraceCard(
+            card, dynamic ? value : VillainSelector(value, card, cast))).ToList();
+        if (current is not null
+            && selected.All(card => card.ObjectId != current.ObjectId)
+            && dynamic)
+        {
+            traced.Insert(0, new TraceCard(current, value));
+        }
+        return traced;
+    }
+
+    private static List<Card> TraceCandidateCards(
+        AbilityValue value, Cast cast)
+    {
+        if (value is AbilityValue.Map)
+        {
+            var node = Tree(value);
+            if (node.Kind is "minBy" or "maxBy")
+            {
+                return TraceCandidateCards(node.Require("of"), cast);
+            }
+            if (node.Kind == "withTrait")
+            {
+                return TraceCandidateCards(node.Require("cards"), cast);
+            }
+            if (node.Kind == "withoutAnotherCopyAttached")
+            {
+                return TraceCandidateCards(node.Argument, cast);
+            }
+            if (node.Kind == "enemiesWithTrait"
+                || node.Kind == "query" && node.Argument is AbilityValue.Word
+                    { Value: "enemies" or "attackableEnemies"
+                        or "minionsEngagedWithYou" or "dronesEngagedWithYou"
+                        or "enemiesEngagedWithChosenPlayer" })
+            {
+                return
+                [
+                    .. cast.World.Areas
+                        .SelectMany(area => area.Cards)
+                        .Where(card => FacedownDrones.Kind(
+                            card, cast.World.Facts) is
+                            CardKind.EncounterVillain or CardKind.Minion),
+                ];
+            }
+        }
+        return [.. Every(value, cast)];
+    }
+
+    private static TraceCard? TraceCardNamed(
+        AbilityValue value, Cast cast)
+    {
+        if (Find(value, cast) is { } found)
+        {
+            return new TraceCard(found, VillainSelector(value, found, cast));
+        }
+        var current = cast.World.TheCardIn(DeckType.VillainArea);
+        return current is not null && PotentialVillainSelector(value, cast)
+            ? new TraceCard(current, value)
+            : null;
+    }
+
+    private static bool PotentialVillainSelector(
+        AbilityValue value, Cast cast)
+    {
+        if (cast.World.TheCardIn(DeckType.VillainArea) is null
+            || value is not AbilityValue.Map)
+        {
+            return false;
+        }
+        var node = Tree(value);
+        return node.Kind switch
+        {
+            "query" => node.Argument is AbilityValue.Word
+                { Value: "villain" or "enemies" or "attackableEnemies" or "characters" },
+            "titled" => cast.World.AreaOf(DeckType.VillainDeck).Cards
+                    .Prepend(cast.World.TheCardIn(DeckType.VillainArea)!)
+                    .Any(stage => string.Equals(
+                        Word(node.Argument), cast.World.Facts.Title(stage.FaceId),
+                        StringComparison.Ordinal)),
+            "enemiesWithTrait" => true,
+            "withTrait" => PotentialVillainSelector(node.Require("cards"), cast),
+            "withoutAnotherCopyAttached" => PotentialVillainSelector(node.Argument, cast),
+            "minBy" or "maxBy" => PotentialVillainSelector(node.Require("of"), cast),
+            _ => false,
+        };
+    }
+
+    private static bool SelectorMembershipCanChange(AbilityValue value)
+    {
+        if (value is not AbilityValue.Map)
+        {
+            return false;
+        }
+        var node = Tree(value);
+        return node.Kind switch
+        {
+            "withTrait" or "enemiesWithTrait" or "minBy" or "maxBy"
+                or "withoutAnotherCopyAttached" => true,
+            "query" => node.Argument is AbilityValue.Word
+                { Value: "attackableEnemies" or "minionsEngagedWithYou"
+                    or "dronesEngagedWithYou"
+                    or "enemiesEngagedWithChosenPlayer" },
+            _ => false,
+        };
+    }
+
+    private static AbilityValue? VillainSelector(
+        AbilityValue value, Card resolved, Cast cast)
+    {
+        var current = cast.World.TheCardIn(DeckType.VillainArea);
+        if (current is null || resolved.ObjectId != current.ObjectId
+            || value is not AbilityValue.Map)
+        {
+            return null;
+        }
+        return SelectorCanTrackVillain(value, current, cast) ? value : null;
+    }
+
+    private static bool SelectorCanTrackVillain(
+        AbilityValue value, Card current, Cast cast)
+    {
+        if (value is not AbilityValue.Map)
+        {
+            return false;
+        }
+        var node = Tree(value);
+        return node.Kind switch
+        {
+            "query" => node.Argument is AbilityValue.Word
+                { Value: "villain" or "enemies" or "attackableEnemies" or "characters" },
+            "titled" => string.Equals(
+                Word(node.Argument), cast.World.Facts.Title(current.FaceId),
+                StringComparison.Ordinal),
+            "enemiesWithTrait" => TraceHasTrait(
+                current, Word(node.Argument), cast, []),
+            "withTrait" => TraceHasTrait(
+                    current, Word(node.Require("trait")), cast, [])
+                && SelectorCanTrackVillain(
+                    node.Require("cards"), current, cast),
+            "withoutAnotherCopyAttached" => SelectorCanTrackVillain(
+                node.Argument, current, cast),
+            "minBy" or "maxBy" => SelectorCanTrackVillain(
+                node.Require("of"), current, cast),
+            _ => false,
+        };
+    }
+
+    private static int? TraceSelectorIncludesCard(
+        AbilityValue value, int bound, int currentVillain, Cast cast,
+        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
+        Dictionary<(int Card, string Field), long> modifiers,
+        Dictionary<int, int> engagement)
+    {
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        int candidateId = bound == boardVillain ? currentVillain : bound;
+        if (candidateId < 0 || discarded.Contains(candidateId))
+        {
+            return null;
+        }
+        var candidate = cast.World.Cards[candidateId];
+        return TraceSelectorMatches(
+            value, candidate, currentVillain, cast, discarded, traits, modifiers,
+            engagement)
+            ? candidateId
+            : null;
+    }
+
+    private static bool TraceSelectorMatches(
+        AbilityValue value, Card candidate, int currentVillain, Cast cast,
+        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
+        Dictionary<(int Card, string Field), long> modifiers,
+        Dictionary<int, int> engagement)
+    {
+        if (value is not AbilityValue.Map)
+        {
+            return false;
+        }
+        var node = Tree(value);
+        bool villain = candidate.ObjectId == currentVillain;
+        var kind = FacedownDrones.Kind(candidate, cast.World.Facts);
+        return node.Kind switch
+        {
+            "query" => node.Argument switch
+            {
+                AbilityValue.Word { Value: "villain" } => villain,
+                AbilityValue.Word { Value: "enemies" } => villain
+                    || kind == CardKind.Minion,
+                AbilityValue.Word { Value: "minions" } => kind == CardKind.Minion,
+                AbilityValue.Word { Value: "characters" } => villain
+                    || kind is CardKind.Minion or CardKind.Hero
+                        or CardKind.AlterEgo or CardKind.Ally,
+                AbilityValue.Word { Value: "attackableEnemies" } => villain
+                    ? VillainIsAttackableInTrace(
+                        cast, candidate, discarded, modifiers, engagement)
+                    : kind == CardKind.Minion
+                        && CanTakeDamageInTrace(cast, candidate, discarded),
+                AbilityValue.Word { Value: "minionsEngagedWithYou" } =>
+                    kind == CardKind.Minion
+                    && TraceEngagedWith(candidate, cast.Player, engagement),
+                AbilityValue.Word { Value: "dronesEngagedWithYou" } =>
+                    FacedownDrones.Is(candidate)
+                    && TraceEngagedWith(candidate, Resolver(cast), engagement),
+                AbilityValue.Word { Value: "enemiesEngagedWithChosenPlayer" } =>
+                    kind == CardKind.Minion
+                    && cast.Chosen is { Owner: >= 0 } chosen
+                    && TraceEngagedWith(candidate, chosen.Owner, engagement),
+                _ => Every(value, cast).Any(card =>
+                    card.ObjectId == candidate.ObjectId),
+            },
+            "titled" => string.Equals(
+                Word(node.Argument), cast.World.Facts.Title(candidate.FaceId),
+                StringComparison.Ordinal),
+            "enemiesWithTrait" => TraceHasTrait(
+                candidate, Word(node.Argument), cast, discarded, traits),
+            "withTrait" => TraceSelectorMatches(
+                    node.Require("cards"), candidate, currentVillain,
+                    cast, discarded, traits, modifiers, engagement)
+                && TraceHasTrait(
+                    candidate, Word(node.Require("trait")), cast, discarded, traits),
+            "withoutAnotherCopyAttached" => TraceSelectorMatches(
+                    node.Argument, candidate, currentVillain,
+                    cast, discarded, traits, modifiers, engagement)
+                && !AnotherCopyAttachedInTrace(candidate, cast, discarded),
+            "minBy" or "maxBy" => TraceRankedSelectorIncludesCard(
+                node, candidate, currentVillain, cast, discarded, traits,
+                modifiers, engagement),
+            _ => false,
+        };
+    }
+
+    private static bool TraceEngagedWith(
+        Card card, int player, Dictionary<int, int> engagement) =>
+        engagement.TryGetValue(card.ObjectId, out int traced)
+            ? traced == player
+            : card.Area.Type == DeckType.EngagedEnemiesArea
+                && card.Area.PlayArea == PlayArea.Of(player);
+
+    private static bool VillainIsAttackableInTrace(
+        Cast cast, Card current, HashSet<int> discarded,
+        Dictionary<(int Card, string Field), long> modifiers,
+        Dictionary<int, int> engagement)
+    {
+        int player = Resolver(cast);
+        bool guarded = cast.World
+            .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player))
+            .Cards.Any(enemy => !discarded.Contains(enemy.ObjectId)
+                && !engagement.ContainsKey(enemy.ObjectId)
+                && FacedownDrones.Kind(enemy, cast.World.Facts) == CardKind.Minion
+                && TraceModified(
+                    enemy, "guard", cast, discarded, modifiers) > 0)
+            || engagement.Any(pair => pair.Value == player
+                && !discarded.Contains(pair.Key)
+                && TraceModified(
+                    cast.World.Cards[pair.Key], "guard",
+                    cast, discarded, modifiers) > 0);
+        return !guarded && CanTakeDamageInTrace(cast, current, discarded);
+    }
+
+    private static bool TraceHasTrait(
+        Card current, string trait, Cast cast, HashSet<int> discarded,
+        Dictionary<int, HashSet<string>>? traits = null)
+    {
+        if (traits?.TryGetValue(current.ObjectId, out var gained) == true
+            && gained.Contains(trait))
+        {
+            return true;
+        }
+        if (FacedownDrones.InherentTraits(current, cast.World.Facts)
+            .Contains(trait, StringComparer.Ordinal))
+        {
+            return true;
+        }
+
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        string grantedKind = Rules.State.Traits.Granted + trait;
+        if (cast.World.Effects.Active().Any(effect =>
+            effect.Affects == current.ObjectId
+            && (effect.Source != EffectSource.ConstantAbility
+                || effect.Card is not int source || !discarded.Contains(source))
+            && string.Equals(effect.Kind, grantedKind, StringComparison.Ordinal)))
+        {
+            return true;
+        }
+
+        var carried = TraceCarriedAttachments(current, cast, discarded);
+        var carriedIds = carried.Select(card => card.ObjectId).ToHashSet();
+        return cast.World.Effects.Active().Any(effect =>
+            effect.Affects == boardVillain
+            && effect.Card is int source && carriedIds.Contains(source)
+            && string.Equals(effect.Kind, grantedKind, StringComparison.Ordinal));
+    }
+
+    private static List<Card> TraceCarriedAttachments(
+        Card current, Cast cast, HashSet<int> discarded)
+    {
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        if (boardVillain < 0 || !string.Equals(
+                cast.World.Facts.Title(cast.World.Cards[boardVillain].FaceId),
+                cast.World.Facts.Title(current.FaceId),
+                StringComparison.Ordinal))
+        {
+            return [];
+        }
+        return
+        [
+            .. cast.World.Areas
+                .Where(area => area.Host == boardVillain
+                    || area.Host == current.ObjectId)
+                .SelectMany(area => area.Cards)
+                .Where(card => !discarded.Contains(card.ObjectId)),
+        ];
+    }
+
+    private static long TraceModified(
+        Card current, string field, Cast cast, HashSet<int> discarded,
+        Dictionary<(int Card, string Field), long>? modifiers = null)
+    {
+        if (StateFields.FilledFrom.TryGetValue(field, out string? attribute)
+            && attribute is "ATK" or "THW" or "DEF" or "REC" or "SCH"
+            && !StateFields.HasUsablePrintedPower(
+                cast.World.Facts, current.FaceId, attribute))
+        {
+            // `rr:dash-value.3`: a referenced dash is an unmodifiable zero.
+            // Match StateFields.Modified's early return before applying either
+            // trace-local or carried modifiers.
+            return 0;
+        }
+
+        string? printed = field switch
+        {
+            "attack" => "ATK+",
+            "scheme" => "SCH+",
+            "thwart" => "THW+",
+            _ => null,
+        };
+        long value = StateFields.Modified(
+                cast.World, current, field, cast.World.Facts, cast.World.Players)
+            + (modifiers?.GetValueOrDefault((current.ObjectId, field)) ?? 0);
+        if (printed is not null)
+        {
+            value -= cast.World.Areas
+                .Where(area => area.Host == current.ObjectId)
+                .SelectMany(area => area.Cards)
+                .Where(card => discarded.Contains(card.ObjectId))
+                .Sum(card => cast.World.Facts.PrintedValue(
+                    card.FaceId, printed, cast.World.Players));
+        }
+        value -= cast.World.Effects.Active()
+            .Where(effect => string.Equals(
+                    effect.Kind, field, StringComparison.Ordinal)
+                && effect.AppliesTo(cast.World, current)
+                && effect.Source == EffectSource.ConstantAbility
+                && effect.Card is int source && discarded.Contains(source))
+            .Sum(effect => effect.Amount);
+
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        if (current.ObjectId == boardVillain)
+        {
+            return value;
+        }
+
+        var carried = TraceCarriedAttachments(current, cast, discarded);
+        if (printed is not null)
+        {
+            value += carried.Sum(card => cast.World.Facts.PrintedValue(
+                card.FaceId, printed, cast.World.Players));
+        }
+
+        var carriedIds = carried.Select(card => card.ObjectId).ToHashSet();
+        value += cast.World.Effects.Active()
+            .Where(effect => effect.Affects == boardVillain
+                && effect.Card is int source && carriedIds.Contains(source)
+                && string.Equals(effect.Kind, field, StringComparison.Ordinal))
+            .Sum(effect => effect.Amount);
+        return value;
+    }
+
+    private static bool AnotherCopyAttachedInTrace(
+        Card current, Cast cast, HashSet<int> discarded)
+    {
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        string sourceTitle = cast.World.Facts.Title(cast.Source.FaceId);
+        bool carried = boardVillain >= 0 && string.Equals(
+            cast.World.Facts.Title(cast.World.Cards[boardVillain].FaceId),
+            cast.World.Facts.Title(current.FaceId), StringComparison.Ordinal);
+        return cast.World.Areas
+            .Where(area => area.Host == current.ObjectId
+                || carried && area.Host == boardVillain)
+            .SelectMany(area => area.Cards)
+            .Any(attached => attached.ObjectId != cast.Source.ObjectId
+                && !discarded.Contains(attached.ObjectId)
+                && string.Equals(
+                    cast.World.Facts.Title(attached.FaceId), sourceTitle,
+                    StringComparison.Ordinal));
+    }
+
+    private static bool TraceRankedSelectorIncludesCard(
+        AbilityNode node, Card candidate, int currentVillain, Cast cast,
+        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
+        Dictionary<(int Card, string Field), long> modifiers,
+        Dictionary<int, int> engagement)
+    {
+        if (!TraceSelectorMatches(
+                node.Require("of"), candidate, currentVillain,
+                cast, discarded, traits, modifiers, engagement)
+            || TraceModified(candidate, "permanent", cast, discarded) > 0)
+        {
+            return false;
+        }
+
+        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        var candidates = TraceCandidateCards(node.Require("of"), cast)
+            .Select(card => card.ObjectId == boardVillain
+                ? cast.World.Cards[currentVillain]
+                : card)
+            .DistinctBy(card => card.ObjectId)
+            .Where(card => !discarded.Contains(card.ObjectId)
+                && TraceSelectorMatches(
+                    node.Require("of"), card, currentVillain,
+                    cast, discarded, traits, modifiers, engagement)
+                && TraceModified(card, "permanent", cast, discarded) <= 0)
+            .ToList();
+        string key = Word(node.Require("by"));
+        long Rank(Card card) => key switch
+        {
+            "cost" => cast.World.Facts.PrintedValue(
+                card.FaceId, "Cost", cast.World.Players),
+            "attack" => TraceModified(
+                card, "attack", cast, discarded, modifiers),
+            "printedHealth" => cast.World.Facts.PrintedValue(
+                card.FaceId, "HP", cast.World.Players),
+            _ => throw new AbilityException(
+                $"'{key}' is not a value cards can be ranked by"),
+        };
+        long extreme = node.Kind == "minBy"
+            ? candidates.Min(Rank)
+            : candidates.Max(Rank);
+        return Rank(candidate) == extreme;
+    }
+
+    private static long MutationTotal(
+        AbilityNode node, Cast cast, RepeatedChange assumed, bool binding,
+        long own,
+        Func<AbilityNode, long> childAmount)
+    {
+        if (node.Kind == "if")
+        {
+            var test = Tree(node.Require("test"));
+            if (RepeatedTestCanChange(test, assumed)
+                || binding && BindingCanChange(test.Argument))
+            {
+                long possible = Branches.Select(node.Field)
+                    .Where(value => value is not null)
+                    .Select(value => childAmount(Tree(value!)))
+                    .DefaultIfEmpty(0)
+                    .Max();
+                return SaturatingSum(own, [possible]);
+            }
+
+            bool passes = Test(test, cast);
+            long active = node.Field(passes ? "then" : "else") is { } branch
+                ? childAmount(Tree(branch))
+                : 0;
+            return SaturatingSum(own, [active]);
+        }
+
+        var amounts = MutationChildren(node).Select(childAmount).ToList();
+
+        // The engine chooses one option. Ordered and simultaneous children all
+        // resolve, so only those amounts combine.
+        long descendants = node.Kind == "choose"
+            ? amounts.DefaultIfEmpty(0).Max()
+            : SaturatingSum(0, amounts);
+        return SaturatingSum(own, [descendants]);
+    }
+
+    private static long SaturatingSum(long own, IEnumerable<long> rest)
+    {
+        foreach (long amount in rest)
+        {
+            own = amount > long.MaxValue - own ? long.MaxValue : own + amount;
+        }
+        return own;
+    }
+
+    private static bool CanExhaust(
+        long amountPerFrame, int frames, long remaining) =>
+        amountPerFrame > 0 && frames > 0
+        && amountPerFrame >= (remaining + frames - 1) / frames;
+
+    private static IEnumerable<AbilityNode> MutationChildren(AbilityNode node) =>
+        node.Kind is "attack" or "thwart"
+            ? [Tree(node.Require("effect"))]
+            : ContinuationChildren(node);
+
+    private static IEnumerable<AbilityNode> ContinuationChildren(AbilityNode node) =>
+        node.Kind switch
+        {
+            "choose" => Nodes(node.Require("options")),
+            "chooseCard" or "eachPlayer" => [Tree(node.Require("effect"))],
+            "afterActivation" => [Tree(node.Require("effect"))],
+            "payOrEffect" or "payOrExhaust" => [Tree(node.Require("otherwise"))],
+            "thwartSchemes" or "thwartDifferentSchemes" or "legalPractice" =>
+                [Tree(node.Require("power"))],
+            _ => StructuralChildren(node),
+        };
+
     private static bool ContainsFirstActivation(AbilityNode node) =>
         (node.Kind is "enemyAttacks" or "enemySchemes"
             && node.Field("first") is AbilityValue.Word { Value: "true" })
@@ -3836,14 +5550,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private List<GameEvent> Continue(Card source, Cast cast, int from)
     {
+        if (cast.AbilityOrdinal >= 0 && cast.AbilityPath.Count > 0)
+        {
+            var root = AbilityAt(
+                source, cast.Tier, cast.AbilityOrdinal, cast.AbilityFace).Effect;
+            int eachPlayer = cast.AbilityPath.FindIndex(frame =>
+                frame.StartsWith("eachPlayer:", StringComparison.Ordinal));
+            ResumeAfter(
+                root, cast.AbilityPath, cast,
+                stopBefore: cast.EachPlayerFrame && !cast.FinalPlayer ? eachPlayer : -1);
+            DiscardEvent(source, cast);
+            return cast.Events;
+        }
+
         var effect = On(source)
             .Select(ability => ability.Effect)
             .FirstOrDefault(tree => Choices(tree).Any());
 
-        // **The resume point belongs to the top-level sequence and nowhere
-        // else.** Carried on the `Cast` it would leak into any `seq` the chosen
-        // option itself contains -- an option of three effects resumed at two
-        // would run only the third.
+        // Agenda steps created before structural continuation paths existed
+        // still resume from their top-level sequence index.
         if (cast.EachPlayerFrame)
         {
             if (cast.FinalPlayer && effect is { Kind: "seq" } && !cast.Suspended)
@@ -3895,10 +5620,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     /// <summary>The one choice a card offers, found again from the card.</summary>
     /// <remarks>
-    /// A step cannot carry an effect tree, so it carries the card and the node
-    /// is looked up again. That makes "exactly one choice per card" the price,
-    /// and it is charged by name: a second one would make which of them is
-    /// waiting a guess.
+    /// A step cannot carry an effect tree, so it carries the card, same-timing
+    /// ability ordinal, and structural path used to find the node again.
     /// </remarks>
     private AbilityNode Choice(
         World world, Card source, int player, int stoppedAt, AbilityType? tier)
@@ -3909,10 +5632,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // and its "Boost" chooses between two effects, and picking the first
         // ability with a choice in it would resume the wrong one -- silently,
         // and with a legal-looking question about the wrong cards.
-        var written = On(source)
+        var persisted = ContinuationStep(world, source, stoppedAt, tier);
+        var written = AbilitiesOn(source, persisted?.AbilityFace)
             .Where(ability => tier is null || ability.Trigger.Timing == tier)
             .ToList();
-        var cast = Resuming(world, source, player, tier);
+        var cast = Resuming(
+            world, source, player, tier,
+            continuation: persisted?.AbilityOccurrence);
+        RestorePersisted(cast, persisted);
+        if (persisted is
+            { AbilityOrdinal: >= 0, AbilityPath: { } path } step)
+        {
+            var ability = written.ElementAtOrDefault(step.AbilityOrdinal)
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' has no '{tier}' ability {step.AbilityOrdinal}");
+            cast.RestoreAbility(step.AbilityOrdinal, path, step.AbilityFace);
+            var exact = NodeAtPath(ability.Effect, path);
+            return ActiveChoices(exact, cast).SingleOrDefault()
+                ?? throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' has no choice at its persisted ability path");
+        }
 
         if (written.Count > 1
             && written.Count(a => ActiveChoices(a.Effect, cast).Any()) > 1)
@@ -4057,10 +5796,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private static bool SuspendsInsideAnd(AbilityNode node) =>
-        node.Kind is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
-            or "placeThreat" or "enemyAttacks" or "enemySchemes"
-            or "then" or "otherwise"
+        node.Kind == "placeThreat"
         || StructuralChildren(node).Any(SuspendsInsideAnd);
+
+    private static bool SuspendsPowerEffect(AbilityNode node) =>
+        Choices(node).Any()
+        || node.Kind is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
+            or "placeThreat" or "enemyAttacks" or "enemySchemes"
+        || StructuralChildren(node).Any(SuspendsPowerEffect);
 
     private static IEnumerable<AbilityNode> PowerNodes(AbilityNode node, string power)
     {
@@ -4378,26 +6121,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             case "and":
                 // `rr:and` makes the effects simultaneous and independent;
                 // `rr:first-player.3` gives their order to the first player.
-                // A suspending child needs a persisted nested continuation,
-                // which MARVEL-293 owns, so reject that shape before asking or
-                // changing the board.
                 var simultaneous = Nodes(node.Argument).ToList();
-                if (simultaneous.SelectMany(Choices).Any()
-                    || simultaneous.Any(SuspendsInsideAnd))
-                {
-                    throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' resolves effects joined by 'and' and one "
-                        + "of them suspends before the ordered group can finish");
-                }
                 if (simultaneous.Count <= 1)
                 {
                     foreach (var effect in simultaneous)
                     {
-                        Run(effect, cast);
+                        RunChild(effect, $"and:{simultaneous.IndexOf(effect)}::", cast);
                     }
                     break;
                 }
-                SuspendForChoice(cast);
+                SuspendForChoice(node, cast);
                 break;
 
             case "then":
@@ -4409,9 +6142,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 break;
 
             case "eachPlayer":
+                if (HasNestedEachPlayer(node, cast))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' nests one each-player frame inside another, "
+                        + "which is not implemented");
+                }
                 EachPlayerEffects.Schedule(
                     cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep,
-                    cast.GainedKeywords.Contains("surge"));
+                    cast.GainedKeywords.Contains("surge"), AbilityOrdinal(node, cast),
+                    [.. cast.AbilityPath], cast.AbilityFace, cast.Player,
+                    new Dictionary<string, long>(cast.Results, StringComparer.Ordinal),
+                    cast.Occurrence, [.. cast.Discarded.Select(card => card.ObjectId)],
+                    cast.HasContinuation);
                 cast.Suspend();
                 break;
 
@@ -4592,14 +6335,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             case "resolveSpecials":
                 if (Every(node.Require("cards"), cast).Count > 0)
                 {
-                    SuspendForChoice(cast);
+                    SuspendForChoice(node, cast);
                 }
 
                 break;
 
             case "payOrExhaust":
             case "payOrEffect":
-                SuspendForChoice(cast);
+                SuspendForChoice(node, cast);
                 break;
 
             case "chooseTopForHand":
@@ -4609,14 +6352,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     break;
                 }
-                SuspendForChoice(cast);
+                SuspendForChoice(node, cast);
                 break;
 
             case "chooseDiscardToShuffle":
             case "thwartDifferentSchemes":
             case "makeTheCall":
             case "legalPractice":
-                SuspendForChoice(cast);
+                SuspendForChoice(node, cast);
                 break;
 
             case "afterActivation":
@@ -4640,7 +6383,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 var branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
                 if (node.Field(branch) is { } taken)
                 {
-                    Run(Tree(taken), cast);
+                    RunChild(Tree(taken), $"if:{branch}", cast);
                 }
 
                 break;
@@ -4713,8 +6456,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         cast.World.Players) <= 0
                     && cast.GainedKeywords.Add("surge"))
                 {
-                    ((AbilityRunner)cast.Abilities).RememberGainedSurge(
-                        cast.World, cast.Source.ObjectId);
+                    RememberGainedSurge(cast.World, cast.Source.ObjectId);
                     Deal.EncounterCard(
                         cast.World, cast.Player, cast.Trigger, cast.Events);
                 }
@@ -4753,7 +6495,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             case "defense":
                 Attack.BeginDefenseAbility(cast.World, cast.Player);
-                Run(Tree(node.Require("effect")), cast);
+                RunChild(Tree(node.Require("effect")), "defense:effect", cast);
                 break;
 
             case "thwart":
@@ -5839,12 +7581,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// "may" is itself a question.
     /// </para>
     /// <para>
-    /// So a suspended ability remembers <i>where</i>, and that place is an
-    /// index into the top-level sequence — one number, which is what a
-    /// <see cref="PhaseStep"/> can carry and what survives a save. A choice
-    /// nested inside an <c>if</c> inside a <c>seq</c> is refused by name
-    /// instead; nothing in the pool needs one, and inventing a path notation
-    /// for it would be inventing the general case for no card.
+    /// A suspended ability stores its exact authored ability and structural
+    /// path in <see cref="PhaseStep"/>. Unwinding that path resumes nested
+    /// sequences and branches without rerunning completed effects.
     /// </para>
     /// </remarks>
     private static void Sequence(AbilityNode node, Cast cast, int from)
@@ -5860,20 +7599,368 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             cast.At(step);
             cast.SetContinuation(outerContinuation || step < steps.Count - 1);
-            Run(steps[step], cast);
+            RunChild(steps[step], $"seq:{step}", cast);
             if (cast.Suspended)
             {
-                if (cast.ActivationIds.Count > 0)
-                {
-                    ((AbilityRunner)cast.Abilities).RegisterActivationContinuation(
-                        cast, node, step + 1);
-                }
-
                 return;
             }
         }
         cast.SetContinuation(outerContinuation);
     }
+
+    private static void RunChild(AbilityNode node, string frame, Cast cast)
+    {
+        cast.AbilityPath.Add(frame);
+        try
+        {
+            Run(node, cast);
+        }
+        finally
+        {
+            cast.AbilityPath.RemoveAt(cast.AbilityPath.Count - 1);
+        }
+    }
+
+    private static int AbilityOrdinal(AbilityNode node, Cast cast)
+    {
+        if (cast.AbilityOrdinal >= 0)
+        {
+            return cast.AbilityOrdinal;
+        }
+
+        var runner = (AbilityRunner)cast.Abilities;
+        var written = runner.AbilitiesOn(cast.Source, cast.AbilityFace)
+            .Where(ability => cast.Tier is null || ability.Trigger.Timing == cast.Tier)
+            .ToList();
+        var matches = written
+            .Select((ability, ordinal) => (Node: TryNodeAtPath(
+                ability.Effect, cast.AbilityPath), ordinal))
+            .Where(candidate => candidate.Node == node)
+            .Select(candidate => candidate.ordinal)
+            .ToList();
+        return matches.Count == 1
+            ? matches[0]
+            : throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot identify the exact ability that suspended");
+    }
+
+    private IEnumerable<CardAbility> AbilitiesOn(Card source, string? face) =>
+        string.IsNullOrEmpty(face) ? On(source) : book.On(face);
+
+    private CardAbility AbilityAt(
+        Card source, AbilityType? tier, int ordinal, string? face = null) =>
+        AbilitiesOn(source, face)
+            .Where(ability => tier is null || ability.Trigger.Timing == tier)
+            .ElementAtOrDefault(ordinal)
+        ?? throw new RulesNotImplementedException(
+            $"'{source.FaceId}' has no '{tier}' ability {ordinal}");
+
+    private static void RestorePersisted(Cast cast, PhaseStep? continuation)
+    {
+        if (continuation is not { } step)
+        {
+            return;
+        }
+        RestorePersisted(cast, step.Discarded, step.AbilityResults);
+    }
+
+    private static void RestorePersisted(
+        Cast cast, IReadOnlyList<int>? discarded,
+        IReadOnlyDictionary<string, long>? results)
+    {
+        cast.Discarded.Clear();
+        if (discarded is not null)
+        {
+            cast.Discarded.AddRange(discarded.Select(id => cast.World.Cards[id]));
+        }
+        foreach (var (name, value) in results
+            ?? new Dictionary<string, long>(StringComparer.Ordinal))
+        {
+            cast.Results[name] = value;
+        }
+    }
+
+    private static AbilityNode? TryNodeAtPath(
+        AbilityNode root, IReadOnlyList<string> path)
+    {
+        try
+        {
+            return NodeAtPath(root, path);
+        }
+        catch (Exception error) when (error is AbilityException
+            or ArgumentOutOfRangeException or InvalidOperationException
+            or RulesNotImplementedException)
+        {
+            return null;
+        }
+    }
+
+    private static PhaseStep? ContinuationStep(
+        World world, Card source, int stoppedAt, AbilityType? tier)
+    {
+        bool Matches(PhaseStep step) => step.What == Steps.ChooseOption
+            && step.Subject == source.ObjectId
+            && step.Index == stoppedAt
+            && step.Tier == tier;
+        if (world.Agenda.Current is { } current && Matches(current))
+        {
+            return current;
+        }
+        for (int index = world.Agenda.Outstanding.Count - 1; index >= 0; index--)
+        {
+            if (Matches(world.Agenda.Outstanding[index]))
+            {
+                return world.Agenda.Outstanding[index];
+            }
+        }
+        return null;
+    }
+
+    private static AbilityNode NodeAtPath(
+        AbilityNode root, IReadOnlyList<string> path)
+    {
+        try
+        {
+            return NodeAtPathCore(root, path);
+        }
+        catch (Exception error) when (error is AbilityException
+            or ArgumentOutOfRangeException or IndexOutOfRangeException
+            or InvalidOperationException or FormatException)
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation path '{string.Join("/", path)}' is invalid");
+        }
+    }
+
+    private static AbilityNode NodeAtPathCore(
+        AbilityNode root, IReadOnlyList<string> path, int offset = 0)
+    {
+        var node = root;
+        for (int index = offset; index < path.Count; index++)
+        {
+            var parts = path[index].Split(':');
+            node = parts[0] switch
+            {
+                "seq" => Nodes(node.Argument).ElementAt(ParseIndex(parts, path[index])),
+                "if" => Tree(node.Require(parts[1])),
+                "then" or "otherwise" => Tree(node.Require(parts[1])),
+                "defense" or "eachPlayer" => Tree(node.Require("effect")),
+                "choice" when parts[1] == "option" =>
+                    Nodes(node.Require("options")).ElementAt(ParseIndex(parts, path[index], 2)),
+                "choice" when parts[1] == "effect" => Tree(node.Require("effect")),
+                "choice" when parts[1] == "otherwise" => Tree(node.Require("otherwise")),
+                "and" => Nodes(node.Argument).ElementAt(ParseIndex(parts, path[index])),
+                _ => throw new RulesNotImplementedException(
+                    $"ability continuation frame '{path[index]}' is not implemented"),
+            };
+        }
+        return node;
+    }
+
+    private static void ResumeAfter(
+        AbilityNode node, IReadOnlyList<string> path, Cast cast, int depth = 0,
+        int stopBefore = -1)
+    {
+        try
+        {
+            ResumeAfterCore(node, path, cast, depth, stopBefore);
+        }
+        catch (Exception error) when (error is AbilityException
+            or ArgumentOutOfRangeException or IndexOutOfRangeException
+            or InvalidOperationException or FormatException)
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation path '{string.Join("/", path)}' is invalid");
+        }
+    }
+
+    private static void ResumeAfterCore(
+        AbilityNode node, IReadOnlyList<string> path, Cast cast, int depth = 0,
+        int stopBefore = -1)
+    {
+        if (depth >= path.Count)
+        {
+            return;
+        }
+
+        string frame = path[depth];
+        var parts = frame.Split(':');
+        AbilityNode child = parts[0] switch
+        {
+            "seq" => Nodes(node.Argument).ElementAt(ParseIndex(parts, frame)),
+            "if" => Tree(node.Require(parts[1])),
+            "then" or "otherwise" => Tree(node.Require(parts[1])),
+            "defense" or "eachPlayer" => Tree(node.Require("effect")),
+            "choice" when parts[1] == "option" =>
+                Nodes(node.Require("options")).ElementAt(ParseIndex(parts, frame, 2)),
+            "choice" when parts[1] == "effect" => Tree(node.Require("effect")),
+            "choice" when parts[1] == "otherwise" => Tree(node.Require("otherwise")),
+            "and" => Nodes(node.Argument).ElementAt(ParseIndex(parts, frame)),
+            _ => throw new RulesNotImplementedException(
+                $"ability continuation frame '{frame}' is not implemented"),
+        };
+
+        bool inheritedContinuation = cast.HasContinuation;
+        cast.SetContinuation(
+            inheritedContinuation || HasRemainingAtFrame(node, parts, frame));
+        ResumeAfterCore(child, path, cast, depth + 1, stopBefore);
+        if (cast.Suspended || depth <= stopBefore)
+        {
+            return;
+        }
+
+        cast.SetContinuation(inheritedContinuation);
+        cast.SetAbilityPath(path.Take(depth));
+        switch (parts[0])
+        {
+            case "seq":
+                var steps = Nodes(node.Argument).ToList();
+                bool outerContinuation = cast.HasContinuation;
+                for (int index = ParseIndex(parts, frame) + 1; index < steps.Count; index++)
+                {
+                    cast.At(index);
+                    cast.SetContinuation(outerContinuation || index < steps.Count - 1);
+                    RunChild(steps[index], $"seq:{index}", cast);
+                    if (cast.Suspended)
+                    {
+                        return;
+                    }
+                }
+                cast.SetContinuation(outerContinuation);
+                break;
+
+            case "then" when parts[1] == "effect":
+            case "otherwise" when parts[1] == "effect":
+                if (parts.Length < 3
+                    || !Enum.TryParse(parts[2], out ResolutionOutcome outcome))
+                {
+                    throw new RulesNotImplementedException(
+                        $"ability continuation frame '{frame}' has no resolution outcome");
+                }
+                var required = parts[0] == "then"
+                    ? ResolutionOutcome.Full
+                    : ResolutionOutcome.None;
+                if (outcome == required)
+                {
+                    RunChild(Tree(node.Require(parts[0])), $"{parts[0]}:{parts[0]}", cast);
+                }
+                break;
+
+            case "and":
+                var effects = Nodes(node.Argument).ToList();
+                var remaining = ValidRemaining(node, parts, frame);
+                var completed = Completed(parts, frame);
+                completed.Add(ParseIndex(parts, frame));
+                bool outerAndContinuation = cast.HasContinuation;
+                for (int position = 0; position < remaining.Count; position++)
+                {
+                    int index = remaining[position];
+                    string after = string.Join(',', remaining.Skip(position + 1));
+                    string before = string.Join(',', completed.Concat(remaining.Take(position)));
+                    cast.SetContinuation(
+                        outerAndContinuation || position < remaining.Count - 1);
+                    RunChild(effects[index], $"and:{index}:{after}:{before}", cast);
+                    if (cast.Suspended)
+                    {
+                        return;
+                    }
+                }
+                cast.SetContinuation(outerAndContinuation);
+                break;
+
+            case "eachPlayer":
+                if (cast.AbilityPlayer >= 0)
+                {
+                    cast.RestorePlayer(cast.AbilityPlayer);
+                }
+                break;
+        }
+    }
+
+    private static bool HasRemainingAtFrame(
+        AbilityNode node, string[] parts, string frame)
+    {
+        return parts[0] switch
+        {
+            "seq" => ParseIndex(parts, frame) < Nodes(node.Argument).Count() - 1,
+            "and" => ValidRemaining(node, parts, frame).Count > 0,
+            "then" when parts[1] == "effect" => DependentContinues(parts, frame, true),
+            "otherwise" when parts[1] == "effect" =>
+                DependentContinues(parts, frame, false),
+            _ => false,
+        };
+    }
+
+    private static bool DependentContinues(string[] parts, string frame, bool onFull)
+    {
+        if (parts.Length < 3
+            || !Enum.TryParse(parts[2], out ResolutionOutcome outcome))
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation frame '{frame}' has no resolution outcome");
+        }
+        return outcome == (onFull ? ResolutionOutcome.Full : ResolutionOutcome.None);
+    }
+
+    private static List<int> ValidRemaining(
+        AbilityNode node, string[] parts, string frame)
+    {
+        var effects = Nodes(node.Argument).ToList();
+        var remaining = Remaining(parts, frame);
+        var completed = Completed(parts, frame);
+        var completeOrder = completed
+            .Append(ParseIndex(parts, frame))
+            .Concat(remaining)
+            .ToList();
+        if (completeOrder.Count != effects.Count
+            || completeOrder.Distinct().Count() != effects.Count
+            || completeOrder.Any(index => index < 0 || index >= effects.Count))
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation frame '{frame}' has an invalid remaining order");
+        }
+        return remaining;
+    }
+
+    private static List<int> Remaining(string[] parts, string frame)
+        => OrderPart(parts, 2, frame);
+
+    private static List<int> Completed(string[] parts, string frame)
+    {
+        if (parts.Length < 4)
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation frame '{frame}' has no completed order");
+        }
+        return OrderPart(parts, 3, frame);
+    }
+
+    private static List<int> OrderPart(string[] parts, int position, string frame)
+    {
+        if (parts.Length <= position || string.IsNullOrEmpty(parts[position]))
+        {
+            return [];
+        }
+        try
+        {
+            return parts[position].Split(',').Select(value => int.Parse(
+                value, System.Globalization.CultureInfo.InvariantCulture)).ToList();
+        }
+        catch (Exception error) when (error is FormatException or OverflowException)
+        {
+            throw new RulesNotImplementedException(
+                $"ability continuation frame '{frame}' has an invalid remaining order");
+        }
+    }
+
+    private static int ParseIndex(string[] parts, string frame, int position = 1) =>
+        parts.Length > position
+        && int.TryParse(
+            parts[position], System.Globalization.NumberStyles.None,
+            System.Globalization.CultureInfo.InvariantCulture, out int value)
+            ? value
+            : throw new RulesNotImplementedException(
+                $"ability continuation frame '{frame}' has no valid index");
 
     private static void Choose(AbilityNode node, Cast cast)
     {
@@ -5895,15 +7982,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "guard the choice with `exists`");
         }
 
-        SuspendForChoice(cast);
+        SuspendForChoice(node, cast);
     }
 
     /// <summary>Suspend an ability for one persisted player choice.</summary>
-    private static void SuspendForChoice(Cast cast)
+    private static void SuspendForChoice(AbilityNode node, Cast cast)
     {
-        // `Index` is where to pick the ability up: the step *after* this
-        // choice in the top-level sequence. A choice that is the whole effect
-        // has nothing after it and resumes at one, which runs nothing.
+        // `Index` remains the legacy top-level resume point. New continuations
+        // use AbilityOrdinal and AbilityPath below.
         var continuation = new PhaseStep(
             Steps.ChooseOption,
             cast.World.Agenda.Current?.Round ?? 0,
@@ -5916,9 +8002,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // and the card and the position do not say which -- see `Choice`.
             Tier: cast.Tier,
             FinalStep: cast.FinalStep,
+            FinalPlayer: cast.FinalPlayer,
+            EachPlayerFrame: cast.EachPlayerFrame,
             Trigger: cast.Trigger,
             SurgeGained: cast.GainedKeywords.Contains("surge"),
-            Discarded: [.. cast.Discarded.Select(card => card.ObjectId)]);
+            Discarded: [.. cast.Discarded.Select(card => card.ObjectId)],
+            AbilityOrdinal: AbilityOrdinal(node, cast),
+            AbilityPath: [.. cast.AbilityPath],
+            AbilityResults: new Dictionary<string, long>(cast.Results, StringComparer.Ordinal),
+            AbilityOccurrence: cast.Occurrence,
+            AbilityFace: cast.AbilityFace,
+            AbilityPlayer: cast.AbilityPlayer,
+            AbilityHasContinuation: cast.HasContinuation);
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
             cast.World.Agenda.ThenContinuation(continuation, cast.Occurrence);
@@ -6004,7 +8099,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
 
-        SuspendForChoice(cast);
+        SuspendForChoice(node, cast);
     }
 
     /// <summary>The characters indirect damage may be assigned to.</summary>
@@ -6208,13 +8303,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         IReadOnlyList<Card> targets, long powerAmount)
     {
         var effect = Tree(node.Require("effect"));
-        if (Choices(effect).Any())
+        if (SuspendsPowerEffect(effect))
         {
             throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' asks a question inside a {power.ToLowerInvariant()}");
+                $"'{cast.Source.FaceId}' suspends inside a {power.ToLowerInvariant()}, "
+                + "which is not implemented");
         }
 
-        var abilities = On(cast.Source).ToList();
+        var abilities = AbilitiesOn(cast.Source, cast.AbilityFace).ToList();
         var addresses = abilities
             .Select((ability, index) => (Ability: ability, Index: index))
             .Where(candidate => cast.Tier is null
@@ -6233,6 +8329,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var address = addresses[0];
         int resumeFrom = cast.HasContinuation ? cast.Position + 1 : -1;
+        IReadOnlyList<string>? abilityPath = cast.HasContinuation
+            ? [.. cast.AbilityPath]
+            : null;
+        var abilityResults = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
+        var discarded = cast.Discarded.Select(card => card.ObjectId).ToList();
         bool scheduled = power == BasicPowers.AttackVerb
             ? BasicPowers.CardAttack(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
@@ -6240,7 +8341,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 powerOrdinal: address.Ordinal, resumeFrom: resumeFrom,
                 finalStep: cast.FinalStep,
                 targets: [.. targets.Select(card => card.ObjectId)], nested: true,
-                surgeGained: cast.GainedKeywords.Contains("surge"))
+                surgeGained: cast.GainedKeywords.Contains("surge"),
+                abilityPath: abilityPath, abilityFace: cast.AbilityFace,
+                abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
+                discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
+                finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer,
+                abilityHasContinuation: cast.HasContinuation)
             : BasicPowers.CardThwart(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
                 cast.Trigger, cast.Events, abilityIndex: address.Index,
@@ -6250,7 +8356,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 imminentThreat: cast.Occurrence.Threat,
                 automaticTarget: node.Field("automaticTarget") is not null,
                 nested: true,
-                surgeGained: cast.GainedKeywords.Contains("surge"));
+                surgeGained: cast.GainedKeywords.Contains("surge"),
+                abilityPath: abilityPath, abilityFace: cast.AbilityFace,
+                abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
+                discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
+                finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer,
+                abilityHasContinuation: cast.HasContinuation);
         if (!scheduled)
         {
             return;
@@ -6730,13 +8841,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             if (first)
             {
-                if (cast.HasContinuation)
-                {
-                    throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' resolves an activation first and then continues");
-                }
-
-                cast.World.Agenda.Now(activation);
+                activationIds.Add(cast.World.Agenda.NowActivation(activation));
             }
             else
             {
@@ -6746,39 +8851,44 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         if (cast.HasContinuation && activationIds.Count > 0)
         {
+            cast.World.Agenda.AfterActivations(activationIds, new PhaseStep(
+                Steps.ResumeAbility,
+                round,
+                2,
+                Index: cast.Position + 1,
+                Subject: cast.Source.ObjectId,
+                Seat: cast.Player,
+                Tier: cast.Tier,
+                FinalStep: cast.FinalStep,
+                FinalPlayer: cast.FinalPlayer,
+                EachPlayerFrame: cast.EachPlayerFrame,
+                Trigger: cast.Trigger,
+                SurgeGained: cast.GainedKeywords.Contains("surge"),
+                Discarded: [.. cast.Discarded.Select(card => card.ObjectId)],
+                AbilityOrdinal: AbilityOrdinal(node, cast),
+                AbilityPath: [.. cast.AbilityPath],
+                AbilityResults: ActivationResults(cast),
+                AbilityOccurrence: cast.Occurrence,
+                AbilityFace: cast.AbilityFace,
+                AbilityPlayer: cast.AbilityPlayer,
+                AbilityHasContinuation: cast.HasContinuation));
             cast.WaitFor(activationIds);
             cast.Suspend();
         }
     }
 
-    private void RegisterActivationContinuation(Cast cast, AbilityNode sequence, int next)
+    private static Dictionary<string, long> ActivationResults(Cast cast)
     {
-        var continuation = new ActivationContinuation(
-            cast.Source.ObjectId,
-            cast.Occurrence,
-            cast.Player,
-            cast.Tier,
-            sequence,
-            next,
-            cast.ActivationIds.Count,
-            new Dictionary<string, long>(cast.Results, StringComparer.Ordinal),
-            cast.GainedKeywords.Contains("surge"));
-        foreach (int id in cast.ActivationIds)
-        {
-            activations.Add(id, continuation);
-        }
+        var results = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
+        results.Remove("activationMade");
+        results.Remove("activationDamage");
+        results.Remove("activationThreat");
+        return results;
     }
 
     /// <summary>Propagate one reveal-scoped Surge gain to work already suspended.</summary>
-    private void RememberGainedSurge(World world, int source)
+    private static void RememberGainedSurge(World world, int source)
     {
-        foreach (var continuation in activations.Values
-            .Where(continuation => continuation.Source == source)
-            .Distinct())
-        {
-            continuation.SurgeGained = true;
-        }
-
         // Choice and each-player continuations are saveable agenda data. An
         // earlier ability can already have scheduled one when a later sibling
         // ability gains Surge, so its original snapshot must be advanced too.
@@ -7673,7 +9783,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <param name="World">The board.</param>
     /// <param name="Source">The card whose text this is.</param>
     /// <param name="Occurrence">What it is timed to.</param>
-    /// <param name="Player">The seat resolving it.</param>
+    /// <param name="InitialPlayer">The seat resolving its first structural frame.</param>
     /// <param name="Events">Where to record what it did.</param>
     /// <param name="Abilities">
     /// The runner itself, for the rules that run more cards. A main scheme this
@@ -7682,9 +9792,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// interpreter that is running it.
     /// </param>
     private sealed record Cast(
-        World World, Card Source, Occurrence Occurrence, int Player, List<GameEvent> Events,
+        World World, Card Source, Occurrence Occurrence, int InitialPlayer,
+        List<GameEvent> Events,
         ICardAbilities Abilities)
     {
+        /// <summary>The seat whose perspective the current structural frame uses.</summary>
+        public int Player { get; private set; } = InitialPlayer;
+
+        /// <summary>The resolver to restore after leaving an each-player frame.</summary>
+        public int AbilityPlayer { get; init; } = InitialPlayer;
+
+        public void RestorePlayer(int player) => Player = player;
+
         /// <summary>The trigger string this ability's events carry.</summary>
         /// <remarks>
         /// A constant ability resolves against no occurrence and so has none.
@@ -7760,6 +9879,43 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <param name="step">Its index.</param>
         public void At(int step) => Position = step;
 
+        /// <summary>The exact authored ability and structural route being resolved.</summary>
+        public int AbilityOrdinal { get; private set; } = -1;
+
+        public string AbilityFace { get; private set; } = Source.FaceId;
+
+        public List<string> AbilityPath { get; } = [];
+
+        public void RestoreAbility(
+            int ordinal, IReadOnlyList<string> path, string? face = null)
+        {
+            AbilityOrdinal = ordinal;
+            AbilityFace = face ?? string.Empty;
+            AbilityPath.Clear();
+            AbilityPath.AddRange(path);
+        }
+
+        public void SetAbilityPath(IEnumerable<string> path)
+        {
+            var copy = path.ToList();
+            AbilityPath.Clear();
+            AbilityPath.AddRange(copy);
+        }
+
+        public void CompletePendingDependency(ResolutionOutcome outcome)
+        {
+            int pending = AbilityPath.FindLastIndex(frame =>
+                frame.EndsWith(":Pending", StringComparison.Ordinal));
+            if (pending >= 0)
+            {
+                AbilityPath[pending] = AbilityPath[pending][..^"Pending".Length]
+                    + outcome;
+            }
+        }
+
+        public bool HasPendingDependency => AbilityPath.Any(frame =>
+            frame.EndsWith(":Pending", StringComparison.Ordinal));
+
         /// <summary>The card the player picked, once they have.</summary>
         public Card? Chosen { get; private set; }
 
@@ -7808,31 +9964,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <summary>Replaces the damage with this much.</summary>
         /// <param name="amount">What is left.</param>
         public void Replace(long amount) => Remaining = amount;
-    }
-
-    private sealed class ActivationContinuation(
-        int source,
-        Occurrence occurrence,
-        int player,
-        AbilityType? tier,
-        AbilityNode sequence,
-        int next,
-        int remaining,
-        Dictionary<string, long> results,
-        bool surgeGained)
-    {
-        public int Source { get; } = source;
-        public Occurrence Occurrence { get; } = occurrence;
-        public int Player { get; } = player;
-        public AbilityType? Tier { get; } = tier;
-        public AbilityNode Sequence { get; } = sequence;
-        public int Next { get; } = next;
-        public int Remaining { get; set; } = remaining;
-        public Dictionary<string, long> Results { get; } = results;
-        public bool SurgeGained { get; set; } = surgeGained;
-        public long Made { get; set; }
-        public long Damage { get; set; }
-        public long Threat { get; set; }
     }
 
     private sealed record ActivationEffect(

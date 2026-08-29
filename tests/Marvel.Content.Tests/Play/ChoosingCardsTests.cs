@@ -552,6 +552,48 @@ public sealed class ChoosingCardsTests
         Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
     }
 
+    [Rule("rr:choose-option")]
+    [Fact]
+    public void SameTimingChoicesResumeTheirExactAuthoredAbility()
+    {
+        // The ordinal is save data chosen by the engine. The rule requires
+        // each ability's choice to resolve; it does not define how a saved
+        // question identifies two abilities at the same timing.
+        var book = AbilityCatalog.Parse(
+            """
+            {"cards":[{"card":"01110","abilities":[
+              {"trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
+               "effect":{"choose":{"options":[{"draw":{"player":"you","count":1}},
+                                               {"draw":{"player":"you","count":2}}]}}},
+              {"trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
+               "effect":{"choose":{"options":[{"giveStatus":{"card":"you","status":"stunned"}},
+                                               {"giveStatus":{"card":"you","status":"confused"}}]}}}
+            ]}]}
+            """);
+        var runner = new AbilityRunner(book);
+        var world = Deal();
+        var identity = world.Seats[0].IdentityCard;
+        var card = world.CreateCard(
+            AuthoredCards.HydraBomber, world.AreaOf(DeckType.RevealingArea));
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.WhenRevealed(world, card, 0);
+        Assert.Equal([0, 1], world.Agenda.Outstanding.Select(step => step.AbilityOrdinal));
+
+        var first = world.Agenda.Current!.Value;
+        runner.Chose(world, card, 0, first.Index, Decision.Take(1), first.Tier);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
+        world.Agenda.Advance();
+        world.Agenda.Advance();
+        world.Agenda.Advance();
+
+        var second = world.Agenda.Current!.Value;
+        runner.Chose(world, card, 0, second.Index, Decision.Take(1), second.Tier);
+
+        Assert.True(Statuses.Has(world, identity, Statuses.Confused));
+        Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
+    }
+
     private static (Card Card, IReadOnlyList<Marvel.Rules.Events.GameEvent> Events) Reveal(
         World world, string faceId, int player = 0)
     {

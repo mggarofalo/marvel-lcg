@@ -611,10 +611,10 @@ or fully resolved: `then` takes its branch only after full resolution, while
 `otherwise` takes its branch only after no resolution. The explicit `effect`
 field also records which sentence or semicolon-delimited unit the printed
 dependency word refers to. A preceding effect that suspends for a player choice
-raises before changing the board; MARVEL-293 owns the resumable continuation
-needed to preserve its eventual resolution outcome. The same issue owns an
-ordered `and` child that suspends; that shape raises before the order prompt or
-any board mutation because its remaining siblings need the same continuation.
+stores the eventual none/partial/full outcome in its continuation frame before
+the dependent branch is considered. An ordered `and` stores the chosen order
+and its remaining siblings when a child suspends, so answering that child does
+not rerun effects that already resolved.
 
 **`enemyAttacks` and `enemySchemes` schedule; they do not resolve.** An
 activation is the six steps of `rr:attack-enemy-activation`, one of which asks a
@@ -702,20 +702,18 @@ two questions in a row. **36 cards in the pool pair a "may" with a listed
 choice**, and every "may" is itself a question, so this is not one card's
 peculiarity.
 
-A suspended ability now remembers **where**, and that place is an index into its
-top-level sequence: one number, which is what a `PhaseStep` can carry and what
-survives a save. `Chose` runs the option and then runs the rest of the sequence
-from there; if the rest holds another choice, it suspends again and says where
-to pick up next.
+A suspended ability remembers the exact same-timing ability ordinal and a
+structural path through `seq`, `if`, dependency, choice, `and`, defense, and
+`eachPlayer` frames. Both are small agenda values and survive a save. Answering
+the question resumes by unwinding that path: completed effects are not rerun,
+the rest of every enclosing sequence continues, and a later question replaces
+the persisted path with its own.
 
-**The resume point belongs to the top-level sequence and nowhere else.** Carried
-on the `Cast` it leaked into any `seq` the chosen option itself contained — an
-option of three effects resumed at two ran only the third. It is a parameter to
-`Sequence` instead, which is why `Run` never sees one.
-
-A choice nested inside an `if` inside a `seq` is still refused by name. Nothing
-in the pool needs one, and inventing a path notation for it would be inventing
-the general case for no card.
+Enemy-activation waits use the same representation. Their internal resume step
+also carries the resolving occurrence, effect-local numeric results, discarded
+bindings, and gained Surge. Completion aggregates `activationMade`,
+`activationDamage`, and `activationThreat` into that step before resuming the
+card text.
 
 **`choose` is the shape the interpreter did not have.** Everything else a card
 could do was something the engine could finish; "choose to either take 2 damage

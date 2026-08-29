@@ -120,6 +120,20 @@ public enum Stage
 /// but must not make a continuation mistake the next surviving player for the
 /// player whose enemies have already activated.
 /// </param>
+/// <param name="AbilityOrdinal">
+/// Which same-tier authored ability suspended. The ordinal is engine save data;
+/// it avoids guessing when one card has more than one ability at the same timing.
+/// </param>
+/// <param name="AbilityPath">
+/// Structural path from that ability's root effect to the node that suspended.
+/// The segment spelling is an engine save-format choice.
+/// </param>
+/// <param name="AbilityActivationIds">Activations one persisted ability is waiting for.</param>
+/// <param name="AbilityResults">Effect-local numeric bindings carried across that wait.</param>
+/// <param name="AbilityOccurrence">The occurrence the suspended ability is resolving in.</param>
+/// <param name="AbilityFace">The printed face whose authored ability suspended.</param>
+/// <param name="AbilityPlayer">The player resolving the containing ability.</param>
+/// <param name="AbilityHasContinuation">Whether structural ancestor work remains.</param>
 public readonly record struct PhaseStep(
     string What, int Round, int Number, int Index = 0, int Subject = -1, int Seat = -1,
     bool Plan = false, int Character = -1, Timing.AbilityType? Tier = null,
@@ -129,7 +143,13 @@ public readonly record struct PhaseStep(
     PlayerAction? PlayerAction = null, int? OccurrenceId = null,
     bool SurgeGained = false, IReadOnlyList<int>? Discarded = null,
     IReadOnlyList<int>? ActivatedEnemies = null,
-    IReadOnlyList<int>? ActivationPlayers = null)
+    IReadOnlyList<int>? ActivationPlayers = null, int AbilityOrdinal = -1,
+    IReadOnlyList<string>? AbilityPath = null,
+    IReadOnlyList<int>? AbilityActivationIds = null,
+    IReadOnlyDictionary<string, long>? AbilityResults = null,
+    Occurrence? AbilityOccurrence = null,
+    string AbilityFace = "", int AbilityPlayer = -1,
+    bool AbilityHasContinuation = false)
 {
     /// <summary>What is happening, as triggering conditions.</summary>
     /// <remarks>
@@ -374,7 +394,8 @@ public sealed class Agenda
         .. items
             .Select(item => item.Step)
             .Where(step => step.What is not Steps.CompleteAttackActivation
-                and not Steps.CompleteSchemeActivation),
+                and not Steps.CompleteSchemeActivation
+                and not Steps.ResumeAbility),
     ];
 
     /// <summary>Remember gained Surge on every continuation of one revealed card.</summary>
@@ -394,7 +415,8 @@ public sealed class Agenda
             bool ownsContinuation = step.Subject == source
                 && step.What is Steps.ChooseOption
                     or Steps.OrderEachPlayer
-                    or Steps.ResolveEachPlayer;
+                    or Steps.ResolveEachPlayer
+                    or Steps.ResumeAbility;
             ownsContinuation |= step.CharacterAttack?.Source == source
                 || step.CharacterThwart?.Source == source;
             if (ownsContinuation)
@@ -603,7 +625,7 @@ public sealed class Agenda
     {
         if (IsActivation(step))
         {
-            NowActivation(step);
+            _ = NowActivation(step);
             return;
         }
 
@@ -651,8 +673,13 @@ public sealed class Agenda
         items.Add((completion, Stage.Interrupts, completion.ScheduledOccurrence));
     }
 
-    private void NowActivation(PhaseStep step)
+    /// <summary>Schedule an immediate activation and return its stable id.</summary>
+    public int NowActivation(PhaseStep step)
     {
+        if (!IsActivation(step))
+        {
+            throw new ArgumentException("the step is not an enemy activation", nameof(step));
+        }
         int id = nextActivationId++;
         var root = step with { ActivationId = id };
         var completion = Completion(root);
@@ -662,6 +689,60 @@ public sealed class Agenda
             (completion, Stage.Interrupts, completion.ScheduledOccurrence),
         ]);
         scheduled = 0;
+        return id;
+    }
+
+    /// <summary>Place one persisted ability continuation after all named activations.</summary>
+    public void AfterActivations(IReadOnlyList<int> activationIds, PhaseStep continuation)
+    {
+        ArgumentNullException.ThrowIfNull(activationIds);
+        if (activationIds.Count == 0)
+        {
+            throw new ArgumentException("at least one activation is required", nameof(activationIds));
+        }
+        int at = activationIds.Max(CompletionIndex) + 1;
+        items.Insert(at, (
+            continuation with { Plan = true, AbilityActivationIds = [.. activationIds] },
+            Stage.Apply,
+            continuation.AbilityOccurrence));
+    }
+
+    /// <summary>Record one activation result and take the continuation when all are done.</summary>
+    public PhaseStep? CompleteActivationWait(EnemyActivation result)
+    {
+        int at = items.FindIndex(item =>
+            item.Step.What == Steps.ResumeAbility
+            && item.Step.AbilityActivationIds?.Contains(result.Id) == true);
+        if (at < 0)
+        {
+            return null;
+        }
+
+        var item = items[at];
+        var values = item.Step.AbilityResults is { } existing
+            ? new Dictionary<string, long>(existing, StringComparer.Ordinal)
+            : new Dictionary<string, long>(StringComparer.Ordinal);
+        values["activationMade"] = values.GetValueOrDefault("activationMade")
+            + (result.Made ? 1 : 0);
+        values["activationDamage"] = values.GetValueOrDefault("activationDamage")
+            + result.DamageDealt;
+        values["activationThreat"] = values.GetValueOrDefault("activationThreat")
+            + result.ThreatPlaced;
+        var remaining = item.Step.AbilityActivationIds!
+            .Where(id => id != result.Id)
+            .ToList();
+        var updated = item.Step with
+        {
+            AbilityResults = values,
+            AbilityActivationIds = remaining,
+        };
+        if (remaining.Count > 0)
+        {
+            items[at] = (updated, item.Stage, item.Occurrence);
+            return null;
+        }
+        items.RemoveAt(at);
+        return updated;
     }
 
     private int CompletionIndex(int activationId)
@@ -1018,6 +1099,9 @@ public static class Steps
     /// it is the answer to this.
     /// </remarks>
     public const string ChooseOption = "ChooseOption";
+
+    /// <summary>Resume persisted card text after its enemy activations complete.</summary>
+    public const string ResumeAbility = "ResumeAbility";
 
     /// <summary>
     /// The first player orders the frames of an effect that resolves for each

@@ -2040,20 +2040,26 @@ public sealed class ActionAbilityTests
 
     [Rule("rr:and.1")]
     [Fact]
-    public void AndWithAReachableNestedSuspenderRaisesBeforeChangingTheBoard()
+    public void AndResumesAfterAReachableNestedSuspender()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
             "Action",
             """{ "and": [ { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "exhaust": "this" }, "else": { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } } } }, { "draw": { "player": "you", "count": 1 } } ] }""");
         Card? source = null;
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            hero: true,
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
     [Rule("rr:then")]
@@ -2347,7 +2353,7 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
-    public void ADependentEffectThatWouldSuspendRaisesBeforeChangingTheBoard()
+    public void ADependentEffectResumesAfterItsChoice()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2355,17 +2361,21 @@ public sealed class ActionAbilityTests
             """{ "then": { "effect": { "choose": { "options": [ { "exhaust": "this" }, { "draw": { "player": "you", "count": 1 } } ] } }, "then": { "discard": "this" } } }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, _) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("suspends for a player choice", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
-        Assert.Equal(DeckType.SupportsArea, source.Area.Type);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(0));
+
+        Assert.Equal(DeckType.DiscardPile, source!.Area.Type);
     }
 
     [Fact]
-    public void ADependentEachPlayerEffectRaisesBeforeChangingTheBoard()
+    public void ADependentEachPlayerEffectResumesTheAbility()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2374,34 +2384,48 @@ public sealed class ActionAbilityTests
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void ADependentFirstActivationRaisesBeforePayingForAnOuterContinuation()
+    public void ADependentFirstActivationPersistsItsOuterContinuation()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
-            "Action",
+            "WhenRevealed",
             """{ "seq": [ { "then": { "effect": { "draw": { "player": "you", "count": 1 } }, "then": { "enemyAttacks": { "enemies": { "query": "villain" }, "first": "true" } } } }, { "draw": { "player": "you", "count": 1 } } ] }""",
-            cost: """{ "exhaust": "this" }""");
+            eventName: Steps.CardRevealed);
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (_, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        runner.WhenRevealed(world, source!, 0);
+        var attack = Assert.Single(
+            world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
+
+        runner.ActivationCompleted(world, new EnemyActivation(
+            attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: false));
+
         Assert.True(source!.Ready);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void AnUnsupportedChoiceOptionRaisesBeforePayingTheActionCost()
+    public void AChoiceOptionCanSuspendInsideAnd()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2410,16 +2434,25 @@ public sealed class ActionAbilityTests
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(1));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void ACostCannotSwitchAnIfIntoAnUnsupportedBranchAfterPreflight()
+    public void ACostCanSwitchAnIfIntoAResumableBranch()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2428,12 +2461,20 @@ public sealed class ActionAbilityTests
             cost: """{ "discard": "this" }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.Equal(DeckType.DiscardPile, source!.Area.Type);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
@@ -2492,7 +2533,7 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
-    public void ACostCannotActivateAnUnsupportedOtherwiseBranch()
+    public void ACostCanActivateAResumableOtherwiseBranch()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2501,16 +2542,23 @@ public sealed class ActionAbilityTests
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(0));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void AnEarlierStepCannotActivateAnUnsupportedOtherwiseBranch()
+    public void AnEarlierStepCanActivateAResumableOtherwiseBranch()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2518,16 +2566,23 @@ public sealed class ActionAbilityTests
             """{ "seq": [ { "exhaust": "this" }, { "otherwise": { "effect": { "exhaust": "this" }, "otherwise": { "choose": { "options": [ { "draw": { "player": "you", "count": 1 } }, { "heal": { "card": "you", "amount": 1 } } ] } } } } ] }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(0));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void ANestedSequencePreservesAnEarlierMutationBoundary()
+    public void ANestedSequenceResumesPastAnEarlierMutationBoundary()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2535,16 +2590,23 @@ public sealed class ActionAbilityTests
             """{ "seq": [ { "exhaust": "this" }, { "seq": [ { "otherwise": { "effect": { "exhaust": "this" }, "otherwise": { "choose": { "options": [ { "draw": { "player": "you", "count": 1 } }, { "heal": { "card": "you", "amount": 1 } } ] } } } } ] } ] }""");
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (game, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(0));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void ADirectSequencePreflightsBeforeItsFirstMutation()
+    public void ADirectSequencePersistsItsNestedContinuationAfterItsFirstMutation()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
@@ -2557,10 +2619,3444 @@ public sealed class ActionAbilityTests
             abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => runner.WhenRevealed(world, source!, 0));
+        runner.WhenRevealed(world, source!, 0);
 
-        Assert.Contains("nested continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        Assert.Equal(Steps.ChooseOption, waiting.What);
+        Assert.Equal(["seq:1"], waiting.AbilityPath);
+    }
+
+    [Rule("rr:and.1")]
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void AnOrderedCardAttackResumesTheRemainingSimultaneousEffect()
+    {
+        // The first player chooses the order of the independent effects. The
+        // attack has its own agenda procedure, so the later draw must wait for
+        // that procedure and then resume from the exact `and` branch.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "and": [ { "attack": { "target": { "query": "villain" }, "effect": { "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.Equal(1, villain.Damage);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void LeavingTheFinalEachPlayerFrameRestoresTheOriginalResolver()
+    {
+        // Each frame reads "you" as that frame's player. Text after the frame
+        // belongs to the player resolving the ability, not whichever player
+        // the first player put last in the chosen order.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        int firstHeld = world.Seats[0].Hand.Cards.Count;
+        int secondHeld = world.Seats[1].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(
+            order.Id,
+            [world.Seats[0].IdentityCard.ObjectId, world.Seats[1].IdentityCard.ObjectId]));
+
+        Assert.Equal(firstHeld + 2, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(secondHeld + 1, world.Seats[1].Hand.Cards.Count);
+    }
+
+    [Rule("rr:and.1")]
+    [Fact]
+    public void UnsupportedThreatPlacementOrderingRaisesBeforeTheActionCost()
+    {
+        // Threat placement has its own interrupt and response windows. Until
+        // that agenda record carries a structural card continuation, accepting
+        // an order that places it first would silently skip the later effect.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "and": [ { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }, { "draw": { "player": "you", "count": 1 } } ] }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("threat placement continuation", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void NestedEachPlayerFramesRaiseBeforeTheActionCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "choose": { "options": [ { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("nests one each-player", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void ACardPowerThatWouldSuspendRaisesBeforeTheActionCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": { "target": "chosen", "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:labeled-ability.4")]
+    [Fact]
+    public void LegalPracticePowerThatWouldSuspendRaisesBeforeTheActionCost()
+    {
+        // A labeled thwart ability "is considered to be a thwart made by that
+        // player's identity." Its whole nested power must be preflighted.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "legalPractice": { "schemes": { "query": "thwartableSchemes" }, "power": { "thwart": { "target": "chosen", "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:labeled-ability.4")]
+    [Fact]
+    public void DifferentSchemesPowerThatWouldSuspendRaisesBeforeTheActionCost()
+    {
+        // A labeled thwart ability "is considered to be a thwart made by that
+        // player's identity." Its whole nested power must be preflighted.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "thwartDifferentSchemes": { "schemes": { "query": "thwartableSchemes" }, "power": { "thwart": { "target": "chosen", "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void DelayedPowerThatWouldSuspendRaisesBeforeTheActionCost()
+    {
+        // The delayed subtree is still the action's effect. Preflight must see
+        // its labeled attack before any cost is paid or activation state changes.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "afterActivation": { "effect": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Activation = new EnemyActivation(
+                    board.TheCardIn(DeckType.VillainArea)!.ObjectId,
+                    Player: 0,
+                    Attacking: true,
+                    Id: 41);
+            },
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void AStableFormBranchIgnoresAnUnreachableSuspendingPower()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:form-change-form")]
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void APredecessorMutationPreflightsEveryReachableDependentBranch()
+    {
+        // Changing form flips which dependent branch resolves. The unsupported
+        // labeled attack must be found before the form change or cost occurs.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "then": { "effect": { "changeForm": { "player": "you", "to": "alterEgo" } }, "then": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void EachPlayerPreflightUsesEveryPlayersCurrentForm()
+    {
+        // "For each player" reaches both identities. A safe branch for the
+        // initiating hero cannot hide an unsupported branch for an alter-ego.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:choose-game-element.3")]
+    [Rule("rr:attack-player-ability-type")]
+    [Fact]
+    public void ChosenCardContextIsPreflightedBeforeTheActionCost()
+    {
+        // The choice binds "chosen" before its effect resolves. Every branch
+        // that binding can open must be checked before the cost is paid.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "if": { "test": { "exists": "chosen" }, "then": { "attack": { "target": "chosen", "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } }, "else": { "draw": { "player": "you", "count": 1 } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void ChosenCardDoesNotDestabilizeAnUnrelatedFormBranch()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": "chosen", "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void ChosenPlayerBindingIsPreflightedAfterSelection()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "identities" }, "effect": { "if": { "test": { "inForm": { "player": "chosenPlayer", "form": "hero" } }, "then": { "draw": { "player": "chosenPlayer", "count": 1 } }, "else": { "draw": { "player": "chosenPlayer", "count": 1 } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:then")]
+    [Fact]
+    public void ChosenTargetCanMakeADependentContinuationReachable()
+    {
+        // "Then" resolves only after its predecessor resolves in full. Binding
+        // the threatened scheme makes that predecessor reachable and mutable.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "chooseCard": { "from": { "query": "thwartableSchemes" }, "effect": { "then": { "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } }, "then": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? scheme = null;
+        long threat = -1;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                scheme = board.TheCardIn(DeckType.MainSchemesArea)!;
+                threat = scheme.Tokens.GetValueOrDefault("k_threat");
+            },
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(threat, scheme!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void EachPlayerPreflightIncludesMutationsFromEarlierFrames()
+    {
+        // The first player can remove the source before another player's frame
+        // tests whether its title remains in play.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "discard": "this" }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Fact]
+    public void EachPlayerDrawDoesNotDestabilizeEveryPlayersHeroForm()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void ACardTitleContainingChosenIsNotAChoiceBinding()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "chooseCard": {
+              "from": { "query": "attackableEnemies" },
+              "effect": { "if": {
+                "test": { "titleInPlay": "Kang's Chosen" },
+                "then": { "attack": {
+                  "target": "chosen",
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } },
+                "else": { "draw": { "player": "you", "count": 1 } }
+              } }
+            } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void EachPlayerPreflightIncludesDefeatFromEarlierFrames()
+    {
+        // Damage tokens equal to remaining hit points defeat a minion. A later
+        // player's title test therefore sees a different in-play board.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "titleInPlay": "Hydra Mercenary" }, "then": { "dealDamage": { "cards": { "titled": "Hydra Mercenary" }, "amount": 3 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        Card? minion = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(0, minion!.Damage);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void EachPlayerPreflightUnionsEveryPlayersActiveMutationPath()
+    {
+        // The first player chooses the order. A hero can discard the source
+        // before an alter-ego's different branch tests whether it remains.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "discard": "this" },
+              "else": { "if": {
+                "test": { "titleInPlay": "Aunt May" },
+                "then": { "draw": { "player": "you", "count": 1 } },
+                "else": { "attack": {
+                  "target": { "query": "villain" },
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Fact]
+    public void RepeatedMutationAnalysisDoesNotReadAnUnansweredChosenPlayer()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "titleInPlay": "Aunt May" },
+              "then": { "chooseCard": {
+                "from": { "query": "identities" },
+                "effect": { "if": {
+                  "test": { "inForm": { "player": "chosenPlayer", "form": "hero" } },
+                  "then": { "draw": { "player": "chosenPlayer", "count": 1 } },
+                  "else": { "draw": { "player": "chosenPlayer", "count": 1 } }
+                } }
+              } },
+              "else": { "draw": { "player": "you", "count": 1 } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Rule("rr:form-change-form")]
+    [Fact]
+    public void RepeatedMutationAnalysisIncludesLabelledPowerEffects()
+    {
+        // The first player can order another hero first. That hero's attack
+        // flips the first player before the first player's own frame resolves.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } }
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void RepeatedMutationAnalysisReachesAFixedPoint()
+    {
+        // One frame removes the title, making a form change reachable; that
+        // form change makes the unsupported third-frame branch reachable.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "titleInPlay": "Aunt May" },
+              "then": { "discard": "this" },
+              "else": { "if": {
+                "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+                "then": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } },
+                "else": { "attack": {
+                  "target": { "query": "villain" },
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Fact]
+    public void RepeatedMutationAnalysisIsBoundedByRemainingFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "titleInPlay": "Aunt May" },
+              "then": { "discard": "this" },
+              "else": { "if": {
+                "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+                "then": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } },
+                "else": { "attack": {
+                  "target": { "query": "villain" },
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void RemovingThreatDoesNotChangeWhichTitlesAreInPlay()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "removeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void LethalDamageCanMoveTheFirstPlayerBindingBetweenFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "inForm": { "player": "firstPlayer", "form": "hero" } }, "then": { "dealDamage": { "cards": "you", "amount": 99 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(0, world!.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, world.FirstPlayer);
+    }
+
+    [Fact]
+    public void VillainDamageCannotMoveTheFirstPlayerBinding()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "inForm": { "player": "firstPlayer", "form": "hero" } }, "then": { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void NonlethalIdentityDamageCannotMoveTheFirstPlayerBinding()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "inForm": { "player": "firstPlayer", "form": "hero" } }, "then": { "dealDamage": { "cards": "you", "amount": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void MovingLethalDamageCanMoveTheFirstPlayerBinding()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "inForm": { "player": "firstPlayer", "form": "hero" } }, "then": { "moveDamage": { "from": { "query": "villain" }, "to": "you", "amount": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        World? world = null;
+        Card? source = null;
+        Card? villain = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                villain = board.TheCardIn(DeckType.VillainArea)!;
+                villain.TakeDamage(1);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(1, villain!.Damage);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, world.FirstPlayer);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void RemovingLastThreatCanDefeatATitleBetweenFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "titleInPlay": "Bomb Scare" }, "then": { "removeThreat": { "scheme": { "titled": "Bomb Scare" }, "amount": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        Card? scheme = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                InPlay(board, AuthoredCards.AuntMay);
+                scheme = board.CreateCard(
+                    "01109", board.AreaOf(DeckType.SideSchemesArea));
+                scheme.PlaceTokens("k_threat", 1);
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(1, scheme!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(DeckType.SideSchemesArea, scheme.Area.Type);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void CumulativeThreatRemovalCanDefeatATitleBetweenFrames()
+    {
+        // All threat removed during one player's frame counts when deciding
+        // whether a later player's title-dependent branch can become active.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "titleInPlay": "Bomb Scare" },
+              "then": { "seq": [
+                { "removeThreat": { "scheme": { "titled": "Bomb Scare" }, "amount": 1 } },
+                { "removeThreat": { "scheme": { "titled": "Bomb Scare" }, "amount": 1 } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? scheme = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                scheme = board.CreateCard(
+                    "01109", board.AreaOf(DeckType.SideSchemesArea));
+                scheme.PlaceTokens("k_threat", 2);
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(2, scheme!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(DeckType.SideSchemesArea, scheme.Area.Type);
+    }
+
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void CumulativeDamageCanEliminateAPlayerBetweenFrames()
+    {
+        // Individually nonlethal damage instances combine before the next
+        // player's frame and can move the first-player binding.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": "you", "amount": 1 } },
+                { "dealDamage": { "cards": "you", "amount": 1 } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(8, world!.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, world.FirstPlayer);
+    }
+
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void OrderedMutationCanExposeLethalDamageWithinARepeatedFrame()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "discard": "this" },
+                { "if": {
+                  "test": { "not": { "titleInPlay": "Aunt May" } },
+                  "then": { "dealDamage": { "cards": "you", "amount": 2 } },
+                  "else": { "draw": { "player": "you", "count": 1 } }
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+        Assert.Equal(8, world!.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, world.FirstPlayer);
+    }
+
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void DamageToFixedTargetsAccumulatesAcrossRepeatedFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "dealDamage": {
+                "cards": { "query": "identities" }, "amount": 1
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(8, world!.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, world.FirstPlayer);
+    }
+
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Theory]
+    [InlineData("\"yourHero\"")]
+    [InlineData("{ \"query\": \"charactersYouControl\" }")]
+    [InlineData("{ \"withTrait\": { \"cards\": \"yourHero\", \"trait\": \"AVENGER\" } }")]
+    [InlineData("{ \"withTrait\": { \"cards\": { \"query\": \"charactersYouControl\" }, \"trait\": \"AVENGER\" } }")]
+    [InlineData("{ \"maxBy\": { \"of\": { \"query\": \"charactersYouControl\" }, \"by\": \"attack\" } }")]
+    public void PlayerRelativeDamageTargetsApplyOnlyInTheirPlayersFrame(
+        string targets)
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            $$"""
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "dealDamage": { "cards": {{targets}}, "amount": 1 } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void MovedDamageCannotBeReusedAcrossRepeatedFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "moveDamage": {
+                "from": { "query": "villain" },
+                "to": { "titled": "Spider-Man" },
+                "amount": 1
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.TheCardIn(DeckType.VillainArea)!.TakeDamage(1);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void DamageBeforeAMoveReplenishesItsRepeatedSource()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "titled": "Hydra Mercenary" }, "amount": 2 } },
+                { "discard": "this" },
+                { "if": {
+                  "test": { "not": { "titleInPlay": "Aunt May" } },
+                  "then": { "moveDamage": {
+                    "from": { "titled": "Hydra Mercenary" },
+                    "to": { "titled": "Spider-Man" },
+                    "amount": 2
+                  } },
+                  "else": { "moveDamage": {
+                    "from": { "query": "villain" },
+                    "to": { "titled": "Spider-Man" },
+                    "amount": 1
+                  } }
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+        Card? minion = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.TheCardIn(DeckType.VillainArea)!.TakeDamage(1);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+        Assert.Equal(0, minion!.Damage);
+        Assert.Equal(8, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void DamageAfterAMoveIsAvailableOnlyToLaterRepeatedFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } },
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void DamageMovedAwayDoesNotAccumulateAcrossRepeatedFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "titled": "Spider-Man" }, "amount": 1 } },
+                { "moveDamage": {
+                  "from": { "titled": "Spider-Man" },
+                  "to": { "query": "villain" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void DamageHealedAfterEachMoveDoesNotAccumulateAcrossFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } },
+                { "heal": { "card": { "titled": "Spider-Man" }, "amount": 1 } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.TheCardIn(DeckType.VillainArea)!.TakeDamage(3);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:damage.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void DistinctPlayersCanSupplyDamageAcrossRepeatedFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "moveDamage": {
+                "from": "you",
+                "to": { "titled": "Spider-Man" },
+                "amount": 1
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+                board.Seats[1].IdentityCard.TakeDamage(1);
+                board.Seats[2].IdentityCard.TakeDamage(1);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk", "iron_man"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(8, world!.Seats[0].IdentityCard.Damage);
+        Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
+        Assert.Equal(1, world.Seats[2].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void PlayerRelativeDamageRebindsBetweenFixedTargetFrames()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "titled": "Spider-Man" }, "amount": 1 } },
+                { "dealDamage": { "cards": "you", "amount": 1 } },
+                { "heal": { "card": { "titled": "Spider-Man" }, "amount": 1 } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(7);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:tough.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void ToughPreventsLethalDamageInAnEarlierRepeatedFrame()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "dealDamage": {
+                "cards": { "titled": "Spider-Man" }, "amount": 1
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Tough);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:tough.2")]
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void ToughGrantedBeforeEachRepeatedDamagePreventsIt()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "giveStatus": {
+                  "card": { "titled": "Spider-Man" }, "status": "tough"
+                } },
+                { "dealDamage": {
+                  "cards": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(8);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void HealthGrantedBeforeRepeatedDamageRaisesItsLethalThreshold()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "titled": "Spider-Man" },
+                  "keyword": "health", "amount": 1, "until": "EndOfRound"
+                } },
+                { "dealDamage": {
+                  "cards": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void ProhibitedMoveLeavesDamageForALaterRepeatedMove()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Madame Hydra" },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        World? world = null;
+        Card? source = null;
+        Card? villain = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01180", board.AreaOf(DeckType.SideSchemesArea));
+                board.CreateCard(
+                    "01181",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                villain = board.TheCardIn(DeckType.VillainArea)!;
+                villain.TakeDamage(1);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(1, villain!.Damage);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void ProhibitedDamageCannotReplenishARepeatedMoveSource()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": {
+                  "cards": { "titled": "Madame Hydra" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Madame Hydra" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01180", board.AreaOf(DeckType.SideSchemesArea));
+                board.CreateCard(
+                    "01181",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void EarlierDiscardCanRemoveARepeatedMoveProhibition()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "if": {
+                  "test": { "titleInPlay": "Legions of Hydra" },
+                  "then": { "discard": { "titled": "Legions of Hydra" } }
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Madame Hydra" },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01180", board.AreaOf(DeckType.SideSchemesArea));
+                board.CreateCard(
+                    "01181",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.TheCardIn(DeckType.VillainArea)!.TakeDamage(1);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void SideSchemeDefeatCanRemoveARepeatedDamageProhibition()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "removeThreat": {
+                  "scheme": { "titled": "Legions of Hydra" }, "amount": 1
+                } },
+                { "dealDamage": {
+                  "cards": { "titled": "Madame Hydra" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Madame Hydra" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        World? world = null;
+        Card? source = null;
+        Card? legions = null;
+        Card? madame = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                legions = board.CreateCard(
+                    "01180", board.AreaOf(DeckType.SideSchemesArea));
+                legions.PlaceTokens("k_threat", 1);
+                madame = board.CreateCard(
+                    "01181",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(1, legions!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(0, madame!.Damage);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void MinionDefeatCanRemoveARepeatedDamageProhibition()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "drones" }, "amount": 100 } },
+                { "dealDamage": { "cards": { "titled": "Ultron" }, "amount": 1 } },
+                { "moveDamage": {
+                  "from": { "titled": "Ultron" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        World? world = null;
+        Card? source = null;
+        Card? drone = null;
+        Card? ultron = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                ultron = board.CreateCard(
+                    "01136", board.AreaOf(DeckType.VillainArea));
+                drone = FacedownDrones.EngageTop(
+                    board, 0, "test", "Create_Drone", []);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.NotNull(drone);
+        Assert.Equal(0, drone!.Damage);
+        Assert.Equal(0, ultron!.Damage);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:villain-defeat.2")]
+    [Fact]
+    public void ARepeatedFrameUsesTheNewVillainStageAfterDefeat()
+    {
+        // "Excess damage that is dealt to defeat a villain stage does not
+        // carry over to the new stage." The later move therefore reads zero
+        // damage from the newly revealed stage, not the defeated card's dial.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 100 } },
+                { "moveDamage": {
+                  "from": { "titled": "Rhino" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:villain-defeat.2")]
+    [Fact]
+    public void AFilteredVillainSelectorMutatesTheNewStageBeforeTheNextFrame()
+    {
+        // The new stage is the current in-play card titled Rhino. It begins
+        // without the defeated stage's excess damage, then receives this
+        // effect's next point. The following move must see that point or the
+        // trace would offer an ability whose first frame defeats the player.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 100 } },
+                { "dealDamage": {
+                  "cards": { "withTrait": {
+                    "cards": { "query": "villain" }, "trait": "BRUTE"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:villain-defeat.4")]
+    [Fact]
+    public void ATitleSelectorDoesNotFollowADifferentVillainCharacter()
+    {
+        // A different-title stage is not Rhino. The live title selector finds
+        // nothing after Ultron replaces Rhino, so it cannot put damage on
+        // Ultron for the following move to carry to the wounded hero.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 100 } },
+                { "dealDamage": { "cards": { "titled": "Rhino" }, "amount": 1 } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01136", board.AreaOf(DeckType.VillainDeck));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:villain-defeat.2")]
+    [Fact]
+    public void ARankedSelectorIsRecomputedForTheNewVillainStage()
+    {
+        // Rhino I and Shocker tie for the lowest attack, but Rhino II does
+        // not. The selector is evaluated after the stage changes, so only
+        // Shocker receives the point and the new villain has none to move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 100 } },
+                { "dealDamage": {
+                  "cards": { "minBy": {
+                    "of": { "query": "enemies" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01103",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:villain-defeat.2")]
+    [Fact]
+    public void ARankedSelectorCanGainTheNewVillainStage()
+    {
+        // Rhino I is below Sandman's attack, while Rhino II ties it. The live
+        // maximum therefore gains the new stage after the defeat; its damage
+        // must be visible to the following move before the action is offered.
+        var runner = RepeatedDynamicTargetRunner(
+            """{ "query": "villain" }""",
+            """{ "maxBy": { "of": { "query": "enemies" }, "by": "attack" } }""");
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01102",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void DefeatingGuardCanMakeTheVillainADynamicDamageTarget()
+    {
+        // "The engaged player cannot attack any villain" only while Guard is
+        // present. Defeating Hydra Mercenary makes Rhino attackable before the
+        // next effect resolves, so the subsequent move has damage to carry.
+        var runner = RepeatedDynamicTargetRunner(
+            """{ "titled": "Hydra Mercenary" }""",
+            """{ "query": "attackableEnemies" }""");
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:villain-defeat.3.2")]
+    [Fact]
+    public void CarriedAttachmentTraitsApplyToTheNewVillainStage()
+    {
+        // Attachments and their constant abilities carry to a same-title
+        // stage. Flight therefore still gives Rhino II AERIAL before the
+        // filtered damage resolves, leaving a point for the following move.
+        var runner = RepeatedDynamicTargetRunner(
+            """{ "query": "villain" }""",
+            """{ "withTrait": { "cards": { "query": "villain" }, "trait": "AERIAL" } }""",
+            includeAuthored: true);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                board.CreateCard(
+                    "40151",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, villain.Area.PlayArea,
+                        villain.ObjectId));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:ability")]
+    [Fact]
+    public void DiscardedAttachmentStopsGrantingItsTraitDuringTheTrace()
+    {
+        // A constant ability remains active only while its card is in play.
+        // Discarding Cosmic Flight removes AERIAL before the filtered damage,
+        // so the wounded identity is no longer one of that effect's targets.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "discard": { "titled": "Cosmic Flight" } },
+                { "dealDamage": {
+                  "cards": { "withTrait": {
+                    "cards": { "query": "characters" }, "trait": "AERIAL"
+                  } },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:lasting-effects.1")]
+    [Fact]
+    public void DiscardedAttachmentKeepsItsLastingTraitDuringTheTrace()
+    {
+        // A lasting effect continues for its specified duration whether or not
+        // its source remains in play. Discarding Rocket Boots therefore does
+        // not remove the AERIAL it already granted until the phase ends.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "discard": { "titled": "Rocket Boots" } },
+                { "dealDamage": {
+                  "cards": { "withTrait": {
+                    "cards": { "query": "characters" }, "trait": "AERIAL"
+                  } },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var boots = board.CreateCard(
+                    "01039",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+                board.Effects.Register(new ContinuousEffect(
+                    EffectSource.LastingEffect,
+                    Traits.Granted + "AERIAL",
+                    Card: boots.ObjectId,
+                    Affects: board.Seats[0].IdentityCard.ObjectId,
+                    Lasts: new Duration(Until: TimingPoints.EndOfPlayerPhase)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:attachment.1")]
+    [Fact]
+    public void DiscardedAttachmentStopsModifyingARankedField()
+    {
+        // An attachment may modify its attached character's ATK "as indicated
+        // by the values in the associated fields on the attachment card."
+        // Discarding Enhanced Ivory Horn therefore drops Rhino to Shocker's
+        // ATK, so both are minimum targets and Rhino's point is available for
+        // the lethal move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "discard": { "titled": "Enhanced Ivory Horn" } },
+                { "dealDamage": {
+                  "cards": { "minBy": {
+                    "of": { "query": "enemies" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                board.CreateCard(
+                    "01100",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, villain.Area.PlayArea,
+                        villain.ObjectId));
+                board.CreateCard(
+                    "01103",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:traits.1")]
+    [Fact]
+    public void EarlierTraitGrantChangesALaterDynamicTargetSet()
+    {
+        // A granted trait is immediately part of what later card abilities
+        // query. Granting Rhino AERIAL makes both it and the already-AERIAL
+        // Vulture targets before the villain's point is moved to the hero.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "query": "villain" },
+                  "trait": "AERIAL", "until": "EndOfRound"
+                } },
+                { "dealDamage": {
+                  "cards": { "withTrait": {
+                    "cards": { "query": "enemies" }, "trait": "AERIAL"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "27163",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:traits.1")]
+    [Fact]
+    public void EarlierTraitGrantChangesAMinionOnlyTargetSet()
+    {
+        // Dynamic membership is not limited to sets that can contain the
+        // villain. Giving Shocker AERIAL adds it to the later minion-only set,
+        // so its damage is present for the move to the wounded hero.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "titled": "Shocker" },
+                  "trait": "AERIAL", "until": "EndOfRound"
+                } },
+                { "dealDamage": {
+                  "cards": { "withTrait": {
+                    "cards": { "query": "minions" }, "trait": "AERIAL"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Shocker" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01103",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "27163",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void EarlierNumericGrantChangesALaterRankedTargetSet()
+    {
+        // Rhino begins below Sandman's attack. The +2 ATK grant makes Rhino
+        // the unique maximum before the ranked damage resolves, leaving a
+        // point for the following move to carry to the wounded hero.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "query": "villain" },
+                  "keyword": "attack", "amount": 2, "until": "EndOfRound"
+                } },
+                { "dealDamage": {
+                  "cards": { "maxBy": {
+                    "of": { "query": "enemies" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01102",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void RankedSelectorCanDropAnInitiallySelectedNonVillain()
+    {
+        // Sandman begins as the maximum attack enemy, but Ultron's next stage
+        // exceeds him. The live maximum drops Sandman, so no damage is present
+        // on him for the following move and the ability remains legal.
+        var runner = RepeatedDynamicTargetRunner(
+            """{ "query": "villain" }""",
+            """{ "maxBy": { "of": { "query": "enemies" }, "by": "attack" } }""",
+            """{ "titled": "Sandman" }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01136", board.AreaOf(DeckType.VillainDeck));
+                board.CreateCard(
+                    "01102",
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void RankedPlayerCharacterSelectorRetainsItsControllerScope()
+    {
+        // The dynamic rank is over characters the resolving player controls,
+        // not over enemies. Hulk is in that set and has the highest attack, so
+        // its damage is available for the following move to Spider-Man.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": {
+                  "cards": { "maxBy": {
+                    "of": { "query": "charactersYouControl" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Hulk" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01050",
+                    board.AreaOf(
+                        DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:dash-value.3")]
+    [Fact]
+    public void ATraceLocalModifierCannotChangeADashPowerForRanking()
+    {
+        // A referenced dash is "treated as having a value of 0" and "cannot
+        // be modified." Giving alter-ego Carol +5 ATK therefore leaves Hulk
+        // as the maximum-ATK character and makes his damage available for the
+        // lethal move that follows.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "titled": "Carol Danvers" },
+                  "keyword": "attack", "amount": 5, "until": "EndOfRound"
+                } },
+                { "dealDamage": {
+                  "cards": { "maxBy": {
+                    "of": { "query": "characters" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Hulk" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01050",
+                    board.AreaOf(
+                        DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:enters-play")]
+    [Rule("rr:toughness.1")]
+    [Fact]
+    public void AMinionPutIntoPlayJoinsLaterRankedTargetSets()
+    {
+        // A card enters play when it moves from an out-of-play area into play,
+        // and Toughness gives it a tough status at that point. Sandman joins
+        // the enemy set before the ranked damage: the first point consumes
+        // tough, the second frame damages Sandman, and Rhino has none to move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "if": {
+                  "test": { "not": { "titleInPlay": "Sandman" } },
+                  "then": { "putIntoPlay": {
+                    "card": { "cardsIn": {
+                      "areas": [ "encounterDiscardPile" ], "title": "Sandman"
+                    } },
+                    "where": "engagedWithYou"
+                  } }
+                } },
+                { "dealDamage": {
+                  "cards": { "maxBy": {
+                    "of": { "query": "enemies" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01102",
+                    board.AreaOf(DeckType.EncounterDiscardPile));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void AGuardMinionPutIntoPlayImmediatelyProtectsTheVillain()
+    {
+        // Guard means "the engaged player cannot attack any villain."
+        // Putting Hydra Mercenary into play engaged with the resolving hero
+        // therefore removes Rhino from attackableEnemies before damage lands.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "seq": [
+                  { "if": {
+                    "test": { "not": { "titleInPlay": "Hydra Mercenary" } },
+                    "then": { "putIntoPlay": {
+                      "card": { "cardsIn": {
+                        "areas": [ "encounterDiscardPile" ],
+                        "title": "Hydra Mercenary"
+                      } },
+                      "where": "engagedWithYou"
+                    } }
+                  } },
+                  { "dealDamage": {
+                    "cards": { "query": "attackableEnemies" }, "amount": 1
+                  } },
+                  { "moveDamage": {
+                    "from": { "query": "villain" },
+                    "to": { "titled": "Spider-Man" }, "amount": 1
+                  } }
+                ] }
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EncounterDiscardPile));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void AOneTimeGuardEntryKeepsItsOriginalEngagementAcrossFrames()
+    {
+        // Guard protects only the engaged player. Hydra Mercenary enters
+        // engaged with player zero once; the next frame does not put it into
+        // play again or move that engagement to player one, so Rhino takes the
+        // later damage and the lethal continuation must be rejected up front.
+        var runner = GuardEntryRunner();
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EncounterDiscardPile));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EncounterDiscardPile, mercenary!.Area.Type);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void TraceLocalEngagementOverridesTheCardsFrozenBoardArea()
+    {
+        // Guard protects only the engaged player. After the hero frame moves
+        // Hydra Mercenary from player zero to player one, the unchanged board
+        // area must not also leave player zero guarded in the trace. Their
+        // later frame damages Rhino, eliminates them, and exposes the third
+        // player's unsupported branch before any real mutation occurs.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": {
+                "player": "firstPlayer", "form": "alterEgo"
+              } },
+              "then": { "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "seq": [
+                  { "discard": { "titled": "Hydra Mercenary" } },
+                  { "putIntoPlay": {
+                    "card": { "titled": "Hydra Mercenary" },
+                    "where": "engagedWithYou"
+                  } }
+                ] },
+                "else": { "seq": [
+                  { "dealDamage": {
+                    "cards": { "query": "attackableEnemies" }, "amount": 1
+                  } },
+                  { "moveDamage": {
+                    "from": { "query": "villain" },
+                    "to": { "titled": "Spider-Man" }, "amount": 1
+                  } }
+                ] }
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+            },
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(PlayArea.Of(0), mercenary!.Area.PlayArea);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:engage.1")]
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void EngagementRelativeQueriesUseTheTraceLocalPlayer()
+    {
+        // Engagement is the player's play area at runtime. During eligibility,
+        // trace-local entry is that area's synthetic equivalent: after the
+        // hero re-engages Hydra, minionsEngagedWithYou must find and defeat it,
+        // exposing Rhino before the lethal move and unsupported third frame.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": {
+                "player": "firstPlayer", "form": "alterEgo"
+              } },
+              "then": { "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "seq": [
+                  { "discard": { "titled": "Hydra Mercenary" } },
+                  { "putIntoPlay": {
+                    "card": { "titled": "Hydra Mercenary" },
+                    "where": "engagedWithYou"
+                  } },
+                  { "dealDamage": {
+                    "cards": { "query": "minionsEngagedWithYou" }, "amount": 3
+                  } },
+                  { "dealDamage": {
+                    "cards": { "query": "attackableEnemies" }, "amount": 1
+                  } },
+                  { "moveDamage": {
+                    "from": { "query": "villain" },
+                    "to": { "titled": "Spider-Man" }, "amount": 1
+                  } }
+                ] }
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, mercenary!, Statuses.Tough);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+            },
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(PlayArea.Of(0), mercenary!.Area.PlayArea);
+        Assert.True(Statuses.Has(world!, mercenary, Statuses.Tough));
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:guard.1")]
+    [Rule("rr:lasting-effects.1")]
+    [Fact]
+    public void TraceLocalGuardImmediatelyProtectsTheVillain()
+    {
+        // Guard means the engaged player cannot attack the villain, and a
+        // lasting effect persists for its specified duration. Granting Sandman
+        // Guard therefore removes Rhino from attackableEnemies before damage,
+        // leaving no villain damage for the later move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "seq": [
+                { "grantUntil": {
+                  "card": { "titled": "Sandman" },
+                  "keyword": "guard", "amount": 1,
+                  "until": "EndOfPlayerPhase"
+                } },
+                { "dealDamage": {
+                  "cards": { "query": "attackableEnemies" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+                ] }
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01102",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:guard.1")]
+    [Rule("rr:damage.step.7")]
+    [Fact]
+    public void DefeatingATraceEnteredGuardImmediatelyExposesTheVillain()
+    {
+        // Guard prevents attacks only while the minion remains engaged. Three
+        // damage defeats Hydra Mercenary, so Guard leaves play before the next
+        // effect damages Rhino and makes the following lethal move reachable.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "if": {
+                  "test": { "not": { "titleInPlay": "Hydra Mercenary" } },
+                  "then": { "putIntoPlay": {
+                    "card": { "cardsIn": {
+                      "areas": [ "encounterDiscardPile" ],
+                      "title": "Hydra Mercenary"
+                    } },
+                    "where": "engagedWithYou"
+                  } }
+                } },
+                { "dealDamage": {
+                  "cards": { "enemiesWithTrait": "HYDRA" }, "amount": 3
+                } },
+                { "dealDamage": {
+                  "cards": { "query": "attackableEnemies" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(DeckType.EncounterDiscardPile));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EncounterDiscardPile, mercenary!.Area.Type);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:status-cards.2")]
+    [Rule("rr:guard.1")]
+    [Fact]
+    public void DiscardingAndReenteringAMinionDoesNotKeepHostedTough()
+    {
+        // A tough status card is placed on its character. Discarding Hydra
+        // Mercenary discards that hosted status too, so re-entering without
+        // printed Toughness leaves it vulnerable: three damage defeats it,
+        // Guard leaves, and the later lethal move is reachable.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "discard": { "titled": "Hydra Mercenary" } },
+                { "putIntoPlay": {
+                  "card": { "titled": "Hydra Mercenary" },
+                  "where": "engagedWithYou"
+                } },
+                { "dealDamage": {
+                  "cards": { "enemiesWithTrait": "HYDRA" }, "amount": 3
+                } },
+                { "dealDamage": {
+                  "cards": { "query": "attackableEnemies" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """);
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, mercenary!, Statuses.Tough);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, mercenary!.Area.Type);
+        Assert.True(Statuses.Has(world!, mercenary, Statuses.Tough));
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:attachment.1")]
+    [Fact]
+    public void ReenteringAMinionDoesNotKeepItsDiscardedAttachmentModifier()
+    {
+        // An attachment modifies the character it is attached to. Discarding
+        // Hydra Mercenary also discards Gobbler Glider, so the re-entered
+        // minion has ATK 1 and is the sole minimum below Rhino's ATK 2.
+        var runner = ReenteredAttachmentRankRunner("minBy");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "30027",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, mercenary.Area.PlayArea,
+                        mercenary.ObjectId));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:attachment.1")]
+    [Fact]
+    public void DiscardedHostedModifierCannotHideALethalRankedContinuation()
+    {
+        // Neurological Implants gives its attached minion +2 ATK only while
+        // attached. Once Hydra Mercenary and the attachment are discarded,
+        // re-entered Hydra is ATK 1 and Rhino is the maximum-ATK enemy whose
+        // damage makes the unsupported later frame reachable.
+        var runner = ReenteredAttachmentRankRunner("maxBy");
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+        Card? implants = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                implants = board.CreateCard(
+                    "04119",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, mercenary.Area.PlayArea,
+                        mercenary.ObjectId));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, mercenary!.Area.Type);
+        Assert.Equal(mercenary.ObjectId, implants!.Area.Host);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:permanent.5")]
+    [Fact]
+    public void PermanentHostedDescendantRaisesBeforeAnActionCostMutates()
+    {
+        // When a permanent attachment loses its host, its attach-to text must
+        // resolve and it is removed only if no valid target exists. That path
+        // is explicitly unimplemented, so the complete hosted tree is checked
+        // before exhausting the action source or discarding its host.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "discard": { "titled": "Hydra Mercenary" } },
+                { "dealDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        World? world = null;
+        Card? source = null;
+        Card? mercenary = null;
+        Card? navigator = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                mercenary = board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                navigator = board.CreateCard(
+                    "27189a",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, mercenary.Area.PlayArea,
+                        mercenary.ObjectId));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("rr:permanent.5 is not implemented", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, mercenary!.Area.Type);
+        Assert.Equal(mercenary.ObjectId, navigator!.Area.Host);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:ability.step.1")]
+    [Fact]
+    public void EnteringConstantAbilityRaisesBeforeARepeatedEffectMutates()
+    {
+        // Constant abilities are active while their source is in play. The
+        // eligibility trace does not move cards, so it must raise rather than
+        // rank Titania without her remaining-health ATK constant.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "if": {
+                  "test": { "not": { "titleInPlay": "Titania" } },
+                  "then": { "putIntoPlay": {
+                    "card": { "cardsIn": {
+                      "areas": [ "encounterDiscardPile" ], "title": "Titania"
+                    } },
+                    "where": "engagedWithYou"
+                  } }
+                } },
+                { "dealDamage": {
+                  "cards": { "maxBy": {
+                    "of": { "query": "enemies" }, "by": "attack"
+                  } },
+                  "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Titania" },
+                  "to": { "titled": "Spider-Man" }, "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        World? world = null;
+        Card? source = null;
+        Card? titania = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                titania = board.CreateCard(
+                    "01162",
+                    board.AreaOf(DeckType.EncounterDiscardPile));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("constant abilities", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EncounterDiscardPile, titania!.Area.Type);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:damage.step.1")]
+    [Rule("rr:replacement-effect.1")]
+    [Fact]
+    public void ForcedReplacementCanLeaveARepeatedMoveSourceEmpty()
+    {
+        // Damage replacement abilities resolve before damage is placed. Once
+        // Armored Rhino Suit puts that damage on itself "instead", "the effect
+        // is no longer considered imminent" and Rhino has nothing to move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+              "then": { "seq": [
+                { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } },
+                { "moveDamage": {
+                  "from": { "query": "villain" },
+                  "to": { "titled": "Spider-Man" },
+                  "amount": 1
+                } }
+              ] },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """,
+            includeAuthored: true);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                board.CreateCard(
+                    AuthoredCards.ArmoredSuit,
+                    board.AreaOf(
+                        DeckType.UpgradesArea, villain.Area.PlayArea,
+                        villain.ObjectId));
+                board.Seats[0].IdentityCard.TakeDamage(9);
+            },
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Equal(9, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    public void BoundedThreatRemovalCannotDefeatADistantSideScheme()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "eachPlayer": { "effect": { "if": { "test": { "titleInPlay": "Bomb Scare" }, "then": { "removeThreat": { "scheme": { "titled": "Bomb Scare" }, "amount": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var scheme = board.CreateCard(
+                    "01109", board.AreaOf(DeckType.SideSchemesArea));
+                scheme.PlaceTokens("k_threat", 3);
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Fact]
+    public void InactiveRemovalBranchDoesNotInflateARepeatedMutationBudget()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "titleInPlay": "Bomb Scare" },
+              "then": { "removeThreat": {
+                "scheme": { "titled": "Bomb Scare" }, "amount": 1
+              } },
+              "else": { "seq": [
+                { "removeThreat": {
+                  "scheme": { "titled": "Bomb Scare" }, "amount": 100
+                } },
+                { "attack": {
+                  "target": { "query": "villain" },
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } }
+              ] }
+            } } } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var scheme = board.CreateCard(
+                    "01109", board.AreaOf(DeckType.SideSchemesArea));
+                scheme.PlaceTokens("k_threat", 3);
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void RepeatedMutationAnalysisFlowsThroughOnePlayersSequence()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "eachPlayer": { "effect": { "seq": [
+              { "if": {
+                "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+                "then": { "draw": { "player": "you", "count": 1 } },
+                "else": { "attack": {
+                  "target": { "query": "villain" },
+                  "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+                } }
+              } },
+              { "discard": "this" },
+              { "if": {
+                "test": { "not": { "titleInPlay": "Aunt May" } },
+                "then": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } }
+              } }
+            ] } } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.SupportsArea, source.Area.Type);
+    }
+
+    [Rule("rr:choose-option")]
+    [Fact]
+    public void AChoiceContinuationPreservesEarlierEffectResults()
+    {
+        // "This way" is scoped to the one ability resolution. Asking a
+        // question cannot replace that resolution with a fresh result map.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "heal": { "card": "you", "amount": 1 } }, { "choose": { "options": [ { "exhaust": "this" }, { "ready": "this" } ] } }, { "if": { "test": { "atLeast": { "value": { "result": "healed" }, "count": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(1);
+            },
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(0));
+
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void PayOrExhaustContinuesTheContainingSequence()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "payOrExhaust": { "resources": "YBR", "otherwise": { "exhaust": "this" } } }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(1));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:activation.7")]
+    [Fact]
+    public void SequentialActivationWaitsUseTheOriginatingFaceAndFreshResults()
+    {
+        // The first attack changes neither the identity's current face nor the
+        // authored face that owns this ability. Its damage result must not leak
+        // into the second wait's later condition.
+        var runner = Runner(
+            AuthoredCards.SpiderMan,
+            "WhenRevealed",
+            """{ "seq": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "seq": [ { "enemyAttacks": { "enemies": { "query": "villain" } } }, { "enemyAttacks": { "enemies": { "query": "villain" } } } ] }, { "if": { "test": { "atLeast": { "value": { "result": "activationDamage" }, "count": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""",
+            eventName: Steps.CardRevealed);
+        var (_, world) = Playing(_ => { }, hero: true, abilities: runner);
+        var identity = world.Seats[0].IdentityCard;
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.WhenRevealed(world, identity, 0);
+        Assert.Equal("01001b", identity.FaceId);
+        var first = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.Attack);
+
+        runner.ActivationCompleted(world, new EnemyActivation(
+            first.Subject, first.Seat, Attacking: true, first.ActivationId,
+            Made: true, DamageDealt: 2));
+        var second = Assert.Single(
+            world.Agenda.Outstanding,
+            step => step.What == Steps.Attack && step.ActivationId != first.ActivationId);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+
+        runner.ActivationCompleted(world, new EnemyActivation(
+            second.Subject, second.Seat, Attacking: true, second.ActivationId,
+            Made: true, DamageDealt: 0));
+
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:each-player.1")]
+    [Fact]
+    public void EachPlayerReconstructionUsesTheOriginatingIdentityFace()
+    {
+        var runner = Runner(
+            AuthoredCards.SpiderMan,
+            "WhenRevealed",
+            """{ "seq": [ { "heal": { "card": "you", "amount": 1 } }, { "changeForm": { "player": "you", "to": "alter-ego" } }, { "eachPlayer": { "effect": { "draw": { "player": "you", "count": 1 } } } }, { "if": { "test": { "atLeast": { "value": { "result": "healed" }, "count": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""",
+            eventName: Steps.CardRevealed);
+        var (_, world) = Playing(
+            board => board.Seats[0].IdentityCard.TakeDamage(1),
+            hero: true,
+            abilities: runner);
+        var identity = world.Seats[0].IdentityCard;
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.WhenRevealed(world, identity, 0);
+        var frame = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.ResolveEachPlayer);
+        for (int advances = 0;
+             world.Agenda.Current?.What != Steps.ResolveEachPlayer && advances < 20;
+             advances++)
+        {
+            world.Agenda.Advance();
+        }
+        Assert.Equal(Steps.ResolveEachPlayer, world.Agenda.Current?.What);
+
+        runner.ResolveEachPlayer(
+            world, identity, frame.Seat, frame.Index, frame.Tier,
+            frame.FinalStep, frame.FinalPlayer);
+
+        Assert.Equal("01001b", identity.FaceId);
+        Assert.Equal(0, identity.Damage);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:and.1")]
+    [Fact]
+    public void AFinalOrderedPowerKeepsNestedAncestorWorkPending()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "seq": [ { "and": [ { "draw": { "player": "you", "count": 1 } }, { "attack": { "target": { "query": "villain" }, "effect": { "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } } } } ] }, { "draw": { "player": "you", "count": 1 } } ] } } }""");
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.Equal(1, villain.Damage);
+        Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void InvalidOrderedContinuationIsRejectedBeforeRunningAnySibling()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "and": [ { "exhaust": "this" }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var forged = new PhaseStep(
+            Steps.ResumeAbility, 1, 2, Subject: source!.ObjectId, Seat: 0,
+            Tier: AbilityType.Action, AbilityOrdinal: 0,
+            AbilityPath: ["and:0:0,1:"], AbilityFace: source.FaceId,
+            AbilityHasContinuation: true);
+
+        Assert.Throws<RulesNotImplementedException>(
+            () => runner.ResumeAbility(world, forged));
+
+        Assert.True(source.Ready);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }
 
@@ -2639,21 +6135,29 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
-    public void AFirstActivationCannotRunBeforeTheRestOfASequence()
+    public void AFirstActivationResumesTheRestOfASequence()
     {
         var runner = Runner(
             AuthoredCards.AuntMay,
-            "Action",
+            "WhenRevealed",
             """{ "seq": [ { "enemyAttacks": { "enemies": { "query": "villain" }, "first": "true" } }, { "draw": { "player": "you", "count": 1 } } ] }""",
-            cost: """{ "exhaust": "this" }""");
+            eventName: Steps.CardRevealed);
         Card? source = null;
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (_, world) = Playing(
             board => source = InPlay(board, AuthoredCards.AuntMay),
-            abilities: runner));
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
 
-        Assert.Contains("first and then continues", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        runner.WhenRevealed(world, source!, 0);
+        var attack = Assert.Single(
+            world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+
+        runner.ActivationCompleted(world, new EnemyActivation(
+            attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: false));
+
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
@@ -2817,6 +6321,95 @@ public sealed class ActionAbilityTests
             AuthoredCards.Book.AttachTo);
         return new Marvel.Cards.Run.AbilityRunner(book);
     }
+
+    private static Marvel.Cards.Run.AbilityRunner GuardEntryRunner() => Runner(
+        AuthoredCards.AuntMay,
+        "Action",
+        """
+        { "eachPlayer": { "effect": { "if": {
+          "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+          "then": { "seq": [
+            { "if": {
+              "test": { "not": { "titleInPlay": "Hydra Mercenary" } },
+              "then": { "putIntoPlay": {
+                "card": { "cardsIn": {
+                  "areas": [ "encounterDiscardPile" ],
+                  "title": "Hydra Mercenary"
+                } },
+                "where": "engagedWithYou"
+              } }
+            } },
+            { "dealDamage": {
+              "cards": { "query": "attackableEnemies" }, "amount": 1
+            } },
+            { "moveDamage": {
+              "from": { "query": "villain" },
+              "to": { "titled": "Spider-Man" }, "amount": 1
+            } }
+          ] },
+          "else": { "attack": {
+            "target": { "query": "villain" },
+            "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+          } }
+        } } } }
+        """);
+
+    private static Marvel.Cards.Run.AbilityRunner ReenteredAttachmentRankRunner(
+        string rank) => Runner(
+        AuthoredCards.AuntMay,
+        "Action",
+        $$"""
+        { "eachPlayer": { "effect": { "if": {
+          "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+          "then": { "seq": [
+            { "discard": { "titled": "Hydra Mercenary" } },
+            { "putIntoPlay": {
+              "card": { "titled": "Hydra Mercenary" },
+              "where": "engagedWithYou"
+            } },
+            { "dealDamage": {
+              "cards": { "{{rank}}": {
+                "of": { "query": "enemies" }, "by": "attack"
+              } },
+              "amount": 1
+            } },
+            { "moveDamage": {
+              "from": { "query": "villain" },
+              "to": { "titled": "Spider-Man" }, "amount": 1
+            } }
+          ] },
+          "else": { "attack": {
+            "target": { "query": "villain" },
+            "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+          } }
+        } } } }
+        """);
+
+    private static Marvel.Cards.Run.AbilityRunner RepeatedDynamicTargetRunner(
+        string firstTarget, string secondTarget,
+        string moveSource = """{ "query": "villain" }""",
+        bool includeAuthored = false) => Runner(
+        AuthoredCards.AuntMay,
+        "Action",
+        $$"""
+        { "eachPlayer": { "effect": { "if": {
+          "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+          "then": { "seq": [
+            { "dealDamage": { "cards": {{firstTarget}}, "amount": 100 } },
+            { "dealDamage": { "cards": {{secondTarget}}, "amount": 1 } },
+            { "moveDamage": {
+              "from": {{moveSource}},
+              "to": { "titled": "Spider-Man" },
+              "amount": 1
+            } }
+          ] },
+          "else": { "attack": {
+            "target": { "query": "villain" },
+            "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+          } }
+        } } } }
+        """,
+        includeAuthored: includeAuthored);
 
     /// <summary>
     /// A game past the mulligan, on the first player's turn.
