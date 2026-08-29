@@ -81,7 +81,8 @@ public static class PhaseEnd
 
             foreach (var card in area.Cards.ToList())
             {
-                if (facts.PrintedValue(card.FaceId, "Temporary", world.Players) > 0)
+                if (StateFields.Modified(
+                        world, card, "temporary", facts, world.Players) > 0)
                 {
                     Discard.Card(world, card, "end of round", events);
                 }

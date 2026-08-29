@@ -233,10 +233,14 @@ public static class AbilityPlayers
 /// This is card text overriding the ordinary controller or attachment-holder
 /// permission, not a conclusion inferred from the card's ownership.
 /// </param>
+/// <param name="Labels">
+/// Every parenthetical attack, defense, or thwart label printed on the
+/// ability. Multiple labels belong to one ability and are resolved together.
+/// </param>
 public sealed record CardAbility(
     string Card, string Name, AbilityTrigger Trigger, AbilityNode Effect,
     AbilityNode? Cost = null, long? Limit = null, AbilityNode? When = null,
-    bool AnyPlayer = false);
+    bool AnyPlayer = false, IReadOnlyList<string>? Labels = null);
 
 /// <summary>
 /// Every authored card, and every ability on them.

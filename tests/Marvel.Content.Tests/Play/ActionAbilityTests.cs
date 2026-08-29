@@ -1880,6 +1880,49 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Rule("rr:labeled-ability.5")]
+    [Rule("rr:labeled-ability.6")]
+    [Rule("rr:labeled-ability.6.2")]
+    [Fact]
+    public void MultiLabeledAbilityCancelsOnceAfterCostsAndBeforeAnyEffect()
+    {
+        // Crosscounter's attack/defense/thwart labels are one ability. A stun
+        // or confusion cancels the whole post-arrow effect, removes every
+        // matching status, and leaves the already-paid exhaustion cost paid.
+        var runner = Runner(
+            "01017",
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "exhaust": "this" }""",
+            labels: "[ \"attack\", \"defense\", \"thwart\" ]");
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
+                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Confused);
+            },
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+        Assert.False(Statuses.Has(
+            world, world.Seats[0].IdentityCard, Statuses.Stunned));
+        Assert.False(Statuses.Has(
+            world, world.Seats[0].IdentityCard, Statuses.Confused));
+    }
+
     [Rule("rr:lasting-effects.6")]
     [Fact]
     public void AnUntilEndOfAttackEffectCannotBeginOutsideAnAttack()
@@ -12828,7 +12871,8 @@ public sealed class ActionAbilityTests
         string? player = null,
         long? limit = null,
         bool anyPlayer = false,
-        bool includeAuthored = false)
+        bool includeAuthored = false,
+        string? labels = null)
     {
         var local = Marvel.Cards.Dsl.AbilityCatalog.Parse(
             $$"""
@@ -12837,6 +12881,7 @@ public sealed class ActionAbilityTests
                 {{(cost is null ? string.Empty : $"\"cost\": {cost},")}}
                 {{(limit is null ? string.Empty : $"\"limitPerRound\": {limit.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)},")}}
                 {{(anyPlayer ? "\"anyPlayer\": true," : string.Empty)}}
+                {{(labels is null ? string.Empty : $"\"labels\": {labels},")}}
                 "effect": {{effect}}
             } ] } ] }
             """);

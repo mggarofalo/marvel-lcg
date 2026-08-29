@@ -602,6 +602,12 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | Amounts | a number, `{ "perPlayer": n }`, `{ "result": "healed" }`, `{ "result": "activationMade" }`, `{ "result": "activationDamage" }`, `{ "result": "activationThreat" }`, `{ "tokensOn": … }`, `{ "damageOn": … }` |
 | Bindings | `this`, `that`, `you`, `yourHero`, `yourAlterEgo`, `chosen`, `attachedTo`, `trigger.subject`, `trigger.actor`, `trigger.target`, `defeated`, `activatingEnemy`; players `you`, `controller`, `trigger.player`, `defeater`; subjects `this`, `attachedTo`, `you`, `game`; attack roles `this`, `attachedTo`, `you`, `villain`, `minion`, `hero`, `ally`, `friendly`, `enemy` |
 
+An ability with more than one printed parenthetical carries one envelope field,
+for example `"labels": ["attack", "defense", "thwart"]`. The interpreter
+begins that label set once after costs; it does not nest three independent
+effect nodes, because one matching status cancels the entire ability and every
+matching status leaves together (`rr:labeled-ability.5` and `.6`).
+
 **Dependency words preserve resolution outcomes.** `and` groups simultaneous,
 independent effects into one ability occurrence and asks the first player for
 their resolution order. `then` and `otherwise` each carry an explicit `effect`
@@ -822,9 +828,10 @@ text means the identity in either form.
 
 **Threat-removal exceptions are scoped.** A `removeThreat` instruction may
 carry `"ignoresCrisis": "true"` only when the printed instruction says it
-ignores crisis icons. `"overridesCannot": "true"` is reserved for an explicit
-exception to another threat-removal prohibition. Neither is inferred from an
-ordinary permission to remove threat.
+ignores crisis icons. `"overridesCannotFrom": <card selector>` names the exact
+card-text prohibition an explicit exception overrides; every unrelated
+prohibition remains in force. Neither exception is inferred from an ordinary
+permission to remove threat.
 
 **`{ "perPlayer": n }` counts eliminated players.** `rr:player-elimination.6`:
 "effects that refer to the players in the game ignore eliminated players,

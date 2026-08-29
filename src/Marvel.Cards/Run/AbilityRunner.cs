@@ -94,7 +94,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Tier = ability.Trigger.Timing,
             };
             TrackResolution(cast, ability);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
         }
 
@@ -126,7 +126,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Tier = ability.Trigger.Timing,
                 };
                 TrackResolution(cast, ability);
-                Run(ability.Effect, cast);
+                Run(ability, cast);
                 cast.CompleteResolution();
             }
         }
@@ -391,12 +391,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public bool CanRemoveThreat(World world, Card scheme)
+    public bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(scheme);
 
-        foreach (var card in world.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)))
+        foreach (var card in world.Cards.Where(card =>
+                     card.ObjectId != ignoredSource && DeckTypes.IsInPlay(card.Area.Type)))
         {
             foreach (var ability in On(card).Where(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
@@ -614,7 +615,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         cast.RestoreAbility(ability.Ordinal, []);
         cast.TrackResolution(ability.Ordinal);
-        Run(found.Effect, cast);
+        Run(found, cast);
         cast.CompleteResolution();
         DiscardEvent(card, cast);
         return events;
@@ -680,7 +681,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             };
             cast.RestoreAbility(ordinal, []);
             cast.TrackResolution(ordinal);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
         }
 
@@ -773,7 +774,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             };
             cast.RestoreAbility(ordinal, []);
             cast.TrackResolution(ordinal);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
         }
 
@@ -804,7 +805,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             cast.RestoreAbility(0, []);
             cast.TrackResolution(0);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
         }
         return events;
@@ -1065,7 +1066,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             };
 
             TrackResolution(cast, ability);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
 
             // An ability that touched the damage says so; one that did nothing
@@ -1249,7 +1250,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     Tier = ability.Trigger.Timing,
                 };
                 TrackResolution(cast, ability);
-                Run(ability.Effect, cast);
+                Run(ability, cast);
                 cast.CompleteResolution();
             }
         }
@@ -1448,7 +1449,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Tier = ability.Trigger.Timing,
             };
             TrackResolution(cast, ability);
-            Run(ability.Effect, cast);
+            Run(ability, cast);
             cast.CompleteResolution();
         }
 
@@ -1618,7 +1619,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         cast.RestoreAbility(ability.Ordinal, []);
         cast.TrackResolution(ability.Ordinal);
-        Run(found.Effect, cast);
+        Run(found, cast);
         cast.CompleteResolution();
         DiscardEvent(card, cast);
         return events;
@@ -6261,15 +6262,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private static bool CanRemoveThreatFrom(AbilityNode node, Cast cast, Card scheme) =>
-        (OverridesThreatRemovalProhibition(node)
-            || cast.Abilities.CanRemoveThreat(cast.World, scheme))
+        cast.Abilities.CanRemoveThreat(
+            cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
         && (IgnoresCrisis(node)
             || scheme.Area.Type != DeckType.MainSchemesArea
             || !IsPlayerCard(cast)
             || !MainScheme.Crisis(cast.World, cast.World.Facts));
 
-    private static bool OverridesThreatRemovalProhibition(AbilityNode node) =>
-        node.Field("overridesCannot") is AbilityValue.Word { Value: "true" };
+    private static int OverriddenThreatRemovalSource(AbilityNode node, Cast cast) =>
+        node.Field("overridesCannotFrom") is { } source
+            ? Find(source, cast)?.ObjectId ?? -1
+            : -1;
 
     private static bool IgnoresCrisis(AbilityNode node) =>
         node.Field("ignoresCrisis") is AbilityValue.Word { Value: "true" };
@@ -6995,8 +6998,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             var schemes = PowerEvery(node.Require("scheme"), cast, reachability);
             var valid = schemes.Where(scheme =>
                 PowerThreat(reachability, scheme) > 0
-                && (OverridesThreatRemovalProhibition(node)
-                    || cast.Abilities.CanRemoveThreat(cast.World, scheme))
+                && cast.Abilities.CanRemoveThreat(
+                    cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
                 && (IgnoresCrisis(node)
                     || !(scheme.Area.Type == DeckType.MainSchemesArea
                     && IsPlayerCard(cast)
@@ -7279,8 +7282,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             foreach (var scheme in PowerEvery(
                 node.Require("scheme"), cast, reachability))
             {
-                if (!OverridesThreatRemovalProhibition(node)
-                    && !cast.Abilities.CanRemoveThreat(cast.World, scheme)
+                if (!cast.Abilities.CanRemoveThreat(
+                        cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
                     || !IgnoresCrisis(node)
                         && scheme.Area.Type == DeckType.MainSchemesArea
                         && IsPlayerCard(cast)
@@ -9567,6 +9570,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     };
 
     // ---- the effect tree ---------------------------------------------------
+
+    private static void Run(CardAbility ability, Cast cast)
+    {
+        var labels = ability.Labels ?? [];
+        if (labels.Count > 0)
+        {
+            var performer = LabeledAbilities.Begin(
+                cast.World, cast.World.Facts, Resolver(cast), cast.Source,
+                labels, cast.Events);
+            if (performer is null)
+            {
+                return;
+            }
+
+            cast.AbilityActor = performer;
+            if (labels.Contains(Attack.DefenseVerb, StringComparer.Ordinal))
+            {
+                Attack.BeginDefenseAbility(cast.World, Resolver(cast), performer);
+            }
+        }
+
+        Run(ability.Effect, cast);
+    }
 
     private static void Run(AbilityNode node, Cast cast)
     {
@@ -12236,7 +12262,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Damage from an attack event performed by the resolving identity.</summary>
     private static void DealAttackDamage(AbilityNode node, Cast cast)
     {
-        var attacker = cast.PowerActor ?? cast.World.Seats[Resolver(cast)].IdentityCard;
+        var attacker = cast.PowerActor
+            ?? cast.AbilityActor
+            ?? cast.World.Seats[Resolver(cast)].IdentityCard;
         ContinuousEffect? temporaryOverkill = null;
         if (node.Field("overkill") is not null)
         {
@@ -12290,7 +12318,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var damaged = Damage.Attack(
             cast.World,
             cast.World.Facts,
-            cast.PowerActor ?? cast.World.Seats[Resolver(cast)].IdentityCard,
+            cast.PowerActor
+                ?? cast.AbilityActor
+                ?? cast.World.Seats[Resolver(cast)].IdentityCard,
             cast.Source,
             to,
             amount,
@@ -12482,7 +12512,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 "Remove_Threat",
                 cast.Events,
                 by: Resolver(cast),
-                overridesCannot: OverridesThreatRemovalProhibition(node));
+                overridesCannotFrom: OverriddenThreatRemovalSource(node, cast));
         }
     }
 
@@ -14029,6 +14059,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         /// <summary>The card attributed as performer of the labelled power.</summary>
         public Card? PowerActor { get; init; }
+
+        /// <summary>The performer attributed by an ability-envelope label.</summary>
+        public Card? AbilityActor { get; set; }
 
         /// <summary>A numeric result carried into this labelled power.</summary>
         public long PowerAmount { get; init; } = -1;

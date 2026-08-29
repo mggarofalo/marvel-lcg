@@ -68,6 +68,30 @@ public sealed class PhaseEndTests
         Assert.Equal(0, watcher.ActiveAt(WindowKind.Response));
     }
 
+    [Rule("rr:loses")]
+    [Rule("rr:temporary.1")]
+    [Fact]
+    public void AnUpgradeThatLosesTemporaryRemainsAtRoundEnd()
+    {
+        // The card functions as if it does not possess a lost characteristic.
+        // Temporary's forced discard therefore does not fire while the loss is
+        // active, even though the keyword remains printed on the upgrade.
+        var facts = new Facts();
+        var world = Board(facts);
+        var upgrade = world.CreateCard(
+            "temporary",
+            world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Characteristics.LossOf("temporary"),
+            Affects: upgrade.ObjectId));
+
+        PhaseEnd.EndVillainPhase(world, facts, []);
+
+        Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
+        Assert.Equal(1, facts.PrintedValue("temporary", "Temporary", 1));
+    }
+
     [Rule("rr:triggering-condition.2")]
     [Fact]
     public void TheVillainPhaseEndingIsOneOccurrenceCarryingTwoConditions()
@@ -186,9 +210,9 @@ public sealed class PhaseEndTests
         EffectSource.LastingEffect, "attack", Amount: 1,
         Lasts: Duration.UntilEndOf(timingPoint));
 
-    private static World Board()
+    private static World Board(ICardFacts? facts = null)
     {
-        var world = new World(new Facts(), players: 1);
+        var world = new World(facts ?? new Facts(), players: 1);
         world.CreateSeat("p0");
         return world;
     }
@@ -242,14 +266,21 @@ public sealed class PhaseEndTests
 
     private sealed class Facts : ICardFacts
     {
-        public CardKind Kind(string faceId) => CardKind.Unknown;
+        public CardKind Kind(string faceId) =>
+            faceId == "temporary" ? CardKind.Upgrade : CardKind.Unknown;
 
         public IReadOnlyList<string> Traits(string faceId) => [];
 
         public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
-            new Dictionary<string, string>(StringComparer.Ordinal);
+            faceId == "temporary"
+                ? new Dictionary<string, string>(StringComparer.Ordinal)
+                    { ["Temporary"] = "1" }
+                : new Dictionary<string, string>(StringComparer.Ordinal);
 
         public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) =>
-            fallback;
+            Attributes(faceId).TryGetValue(attribute, out string? value)
+            && long.TryParse(value, out long number)
+                ? number
+                : fallback;
     }
 }

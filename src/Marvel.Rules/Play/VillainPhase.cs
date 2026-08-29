@@ -60,8 +60,11 @@ public interface ICardAbilities : IWindowAbilities
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="scheme">The scheme threat would be removed from.</param>
+    /// <param name="ignoredSource">
+    /// One explicitly overridden prohibition source, or -1.
+    /// </param>
     /// <returns>Whether the removal is permitted.</returns>
-    bool CanRemoveThreat(World world, Card scheme) => true;
+    bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => true;
 
     /// <summary>
     /// The resources a card in hand generates toward the current payment.
@@ -546,7 +549,7 @@ public class NoCardAbilities : ICardAbilities
         World world, PhaseStep continuation) => [];
 
     /// <inheritdoc/>
-    public virtual bool CanRemoveThreat(World world, Card scheme) => true;
+    public virtual bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => true;
 
     /// <inheritdoc/>
     public virtual string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
