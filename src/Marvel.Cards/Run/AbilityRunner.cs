@@ -16496,17 +16496,39 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             if (effect.Kind == "giveStatus")
             {
                 string status = Word(effect.Require("status"));
-                if (status == Statuses.Tough)
+                foreach (var state in states)
                 {
-                    foreach (var state in states)
+                    foreach (var target in Every(
+                                 effect.Require("card"), cast))
                     {
-                        foreach (var target in Every(
-                                     effect.Require("card"), cast))
+                        long limit = Statuses.Limit(
+                            cast.World, cast.World.Facts, target, status);
+                        long held = state.StatusOf(cast, target, status);
+                        if (held >= limit)
                         {
-                            state.Tough[target.ObjectId] = Math.Min(
-                                Statuses.Limit(
-                                    cast.World, cast.World.Facts, target, status),
-                                state.ToughOf(cast, target) + 1);
+                            continue;
+                        }
+                        state.Status[(target.ObjectId, status)] = held + 1;
+                        if (status == Statuses.Tough)
+                        {
+                            state.Tough[target.ObjectId] = held + 1;
+                        }
+                        bool vulnerable = status is Statuses.Stunned
+                                or Statuses.Confused
+                            && StateFields.Modified(
+                                cast.World, target, "vulnerable",
+                                cast.World.Facts, cast.World.Players) > 0
+                            && held + 1 >= limit && limit > 0;
+                        if (vulnerable
+                            && (cast.World.Facts.Kind(target.FaceId)
+                                    == CardKind.Minion
+                                    && queried.Contains(
+                                        DeckType.EncounterDiscardPile)
+                                || cast.World.Facts.Kind(target.FaceId)
+                                    == CardKind.Ally
+                                    && queried.Contains(DeckType.DiscardPile)))
+                        {
+                            couldDiscard = true;
                         }
                     }
                 }
@@ -16545,11 +16567,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     return states;
                 }
                 var simultaneous = Nodes(effect.Argument).ToList();
-                if (simultaneous.Count > 63)
+                const int MaximumProjectedAndEffects = 12;
+                if (simultaneous.Count > MaximumProjectedAndEffects)
                 {
                     throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' has an and-group with "
-                        + $"{simultaneous.Count} effects, whose orders cannot be projected");
+                        + $"{simultaneous.Count} effects; projecting more than "
+                        + $"{MaximumProjectedAndEffects} orders is not implemented");
                 }
 
                 var frontier = states
@@ -16610,6 +16634,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 return AreaProjectionState.Distinct(branched);
             }
 
+            if (effect.Kind is "then" or "otherwise")
+            {
+                var predecessor = Tree(effect.Require("effect"));
+                var dependent = Tree(effect.Require(effect.Kind));
+                var required = effect.Kind == "then"
+                    ? ResolutionOutcome.Full : ResolutionOutcome.None;
+                var branched = new List<AreaProjectionState>();
+                foreach (var state in states)
+                {
+                    var outcome = ProjectedResolution(
+                        predecessor, state, cast);
+                    var projected = outcome == ResolutionOutcome.None
+                        ? [state]
+                        : Trace(
+                            predecessor, [state], repetitions,
+                            baseMultiplier);
+                    if (outcome == required)
+                    {
+                        projected = Trace(
+                            dependent, projected, repetitions,
+                            baseMultiplier);
+                    }
+                    branched.AddRange(projected);
+                }
+                return AreaProjectionState.Distinct(branched);
+            }
+
             if (effect.Kind is "choose" or "chooseCard")
             {
                 return states;
@@ -16650,10 +16701,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         AbilityNode test, AreaProjectionState state, Cast cast)
     {
         if (test.Kind == "hasStatus"
-            && Word(test.Require("status")) == Statuses.Tough
             && Find(test.Require("card"), cast) is { } target)
         {
-            return state.ToughOf(cast, target) > 0;
+            return state.StatusOf(
+                cast, target, Word(test.Require("status"))) > 0;
         }
         if (test.Kind == "not")
         {
@@ -16664,22 +16715,43 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             var values = Nodes(test.Argument)
                 .Select(child => ProjectedTest(child, state, cast)).ToList();
-            if (values.Any(value => value is null))
+            if (test.Kind == "and" && values.Any(value => value == false))
             {
-                return null;
+                return false;
             }
-            return test.Kind == "and"
-                ? values.All(value => value == true)
-                : values.Any(value => value == true);
+            if (test.Kind == "or" && values.Any(value => value == true))
+            {
+                return true;
+            }
+            return values.Any(value => value is null)
+                ? null
+                : test.Kind == "and";
         }
         return null;
     }
+
+    private static ResolutionOutcome ProjectedResolution(
+        AbilityNode effect, AreaProjectionState state, Cast cast) =>
+        effect.Kind switch
+        {
+            "heal" => ResolutionOfAmount(
+                Find(effect.Require("card"), cast) is { } healed
+                    ? state.DamageOf(healed) : 0,
+                Amount(effect.Require("amount"), cast)),
+            "removeThreat" => CombinedOutcomes(
+                Every(effect.Require("scheme"), cast).Select(scheme =>
+                    ResolutionOfAmount(
+                        state.ThreatOf(scheme),
+                        Amount(effect.Require("amount"), cast)))),
+            _ => ResolutionOf(effect, cast),
+        };
 
     private sealed class AreaProjectionState(Cast cast)
     {
         public Dictionary<int, long> Damage { get; } = [];
         public Dictionary<int, long> Tough { get; } = [];
         public Dictionary<int, long> Threat { get; } = [];
+        public Dictionary<(int Card, string Status), long> Status { get; } = [];
 
         public long DamageOf(Card card) =>
             Damage.GetValueOrDefault(card.ObjectId, card.Damage);
@@ -16687,6 +16759,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public long ToughOf(Cast current, Card card) => Tough.GetValueOrDefault(
             card.ObjectId,
             Statuses.Count(current.World, card, Statuses.Tough));
+
+        public long StatusOf(Cast current, Card card, string status) =>
+            status == Statuses.Tough
+                ? ToughOf(current, card)
+                : Status.GetValueOrDefault(
+                    (card.ObjectId, status),
+                    Statuses.Count(current.World, card, status));
 
         public long ThreatOf(Card card) => Threat.GetValueOrDefault(
             card.ObjectId, card.Tokens.GetValueOrDefault("k_threat"));
@@ -16706,6 +16785,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 clone.Threat[card] = amount;
             }
+            foreach (var (key, count) in Status)
+            {
+                clone.Status[key] = count;
+            }
             return clone;
         }
 
@@ -16721,7 +16804,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Concat(Tough.OrderBy(pair => pair.Key)
                     .Select(pair => $"s{pair.Key}:{pair.Value}"))
                 .Concat(Threat.OrderBy(pair => pair.Key)
-                    .Select(pair => $"t{pair.Key}:{pair.Value}")));
+                    .Select(pair => $"t{pair.Key}:{pair.Value}"))
+                .Concat(Status.OrderBy(pair => pair.Key.Card)
+                    .ThenBy(pair => pair.Key.Status, StringComparer.Ordinal)
+                    .Select(pair =>
+                        $"x{pair.Key.Card}:{pair.Key.Status}:{pair.Value}")));
     }
 
     private static IEnumerable<AbilityNode> ReachableMutationBranches(
