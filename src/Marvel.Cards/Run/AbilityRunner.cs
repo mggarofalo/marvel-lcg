@@ -16350,8 +16350,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         bool couldDiscard = false;
 
         bool DiscardedByDamage(AreaProjectionState state, Card target) =>
-            state.DamageOf(target) >= Damage.Health(
-                cast.World, cast.World.Facts, target)
+            state.DamageOf(target) >= state.HealthOf(cast, target)
             && DefeatTreeChangesArea(target, queried, cast);
 
         bool RootLeavesOnDefeat(Card root)
@@ -16482,8 +16481,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             state.Damage[target.ObjectId] = SaturatingSum(
                 state.DamageOf(target), [dealt]);
             couldDiscard |= DiscardedByDamage(state, target);
-            if (state.DamageOf(target) < Damage.Health(
-                    cast.World, cast.World.Facts, target))
+            if (state.DamageOf(target) < state.HealthOf(cast, target))
             {
                 return;
             }
@@ -16740,6 +16738,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         state.Traits[target.ObjectId] = granted = [];
                     }
                     granted.Add(trait);
+                }
+                return states;
+            }
+
+            if (effect.Kind == "grantUntil"
+                && effect.Field("keyword") is { } grantedField)
+            {
+                string field = Word(grantedField);
+                long amount = effect.Field("amount") is { } given
+                    ? Amount(given, cast) : 0;
+                foreach (var state in states)
+                {
+                    var target = ProjectedFind(
+                        effect.Require("card"), state, cast);
+                    if (target is not null)
+                    {
+                        var key = (target.ObjectId, field);
+                        state.Modifiers[key] = SaturatingSum(
+                            state.Modifiers.GetValueOrDefault(key), [amount]);
+                    }
                 }
                 return states;
             }
@@ -17203,9 +17221,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 "cost" => cast.World.Facts.PrintedValue(
                     card.FaceId, "Cost", cast.World.Players),
-                "attack" => StateFields.Modified(
-                    cast.World, card, "attack",
-                    cast.World.Facts, cast.World.Players),
+                "attack" => state.ModifiedOf(cast, card, "attack"),
                 "printedHealth" => cast.World.Facts.PrintedValue(
                     card.FaceId, "HP", cast.World.Players),
                 _ => throw new AbilityException(
@@ -17387,6 +17403,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public Dictionary<int, int> Hosts { get; } = [];
         public Dictionary<int, int> EngagedWith { get; } = [];
         public Dictionary<int, HashSet<string>> Traits { get; } = [];
+        public Dictionary<(int Card, string Field), long> Modifiers { get; } = [];
         public bool SourceReferenceCurrent { get; set; } = true;
         public int ActiveVillain { get; set; } =
             cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
@@ -17408,6 +17425,68 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         public long ThreatOf(Card card) => Threat.GetValueOrDefault(
             card.ObjectId, card.Tokens.GetValueOrDefault("k_threat"));
+
+        public long HealthOf(Cast current, Card card) => SaturatingSum(
+            FacedownDrones.BaseValue(
+                card, current.World.Facts, "HP", current.World.Players),
+            [ModifiedOf(current, card, "health")]);
+
+        public long ModifiedOf(Cast current, Card card, string field)
+        {
+            long value = StateFields.Modified(
+                current.World, card, field,
+                current.World.Facts, current.World.Players);
+            foreach (var effect in current.World.Effects.Active())
+            {
+                if (effect.Source == EffectSource.ConstantAbility
+                    && effect.Card is int source
+                    && Departed.Contains(source)
+                    && string.Equals(effect.Kind, field, StringComparison.Ordinal)
+                    && effect.AppliesTo(current.World, card))
+                {
+                    value -= effect.Amount;
+                }
+            }
+            value = SaturatingSum(
+                value,
+                [Modifiers.GetValueOrDefault((card.ObjectId, field))]);
+
+            string? printedModifier = field switch
+            {
+                "attack" => "ATK+",
+                "scheme" => "SCH+",
+                "thwart" => "THW+",
+                _ => null,
+            };
+            if (printedModifier is null)
+            {
+                return value;
+            }
+            foreach (var attached in current.World.Cards.Where(candidate =>
+                         candidate.Area.Host == card.ObjectId
+                         && DeckTypes.IsInPlay(candidate.Area.Type)))
+            {
+                if (Departed.Contains(attached.ObjectId)
+                    || Hosts.TryGetValue(attached.ObjectId, out int projected)
+                        && projected != card.ObjectId)
+                {
+                    value -= current.World.Facts.PrintedValue(
+                        attached.FaceId, printedModifier, current.World.Players);
+                }
+            }
+            foreach (var (attachedId, host) in Hosts)
+            {
+                var attached = current.World.Cards[attachedId];
+                if (host == card.ObjectId
+                    && attached.Area.Host != card.ObjectId
+                    && !Departed.Contains(attachedId))
+                {
+                    value += current.World.Facts.PrintedValue(
+                        attached.FaceId, printedModifier, current.World.Players);
+                }
+            }
+            return value;
+        }
 
         public bool HasTrait(Cast current, Card card, string trait)
         {
@@ -17471,6 +17550,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 clone.Traits[card] = [.. traits];
             }
+            foreach (var (key, amount) in Modifiers)
+            {
+                clone.Modifiers[key] = amount;
+            }
             clone.ActiveVillain = ActiveVillain;
             clone.VillainAttachmentHost = VillainAttachmentHost;
             clone.SourceReferenceCurrent = SourceReferenceCurrent;
@@ -17503,6 +17586,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Concat(Traits.OrderBy(pair => pair.Key)
                     .SelectMany(pair => pair.Value.Order(StringComparer.Ordinal)
                         .Select(trait => $"g{pair.Key}:{trait}")))
+                .Concat(Modifiers.OrderBy(pair => pair.Key.Card)
+                    .ThenBy(pair => pair.Key.Field, StringComparer.Ordinal)
+                    .Select(pair =>
+                        $"m{pair.Key.Card}:{pair.Key.Field}:{pair.Value}"))
                 .Append($"v{ActiveVillain}:{VillainAttachmentHost}")
                 .Append($"r{SourceReferenceCurrent}"));
     }
