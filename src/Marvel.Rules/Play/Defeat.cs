@@ -91,17 +91,21 @@ public static class Defeat
     /// ally is defeated <b>by anything other than consequential damage</b>".
     /// </param>
     /// <param name="by">The seat whose character did it, or <c>-1</c>.</param>
+    /// <param name="recordOn">
+    /// The occurrence the defeat joins when an internal plan is applying it.
+    /// Null uses the current agenda occurrence.
+    /// </param>
     /// <returns>True, so that a caller can report it in one expression.</returns>
     public static bool Character(
         World world, ICardFacts facts, Card character, string trigger, List<GameEvent> events,
-        string how = "", int by = -1)
+        string how = "", int by = -1, Timing.Occurrence? recordOn = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(character);
         ArgumentNullException.ThrowIfNull(events);
 
-        var defeated = Record(world, character, by, how);
+        var defeated = Record(world, character, by, how, recordOn);
         var occurrence = world.Agenda.Occurrence!;
 
         // `rr:damage.step.7` -- "abilities that trigger *when [character] is
@@ -284,11 +288,13 @@ public static class Defeat
     /// notice.
     /// </para>
     /// </remarks>
-    private static Defeated Record(World world, Card card, int by, string how)
+    private static Defeated Record(
+        World world, Card card, int by, string how,
+        Timing.Occurrence? recordOn = null)
     {
         var defeated = new Defeated(card.ObjectId, by, how);
 
-        if (world.Agenda.Occurrence is not { } happening)
+        if (recordOn is null && world.Agenda.Occurrence is not { })
         {
             throw new RulesNotImplementedException(
                 $"card {card.ObjectId} was defeated by '{how}' and nothing is happening on the "
@@ -297,6 +303,7 @@ public static class Defeat
                 + "the rules make it an occurrence");
         }
 
+        var happening = recordOn ?? world.Agenda.Occurrence!;
         happening.Also(defeated);
         return defeated;
     }

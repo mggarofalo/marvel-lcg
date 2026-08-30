@@ -327,6 +327,64 @@ public sealed class IndirectDamageTests
         Assert.Equal(DeckType.AlliesArea, second.Area.Type);
     }
 
+    [Rule("rr:triggering-condition.2")]
+    [Rule("rr:indirect-damage.3")]
+    [Fact]
+    public void IndirectAllyDefeatJoinsTheOuterAttackResponseWindow()
+    {
+        // `rr:triggering-condition.2` says an attack that both deals damage
+        // and defeats a character is handled "with a single interrupt window
+        // and a single response window." The assignment plan is internal;
+        // Gene Pool's "After an ally is defeated" Forced Response therefore
+        // belongs to the outer attack-damage occurrence and feeds the pool.
+        var world = Deal();
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var pool = world.CreateCard(
+            AuthoredCards.GenePool, world.AreaOf(DeckType.SideSchemesArea));
+        var ally = world.CreateCard(
+            Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        ally.TakeDamage(Damage.Health(world, Cards, ally) - 1);
+        long before = pool.Tokens.GetValueOrDefault("k_threat");
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        while (defend.Asking != Question.Defender)
+        {
+            Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+            defend = Sequence.Work(world, Cards, runner, events)!;
+        }
+        Attack.MakeIndirect(world);
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var assign = Sequence.Work(world, Cards, runner, events)!;
+        int amount = Assert.Single(assign.Affordances).Targets!.Min;
+        Sequence.Answer(
+            world, Cards, runner, assign,
+            Decision.Take(
+                assign.Affordances[0].Id,
+                [ally.ObjectId, .. Enumerable.Repeat(
+                    world.Seats[0].IdentityCard.ObjectId, amount - 1)], []), events);
+
+        var remaining = Sequence.Work(world, Cards, runner, events);
+        while (remaining is not null)
+        {
+            Sequence.Answer(
+                world, Cards, runner, remaining,
+                remaining.Cancellable
+                    ? Decision.Decline
+                    : Decision.Take(Assert.Single(remaining.Affordances).Id),
+                events);
+            remaining = Sequence.Work(world, Cards, runner, events);
+        }
+
+        Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
+        Assert.Equal(before + 3, pool.Tokens.GetValueOrDefault("k_threat"));
+    }
+
     [Rule("rr:indirect-damage.3.2")]
     [Rule("rr:damage.step.1")]
     [Fact]

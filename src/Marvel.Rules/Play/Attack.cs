@@ -657,7 +657,16 @@ public static class Attack
         events.AddRange(abilities.Boost(world, boost, activation.Player));
         if (world.Agenda.Count > beforeAbility)
         {
-            world.Agenda.ThenContinuation(
+            // An ordinary authored choice is still scheduled after the flip;
+            // move that child ahead first. A nested rules procedure has
+            // already done this for itself and made its child current.
+            if (world.Agenda.Current is { What: Steps.FlipBoostCards })
+            {
+                world.Agenda.BeforeResponses(occurrence);
+            }
+            world.Agenda.BeforeOwnerAfterContinuations(
+                occurrence,
+                Steps.FlipBoostCards,
                 new PhaseStep(
                     Steps.FinishBoostCard,
                     world.Agenda.Current?.Round ?? 0,
@@ -665,15 +674,7 @@ public static class Attack
                     Subject: boost.ObjectId,
                     Seat: activation.Player,
                     Character: activation.Enemy,
-                    ProcedureFlag: activation.Attacking),
-                occurrence);
-            // A nested damage/defeat procedure may already have moved itself
-            // ahead of this flip. In that case FinishBoostCard was inserted
-            // behind that child and is already before the exact flip owner.
-            if (world.Agenda.Current is { What: Steps.FlipBoostCards })
-            {
-                world.Agenda.BeforeResponses(occurrence);
-            }
+                    ProcedureFlag: activation.Attacking));
             return;
         }
 
@@ -1183,7 +1184,8 @@ public static class Attack
             var outcome = Damage.FinishPlaced(
                 world, facts, attacker,
                 new Damage.PlacedDamage(target, Dealt: 0, Taken: 1),
-                Steps.AttackInitiated, "Attack", events);
+                Steps.AttackInitiated, "Attack", events,
+                recordDefeatOn: occurrence);
             if (outcome != Damage.Outcome.Suspended)
             {
                 continue;

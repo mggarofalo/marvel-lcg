@@ -234,7 +234,8 @@ public static class Damage
     /// <summary>Resolve damage step 6 and defeat after step 5 placement.</summary>
     internal static Outcome FinishPlaced(
         World world, ICardFacts facts, Card source, PlacedDamage placed,
-        string trigger, string verb, List<GameEvent> events, int by = -1)
+        string trigger, string verb, List<GameEvent> events, int by = -1,
+        Occurrence? recordDefeatOn = null)
     {
         if (!placed.Landed)
         {
@@ -277,7 +278,8 @@ public static class Damage
 
         int beforeDefeat = world.Agenda.Count;
         bool defeated = Defeat.Character(
-            world, facts, target, trigger, events, how: verb, by: by);
+            world, facts, target, trigger, events, how: verb, by: by,
+            recordOn: recordDefeatOn);
         if (!defeated && world.Agenda.Count > beforeDefeat)
         {
             return Outcome.Suspended;

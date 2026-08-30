@@ -639,6 +639,47 @@ public sealed class Agenda
             (step with { Plan = true, OccurrenceId = occurrence.Id }, Stage.Apply, occurrence));
     }
 
+    /// <summary>Put every child and then a continuation before its exact owner.</summary>
+    /// <remarks>
+    /// Several nested procedure frames may share the owner's occurrence. The
+    /// step name distinguishes the original owner from those children, so the
+    /// continuation remains behind every child even when more than one of them
+    /// has already moved ahead of the owner.
+    /// </remarks>
+    public void BeforeOwnerAfterContinuations(
+        Occurrence occurrence, string owner, PhaseStep continuation)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        int ownerAt = items.FindIndex(item =>
+            ReferenceEquals(item.Occurrence, occurrence)
+            && item.Step.What == owner);
+        if (ownerAt < 0)
+        {
+            throw new InvalidOperationException(
+                $"the '{owner}' occurrence owner is not on the agenda");
+        }
+
+        var children = items
+            .Where((item, index) =>
+                index != ownerAt && ReferenceEquals(item.Occurrence, occurrence))
+            .ToList();
+        items.RemoveAll(item =>
+            ReferenceEquals(item.Occurrence, occurrence)
+            && item.Step.What != owner);
+        ownerAt = items.FindIndex(item =>
+            ReferenceEquals(item.Occurrence, occurrence)
+            && item.Step.What == owner);
+        items.InsertRange(ownerAt, children);
+        items.Insert(
+            ownerAt + children.Count,
+            (continuation with
+            {
+                Plan = true,
+                OccurrenceId = occurrence.Id,
+            }, Stage.Apply, occurrence));
+        scheduled = 0;
+    }
+
     /// <summary>Schedule one complete enemy activation and return its stable id.</summary>
     /// <remarks>
     /// The completion sentinel is present before the activation starts, so an
