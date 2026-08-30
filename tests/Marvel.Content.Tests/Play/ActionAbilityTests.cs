@@ -9332,6 +9332,109 @@ public sealed class ActionAbilityTests
             moved.Cards.Any(card => card.Card == source.ObjectId));
     }
 
+    [Rule("rr:in-play-and-out-of-play.4")]
+    [Fact]
+    public void RetainedBindingCannotFollowACardIntoTheHand()
+    {
+        // Returning the source to hand makes it out of play. The following
+        // component retains `this`, but it does not expressly refer to the
+        // hand and therefore cannot discard the card from there.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "returnToHand": "this" },
+              { "discard": "this" }
+            ] }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(DeckType.HandsArea, source!.Area.Type);
+    }
+
+    [Rule("rr:in-play-and-out-of-play.4")]
+    [Fact]
+    public void ChosenBindingRemembersTheAreaWhereItWasSelected()
+    {
+        // `chosen` is an express reference to the selected in-play card, not
+        // permission to follow it into a later out-of-play area. Its selection
+        // origin therefore survives the first component's hand move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "chooseCard": {
+              "from": { "titled": "Helicarrier" },
+              "effect": { "seq": [
+                { "returnToHand": "chosen" },
+                { "discard": "chosen" }
+              ] }
+            } }
+            """);
+        Card? source = null;
+        Card? target = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                target = InPlay(board, "01092");
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        game.Resolve(Decision.Take(action.Id));
+
+        game.Resolve(Decision.Take(target!.ObjectId));
+
+        Assert.Equal(DeckType.HandsArea, target.Area.Type);
+    }
+
+    [Rule("rr:in-play-and-out-of-play.4")]
+    [Rule("rr:removed-from-the-game")]
+    [Fact]
+    public void AreaNamedSelectorCanRemoveAnOutOfPlayCard()
+    {
+        // cardsIn expressly names the encounter discard pile, so the ability
+        // may affect its matching out-of-play card. This is distinct from a
+        // stale binding that merely follows a target after an earlier move.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "removeFromGame": { "cardsIn": {
+              "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+            } } }
+            """);
+        Card? source = null;
+        Card? target = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                target = board.CreateCard(
+                    "01101", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(DeckType.RemovedArea, target!.Area.Type);
+        Assert.Contains(target, world.AreaOf(DeckType.RemovedArea).Cards);
+    }
+
     [Rule("rr:permanent.4")]
     [Rule("rr:then.1")]
     [Rule("rr:then.2")]

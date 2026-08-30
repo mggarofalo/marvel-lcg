@@ -655,16 +655,9 @@ public sealed class ContinuousEffects(World world)
                         || HasHostedAncestor(card, [root.ObjectId]))
                     .Select(card => card.ObjectId)
                     .ToArray());
-            var definiteTrees = sources
+            var definiteSources = planned
                 .Where(source => definiteIds.Contains(source.ObjectId))
-                .ToDictionary(
-                    source => source.ObjectId,
-                    source => planned
-                        .Where(card => definiteIds.Contains(card.ObjectId)
-                            && (card.ObjectId == source.ObjectId
-                                || HasHostedAncestor(card, [source.ObjectId])))
-                        .Select(card => card.ObjectId)
-                        .ToArray());
+                .ToArray();
 
             // The derived-effect simulation has found every tentative cascade
             // root. End it before projecting physical absence, so constants
@@ -674,7 +667,7 @@ public sealed class ContinuousEffects(World world)
             simulationEnded = true;
 
             var selected = PreflightSelectedDepartures(
-                roots, definiteIds, definiteTrees, rootTrees,
+                roots, definiteIds, definiteSources, rootTrees,
                 attachmentPreflightExemptions ?? new HashSet<int>());
             var departures = definiteIds
                 .Concat(selected.SelectMany(card => rootTrees[card.ObjectId]))
@@ -695,7 +688,7 @@ public sealed class ContinuousEffects(World world)
     private Card[] PreflightSelectedDepartures(
         Card[] roots,
         IReadOnlySet<int> definiteIds,
-        Dictionary<int, int[]> definiteTrees,
+        IReadOnlyList<Card> definiteSources,
         Dictionary<int, int[]> rootTrees,
         IReadOnlySet<int> attachmentPreflightExemptions)
     {
@@ -726,21 +719,11 @@ public sealed class ContinuousEffects(World world)
                 .Where(card => !HasHostedAncestor(card, selected))
                 .ToArray();
 
-            // Definite trees are checked after their sources' constants end.
-            // A captured Victory root leaves first and was already checked on
-            // the trigger board, so only that ordered subtree is exempt from
-            // the post-departure projection.
+            PreflightDefiniteAttachments(
+                definiteSources, definiteIds, attachmentPreflightExemptions);
+
             using (ProjectOut([.. definiteIds]))
             {
-                foreach (var (root, tree) in definiteTrees)
-                {
-                    Discard.PreflightProjectedAttachments(
-                        world,
-                        world.Cards[root],
-                        tree.Skip(1)
-                            .Where(id => !attachmentPreflightExemptions.Contains(id))
-                            .Select(id => world.Cards[id]));
-                }
                 foreach (var root in selectedRoots)
                 {
                     Discard.PreflightProjectedAttachments(
@@ -751,6 +734,51 @@ public sealed class ContinuousEffects(World world)
             }
 
             return selectedRoots;
+        }
+    }
+
+    /// <summary>Checks each hosted card at the board where its direct host departs.</summary>
+    private void PreflightDefiniteAttachments(
+        IReadOnlyList<Card> sources,
+        IReadOnlySet<int> definiteIds,
+        IReadOnlySet<int> attachmentPreflightExemptions)
+    {
+        foreach (var source in sources)
+        {
+            var direct = world.Areas
+                .Where(area => area.Host == source.ObjectId)
+                .SelectMany(area => area.Cards)
+                .Where(card => definiteIds.Contains(card.ObjectId))
+                .Where(card => !attachmentPreflightExemptions.Contains(card.ObjectId))
+                .ToArray();
+            if (direct.Length == 0)
+            {
+                continue;
+            }
+
+            // Project only the direct host and earlier ancestors. The hosted
+            // cards remain in play, so their own constants can react to the
+            // host's absence before Permanent is read. A captured Victory root
+            // begins a separate earlier departure group while the defeated
+            // host's constants are still active.
+            var projected = new List<int>();
+            var leaving = source;
+            while (definiteIds.Contains(leaving.ObjectId))
+            {
+                projected.Add(leaving.ObjectId);
+                if (attachmentPreflightExemptions.Contains(leaving.ObjectId)
+                    || leaving.Area.Host < 0
+                    || leaving.Area.Host >= world.Cards.Count)
+                {
+                    break;
+                }
+                leaving = world.Cards[leaving.Area.Host];
+            }
+
+            using (ProjectOut(projected))
+            {
+                Discard.PreflightProjectedAttachments(world, source, direct);
+            }
         }
     }
 

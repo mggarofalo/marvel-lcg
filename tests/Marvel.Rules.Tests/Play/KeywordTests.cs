@@ -852,6 +852,70 @@ public sealed class KeywordTests
         Assert.Equal(DeckType.UpgradesArea, attachment.Area.Type);
     }
 
+    [Rule("rr:ability.5")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:victory-x.1.2")]
+    [Fact]
+    public void VictoryRootDoesNotExemptItsHostedPermanentFromPreflight()
+    {
+        // V's interrupt lets V itself leave before H, but its child A still
+        // loses host V. V currently makes A lose Permanent; projecting V's
+        // departure restores Permanent and must refuse before either moves.
+        var printed = new Printed()
+            .With("minion", ("HP", "1"))
+            .With("victoryAttachment", ("Victory", "1"))
+            .With("permanentAttachment", ("Permanent", "1"));
+        var world = Board(printed);
+        var host = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var victory = world.CreateCard(
+            "victoryAttachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId));
+        var permanent = world.CreateCard(
+            "permanentAttachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), victory.ObjectId));
+        world.Abilities = new ConstantCharacteristic(
+            victory.ObjectId,
+            permanent.ObjectId,
+            Characteristics.LossOf("permanent"));
+        Agendas.Happening(world);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Damage.Deal(world, printed, host, host, 1, "test", "test", []));
+
+        Assert.Equal(DeckType.EngagedEnemiesArea, host.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, victory.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
+    }
+
+    [Rule("rr:ability.5")]
+    [Rule("rr:permanent.5")]
+    [Fact]
+    public void HostedCardKeepsItsOwnConstantsDuringDeparturePreflight()
+    {
+        // A grants itself Permanent only when H is absent. The projected read
+        // must remove H while leaving A in play, or A's own conditional constant
+        // disappears and the unsupported reattachment is missed.
+        var printed = new Printed()
+            .With("minion", ("HP", "1"))
+            .With("attachment");
+        var world = Board(printed);
+        var host = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId));
+        world.Abilities = new ConstantWhenHostAbsent(
+            host.ObjectId, attachment.ObjectId, "permanent");
+        Agendas.Happening(world);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Damage.Deal(world, printed, host, host, 1, "test", "test", []));
+
+        Assert.Equal(DeckType.EngagedEnemiesArea, host.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, attachment.Area.Type);
+    }
+
     [Rule("rr:tuck.1")]
     [Rule("rr:victory-x.3")]
     [Fact]
@@ -2140,8 +2204,28 @@ public sealed class KeywordTests
                     new ContinuousEffect(
                         EffectSource.ConstantAbility,
                         kind,
+                        Amount: 1,
                         Card: source,
                         Affects: affected,
+                        Lasts: Duration.WhileInPlay),
+                ]
+                : [];
+    }
+
+    private sealed class ConstantWhenHostAbsent(
+        int host, int source, string kind) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card) =>
+            card.ObjectId == source
+            && !DeckTypes.IsInPlay(world.Cards[host].Area.Type)
+                ?
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        kind,
+                        Amount: 1,
+                        Card: source,
+                        Affects: source,
                         Lasts: Duration.WhileInPlay),
                 ]
                 : [];

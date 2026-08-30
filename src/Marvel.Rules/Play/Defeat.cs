@@ -483,11 +483,9 @@ public static class Defeat
     {
         var victory = PreflightDefeatAttachments(world, facts, host);
         bool hostHasVictory = Timing.Keywords.Has(world, host, "victory", facts);
-        var victoryTrees = DefeatDepartureCards(world, victory)
-            .Select(card => card.ObjectId)
-            .ToHashSet();
+        var victoryRoots = victory.Select(card => card.ObjectId).ToHashSet();
         var constantsEnding = world.Effects.PreflightConstantsEnding(
-            DefeatDepartureCards(world, [host]), victoryTrees);
+            DefeatDepartureCards(world, [host]), victoryRoots);
         using var departure = constantsEnding.Begin();
 
         VictoryAttachments(world, victory, trigger, events);

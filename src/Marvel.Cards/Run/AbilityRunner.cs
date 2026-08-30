@@ -5503,8 +5503,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 ? TargetLegality.Valid : TargetLegality.Invalid,
 
             "removeFromGame" => Cards(Every(node.Argument, cast).Where(card =>
-                Rules.Play.Discard.EffectCanRemove(
-                    cast.World, cast.World.Facts, cast.Source, card))),
+                CanRemoveByEffect(node.Argument, cast, card))),
             "reveal" or "returnToHand" => Cards(Every(node.Argument, cast)),
             "exhaust" => Cards(Every(node.Argument, cast).Where(card => card.Ready)),
             "ready" => Cards(Every(node.Argument, cast).Where(card =>
@@ -5514,9 +5513,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "grantUntil" => Find(node.Require("card"), cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
-            "discard" => Find(node.Field("card") ?? node.Argument, cast) is { } discarded
-                && Rules.Play.Discard.EffectCanRemove(
-                    cast.World, cast.World.Facts, cast.Source, discarded)
+            "discard" => (node.Field("card") ?? node.Argument) is { } discardTarget
+                && Find(discardTarget, cast) is { } discarded
+                && CanRemoveByEffect(discardTarget, cast, discarded)
                     ? TargetLegality.Valid : TargetLegality.Invalid,
             "dealEncounterCard" => Find(node.Field("card") ?? node.Argument, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
@@ -5938,7 +5937,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.World.Facts,
                 Word(node.Require("to"))),
             "removeFromGame" => Find(node.Argument, cast) is { } card
-                && card.Area.Type != DeckType.RemovedArea,
+                && CanRemoveByEffect(node.Argument, cast, card),
             "exhaust" => Find(node.Argument, cast)?.Ready == true,
             "ready" => Every(node.Argument, cast).Any(card =>
                 !card.Ready && cast.Abilities.CanReady(cast.World, card, cast.Source)),
@@ -6039,9 +6038,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "ready" => ResolutionOfCards(
                 Every(node.Argument, cast), card => !card.Ready
                     && cast.Abilities.CanReady(cast.World, card, cast.Source)),
-            "discard" => Find(node.Field("card") ?? node.Argument, cast) is { } discarded
-                && Rules.Play.Discard.EffectCanRemove(
-                    cast.World, cast.World.Facts, cast.Source, discarded)
+            "discard" => (node.Field("card") ?? node.Argument) is { } discardTarget
+                && Find(discardTarget, cast) is { } discarded
+                && CanRemoveByEffect(discardTarget, cast, discarded)
                     ? ResolutionOutcome.Full
                     : ResolutionOutcome.None,
             "draw" => CombinedOutcomes(Seats(node.Require("player"), cast).Select(player =>
@@ -12795,19 +12794,65 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static void Discard(AbilityNode node, Cast cast)
     {
-        if (Find(node.Field("card") ?? node.Argument, cast) is { } target)
+        var selector = node.Field("card") ?? node.Argument;
+        if (Find(selector, cast) is { } target)
         {
             // rr:target.2 lets a multi-target ability initiate when at least
             // one target is valid. A different component can therefore have
             // an invalid target and simply does not resolve against it.
-            if (Rules.Play.Discard.EffectCanRemove(
-                    cast.World, cast.World.Facts, cast.Source, target))
+            if (CanRemoveByEffect(selector, cast, target))
             {
                 Rules.Play.Discard.CardFromEffect(
                     cast.World, cast.World.Facts, cast.Source, target,
                     cast.Trigger, cast.Events);
             }
         }
+    }
+
+    /// <summary>Whether this exact selector may make its current target depart.</summary>
+    private static bool CanRemoveByEffect(
+        AbilityValue selector, Cast cast, Card target)
+    {
+        // `rr:in-play-and-out-of-play.4`: a retained binding does not authorize
+        // a later component to follow a card into an out-of-play area. Cards
+        // resolving in the boost/reveal/processing staging areas remain live
+        // ability subjects; every other out-of-play target must be found by a
+        // selector that expressly names its current area.
+        bool reachable = DeckTypes.IsInPlay(target.Area.Type)
+            || target.Area.Type is DeckType.BoostingArea
+                or DeckType.ProcessingArea
+                or DeckType.RevealingArea
+            || selector is AbilityValue.Word { Value: "chosen" }
+                && cast.WasSelectedInCurrentArea(target)
+            || ExplicitlySelectsOutOfPlayCard(selector, cast, target);
+        return reachable
+            && Rules.Play.Discard.EffectCanRemove(
+                cast.World, cast.World.Facts, cast.Source, target);
+    }
+
+    /// <summary>Whether a selector names the out-of-play area holding one card.</summary>
+    private static bool ExplicitlySelectsOutOfPlayCard(
+        AbilityValue value, Cast cast, Card target)
+    {
+        if (value is AbilityValue.Map map)
+        {
+            if (map.Entries.Count == 1)
+            {
+                var (kind, argument) = map.Entries.First();
+                if (kind == "cardsIn"
+                    && CardsIn(new AbilityNode(kind, argument), cast)
+                        .Any(card => card.ObjectId == target.ObjectId))
+                {
+                    return true;
+                }
+            }
+            return map.Entries.Values.Any(child =>
+                ExplicitlySelectsOutOfPlayCard(child, cast, target));
+        }
+
+        return value is AbilityValue.List list
+            && list.Values.Any(child =>
+                ExplicitlySelectsOutOfPlayCard(child, cast, target));
     }
 
     // ---- reading a value ---------------------------------------------------
@@ -12864,8 +12909,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would remove a card that is not there");
 
-        if (!Rules.Play.Discard.EffectCanRemove(
-                cast.World, cast.World.Facts, cast.Source, card))
+        if (!CanRemoveByEffect(node.Argument, cast, card))
         {
             // Another component can make a multi-target effect valid under
             // rr:target.3.4; this invalid component simply does not resolve.
@@ -13725,9 +13769,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         foreach (var (name, value) in results
             ?? new Dictionary<string, long>(StringComparer.Ordinal))
         {
-            if (name == PersistedChosen)
+            if (name is PersistedChosen or PersistedChosenArea)
             {
-                RestorePersistedChosen(cast, value, overwrite: false);
                 continue;
             }
             if (cast.RestoreCrisisIgnoringThwart(name, value))
@@ -13736,6 +13779,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             cast.Results[name] = value;
         }
+        RestorePersistedChosen(cast, results, overwrite: false);
     }
 
     private static void RestorePersistedChosen(
@@ -13743,23 +13787,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         if (results?.TryGetValue(PersistedChosen, out long chosen) == true)
         {
-            RestorePersistedChosen(cast, chosen, overwrite);
-        }
-    }
-
-    private static void RestorePersistedChosen(
-        Cast cast, long chosen, bool overwrite)
-    {
-        if (chosen < 0 || chosen >= cast.World.Cards.Count)
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' has invalid persisted chosen-card metadata");
-        }
-        var card = cast.World.Cards[(int)chosen];
-        cast.RestorePlayerSelection(card);
-        if (overwrite || cast.Chosen is null)
-        {
-            cast.Choose(card);
+            if (chosen < 0 || chosen >= cast.World.Cards.Count)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has invalid persisted chosen-card metadata");
+            }
+            var card = cast.World.Cards[(int)chosen];
+            cast.RestorePlayerSelection(card);
+            if (overwrite || cast.Chosen is null)
+            {
+                cast.Choose(card);
+            }
+            if (results.TryGetValue(PersistedChosenArea, out long area))
+            {
+                cast.RestoreSelectionOrigin(card, checked((int)area));
+            }
         }
     }
 
@@ -14488,6 +14530,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         var effect = Tree(node.Require("effect"));
         var continuationChosen = cast.PlayerSelection ?? cast.Chosen;
+        int continuationChosenArea = continuationChosen is null
+            ? -1
+            : cast.SelectionOrigin(continuationChosen);
         cast.Choose(target);
         if (SuspendsPowerEffect(
             effect, cast, bindingMayChange: powerAmount >= 0))
@@ -14521,10 +14566,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (continuationChosen is null)
         {
             abilityResults.Remove(PersistedChosen);
+            abilityResults.Remove(PersistedChosenArea);
         }
         else
         {
             abilityResults[PersistedChosen] = continuationChosen.ObjectId;
+            abilityResults[PersistedChosenArea] = continuationChosenArea;
         }
         var discarded = cast.Discarded.Select(card => card.ObjectId).ToList();
         bool automaticThwartTarget = node.Field("automaticTarget") is not null
@@ -15146,12 +15193,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private const string PersistedChosen = "__continuation.chosen";
+    private const string PersistedChosenArea = "__continuation.chosen_area";
 
     private static void PersistChosen(Cast cast, Dictionary<string, long> results)
     {
         if ((cast.PlayerSelection ?? cast.Chosen) is { } chosen)
         {
             results[PersistedChosen] = chosen.ObjectId;
+            results[PersistedChosenArea] = cast.SelectionOrigin(chosen);
         }
     }
 
@@ -15391,8 +15440,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return
             [
                 .. Every(discardable.Argument, cast).Where(card =>
-                    Rules.Play.Discard.EffectCanRemove(
-                        cast.World, cast.World.Facts, cast.Source, card)),
+                    CanRemoveByEffect(discardable.Argument, cast, card)),
             ];
         }
 
@@ -15723,8 +15771,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // grant. Reading print alone would miss a permanence handed out in
         // play.
         var among = Every(node.Require("of"), cast)
-            .Where(card => Rules.Play.Discard.EffectCanRemove(
-                cast.World, cast.World.Facts, cast.Source, card))
+            .Where(card => CanRemoveByEffect(node.Require("of"), cast, card))
             .ToList();
 
         if (among.Count == 0)
@@ -16361,21 +16408,49 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <summary>The card the player picked, once they have.</summary>
         public Card? Chosen { get; private set; }
 
+        private readonly Dictionary<int, int> selectionOrigins = [];
+
         /// <summary>The outer card selection used by chosen-player references.</summary>
         public Card? PlayerSelection { get; private set; }
 
         /// <summary>Records the card a <c>chooseCard</c> was answered with.</summary>
         /// <param name="card">What they picked.</param>
-        public void Choose(Card? card) => Chosen = card;
+        public void Choose(Card? card)
+        {
+            Chosen = card;
+            RememberSelectionOrigin(card);
+        }
 
         /// <summary>Records a player answer in both chosen namespaces.</summary>
         public void ChooseSelection(Card? card)
         {
             Chosen = card;
             PlayerSelection = card;
+            RememberSelectionOrigin(card);
         }
 
-        public void RestorePlayerSelection(Card? card) => PlayerSelection = card;
+        public void RestorePlayerSelection(Card? card)
+        {
+            PlayerSelection = card;
+            RememberSelectionOrigin(card);
+        }
+
+        public int SelectionOrigin(Card card) =>
+            selectionOrigins.GetValueOrDefault(card.ObjectId, card.Area.Id);
+
+        public bool WasSelectedInCurrentArea(Card card) =>
+            SelectionOrigin(card) == card.Area.Id;
+
+        public void RestoreSelectionOrigin(Card card, int area) =>
+            selectionOrigins[card.ObjectId] = area;
+
+        private void RememberSelectionOrigin(Card? card)
+        {
+            if (card is not null)
+            {
+                selectionOrigins.TryAdd(card.ObjectId, card.Area.Id);
+            }
+        }
 
         /// <summary>
         /// Which of the card's abilities is running, or null.
