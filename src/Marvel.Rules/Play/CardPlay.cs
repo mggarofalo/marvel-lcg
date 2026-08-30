@@ -1227,10 +1227,9 @@ public static class CardPlay
     /// as a <b>Forced Response</b> for exactly that reason.
     /// </para>
     /// <para>
-    /// <b>Which card leaves is the player's choice and this does not ask.</b>
-    /// The card just played is kept and the oldest of the others goes, which is
-    /// deterministic and stated rather than silently arbitrary. See MARVEL-187,
-    /// the same shape of gap.
+    /// Which card leaves is the player's choice. The choice is an agenda
+    /// continuation so it can suspend an enclosing card-play procedure and
+    /// resume before that play's response window.
     /// </para>
     /// </remarks>
     private static void Restricted(
@@ -1254,13 +1253,25 @@ public static class CardPlay
                 && StateFields.Modified(world, card, "restricted", facts, world.Players) > 0));
         }
 
-        // `StateFields.RestrictedLimit` is the two the rule names.
-        foreach (var card in held
-            .Where(card => card.ObjectId != played.ObjectId)
-            .OrderBy(card => card.ObjectId)
-            .Take(Math.Max(0, held.Count - (int)StateFields.RestrictedLimit)))
+        if (held.Count > StateFields.RestrictedLimit)
         {
-            Discard.Card(world, card, "restricted", events);
+            var choice = new PhaseStep(
+                Steps.ChooseRestrictedCard,
+                world.Agenda.Current?.Round ?? 0,
+                0,
+                Subject: played.ObjectId,
+                Seat: seat.Index,
+                Plan: true,
+                ProcedureCandidates: [.. held.Select(card => card.ObjectId)]);
+
+            if (world.Agenda.Occurrence is { } occurrence)
+            {
+                world.Agenda.ThenContinuation(choice, occurrence);
+            }
+            else
+            {
+                world.Agenda.Add(choice);
+            }
         }
     }
 }

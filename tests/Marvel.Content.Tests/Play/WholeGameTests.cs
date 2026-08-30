@@ -137,6 +137,13 @@ public sealed class WholeGameTests
             {
                 game.Resolve(Decision.Take(ending.Id, Excess(world, game), []));
             }
+            else if (game.Pending.Asking == Question.Order)
+            {
+                var ordered = options[0];
+                game.Resolve(new Decision(
+                    ordered.Id,
+                    ordered.Targets is { } targets ? [.. targets.Legal] : []));
+            }
             else if (game.Pending.Asking == Question.Defender)
             {
                 // The last candidate, which is an ally when there is one --

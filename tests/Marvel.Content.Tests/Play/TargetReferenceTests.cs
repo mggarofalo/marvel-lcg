@@ -405,6 +405,7 @@ public sealed class TargetReferenceTests
     }
 
     [Rule("rr:target.3.5")]
+    [Rule("rr:ready.1")]
     [Fact]
     public void ACardThatCannotReadyIsSkippedAndDoesNotMakeTheAbilityLegal()
     {

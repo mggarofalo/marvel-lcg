@@ -1036,7 +1036,7 @@ public sealed class CardPlayTests
     [Rule("rr:restricted")]
     [Rule("rr:restricted.1")]
     [Fact]
-    public void AThirdRestrictedCardForcesTheOldestOut()
+    public void AThirdRestrictedCardAsksWhichOneLeavesPlay()
     {
         // "A player **can** play or put into play a restricted card even if
         // they already control two restricted cards. However, if a player ever
@@ -1060,11 +1060,24 @@ public sealed class CardPlayTests
         Assert.Equal(DeckType.UpgradesArea, second.Area.Type);
 
         var third = InHand(world, "locked");
-        CardPlay.Play(world, printed, new Silent(), seat, third, [], []);
+        var abilities = new Silent();
+        CardPlay.Play(world, printed, abilities, seat, third, [], []);
 
-        // The one just played stays, and the oldest of the others goes.
-        Assert.Equal(DeckType.DiscardPile, first.Area.Type);
-        Assert.Equal(DeckType.UpgradesArea, second.Area.Type);
+        var events = new List<GameEvent>();
+        var asked = Sequence.Work(world, printed, abilities, events);
+
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Element, asked.Asking);
+        Assert.Equal(seat.Index, asked.Player);
+        Assert.Equal([first.ObjectId, second.ObjectId, third.ObjectId],
+            asked.Affordances.Select(option => option.Id));
+
+        Sequence.Answer(
+            world, printed, abilities, asked, Decision.Take(second.ObjectId), events);
+        Assert.Null(Sequence.Work(world, printed, abilities, events));
+
+        Assert.Equal(DeckType.UpgradesArea, first.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, second.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, third.Area.Type);
     }
 

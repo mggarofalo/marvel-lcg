@@ -4,6 +4,7 @@ using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -157,7 +158,7 @@ public sealed class DefeatStepSevenTests
 
     [Rule("rr:damage.step.7")]
     [Fact]
-    public void ANonForcedInterruptIsRefusedRatherThanSilentlyDropped()
+    public void ANonForcedInterruptCanBeAcceptedAtStepSeven()
     {
         // An optional ability at step 7 has nobody to offer it to, and a card
         // carrying one would otherwise sit in the dataset looking implemented
@@ -167,22 +168,49 @@ public sealed class DefeatStepSevenTests
             Book((Attachment, "Interrupt", "attachedTo", 2)), out var minion, out _);
 
         Agendas.Happening(world);
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Defeat.Character(world, Cards, minion, "test", []));
+        var events = new List<GameEvent>();
+        Defeat.Character(world, Cards, minion, "test", events);
+        var asked = Sequence.Work(world, Cards, world.Abilities, events);
 
-        Assert.Contains("non-forced interrupt", thrown.Message, StringComparison.Ordinal);
-        Assert.Contains("rr:damage.step.7", thrown.Message, StringComparison.Ordinal);
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Opportunity, asked.Asking);
+        Sequence.Answer(
+            world, Cards, world.Abilities, asked,
+            Decision.Take(asked.Affordances[0].Id), events);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+    }
+
+    [Rule("rr:damage.step.7")]
+    [Rule("rr:ability.11")]
+    [Fact]
+    public void ANonForcedInterruptCanBeDeclinedAtStepSeven()
+    {
+        var world = Board(
+            Book((Attachment, "Interrupt", "attachedTo", 2)), out var minion, out _);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long before = scheme.Tokens.GetValueOrDefault("k_threat");
+        var events = new List<GameEvent>();
+
+        Agendas.Happening(world);
+        Defeat.Character(world, Cards, minion, "test", events);
+        var asked = Sequence.Work(world, Cards, world.Abilities, events);
+        Assert.NotNull(asked);
+        Sequence.Answer(world, Cards, world.Abilities, asked, Decision.Decline, events);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
+
+        Assert.Equal(before, scheme.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
 
     [Rule("rr:forced.5")]
     [Fact]
-    public void TwoCardsAnsweringOneDefeatRefuseToPickAnOrder()
+    public void TheFirstPlayerOrdersTwoCardsAnsweringOneDefeat()
     {
         // "If two or more forced abilities would initiate at the same moment,
-        // the **first player determines the order**." Step 7 is reached from
-        // inside the damage and has nobody to ask, so it refuses rather than
-        // choosing -- two effects at one moment in an order the engine invented
-        // is a board that is plausible and wrong.
+        // the **first player determines the order**." The procedure remains at
+        // step 7 while that question is answered, before either effect resolves
+        // and before the defeated card leaves play.
         var world = Board(
             Book(
                 (Attachment, "ForcedInterrupt", "attachedTo", 2),
@@ -193,14 +221,23 @@ public sealed class DefeatStepSevenTests
         long before = scheme.Tokens.GetValueOrDefault("k_threat");
 
         Agendas.Happening(world);
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Defeat.Character(world, Cards, minion, "test", []));
+        var events = new List<GameEvent>();
+        Defeat.Character(world, Cards, minion, "test", events);
+        var asked = Sequence.Work(world, Cards, world.Abilities, events);
 
-        Assert.Contains("rr:forced.5", thrown.Message, StringComparison.Ordinal);
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Order, asked.Asking);
+        var attachment = world.Areas
+            .Where(area => area.Type == DeckType.UpgradesArea)
+            .SelectMany(area => area.Cards)
+            .Single();
+        Sequence.Answer(
+            world, Cards, world.Abilities, asked,
+            Decision.Take(attachment.ObjectId), events);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
 
-        // Refused before either of them ran, so the board is where it was
-        // rather than half-way through an order nobody chose.
-        Assert.Equal(before, scheme.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(3, scheme.Tokens.GetValueOrDefault("k_threat") - before);
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
 
     [Rule("rr:when-defeated-abilities.2")]

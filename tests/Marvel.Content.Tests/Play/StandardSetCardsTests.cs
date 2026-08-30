@@ -1,6 +1,7 @@
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -43,6 +44,48 @@ public sealed class StandardSetCardsTests
 
         Assert.True(world.Seats[0].IdentityCard.Ready);
         Assert.False(world.Seats[1].IdentityCard.Ready);
+    }
+
+    [Rule("rr:forced.5")]
+    [Rule("rr:surge.1")]
+    [Rule("rr:when-revealed-abilities.1")]
+    [Fact]
+    public void TheFirstPlayerOrdersPrintedAndKeywordWhenRevealedAbilities()
+    {
+        // Exhaustion has one printed When Revealed ability and the Surge
+        // keyword supplies another at the same moment. The first player chooses
+        // which initiates first; the remaining forced ability then resolves
+        // without a second, vacuous ordering question.
+        var world = Deal();
+        var card = world.CreateCard(
+            AuthoredCards.Exhaustion,
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
+        world.Agenda.Add(new PhaseStep(
+            Steps.RevealEncounterCard, 1, 4,
+            Subject: card.ObjectId, Seat: 0));
+        var runner = AuthoredCards.Runner();
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        int dealt = world.AreaOf(
+            DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count;
+
+        var asked = Sequence.Work(world, Cards, runner, events);
+
+        Assert.NotNull(asked);
+        Assert.Equal(world.FirstPlayer, asked.Player);
+        Assert.Equal(Question.Order, asked.Asking);
+        Assert.Contains(asked.Affordances, option => option.Label == "Surge");
+        var printed = Assert.Single(
+            asked.Affordances,
+            option => option.Label.Contains("When Revealed", StringComparison.Ordinal));
+        Sequence.Answer(
+            world, Cards, runner, asked, Decision.Take(printed.Id), events);
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
+
+        Assert.False(world.Seats[0].IdentityCard.Ready);
+        Assert.Equal(
+            dealt,
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count);
+        Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
     }
 
     [Rule("rr:exhausted")]

@@ -121,7 +121,11 @@ public static class Defeat
         // occurrence's interrupt window closed before the damage that caused
         // this was dealt, and `rr:damage`'s own order is what says that is not
         // where these belong.
-        events.AddRange(world.Abilities.WhenCardDefeated(world, character, defeated));
+        if (!world.Abilities.WhenCardDefeated(
+                world, character, defeated, trigger, events))
+        {
+            return true;
+        }
 
         if (!ReferenceEquals(world.Agenda.Occurrence, occurrence))
         {
@@ -209,7 +213,11 @@ public static class Defeat
 
         // `rr:when-defeated-abilities.2` lists a side scheme among the cards
         // this happens to, and `.2.1` puts it before the card goes.
-        events.AddRange(world.Abilities.WhenCardDefeated(world, scheme, defeated));
+        if (!world.Abilities.WhenCardDefeated(
+                world, scheme, defeated, trigger, events))
+        {
+            return;
+        }
 
         if (!ReferenceEquals(world.Agenda.Occurrence, occurrence))
         {

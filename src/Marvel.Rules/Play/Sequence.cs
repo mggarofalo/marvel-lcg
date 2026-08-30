@@ -161,7 +161,7 @@ public static class Sequence
             // the first child instead and apply the Action a second time.
             if (step.What != Steps.TurnAction)
             {
-                world.Agenda.Advance(applying);
+                world.Agenda.Advance(step, applying);
             }
 
             if (world.IsOver)

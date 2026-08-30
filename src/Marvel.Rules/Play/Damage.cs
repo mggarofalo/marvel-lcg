@@ -126,7 +126,11 @@ public static class Damage
         // `rr:would.1` then makes the original condition invalid.
         if (after <= 0)
         {
-            world.Abilities.WouldBeDefeated(world, target, events);
+            if (!world.Abilities.WouldBeDefeated(
+                    world, target, source, trigger, verb, by, events))
+            {
+                return false;
+            }
             after = Math.Max(0, Health(world, facts, target) - target.Damage);
         }
 

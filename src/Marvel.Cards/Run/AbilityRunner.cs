@@ -673,6 +673,27 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             new Occurrence(0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player));
 
     /// <inheritdoc/>
+    public IReadOnlyList<PendingAbility> WhenRevealedAbilities(
+        World world, Card card, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+        if (!book.Authored.Contains(card.FaceId))
+        {
+            throw new RulesNotImplementedException(
+                $"card '{card.FaceId}' was revealed and no ability data is written for it; "
+                + $"this engine has {book.Authored.Count} authored card(s)");
+        }
+
+        return [.. On(card)
+            .Where(ability => ability.Trigger.Timing == AbilityType.WhenRevealed)
+            .Where(ability => string.Equals(
+                ability.Trigger.Event, Steps.CardRevealed, StringComparison.Ordinal))
+            .Select((_, ordinal) => new PendingAbility(
+                card.ObjectId, AbilityType.WhenRevealed, player, ordinal))];
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<GameEvent> WhenRevealed(
         World world, Card card, int player, Occurrence occurrence)
     {
@@ -1236,6 +1257,16 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <inheritdoc/>
     public void WouldBeDefeated(World world, Card target, List<GameEvent> events)
     {
+        _ = WouldBeDefeated(
+            world, target, target, Steps.CardWouldBeDefeated,
+            Steps.CardWouldBeDefeated, -1, events);
+    }
+
+    /// <inheritdoc/>
+    public bool WouldBeDefeated(
+        World world, Card target, Card source, string trigger, string verb, int by,
+        List<GameEvent> events)
+    {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(events);
@@ -1253,18 +1284,16 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             var (mandatory, optional) = AbilityWindow.Split(tiers[0]);
             if (mandatory.Count == 0)
             {
-                throw new RulesNotImplementedException(
-                    $"'{world.Cards[optional[0].Card].FaceId}' offers an optional interrupt "
-                    + "at rr:damage.step.6, and dealing damage has no suspended window in "
-                    + "which to ask whether to use it");
+                SuspendWouldBeDefeated(
+                    world, target, source, trigger, verb, by, occurrence, optional);
+                return false;
             }
 
             if (mandatory.Count > 1)
             {
-                throw new RulesNotImplementedException(
-                    $"{mandatory.Count} forced interrupts answer the imminent defeat of card "
-                    + $"{target.ObjectId}. rr:forced.5 gives their order to the first player, "
-                    + "and rr:damage.step.6 has no ordering prompt yet");
+                SuspendWouldBeDefeated(
+                    world, target, source, trigger, verb, by, occurrence, mandatory);
+                return false;
             }
 
             occurrence.Trigger(WindowKind.Interrupt, mandatory[0].Card);
@@ -1275,8 +1304,39 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             // no later interrupt to that original condition may be used.
             if (Damage.Health(world, world.Facts, target) - target.Damage > 0)
             {
-                return;
+                return true;
             }
+        }
+
+        return true;
+    }
+
+    private static void SuspendWouldBeDefeated(
+        World world, Card target, Card source, string trigger, string verb, int by,
+        Occurrence occurrence, IReadOnlyList<PendingAbility> pending)
+    {
+        var step = new PhaseStep(
+            Steps.ChooseWouldBeDefeated,
+            world.Agenda.Current?.Round ?? 0,
+            6,
+            Subject: target.ObjectId,
+            Seat: target.Owner >= 0 ? target.Owner : world.FirstPlayer,
+            Plan: true,
+            ProcedureAbilities: [.. pending],
+            ProcedureOccurrence: occurrence,
+            ProcedureSource: source.ObjectId,
+            ProcedureTrigger: trigger,
+            ProcedureVerb: verb,
+            ProcedureBy: by);
+
+        if (world.Agenda.Occurrence is { } parent)
+        {
+            world.Agenda.ThenContinuation(step, parent);
+            world.Agenda.BeforeResponses(parent);
+        }
+        else
+        {
+            world.Agenda.Add(step);
         }
     }
 
@@ -1540,6 +1600,16 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated)
     {
+        var events = new List<GameEvent>();
+        _ = WhenCardDefeated(world, card, defeated, Steps.CardDefeated, events);
+        return events;
+    }
+
+    /// <inheritdoc/>
+    public bool WhenCardDefeated(
+        World world, Card card, Defeated defeated, string trigger,
+        List<GameEvent> events)
+    {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(defeated);
@@ -1583,39 +1653,80 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var spent = world.Agenda.Occurrence;
         var elsewhere = Answering(world, card, occurrence, spent);
-        Alone(card, written.Count, elsewhere);
-
-        var events = new List<GameEvent>();
-
-        // `rr:when-defeated-abilities.2` -- "**all** When Defeated abilities on
-        // the card resolve", so this is every one of them rather than the
-        // single one a window would take.
-        foreach (var ability in written)
+        if (elsewhere.Count == 0)
         {
-            var cast = new Cast(world, card, occurrence, card.Owner, events, this)
+            // `rr:when-defeated-abilities.2` says all abilities on the defeated
+            // card resolve. Their printed/data order is already authoritative;
+            // the cross-card ordering question from `rr:forced.5` does not
+            // arise until another card answers the same defeat.
+            foreach (var ability in written)
             {
-                Tier = ability.Trigger.Timing,
-            };
-            TrackResolution(cast, ability);
-            Run(ability, cast);
-            cast.CompleteResolution();
+                var cast = new Cast(world, card, occurrence, card.Owner, events, this)
+                {
+                    Tier = ability.Trigger.Timing,
+                };
+                TrackResolution(cast, ability);
+                Run(ability, cast);
+                cast.CompleteResolution();
+            }
+            return true;
         }
 
-        // `rr:forced.6` -- "each forced ability must resolve as completely as
-        // possible before the next forced ability being triggered by the same
-        // triggering condition may initiate", so the board is re-read between
-        // them rather than this walking a list gathered once. The occurrence
-        // remembers what has fired, which is `rr:triggering-condition.1`, and
-        // is what stops the re-read offering the same card twice.
-        while (Answering(world, card, occurrence, spent) is { Count: > 0 } waiting)
+        var own = written.Select((_, ordinal) => new PendingAbility(
+            card.ObjectId, AbilityType.WhenDefeated, card.Owner, ordinal));
+        var waiting = own.Concat(elsewhere).ToList();
+        while (waiting.Count > 0)
         {
-            Alone(card, own: 0, waiting);
-            occurrence.Trigger(WindowKind.Interrupt, waiting[0].Card);
-            spent?.Trigger(WindowKind.Interrupt, waiting[0].Card);
-            events.AddRange(Resolve(world, occurrence, waiting[0], [], []));
+            var mandatory = waiting
+                .Where(ability => AbilityTypes.IsMandatory(ability.Type))
+                .ToList();
+            var offered = mandatory.Count > 0
+                ? mandatory
+                : waiting.Where(ability => !AbilityTypes.IsMandatory(ability.Type)).ToList();
+            if (offered.Count > 1 || mandatory.Count == 0)
+            {
+                SuspendCardDefeated(
+                    world, card, trigger, occurrence, defeated, offered);
+                return false;
+            }
+
+            var next = offered[0];
+            occurrence.Trigger(WindowKind.Interrupt, next.Card);
+            spent?.Trigger(WindowKind.Interrupt, next.Card);
+            events.AddRange(Resolve(world, occurrence, next, [], []));
+            waiting.Remove(next);
         }
 
-        return events;
+        return true;
+    }
+
+    private static void SuspendCardDefeated(
+        World world, Card card, string trigger, Occurrence occurrence,
+        Defeated defeated, IReadOnlyList<PendingAbility> pending)
+    {
+        occurrence.Also(defeated);
+        var step = new PhaseStep(
+            Steps.ChooseCardDefeatedAbility,
+            world.Agenda.Current?.Round ?? 0,
+            7,
+            Subject: card.ObjectId,
+            Seat: card.Owner >= 0 ? card.Owner : world.FirstPlayer,
+            Plan: true,
+            ProcedureAbilities: [.. pending],
+            ProcedureOccurrence: occurrence,
+            ProcedureTrigger: trigger,
+            ProcedureVerb: defeated.How,
+            ProcedureBy: defeated.By);
+
+        if (world.Agenda.Occurrence is { } parent)
+        {
+            world.Agenda.ThenContinuation(step, parent);
+            world.Agenda.BeforeResponses(parent);
+        }
+        else
+        {
+            world.Agenda.Add(step);
+        }
     }
 
     /// <summary>
@@ -1630,11 +1741,9 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     /// the rest — <c>rr:ability.step.2.a</c>.
     /// </para>
     /// <para>
-    /// <b>A non-forced interrupt is refused rather than dropped.</b> Step 7 is
-    /// reached from inside the damage, after <c>.step.5</c> has placed it, and
-    /// an optional ability there has nobody to offer it to. A card carrying one
-    /// would otherwise sit in the dataset looking implemented and never fire,
-    /// which is the failure the whole of this file is arranged to avoid.
+    /// A non-forced interrupt is returned as the earliest waiting tier. The
+    /// rules layer persists that tier as a procedure continuation and offers it
+    /// without moving the defeated card or replaying the damage.
     /// </para>
     /// </remarks>
     /// <param name="world">The board.</param>
@@ -1658,56 +1767,13 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         foreach (var tier in tiers)
         {
             var (mandatory, optional) = AbilityWindow.Split(tier);
-            if (optional.Count > 0)
+            if (mandatory.Count > 0 || optional.Count > 0)
             {
-                throw new RulesNotImplementedException(
-                    $"card '{world.Cards[optional[0].Card].FaceId}' offers a non-forced "
-                    + $"interrupt when card {card.ObjectId} is defeated. rr:damage.step.7 "
-                    + "puts it after the damage has been placed, where the occurrence's "
-                    + "interrupt window has long closed and there is nobody left to ask");
-            }
-
-            if (mandatory.Count > 0)
-            {
-                return mandatory;
+                return mandatory.Count > 0 ? mandatory : optional;
             }
         }
 
         return [];
-    }
-
-    /// <summary>
-    /// Refuses a defeat that two cards answer at once — <c>rr:forced.5</c>.
-    /// </summary>
-    /// <remarks>
-    /// "If two or more forced abilities would initiate at the same moment, the
-    /// <b>first player determines the order</b> in which the abilities
-    /// initiate, regardless of who controls the cards bearing those abilities."
-    /// A question, and <c>rr:damage.step.7</c> is reached from inside the damage
-    /// with nobody to put it to — <see cref="Offering"/> asks it in a window and
-    /// this is not one.
-    /// <para>
-    /// So it refuses rather than picks. Two effects at one moment in an order
-    /// the engine chose is a board that is plausible and wrong, and the
-    /// alternative costs nothing today: <c>rr:when-defeated-abilities.2</c>
-    /// decides the one-card case outright — "all When Defeated abilities
-    /// <b>on the card</b> resolve" — and it is only across cards that nothing
-    /// does. Nothing in the pool the engine reaches puts two there: MARVEL-254.
-    /// </para>
-    /// </remarks>
-    /// <param name="card">The card that was defeated.</param>
-    /// <param name="own">How many of its own abilities are waiting.</param>
-    /// <param name="elsewhere">What other cards have waiting.</param>
-    private static void Alone(Card card, int own, IReadOnlyList<PendingAbility> elsewhere)
-    {
-        int cards = (own > 0 ? 1 : 0) + elsewhere.Select(pending => pending.Card).Distinct().Count();
-        if (cards > 1)
-        {
-            throw new RulesNotImplementedException(
-                $"{cards} cards have a forced interrupt when card {card.ObjectId} is defeated. "
-                + "rr:forced.5 gives the order to the first player, and rr:damage.step.7 is "
-                + "reached from inside the damage with nobody to ask");
-        }
     }
 
     /// <inheritdoc/>

@@ -107,6 +107,16 @@ public sealed class ActingPolicy(int seed, int declineOneIn = 4)
             return [];
         }
 
+        // An indirect-damage assignment names one character per point, so the
+        // same character may appear repeatedly. It is a division rather than
+        // `rr:choose-game-element` targeting; cycling the legal characters is
+        // the policy's deterministic, capacity-friendly assignment strategy.
+        if (string.Equals(taken.Label, "indirectDamage", StringComparison.Ordinal))
+        {
+            return [.. Enumerable.Range(0, wanted.Min)
+                .Select(index => wanted.Legal[index % wanted.Legal.Count])];
+        }
+
         // `TargetRequest.IsGrouped` is a different reading of the same fields
         // rather than an extra constraint on them -- Explosive Arrow offers
         // whole groups and its flat range describes neither of them.
