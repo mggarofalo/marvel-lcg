@@ -16344,10 +16344,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         bool DiscardedByDamage(AreaProjectionState state, Card target) =>
             state.DamageOf(target) >= Damage.Health(
                 cast.World, cast.World.Facts, target)
-            && (cast.World.Facts.Kind(target.FaceId) == CardKind.Minion
-                    && queried.Contains(DeckType.EncounterDiscardPile)
-                || cast.World.Facts.Kind(target.FaceId) == CardKind.Ally
-                    && queried.Contains(DeckType.DiscardPile));
+            && DiscardTreeChangesArea(target);
 
         bool DiscardTreeChangesArea(Card root)
         {
@@ -16689,8 +16686,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 return states;
             }
 
-            if (effect.Kind is "attack" or "thwart" or "defense"
-                or "delayUntil")
+            if (effect.Kind is "attack" or "thwart")
+            {
+                var target = Find(effect.Require("target"), cast);
+                if (target is null)
+                {
+                    return states;
+                }
+                var prior = cast.CaptureChosen();
+                try
+                {
+                    cast.Choose(target);
+                    return Trace(
+                        Tree(effect.Require("effect")), states,
+                        repetitions, baseMultiplier);
+                }
+                finally
+                {
+                    cast.RestoreChosen(prior);
+                }
+            }
+
+            if (effect.Kind is "defense" or "delayUntil")
             {
                 return Trace(
                     Tree(effect.Require("effect")), states,
@@ -16771,8 +16788,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "if" => ProjectedTest(
                     Tree(effect.Require("test")), state, cast)
                 is { } result
-                && effect.Field(result ? "then" : "else") is { } branch
-                    ? ProjectedResolution(Tree(branch), state, cast)
+                    ? effect.Field(result ? "then" : "else") is { } branch
+                        ? ProjectedResolution(Tree(branch), state, cast)
+                        : ResolutionOutcome.None
                     : throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' has a projected dependent condition "
                         + "whose outcome is not implemented"),

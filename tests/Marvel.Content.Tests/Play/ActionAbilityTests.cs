@@ -10437,7 +10437,7 @@ public sealed class ActionAbilityTests
               { "attack": {
                 "target": { "titled": "Hydra Mercenary" },
                 "effect": { "dealAttackDamage": {
-                  "cards": { "titled": "Hydra Mercenary" }, "amount": 1
+                  "cards": "chosen", "amount": 1
                 } }
               } },
               { "removeFromGame": { "cardsIn": {
@@ -10561,6 +10561,94 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
         Assert.Equal(DeckType.AlliesArea, vulnerable!.Area.Type);
         Assert.Equal(vulnerable.ObjectId, attachment!.Area.Host);
+    }
+
+    [Rule("rr:defeat.1")]
+    [Rule("rr:attach-to.1")]
+    [Rule("rr:cost.6")]
+    [Fact]
+    public void LethalDamageProjectsHostedCardsBeforeCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "titled": "Hawkeye" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? ally = null;
+        Card? attachment = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                ally = board.CreateCard(
+                    "01066", board.AreaOf(
+                        DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                ally.TakeDamage(
+                    Damage.Health(board, board.Facts, ally) - 1);
+                attachment = board.CreateCard(
+                    "01098", board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0), ally.ObjectId));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.AlliesArea, ally!.Area.Type);
+        Assert.Equal(ally.ObjectId, attachment!.Area.Host);
+    }
+
+    [Rule("rr:otherwise.1")]
+    [Fact]
+    public void ProjectedIfWithoutAnActiveBranchResolvesNone()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "otherwise": {
+                "effect": { "if": {
+                  "test": { "hasStatus": {
+                    "card": { "titled": "Hydra Mercenary" }, "status": "tough"
+                  } },
+                  "then": { "heal": { "card": "you", "amount": 1 } }
+                } },
+                "otherwise": { "draw": { "player": "you", "count": 1 } }
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
     }
 
     [Rule("rr:search.1")]
