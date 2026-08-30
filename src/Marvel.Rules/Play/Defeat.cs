@@ -155,7 +155,7 @@ public static class Defeat
             case CardKind.Minion:
                 // `rr:defeat.1` -- discarded, to its owner's pile, which for a
                 // minion is the encounter discard. Unless it is worth points.
-                Discard.PreflightAttachments(world, card);
+                PreflightDefeatAttachments(world, facts, card);
                 VictoryAttachments(world, facts, card, trigger, events);
                 if (!ToVictoryDisplay(world, facts, card, trigger, events))
                 {
@@ -234,7 +234,7 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(scheme);
         ArgumentNullException.ThrowIfNull(events);
 
-        Discard.PreflightAttachments(world, scheme);
+        PreflightDefeatAttachments(world, facts, scheme);
         VictoryAttachments(world, facts, scheme, trigger, events);
         if (!ToVictoryDisplay(world, facts, scheme, trigger, events))
         {
@@ -442,15 +442,40 @@ public static class Defeat
     private static void VictoryAttachments(
         World world, ICardFacts facts, Card host, string trigger, List<GameEvent> events)
     {
-        foreach (var attachment in world.Areas
-                     .Where(area => area.Host == host.ObjectId)
-                     .SelectMany(area => area.Cards)
-                     .Where(card => Timing.Keywords.Has(
-                         world, card, "victory", facts))
-                     .ToList())
+        foreach (var attachment in VictoryAttachmentsOn(world, facts, host))
         {
             ToVictoryDisplay(world, facts, attachment, trigger, events);
         }
+    }
+
+    private static List<Card> VictoryAttachmentsOn(
+        World world, ICardFacts facts, Card host) =>
+    [
+        .. world.Areas
+            .Where(area => area.Host == host.ObjectId
+                && DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Where(card => facts.Kind(card.FaceId) is
+                CardKind.Attachment or CardKind.Upgrade)
+            .Where(card => Timing.Keywords.Has(world, card, "victory", facts)),
+    ];
+
+    /// <summary>Preflights the hosted tree in its Victory-interrupt order.</summary>
+    private static void PreflightDefeatAttachments(
+        World world, ICardFacts facts, Card host)
+    {
+        var victory = VictoryAttachmentsOn(world, facts, host);
+
+        // A Victory attachment leaves before its host. Permanent on that same
+        // card therefore never reaches rr:permanent.5, but any hosted
+        // descendant still has to be proved removable from the Victory card.
+        foreach (var attachment in victory)
+        {
+            Discard.PreflightAttachments(world, attachment);
+        }
+
+        Discard.PreflightAttachmentsExcept(
+            world, host, victory.Select(card => card.ObjectId).ToHashSet());
     }
 
     /// <summary>

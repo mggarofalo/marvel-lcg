@@ -6039,9 +6039,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "ready" => ResolutionOfCards(
                 Every(node.Argument, cast), card => !card.Ready
                     && cast.Abilities.CanReady(cast.World, card, cast.Source)),
-            "discard" => Find(node.Field("card") ?? node.Argument, cast) is not null
-                ? ResolutionOutcome.Full
-                : ResolutionOutcome.None,
+            "discard" => Find(node.Field("card") ?? node.Argument, cast) is { } discarded
+                && Rules.Play.Discard.EffectCanRemove(
+                    cast.World, cast.World.Facts, cast.Source, discarded)
+                    ? ResolutionOutcome.Full
+                    : ResolutionOutcome.None,
             "draw" => CombinedOutcomes(Seats(node.Require("player"), cast).Select(player =>
                 ResolutionOfAmount(
                     cast.World.Seats[player].Deck.Cards.Count

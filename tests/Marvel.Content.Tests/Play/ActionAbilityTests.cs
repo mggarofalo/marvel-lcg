@@ -9300,6 +9300,57 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
     }
 
+    [Rule("rr:permanent.4")]
+    [Rule("rr:then.1")]
+    [Rule("rr:then.2")]
+    [Theory]
+    [InlineData("then", 0)]
+    [InlineData("otherwise", 1)]
+    public void SkippedPermanentDiscardHasTheCorrectDependentOutcome(
+        string dependency, int cardsDrawn)
+    {
+        // The cross-set Permanent is not a legal discard target, so that
+        // component resolves none. "Then" does not run; "otherwise" does.
+        // A valid exhaust sibling keeps the overall target legal.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            $$"""
+            { "chooseCard": {
+              "from": { "titled": "Compact Darts" },
+              "effect": { "seq": [
+                { "exhaust": "chosen" },
+                { "{{dependency}}": {
+                  "effect": { "discard": "chosen" },
+                  "{{dependency}}": { "draw": { "player": "you", "count": 1 } }
+                } }
+              ] }
+            } }
+            """);
+        Card? source = null;
+        Card? permanent = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                permanent = board.CreateCard(
+                    "27182a", board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+            },
+            hero: true,
+            abilities: runner);
+        int hand = world.Seats[0].Hand.Cards.Count;
+
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        game.Resolve(Decision.Take(action.Id));
+        game.Resolve(Decision.Take(permanent!.ObjectId));
+
+        Assert.False(permanent.Ready);
+        Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
+        Assert.Equal(hand + cardsDrawn, world.Seats[0].Hand.Cards.Count);
+    }
+
     [Rule("rr:permanent.5")]
     [Rule("rr:labeled-ability.4")]
     [Fact]

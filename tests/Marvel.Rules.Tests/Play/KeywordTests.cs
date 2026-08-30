@@ -734,7 +734,7 @@ public sealed class KeywordTests
         var printed = new Printed()
             .With("minion", ("HP", "1"))
             .With("attachment", ("Victory", "2"))
-            .With("permanentish", ("Permanent", "1"));
+            .With("permanentAttachment", ("Permanent", "1"));
         var world = Board(printed);
         var minion = world.CreateCard(
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
@@ -742,7 +742,7 @@ public sealed class KeywordTests
             "attachment", world.AreaOf(
                 DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
         var permanent = world.CreateCard(
-            "permanentish", world.AreaOf(
+            "permanentAttachment", world.AreaOf(
                 DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
         var events = new List<GameEvent>();
         Agendas.Happening(world);
@@ -756,6 +756,56 @@ public sealed class KeywordTests
         Assert.DoesNotContain(events.OfType<CardsMoved>(), moved =>
             moved.Cards.Any(card => card.Card == victory.ObjectId
                 || card.Card == permanent.ObjectId));
+    }
+
+    [Rule("rr:permanent.5")]
+    [Rule("rr:victory-x.1.2")]
+    [Fact]
+    public void PermanentVictoryAttachmentLeavesBeforeItsDefeatedHost()
+    {
+        // Victory's Forced Interrupt moves this attachment first. Because it
+        // is no longer attached when the host leaves, Permanent never needs to
+        // resolve its unsupported reattachment instruction.
+        var printed = new Printed()
+            .With("minion", ("HP", "1"))
+            .With("attachment", ("Permanent", "1"), ("Victory", "1"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
+        Agendas.Happening(world);
+
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
+
+        Assert.Equal(DeckType.VictoryDisplay, attachment.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+    }
+
+    [Rule("rr:tuck.1")]
+    [Rule("rr:victory-x.3")]
+    [Fact]
+    public void TuckedVictoryCardDiscardsBecauseItIsNotAttached()
+    {
+        // A tucked card is expressly not attached. Its printed Attachment
+        // type and Victory keyword therefore do not receive the attachment's
+        // host-defeat interrupt.
+        var printed = new Printed()
+            .With("minion", ("HP", "1"))
+            .With("attachment", ("Victory", "1"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var tucked = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.AsideDeck, PlayArea.Of(0), minion.ObjectId));
+        Agendas.Happening(world);
+
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, tucked.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
 
     [Rule("rr:loses")]
@@ -1909,6 +1959,7 @@ public sealed class KeywordTests
             "ally" => CardKind.Ally,
             "boost" => CardKind.Treachery,
             "permanentish" => CardKind.Support,
+            "attachment" or "permanentAttachment" => CardKind.Attachment,
             "villain" => CardKind.EncounterVillain,
             "scheme" => CardKind.MainScheme,
             "minion" or "steady" => CardKind.Minion,

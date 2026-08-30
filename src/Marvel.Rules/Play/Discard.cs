@@ -162,6 +162,19 @@ public static class Discard
         PreflightAttachments(world, host, AttachedTo(world, host.ObjectId));
     }
 
+    /// <summary>Preflights a host after named direct cards leave by an earlier interrupt.</summary>
+    internal static void PreflightAttachmentsExcept(
+        World world, State.Card host, IReadOnlySet<int> leavingFirst)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(leavingFirst);
+        PreflightAttachments(
+            world, host,
+            [.. AttachedTo(world, host.ObjectId)
+                .Where(card => !leavingFirst.Contains(card.ObjectId))]);
+    }
+
     private static void PreflightAttachments(
         World world, State.Card host, IReadOnlyList<State.Card> direct)
     {
