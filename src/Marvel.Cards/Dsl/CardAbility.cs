@@ -292,10 +292,20 @@ public enum MaximumPeriod
 /// without being revealed.
 /// </para>
 /// </param>
+/// <param name="ControlledByFirstPlayer">
+/// Cards whose setup text gives control to the first player. This is placement
+/// metadata, not a claim that the rest of the card's abilities are authored.
+/// </param>
+/// <param name="PlacementOnly">
+/// Cards whose placement text and absence of a When Revealed ability are known,
+/// while their other printed abilities remain unauthored.
+/// </param>
 public sealed record AbilityBook(
     IReadOnlyList<CardAbility> Abilities,
     IReadOnlySet<string> Authored,
-    IReadOnlyDictionary<string, AbilityValue>? AttachTo = null)
+    IReadOnlyDictionary<string, AbilityValue>? AttachTo = null,
+    IReadOnlySet<string>? ControlledByFirstPlayer = null,
+    IReadOnlySet<string>? PlacementOnly = null)
 {
     /// <summary>An empty book. No card has been read.</summary>
     public static AbilityBook None { get; } =
@@ -305,6 +315,17 @@ public sealed record AbilityBook(
     /// <param name="card">A printed face id.</param>
     public AbilityValue? Attaches(string card) =>
         AttachTo is { } named && named.TryGetValue(card, out var element) ? element : null;
+
+    /// <summary>Whether setup gives this card to the first player.</summary>
+    public bool FirstPlayerControls(string card) =>
+        ControlledByFirstPlayer?.Contains(card) is true;
+
+    /// <summary>Whether enough is known to resolve this card's reveal as silence.</summary>
+    public bool KnowsWhenRevealed(string card) =>
+        Authored.Contains(card) || PlacementOnly?.Contains(card) is true;
+
+    /// <summary>Whether only this card's placement and reveal silence are known.</summary>
+    public bool IsPlacementOnly(string card) => PlacementOnly?.Contains(card) is true;
 
     /// <summary>The abilities on one printed face.</summary>
     /// <param name="card">A printed face id.</param>

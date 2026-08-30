@@ -589,7 +589,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 
 | | |
 |---|---|
-| Envelope | `trigger { event, alsoHappened, timing, subject, actor, target, form, player }`, `name`, `cost`, `limitPerRound`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. `actor` and `target` match explicit attack roles. |
+| Envelope | `trigger { event, alsoHappened, timing, subject, actor, target, form, player }`, `name`, `cost`, `limitPerRound`, `effect`; and placement properties `attachTo` and `controlledBy` beside the abilities rather than in one. A placement-only row omits `abilities`, establishes that the card has no When Revealed ability, and does not claim its remaining text is authored. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. `actor` and `target` match explicit attack roles. |
 | Costs | `spend` (resource letters), `spendPrinted` (exact printed resource letters), `spendEnergyX` (a positive player-chosen X), `exhaust`, `discardFromHand` (a count) |
 | Control | `seq`, `and`, `if`, `then`, `otherwise`, `forEach`, `eachTime`, `choose`, `chooseCard`, `chooseTopForHand`, `chooseDiscardToShuffle`, `thwartDifferentSchemes`, `makeTheCall`, `legalPractice`, `payOrExhaust`, `payOrEffect`, `eachPlayer`, `resolveSpecials`, `afterActivation` |
 | Tests | `and`, `or`, `not`, `exists`, `canMakeTheCall`, `canLegalPractice`, `canAutomaticThwart`, `hasStatus`, `hasTrait`, `cardSet`, `isTitle`, `inForm`, `activationIs`, `atLeast`, `titleInPlay`, `attackDamaged`, `discardedWithResource`, `paidWithResource`, `defeatedByYou`, `wasDefeated`, `heroDefended`, `undefendedAttack`, `inExpertMode`, `isKind`, `defeatedBy`, `threatCause`, `finalStep` |
@@ -1119,6 +1119,28 @@ Two other things fell out of reading it as the rule:
 `Reveal.EnterPlay` never ran for one. Eleven attachments in the pool print
 `uses X`, a keyword that fires on entering play — each had been arriving with an
 empty counter pool and an ability that spends from it.
+
+### Setup control is placement metadata too
+
+Some scenario cards say that the first player controls them as part of Setup.
+That sentence determines where the card enters play; it is not a triggered
+ability:
+
+```json
+{ "card": "16142", "name": "Milano",
+  "controlledBy": "firstPlayer" }
+```
+
+`ICardAbilities.SetupController` resolves the moving first-player token to a
+seat, and setup places an ally or support in that player's corresponding area.
+`rr:ownership-and-control.2.2` then makes the scenario-specific player card
+owned by that player. A placement-only row omits `abilities`: it asserts the
+printed card has no When Revealed ability, while preserving the distinction
+between the one sentence the engine can place and its other unauthored text.
+`Game.Begin` asks the card layer to validate the dealt board and refuses an
+in-play placement-only card by printed id. That boundary is deliberately after
+setup: setup can prove where the card belongs, but no client can start playing
+a plausible board on which its mandatory remaining text silently disappears.
 
 ### An ability can answer a moment that is about nobody
 

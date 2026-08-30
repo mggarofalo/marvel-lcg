@@ -27,7 +27,10 @@ public static class AbilityCatalog
     // was read the way it was, and what its data deliberately does not say.
     // Nothing reads it, and that is the point -- it is for the next person.
     private static readonly HashSet<string> CardKeys =
-        new(StringComparer.Ordinal) { "card", "name", "note", "abilities", "attachTo" };
+        new(StringComparer.Ordinal)
+        {
+            "card", "name", "note", "abilities", "attachTo", "controlledBy",
+        };
 
     private static readonly HashSet<string> AbilityKeys =
         new(StringComparer.Ordinal)
@@ -59,7 +62,11 @@ public static class AbilityCatalog
 
         var abilities = new List<CardAbility>();
         var authored = new HashSet<string>(StringComparer.Ordinal);
+        var described = new HashSet<string>(StringComparer.Ordinal);
         var attachTo = new Dictionary<string, AbilityValue>(StringComparer.Ordinal);
+        var controlledByFirstPlayer = new HashSet<string>(StringComparer.Ordinal);
+        var placementOnly = new HashSet<string>(StringComparer.Ordinal);
+        var incomplete = new List<string>();
 
         foreach (var element in cards.EnumerateArray())
         {
@@ -67,7 +74,7 @@ public static class AbilityCatalog
             string card = Text(element, "card") ?? throw new AbilityException("a card has no 'card'");
             string name = Text(element, "name") ?? card;
 
-            if (!authored.Add(card))
+            if (!described.Add(card))
             {
                 // Two entries for one card would make which one wins depend on
                 // file order, and the loser would vanish silently.
@@ -86,10 +93,31 @@ public static class AbilityCatalog
                 attachTo[card] = Value(host, card);
             }
 
+            if (element.TryGetProperty("controlledBy", out var controller))
+            {
+                if (controller.ValueKind != JsonValueKind.String
+                    || !string.Equals(
+                        controller.GetString(), "firstPlayer", StringComparison.Ordinal))
+                {
+                    throw new AbilityException(
+                        $"card '{card}' has a 'controlledBy' other than 'firstPlayer'");
+                }
+                controlledByFirstPlayer.Add(card);
+            }
+
             if (!element.TryGetProperty("abilities", out var list))
             {
+                if (!element.TryGetProperty("attachTo", out _)
+                    && !element.TryGetProperty("controlledBy", out _))
+                {
+                    incomplete.Add(card);
+                    continue;
+                }
+                placementOnly.Add(card);
                 continue;
             }
+
+            authored.Add(card);
 
             foreach (var ability in list.EnumerateArray())
             {
@@ -97,7 +125,14 @@ public static class AbilityCatalog
             }
         }
 
-        return new AbilityBook(abilities, authored, attachTo);
+        if (incomplete.Count > 0)
+        {
+            throw new AbilityException(
+                $"card '{incomplete[0]}' has neither abilities nor placement data");
+        }
+
+        return new AbilityBook(
+            abilities, authored, attachTo, controlledByFirstPlayer, placementOnly);
     }
 
     private static JsonDocument Read(string json)

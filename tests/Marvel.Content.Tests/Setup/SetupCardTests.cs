@@ -2,6 +2,7 @@ using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Tests;
@@ -63,6 +64,95 @@ public sealed class SetupCardTests
 
         Assert.Equal(DeckType.UpgradesArea, card.Area.Type);
         Assert.Equal(villain.ObjectId, card.Area.Host);
+    }
+
+    [Rule("rr:appendix-ii-setup.step.11")]
+    [Rule("rr:attach-to")]
+    [Theory]
+    [InlineData("16149")]
+    [InlineData("21129")]
+    public void ASetupAttachmentIsPutIntoPlayAttachedToTheVillain(string faceId)
+    {
+        // Step 11 puts each Setup card into play. Both cards say "Attach to
+        // the villain," and rr:attach-to requires that attachment as the card
+        // enters play; neither card is revealed to get there.
+        var world = Deal(faceId);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+
+        var card = Assert.Single(world.Cards, each => each.FaceId == faceId);
+
+        Assert.Equal(DeckType.UpgradesArea, card.Area.Type);
+        Assert.Equal(villain.ObjectId, card.Area.Host);
+    }
+
+    [Rule("rr:appendix-ii-setup.step.11")]
+    [Rule("rr:ownership-and-control.2.2")]
+    [Theory]
+    [InlineData("16142", DeckType.SupportsArea)]
+    [InlineData("40130", DeckType.AlliesArea)]
+    public void AScenarioPlayerCardStartsUnderTheFirstPlayersControl(
+        string faceId, DeckType expectedArea)
+    {
+        // Each card says "The first player controls" it. When that player
+        // takes control, rr:ownership-and-control.2.2 makes a scenario-specific
+        // player card become owned by that player as well.
+        var world = Deal(faceId);
+
+        var card = Assert.Single(world.Cards, each => each.FaceId == faceId);
+
+        Assert.Equal(expectedArea, card.Area.Type);
+        Assert.Equal(PlayArea.Of(world.FirstPlayer), card.Area.PlayArea);
+        Assert.Equal(world.FirstPlayer, card.Owner);
+        Assert.Equal(world.FirstPlayer, card.Area.CardOwner);
+    }
+
+    [Theory]
+    [InlineData("16142")]
+    [InlineData("16149")]
+    [InlineData("21129")]
+    [InlineData("40130")]
+    public void PlacementOnlyCardsRefusePlayUntilTheirRemainingTextIsImplemented(
+        string faceId)
+    {
+        // Setup can construct the correct board without pretending the rest of
+        // a card works. Opening that board for play is the first boundary where
+        // Milano's resource, Power Stone's response, the Gauntlet's Special, or
+        // Hope's constants could matter, so the engine refuses it by name.
+        var world = Deal(faceId);
+
+        var refused = Assert.Throws<RulesNotImplementedException>(
+            () => Game.Begin(world, Cards, AuthoredCards.Runner()));
+
+        Assert.Contains(faceId, refused.Message, StringComparison.Ordinal);
+        Assert.Contains("remaining printed text", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Rule("rr:appendix-ii-setup.step.11")]
+    [Rule("rr:appendix-ii-setup.step.12.a")]
+    [Fact]
+    public void ASetupAttachmentWaitsForScenarioSetupToRevealItsVillain()
+    {
+        // Loki has no villain at step 11; All Hail King Loki reveals one at
+        // step 12a. The documents do not order the Gauntlet's attachment
+        // against that scenario exception, so the engine retains it and retries
+        // after the scheme's Setup ability rather than inventing a host.
+        var order = Dealer.DealOrder(Setup, "rhino", ["spider_man"]).ToList();
+        order.Add(new Creation("21129", CreationSource.EncounterSet, Creation.Scenario));
+        var blueprints = Blueprints.From(order, Cards).ToList();
+        int villainIndex = blueprints.FindIndex(card => card.Slot == SetupSlot.Villain);
+        var villainBlueprint = blueprints[villainIndex];
+        blueprints[villainIndex] = villainBlueprint with { Slot = SetupSlot.SetAside };
+
+        var world = WorldSetup.Deal(
+            Cards,
+            blueprints,
+            ["Spider-Man"],
+            Seed,
+            new RevealsVillainDuringScenarioSetup());
+
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var gauntlet = Assert.Single(world.Cards, card => card.FaceId == "21129");
+        Assert.Equal(villain.ObjectId, gauntlet.Area.Host);
     }
 
     [Rule("rr:traits")]
@@ -192,13 +282,13 @@ public sealed class SetupCardTests
     [Fact]
     public void ACardTheEngineCannotPlaceStopsTheDealByName()
     {
-        // The Infinity Gauntlet has the setup keyword and its placement is not
-        // written, so there is nowhere to put it. Leaving it in the pile it was
+        // Power Stone has the setup keyword, but this deliberately silent card
+        // layer supplies none of its placement text. Leaving it in the pile it was
         // searched out of would deal a board quietly missing a card the rules
         // put on the table — which is the failure this whole file exists to
         // stop, one level up from a card that does nothing.
         var refused = Assert.Throws<RulesNotImplementedException>(
-            () => Deal("21129", AuthoredCards.Runner()));
+            () => Deal("16149", new NoCardAbilities()));
 
         Assert.Contains("nowhere to put it", refused.Message, StringComparison.Ordinal);
     }
@@ -235,5 +325,27 @@ public sealed class SetupCardTests
             ["Spider-Man"],
             Seed,
             abilities ?? AuthoredCards.Runner());
+    }
+
+    private sealed class RevealsVillainDuringScenarioSetup : NoCardAbilities
+    {
+        private readonly AbilityRunner placement = AuthoredCards.Runner();
+
+        public override int? AttachesTo(World world, Card card) =>
+            placement.AttachesTo(world, card);
+
+        public override IReadOnlyList<GameEvent> Setup(World world, Card card)
+        {
+            if (Cards.Kind(card.FaceId) != CardKind.MainScheme)
+            {
+                return [];
+            }
+
+            var villain = world.Cards.Single(each =>
+                each.Area.Type == DeckType.AsideDeck
+                && Cards.Kind(each.FaceId) == CardKind.EncounterVillain);
+            World.MoveToTop(villain, world.AreaOf(DeckType.VillainArea));
+            return [];
+        }
     }
 }

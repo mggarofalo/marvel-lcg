@@ -283,9 +283,14 @@ public static class Reveal
     /// The host selected by a suspended reveal procedure, or null when the
     /// attachment phrase can resolve without asking.
     /// </param>
+    /// <param name="setupController">
+    /// The player named by a setup card's control instruction, or null when
+    /// ordinary reveal placement applies.
+    /// </param>
     public static void Resolve(
         World world, ICardFacts facts, Card card, int player, List<GameEvent> events,
-        Occurrence? occurrence = null, int? attachmentTarget = null)
+        Occurrence? occurrence = null, int? attachmentTarget = null,
+        int? setupController = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -294,6 +299,12 @@ public static class Reveal
 
         var into = facts.Kind(card.FaceId) switch
         {
+            CardKind.Ally when setupController is { } controller => world.AreaOf(
+                DeckType.AlliesArea, PlayArea.Of(controller), cardOwner: controller),
+
+            CardKind.Support when setupController is { } controller => world.AreaOf(
+                DeckType.SupportsArea, PlayArea.Of(controller), cardOwner: controller),
+
             // `rr:reveal.3` and `rr:minion`: "it enters play in the play area of
             // the player revealing it. **It is considered to engage that
             // player.**" Engagement is not a flag beside the minion -- it is
