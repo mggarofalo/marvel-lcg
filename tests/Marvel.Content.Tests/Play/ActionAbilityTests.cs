@@ -9300,6 +9300,38 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
     }
 
+    [Rule("rr:removed-from-the-game.2")]
+    [Rule("rr:target.4.1")]
+    [Fact]
+    public void LaterComponentSkipsACardAlreadyRemovedFromTheGame()
+    {
+        // The first component removes the bound source. It is no longer a
+        // valid target when the second component resolves, so that component
+        // does nothing rather than trying to move the terminal card again.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "removeFromGame": "this" },
+              { "discard": "this" }
+            ] }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+
+        var resolved = game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(DeckType.RemovedArea, source!.Area.Type);
+        Assert.Single(resolved.Events.OfType<CardsMoved>(), moved =>
+            moved.Cards.Any(card => card.Card == source.ObjectId));
+    }
+
     [Rule("rr:permanent.4")]
     [Rule("rr:then.1")]
     [Rule("rr:then.2")]

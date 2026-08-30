@@ -808,6 +808,44 @@ public sealed class KeywordTests
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
 
+    [Rule("rr:ability.5")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:victory-x.1.2")]
+    [Fact]
+    public void VictoryAttachmentWaitsForTheCompleteDefeatCascadePreflight()
+    {
+        // H's departure restores zero-counter Uses on U, whose permanent
+        // attachment makes that cascade unsupported. V must not take its
+        // Victory move until the complete H/V/U/P transaction is proved.
+        var printed = new Printed()
+            .With("minion", ("HP", "1"))
+            .With("victoryAttachment", ("Victory", "1"))
+            .With("permanentAttachment", ("Permanent", "1"))
+            .With("sideScheme", ("Uses", "3,web"));
+        var world = Board(printed);
+        var host = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var victory = world.CreateCard(
+            "victoryAttachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId));
+        var uses = world.CreateCard(
+            "sideScheme", world.AreaOf(DeckType.SideSchemesArea));
+        var permanent = world.CreateCard(
+            "permanentAttachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Villains, uses.ObjectId));
+        world.Abilities = new ConstantUsesLoss(host.ObjectId, uses.ObjectId);
+        Assert.True(Characteristics.IsLost(world, uses, "uses"));
+        Agendas.Happening(world);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Damage.Deal(world, printed, host, host, 1, "test", "test", []));
+
+        Assert.Equal(DeckType.EngagedEnemiesArea, host.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, victory.Area.Type);
+        Assert.Equal(DeckType.SideSchemesArea, uses.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
+    }
+
     [Rule("rr:loses")]
     [Rule("rr:victory-x.2")]
     [Fact]
@@ -1959,7 +1997,8 @@ public sealed class KeywordTests
             "ally" => CardKind.Ally,
             "boost" => CardKind.Treachery,
             "permanentish" => CardKind.Support,
-            "attachment" or "permanentAttachment" => CardKind.Attachment,
+            "attachment" or "permanentAttachment" or "victoryAttachment" =>
+                CardKind.Attachment,
             "villain" => CardKind.EncounterVillain,
             "scheme" => CardKind.MainScheme,
             "minion" or "steady" => CardKind.Minion,

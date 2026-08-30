@@ -155,12 +155,7 @@ public static class Defeat
             case CardKind.Minion:
                 // `rr:defeat.1` -- discarded, to its owner's pile, which for a
                 // minion is the encounter discard. Unless it is worth points.
-                PreflightDefeatAttachments(world, facts, card);
-                VictoryAttachments(world, facts, card, trigger, events);
-                if (!ToVictoryDisplay(world, facts, card, trigger, events))
-                {
-                    Discard.Card(world, card, trigger, events);
-                }
+                MoveDefeatedCard(world, facts, card, trigger, events);
 
                 return;
 
@@ -234,12 +229,7 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(scheme);
         ArgumentNullException.ThrowIfNull(events);
 
-        PreflightDefeatAttachments(world, facts, scheme);
-        VictoryAttachments(world, facts, scheme, trigger, events);
-        if (!ToVictoryDisplay(world, facts, scheme, trigger, events))
-        {
-            Discard.Card(world, scheme, trigger, events);
-        }
+        MoveDefeatedCard(world, facts, scheme, trigger, events);
     }
 
     /// <summary>Put damage step 8 after nested step-7 agenda work.</summary>
@@ -476,6 +466,53 @@ public static class Defeat
 
         Discard.PreflightAttachmentsExcept(
             world, host, victory.Select(card => card.ObjectId).ToHashSet());
+    }
+
+    /// <summary>Moves Victory interrupts and their defeated host as one transaction.</summary>
+    private static void MoveDefeatedCard(
+        World world, ICardFacts facts, Card host, string trigger,
+        List<GameEvent> events)
+    {
+        PreflightDefeatAttachments(world, facts, host);
+        var constantsEnding = world.Effects.PreflightConstantsEnding(
+            DefeatDepartureCards(world, host));
+        using var departure = constantsEnding.Begin();
+
+        VictoryAttachments(world, facts, host, trigger, events);
+        if (!ToVictoryDisplay(world, facts, host, trigger, events))
+        {
+            Discard.Card(world, host, trigger, events);
+        }
+
+        constantsEnding.Complete(trigger, events);
+    }
+
+    /// <summary>The complete physical card set removed by one host defeat.</summary>
+    private static List<Card> DefeatDepartureCards(World world, Card host)
+    {
+        var cards = new List<Card> { host };
+        var seen = new HashSet<int> { host.ObjectId };
+        var pending = new Stack<Card>(world.Areas
+            .Where(area => area.Host == host.ObjectId)
+            .SelectMany(area => area.Cards)
+            .Reverse());
+        while (pending.TryPop(out var card))
+        {
+            if (!seen.Add(card.ObjectId))
+            {
+                throw new RulesNotImplementedException(
+                    $"attachment {card.ObjectId} forms a hosting cycle");
+            }
+            cards.Add(card);
+            foreach (var child in world.Areas
+                         .Where(area => area.Host == card.ObjectId)
+                         .SelectMany(area => area.Cards)
+                         .Reverse())
+            {
+                pending.Push(child);
+            }
+        }
+        return cards;
     }
 
     /// <summary>

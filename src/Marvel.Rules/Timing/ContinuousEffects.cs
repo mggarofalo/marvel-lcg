@@ -558,8 +558,20 @@ public sealed class ContinuousEffects(World world)
             [source], includeHostedCards, moveRoots: false);
     }
 
+    /// <summary>Proves one ordered transaction whose complete card set will depart.</summary>
+    internal ConstantEnding PreflightConstantsEnding(IReadOnlyList<Card> sources)
+    {
+        ArgumentNullException.ThrowIfNull(sources);
+        return PreflightDepartures(
+            [.. sources.DistinctBy(card => card.ObjectId)],
+            includeHostedCards: false,
+            moveRoots: false,
+            preflightDefiniteAttachments: false);
+    }
+
     private ConstantEnding PreflightDepartures(
-        Card[] sources, bool includeHostedCards, bool moveRoots)
+        Card[] sources, bool includeHostedCards, bool moveRoots,
+        bool preflightDefiniteAttachments = true)
     {
         if (sources.Length == 0)
         {
@@ -659,7 +671,8 @@ public sealed class ContinuousEffects(World world)
             simulationEnded = true;
 
             var selected = PreflightSelectedDepartures(
-                roots, definiteIds, definiteTrees, rootTrees);
+                roots, definiteIds, definiteTrees, rootTrees,
+                preflightDefiniteAttachments);
             var departures = definiteIds
                 .Concat(selected.SelectMany(card => rootTrees[card.ObjectId]))
                 .Distinct()
@@ -680,7 +693,8 @@ public sealed class ContinuousEffects(World world)
         Card[] roots,
         IReadOnlySet<int> definiteIds,
         Dictionary<int, int[]> definiteTrees,
-        Dictionary<int, int[]> rootTrees)
+        Dictionary<int, int[]> rootTrees,
+        bool preflightDefiniteAttachments)
     {
         var selected = new HashSet<int>();
         while (true)
@@ -714,7 +728,9 @@ public sealed class ContinuousEffects(World world)
             // tree away: its own constant can make it Permanent. Definite
             // source trees are checked on the current board; tentative Uses
             // roots are checked with only the initiating source projected.
-            foreach (var (root, tree) in definiteTrees)
+            foreach (var (root, tree) in preflightDefiniteAttachments
+                         ? definiteTrees
+                         : [])
             {
                 Discard.PreflightProjectedAttachments(
                     world, world.Cards[root], tree.Skip(1).Select(id => world.Cards[id]));

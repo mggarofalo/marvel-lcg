@@ -44,8 +44,13 @@ public static class Discard
     /// <summary>Whether a card effect may make one permanent target leave play.</summary>
     public static bool EffectCanRemove(
         World world, ICardFacts facts, State.Card source, State.Card target) =>
-        StateFields.Modified(world, target, "permanent", facts, world.Players) <= 0
-        || SameSet(facts, source, target);
+        // `rr:removed-from-the-game.2`: a removed card "cannot re-enter the
+        // game by any means." A sequence can retain a binding after an earlier
+        // component removes it, but that stale object is no longer a legal
+        // target for another discard or removal component.
+        target.Area.Type != DeckType.RemovedArea
+        && (StateFields.Modified(world, target, "permanent", facts, world.Players) <= 0
+            || SameSet(facts, source, target));
 
     /// <summary>Whether two printed cards belong to the same non-empty set.</summary>
     public static bool SameSet(ICardFacts facts, State.Card first, State.Card second)
