@@ -17252,34 +17252,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         else if (node.Kind == "query")
         {
             string query = Word(node.Argument);
-            found.AddRange(state.Entered
-                .Select(id => cast.World.Cards[id])
-                .Where(card => !state.Departed.Contains(card.ObjectId))
-                .Where(card => query switch
-                {
-                    "minions" or "attackableMinions" =>
-                        cast.World.Facts.Kind(card.FaceId) == CardKind.Minion,
-                    "minionsEngagedWithYou" =>
-                        cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
-                        && state.EngagedWith.GetValueOrDefault(
-                            card.ObjectId, -1) == Resolver(cast),
-                    "enemiesEngagedWithChosenPlayer" =>
-                        cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
-                        && state.EngagedWith.GetValueOrDefault(
-                            card.ObjectId, -1) == ChosenPlayer(cast).Owner,
-                    "enemies" or "attackableEnemies" =>
-                        cast.World.Facts.Kind(card.FaceId) is
-                            CardKind.Minion or CardKind.EncounterVillain,
-                    "characters" => cast.World.Facts.Kind(card.FaceId) is
-                        CardKind.Minion or CardKind.EncounterVillain
-                            or CardKind.Ally or CardKind.Hero or CardKind.AlterEgo,
-                    "sideSchemes" or "schemes" or "thwartableSchemes" =>
-                        cast.World.Facts.Kind(card.FaceId)
-                            == CardKind.EncounterSideScheme,
-                    _ => false,
-                }));
             if (query is "attackableEnemies" or "attackableMinions")
             {
+                string candidates = query == "attackableEnemies"
+                    ? "enemies" : "minions";
+                found = ProjectedEvery(
+                    new AbilityValue.Map(new Dictionary<string, AbilityValue>
+                    {
+                        ["query"] = new AbilityValue.Word(candidates),
+                    }),
+                    state,
+                    cast);
                 found = found.Where(card =>
                         cast.World.Abilities.CanTakeDamage(
                             cast.World, card, cast.Source))
@@ -17298,6 +17281,34 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     found.RemoveAll(card => cast.World.Facts.Kind(card.FaceId)
                         == CardKind.EncounterVillain);
                 }
+            }
+            else
+            {
+                found.AddRange(state.Entered
+                    .Select(id => cast.World.Cards[id])
+                    .Where(card => !state.Departed.Contains(card.ObjectId))
+                    .Where(card => query switch
+                    {
+                        "minions" => cast.World.Facts.Kind(card.FaceId)
+                            == CardKind.Minion,
+                        "minionsEngagedWithYou" =>
+                            cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                            && state.EngagedWith.GetValueOrDefault(
+                                card.ObjectId, -1) == Resolver(cast),
+                        "enemiesEngagedWithChosenPlayer" =>
+                            cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                            && state.EngagedWith.GetValueOrDefault(
+                                card.ObjectId, -1) == ChosenPlayer(cast).Owner,
+                        "enemies" => cast.World.Facts.Kind(card.FaceId) is
+                            CardKind.Minion or CardKind.EncounterVillain,
+                        "characters" => cast.World.Facts.Kind(card.FaceId) is
+                            CardKind.Minion or CardKind.EncounterVillain
+                                or CardKind.Ally or CardKind.Hero or CardKind.AlterEgo,
+                        "sideSchemes" or "schemes" or "thwartableSchemes" =>
+                            cast.World.Facts.Kind(card.FaceId)
+                                == CardKind.EncounterSideScheme,
+                        _ => false,
+                    }));
             }
         }
         else if (node.Kind == "titled")
@@ -17449,12 +17460,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
             }
             if (ProjectedPredicateInputsChanged(current)
-                && effects.Any(effect =>
-                    effect.Source == EffectSource.ConstantAbility
-                    && (effect.Card is not int source
-                        || !Departed.Contains(source))
-                    && string.Equals(effect.Kind, field, StringComparison.Ordinal)
-                    && effect.AppliesTo(current.World, card)))
+                && ConditionalConstantMayModify(current, field))
             {
                 throw new RulesNotImplementedException(
                     $"'{current.Source.FaceId}' changes game state before reading "
@@ -17520,6 +17526,46 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             || Modifiers.Count > 0
             || ActiveVillain != (current.World.TheCardIn(
                 DeckType.VillainArea)?.ObjectId ?? -1);
+
+        private bool ConditionalConstantMayModify(Cast current, string field)
+        {
+            if (current.Abilities is not AbilityRunner runner)
+            {
+                return false;
+            }
+            return current.World.Areas
+                .Where(area => DeckTypes.IsInPlay(area.Type))
+                .SelectMany(area => area.Cards)
+                .Where(source => !Departed.Contains(source.ObjectId))
+                .SelectMany(source => runner.On(source))
+                .Where(ability => ability.Trigger.Timing == AbilityType.Constant)
+                .Any(ability => ConditionalGrant(
+                    ability.Effect, field, ability.When is not null));
+        }
+
+        private static bool ConditionalGrant(
+            AbilityNode node, string field, bool conditioned)
+        {
+            if (node.Kind == "if")
+            {
+                return Branches.Select(node.Field)
+                    .Where(value => value is not null)
+                    .Any(value => ConditionalGrant(
+                        Tree(value!), field, conditioned: true));
+            }
+            if (node.Kind is "grant" or "grantEach"
+                && node.Field("keyword") is { } keyword
+                && string.Equals(Word(keyword), field, StringComparison.Ordinal))
+            {
+                return conditioned;
+            }
+            if (node.Kind is "seq" or "and")
+            {
+                return Nodes(node.Argument).Any(child =>
+                    ConditionalGrant(child, field, conditioned));
+            }
+            return false;
+        }
 
         public bool HasTrait(Cast current, Card card, string trait)
         {

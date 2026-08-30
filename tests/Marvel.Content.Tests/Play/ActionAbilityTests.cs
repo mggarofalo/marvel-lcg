@@ -11557,6 +11557,172 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.EngagedEnemiesArea, soldier.Area.Type);
     }
 
+    [Rule("rr:guard.1")]
+    [Rule("rr:villain-defeat.4.2")]
+    [Fact]
+    public void DepartedGuardReaddsVillainToProjectedAttackableEnemies()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "titled": "Hydra Mercenary" }, "amount": 3
+              } },
+              { "dealDamage": {
+                "cards": { "query": "attackableEnemies" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? guard = null;
+        Card? attachment = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                villain.TakeDamage(
+                    Damage.Health(board, board.Facts, villain) - 1);
+                board.CreateCard("01136", board.AreaOf(DeckType.VillainDeck));
+                guard = board.CreateCard(
+                    "08028", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                attachment = board.CreateCard(
+                    "01098", board.AreaOf(
+                        DeckType.UpgradesArea, villain.Area.PlayArea,
+                        villain.ObjectId));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, guard!.Area.Type);
+        Assert.True(DeckTypes.IsInPlay(attachment!.Area.Type));
+    }
+
+    [Rule("rr:ability")]
+    [Rule("rr:hit-points.2.3")]
+    [Fact]
+    public void UnconditionalHealthConstantSurvivesUnrelatedProjectedChange()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "removeThreat": {
+                "scheme": { "query": "mainScheme" }, "amount": 1
+              } },
+              { "dealDamage": {
+                "cards": { "query": "villain" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            includeAuthored: true);
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var scheme = board.TheCardIn(DeckType.MainSchemesArea)!;
+                scheme.PlaceTokens("k_threat", 1);
+                board.CreateCard(
+                    "01127", board.AreaOf(DeckType.SideSchemesArea));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+    }
+
+    [Rule("rr:ability.9")]
+    [Fact]
+    public void ProjectedStatusRefusesNewlyActiveConditionalAttackConstant()
+    {
+        var runner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                """
+                { "cards": [
+                  { "card": "01006", "abilities": [ {
+                    "trigger": {
+                      "event": "WhenActionTriggered", "timing": "Action",
+                      "subject": "game"
+                    },
+                    "cost": { "exhaust": "this" },
+                    "effect": { "seq": [
+                      { "giveStatus": {
+                        "card": { "titled": "Hydra Mercenary" },
+                        "status": "stunned"
+                      } },
+                      { "dealDamage": {
+                        "cards": { "maxBy": {
+                          "of": { "query": "minions" }, "by": "attack"
+                        } },
+                        "amount": 100
+                      } },
+                      { "removeFromGame": { "cardsIn": {
+                        "area": "encounterDiscardPile",
+                        "title": "Hydra Mercenary"
+                      } } }
+                    ] }
+                  } ] },
+                  { "card": "08028", "abilities": [ {
+                    "trigger": { "timing": "Constant", "subject": "this" },
+                    "effect": { "if": {
+                      "test": { "hasStatus": {
+                        "card": "this", "status": "stunned"
+                      } },
+                      "then": { "grant": {
+                        "card": "this", "keyword": "attack", "amount": 10
+                      } }
+                    } }
+                  } ] }
+                ] }
+                """));
+        Card? source = null;
+        Card? hydra = null;
+        World? world = null;
+
+        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                hydra = board.CreateCard(
+                    "08028", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                var criminal = board.CreateCard(
+                    "02007", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, criminal, Statuses.Tough);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("conditional constant", refused.Message);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
+        Assert.Equal(0, Statuses.Count(world!, hydra, Statuses.Stunned));
+    }
+
     [Rule("rr:villain-defeat.3.2")]
     [Rule("rr:villain-defeat.4.2")]
     [Fact]
