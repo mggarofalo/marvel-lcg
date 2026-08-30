@@ -204,8 +204,11 @@ public sealed class DefeatStepSevenTests
     }
 
     [Rule("rr:forced.5")]
-    [Fact]
-    public void TheFirstPlayerOrdersTwoCardsAnsweringOneDefeat()
+    [Theory]
+    [InlineData(true, 2, 1)]
+    [InlineData(false, 1, 2)]
+    public void TheFirstPlayerOrdersTwoCardsAnsweringOneDefeat(
+        bool attachmentFirst, long firstAmount, long secondAmount)
     {
         // "If two or more forced abilities would initiate at the same moment,
         // the **first player determines the order**." The procedure remains at
@@ -216,7 +219,9 @@ public sealed class DefeatStepSevenTests
                 (Attachment, "ForcedInterrupt", "attachedTo", 2),
                 (Mercenary, "WhenDefeated", "this", 1)),
             out var minion,
-            out _);
+            out _,
+            players: 2);
+        world.FirstPlayer = 1;
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         long before = scheme.Tokens.GetValueOrDefault("k_threat");
 
@@ -226,17 +231,47 @@ public sealed class DefeatStepSevenTests
         var asked = Sequence.Work(world, Cards, world.Abilities, events);
 
         Assert.NotNull(asked);
+        Assert.Equal(1, asked.Player);
         Assert.Equal(Question.Order, asked.Asking);
+        Assert.Equal(2, asked.Affordances.Count);
+        Assert.Equal(before, scheme.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
         var attachment = world.Areas
             .Where(area => area.Type == DeckType.UpgradesArea)
             .SelectMany(area => area.Cards)
             .Single();
+        Assert.Contains(asked.Affordances, option => option.Id == minion.ObjectId);
+        Assert.Contains(asked.Affordances, option => option.Id == attachment.ObjectId);
         Sequence.Answer(
             world, Cards, world.Abilities, asked,
-            Decision.Take(attachment.ObjectId), events);
+            Decision.Take(attachmentFirst ? attachment.ObjectId : minion.ObjectId), events);
         Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
 
-        Assert.Equal(3, scheme.Tokens.GetValueOrDefault("k_threat") - before);
+        var threatChanges = events
+            .OfType<FieldSet>()
+            .Where(change => change.Card == scheme.ObjectId && change.Field == "k_threat")
+            .ToList();
+        Assert.Collection(
+            threatChanges,
+            first =>
+            {
+                Assert.Equal(before, first.From);
+                Assert.Equal(before + firstAmount, first.To);
+            },
+            second =>
+            {
+                Assert.Equal(before + firstAmount, second.From);
+                Assert.Equal(before + firstAmount + secondAmount, second.To);
+            });
+        int lastEffect = events.FindLastIndex(happened => happened is FieldSet changed
+            && changed.Card == scheme.ObjectId
+            && changed.Field == "k_threat");
+        int left = events.FindIndex(happened => happened is CardsMoved moved
+            && moved.Cards.Any(landing => landing.Card == minion.ObjectId));
+        Assert.True(lastEffect < left, "both step 7 effects resolved before step 8");
+        Assert.Equal(
+            firstAmount + secondAmount,
+            scheme.Tokens.GetValueOrDefault("k_threat") - before);
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
 
@@ -335,12 +370,19 @@ public sealed class DefeatStepSevenTests
     }
 
     /// <summary>The Rhino board, a minion, and an attachment hanging off it.</summary>
-    private static World Board(string json, out Card minion, out Card attachment)
+    private static World Board(
+        string json, out Card minion, out Card attachment, int players = 1)
     {
+        var heroes = players == 1
+            ? new[] { "spider_man" }
+            : ["spider_man", "captain_marvel"];
+        var names = players == 1
+            ? new[] { "Spider-Man" }
+            : ["Spider-Man", "Captain Marvel"];
         var world = WorldSetup.Deal(
             Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
-            ["Spider-Man"],
+            Blueprints.From(Dealer.DealOrder(Setup, "rhino", heroes), Cards),
+            names,
             12345);
         world.Abilities = new AbilityRunner(AbilityCatalog.Parse(json));
 
