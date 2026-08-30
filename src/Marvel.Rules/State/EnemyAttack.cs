@@ -58,10 +58,11 @@ namespace Marvel.Rules.State;
 /// <param name="AdditionalPlayers">
 /// Hero seats still to resolve this same attack against, in player order.
 /// </param>
+/// <param name="Indirect">Whether this attack's calculated damage is indirect.</param>
 public sealed record EnemyAttack(
     int Enemy, int Player, int Target, int Defender = -1, bool BasicDefense = false,
     bool Damaged = false, long? CalculatedDamage = null,
-    IReadOnlyList<int>? AdditionalPlayers = null)
+    IReadOnlyList<int>? AdditionalPlayers = null, bool Indirect = false)
 {
     /// <summary>Whether any character was declared the defender.</summary>
     public bool IsDefended => Defender >= 0;

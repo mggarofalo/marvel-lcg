@@ -152,7 +152,8 @@ absent from the game.
 Prompt        Player, Kind, Trigger, Label, Cancellable, Affordance[]
 Affordance    Id, Verb, AnchorId, AnchorPlayer, Label,
               TargetRequest?, CostOption[], Illegal?
-TargetRequest Legal[], Min, Max, Groups[][], MustIncludeTraits[], Rule, IsSearch
+TargetRequest Legal[], Min, Max, Groups[][], MustIncludeTraits[], Rule, IsSearch,
+              AllowRepeated
 CostOption    Target, Cost, Rule[], OrCost, OrRule[], ResourceSource[],
               VariableRequest[], ResourceCost[]
 ResourceSource Effect, Generates
@@ -270,6 +271,13 @@ client that enforced both would reject legal play.
 
 The rule is now executable rather than described — `TargetRequest.Allows` — for
 the plain reason that the prose was already there and this happened anyway.
+
+### Indirect damage entries are allocations, not repeated targets
+
+`rr:indirect-damage.1` lets a player divide damage among controlled characters.
+The wire represents one assigned point with one target id, so three damage on
+one ally is `[ally, ally, ally]`. `AllowRepeated` distinguishes that allocation
+from an ordinary target choice governed by `rr:choose-game-element.3.1`.
 
 ### `Legality` is still unobserved, at three times the sample
 

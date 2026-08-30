@@ -721,6 +721,13 @@ public static class Attack
         world.Attack = attack with { CalculatedDamage = Amount(world, facts, attack) };
     }
 
+    /// <summary>Make the current enemy attack deal indirect damage.</summary>
+    public static void MakeIndirect(World world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        world.Attack = Current(world) with { Indirect = true };
+    }
+
     /// <summary>
     /// Step 5. Deal the damage calculated in step 4 —
     /// <c>rr:attack-enemy-activation.step.5</c>.
@@ -759,6 +766,47 @@ public static class Attack
             Lasts: Duration.UntilEndOf(TimingPoints.EndOfAttack)));
         if (amount <= 0)
         {
+            return;
+        }
+
+        if (attack.Indirect)
+        {
+            var candidates = IndirectCandidates(world, facts, attack.Player);
+            long assign = Math.Min(
+                amount,
+                candidates.Sum(card => Damage.Health(world, facts, card) - card.Damage));
+            if (assign <= 0)
+            {
+                return;
+            }
+
+            var assignment = new PhaseStep(
+                Steps.AssignIndirectAttackDamage,
+                world.Agenda.Current?.Round ?? 0,
+                5,
+                Subject: attack.Enemy,
+                Seat: attack.Player,
+                Character: attack.Target,
+                ProcedureAmount: assign,
+                ProcedureCandidates: [.. candidates.Select(card => card.ObjectId)]);
+            if (candidates.Count == 1)
+            {
+                AssignIndirectDamage(
+                    world, facts, assignment,
+                    Decision.Take(
+                        attack.Enemy,
+                        Enumerable.Repeat(candidates[0].ObjectId, (int)assign).ToList(),
+                        []),
+                    events);
+            }
+            else
+            {
+                world.Agenda.ThenContinuation(
+                    assignment,
+                    world.Agenda.Occurrence
+                        ?? throw new RulesNotImplementedException(
+                            "indirect attack damage has no containing occurrence"));
+            }
             return;
         }
 
@@ -812,17 +860,158 @@ public static class Attack
         {
             world.Activation = activation with
             {
-                DamageDealt = activation.DamageDealt + damage.Amount,
+                DamageDealt = activation.DamageDealt + damage.Dealt,
             };
         }
         else if (world.FinishedActivation is { } finishedActivation)
         {
             world.FinishedActivation = finishedActivation with
             {
-                DamageDealt = finishedActivation.DamageDealt + damage.Amount,
+                DamageDealt = finishedActivation.DamageDealt + damage.Dealt,
             };
         }
     }
+
+    /// <summary>Ask the attacked player to assign one indirect attack's damage.</summary>
+    public static Prompt IndirectDamagePrompt(
+        World world, ICardFacts facts, PhaseStep step)
+    {
+        var candidates = IndirectCandidates(world, facts, step.Seat)
+            .Where(card => (step.ProcedureCandidates ?? []).Contains(card.ObjectId))
+            .ToList();
+        int amount = checked((int)Math.Min(
+            step.ProcedureAmount,
+            candidates.Sum(card => Damage.Health(world, facts, card) - card.Damage)));
+        return new Prompt(
+            step.Seat,
+            Question.Element,
+            TimingPriority.Untimed,
+            Steps.DealAttackDamage,
+            $"{world.Seats[step.Seat].Name} assigns {amount} indirect attack damage",
+            false,
+            [new Affordance(
+                step.Subject, "Choose", step.Subject, World.Scenario,
+                "indirectDamage",
+                new TargetRequest(
+                    [.. candidates.Select(card => card.ObjectId)], amount, amount,
+                    Rule: "rr:indirect-damage.1", AllowRepeated: true))]);
+    }
+
+    /// <summary>Resolve an assignment without treating every recipient as attacked.</summary>
+    public static void AssignIndirectDamage(
+        World world, ICardFacts facts, PhaseStep step, Decision input,
+        List<GameEvent> events)
+    {
+        var eligible = IndirectCandidates(world, facts, step.Seat)
+            .Where(card => (step.ProcedureCandidates ?? []).Contains(card.ObjectId))
+            .ToDictionary(card => card.ObjectId);
+        int expected = checked((int)Math.Min(
+            step.ProcedureAmount,
+            eligible.Values.Sum(card => Damage.Health(world, facts, card) - card.Damage)));
+        if (input.Targets.Count != expected)
+        {
+            throw new RulesNotImplementedException(
+                $"indirect attack damage requires {expected} assignments");
+        }
+
+        var assigned = new Dictionary<int, long>();
+        foreach (int id in input.Targets)
+        {
+            if (!eligible.TryGetValue(id, out var card))
+            {
+                throw new RulesNotImplementedException(
+                    $"card {id} cannot receive this indirect attack damage");
+            }
+            long share = assigned.GetValueOrDefault(id) + 1;
+            long room = Damage.Health(world, facts, card) - card.Damage;
+            if (share > room)
+            {
+                throw new RulesNotImplementedException(
+                    $"card {id} has room for {room} indirect attack damage");
+            }
+            assigned[id] = share;
+        }
+
+        var attacker = world.Cards[step.Subject];
+        long dealt = 0;
+        bool damaged = false;
+        bool suspended = false;
+        foreach (var (id, amount) in assigned.OrderBy(pair => pair.Key))
+        {
+            var target = world.Cards[id];
+            long before = target.Damage;
+            var outcome = Damage.DealWithAmounts(
+                world, facts, attacker, target, amount,
+                Steps.AttackInitiated, "Attack", events,
+                out long dealtToTarget, out _);
+            suspended |= outcome == Damage.Outcome.Suspended;
+            long landed = Math.Max(0, target.Damage - before);
+            dealt += dealtToTarget;
+            damaged |= landed > 0;
+            if (landed > 0)
+            {
+                DelayedEffects.Occur(world, "WhenDamageDealt", target.ObjectId, events);
+            }
+        }
+
+        if (damaged)
+        {
+            world.Attack = Current(world) with { Damaged = true };
+            world.Agenda.Occurrence?.Also(Steps.DamageDealt);
+        }
+        if (world.Activation is { } activation)
+        {
+            world.Activation = activation with { DamageDealt = activation.DamageDealt + dealt };
+        }
+
+        if (suspended)
+        {
+            world.Agenda.ThenContinuation(
+                new PhaseStep(
+                    Steps.FinishIndirectAttackDamage,
+                    world.Agenda.Current?.Round ?? 0,
+                    5,
+                    Subject: step.Subject,
+                    Character: step.Character,
+                    Plan: true),
+                world.Agenda.Occurrence
+                    ?? throw new RulesNotImplementedException(
+                        "suspended indirect attack damage has no occurrence"));
+            return;
+        }
+
+        // Only the declared defender (or the undefended target) was attacked;
+        // other recipients merely took damage from that attack.
+        if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
+        {
+            Damage.Retaliate(world, facts, world.Cards[step.Character], attacker,
+                Steps.AttackInitiated, events);
+        }
+    }
+
+    /// <summary>Resolve retaliation after an indirect-damage defeat decision.</summary>
+    public static void FinishIndirectDamage(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        var attacker = world.Cards[step.Subject];
+        if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
+        {
+            Damage.Retaliate(world, facts, world.Cards[step.Character], attacker,
+                Steps.AttackInitiated, events);
+        }
+    }
+
+    private static List<Card> IndirectCandidates(World world, ICardFacts facts, int player) =>
+    [
+        .. world.Cards
+            .Where(card => card.Area.PlayArea == PlayArea.Of(player))
+            .Where(card => card.ObjectId == world.Seats[player].IdentityCard.ObjectId
+                || FacedownDrones.Kind(card, facts) == CardKind.Ally)
+            .Where(card => DeckTypes.IsInPlay(card.Area.Type)
+                && Damage.Health(world, facts, card) - card.Damage > 0
+                && world.Abilities.CanTakeDamage(world, card, world.Cards[Current(world).Enemy]))
+            .OrderBy(card => card.ObjectId),
+    ];
 
     /// <summary>
     /// How much damage the attack deals —

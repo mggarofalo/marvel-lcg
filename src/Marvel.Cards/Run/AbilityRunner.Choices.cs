@@ -320,7 +320,8 @@ public sealed partial class AbilityRunner
                         Legal: [.. eligible.Select(card => card.ObjectId)],
                         Min: (int)share,
                         Max: (int)share,
-                        Rule: "rr:indirect-damage.1")),
+                        Rule: "rr:indirect-damage.1",
+                        AllowRepeated: true)),
             ]);
     }
 

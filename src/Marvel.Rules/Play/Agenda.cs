@@ -956,6 +956,32 @@ public sealed class Agenda
         }
     }
 
+    /// <summary>Remove the consequential-damage step for an aborted ally power.</summary>
+    /// <remarks>
+    /// The rulebook does not define an agenda operation. This is the engine's
+    /// representation of <c>rr:consequential-damage.2</c>: when the target left
+    /// before the basic power applied, the already-exhausted ally takes no
+    /// consequential damage.
+    /// </remarks>
+    public void CancelConsequentialDamage(int ally, int target, bool attack)
+    {
+        string what = attack
+            ? Steps.AllyConsequentialDamage
+            : Steps.AllyThwartConsequentialDamage;
+        int at = items.FindIndex(item =>
+            item.Step.What == what
+            && item.Step.Subject == ally
+            && item.Step.Character == target);
+        if (at >= 0)
+        {
+            items.RemoveAt(at);
+            if (at <= scheduled)
+            {
+                scheduled = Math.Max(0, scheduled - 1);
+            }
+        }
+    }
+
     /// <summary>
     /// Abandon everything outstanding.
     /// </summary>
@@ -1355,6 +1381,12 @@ public static class Steps
 
     /// <summary>Choose an eligible host for a revealed attachment.</summary>
     public const string ChooseAttachmentTarget = "ChooseAttachmentTarget";
+
+    /// <summary>Assign the calculated damage from one indirect enemy attack.</summary>
+    public const string AssignIndirectAttackDamage = "AssignIndirectAttackDamage";
+
+    /// <summary>Finish retaliation after indirect damage suspended on defeat.</summary>
+    public const string FinishIndirectAttackDamage = "FinishIndirectAttackDamage";
 
     /// <summary>Resolve damage step 6 through a player decision.</summary>
     public const string ChooseWouldBeDefeated = "ChooseWouldBeDefeated";

@@ -23,6 +23,10 @@ namespace Marvel.Rules.Prompts;
 /// Whether choosing means looking through a hidden zone, which a client should
 /// present as a search rather than as picking something already on the table.
 /// </param>
+/// <param name="AllowRepeated">
+/// Whether entries are allocations that may name one object more than once.
+/// This is true for indirect damage, where each entry represents one point.
+/// </param>
 /// <remarks>
 /// <para>
 /// <paramref name="Groups"/> exists because <paramref name="Legal"/> and the
@@ -60,7 +64,8 @@ public sealed record TargetRequest(
     IReadOnlyList<IReadOnlyList<int>>? Groups = null,
     IReadOnlyList<string>? MustIncludeTraits = null,
     string Rule = "",
-    bool IsSearch = false)
+    bool IsSearch = false,
+    bool AllowRepeated = false)
 {
     /// <summary>Whether the selection rule constrains it beyond a count.</summary>
     public bool IsGrouped => Groups is { Count: > 0 };
@@ -83,7 +88,7 @@ public sealed record TargetRequest(
         // below: a grouped selection does not make two references to one
         // object into two targets, and a flat request's count must not be met
         // by repeating one legal id.
-        if (selection.Distinct().Count() != selection.Count)
+        if (!AllowRepeated && selection.Distinct().Count() != selection.Count)
         {
             return false;
         }

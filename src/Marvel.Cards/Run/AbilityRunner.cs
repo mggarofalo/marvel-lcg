@@ -1230,15 +1230,6 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             return amount;
         }
 
-        var prevention = world.Effects.Active().FirstOrDefault(effect =>
-            string.Equals(effect.Kind, "preventDamage", StringComparison.Ordinal)
-            && effect.Affects == target.ObjectId);
-        if (prevention is not null && world.Effects.Use(prevention))
-        {
-            long prevented = prevention.Amount <= 0 ? amount : prevention.Amount;
-            return Math.Max(0, amount - prevented);
-        }
-
         var occurrence = new Occurrence(
             0, [Steps.DamageWouldBeDealt], Subject: target.ObjectId, Player: target.Owner);
 
@@ -1283,6 +1274,27 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         return left;
+    }
+
+    /// <inheritdoc/>
+    public long WouldTake(
+        World world, Card target, Card source, long amount, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(events);
+
+        var prevention = world.Effects.Active().FirstOrDefault(effect =>
+            string.Equals(effect.Kind, "preventDamage", StringComparison.Ordinal)
+            && effect.Affects == target.ObjectId);
+        if (prevention is null || !world.Effects.Use(prevention))
+        {
+            return amount;
+        }
+
+        long prevented = prevention.Amount <= 0 ? amount : prevention.Amount;
+        return Math.Max(0, amount - prevented);
     }
 
     /// <inheritdoc/>

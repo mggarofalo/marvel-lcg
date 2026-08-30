@@ -204,6 +204,30 @@ public sealed class IndirectDamageTests
         Assert.Equal(2, identity.Damage);
     }
 
+    [Rule("rr:indirect-damage.3.2")]
+    [Fact]
+    public void ToughDoesNotReduceHowMuchIndirectDamageCanBeAssigned()
+    {
+        // A tough character can be assigned damage up to its remaining hit
+        // points without anticipating the prevention. All three points are
+        // assigned to the ally, then its one tough card prevents all of them.
+        var world = Deal();
+        BombScare(world, threat: 3);
+        var ally = world.CreateCard(
+            Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        Statuses.Give(world, ally, Statuses.Tough);
+
+        var card = Reveal(world, AuthoredCards.Explosion);
+        var waiting = Assert.Single(world.Agenda.Outstanding);
+        AuthoredCards.Runner().Chose(
+            world, card, 0, waiting.Index,
+            Decision.Take(card.ObjectId, [ally.ObjectId, ally.ObjectId, ally.ObjectId], []));
+
+        Assert.Equal(0, ally.Damage);
+        Assert.False(Statuses.Has(world, ally, Statuses.Tough));
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:indirect-damage.4")]
     [Fact]
     public void ASupportIsNotACharacterAndTakesNone()
@@ -246,6 +270,24 @@ public sealed class IndirectDamageTests
         // One eligible character, so nothing is asked and the identity takes it.
         Assert.Empty(world.Agenda.Outstanding);
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:indirect-damage.4.1")]
+    [Fact]
+    public void IndirectDamageIsIgnoredWhenNoControlledCharacterCanReceiveIt()
+    {
+        // If no controlled character can be assigned any of the damage, the
+        // whole amount is ignored. This contrived board leaves the identity at
+        // zero remaining hit points so the eligibility rule can be isolated.
+        var world = Deal();
+        BombScare(world, threat: 3);
+        var identity = world.Seats[0].IdentityCard;
+        identity.TakeDamage(Damage.Health(world, Cards, identity));
+
+        Reveal(world, AuthoredCards.Explosion);
+
+        Assert.Equal(Damage.Health(world, Cards, identity), identity.Damage);
+        Assert.Empty(world.Agenda.Outstanding);
     }
 
     /// <summary>Puts Bomb Scare in play with a stated amount of threat.</summary>

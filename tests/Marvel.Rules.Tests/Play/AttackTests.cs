@@ -20,6 +20,101 @@ namespace Marvel.Rules.Tests.Play;
 /// </remarks>
 public sealed class AttackTests
 {
+    [Rule("rr:attack-enemy-activation.step.3.a")]
+    [Rule("rr:attack-enemy-activation.step.3.e")]
+    [Fact]
+    public void AdditionalBoostCardsFlipAndResolveOneAtATimeInDealtOrder()
+    {
+        // Each card is turned faceup, its boost ability resolves, and it is
+        // discarded before the next card is turned faceup. The recorder sees
+        // the first card already discarded when the second ability begins.
+        var printed = Printed(atk: 2, boost: 0);
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.Agenda.Abandon();
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.GiveAdditionalBoostCard(world, villain, "test", []);
+        Attack.GiveAdditionalBoostCard(world, villain, "test", []);
+        var abilities = new BoostOrderRecorder();
+
+        Attack.FlipBoostCards(world, printed, abilities, []);
+
+        Assert.Equal(["boost", "filler"], abilities.Faces);
+        Assert.Equal([0, 1], abilities.DiscardedBeforeResolution);
+        Assert.Equal(2, world.AreaOf(DeckType.EncounterDiscardPile).Cards.Count);
+    }
+
+    [Rule("rr:boost-boost-icon.3")]
+    [Fact]
+    public void BoostAbilityDamageIsNotCountedAsActivationDamage()
+    {
+        // The boost ability deals two damage during the activation, then the
+        // attack deals three. Only the latter is damage dealt by the activation.
+        var printed = Printed(atk: 3, boost: 0);
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.Agenda.Abandon();
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.GiveAdditionalBoostCard(world, villain, "test", []);
+
+        Attack.FlipBoostCards(world, printed, new DamagingBoost(), []);
+        Attack.CalculateDamage(world, printed);
+        Attack.DealDamage(world, printed, []);
+
+        Assert.Equal(5, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(3, world.Activation!.DamageDealt);
+    }
+
+    [Rule("rr:indirect-damage.5")]
+    [Rule("rr:indirect-damage.5.1")]
+    [Fact]
+    public void IndirectAttackDamageIsAssignedAfterDefenseWithoutAttackingRecipients()
+    {
+        // The defender decision happens before indirect damage is assigned.
+        // The undefended hero remains the attacked character even though most
+        // damage is assigned to an ally; that ally's retaliate cannot fire.
+        var printed = Printed(atk: 4, boost: 0);
+        var world = Board(printed);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "retaliate", Amount: 2,
+            Affects: ally.ObjectId));
+        var abilities = new CompletionRecorder();
+        var events = new List<GameEvent>();
+
+        var defend = Sequence.Work(world, printed, abilities, events)!;
+        Assert.Equal(Question.Defender, defend.Asking);
+        Attack.MakeIndirect(world);
+        Sequence.Answer(world, printed, abilities, defend, Decision.Decline, events);
+
+        var assign = Sequence.Work(world, printed, abilities, events)!;
+        Assert.Equal(Question.Element, assign.Asking);
+        var targets = Assert.Single(assign.Affordances).Targets!;
+        Assert.Equal(
+            [world.Seats[0].IdentityCard.ObjectId, ally.ObjectId],
+            targets.Legal);
+        Sequence.Answer(
+            world, printed, abilities, assign,
+            Decision.Take(
+                assign.Affordances[0].Id,
+                [ally.ObjectId, ally.ObjectId, ally.ObjectId,
+                 world.Seats[0].IdentityCard.ObjectId],
+                []),
+            events);
+        Sequence.Finish(world, printed, abilities, events);
+
+        Assert.False(DeckTypes.IsInPlay(ally.Area.Type));
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
+        Assert.Equal(world.Seats[0].IdentityCard.ObjectId, world.FinishedAttack!.Target);
+        Assert.Equal(4, Assert.Single(abilities.Results).DamageDealt);
+    }
+
     [Rule("rr:attack-enemy-activation.step.1")]
     [Rule("rr:boost-boost-icon")]
     [Fact]
@@ -481,6 +576,7 @@ public sealed class AttackTests
     }
 
     [Rule("rr:player-elimination.5.1")]
+    [Rule("rr:damage.3.2")]
     [Fact]
     public void EliminatingTheAttackedPlayerEndsTheAttackImmediately()
     {
@@ -498,7 +594,10 @@ public sealed class AttackTests
         Assert.Null(world.Activation);
         Assert.NotNull(world.FinishedAttack);
         Assert.True(world.FinishedAttack!.Damaged);
-        Assert.Equal(10, Assert.Single(observer.CompletedActivations).DamageDealt);
+        // All twenty was dealt even though the identity could take only its
+        // ten remaining hit points; modifying damage taken does not modify
+        // damage dealt.
+        Assert.Equal(20, Assert.Single(observer.CompletedActivations).DamageDealt);
         Assert.True(observer.SawDamageDealt);
         Assert.False(world.Agenda.IsBusy);
     }
@@ -915,6 +1014,34 @@ public sealed class AttackTests
         {
             Results.Add(result);
             return [];
+        }
+    }
+
+    private sealed class BoostOrderRecorder : NoCardAbilities
+    {
+        public List<string> Faces { get; } = [];
+        public List<int> DiscardedBeforeResolution { get; } = [];
+
+        public override IReadOnlyList<GameEvent> Boost(World world, Card card, int player)
+        {
+            Assert.Equal(DeckType.BoostingArea, card.Area.Type);
+            Assert.True(card.FaceUp);
+            Faces.Add(card.FaceId);
+            DiscardedBeforeResolution.Add(
+                world.AreaOf(DeckType.EncounterDiscardPile).Cards.Count);
+            return [];
+        }
+    }
+
+    private sealed class DamagingBoost : NoCardAbilities
+    {
+        public override IReadOnlyList<GameEvent> Boost(World world, Card card, int player)
+        {
+            var events = new List<GameEvent>();
+            Damage.Deal(
+                world, world.Facts, card, world.Seats[player].IdentityCard,
+                2, "Boost", "Deal_Damage", events);
+            return events;
         }
     }
 

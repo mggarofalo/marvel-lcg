@@ -34,9 +34,10 @@ public static class Damage
         Suspended,
     }
 
-    /// <summary>The characters and amount actually damaged by one attack.</summary>
+    /// <summary>The characters, damage, and excess produced by one attack.</summary>
     public sealed record AttackResult(
-        IReadOnlyList<Card> Characters, long Amount, bool Suspended = false);
+        IReadOnlyList<Card> Characters, long Amount, bool Suspended = false,
+        long Excess = 0, long Dealt = 0, long Taken = 0);
 
     /// <summary>
     /// Deals damage to a character, and defeats it if that was enough.
@@ -72,6 +73,15 @@ public static class Damage
     public static Outcome DealOutcome(
         World world, ICardFacts facts, Card source, Card target, long amount,
         string trigger, string verb, List<GameEvent> events, int by = -1)
+        => DealWithAmounts(
+            world, facts, source, target, amount, trigger, verb, events,
+            out _, out _, by);
+
+    /// <summary>Deals damage and reports the distinct dealt and taken amounts.</summary>
+    internal static Outcome DealWithAmounts(
+        World world, ICardFacts facts, Card source, Card target, long amount,
+        string trigger, string verb, List<GameEvent> events,
+        out long dealt, out long taken, int by = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -79,6 +89,8 @@ public static class Damage
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(events);
 
+        dealt = 0;
+        taken = 0;
         if (amount <= 0)
         {
             return Outcome.NotDefeated;
@@ -102,6 +114,7 @@ public static class Damage
         {
             return Outcome.NotDefeated;
         }
+        dealt = amount;
 
         // `rr:tough.2`: "if a character with a tough status card would take any
         // amount of damage, **prevent all of that damage** and discard a tough
@@ -127,6 +140,17 @@ public static class Damage
             // have taken damage**." So no health event, and no defeat.
             return Outcome.NotDefeated;
         }
+
+        // `rr:damage.step.3` and `.3.2`: modifying what the character takes
+        // (including prevention) does not rewrite the amount the source dealt.
+        // Step 1 has already fixed that dealt amount; only placement below uses
+        // the reduced taken amount.
+        amount = world.Abilities.WouldTake(world, target, source, amount, events);
+        if (amount <= 0)
+        {
+            return Outcome.NotDefeated;
+        }
+        taken = amount;
 
         long printed = Health(world, facts, target);
         long before = Math.Max(0, printed - target.Damage);
@@ -295,9 +319,9 @@ public static class Damage
             }
         }
 
-        // Worked out before the damage, because `rr:overkill.1` is "the damage
-        // beyond its hit points" and after the defeat the character is gone.
-        long beyond = Math.Max(0, amount - Math.Max(0, Health(world, facts, target) - target.Damage));
+        // Remaining hit points are captured before the damage because the
+        // defeated character may leave play before overkill is resolved.
+        long remaining = Math.Max(0, Health(world, facts, target) - target.Damage);
         // The same is true of control. A defeated ally moves to its owner's
         // discard pile, but `rr:overkill.1` sends excess damage to the identity
         // of the player who **controlled** it while it was defeated.
@@ -316,13 +340,17 @@ public static class Damage
         var damaged = new List<Card>();
         int firstDamageEvent = events.Count;
         long before = target.Damage;
-        bool overkill = beyond > 0
-            && Keywords.Has(world, attacker, Keywords.Overkill, facts);
+        bool hasOverkill = Keywords.Has(world, attacker, Keywords.Overkill, facts);
         bool canRetaliate = retaliate
             && !Keywords.Has(world, attacker, Keywords.Ranged, facts);
-        var outcome = DealOutcome(
+        var outcome = DealWithAmounts(
             world, facts, source, target, amount, trigger, verb, events,
-            by: attacker.Owner);
+            out long dealtAmount, out long takenAmount, by: attacker.Owner);
+        // Prevention changes what is taken without changing what was dealt,
+        // but `rr:overkill.4` specifically withholds prevented excess. The
+        // spill is therefore the taken amount beyond the former hit points.
+        long beyond = Math.Max(0, takenAmount - remaining);
+        bool overkill = beyond > 0 && hasOverkill;
         if (outcome == Outcome.Defeated && overkill)
         {
             Spill(world, facts, source, target, spillPlayer, beyond, trigger, events);
@@ -365,7 +393,14 @@ public static class Damage
             Retaliate(world, facts, target, attacker, trigger, events);
         }
 
-        return new AttackResult(damaged, dealt, outcome == Outcome.Suspended);
+        // `rr:overkill.3`: a card ability that counts excess damage uses the
+        // same value the overkill keyword calculated. Expose that calculation
+        // rather than asking every card to reconstruct the defeated target's
+        // former remaining hit points after it has left play.
+        long excess = outcome == Outcome.Defeated ? beyond : 0;
+        return new AttackResult(
+            damaged, dealt, outcome == Outcome.Suspended, excess,
+            dealtAmount, takenAmount);
     }
 
     /// <summary>Resolve overkill and retaliate after a suspended defeat decision.</summary>

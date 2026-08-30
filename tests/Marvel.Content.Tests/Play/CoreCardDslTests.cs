@@ -252,7 +252,9 @@ public sealed class CoreCardDslTests
 
         runner.Resolve(world, occurrence, interrupt, [], []);
 
-        Assert.Equal(2, runner.WouldBeDealt(
+        Assert.Equal(5, runner.WouldBeDealt(
+            world, world.Seats[0].IdentityCard, villain, 5, []));
+        Assert.Equal(2, runner.WouldTake(
             world, world.Seats[0].IdentityCard, villain, 5, []));
         Assert.Equal(DeckType.DiscardPile, flight.Area.Type);
     }

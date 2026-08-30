@@ -3,6 +3,7 @@ using Marvel.Cards.Run;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -135,6 +136,39 @@ public sealed class BoostAbilityTests
         new AbilityRunner(book).Boost(world, card, 0);
 
         Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
+    }
+
+    [Rule("rr:indirect-damage.5")]
+    [Fact]
+    public void ABoostAbilityCanMakeTheActivationsAttackIndirect()
+    {
+        var book = AbilityCatalog.Parse(
+            """
+            {"cards":[{"card":"01123","abilities":[{
+              "trigger":{"event":"WhenCardRevealed","timing":"Boost","subject":"this"},
+              "effect":{"makeAttackIndirect":1}}]}]}
+            """);
+        var runner = new AbilityRunner(book);
+        var world = Deal();
+        world.Abilities = runner;
+        world.Seats[0].IdentityCard.TurnTo("01001a");
+        var ally = world.CreateCard(
+            "01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard(SonicBoom, world.AreaOf(DeckType.EncounterDeck));
+        world.Agenda.Abandon();
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var assign = Sequence.Work(world, Cards, runner, events)!;
+
+        Assert.Equal(Question.Element, assign.Asking);
+        Assert.Equal(
+            [world.Seats[0].IdentityCard.ObjectId, ally.ObjectId],
+            Assert.Single(assign.Affordances).Targets!.Legal);
     }
 
     [Fact]

@@ -249,6 +249,14 @@ public interface ICardAbilities : IWindowAbilities
     long WouldBeDealt(
         World world, Card target, Card source, long amount, List<GameEvent> events);
 
+    /// <summary>Step 3 of dealing damage — modify how much the character takes.</summary>
+    /// <remarks>
+    /// <c>rr:damage.3.2</c> distinguishes this from <see cref="WouldBeDealt"/>:
+    /// prevention changes the amount taken without changing the amount dealt.
+    /// </remarks>
+    long WouldTake(
+        World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
+
     /// <summary>
     /// Step 6 of dealing damage — <c>rr:damage.step.6</c>.
     /// </summary>
@@ -652,6 +660,10 @@ public class NoCardAbilities : ICardAbilities
         World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
 
     /// <inheritdoc/>
+    public virtual long WouldTake(
+        World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
+
+    /// <inheritdoc/>
     public virtual void WouldBeDefeated(
         World world, Card target, List<GameEvent> events)
     {
@@ -918,6 +930,13 @@ public static class VillainPhase
                 Attack.DealDamage(world, facts, events);
                 break;
 
+            case Steps.AssignIndirectAttackDamage:
+                return Attack.IndirectDamagePrompt(world, facts, step);
+
+            case Steps.FinishIndirectAttackDamage:
+                Attack.FinishIndirectDamage(world, facts, step, events);
+                break;
+
             case Steps.NextAttackTarget:
                 Attack.NextTarget(world, step.Seat);
                 break;
@@ -1148,6 +1167,10 @@ public static class VillainPhase
         {
             case Steps.DeclareDefender:
                 Attack.Defend(world, facts, abilities, input, events);
+                break;
+
+            case Steps.AssignIndirectAttackDamage:
+                Attack.AssignIndirectDamage(world, facts, step, input, events);
                 break;
 
             case Steps.ChooseOption:

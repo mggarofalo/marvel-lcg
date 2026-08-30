@@ -267,6 +267,22 @@ public sealed class AffordanceTests
         Assert.True(request.Allows([1, 2]));
     }
 
+    [Rule("rr:indirect-damage.1")]
+    [Fact]
+    public void IndirectDamageCanAllocateSeveralPointsToOneCharacter()
+    {
+        // These are damage-point allocations, not repeated choices of one
+        // target. Assigning three points to one character names it three times.
+        var request = new TargetRequest(
+            Legal: [1, 2], Min: 3, Max: 3,
+            Rule: "rr:indirect-damage.1", AllowRepeated: true);
+
+        Assert.True(request.Allows([1, 1, 1]));
+        Assert.True(request.Allows([1, 1, 2]));
+        Assert.False(request.Allows([1, 1]));
+        Assert.False(request.Allows([1, 1, 9]));
+    }
+
     [Rule("rr:choose-game-element.3.1")]
     [Fact]
     public void AGroupedSelectionCannotRepeatOneMember()

@@ -709,6 +709,10 @@ public sealed partial class AbilityRunner
                 Indirect(node, cast);
                 break;
 
+            case "makeAttackIndirect":
+                Attack.MakeIndirect(cast.World);
+                break;
+
             case "dealDamage":
                 DealDamage(node, cast);
                 break;

@@ -112,6 +112,42 @@ public sealed class BasicPowerTests
         Assert.Equal(3, villain.Damage);
     }
 
+    [Rule("rr:consequential-damage.2")]
+    [Rule("rr:consequential-damage.2.1")]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AnAllyPowerAbortsWithoutConsequentialDamageIfItsTargetLeaves(
+        bool attacking)
+    {
+        // If the target leaves before the basic power applies, the ally still
+        // paid its exhaust cost but is not considered to have attacked or
+        // thwarted and takes no consequential damage.
+        var printed = new Printed()
+            .With("ally", ("ATK", "2"), ("THW", "2"), ("HP", "3"))
+            .With("villain", ("HP", "10"));
+        var world = Board(printed);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var target = attacking
+            ? world.TheCardIn(DeckType.VillainArea)!
+            : world.TheCardIn(DeckType.MainSchemesArea)!;
+        if (!attacking)
+        {
+            target.PlaceTokens("k_threat", 2);
+        }
+
+        BasicPowers.AllyPower(
+            world, printed, ally, target,
+            attacking ? BasicPowers.AttackVerb : BasicPowers.ThwartVerb, []);
+        World.MoveToTop(target, world.AreaOf(DeckType.EncounterDiscardPile));
+        Agendas.Finish(world, printed);
+
+        Assert.False(ally.Ready);
+        Assert.Equal(0, ally.Damage);
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
     [Rule("rr:star-icon.4")]
     [Fact]
     public void AStarredIdentityPowerChecksItsTextWhenUsed()
@@ -175,6 +211,40 @@ public sealed class BasicPowerTests
 
         Assert.Contains("is exhausted", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(0, villain.Damage);
+    }
+
+    [Rule("rr:attack-player-ability-type.1.2")]
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void PermissionMakesABasicAttackWithoutChangingReadiness(
+        bool useAlly, bool exhausted)
+    {
+        // "Without exhausting" can be used on an exhausted hero or ally. A
+        // ready character remains ready; an exhausted one remains exhausted.
+        var printed = new Printed()
+            .With("hero", ("ATK", "3"))
+            .With("ally", ("ATK", "2"), ("HP", "3"))
+            .With("villain", ("HP", "10"));
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var character = useAlly
+            ? world.CreateCard(
+                "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0))
+            : world.Seats[0].IdentityCard;
+        if (exhausted)
+        {
+            character.Exhaust();
+        }
+
+        BasicPowers.BasicAttackWithoutExhausting(
+            world, printed, character, villain, []);
+        Agendas.Finish(world, printed);
+
+        Assert.Equal(!exhausted, character.Ready);
+        Assert.Equal(useAlly ? 2 : 3, villain.Damage);
     }
 
     [Rule("rr:player-turn.3")]
@@ -850,6 +920,7 @@ public sealed class BasicPowerTests
         {
             "alterego" => CardKind.AlterEgo,
             "hero" => CardKind.Hero,
+            "ally" => CardKind.Ally,
             "scheme" => CardKind.MainScheme,
             "minion" => CardKind.Minion,
             "upgrade" => CardKind.Attachment,
@@ -869,6 +940,9 @@ public sealed class BasicPowerTests
             && long.TryParse(value.TrimEnd('*'), out long number)
                 ? number
                 : fallback;
+
+        public long ConsequentialDamage(string faceId, string attribute) =>
+            faceId == "ally" ? 1 : 0;
 
         /// <summary>`villain` and `villain2` are two stages of one character.</summary>
         public string Title(string faceId) =>
