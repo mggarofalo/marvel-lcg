@@ -42,9 +42,12 @@ public sealed class GameOutcomeTests
     }
 
     [Rule("rr:main-scheme-main-scheme-deck.2.1")]
+    [Rule("rr:winning-the-game")]
     [Fact]
     public void TheSamePolicyCanLoseToTheFinalMainScheme()
     {
+        // "If the final stage of the main scheme deck is completed, the
+        // villain wins the game."
         var played = Play(1);
 
         Assert.Equal(Outcome.VillainWins, played.World.Result);

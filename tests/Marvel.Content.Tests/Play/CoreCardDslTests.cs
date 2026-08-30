@@ -233,9 +233,14 @@ public sealed class CoreCardDslTests
     }
 
     [Rule("rr:prevent")]
+    [Rule("rr:prevent.1")]
+    [Rule("rr:prevent.1.1")]
     [Fact]
     public void CosmicFlightPreventsExactlyThreeDamage()
     {
+        // Preventing damage "reduce[s] the amount of damage the target takes";
+        // the amount "dealt" is not reduced. Five is still dealt, while only
+        // two is taken after Cosmic Flight prevents three.
         var world = Hero("01010a");
         var flight = world.CreateCard(
             "01017", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));

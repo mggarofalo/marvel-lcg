@@ -75,10 +75,12 @@ public sealed class IndirectDamageTests
     }
 
     [Rule("rr:indirect-damage.2")]
+    [Rule("rr:you-your.3")]
     [Fact]
     public void WithAnAllyThePlayerIsAskedHowToDivideIt()
     {
-        // "Indirect damage dealt to a group of players can be divided as the
+        // If an ability deals indirect damage to "you," that player assigns it
+        // among characters under their control. "Indirect damage dealt to a group of players can be divided as the
         // group chooses among friendly characters in play." Two characters and
         // three damage is a real division, so this asks.
         var world = Deal();

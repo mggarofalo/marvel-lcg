@@ -43,10 +43,12 @@ public sealed class CoreSetupTests
     }
 
     [Rule("rr:appendix-ii-setup.step.1")]
+    [Rule("rr:appendix-ii-setup.step.2")]
     [Rule("rr:appendix-ii-setup.step.4")]
     [Rule("rr:appendix-ii-setup.step.5")]
     [Rule("rr:appendix-ii-setup.step.6")]
     [Rule("rr:appendix-ii-setup.step.14")]
+    [Rule("rr:obligation.2")]
     [Fact]
     public void EveryCoreStarterDeckReachesTheMulliganInThePrintedPlaces()
     {
@@ -63,6 +65,10 @@ public sealed class CoreSetupTests
                 seat.IdentityCard.Area.Type == DeckType.HeroArea
                     && Cards.Kind(seat.IdentityCard.FaceId) == CardKind.AlterEgo,
                 $"{printed.Source}; rr:appendix-ii-setup.step.1: {name} starts alter-ego side up");
+            Assert.Equal(
+                Cards.PrintedValue(seat.IdentityCard.FaceId, "HP", 1),
+                Damage.Health(world, Cards, seat.IdentityCard));
+            Assert.Equal(0, seat.IdentityCard.Damage);
 
             SameMultiset(
                 printed.Source,
@@ -71,7 +77,7 @@ public sealed class CoreSetupTests
                 seat.Deck.Cards.Concat(seat.Hand.Cards).Select(card => card.FaceId));
             SameMultiset(
                 printed.Source,
-                "obligation in the encounter deck",
+                "associated obligations shuffled into the encounter deck",
                 printed.Obligation,
                 world.Cards
                     .Where(card => card.Area.Type == DeckType.EncounterDeck)
@@ -86,9 +92,12 @@ public sealed class CoreSetupTests
     }
 
     [Rule("rr:modes-of-play.2")]
+    [Rule("rr:modes-of-play.1")]
     [Fact]
     public void TheThreeCoreScenariosAndBothModesAreThePrintedLists()
     {
+        // Standard mode follows "the content and setup instructions for the
+        // chosen scenario"; expert mode substitutes its listed stages and set.
         foreach (var (name, printed) in Scenarios)
         {
             var actual = Setup.Campaign(name);
@@ -106,10 +115,17 @@ public sealed class CoreSetupTests
     }
 
     [Rule("rr:appendix-ii-setup.step.8")]
+    [Rule("rr:appendix-ii-setup.step.9")]
     [Rule("rr:appendix-ii-setup.step.10")]
+    [Rule("rr:expert-set")]
+    [Rule("rr:standard-set")]
     [Fact]
     public void EveryCoreScenarioModeDealsEveryDeclaredCardToItsPreAbilityPlace()
     {
+        // "The standard set is an encounter set that is added to most
+        // scenarios"; in expert mode, "the expert set [...] is added to
+        // scenarios." The declared encounter specs below include those whole
+        // fixed sets and the dealt deck must contain every one of their cards.
         foreach (var (name, printed) in Scenarios)
         {
             var order = Dealer.DealOrder(Setup, name, ["spider_man"]);
@@ -127,6 +143,11 @@ public sealed class CoreSetupTests
                     .Where(card => card.Area.Type is DeckType.VillainArea or DeckType.VillainDeck)
                     .OrderBy(card => card.ObjectId)
                     .Select(card => card.FaceId));
+            var villain = world.TheCardIn(DeckType.VillainArea)!;
+            Assert.Equal(
+                Cards.PrintedValue(villain.FaceId, "HP", world.Players),
+                Damage.Health(world, Cards, villain));
+            Assert.Equal(0, villain.Damage);
             Same(
                 printed.Source,
                 "main scheme cards on the table and in the main scheme deck",
@@ -153,6 +174,17 @@ public sealed class CoreSetupTests
             Assert.True(
                 setAside.All(dealt => world.Cards[dealt.Id].Area.Type == DeckType.AsideDeck),
                 $"{printed.Source}: every scenario set-aside card starts in the scenario aside pile");
+
+            var fixedCards = printed.FixedSets
+                .SelectMany(Setup.EncounterSet)
+                .ToList();
+            SameMultiset(
+                printed.Source,
+                "standard and expert encounter cards",
+                fixedCards,
+                world.AreaOf(DeckType.EncounterDeck).Cards
+                    .Select(card => card.FaceId)
+                    .Where(fixedCards.Contains));
 
             var encounterSpecs = order
                 .Where(creation => creation.Source is CreationSource.Obligation
@@ -205,10 +237,13 @@ public sealed class CoreSetupTests
     }
 
     [Rule("rr:modular-encounter-set")]
+    [Rule("rr:modular-encounter-set.2")]
     [Rule("rr:appendix-ii-setup.step.10")]
     [Fact]
     public void EveryCoreModularSetCanReplaceRhinosRecommendation()
     {
+        // "If a modular encounter set is added to a scenario, it is done so as
+        // an entire set." Every printed card in each selected set must appear.
         foreach (var (name, printed) in ModularSets)
         {
             var order = Dealer.DealOrder(Setup, "rhino", ["spider_man"], [name]);

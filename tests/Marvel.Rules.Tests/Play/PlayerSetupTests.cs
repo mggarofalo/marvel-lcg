@@ -96,13 +96,15 @@ public sealed class PlayerSetupTests
     }
 
     [Rule("rr:setup-triggered-ability.1")]
+    [Rule("rr:setup-triggered-ability.3")]
     [Rule("rr:appendix-ii-setup.step.16")]
     [Fact]
     public void ASetupChoiceSuspendsAndResumesBeforeTheFirstTurn()
     {
-        // Setup abilities are mandatory, but resolving one can still require a
-        // choice. The game must retain step 16 until that choice and the rest
-        // of the Setup abilities have resolved.
+        // Setup abilities on player cards "are resolved during the 'Resolve
+        // Character Setup Abilities' step" and are mandatory, but resolving
+        // one can still require a choice. The game must retain step 16 until
+        // that choice and the rest of the Setup abilities have resolved.
         var (world, facts) = Board(1);
         var first = world.Seats[0].IdentityCard;
         var second = world.CreateCard(

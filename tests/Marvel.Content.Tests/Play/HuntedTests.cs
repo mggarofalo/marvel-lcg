@@ -89,6 +89,36 @@ public sealed class HuntedTests
         Assert.Equal(DeckType.EncounterDiscardPile, hunted.Area.Type);
     }
 
+    [Rule("rr:you-your.8")]
+    [Fact]
+    public void YourHandMeansTheResolvingPlayersHand()
+    {
+        // If an ability discards from "your" hand, the resolving player
+        // discards from their hand. Player one pays; player zero's card stays.
+        var runner = AuthoredCards.Runner();
+        var world = WorldSetup.Deal(
+            Cards,
+            Blueprints.From(
+                Dealer.DealOrder(Setup, "unus", ["spider_man", "captain_marvel"]),
+                Cards),
+            ["Spider-Man", "Captain Marvel"],
+            12345,
+            runner);
+        var hunted = world.CreateCard(
+            AuthoredCards.Hunted,
+            world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(1)));
+        var untouched = world.Seats[0].Hand.Cards[0];
+        var paid = world.Seats[1].Hand.Cards[0];
+        var action = Assert.Single(
+            runner.Actions(world, 1), pending => pending.Card == hunted.ObjectId);
+
+        runner.Act(world, action, [], [paid.ObjectId]);
+
+        Assert.Equal(DeckType.DiscardPile, paid.Area.Type);
+        Assert.Contains(untouched, world.Seats[0].Hand.Cards);
+        Assert.Equal(DeckType.EncounterDiscardPile, hunted.Area.Type);
+    }
+
     [Rule("rr:cost.3")]
     [Fact]
     public void ACardThatGeneratesNoResourceAtAllStillPaysIt()
@@ -105,6 +135,7 @@ public sealed class HuntedTests
             game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);
         game.Resolve(Decision.Take(action.Id, [paid.ObjectId], []));
 
+        Assert.Equal(DeckType.DiscardPile, paid.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, hunted.Area.Type);
     }
 
@@ -167,9 +198,9 @@ public sealed class HuntedTests
     [Fact]
     public void ACardThatIsNotInTheHandCannotPayIt()
     {
-        // "Discard a card **from your hand**." A card in play is a card, and
-        // the phrase is about where it is — so naming one is refused rather
-        // than quietly discarding it from where it sits.
+        // A card that discards from "your" hand makes the resolving player
+        // discard from "their hand." A card in play is still a card, but
+        // naming one is refused rather than discarding it from where it sits.
         var (game, world) = Playing(out _);
         var action = Assert.Single(
             game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);

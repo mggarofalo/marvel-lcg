@@ -81,9 +81,12 @@ public sealed class CorePlayerSelectionTests
     [Rule("rr:appendix-ii-setup.step.16")]
     [Rule("rr:search.1")]
     [Rule("rr:search.3")]
+    [Rule("rr:you-your.9")]
     [Fact]
     public void ForesightChoosesABlackPantherUpgradeAfterTheMulligan()
     {
+        // If an ability searches "your" deck, the resolving player searches
+        // their own deck. Foresight therefore offers this seat's upgrades.
         var world = Board("01040a,01040b");
         world.Seats[0].IdentityCard.TurnTo("01040b");
         var chosen = world.CreateCard("01046", world.Seats[0].Deck);

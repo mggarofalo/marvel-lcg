@@ -11,6 +11,26 @@ namespace Marvel.Rules.Tests.Play;
 /// <summary>Discard destinations and the choice imposed by the ally limit.</summary>
 public sealed class DiscardAndAllyLimitTests
 {
+    [Rule("rr:attach-to.2")]
+    [Fact]
+    public void AnAttachedCardExhaustsIndependentlyOfItsHost()
+    {
+        // "An attached card exhausts and readies independently of the game
+        // element it is attached to." Exhausting either must not move both.
+        var world = Board(new Facts());
+        var host = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var attachment = world.CreateCard(
+            "upgrade",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId, cardOwner: 0));
+
+        attachment.Exhaust();
+
+        Assert.True(host.Ready);
+        Assert.False(attachment.Ready);
+    }
+
     [Rule("rr:tough.2")]
     [Fact]
     public void ASpentStatusLeavesTheEncounterDeckCycle()

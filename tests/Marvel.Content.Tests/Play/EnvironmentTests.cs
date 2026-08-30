@@ -47,14 +47,15 @@ public sealed class EnvironmentTests
     }
 
     [Rule("rr:reveal.2")]
+    [Rule("rr:environment.1")]
     [Rule("rr:villain-s-play-area.1")]
     [Fact]
     public void ARevealedEnvironmentEntersPlayAndStaysThere()
     {
-        // "**Environment**: It enters play in the villain's play area." And it
-        // stays: step 4 discards a card left in the revealing area, so the
-        // whole of this test is that the card is not there when the step is
-        // over.
+        // "**Environment**: It enters play in the villain's play area." It
+        // then "remains in play until a card ability or game effect causes it
+        // to leave play": step 4 discards a card left in the revealing area,
+        // so the whole test is that the card is not there when the step ends.
         var world = Deal();
         var card = world.CreateCard(
             UltronDrones, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));

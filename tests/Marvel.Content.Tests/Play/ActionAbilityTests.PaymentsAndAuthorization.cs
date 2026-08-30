@@ -306,11 +306,14 @@ public sealed partial class ActionAbilityTests
 
     [Rule("rr:ability.8.2")]
     [Rule("rr:action.1.1")]
+    [Rule("rr:obligation.6")]
     [Fact]
     public void OnlyThePlayerHoldingAnObligationMayTriggerItsAction()
     {
-        // An obligation remains an encounter card, but these clauses are the
-        // exception to the general permission to use encounter-card actions.
+        // "Only the player with the obligation in their play area can trigger
+        // abilities or pay costs on that obligation." It remains an encounter
+        // card, but this is the exception to the general permission to use
+        // encounter-card actions.
         // The second player's turn can request another player's ordinary
         // action; it cannot request the obligation sitting in player zero's
         // play area.
@@ -331,11 +334,14 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:ability.8.1")]
+    [Rule("rr:attachment.2")]
+    [Rule("rr:attachment.2.1")]
     [Fact]
     public void OnlyTheHostControllerMayUseAnAttachmentAbilityThatSaysYou()
     {
-        // The attachment belongs to the scenario. Its host is a player card,
-        // and “you” makes that host's controller the only permitted player.
+        // "You" on an attachment refers to "the attached player card's
+        // controller", and "only" that player can trigger its abilities or
+        // pay its costs. The attachment itself belongs to the scenario.
         var runner = Runner(
             AuthoredCards.PrelateArmor,
             "Action",
@@ -1018,13 +1024,15 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:cost.6")]
+    [Rule("rr:choose-game-element.2")]
     [Rule("rr:event.3")]
     [Fact]
     public void AnEventWithNoValidTargetCannotBeOfferedOrForged()
     {
-        // An event requiring a minion target cannot be initiated on a board
-        // with no minions. The same check runs again at execution, before the
-        // event leaves the hand or a payment source can be spent.
+        // If a player-card ability requires targets and "there are no valid
+        // targets for any part of the ability, the ability cannot be
+        // initiated." The same check runs again at execution, before the event
+        // leaves the hand or a payment source can be spent.
         var runner = Runner(
             AuthoredCards.Backflip,
             "Action",
