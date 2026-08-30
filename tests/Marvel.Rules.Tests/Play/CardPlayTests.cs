@@ -338,6 +338,47 @@ public sealed class CardPlayTests
         Assert.Same(world.Seats[0].Hand, card.Area);
     }
 
+    [Rule("rr:play-restrictions-and-permissions.2")]
+    [Fact]
+    public void APermissionCanPlayAnOwnedCardFromTheDiscardPile()
+    {
+        // A permission may allow "an ally card to be played from a player's
+        // discard pile." The zone and timing are overridden; its printed cost
+        // and other play restrictions remain in force.
+        var printed = Cards().With("ally", ("Cost", "2"));
+        var world = Board(printed);
+        var seat = world.Seats[0];
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        var first = world.Cards[Pay(world, "res")];
+        var second = world.Cards[Pay(world, "res")];
+
+        CardPlay.PlayWithPermission(
+            world, printed, new Silent(), seat, ally,
+            [first.ObjectId, second.ObjectId], []);
+
+        Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, first.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, second.Area.Type);
+    }
+
+    [Fact]
+    public void AnEventPermissionRaisesBeforeItsActionCanBeMisresolved()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var card = world.CreateCard(
+            "event", world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.PlayWithPermission(
+                world, printed, new Silent(), world.Seats[0], card, [], []));
+
+        Assert.Equal(DeckType.DiscardPile, card.Area.Type);
+    }
+
     [Rule("rr:dash-value.1")]
     [Fact]
     public void AnOmittedCostCannotBePlayedForZero()
@@ -1138,6 +1179,25 @@ public sealed class CardPlayTests
         CardPlay.Play(
             world, printed, abilities, world.Seats[0], copy, [], [], [second.ObjectId]);
         Assert.Equal(1, copy.Area.PlayArea.Player);
+    }
+
+    [Rule("rr:max-maximum.3.1")]
+    [Fact]
+    public void ControlCannotTransferIntoAnAlreadyReachedPerPlayerMaximum()
+    {
+        var printed = Cards().With("limited", ("Cost", "0"), ("MaxPerUnit", "1"));
+        var world = Table(printed);
+        var owned = world.CreateCard(
+            "limited", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var other = world.CreateCard(
+            "limited", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.TakeControl(world, printed, other, player: 0));
+
+        Assert.Equal(0, owned.Area.PlayArea.Player);
+        Assert.Equal(1, other.Area.PlayArea.Player);
+        Assert.Equal(1, other.Owner);
     }
 
     [Rule("rr:max-maximum")]

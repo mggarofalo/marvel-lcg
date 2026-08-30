@@ -45,6 +45,24 @@ public interface IWindowAbilities
         IReadOnlyList<int> paying,
         IReadOnlyList<int> chosen);
 
+    /// <summary>Resolves a window ability with explicit variable and icon decisions.</summary>
+    /// <param name="world">The world.</param>
+    /// <param name="occurrence">What it is timed to.</param>
+    /// <param name="ability">Which ability is resolving.</param>
+    /// <param name="paying">The selected generators.</param>
+    /// <param name="chosen">The chosen game elements.</param>
+    /// <param name="values">Numerical variables defined for the cost.</param>
+    /// <param name="allocations">Generated icons assigned to cost components.</param>
+    IReadOnlyList<GameEvent> Resolve(
+        World world,
+        Occurrence occurrence,
+        PendingAbility ability,
+        IReadOnlyList<int> paying,
+        IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values = null,
+        IReadOnlyList<Play.ResourceAllocation>? allocations = null) =>
+        Resolve(world, occurrence, ability, paying, chosen);
+
     /// <summary>How to describe one ability to a player who may take it.</summary>
     /// <param name="world">The world.</param>
     /// <param name="ability">The ability being offered.</param>

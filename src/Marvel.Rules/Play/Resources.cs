@@ -210,6 +210,34 @@ public static class Resources
         return true;
     }
 
+    /// <summary>Whether printed icons pay a cost without wild substitution.</summary>
+    /// <remarks>
+    /// <c>rr:printed.1.1</c>: “Wild resources cannot be spent as other resource
+    /// types for such a cost.” A printed wild still pays a required wild or an
+    /// unrestricted printed-resource slot; it does not become energy, mental,
+    /// or physical here.
+    /// </remarks>
+    public static bool PaysPrinted(string generated, long cost, string? required = null)
+    {
+        ArgumentNullException.ThrowIfNull(generated);
+        if (generated.Length < cost || (required?.Length ?? 0) > cost)
+        {
+            return false;
+        }
+
+        var pool = new List<char>(generated);
+        foreach (char type in required ?? string.Empty)
+        {
+            int found = pool.IndexOf(type);
+            if (found < 0)
+            {
+                return false;
+            }
+            pool.RemoveAt(found);
+        }
+        return true;
+    }
+
     /// <summary>The exact resources paid for a satisfied cost, excluding overpayment.</summary>
     /// <remarks>
     /// <c>rr:cost.4.1</c> distinguishes resources generated beyond a cost from

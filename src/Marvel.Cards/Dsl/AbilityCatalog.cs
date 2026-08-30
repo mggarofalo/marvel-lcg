@@ -33,7 +33,8 @@ public static class AbilityCatalog
         new(StringComparer.Ordinal)
         {
             "name", "note", "trigger", "effect", "cost", "limitPerRound", "when",
-            "anyPlayer", "labels",
+            "anyPlayer", "labels", "printedResources", "maxPerRound", "maxPerPhase",
+            "maxPerGame", "maxPerInstance",
         };
 
     private static readonly HashSet<string> TriggerKeys =
@@ -149,6 +150,25 @@ public static class AbilityCatalog
             throw new AbilityException($"an ability on '{card}' has no 'effect'");
         }
 
+        var parsedEffect = Node(effect, card);
+        string printedResources = Text(element, "printedResources") ?? string.Empty;
+        if (printedResources.Any(resource => !Resources.Types.Contains(resource)))
+        {
+            throw new AbilityException(
+                $"'{card}' declares an unknown printed text-box resource");
+        }
+        if (printedResources.Length > 0
+            && (type != AbilityType.Resource
+                || parsedEffect.Kind != "generate"
+                || parsedEffect.Argument is not AbilityValue.Word generated
+                || !string.Equals(
+                    generated.Value, printedResources, StringComparison.Ordinal)))
+        {
+            throw new AbilityException(
+                $"'{card}' may declare printed text-box resources only on a matching "
+                + "fixed resource ability");
+        }
+
         return new CardAbility(
             card,
             Text(element, "name") ?? cardName,
@@ -161,12 +181,43 @@ public static class AbilityCatalog
                 Form(trigger, card),
                 Also(trigger, card),
                 Whose(trigger, card)),
-            Node(effect, card),
+            parsedEffect,
             element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
             element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null,
             element.TryGetProperty("when", out var condition) ? Node(condition, card) : null,
             Flag(element, "anyPlayer", card),
-            Labels(element, card));
+            Labels(element, card),
+            printedResources,
+            Maximum(element, card));
+    }
+
+    private static AbilityMaximum? Maximum(JsonElement ability, string card)
+    {
+        var written = new[]
+        {
+            (Key: "maxPerRound", Period: MaximumPeriod.Round),
+            (Key: "maxPerPhase", Period: MaximumPeriod.Phase),
+            (Key: "maxPerGame", Period: MaximumPeriod.Game),
+            (Key: "maxPerInstance", Period: MaximumPeriod.Instance),
+        }
+            .Where(candidate => ability.TryGetProperty(candidate.Key, out _))
+            .ToList();
+        if (written.Count > 1)
+        {
+            throw new AbilityException($"'{card}' gives one ability several maxima");
+        }
+        if (written.Count == 0)
+        {
+            return null;
+        }
+
+        var maximum = written[0];
+        long amount = ability.GetProperty(maximum.Key).GetInt64();
+        if (amount <= 0)
+        {
+            throw new AbilityException($"'{card}' gives an ability a non-positive maximum");
+        }
+        return new AbilityMaximum(amount, maximum.Period);
     }
 
     private static List<string> Labels(JsonElement ability, string card)

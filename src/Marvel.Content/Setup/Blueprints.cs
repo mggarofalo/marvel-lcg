@@ -35,6 +35,7 @@ public static class Blueprints
     {
         ArgumentNullException.ThrowIfNull(dealt);
         ArgumentNullException.ThrowIfNull(facts);
+        ValidateDeckMaximums(dealt, facts);
         var blueprints = new List<CardBlueprint>();
         var linkedByDeck = new HashSet<(string Deck, string Card)>();
         foreach (var creation in dealt)
@@ -63,6 +64,36 @@ public static class Blueprints
                 creation.Player));
         }
         return blueprints;
+    }
+
+    /// <summary>Refuses a player deck that exceeds a printed per-deck maximum.</summary>
+    private static void ValidateDeckMaximums(
+        IReadOnlyList<Creation> dealt, ICardFacts facts)
+    {
+        var deckCards = dealt.Where(creation =>
+            creation.Player >= 0
+            && creation.Source is CreationSource.HeroDeck or CreationSource.PlayerDeck);
+        foreach (var deck in deckCards.GroupBy(creation => creation.Player))
+        {
+            foreach (var title in deck.GroupBy(
+                         creation => facts.Title(creation.Faces[0]),
+                         StringComparer.Ordinal))
+            {
+                long maximum = title
+                    .Select(creation => facts.PrintedValue(
+                        creation.Faces[0], "MaxPerDeck", players: 1))
+                    .Where(value => value > 0)
+                    .DefaultIfEmpty(long.MaxValue)
+                    .Min();
+                if (title.LongCount() > maximum)
+                {
+                    throw new ArgumentException(
+                        $"player {deck.Key}'s deck contains {title.LongCount()} copies of "
+                        + $"'{title.Key}', whose printed maximum is {maximum}",
+                        nameof(dealt));
+                }
+            }
+        }
     }
 
     private static string? DeckOf(Creation creation) => creation.Source switch

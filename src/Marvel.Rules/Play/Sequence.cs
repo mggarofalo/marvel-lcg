@@ -254,7 +254,8 @@ public static class Sequence
         // the answer, not something the engine picks for them. Empty when the
         // affordance was free, which is almost all of them.
         events.AddRange(abilities.Resolve(
-            world, window.Occurrence, ability, input.Spent, input.Targets));
+            world, window.Occurrence, ability, input.Spent, input.Targets,
+            input.DefinedValues, input.Allocated));
 
         if (window.Occurrence.Threat is { Replaced: true })
         {

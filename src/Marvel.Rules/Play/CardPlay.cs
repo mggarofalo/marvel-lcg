@@ -385,6 +385,52 @@ public static class CardPlay
         Enter(world, facts, abilities, seat, card, events, targets ?? []);
     }
 
+    /// <summary>Plays an owned card from an out-of-play zone by permission.</summary>
+    /// <remarks>
+    /// <c>rr:play-restrictions-and-permissions.2</c> allows a permission to
+    /// override the normal timing or source-zone specification; its example is
+    /// an ally played from a discard pile. The caller is the resolving effect
+    /// that supplied that permission. Printed restrictions and the ordinary
+    /// resource cost remain in force.
+    /// </remarks>
+    public static void PlayWithPermission(
+        World world, ICardFacts facts, ICardAbilities abilities, Seat seat, Card card,
+        IReadOnlyList<int> paying, List<GameEvent> events,
+        IReadOnlyList<int>? targets = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(seat);
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(paying);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (facts.Kind(card.FaceId) == CardKind.Event)
+        {
+            throw new RulesNotImplementedException(
+                $"event '{card.FaceId}' cannot use an out-of-zone play permission "
+                + "until its Action selection can be represented");
+        }
+
+        if (!Permitted(
+                world, facts, seat, card, targets, abilities,
+                outOfPlayPermission: true))
+        {
+            throw new RulesNotImplementedException(
+                $"card {card.ObjectId} ('{card.FaceId}') cannot use this play permission");
+        }
+
+        var adjusted = CostOf(world, facts, seat, card);
+        var hands = Paying(world, facts, seat, card).Select(player => player.Hand).ToList();
+        Spend(
+            world, facts, hands, paying, adjusted.Amount,
+            Resources.Required(world, card, facts), card.ObjectId, seat.Index,
+            events, payingFor: card);
+        Enter(world, facts, abilities, seat, card, events, targets ?? []);
+        UseCostModifiers(world, adjusted);
+    }
+
     /// <summary>
     /// Puts an ally into play under the named player's control.
     /// </summary>
@@ -681,11 +727,20 @@ public static class CardPlay
 
     private static bool Permitted(
         World world, ICardFacts facts, Seat seat, Card card,
-        IReadOnlyList<int>? targets = null, ICardAbilities? abilities = null)
+        IReadOnlyList<int>? targets = null, ICardAbilities? abilities = null,
+        bool outOfPlayPermission = false)
     {
-        if (card.Area != seat.Hand)
+        if (!outOfPlayPermission && card.Area != seat.Hand)
         {
             // "Cards are played from a player's hand."
+            return false;
+        }
+        if (outOfPlayPermission
+            && (card.Owner != seat.Index || DeckTypes.IsInPlay(card.Area.Type)))
+        {
+            // A permission changes only the named source-zone/timing
+            // specification. It neither takes another player's card nor turns
+            // playing an already-in-play card into a new play.
             return false;
         }
 
@@ -823,6 +878,52 @@ public static class CardPlay
             .SelectMany(area => area.Cards)
             .Count(attached => string.Equals(
                 facts.Title(attached.FaceId), title, StringComparison.Ordinal));
+    }
+
+    /// <summary>Transfers control of an in-play player card to another player.</summary>
+    /// <remarks>
+    /// The destination is validated before the card moves. In particular,
+    /// <c>rr:max-maximum.3.1</c> forbids taking control of another copy of a
+    /// “Max 1 per player” card already controlled there.
+    /// </remarks>
+    public static void TakeControl(
+        World world, ICardFacts facts, Card card, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(card);
+        if (player < 0 || player >= world.Seats.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(player));
+        }
+        if (!DeckTypes.IsInPlay(card.Area.Type) || !card.Area.PlayArea.IsPlayers)
+        {
+            throw new RulesNotImplementedException(
+                $"card {card.ObjectId} is not an in-play player card whose control can transfer");
+        }
+        if (card.Area.PlayArea == PlayArea.Of(player))
+        {
+            return;
+        }
+
+        long maximum = facts.PrintedValue(card.FaceId, "MaxPerUnit", world.Players);
+        string unit = facts.Attributes(card.FaceId)
+            .GetValueOrDefault("MaxPerUnitKind", "player");
+        if (maximum > 0
+            && string.Equals(unit, "player", StringComparison.Ordinal)
+            && CountControlled(world, facts, card, player) >= maximum)
+        {
+            throw new RulesNotImplementedException(
+                $"player {player} already controls the maximum number of "
+                + $"'{facts.Title(card.FaceId)}'");
+        }
+
+        var destination = world.AreaOf(
+            card.Area.Type,
+            PlayArea.Of(player),
+            host: card.Area.Host,
+            cardOwner: card.Owner);
+        World.MoveToTop(card, destination);
     }
 
     /// <summary>Where a played card goes — <c>rr:enters-play</c>.</summary>

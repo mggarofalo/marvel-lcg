@@ -56,6 +56,8 @@ internal sealed record StepRecord(
     DecisionSelector Decision,
     IReadOnlyList<int> Targets,
     IReadOnlyList<int> Resources,
+    IReadOnlyDictionary<string, long> Values,
+    IReadOnlyList<ResourceAllocation> Allocations,
     IReadOnlyList<JsonElement> Events,
     string Digest);
 
@@ -83,6 +85,8 @@ internal sealed record FailureRecord(
     DecisionSelector? Decision,
     IReadOnlyList<int> Targets,
     IReadOnlyList<int> Resources,
+    IReadOnlyDictionary<string, long> Values,
+    IReadOnlyList<ResourceAllocation> Allocations,
     string? LastGoodDigest,
     string? PostFailureDigest,
     IReadOnlyList<StepRecord> RecentSteps,
@@ -175,7 +179,10 @@ internal sealed record DecisionSelector(
             occurrence);
     }
 
-    public Decision Resolve(Prompt prompt, IReadOnlyList<int> targets, IReadOnlyList<int> resources)
+    public Decision Resolve(
+        Prompt prompt, IReadOnlyList<int> targets, IReadOnlyList<int> resources,
+        IReadOnlyDictionary<string, long> values,
+        IReadOnlyList<ResourceAllocation> allocations)
     {
         if (Decline)
         {
@@ -215,7 +222,18 @@ internal sealed record DecisionSelector(
                 $"recorded resources do not pay an offered cost for '{selected.Label}'");
         }
 
-        return Decision.Take(selected.Id, targets, resources);
+        var requested = selected.CostOptions
+            .SelectMany(cost => cost.VariableRequests)
+            .ToDictionary(variable => variable.Name, StringComparer.Ordinal);
+        if (values.Count != requested.Count
+            || values.Any(entry => !requested.TryGetValue(entry.Key, out var variable)
+                || !variable.Allows(entry.Value)))
+        {
+            throw new ReplayDivergenceException(
+                $"recorded variables are not allowed by '{selected.Label}'");
+        }
+
+        return Decision.Take(selected.Id, targets, resources, values, allocations);
     }
 
     private static bool PaymentIsOffered(

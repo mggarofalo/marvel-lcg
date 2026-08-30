@@ -94,6 +94,14 @@ and then consumed once to pay. `CostOption.Sources` is the menu of generators;
 which subset gets used is the player's decision, and the engine cannot collapse
 it in advance.
 
+When one payment covers simultaneous resource costs, `CostOption.Components`
+keeps those costs separate and `Decision.Allocations` assigns individual icons
+from the chosen generators to them. The same field carries a wild resource's
+declared type and identifies which icons were actually paid when a generator
+produced excess. A simulation policy may use `ResourcePayment.Allocate` to make
+one deterministic choice; the engine never applies that helper to a client
+command, because the choice belongs to the player.
+
 `OrCost` is additive rather than a replacement, and that is load-bearing:
 flattening "a mental resource *or* two of any type" to a bare `2` is what
 corrupted a corpus during MARVEL-158, because the payer met the number with
@@ -145,8 +153,13 @@ Prompt        Player, Kind, Trigger, Label, Cancellable, Affordance[]
 Affordance    Id, Verb, AnchorId, AnchorPlayer, Label,
               TargetRequest?, CostOption[], Illegal?
 TargetRequest Legal[], Min, Max, Groups[][], MustIncludeTraits[], Rule, IsSearch
-CostOption    Target, Cost, Rule[], OrCost, OrRule[], ResourceSource[]
+CostOption    Target, Cost, Rule[], OrCost, OrRule[], ResourceSource[],
+              VariableRequest[], ResourceCost[]
 ResourceSource Effect, Generates
+VariableRequest Name, Min, Max
+ResourceCost  Cost, Rule[]
+Decision      Affordance, Targets[], Resources[], Values{}, ResourceAllocation[]
+ResourceAllocation Source, Cost, PaidAs
 ```
 
 Two constraints carried over from the event stream, for the same reasons:
@@ -168,6 +181,17 @@ never a replacement for it.
 The two sides are deliberately asymmetric. A prompt is **absent** when the game
 is over, and never empty — a decision with no options is not put to a player. The
 event list is very often empty: 35.3% of recorded steps change no state at all.
+
+A cost of X adds a `VariableRequest` beside its resource sources, and the
+answer carries the chosen value in `Decision.Values`. This is an engine wire
+choice: the rulebook requires X to be defined before payment and modifiers,
+but does not define a command format. Keeping the value separate from the
+selected generators means overpayment cannot silently redefine X.
+
+Likewise, resource allocation is separate from generator selection. One
+double-resource generator can pay one icon into each of two simultaneous costs,
+while an excess icon or a wild declaration can change a card effect even though
+the generator ids stay identical. `Decision.Allocations` preserves that answer.
 
 ## Reproducing the numbers
 

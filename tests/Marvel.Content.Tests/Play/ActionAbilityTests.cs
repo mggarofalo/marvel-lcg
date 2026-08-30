@@ -192,6 +192,295 @@ public sealed class ActionAbilityTests
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
+    [Rule("rr:cost.12")]
+    [Fact]
+    public void TakingDamageAsACostIsUnpaidWhenDamageIsPrevented()
+    {
+        // A take-damage cost "is not considered paid unless all of that
+        // damage was taken." Preventing even part of it therefore suppresses
+        // the post-arrow draw.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost:
+            """
+            { "takeDamage": { "cards": "you", "amount": 2 } }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+        int held = world.Seats[0].Hand.Cards.Count;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "preventDamage",
+            Amount: 1,
+            Card: source!.ObjectId,
+            Affects: world.Seats[0].IdentityCard.ObjectId,
+            Lasts: new Duration(Uses: 1)));
+
+        var failure = Assert.Throws<RulesNotImplementedException>(() =>
+            runner.Act(world, action, [], []));
+
+        Assert.Contains("only 1 was taken", failure.Message);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:cost.12")]
+    [Fact]
+    public void TakingAllDamagePaysTheCost()
+    {
+        // The cost is paid when "all of that damage was taken," so the effect
+        // after the arrow resolves.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost:
+            """
+            { "takeDamage": { "cards": "you", "amount": 2 } }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.Act(world, action, [], []);
+
+        Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:event.5")]
+    [Fact]
+    public void AnEventDamageModifierAppliesToEveryDamageInstance()
+    {
+        // When an event "deals multiple instances of damage, each of those
+        // instances is modified." Two one-damage instances with +2 each deal
+        // six, not four.
+        var runner = Runner(
+            "01005",
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } },
+              { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }
+            ] }
+            """);
+        Card? played = null;
+        var payments = new List<Card>();
+        var (_, world) = Playing(
+            board =>
+            {
+                played = board.CreateCard("01005", board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    payments.Add(board.CreateCard("01087", board.Seats[0].Hand));
+                }
+            },
+            hero: true,
+            abilities: runner);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "eventDamage", Amount: 2,
+            Card: played!.ObjectId, Affects: played.ObjectId));
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == played.ObjectId);
+
+        runner.Act(world, action, [.. payments.Select(card => card.ObjectId)], []);
+
+        Assert.Equal(6, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
+    [Rule("rr:event.5")]
+    [Fact]
+    public void AnEventThreatModifierAppliesToEveryRemovalInstance()
+    {
+        // The same clause says that when an event "removes multiple instances
+        // of threat, each of those instances is modified."
+        var runner = Runner(
+            "01005",
+            "Action",
+            """
+            { "seq": [
+              { "removeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } },
+              { "removeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }
+            ] }
+            """);
+        Card? played = null;
+        var payments = new List<Card>();
+        var (_, world) = Playing(
+            board =>
+            {
+                board.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 10);
+                played = board.CreateCard("01005", board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    payments.Add(board.CreateCard("01087", board.Seats[0].Hand));
+                }
+            },
+            hero: true,
+            abilities: runner);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "eventThreatRemoval", Amount: 2,
+            Card: played!.ObjectId, Affects: played.ObjectId));
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == played.ObjectId);
+
+        runner.Act(world, action, [.. payments.Select(card => card.ObjectId)], []);
+
+        Assert.Equal(
+            4,
+            world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:event.5.1")]
+    [Fact]
+    public void AnAttackModifierAppliesOnlyToAnEventsFirstAttack()
+    {
+        // A modifier to damage "an attack" deals applies to "only the first"
+        // when an event initiates multiple attacks. The first deals three and
+        // the second deals one.
+        var runner = Runner(
+            "01005",
+            "Action",
+            """
+            { "seq": [
+              { "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } },
+              { "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } }
+            ] }
+            """);
+        Card? played = null;
+        var payments = new List<Card>();
+        var (_, world) = Playing(
+            board =>
+            {
+                played = board.CreateCard("01005", board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    payments.Add(board.CreateCard("01087", board.Seats[0].Hand));
+                }
+            },
+            hero: true,
+            abilities: runner);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "attackDamage", Amount: 2,
+            Card: played!.ObjectId, Affects: played.ObjectId,
+            Lasts: new Duration(Uses: 1)));
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == played.ObjectId);
+
+        runner.Act(world, action, [.. payments.Select(card => card.ObjectId)], []);
+
+        Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
+    [Rule("rr:event.5.1")]
+    [Fact]
+    public void AnAttackModifierIsConsumedAtTheAttackWrapperBoundary()
+    {
+        // Each wrapper is one attack even when its effect uses generic damage.
+        // The modifier remains through the first wrapper and is gone before
+        // the second attack begins.
+        var runner = Runner(
+            "01005",
+            "Action",
+            """
+            { "seq": [
+              { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "dealDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              } },
+              { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "dealDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              } }
+            ] }
+            """);
+        Card? played = null;
+        var payments = new List<Card>();
+        var (game, world) = Playing(
+            board =>
+            {
+                played = board.CreateCard("01005", board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    payments.Add(board.CreateCard("01087", board.Seats[0].Hand));
+                }
+            },
+            hero: true,
+            abilities: runner);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "attackDamage", Amount: 2,
+            Card: played!.ObjectId, Affects: played.ObjectId,
+            Lasts: new Duration(Uses: 1)));
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == played.ObjectId);
+
+        game.Resolve(Decision.Take(
+            action.Id, [], [.. payments.Select(card => card.ObjectId)]));
+
+        Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
+    [Rule("rr:event.5.1")]
+    [Fact]
+    public void EveryDamageInstanceInsideTheFirstAttackIsModified()
+    {
+        // Both damage nodes belong to one attack wrapper. The one-use modifier
+        // is consumed after that attack, not after its first damage instance.
+        var runner = Runner(
+            "01005",
+            "Action",
+            """
+            { "attack": {
+              "target": { "query": "villain" },
+              "effect": { "seq": [
+                { "dealAttackDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } },
+                { "dealAttackDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              ] }
+            } }
+            """);
+        Card? played = null;
+        var payments = new List<Card>();
+        var (game, world) = Playing(
+            board =>
+            {
+                played = board.CreateCard("01005", board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    payments.Add(board.CreateCard("01087", board.Seats[0].Hand));
+                }
+            },
+            hero: true,
+            abilities: runner);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "attackDamage", Amount: 2,
+            Card: played!.ObjectId, Affects: played.ObjectId,
+            Lasts: new Duration(Uses: 1)));
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == played.ObjectId);
+
+        game.Resolve(Decision.Take(
+            action.Id, [], [.. payments.Select(card => card.ObjectId)]));
+
+        Assert.Equal(6, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
     [Rule("rr:player-elimination.5")]
     [Rule("rr:player-elimination.step.5")]
     [Rule("rr:upgrade.1")]
@@ -642,7 +931,7 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
-    public void AWindowEventWithPrintedAndArrowCostsIsNotOfferedOrResolved()
+    public void AWindowEventWithPrintedAndArrowCostsUsesOneAllocatedPayment()
     {
         Card? card = null;
         Card? energy = null;
@@ -669,15 +958,21 @@ public sealed class ActionAbilityTests
             Player: 0,
             Target: world.Seats[0].IdentityCard.ObjectId);
 
-        Assert.Empty(runner.Waiting(world, occurrence, WindowKind.Interrupt));
-        Assert.Throws<RulesNotImplementedException>(() => runner.Resolve(
+        Assert.Contains(
+            runner.Waiting(world, occurrence, WindowKind.Interrupt),
+            pending => pending.Card == eventCard.ObjectId);
+        runner.Resolve(
             world,
             occurrence,
             new PendingAbility(eventCard.ObjectId, AbilityType.Interrupt, 0),
             [payment.ObjectId],
-            []));
-        Assert.Same(world.Seats[0].Hand, eventCard.Area);
-        Assert.Same(world.Seats[0].Hand, payment.Area);
+            [],
+            allocations:
+            [
+                new ResourceAllocation(payment.ObjectId, Cost: 1, PaidAs: "Y"),
+            ]);
+        Assert.Equal(DeckType.DiscardPile, eventCard.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
     }
 
     [Fact]
@@ -716,7 +1011,7 @@ public sealed class ActionAbilityTests
 
         Assert.Contains(
             price.Generators, source => source.Effect == doubleMental!.ObjectId);
-        Assert.DoesNotContain(
+        Assert.Contains(
             price.Generators, source => source.Effect == physical!.ObjectId);
 
         Assert.Throws<RulesNotImplementedException>(() => runner.Act(
@@ -928,7 +1223,7 @@ public sealed class ActionAbilityTests
         Assert.Contains(price.Generators, source => source.Effect == doubleEnergy!.ObjectId);
         Assert.Contains(price.Generators, source => source.Effect == doubleMental!.ObjectId);
         Assert.Contains(price.Generators, source => source.Effect == safeTriple!.ObjectId);
-        Assert.DoesNotContain(
+        Assert.Contains(
             price.Generators, source => source.Effect == ambiguousTriple!.ObjectId);
     }
 
@@ -981,7 +1276,7 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
-    public void ARemainingWildDeclarationChoiceIsNotOfferedOrInferred()
+    public void ARemainingWildDeclarationChoiceIsOfferedButNotInferred()
     {
         const string requiredEvent = "27016"; // one of two wilds must be physical.
         Card? card = null;
@@ -1002,7 +1297,7 @@ public sealed class ActionAbilityTests
 
         var action = Assert.Single(
             runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
-        Assert.DoesNotContain(
+        Assert.Contains(
             Assert.Single(runner.Describe(world, action).CostOptions).Generators,
             source => source.Effect == doubleWild!.ObjectId);
         Assert.Throws<RulesNotImplementedException>(() => runner.Act(
@@ -1012,6 +1307,19 @@ public sealed class ActionAbilityTests
             []));
         Assert.Same(world.Seats[0].Hand, card!.Area);
         Assert.Same(world.Seats[0].Hand, doubleWild!.Area);
+
+        runner.Act(
+            world,
+            action,
+            [doubleWild.ObjectId],
+            [],
+            allocations:
+            [
+                new ResourceAllocation(doubleWild.ObjectId, Cost: 0, PaidAs: "RG"),
+            ]);
+
+        Assert.Equal(DeckType.DiscardPile, card.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, doubleWild.Area.Type);
     }
 
     [Rule("rr:cost.5")]
@@ -1049,6 +1357,345 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.DiscardPile, doubleEnergy.Area.Type);
         Assert.NotNull(game.Pending);
         Assert.Equal(Question.TurnOption, game.Pending.Asking);
+    }
+
+    [Rule("rr:cost.5")]
+    [Rule("rr:cost.5.1")]
+    [Fact]
+    public void OneDoubleResourceCanBeAllocatedAcrossAnEventsTwoCosts()
+    {
+        // An event's printed cost and its cost before the arrow are paid
+        // simultaneously, and the player "chooses how to divide" a generated
+        // double resource between them. One command therefore assigns one icon
+        // to each component while naming the generator only once.
+        const string eventCard = "01004";
+        var runner = Runner(
+            eventCard,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spend": "Y" }""");
+        Card? card = null;
+        Card? doubleEnergy = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                card = board.CreateCard(eventCard, board.Seats[0].Hand);
+                doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
+            },
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == card!.ObjectId);
+        var price = Assert.Single(action.CostOptions);
+
+        Assert.Equal("2", price.Cost);
+        Assert.Equal(2, price.ResourceCosts.Count);
+        Assert.Equal(["1", "1"], price.ResourceCosts.Select(cost => cost.Cost));
+
+        game.Resolve(Decision.Take(
+            action.Id,
+            [],
+            [doubleEnergy!.ObjectId],
+            new Dictionary<string, long>(StringComparer.Ordinal),
+            [
+                new ResourceAllocation(doubleEnergy.ObjectId, Cost: 0, PaidAs: "Y"),
+                new ResourceAllocation(doubleEnergy.ObjectId, Cost: 1, PaidAs: "Y"),
+            ]));
+
+        Assert.Equal(DeckType.DiscardPile, card!.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, doubleEnergy!.Area.Type);
+    }
+
+    [Rule("rr:cost.5")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void ACombinedEventCostWithoutAnAllocationChangesNoState()
+    {
+        const string eventCard = "01004";
+        var runner = Runner(
+            eventCard,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spend": "Y" }""");
+        Card? card = null;
+        Card? doubleEnergy = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                card = board.CreateCard(eventCard, board.Seats[0].Hand);
+                doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
+            },
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world, action, [doubleEnergy!.ObjectId], []));
+
+        Assert.Contains("allocation was not supplied", thrown.Message, StringComparison.Ordinal);
+        Assert.Same(world.Seats[0].Hand, card!.Area);
+        Assert.Same(world.Seats[0].Hand, doubleEnergy!.Area);
+    }
+
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void AnInvalidCombinedEventAllocationChangesNoState()
+    {
+        const string eventCard = "01004";
+        var runner = Runner(
+            eventCard, "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spend": "Y" }""");
+        Card? card = null;
+        Card? doubleEnergy = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                card = board.CreateCard(eventCard, board.Seats[0].Hand);
+                doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
+            },
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world, action, [doubleEnergy!.ObjectId], [],
+            allocations:
+            [
+                new ResourceAllocation(doubleEnergy.ObjectId, Cost: 0, PaidAs: "Y"),
+            ]));
+
+        Assert.Same(world.Seats[0].Hand, card!.Area);
+        Assert.Same(world.Seats[0].Hand, doubleEnergy!.Area);
+    }
+
+    [Rule("rr:printed.1")]
+    [Rule("rr:text-box.1.1")]
+    [Fact]
+    public void APrintedTextBoxResourceAbilityPaysAPrintedResourceCost()
+    {
+        // “They may use resources generated by a card's ability, so long as
+        // the icon for the resource that card generates is printed in its text
+        // box.” Peter Parker's Scientist icon is marked from printed card data
+        // and appears beside printed hand icons in this narrower generator menu.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spendPrinted": "B" }""",
+            includeAuthored: true);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                source = InPlay(board, AuthoredCards.AuntMay);
+            },
+            abilities: runner);
+        int peter = world.Seats[0].IdentityCard.ObjectId;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId
+                && option.CostOptions.Any(cost =>
+                    cost.ResourceCosts.Any(component => component.Printed)));
+        var price = Assert.Single(action.CostOptions);
+
+        Assert.Contains(price.Generators, generator => generator.Effect == peter);
+        Assert.True(Assert.Single(price.ResourceCosts).Printed);
+
+        game.Resolve(Decision.Take(action.Id, [], [peter]));
+
+        Assert.DoesNotContain(
+            runner.ResourceAbilities(world, 0), generator => generator.Effect == peter);
+    }
+
+    [Rule("rr:printed.1.1")]
+    [Fact]
+    public void APrintedWildCannotSubstituteForAPrintedPhysicalCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spendPrinted": "R" }""",
+            includeAuthored: true);
+        Card? source = null;
+        Card? wild = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                Hand(board, Physicals, 0);
+                source = InPlay(board, AuthoredCards.AuntMay);
+                wild = board.CreateCard("01011", board.Seats[0].Hand);
+            },
+            abilities: runner);
+
+        foreach (var other in world.Seats[0].Hand.Cards
+                     .Where(card => card != wild)
+                     .ToList())
+        {
+            World.MoveToTop(other, world.Seats[0].Deck);
+        }
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 0),
+            ability => ability.Card == source!.ObjectId && ability.Ordinal == 1);
+        Assert.Same(world.Seats[0].Hand, wild!.Area);
+    }
+
+    [Rule("rr:cost.5")]
+    [Rule("rr:printed.1")]
+    [Fact]
+    public void SimultaneousPrintedResourceCostsShareOneExactPayment()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "seq": [ { "spendPrinted": "B" }, { "spendPrinted": "Y" } ] }""",
+            includeAuthored: true);
+        Card? source = null;
+        Card? energy = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                energy = board.CreateCard("01093", board.Seats[0].Hand);
+            },
+            abilities: runner);
+        foreach (var other in world.Seats[0].Hand.Cards
+                     .Where(card => card != energy)
+                     .ToList())
+        {
+            World.MoveToTop(other, world.Seats[0].Deck);
+        }
+        int peter = world.Seats[0].IdentityCard.ObjectId;
+        var ability = Assert.Single(
+            runner.Actions(world, 0),
+            pending => pending.Card == source!.ObjectId && pending.Ordinal == 1);
+        var price = Assert.Single(runner.Describe(world, ability).CostOptions);
+
+        Assert.Equal(2, price.ResourceCosts.Count);
+        Assert.All(price.ResourceCosts, component => Assert.True(component.Printed));
+
+        runner.Act(world, ability, [peter, energy!.ObjectId], []);
+
+        Assert.Equal(DeckType.DiscardPile, energy.Area.Type);
+        Assert.DoesNotContain(
+            runner.ResourceAbilities(world, 0), generator => generator.Effect == peter);
+    }
+
+    [Rule("rr:cost.7")]
+    [Rule("rr:cost.8")]
+    [Fact]
+    public void AnOutOfPlayCostCanUseOnlyThePayingPlayersArea()
+    {
+        // A hand is out of play, and a payer "may only use game elements that
+        // are in their own out-of-play areas." The prompt therefore offers
+        // only the payer's hand, and forging another player's card is rejected
+        // before either card moves.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "discardFromHand": 1 }""");
+        Card? source = null;
+        Card? otherPlayersCard = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                otherPlayersCard = board.CreateCard(
+                    Physicals, board.Seats[1].Hand);
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var ability = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+        var targets = Assert.IsType<TargetRequest>(
+            runner.Describe(world, ability).Targets);
+
+        Assert.DoesNotContain(otherPlayersCard!.ObjectId, targets.Legal);
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world, ability, [], [otherPlayersCard.ObjectId]));
+        Assert.Same(world.Seats[1].Hand, otherPlayersCard.Area);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Rule("rr:cost.7.1")]
+    [Rule("rr:cost.7.2")]
+    [Fact]
+    public void AChosenFriendlyCostCanUseAnotherPlayersCard()
+    {
+        // A cost that "uses the word 'choose'" or targets a "friendly" card
+        // may choose cards the payer does not control.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost:
+            """
+            { "exhaustChosen": {
+              "from": { "query": "heroesAndAllies" },
+              "count": 1
+            } }
+            """);
+        Card? source = null;
+        Card? friendly = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                friendly = board.CreateCard(
+                    AuthoredCards.BlackCat,
+                    board.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var ability = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+        var targets = Assert.IsType<TargetRequest>(
+            runner.Describe(world, ability).Targets);
+
+        Assert.Contains(friendly!.ObjectId, targets.Legal);
+        Assert.DoesNotContain(world.Seats[1].IdentityCard.ObjectId, targets.Legal);
+        runner.Act(world, ability, [], [friendly.ObjectId]);
+
+        Assert.False(friendly.Ready);
+    }
+
+    [Rule("rr:cost.9")]
+    [Theory]
+    [InlineData("{ \"discardUpToFromHand\": 3 }")]
+    [InlineData("{ \"discardAnyFromHand\": \"yourHand\" }")]
+    public void UpToAndAnyNumberCostsRequireAtLeastOne(string cost)
+    {
+        // A cost requiring "any number" or "up to" a number "requires a
+        // minimum of one such game element."
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: cost);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var ability = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+        var targets = Assert.IsType<TargetRequest>(
+            runner.Describe(world, ability).Targets);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        Assert.Equal(1, targets.Min);
+        Assert.True(targets.Max >= 1);
+        Assert.Throws<RulesNotImplementedException>(() =>
+            runner.Act(world, ability, [], []));
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+
+        int paid = targets.Legal[0];
+        runner.Act(world, ability, [], [paid]);
+        Assert.Equal(DeckType.DiscardPile, world.Cards[paid].Area.Type);
     }
 
     [Rule("rr:cost.5")]
@@ -1884,6 +2531,213 @@ public sealed class ActionAbilityTests
         Assert.Equal(0, villain.Damage);
         Assert.DoesNotContain(
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:max-maximum")]
+    [Rule("rr:max-maximum.1")]
+    [Fact]
+    public void APeriodMaximumIsSharedByTitleAcrossPlayersAndExpires()
+    {
+        // “Max 1 per round” is across all copies by title for all players,
+        // unlike a Limit, which belongs to each instance of an ability.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            maximum: "Round");
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                first = InPlay(board, AuthoredCards.AuntMay);
+                second = board.CreateCard(
+                    AuthoredCards.AuntMay,
+                    board.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == first!.ObjectId);
+
+        runner.Act(world, action, [], []);
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 1), pending => pending.Card == second!.ObjectId);
+        world.Effects.Expire(TimingPoints.EndOfRound);
+        Assert.Contains(
+            runner.Actions(world, 1), pending => pending.Card == second!.ObjectId);
+    }
+
+    [Rule("rr:max-maximum.1")]
+    [Fact]
+    public void APhaseMaximumExpiresAtTheEndOfEitherPhase()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            maximum: "Phase");
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                first = InPlay(board, AuthoredCards.AuntMay);
+                second = InPlay(board, AuthoredCards.AuntMay);
+            },
+            abilities: runner);
+        runner.Act(
+            world,
+            Assert.Single(runner.Actions(world, 0), pending =>
+                pending.Card == first!.ObjectId),
+            [],
+            []);
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
+        world.Effects.Expire(TimingPoints.EndOfPhase);
+        Assert.Contains(
+            runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
+    }
+
+    [Rule("rr:max-maximum.1")]
+    [Fact]
+    public void AGameMaximumSurvivesPhaseAndRoundBoundaries()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            maximum: "Game");
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                first = InPlay(board, AuthoredCards.AuntMay);
+                second = InPlay(board, AuthoredCards.AuntMay);
+            },
+            abilities: runner);
+        runner.Act(
+            world,
+            Assert.Single(runner.Actions(world, 0), pending =>
+                pending.Card == first!.ObjectId),
+            [],
+            []);
+
+        world.Effects.Expire(TimingPoints.EndOfPhase);
+        world.Effects.Expire(TimingPoints.EndOfRound);
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
+    }
+
+    [Rule("rr:max-maximum.1.1")]
+    [Fact]
+    public void ACanceledUseStillCountsTowardACardMaximum()
+    {
+        var runner = Runner(
+            "01017",
+            "Action",
+            """{ "attack": { "target": { "query": "villain" }, "effect": { "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } } } }""",
+            maximum: "Round");
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                first = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                second = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == first!.ObjectId);
+
+        runner.Act(world, action, [], []);
+
+        Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
+        Assert.DoesNotContain(
+            runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
+    }
+
+    [Rule("rr:max-maximum.5")]
+    [Fact]
+    public void APerInstanceMaximumIsSharedAcrossCopiesForOneOccurrence()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Response",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            eventName: "WhenDamageWouldBeDealt",
+            maximum: "Instance");
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                first = InPlay(board, AuthoredCards.AuntMay);
+                second = InPlay(board, AuthoredCards.AuntMay);
+            },
+            abilities: runner);
+        var occurrence = new Occurrence(
+            91,
+            ["WhenDamageWouldBeDealt"],
+            Player: 0,
+            Target: world.Seats[0].IdentityCard.ObjectId);
+        var offered = runner.Waiting(world, occurrence, WindowKind.Response);
+
+        Assert.Equal(2, offered.Count);
+        runner.Resolve(world, occurrence, offered.Single(pending =>
+            pending.Card == first!.ObjectId), [], []);
+
+        Assert.Empty(runner.Waiting(world, occurrence, WindowKind.Response));
+        Assert.Equal(
+            2,
+            runner.Waiting(
+                world,
+                new Occurrence(
+                    92,
+                    ["WhenDamageWouldBeDealt"],
+                    Player: 0,
+                    Target: world.Seats[0].IdentityCard.ObjectId),
+                WindowKind.Response).Count);
+        Assert.NotNull(second);
+    }
+
+    [Rule("rr:max-maximum.6")]
+    [Fact]
+    public void AMaximumWithinAnAbilityCapsOnlyThatResolution()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "dealDamage": {
+              "cards": { "query": "villain" },
+              "amount": { "min": [ 20, 10 ] }
+            } }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+
+        runner.Act(world, action, [], []);
+
+        Assert.Equal(10, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
     [Rule("rr:labeled-ability.5")]
@@ -14503,7 +15357,8 @@ public sealed class ActionAbilityTests
         long? limit = null,
         bool anyPlayer = false,
         bool includeAuthored = false,
-        string? labels = null)
+        string? labels = null,
+        string? maximum = null)
     {
         var local = Marvel.Cards.Dsl.AbilityCatalog.Parse(
             $$"""
@@ -14513,6 +15368,7 @@ public sealed class ActionAbilityTests
                 {{(limit is null ? string.Empty : $"\"limitPerRound\": {limit.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)},")}}
                 {{(anyPlayer ? "\"anyPlayer\": true," : string.Empty)}}
                 {{(labels is null ? string.Empty : $"\"labels\": {labels},")}}
+                {{(maximum is null ? string.Empty : $"\"maxPer{maximum}\": 1,")}}
                 "effect": {{effect}}
             } ] } ] }
             """);

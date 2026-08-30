@@ -67,6 +67,8 @@ public sealed class HuntedTests
         Assert.Null(action.Costs);
     }
 
+    [Rule("rr:cost.1")]
+    [Rule("rr:cost.1.1")]
     [Rule("rr:initiating-abilities.step.5")]
     [Rule("rr:cost-arrow-icon.1")]
     [Fact]
@@ -182,7 +184,9 @@ public sealed class HuntedTests
     [Fact]
     public void TheSameCostInAWindowIsPaidFromTheSameAnswer()
     {
-        // Hunted's is an action, and an action and a window are two ways into
+        // The arrow "distinguishes a cost from an effect"; the Response timing
+        // before it "is not considered part of the cost." Hunted's is an
+        // action, and an action and a window are two ways into
         // `Pay`. The seam is `Sequence.Answer`, which passes the answer's chosen
         // cards on exactly as it passes the resources — so a response that costs
         // a card is paid for, and this is the ability that says so before a

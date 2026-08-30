@@ -112,6 +112,7 @@ public sealed class CorePlayerSelectionTests
     }
 
     [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:non-numerical-variable.1")]
     [Rule("rr:player-turn.5")]
     [Fact]
     public void EnergyChannelsTwoActionsRemainDistinctAndSpendTheChosenX()
@@ -133,13 +134,20 @@ public sealed class CorePlayerSelectionTests
             .ToList();
         var charge = Assert.Single(actions);
         Assert.Equal("Channel Energy", charge.Label);
+        var variable = Assert.Single(Assert.Single(charge.CostOptions).VariableRequests);
+        Assert.Equal("X", variable.Name);
+        Assert.Equal(1, variable.Min);
+        Assert.Equal(8, variable.Max);
 
         var pending = runner.Actions(world, 0).ToList();
         runner.Act(
             world, pending.Single(action => action.Ordinal == 0),
-            [first.ObjectId, second.ObjectId], []);
+            [first.ObjectId, second.ObjectId], [],
+            new Dictionary<string, long>(StringComparer.Ordinal) { ["X"] = 4 });
 
-        Assert.Equal(6, channel.Tokens["c_energy"]);
+        // Both generators produce six energy in total. X was defined as four
+        // before payment, so the other two are overpaid and do not change X.
+        Assert.Equal(4, channel.Tokens["c_energy"]);
         var charged = runner.Actions(world, 0)
             .Where(action => action.Card == channel.ObjectId)
             .ToList();
@@ -153,8 +161,32 @@ public sealed class CorePlayerSelectionTests
         Sequence.Answer(world, Cards, runner, answer, Decision.Take(villain.ObjectId), []);
         Sequence.Finish(world, Cards, runner, []);
 
-        Assert.Equal(10, villain.Damage);
+        Assert.Equal(8, villain.Damage);
         Assert.False(DeckTypes.IsInPlay(channel.Area.Type));
+    }
+
+    [Rule("rr:non-numerical-variable.1")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void EnergyChannelRejectsAPaymentThatDoesNotDefineX()
+    {
+        // A generator selection is not the definition of X. Reject the forged
+        // command before discarding the generator or placing any counters.
+        var world = Board("01010a");
+        var channel = world.CreateCard(
+            "01018", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var energy = world.CreateCard("01014", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+        var charge = Assert.Single(
+            runner.Actions(world, 0),
+            ability => ability.Card == channel.ObjectId && ability.Ordinal == 0);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world, charge, [energy.ObjectId], []));
+
+        Assert.Contains("explicit value for X", thrown.Message, StringComparison.Ordinal);
+        Assert.Same(world.Seats[0].Hand, energy.Area);
+        Assert.False(channel.Tokens.ContainsKey("c_energy"));
     }
 
     [Rule("rr:target.2")]

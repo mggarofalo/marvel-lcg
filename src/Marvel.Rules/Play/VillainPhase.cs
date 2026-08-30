@@ -81,6 +81,17 @@ public interface ICardAbilities : IWindowAbilities
     string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
         Resources.GeneratedBy(source.FaceId, world.Facts);
 
+    /// <summary>
+    /// Currently available resource abilities whose generated icons are
+    /// physically printed in their text box.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:printed.1</c> permits these abilities to pay a “printed resources”
+    /// cost. Ordinary resource abilities are deliberately absent: generating a
+    /// resource is not enough unless that icon is itself printed in the box.
+    /// </remarks>
+    IReadOnlyList<ResourceSource> PrintedResourceAbilities(World world, int player) => [];
+
     /// <summary>Applies card-specific restrictions to an attack's defenders.</summary>
     /// <param name="world">The board.</param>
     /// <param name="attack">The attack whose defender is being declared.</param>
@@ -283,7 +294,7 @@ public interface ICardAbilities : IWindowAbilities
     /// <c>rr:initiating-abilities.step.5</c> and <c>.step.6</c>.
     /// </summary>
     /// <remarks>
-    /// Separate from <see cref="IWindowAbilities.Resolve"/> because an action
+    /// Separate from a timing-window resolution because an action
     /// is answered rather than merely taken: a cost of spending resources is a
     /// choice of <i>which</i> cards, and the answer carries it.
     /// </remarks>
@@ -296,12 +307,20 @@ public interface ICardAbilities : IWindowAbilities
     /// no type, only a card — and <c>rr:initiating-abilities</c> keeps choosing
     /// and paying in different steps, so the two lists arrive separately.
     /// </param>
+    /// <param name="values">
+    /// Numerical variables the player defined while initiating the cost.
+    /// </param>
+    /// <param name="allocations">
+    /// Generated icons assigned to distinguishable simultaneous costs.
+    /// </param>
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> Act(
         World world,
         PendingAbility ability,
         IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen);
+        IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values = null,
+        IReadOnlyList<ResourceAllocation>? allocations = null);
 
     /// <summary>Resolves an accepted Action inside its live agenda occurrence.</summary>
     IReadOnlyList<GameEvent> Act(
@@ -309,7 +328,10 @@ public interface ICardAbilities : IWindowAbilities
         PendingAbility ability,
         IReadOnlyList<int> paying,
         IReadOnlyList<int> chosen,
-        Occurrence occurrence) => Act(world, ability, paying, chosen);
+        Occurrence occurrence,
+        IReadOnlyDictionary<string, long>? values = null,
+        IReadOnlyList<ResourceAllocation>? allocations = null) =>
+        Act(world, ability, paying, chosen, values, allocations);
 
     /// <summary>
     /// Resolves the <b>Special</b> ability on a card named by another ability —
@@ -625,7 +647,9 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Act(
         World world, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen) =>
+        IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values = null,
+        IReadOnlyList<ResourceAllocation>? allocations = null) =>
         throw new RulesNotImplementedException(
             "no card has an action, so none of them can be triggered");
 
@@ -710,6 +734,14 @@ public class NoCardAbilities : ICardAbilities
         IReadOnlyList<int> paying, IReadOnlyList<int> chosen) =>
         throw new RulesNotImplementedException(
             "nothing is waiting in any window, so nothing can be resolved from one");
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Resolve(
+        World world, Occurrence occurrence, PendingAbility ability,
+        IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values = null,
+        IReadOnlyList<ResourceAllocation>? allocations = null) =>
+        Resolve(world, occurrence, ability, paying, chosen);
 
     /// <inheritdoc/>
     public virtual Prompts.Affordance Describe(World world, PendingAbility ability) =>
@@ -918,7 +950,8 @@ public static class VillainPhase
                 try
                 {
                     events.AddRange(abilities.Act(
-                        world, action.Ability, action.Paying, action.Chosen, occurrence));
+                        world, action.Ability, action.Paying, action.Chosen, occurrence,
+                        action.DefinedValues, action.Allocated));
                 }
                 catch
                 {

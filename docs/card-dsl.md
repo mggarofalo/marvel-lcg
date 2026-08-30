@@ -590,7 +590,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | | |
 |---|---|
 | Envelope | `trigger { event, alsoHappened, timing, subject, actor, target, form, player }`, `name`, `cost`, `limitPerRound`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. `actor` and `target` match explicit attack roles. |
-| Costs | `spend` (resource letters), `spendEnergyX` (a positive player-chosen X), `exhaust`, `discardFromHand` (a count) |
+| Costs | `spend` (resource letters), `spendPrinted` (exact printed resource letters), `spendEnergyX` (a positive player-chosen X), `exhaust`, `discardFromHand` (a count) |
 | Control | `seq`, `and`, `if`, `then`, `otherwise`, `forEach`, `eachTime`, `choose`, `chooseCard`, `chooseTopForHand`, `chooseDiscardToShuffle`, `thwartDifferentSchemes`, `makeTheCall`, `legalPractice`, `payOrExhaust`, `payOrEffect`, `eachPlayer`, `resolveSpecials`, `afterActivation` |
 | Tests | `and`, `or`, `not`, `exists`, `canMakeTheCall`, `canLegalPractice`, `canAutomaticThwart`, `hasStatus`, `hasTrait`, `cardSet`, `isTitle`, `inForm`, `activationIs`, `atLeast`, `titleInPlay`, `attackDamaged`, `discardedWithResource`, `paidWithResource`, `defeatedByYou`, `wasDefeated`, `heroDefended`, `undefendedAttack`, `inExpertMode`, `isKind`, `defeatedBy`, `threatCause`, `finalStep` |
 | Actions | `giveStatus`, `giveAdditionalBoost`, `alsoAttackEachOtherHero`, `attachTo`, `discard`, `discardHandWithResource`, `draw`, `drawToHandSize`, `drawToPrintedHandSize`, `dealEncounterCards`, `dealEncounterCard`, `createDrones`, `placeCounters`, `advanceMainScheme`, `grant`, `grantEach`, `grantUntil`, `grantCharactersControlledBy`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `attack`, `thwart`, `thwartSchemes`, `power`, `dealDamage`, `dealAttackDamage`, `moveDamage`, `moveAttackDamage`, `placeThreat`, `placeAccelerationToken`, `removeThreat`, `preventThreat`, `replaceThreatWithDamage`, `preventThreatRemoval`, `preventDamageFrom`, `preventDamageWhile`, `preventReady`, `reduceNextCardCost`, `heal`, `search`, `addToHand`, `returnOwnedToHand`, `exhaust`, `ready`, `revealTop`, `reveal`, `shuffleInto`, `shuffle`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `putIntoPlay`, `returnToHand`, `soakDamage`, `generate`, `generateTopDiscard`, `doubleResourceFor`, `requireAllyDefender` |
@@ -1378,6 +1378,24 @@ carried which of them the player spent, and `CardPlay.Spend` has refused a
 payment that does not meet the cost. What was missing was ten characters of
 plumbing between the two.
 
+`spendPrinted` is the narrower resource-cost operator. Its value is the same
+resource-letter string as `spend`, but only literal icons on cards in hand and
+resource abilities carrying a matching `printedResources` field appear as
+generators. The field is authored on the ability because generated resources
+alone do not prove an icon is physically printed in its text box: Peter
+Parker's `"printedResources": "B"` qualifies, while Pepper Potts copying the
+top discard card does not. A printed cost component also travels with
+`Printed: true`, so a wild cannot be declared as a required energy, mental, or
+physical icon.
+
+Card maxima are separate from `limitPerRound`. An ability may carry exactly one
+of `maxPerRound`, `maxPerPhase`, `maxPerGame`, or `maxPerInstance`; the value is
+shared across every copy of the card by printed title and, for an instance
+maximum, is additionally keyed to the triggering occurrence. A Limit remains
+per instance of an ability. The interpreter records a maximum as soon as the
+card or ability is initiated, so cancellation does not refund it. `min` remains
+the value-level spelling of “to a maximum of N” inside one resolution.
+
 #### The two questions an action never had to ask
 
 An action is *taken by a seat*, so the request carries who is acting; both the
@@ -1513,6 +1531,52 @@ picks. A payment that is not the cost — none chosen, or two — is refused rat
 than trimmed: `rr:initiating-abilities.step.5` aborts "without paying any
 costs", and an engine that trimmed would be making a decision the player was
 asked to make.
+
+Three related cost shapes keep the printed distinction visible:
+
+```json
+{ "discardUpToFromHand": 3 }
+{ "discardAnyFromHand": "yourHand" }
+{ "exhaustChosen": {
+    "from": { "query": "heroesAndAllies" },
+    "count": 1
+} }
+```
+
+The first two offer only the paying player's hand because `rr:cost.8` limits an
+out-of-play cost to that player's own out-of-play areas. Both have a minimum of
+one: `rr:cost.9` says that "any number" and "up to" costs require one game
+element. `exhaustChosen` takes an explicit query and count. Its supported
+queries are `heroesAndAllies`, `charactersYouControl`, and `alliesYouControl`;
+the broader first query is deliberate because `rr:cost.7.1` and `.7.2` allow a
+cost that says "choose" or "friendly" to reach cards the payer does not
+control. The target request is also the payment record, and forged, duplicate,
+out-of-range, or exhausted choices are rejected before any selected card is
+exhausted or discarded.
+
+Damage has two cost verbs because the rulebook gives them opposite prevention
+semantics:
+
+```json
+{ "dealDamage": { "cards": "you", "amount": 1 } }
+{ "takeDamage": { "cards": "you", "amount": 1 } }
+```
+
+`dealDamage` is paid even when prevention stops every point (`rr:cost.11`).
+`takeDamage` is paid only when the target actually takes the entire amount
+(`rr:cost.12`). The latter runs before other components of a simultaneous
+ability cost, so prevention cannot strand a resource, discard, or exhaustion
+payment. Combining `takeDamage` with an event's printed price is deliberately
+not represented yet: that needs an event-payment transaction and raises before
+anything moves.
+
+Event modifiers are lasting effects attached to the event object while it
+resolves. `eventDamage` and `eventThreatRemoval` add their amount to every
+matching instance, as `rr:event.5` requires; they are not consumed after the
+first node. `attackDamage` is a one-use modifier: when one event performs
+multiple attacks, the first attack consumes it and later attacks do not receive
+it (`rr:event.5.1`). Keeping the event and attack kinds distinct prevents a
+modifier that says “an attack” from accidentally becoming event-wide.
 
 ### A suspended choice has to say which ability it came from
 

@@ -163,8 +163,31 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
             };
         }
 
-        return Decision.Take(option.Id, targets ?? Targets(world, option), payment);
+        var values = Values(option);
+        return Decision.Take(
+            option.Id,
+            targets ?? Targets(world, option),
+            payment,
+            values,
+            Allocations(option, payment, values));
     }
+
+    private static Dictionary<string, long> Values(Affordance option) =>
+        option.CostOptions
+            .SelectMany(cost => cost.VariableRequests)
+            .ToDictionary(
+                variable => variable.Name,
+                variable => variable.Min,
+                StringComparer.Ordinal);
+
+    private static IReadOnlyList<ResourceAllocation> Allocations(
+        Affordance option,
+        IReadOnlyList<int> payment,
+        IReadOnlyDictionary<string, long> values) =>
+        option.CostOptions
+            .Select(cost => ResourcePayment.Allocate(cost, payment, values))
+            .FirstOrDefault(allocation => allocation is not null)
+        ?? [];
 
     private static Affordance? Find(Prompt asked, string verb) =>
         asked.Affordances.FirstOrDefault(option =>
@@ -232,9 +255,13 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
         }
 
         var price = option.CostOptions[0];
-        long cost = long.Parse(
+        long cost = long.TryParse(
             price.Cost,
-            System.Globalization.CultureInfo.InvariantCulture);
+            System.Globalization.CultureInfo.InvariantCulture,
+            out long fixedCost)
+            ? fixedCost
+            : price.VariableRequests.Single(variable =>
+                string.Equals(variable.Name, price.Cost, StringComparison.Ordinal)).Min;
         string required = string.Concat(price.Rule ?? []);
 
         for (int count = 0; count <= price.Generators.Count; count++)

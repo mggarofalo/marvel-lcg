@@ -20,6 +20,15 @@ namespace Marvel.Rules.Prompts;
 /// <param name="Sources">
 /// Every source that can generate resources toward this cost.
 /// </param>
+/// <param name="Variables">
+/// Values the player must define before paying this cost. The request is part
+/// of the affordance because a cost of X cannot infer the player's choice from
+/// whichever generators they later use.
+/// </param>
+/// <param name="Components">
+/// The simultaneous resource costs represented by this one payment. Empty for
+/// an ordinary single cost.
+/// </param>
 /// <remarks>
 /// <para>
 /// <b>Generation and payment are two things, and this record only describes the
@@ -53,13 +62,38 @@ public sealed record CostOption(
     IReadOnlyList<string>? Rule = null,
     string OrCost = "",
     IReadOnlyList<string>? OrRule = null,
-    IReadOnlyList<ResourceSource>? Sources = null)
+    IReadOnlyList<ResourceSource>? Sources = null,
+    IReadOnlyList<VariableRequest>? Variables = null,
+    IReadOnlyList<ResourceCost>? Components = null)
 {
     /// <summary>Whether the cost has a second legal reading.</summary>
     public bool HasAlternative => OrCost.Length > 0;
 
     /// <summary>The generators, or an empty list when there are none.</summary>
     public IReadOnlyList<ResourceSource> Generators => Sources ?? [];
+
+    /// <summary>The variable values this cost asks the player to define.</summary>
+    public IReadOnlyList<VariableRequest> VariableRequests => Variables ?? [];
+
+    /// <summary>The resource-cost components sharing this payment.</summary>
+    public IReadOnlyList<ResourceCost> ResourceCosts => Components
+        ?? [new ResourceCost(Cost, Rule)];
+}
+
+/// <summary>One component of a simultaneous resource payment.</summary>
+public sealed record ResourceCost(
+    string Cost,
+    IReadOnlyList<string>? Rule = null,
+    bool Printed = false);
+
+/// <summary>A numerical value the player must define while initiating a cost.</summary>
+/// <param name="Name">The printed variable, such as <c>X</c>.</param>
+/// <param name="Min">The smallest legal definition.</param>
+/// <param name="Max">The largest legal definition on the current board.</param>
+public readonly record struct VariableRequest(string Name, long Min, long Max)
+{
+    /// <summary>Whether a proposed definition is inside the offered range.</summary>
+    public bool Allows(long value) => value >= Min && value <= Max;
 }
 
 /// <summary>Something that can generate resources toward a cost.</summary>

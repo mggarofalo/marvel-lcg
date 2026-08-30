@@ -15,10 +15,19 @@ namespace Marvel.Rules.Play;
 /// The generators spent to pay for it, by <c>ResourceSource.Effect</c>. Empty
 /// when the affordance is free, and empty on a decline.
 /// </param>
+/// <param name="Values">
+/// Numerical variables defined while initiating the affordance, keyed by the
+/// printed variable name. Empty when the affordance asks for none.
+/// </param>
+/// <param name="Allocations">
+/// Individual generated icons assigned to resource-cost components. Empty
+/// when no rule can distinguish the allocation.
+/// </param>
 /// <remarks>
 /// <para>
-/// Three fields and no more: <c>id</c>, <c>targets</c> and <c>resources</c>.
-/// A decline is the absence of an id rather than a fourth field, because
+/// Five fields and no more: <c>id</c>, <c>targets</c>, <c>resources</c>,
+/// <c>values</c> and <c>allocations</c>.
+/// A decline is the absence of an id rather than another field, because
 /// declining is choosing nothing and not a choice of its own kind.
 /// </para>
 /// <para>
@@ -53,7 +62,9 @@ namespace Marvel.Rules.Play;
 public sealed record Decision(
     int Affordance,
     IReadOnlyList<int> Targets,
-    IReadOnlyList<int>? Resources = null)
+    IReadOnlyList<int>? Resources = null,
+    IReadOnlyDictionary<string, long>? Values = null,
+    IReadOnlyList<ResourceAllocation>? Allocations = null)
 {
     /// <summary>Take nothing. The engine's empty command.</summary>
     public static readonly Decision Decline = new(-1, []);
@@ -63,6 +74,16 @@ public sealed record Decision(
 
     /// <summary>The generators spent, never null.</summary>
     public IReadOnlyList<int> Spent => Resources ?? [];
+
+    /// <summary>The numerical variables explicitly defined by this answer.</summary>
+    public IReadOnlyDictionary<string, long> DefinedValues => Values
+        ?? EmptyValues;
+
+    /// <summary>The explicit paid-icon allocation, never null.</summary>
+    public IReadOnlyList<ResourceAllocation> Allocated => Allocations ?? [];
+
+    private static IReadOnlyDictionary<string, long> EmptyValues { get; } =
+        new Dictionary<string, long>(StringComparer.Ordinal);
 
     /// <summary>Takes an affordance with no targets.</summary>
     /// <param name="affordance">The affordance's id, from the prompt that offered it.</param>
@@ -80,4 +101,26 @@ public sealed record Decision(
     public static Decision Take(
         int affordance, IReadOnlyList<int> targets, IReadOnlyList<int> paying) =>
         new(affordance, targets, paying);
+
+    /// <summary>Takes an affordance with explicit numerical variable values.</summary>
+    public static Decision Take(
+        int affordance, IReadOnlyList<int> targets, IReadOnlyList<int> paying,
+        IReadOnlyDictionary<string, long> values) =>
+        new(affordance, targets, paying, values);
+
+    /// <summary>Takes an affordance with variable values and paid-icon allocation.</summary>
+    public static Decision Take(
+        int affordance, IReadOnlyList<int> targets, IReadOnlyList<int> paying,
+        IReadOnlyDictionary<string, long> values,
+        IReadOnlyList<ResourceAllocation> allocations) =>
+        new(affordance, targets, paying, values, allocations);
 }
+
+/// <summary>Icons from one generator assigned to one simultaneous resource cost.</summary>
+/// <param name="Source">The <c>ResourceSource.Effect</c> that generated them.</param>
+/// <param name="Cost">Zero-based component in <c>CostOption.ResourceCosts</c>.</param>
+/// <param name="PaidAs">
+/// One letter per paid icon. A wild carries the type the player declared for
+/// it; generated excess is omitted because it was not paid for the cost.
+/// </param>
+public readonly record struct ResourceAllocation(int Source, int Cost, string PaidAs);

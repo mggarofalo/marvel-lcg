@@ -237,10 +237,34 @@ public static class AbilityPlayers
 /// Every parenthetical attack, defense, or thwart label printed on the
 /// ability. Multiple labels belong to one ability and are resolved together.
 /// </param>
+/// <param name="PrintedResources">
+/// Resource icons physically printed in this resource ability's text box.
+/// Empty when its generated resources are not printed icons there.
+/// </param>
+/// <param name="Maximum">
+/// A use maximum shared across every copy of this card by title, or null.
+/// </param>
 public sealed record CardAbility(
     string Card, string Name, AbilityTrigger Trigger, AbilityNode Effect,
     AbilityNode? Cost = null, long? Limit = null, AbilityNode? When = null,
-    bool AnyPlayer = false, IReadOnlyList<string>? Labels = null);
+    bool AnyPlayer = false, IReadOnlyList<string>? Labels = null,
+    string PrintedResources = "", AbilityMaximum? Maximum = null);
+
+/// <summary>A maximum shared across copies of a card by title.</summary>
+public sealed record AbilityMaximum(long Uses, MaximumPeriod Period);
+
+/// <summary>The period printed by a card maximum.</summary>
+public enum MaximumPeriod
+{
+    /// <summary>Until the end of the round.</summary>
+    Round,
+    /// <summary>Until the end of the current phase.</summary>
+    Phase,
+    /// <summary>For the rest of the game.</summary>
+    Game,
+    /// <summary>For one triggering occurrence.</summary>
+    Instance,
+}
 
 /// <summary>
 /// Every authored card, and every ability on them.

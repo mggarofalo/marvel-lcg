@@ -29,6 +29,56 @@ public sealed class AbilityDataTests
     private static readonly CardCatalog Printed =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:printed.1")]
+    [Rule("rr:text-box.1.1")]
+    [Fact]
+    public void PrintedTextBoxResourceIconsAreExplicitAbilityData()
+    {
+        // Icons printed within a text box are abilities within that box, and
+        // only those printed icons may pay a “printed resources” cost. The
+        // generated value alone is insufficient evidence: Pepper Potts also
+        // generates resources, but copies them from another card at runtime.
+        var peter = Assert.Single(AuthoredCards.Book.On("01001b"));
+        var pepper = Assert.Single(AuthoredCards.Book.On("01033"));
+
+        Assert.Equal("B", peter.PrintedResources);
+        Assert.Empty(pepper.PrintedResources);
+    }
+
+    [Fact]
+    public void PrintedTextBoxResourceDataMustMatchTheResourceAbility()
+    {
+        var refused = Assert.Throws<AbilityException>(() => AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01001b", "abilities": [ {
+              "trigger": { "event": "WhenActionTriggered", "timing": "Resource",
+                           "subject": "this" },
+              "printedResources": "B",
+              "effect": { "generate": "Y" }
+            } ] } ] }
+            """));
+
+        Assert.Contains("matching fixed resource ability", refused.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OneAbilityCannotDeclareSeveralMaximumPeriods()
+    {
+        var refused = Assert.Throws<AbilityException>(() => AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01003", "abilities": [ {
+              "trigger": { "event": "WhenActionTriggered", "timing": "Action",
+                           "subject": "game" },
+              "maxPerRound": 1,
+              "maxPerGame": 1,
+              "effect": { "draw": { "player": "you", "count": 1 } }
+            } ] } ] }
+            """));
+
+        Assert.Contains("several maxima", refused.Message, StringComparison.Ordinal);
+    }
+
     [Rule("rr:ability.14")]
     [Fact]
     public void AQuotedTimingTriggerIsAuthoredOnlyAsAReference()

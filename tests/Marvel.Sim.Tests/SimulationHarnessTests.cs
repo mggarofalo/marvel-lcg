@@ -55,9 +55,15 @@ public sealed class SimulationHarnessTests
             new Affordance(110, "Action", 7, 1, "Choose"),
             new Affordance(111, "Action", 7, 1, "Choose"));
 
-        Assert.Equal(111, selector.Resolve(replayed, [], []).Affordance);
+        Assert.Equal(
+            111,
+            selector.Resolve(
+                replayed, [], [],
+                new Dictionary<string, long>(StringComparer.Ordinal), []).Affordance);
         Assert.Throws<ReplayDivergenceException>(() =>
-            selector.Resolve(Prompt(new Affordance(1, "Action", 8, 1, "Choose")), [], []));
+            selector.Resolve(
+                Prompt(new Affordance(1, "Action", 8, 1, "Choose")),
+                [], [], new Dictionary<string, long>(StringComparer.Ordinal), []));
     }
 
     [Fact]
