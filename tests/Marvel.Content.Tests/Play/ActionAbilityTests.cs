@@ -11820,6 +11820,105 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
     }
 
+    [Rule("rr:enters-play")]
+    [Rule("rr:ability.9")]
+    [Fact]
+    public void EnteredDynamicConstantRefusesStaleProjectedRanking()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "putIntoPlay": {
+                "card": { "cardsIn": {
+                  "areas": [ "encounterDeck" ], "title": "Titania"
+                } },
+                "where": "engagedWithYou"
+              } },
+              { "dealDamage": {
+                "cards": { "maxBy": {
+                  "of": { "query": "minions" }, "by": "attack"
+                } },
+                "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Titania"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            includeAuthored: true);
+        Card? source = null;
+        Card? titania = null;
+
+        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var criminal = board.CreateCard(
+                    "02007", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, criminal, Statuses.Tough);
+                titania = board.CreateCard(
+                    "01162", board.AreaOf(DeckType.EncounterDeck));
+                board.CreateCard(
+                    "01162", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("conditional constant", refused.Message);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EncounterDeck, titania!.Area.Type);
+    }
+
+    [Rule("rr:attachment.1")]
+    [Rule("rr:ability")]
+    [Fact]
+    public void RehostedAttachmentRetargetsProjectedHealthGrant()
+    {
+        var runner = Runner(
+            "01163",
+            "Action",
+            """
+            { "seq": [
+              { "attachTo": { "titled": "Hydra Mercenary" } },
+              { "dealDamage": {
+                "cards": { "titled": "Hydra Mercenary" }, "amount": 3
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            includeAuthored: true);
+        Card? attachment = null;
+        Card? hydra = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                var originalHost = board.CreateCard(
+                    "16183", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                attachment = board.CreateCard(
+                    "01163", board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        originalHost.ObjectId));
+                hydra = board.CreateCard(
+                    "08028", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == attachment!.ObjectId);
+        Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
+    }
+
     [Rule("rr:villain-defeat.3.2")]
     [Rule("rr:villain-defeat.4.2")]
     [Fact]

@@ -17451,6 +17451,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             foreach (var effect in effects)
             {
                 if (effect.Source == EffectSource.ConstantAbility
+                    && effect.Card is int hostedSource
+                    && Hosts.TryGetValue(hostedSource, out int projectedHost)
+                    && string.Equals(effect.Kind, field, StringComparison.Ordinal))
+                {
+                    bool liveApplies = effect.AppliesTo(current.World, card);
+                    if (liveApplies && projectedHost != card.ObjectId)
+                    {
+                        value -= effect.Amount;
+                    }
+                    else if (!liveApplies && projectedHost == card.ObjectId)
+                    {
+                        value += effect.Amount;
+                    }
+                }
+                if (effect.Source == EffectSource.ConstantAbility
                     && effect.Card is int source
                     && Departed.Contains(source)
                     && string.Equals(effect.Kind, field, StringComparison.Ordinal)
@@ -17534,10 +17549,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 return false;
             }
-            return current.World.Areas
+            var sources = current.World.Areas
                 .Where(area => DeckTypes.IsInPlay(area.Type))
                 .SelectMany(area => area.Cards)
+                .Concat(Entered.Select(id => current.World.Cards[id]))
                 .Where(source => !Departed.Contains(source.ObjectId))
+                .DistinctBy(source => source.ObjectId);
+            return sources
                 .Any(source => runner.On(source)
                     .Where(ability =>
                         ability.Trigger.Timing == AbilityType.Constant)
@@ -17546,7 +17564,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         source, target, current)));
         }
 
-        private static bool ConditionalGrant(
+        private bool ConditionalGrant(
             AbilityNode node, string field, bool conditioned,
             Card source, Card target, Cast current)
         {
@@ -17576,7 +17594,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return false;
         }
 
-        private static bool GrantCouldAffect(
+        private bool GrantCouldAffect(
             AbilityNode grant, Card source, Card target, Cast current)
         {
             var selector = grant.Require(
@@ -17587,7 +17605,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             if (selector is AbilityValue.Word { Value: "attachedTo" })
             {
-                return source.Area.Host == target.ObjectId;
+                return Hosts.GetValueOrDefault(
+                    source.ObjectId, source.Area.Host) == target.ObjectId;
             }
             if (selector is AbilityValue.Map
                 && Tree(selector) is { Kind: "titled" } titled)
