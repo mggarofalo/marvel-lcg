@@ -1532,6 +1532,28 @@ than trimmed: `rr:initiating-abilities.step.5` aborts "without paying any
 costs", and an engine that trimmed would be making a decision the player was
 asked to make.
 
+Three related cost shapes keep the printed distinction visible:
+
+```json
+{ "discardUpToFromHand": 3 }
+{ "discardAnyFromHand": "yourHand" }
+{ "exhaustChosen": {
+    "from": { "query": "heroesAndAllies" },
+    "count": 1
+} }
+```
+
+The first two offer only the paying player's hand because `rr:cost.8` limits an
+out-of-play cost to that player's own out-of-play areas. Both have a minimum of
+one: `rr:cost.9` says that "any number" and "up to" costs require one game
+element. `exhaustChosen` takes an explicit query and count. Its supported
+queries are `heroesAndAllies`, `charactersYouControl`, and `alliesYouControl`;
+the broader first query is deliberate because `rr:cost.7.1` and `.7.2` allow a
+cost that says "choose" or "friendly" to reach cards the payer does not
+control. The target request is also the payment record, and forged, duplicate,
+out-of-range, or exhausted choices are rejected before any selected card is
+exhausted or discarded.
+
 ### A suspended choice has to say which ability it came from
 
 `choose` and `chooseCard` stop the ability and put a `ChooseOption` step on the

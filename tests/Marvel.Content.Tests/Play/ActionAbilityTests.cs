@@ -1264,6 +1264,118 @@ public sealed class ActionAbilityTests
             runner.ResourceAbilities(world, 0), generator => generator.Effect == peter);
     }
 
+    [Rule("rr:cost.7")]
+    [Rule("rr:cost.8")]
+    [Fact]
+    public void AnOutOfPlayCostCanUseOnlyThePayingPlayersArea()
+    {
+        // A hand is out of play, and a payer "may only use game elements that
+        // are in their own out-of-play areas." The prompt therefore offers
+        // only the payer's hand, and forging another player's card is rejected
+        // before either card moves.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "discardFromHand": 1 }""");
+        Card? source = null;
+        Card? otherPlayersCard = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                otherPlayersCard = board.CreateCard(
+                    Physicals, board.Seats[1].Hand);
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var ability = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+        var targets = Assert.IsType<TargetRequest>(
+            runner.Describe(world, ability).Targets);
+
+        Assert.DoesNotContain(otherPlayersCard!.ObjectId, targets.Legal);
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world, ability, [], [otherPlayersCard.ObjectId]));
+        Assert.Same(world.Seats[1].Hand, otherPlayersCard.Area);
+        Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
+    }
+
+    [Rule("rr:cost.7.1")]
+    [Rule("rr:cost.7.2")]
+    [Fact]
+    public void AChosenFriendlyCostCanUseAnotherPlayersCard()
+    {
+        // A cost that "uses the word 'choose'" or targets a "friendly" card
+        // may choose cards the payer does not control.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost:
+            """
+            { "exhaustChosen": {
+              "from": { "query": "heroesAndAllies" },
+              "count": 1
+            } }
+            """);
+        Card? source = null;
+        Card? friendly = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                friendly = board.CreateCard(
+                    AuthoredCards.BlackCat,
+                    board.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var ability = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+        var targets = Assert.IsType<TargetRequest>(
+            runner.Describe(world, ability).Targets);
+
+        Assert.Contains(friendly!.ObjectId, targets.Legal);
+        runner.Act(world, ability, [], [friendly.ObjectId]);
+
+        Assert.False(friendly.Ready);
+    }
+
+    [Rule("rr:cost.9")]
+    [Theory]
+    [InlineData("{ \"discardUpToFromHand\": 3 }")]
+    [InlineData("{ \"discardAnyFromHand\": \"yourHand\" }")]
+    public void UpToAndAnyNumberCostsRequireAtLeastOne(string cost)
+    {
+        // A cost requiring "any number" or "up to" a number "requires a
+        // minimum of one such game element."
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: cost);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var ability = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+        var targets = Assert.IsType<TargetRequest>(
+            runner.Describe(world, ability).Targets);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        Assert.Equal(1, targets.Min);
+        Assert.True(targets.Max >= 1);
+        Assert.Throws<RulesNotImplementedException>(() =>
+            runner.Act(world, ability, [], []));
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+
+        int paid = targets.Legal[0];
+        runner.Act(world, ability, [], [paid]);
+        Assert.Equal(DeckType.DiscardPile, world.Cards[paid].Area.Type);
+    }
+
     [Rule("rr:cost.5")]
     [Rule("rr:cost.10")]
     [Fact]

@@ -1968,6 +1968,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // a sum, and a card with no printed `RES` pays it.
             { Kind: "discardFromHand" } =>
                 world.Seats[player].Hand.Cards.Count >= Number(cost.Argument),
+            { Kind: "discardUpToFromHand" } =>
+                Number(cost.Argument) > 0 && world.Seats[player].Hand.Cards.Count > 0,
+            { Kind: "discardAnyFromHand" } =>
+                world.Seats[player].Hand.Cards.Count > 0,
+            { Kind: "exhaustChosen" } => CostChoices(world, player, cost)
+                .Count(card => card.Ready) >= CostRange(cost, available: int.MaxValue).Min,
 
             { Kind: "heal" } => CostTarget(
                     world, card, player, cost.Require("card")) is { Damage: > 0 }
@@ -2102,16 +2108,88 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .SingleOrDefault(request => request is not null);
         }
 
-        if (cost is not { Kind: "discardFromHand" })
+        if (cost is { Kind: "discardFromHand" })
+        {
+            long many = Number(cost.Argument);
+            return new TargetRequest(
+                [.. world.Seats[player].Hand.Cards.Select(card => card.ObjectId)],
+                (int)many,
+                (int)many);
+        }
+
+        if (cost is { Kind: "discardUpToFromHand" })
+        {
+            int maximum = Math.Min(
+                checked((int)Number(cost.Argument)),
+                world.Seats[player].Hand.Cards.Count);
+            return new TargetRequest(
+                [.. world.Seats[player].Hand.Cards.Select(card => card.ObjectId)],
+                Min: 1,
+                Max: maximum);
+        }
+
+        if (cost is { Kind: "discardAnyFromHand" })
+        {
+            return new TargetRequest(
+                [.. world.Seats[player].Hand.Cards.Select(card => card.ObjectId)],
+                Min: 1,
+                Max: world.Seats[player].Hand.Cards.Count);
+        }
+
+        if (cost is not { Kind: "exhaustChosen" })
         {
             return null;
         }
 
-        long many = Number(cost.Argument);
+        var legal = CostChoices(world, player, cost).Where(card => card.Ready).ToList();
+        var range = CostRange(cost, legal.Count);
         return new TargetRequest(
-            [.. world.Seats[player].Hand.Cards.Select(card => card.ObjectId)],
-            (int)many,
-            (int)many);
+            [.. legal.Select(card => card.ObjectId)],
+            range.Min,
+            range.Max);
+    }
+
+    private static IReadOnlyList<Card> CostChoices(
+        World world, int player, AbilityNode cost)
+    {
+        var query = Tree(cost.Require("from"));
+        string name = Word(query.Argument);
+        return (query.Kind, name) switch
+        {
+            ("query", "heroesAndAllies") =>
+            [
+                .. world.PlayerOrder.Select(seat => world.Seats[seat].IdentityCard),
+                .. world.Areas.Where(area => area.Type == DeckType.AlliesArea)
+                    .SelectMany(area => area.Cards),
+            ],
+            ("query", "charactersYouControl") =>
+            [
+                world.Seats[player].IdentityCard,
+                .. world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player)).Cards,
+            ],
+            ("query", "alliesYouControl") =>
+                [.. world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player)).Cards],
+            _ => throw new RulesNotImplementedException(
+                $"cost choice query '{query.Kind}:{name}' is not implemented"),
+        };
+    }
+
+    private static (int Min, int Max) CostRange(AbilityNode cost, int available)
+    {
+        if (cost.Field("count") is { } exact)
+        {
+            int count = checked((int)Number(exact));
+            return (count, count);
+        }
+        if (cost.Field("upTo") is { } upTo)
+        {
+            return (1, Math.Min(checked((int)Number(upTo)), available));
+        }
+        if (cost.Field("anyNumber") is not null)
+        {
+            return (1, available);
+        }
+        return (1, 1);
     }
 
     /// <summary>What an action's cost looks like on a prompt, or null.</summary>
@@ -2794,9 +2872,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
 
-        if (cost.Kind == "discardFromHand")
+        if (cost.Kind is "discardFromHand" or "discardUpToFromHand" or "discardAnyFromHand")
         {
             DiscardToPay(cost, chosen, cast);
+            return;
+        }
+
+        if (cost.Kind == "exhaustChosen")
+        {
+            foreach (int id in chosen)
+            {
+                var target = cast.World.Cards[id];
+                target.Exhaust();
+                cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
+                {
+                    Trigger = cast.Trigger,
+                    Verb = "Exhaust",
+                });
+            }
             return;
         }
 
@@ -2946,16 +3039,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         + $"generates '{generated}'");
                 }
             }
-            else if (step.Kind == "discardFromHand")
+            else if (step.Kind is "discardFromHand" or "discardUpToFromHand"
+                     or "discardAnyFromHand")
             {
-                long many = Number(step.Argument);
                 var hand = cast.World.Seats[cast.Player].Hand;
-                if (chosen.Count != many || chosen.Distinct().Count() != chosen.Count)
+                int minimum = step.Kind == "discardFromHand"
+                    ? checked((int)Number(step.Argument))
+                    : 1;
+                int maximum = step.Kind switch
                 {
+                    "discardFromHand" => minimum,
+                    "discardUpToFromHand" => checked((int)Number(step.Argument)),
+                    _ => hand.Cards.Count,
+                };
+                if (chosen.Count < minimum || chosen.Count > maximum
+                    || chosen.Distinct().Count() != chosen.Count)
+                {
+                    string required = minimum == maximum
+                        ? $"{minimum}"
+                        : $"{minimum}..{maximum}";
                     throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' costs {many} card(s) from hand and "
-                        + $"{chosen.Count} were chosen; rr:initiating-abilities.step.5 "
-                        + "aborts without paying");
+                        $"'{cast.Source.FaceId}' costs {required} card(s) from "
+                        + $"hand and {chosen.Count} were chosen; "
+                        + "rr:initiating-abilities.step.5 aborts without paying");
                 }
 
                 foreach (int id in chosen)
@@ -2966,6 +3072,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                             $"card {id} is not in {cast.World.Seats[cast.Player].Name}'s hand "
                             + "and cannot be discarded from it");
                     }
+                }
+            }
+            else if (step.Kind == "exhaustChosen")
+            {
+                var legal = CostChoices(cast.World, cast.Player, step)
+                    .Where(card => card.Ready)
+                    .Select(card => card.ObjectId)
+                    .ToHashSet();
+                var range = CostRange(step, legal.Count);
+                if (chosen.Count < range.Min || chosen.Count > range.Max
+                    || chosen.Distinct().Count() != chosen.Count
+                    || chosen.Any(id => !legal.Contains(id)))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' requires {range.Min}..{range.Max} legal "
+                        + $"cards to exhaust and {chosen.Count} were supplied");
                 }
             }
             else if (!Payable(cast.World, cast.Source, cast.Player, step))
@@ -2995,13 +3117,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void DiscardToPay(AbilityNode cost, IReadOnlyList<int> chosen, Cast cast)
     {
-        long many = Number(cost.Argument);
         var hand = cast.World.Seats[cast.Player].Hand;
-
-        if (chosen.Count != many)
+        int minimum = cost.Kind == "discardFromHand"
+            ? checked((int)Number(cost.Argument))
+            : 1;
+        int maximum = cost.Kind switch
         {
+            "discardFromHand" => minimum,
+            "discardUpToFromHand" => checked((int)Number(cost.Argument)),
+            _ => hand.Cards.Count,
+        };
+
+        if (chosen.Count < minimum || chosen.Count > maximum)
+        {
+            string required = minimum == maximum
+                ? $"{minimum}"
+                : $"{minimum}..{maximum}";
             throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' costs {many} card(s) from hand and {chosen.Count} "
+                $"'{cast.Source.FaceId}' costs {required} card(s) from hand and "
+                + $"{chosen.Count} "
                 + "were chosen; rr:initiating-abilities.step.5 aborts without paying");
         }
 
