@@ -1,7 +1,9 @@
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.Tests;
@@ -113,20 +115,37 @@ public sealed class WouldBeDefeatedTests
 
     [Rule("rr:first-player.1")]
     [Fact]
-    public void AHighestHitPointTieRefusesToChooseForTheFirstPlayer()
+    public void TheFirstPlayerBreaksAHighestHitPointAttachmentTie()
     {
         var world = Empty();
         world.CreateCard(
             Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.CreateCard(
             Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var minions = world.AreaOf(
+            DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards.ToList();
         var upgrade = world.CreateCard(
-            AuthoredCards.BiomechanicalUpgrades, world.AreaOf(DeckType.RevealingArea));
+            AuthoredCards.BiomechanicalUpgrades,
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
+        world.Agenda.Add(new PhaseStep(
+            Steps.RevealEncounterCard, 1, 4,
+            Subject: upgrade.ObjectId, Seat: 0));
+        var events = new List<GameEvent>();
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => world.Abilities.AttachesTo(world, upgrade));
+        var asked = Sequence.Work(world, Cards, world.Abilities, events);
 
-        Assert.Contains("rr:first-player.1", thrown.Message, StringComparison.Ordinal);
+        Assert.NotNull(asked);
+        Assert.Equal(world.FirstPlayer, asked.Player);
+        Assert.Equal(Question.Element, asked.Asking);
+        Assert.Equal(minions.Select(minion => minion.ObjectId),
+            asked.Affordances.Select(option => option.Id));
+        Sequence.Answer(
+            world, Cards, world.Abilities, asked,
+            Decision.Take(minions[1].ObjectId), events);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
+
+        Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
+        Assert.Equal(minions[1].ObjectId, upgrade.Area.Host);
     }
 
     [Rule("rr:attach-to.3")]
@@ -143,7 +162,7 @@ public sealed class WouldBeDefeatedTests
 
     [Rule("rr:damage.step.6")]
     [Fact]
-    public void AnOptionalInterruptIsRefusedRatherThanSilentlyUsed()
+    public void AnOptionalInterruptCanBeAcceptedWithoutReplayingDamage()
     {
         var world = Empty(
             """
@@ -159,11 +178,137 @@ public sealed class WouldBeDefeatedTests
             AuthoredCards.BiomechanicalUpgrades,
             world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Damage.Deal(world, Cards, minion, minion, 3, "test", "test", []));
+        var events = new List<GameEvent>();
+        bool defeated = Damage.Deal(
+            world, Cards, minion, minion, 3, "test", "test", events);
+        var asked = Sequence.Work(world, Cards, world.Abilities, events);
 
-        Assert.Contains("optional interrupt", thrown.Message, StringComparison.Ordinal);
-        Assert.Contains("rr:damage.step.6", thrown.Message, StringComparison.Ordinal);
+        Assert.False(defeated);
+        Assert.NotNull(asked);
+        Assert.True(asked.Cancellable);
+        Assert.Equal(Question.Opportunity, asked.Asking);
+        Sequence.Answer(
+            world, Cards, world.Abilities, asked,
+            Decision.Take(asked.Affordances[0].Id), events);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
+
+        Assert.Equal(0, minion.Damage);
+        Assert.Equal(1, events.Count(happened => happened is FieldSet set
+            && set.Card == minion.ObjectId && set.Field == "health" && set.To == 0));
+    }
+
+    [Rule("rr:forced.6")]
+    [Rule("rr:damage.step.6")]
+    [Fact]
+    public void AChosenInterruptFinishesItsOwnChoiceBeforeDefeatContinues()
+    {
+        var world = Empty(
+            """
+            {"cards":[{"card":"01185","abilities":[{
+              "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
+                         "subject":"attachedTo"},
+              "effect":{"choose":{"options":[
+                {"heal":{"card":"attachedTo","amount":{"damageOn":"attachedTo"}}},
+                {"placeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}
+              ]}}
+            }]}]}
+            """);
+        var minion = world.CreateCard(
+            Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.CreateCard(
+            AuthoredCards.BiomechanicalUpgrades,
+            world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
+        var events = new List<GameEvent>();
+
+        Damage.Deal(world, Cards, minion, minion, 3, "test", "test", events);
+        var interrupt = Assert.IsType<Prompt>(
+            Sequence.Work(world, Cards, world.Abilities, events));
+        Sequence.Answer(
+            world, Cards, world.Abilities, interrupt,
+            Decision.Take(interrupt.Affordances[0].Id), events);
+
+        var inner = Assert.IsType<Prompt>(
+            Sequence.Work(world, Cards, world.Abilities, events));
+        Assert.Equal(Question.Option, inner.Asking);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
+        var heal = Assert.Single(inner.Affordances, option => option.Label == "heal");
+        Sequence.Answer(
+            world, Cards, world.Abilities, inner, Decision.Take(heal.Id), events);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
+
+        Assert.Equal(0, minion.Damage);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
+    }
+
+    [Rule("rr:damage.step.6")]
+    [Rule("rr:ability.11")]
+    [Fact]
+    public void AnOptionalInterruptCanBeDeclinedAndDefeatResumes()
+    {
+        var world = Empty(
+            """
+            {"cards":[{"card":"01185","abilities":[{
+              "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
+                         "subject":"attachedTo"},
+              "effect":{"heal":{"card":"attachedTo","amount":{"damageOn":"attachedTo"}}}
+            }]}]}
+            """);
+        var minion = world.CreateCard(
+            Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.CreateCard(
+            AuthoredCards.BiomechanicalUpgrades,
+            world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
+        var events = new List<GameEvent>();
+
+        Damage.Deal(world, Cards, minion, minion, 3, "test", "test", events);
+        var asked = Sequence.Work(world, Cards, world.Abilities, events);
+        Assert.NotNull(asked);
+        Sequence.Answer(world, Cards, world.Abilities, asked, Decision.Decline, events);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Equal(1, events.Count(happened => happened is FieldSet set
+            && set.Card == minion.ObjectId && set.Field == "health" && set.To == 0));
+    }
+
+    [Rule("rr:damage.step.6")]
+    [Rule("rr:retaliate-x.2")]
+    [Fact]
+    public void ADefeatDecisionFinishesBeforeAnAttackChecksRetaliate()
+    {
+        var world = Empty(
+            """
+            {"cards":[{"card":"01185","abilities":[{
+              "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
+                         "subject":"attachedTo"},
+              "effect":{"heal":{"card":"attachedTo","amount":1}}
+            }]}]}
+            """);
+        var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
+        var attacker = world.CreateCard(Mercenary, engaged);
+        var minion = world.CreateCard(Mercenary, engaged);
+        world.CreateCard(
+            AuthoredCards.BiomechanicalUpgrades,
+            world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "retaliate",
+            Amount: 3,
+            Affects: minion.ObjectId));
+        var events = new List<GameEvent>();
+
+        var result = Damage.Attack(
+            world, Cards, attacker, minion, 3, "test", "Attack", events);
+        var asked = Assert.IsType<Prompt>(
+            Sequence.Work(world, Cards, world.Abilities, events));
+
+        Assert.True(result.Suspended);
+        Assert.Equal(0, attacker.Damage);
+        Sequence.Answer(world, Cards, world.Abilities, asked, Decision.Decline, events);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Equal(0, attacker.Damage);
     }
 
     [Rule("rr:forced.4")]
@@ -227,7 +372,7 @@ public sealed class WouldBeDefeatedTests
 
     [Rule("rr:forced.5")]
     [Fact]
-    public void TwoForcedInterruptsRefuseToChooseTheFirstPlayersOrder()
+    public void TheFirstPlayerOrdersTwoForcedInterrupts()
     {
         var world = Empty(
             """
@@ -250,11 +395,19 @@ public sealed class WouldBeDefeatedTests
             AuthoredCards.BiomechanicalUpgrades,
             world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Damage.Deal(world, Cards, minion, minion, 3, "test", "test", []));
+        var events = new List<GameEvent>();
+        Damage.Deal(world, Cards, minion, minion, 3, "test", "test", events);
+        var asked = Sequence.Work(world, Cards, world.Abilities, events);
 
-        Assert.Contains("rr:forced.5", thrown.Message, StringComparison.Ordinal);
-        Assert.Equal(3, minion.Damage);
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Order, asked.Asking);
+        Assert.Equal(world.FirstPlayer, asked.Player);
+        Sequence.Answer(
+            world, Cards, world.Abilities, asked,
+            Decision.Take(upgrade.ObjectId), events);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
+
+        Assert.Equal(0, minion.Damage);
         Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
     }
 

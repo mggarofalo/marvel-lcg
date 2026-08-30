@@ -23,8 +23,11 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Reveal
 {
-    private const int InciteResolutionOrdinal = -1;
-    private const int SurgeResolutionOrdinal = -2;
+    /// <summary>The stable ledger address of keyword-provided Incite.</summary>
+    public const int InciteResolutionOrdinal = -1;
+
+    /// <summary>The stable ledger address of keyword-provided Surge.</summary>
+    public const int SurgeResolutionOrdinal = -2;
 
     /// <summary>
     /// Gives a character a status, and resolves what follows —
@@ -119,21 +122,7 @@ public static class Reveal
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        // `rr:incite-x`: "place X threat on the main scheme." Through
-        // `Threat.Place` and not inline, because threat that reaches the
-        // scheme's target completes it whatever put it there -- and this used
-        // to place it and not look.
-        long incite = StateFields.Modified(world, card, "incite", facts, world.Players);
-        long surge = StateFields.Modified(world, card, "surge", facts, world.Players);
         var keywordAbilities = KeywordAbilities(world, facts, card, player);
-        PendingAbility? inciteAbility = keywordAbilities
-            .Where(ability => ability.Ordinal == InciteResolutionOrdinal)
-            .Select(ability => (PendingAbility?)ability)
-            .SingleOrDefault();
-        PendingAbility? surgeAbility = keywordAbilities
-            .Where(ability => ability.Ordinal == SurgeResolutionOrdinal)
-            .Select(ability => (PendingAbility?)ability)
-            .SingleOrDefault();
         if (occurrence is not null && facts.Kind(card.FaceId) == CardKind.Treachery)
         {
             // Keyword-provided abilities have no authored-data ordinal. These
@@ -144,24 +133,53 @@ public static class Reveal
                 keywordAbilities);
         }
 
-        if (incite > 0 && world.TheCardIn(DeckType.MainSchemesArea) is { } scheme)
+        foreach (var ability in keywordAbilities)
         {
-            Threat.Place(world, facts, abilities, scheme, incite, "incite", events);
-            CompleteKeyword(occurrence, inciteAbility, applied: true);
+            ResolveKeyword(
+                world, facts, abilities, card, player, ability, events, occurrence);
         }
-        else
+    }
+
+    /// <summary>Resolve one keyword-provided When Revealed ability by address.</summary>
+    public static void ResolveKeyword(
+        World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
+        PendingAbility ability, List<GameEvent> events, Occurrence? occurrence = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (ability.Card != card.ObjectId)
         {
-            CompleteKeyword(occurrence, inciteAbility, applied: false);
+            throw new RulesNotImplementedException(
+                $"keyword ability on card {ability.Card} cannot resolve for card {card.ObjectId}");
         }
 
-        // `rr:surge`: "the player resolving the card deals themself a facedown
-        // encounter card from the top of the encounter deck." `rr:keywords.1`
-        // makes additional non-numeric instances inert, so printed and gained
-        // surge are read together and the one ability fires once when present.
-        if (surge > 0)
+        switch (ability.Ordinal)
         {
-            bool dealt = Deal.EncounterCard(world, player, "surge", events) is not null;
-            CompleteKeyword(occurrence, surgeAbility, dealt);
+            case InciteResolutionOrdinal:
+                long incite = StateFields.Modified(
+                    world, card, "incite", facts, world.Players);
+                if (incite > 0 && world.TheCardIn(DeckType.MainSchemesArea) is { } scheme)
+                {
+                    Threat.Place(world, facts, abilities, scheme, incite, "incite", events);
+                    CompleteKeyword(occurrence, ability, applied: true);
+                }
+                else
+                {
+                    CompleteKeyword(occurrence, ability, applied: false);
+                }
+                break;
+
+            case SurgeResolutionOrdinal:
+                bool dealt = Deal.EncounterCard(world, player, "surge", events) is not null;
+                CompleteKeyword(occurrence, ability, dealt);
+                break;
+
+            default:
+                throw new RulesNotImplementedException(
+                    $"keyword reveal ability ordinal {ability.Ordinal} is not implemented");
         }
     }
 
@@ -261,9 +279,13 @@ public static class Reveal
     /// <param name="player">The seat revealing it.</param>
     /// <param name="events">Where to record what happened.</param>
     /// <param name="occurrence">The reveal occurrence, when this move is part of one.</param>
+    /// <param name="attachmentTarget">
+    /// The host selected by a suspended reveal procedure, or null when the
+    /// attachment phrase can resolve without asking.
+    /// </param>
     public static void Resolve(
         World world, ICardFacts facts, Card card, int player, List<GameEvent> events,
-        Occurrence? occurrence = null)
+        Occurrence? occurrence = null, int? attachmentTarget = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -303,7 +325,8 @@ public static class Reveal
             // that card to attach to a specific game element." An ability that
             // attaches says so with the `attachTo` node instead, and it moves
             // the card itself rather than coming through here.
-            CardKind.Attachment when world.Abilities.AttachesTo(world, card) is { } element
+            CardKind.Attachment when (attachmentTarget
+                ?? world.Abilities.AttachesTo(world, card)) is { } element
                 => world.AreaOf(
                     DeckType.UpgradesArea,
                     world.Cards[element].Area.PlayArea,
@@ -416,11 +439,30 @@ public static class Reveal
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(card);
 
+        if (!TeamworkApplies(world, facts, card))
+        {
+            return;
+        }
+
+        string trait = facts.Attributes(card.FaceId)["Teamwork"];
+
+        world.Agenda.Then(new PhaseStep(
+            Forms.In(world, world.Seats[player], facts, Forms.Hero) ? Steps.Attack : Steps.Scheme,
+            round, 2, Index: player, Subject: card.ObjectId, Seat: player));
+    }
+
+    /// <summary>Whether Teamwork's forced response is currently eligible.</summary>
+    public static bool TeamworkApplies(World world, ICardFacts facts, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(card);
+
         if (card.Area.Type != DeckType.EngagedEnemiesArea
             || Characteristics.IsLost(world, card, "teamwork")
             || !facts.Attributes(card.FaceId).TryGetValue("Teamwork", out string? trait))
         {
-            return;
+            return false;
         }
 
         // "In play" and not "engaged with you": a minion in another player's
@@ -432,14 +474,7 @@ public static class Reveal
             .Any(other => other.ObjectId != card.ObjectId
                 && State.Traits.Has(world, other, trait, facts));
 
-        if (!company)
-        {
-            return;
-        }
-
-        world.Agenda.Then(new PhaseStep(
-            Forms.In(world, world.Seats[player], facts, Forms.Hero) ? Steps.Attack : Steps.Scheme,
-            round, 2, Index: player, Subject: card.ObjectId, Seat: player));
+        return company;
     }
 
     /// <summary>
@@ -471,9 +506,7 @@ public static class Reveal
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(card);
 
-        if (card.Area.Type != DeckType.EngagedEnemiesArea
-            || StateFields.Modified(world, card, "quickstrike", facts, world.Players) <= 0
-            || !Forms.In(world, world.Seats[player], facts, Forms.Hero))
+        if (!QuickstrikeApplies(world, facts, card, player))
         {
             return;
         }
@@ -483,6 +516,18 @@ public static class Reveal
         // finished by the time this runs.
         world.Agenda.Then(new PhaseStep(
             Steps.Attack, round, 2, Index: player, Subject: card.ObjectId, Seat: player));
+    }
+
+    /// <summary>Whether Quickstrike's forced response is currently eligible.</summary>
+    public static bool QuickstrikeApplies(
+        World world, ICardFacts facts, Card card, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(card);
+        return card.Area.Type == DeckType.EngagedEnemiesArea
+            && StateFields.Modified(world, card, "quickstrike", facts, world.Players) > 0
+            && Forms.In(world, world.Seats[player], facts, Forms.Hero);
     }
 
     /// <summary>

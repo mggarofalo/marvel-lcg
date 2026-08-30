@@ -356,6 +356,10 @@ public sealed class ResolutionStatusTests
         var occurrence = world.Agenda.Begin(world, Cards);
         var events = new List<GameEvent>();
 
+        var asked = Sequence.Work(world, Cards, runner, events);
+        Assert.NotNull(asked);
+        var surge = Assert.Single(asked.Affordances, option => option.Label == "Surge");
+        Sequence.Answer(world, Cards, runner, asked, Decision.Take(surge.Id), events);
         Sequence.Finish(world, Cards, runner, events);
 
         Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(

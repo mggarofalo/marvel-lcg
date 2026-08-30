@@ -241,6 +241,43 @@ public sealed class VillainPhaseTests
         Assert.Equal(5, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
     }
 
+    [Rule("rr:villain-phase.step.2.b")]
+    [Rule("rr:minion.3")]
+    [Fact]
+    public void TheEngagedPlayerOrdersTheirMinionActivations()
+    {
+        // "In the order of the engaged player's choice." Different printed
+        // scheme values make both minions observable, while the completion
+        // ledger holds the chosen order rather than an object-id fallback.
+        var printed = new Printed()
+            .With("villain", ("SCH", "0"))
+            .With("first", ("SCH", "1"))
+            .With("second", ("SCH", "2"))
+            .With("scheme", ("EscalationThreat", "0"))
+            .With("boost", ("Boost", "0"));
+        var world = Board(printed, players: 1);
+        var first = world.CreateCard(
+            "first", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var second = world.CreateCard(
+            "second", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var observer = new EnemyOrderObserver();
+        var events = new List<GameEvent>();
+        VillainPhase.Schedule(world.Agenda, round: 1);
+
+        var asked = Sequence.Work(world, printed, observer, events);
+
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Order, asked.Asking);
+        Assert.Equal(0, asked.Player);
+        Sequence.Answer(
+            world, printed, observer, asked,
+            new Decision(asked.Affordances[0].Id, [second.ObjectId, first.ObjectId]), events);
+        Sequence.Finish(world, printed, observer, events);
+
+        Assert.Equal(["villain", "second", "first"], observer.Enemies);
+        Assert.Equal(3, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+    }
+
     [Rule("rr:minion.4")]
     [Fact]
     public void AMinionEngagedDuringActivationsJoinsTheCurrentProcedure()
@@ -391,6 +428,85 @@ public sealed class VillainPhaseTests
         Assert.Equal(2, Attack());
     }
 
+    [Rule("rr:forced.5")]
+    [Rule("rr:quickstrike.2")]
+    [Rule("rr:teamwork.2")]
+    [Fact]
+    public void TheFirstPlayerOrdersQuickstrikeAndTeamworkAfterAReveal()
+    {
+        // Both keywords provide forced responses to the minion entering play
+        // and engaging. Neither printed order nor object-id order may decide
+        // which initiates first; the first player does.
+        var printed = new Printed()
+            .With("identity", ("HP", "10"))
+            .With(
+                "encounter",
+                ("Quickstrike", "1"), ("Teamwork", "ACOLYTE"),
+                ("ATK", "1"), ("HP", "3"))
+            .With("friend", ("HP", "3"))
+            .WithTrait("encounter", "ACOLYTE")
+            .WithTrait("friend", "ACOLYTE");
+        printed.Kinds["encounter"] = CardKind.Minion;
+        printed.Kinds["friend"] = CardKind.Minion;
+        printed.Kinds["identity"] = CardKind.Hero;
+        var world = Board(printed, players: 1);
+        world.CreateCard(
+            "friend", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var encounter = world.AreaOf(DeckType.EncounterDeck).Cards
+            .Single(card => card.FaceId == "encounter");
+        world.Agenda.Add(new PhaseStep(
+            Steps.RevealEncounterCard, 1, 4,
+            Subject: encounter.ObjectId, Seat: 0));
+        var events = new List<GameEvent>();
+        var abilities = new NoCardAbilities();
+
+        var asked = Assert.IsType<Prompt>(
+            Sequence.Work(world, printed, abilities, events));
+
+        Assert.Equal(Question.Order, asked.Asking);
+        Assert.Equal(
+            ["Quickstrike", "Teamwork"],
+            asked.Affordances.Select(option => option.Label));
+
+        Sequence.Answer(
+            world, printed, abilities, asked,
+            Decision.Take(asked.Affordances[1].Id), events);
+
+        Assert.Equal(
+            2,
+            world.Agenda.Outstanding
+                .Where(step => step.What == Steps.Attack)
+                .Select(step => step.ActivationId)
+                .Distinct()
+                .Count());
+    }
+
+    [Rule("rr:forced.5")]
+    [Rule("rr:incite-x.1")]
+    [Rule("rr:surge.1")]
+    [Fact]
+    public void TheFirstPlayerOrdersTwoKeywordWhenRevealedAbilities()
+    {
+        var printed = new Printed()
+            .With("encounter", ("Incite", "2"), ("Surge", "1"));
+        printed.Kinds["encounter"] = CardKind.Minion;
+        var world = Board(printed, players: 1);
+        var encounter = world.AreaOf(DeckType.EncounterDeck).Cards
+            .Single(card => card.FaceId == "encounter");
+        world.Agenda.Add(new PhaseStep(
+            Steps.RevealEncounterCard, 1, 4,
+            Subject: encounter.ObjectId, Seat: 0));
+
+        var asked = Sequence.Work(
+            world, printed, new NoCardAbilities(), new List<GameEvent>());
+
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Order, asked.Asking);
+        Assert.Equal(
+            ["Incite", "Surge"],
+            asked.Affordances.Select(option => option.Label));
+    }
+
     /// <summary>Schedules the villain phase and walks it to the end.</summary>
     private static List<GameEvent> Run(
         World world, Printed printed, ICardAbilities? abilities = null)
@@ -410,6 +526,18 @@ public sealed class VillainPhaseTests
             World world, EnemyActivation result)
         {
             Players.Add(result.Player);
+            return [];
+        }
+    }
+
+    private sealed class EnemyOrderObserver : NoCardAbilities
+    {
+        public List<string> Enemies { get; } = [];
+
+        public override IReadOnlyList<GameEvent> ActivationCompleted(
+            World world, EnemyActivation result)
+        {
+            Enemies.Add(world.Cards[result.Enemy].FaceId);
             return [];
         }
     }
@@ -485,6 +613,7 @@ public sealed class VillainPhaseTests
     private sealed class Printed : ICardFacts
     {
         private readonly Dictionary<string, Dictionary<string, string>> attributes = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, List<string>> traits = new(StringComparer.Ordinal);
 
         public Dictionary<string, CardKind> Kinds { get; } = new(StringComparer.Ordinal)
         {
@@ -510,10 +639,21 @@ public sealed class VillainPhaseTests
             return this;
         }
 
+        public Printed WithTrait(string faceId, string trait)
+        {
+            if (!traits.TryGetValue(faceId, out var found))
+            {
+                traits[faceId] = found = [];
+            }
+            found.Add(trait);
+            return this;
+        }
+
         public CardKind Kind(string faceId) =>
             Kinds.TryGetValue(faceId, out var kind) ? kind : CardKind.Unknown;
 
-        public IReadOnlyList<string> Traits(string faceId) => [];
+        public IReadOnlyList<string> Traits(string faceId) =>
+            traits.TryGetValue(faceId, out var found) ? found : [];
 
         public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
             attributes.TryGetValue(faceId, out var found)

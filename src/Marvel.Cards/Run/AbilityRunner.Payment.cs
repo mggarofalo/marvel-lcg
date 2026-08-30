@@ -1049,7 +1049,7 @@ public sealed partial class AbilityRunner
                     $"'{cast.Source.FaceId}' cannot find its take-damage cost target");
             long amount = Number(cost.Require("amount"));
             long before = target.Damage;
-            Damage.Deal(
+            var outcome = Damage.DealOutcome(
                 cast.World, cast.World.Facts, cast.Source, target, amount,
                 cast.Trigger, CardPlay.Verb, cast.Events);
             long taken = target.Damage - before;
@@ -1061,6 +1061,11 @@ public sealed partial class AbilityRunner
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' requires {amount} damage to be taken as a "
                     + $"cost, but only {taken} was taken; rr:cost.12 leaves it unpaid");
+            }
+            if (outcome == Damage.Outcome.Suspended)
+            {
+                cast.Results["costProcedurePending"] = 1;
+                cast.Suspend();
             }
             return;
         }

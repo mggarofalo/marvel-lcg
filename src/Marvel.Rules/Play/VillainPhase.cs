@@ -119,6 +119,10 @@ public interface ICardAbilities : IWindowAbilities
         World world, Card card, int player, Occurrence occurrence) =>
         WhenRevealed(world, card, player);
 
+    /// <summary>Stable addresses of this card's printed When Revealed abilities.</summary>
+    IReadOnlyList<PendingAbility> WhenRevealedAbilities(
+        World world, Card card, int player) => [];
+
     /// <summary>Cancels every When Revealed ability before any one of them applies.</summary>
     bool CancelWhenRevealed(
         World world, Card card, int player, Occurrence occurrence) => false;
@@ -164,8 +168,8 @@ public interface ICardAbilities : IWindowAbilities
     /// the occurrence's interrupt window closed before step 1. Nothing is lost
     /// by that for a <i>forced</i> ability — <c>rr:forced.1</c> leaves nothing
     /// to offer and nothing to decline. A non-forced interrupt on another
-    /// card's defeat would need a window that can ask, and is refused by name
-    /// rather than skipped.
+    /// card's defeat becomes a saveable procedure continuation at this exact
+    /// step, so accepting or declining it does not replay the damage.
     /// </para>
     /// <para>
     /// <c>rr:when-defeated-abilities.2.1</c> puts all of it before the card
@@ -186,6 +190,16 @@ public interface ICardAbilities : IWindowAbilities
     /// </param>
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated);
+
+    /// <summary>Resolve or suspend damage step 7 before the defeated card leaves play.</summary>
+    /// <returns>True when every step-7 ability completed synchronously.</returns>
+    bool WhenCardDefeated(
+        World world, Card card, Defeated defeated, string trigger,
+        List<GameEvent> events)
+    {
+        events.AddRange(WhenCardDefeated(world, card, defeated));
+        return true;
+    }
 
     /// <summary>Resolves the body of a card ability labelled as an attack.</summary>
     void ResolveCardAttack(
@@ -244,6 +258,18 @@ public interface ICardAbilities : IWindowAbilities
     /// character's remaining hit points again after this returns.
     /// </remarks>
     void WouldBeDefeated(World world, Card target, List<GameEvent> events);
+
+    /// <summary>
+    /// Step 6 with enough data to resume the containing damage procedure.
+    /// </summary>
+    /// <returns>True when step 6 completed synchronously; false when it suspended.</returns>
+    bool WouldBeDefeated(
+        World world, Card target, Card source, string trigger, string verb, int by,
+        List<GameEvent> events)
+    {
+        WouldBeDefeated(world, target, events);
+        return true;
+    }
 
     /// <summary>
     /// The "<b>Resource</b>" abilities a player could generate from —
@@ -836,8 +862,7 @@ public static class VillainPhase
                 break;
 
             case Steps.EnemiesActivate:
-                PlanActivations(world, facts, step);
-                break;
+                return PlanActivations(world, facts, step);
 
             case Steps.CompleteAttackActivation:
             case Steps.CompleteSchemeActivation:
@@ -977,6 +1002,40 @@ public static class VillainPhase
             case Steps.ChooseAllyForLimit:
                 return ChooseAllyForLimit(world, facts, step.Seat);
 
+            case Steps.ChooseRestrictedCard:
+                return ChooseRestrictedCard(world, facts, step.Seat);
+
+            case Steps.ChooseAttachmentTarget:
+                return ChooseAttachmentTarget(world, facts, step);
+
+            case Steps.ChooseWouldBeDefeated:
+                return ChooseWouldBeDefeated(world, abilities, step);
+
+            case Steps.ResumeWouldBeDefeated:
+                ResumeWouldBeDefeated(world, facts, abilities, step, events);
+                break;
+
+            case Steps.ChooseCardDefeatedAbility:
+                return ChooseCardDefeatedAbility(world, abilities, step);
+
+            case Steps.ResumeCardDefeatedAbility:
+                ResumeCardDefeatedAbility(world, facts, abilities, step, events);
+                break;
+
+            case Steps.ChooseRevealAbility:
+                return ChooseRevealAbility(world, facts, step);
+
+            case Steps.ResumeRevealAbility:
+                ResumeRevealAbility(world, facts, abilities, step, events);
+                break;
+
+            case Steps.FinishAttackDamage:
+                Damage.FinishAttack(world, facts, step, events);
+                break;
+
+            case Steps.ChoosePostRevealAbility:
+                return ChoosePostRevealAbility(world, step);
+
             case Steps.FinalizeAllyEntry:
                 FinalizeAllyEntry(world, facts, abilities, step.Subject, events);
                 break;
@@ -1101,6 +1160,36 @@ public static class VillainPhase
                 DiscardAllyForLimit(world, facts, step.Seat, input, events);
                 break;
 
+            case Steps.ChooseRestrictedCard:
+                DiscardRestrictedCard(world, facts, step, input, events);
+                break;
+
+            case Steps.ChooseAttachmentTarget:
+                AttachRevealedCard(world, facts, abilities, step, input, events);
+                break;
+
+            case Steps.ChooseWouldBeDefeated:
+                ResolveWouldBeDefeated(
+                    world, facts, abilities, step, input, events);
+                break;
+
+            case Steps.ChooseCardDefeatedAbility:
+                ResolveCardDefeatedAbility(
+                    world, facts, abilities, step, input, events);
+                break;
+
+            case Steps.ChooseRevealAbility:
+                ResolveRevealAbility(world, facts, abilities, step, input, events);
+                break;
+
+            case Steps.ChoosePostRevealAbility:
+                ResolvePostRevealAbility(world, facts, step, input, events);
+                break;
+
+            case Steps.EnemiesActivate:
+                OrderMinionActivations(world, step, input);
+                break;
+
             case Steps.OrderEachPlayer:
                 EachPlayerEffects.Ordered(world, step, input);
                 break;
@@ -1168,6 +1257,664 @@ public static class VillainPhase
             .OrderBy(card => card.ObjectId),
     ];
 
+    private static Prompt ChooseRestrictedCard(World world, ICardFacts facts, int player)
+    {
+        var restricted = RestrictedCards(world, facts, player);
+        if (restricted.Count <= StateFields.RestrictedLimit)
+        {
+            throw new InvalidOperationException(
+                $"player {player} no longer exceeds their restricted-card limit");
+        }
+
+        return new Prompt(
+            player,
+            Question.Element,
+            TimingPriority.Untimed,
+            Steps.ChooseRestrictedCard,
+            $"{world.Seats[player].Name} chooses a restricted card to discard",
+            false,
+            [.. restricted.Select(card => new Affordance(
+                card.ObjectId,
+                "Discard",
+                card.ObjectId,
+                player,
+                facts.Title(card.FaceId)))]);
+    }
+
+    private static void DiscardRestrictedCard(
+        World world, ICardFacts facts, PhaseStep step, Decision input,
+        List<GameEvent> events)
+    {
+        var offered = step.ProcedureCandidates ?? [];
+        var card = RestrictedCards(world, facts, step.Seat)
+            .FirstOrDefault(candidate => candidate.ObjectId == input.Affordance
+                && offered.Contains(candidate.ObjectId))
+            ?? throw new RulesNotImplementedException(
+                $"card {input.Affordance} was not offered for the restricted-card limit");
+
+        Discard.Card(world, card, Steps.ChooseRestrictedCard, events);
+
+        var remaining = RestrictedCards(world, facts, step.Seat);
+        if (remaining.Count > StateFields.RestrictedLimit)
+        {
+            ScheduleProcedureChoice(world, step with
+            {
+                ProcedureCandidates = [.. remaining.Select(candidate => candidate.ObjectId)],
+                OccurrenceId = null,
+            });
+        }
+    }
+
+    private static List<Card> RestrictedCards(World world, ICardFacts facts, int player) =>
+    [
+        .. world.Areas
+            .Where(area => DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Where(card => card.Owner == player
+                && StateFields.Modified(
+                    world, card, "restricted", facts, world.Players) > 0)
+            .OrderBy(card => card.ObjectId),
+    ];
+
+    private static void ScheduleProcedureChoice(World world, PhaseStep step)
+    {
+        if (world.Agenda.Occurrence is { } occurrence)
+        {
+            world.Agenda.ThenContinuation(step, occurrence);
+            return;
+        }
+
+        world.Agenda.Add(step with { Plan = true });
+    }
+
+    private static Prompt ChooseAttachmentTarget(
+        World world, ICardFacts facts, PhaseStep step)
+    {
+        var card = world.Cards[step.Subject];
+        var candidates = step.ProcedureCandidates ?? [];
+        return new Prompt(
+            world.FirstPlayer,
+            Question.Element,
+            TimingPriority.Untimed,
+            Steps.ChooseAttachmentTarget,
+            $"{world.Seats[world.FirstPlayer].Name} chooses where {card.FaceId} attaches",
+            false,
+            [.. candidates.Select(id => new Affordance(
+                id,
+                "Attach",
+                id,
+                world.Cards[id].Area.PlayArea.IsPlayers
+                    ? world.Cards[id].Area.PlayArea.Player
+                    : -1,
+                facts.Title(world.Cards[id].FaceId)))]);
+    }
+
+    private static Prompt ChooseWouldBeDefeated(
+        World world, ICardAbilities abilities, PhaseStep step)
+    {
+        var pending = step.ProcedureAbilities ?? [];
+        if (pending.Count == 0)
+        {
+            throw new InvalidOperationException("damage step 6 has no pending abilities");
+        }
+
+        bool mandatory = pending.All(ability => AbilityTypes.IsMandatory(ability.Type));
+        int player = ProcedurePlayer(world, step, pending, mandatory);
+        var offered = mandatory
+            ? pending
+            : pending.Where(ability => ability.Player < 0 || ability.Player == player).ToList();
+        return new Prompt(
+            player,
+            mandatory ? Question.Order : Question.Opportunity,
+            AbilityTypes.PriorityOf(pending[0].Type),
+            Steps.CardWouldBeDefeated,
+            mandatory
+                ? $"order abilities before card {step.Subject} is defeated"
+                : $"interrupt before card {step.Subject} is defeated",
+            !mandatory,
+            [.. offered.Select(ability => abilities.Describe(world, ability))]);
+    }
+
+    private static void ResolveWouldBeDefeated(
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        Decision input, List<GameEvent> events)
+    {
+        var procedure = step.ProcedureOccurrence
+            ?? throw new InvalidOperationException("damage step 6 has no occurrence");
+        var pending = step.ProcedureAbilities ?? [];
+        bool mandatory = pending.All(ability => AbilityTypes.IsMandatory(ability.Type));
+
+        if (input.IsDecline)
+        {
+            if (mandatory)
+            {
+                throw new RulesNotImplementedException(
+                    "a forced damage-step ability ordering cannot be declined");
+            }
+            int player = ProcedurePlayer(world, step, pending, mandatory: false);
+            var passed = (step.ProcedurePlayersPassed ?? []).Append(player).Distinct().ToList();
+            if (HasOptionalProcedurePlayer(world, pending, passed))
+            {
+                ScheduleProcedureChoice(world, step with
+                {
+                    ProcedurePlayersPassed = passed,
+                    OccurrenceId = null,
+                });
+            }
+            else
+            {
+                FinishWouldBeDefeated(world, facts, step, events);
+            }
+            return;
+        }
+
+        int resolvingPlayer = ProcedurePlayer(world, step, pending, mandatory);
+        var offered = mandatory
+            ? pending
+            : pending.Where(ability =>
+                ability.Player < 0 || ability.Player == resolvingPlayer).ToList();
+        var chosen = offered
+            .Select(ability => (Ability: ability, Offer: abilities.Describe(world, ability)))
+            .Where(pair => pair.Offer.Id == input.Affordance)
+            .Select(pair => (PendingAbility?)pair.Ability)
+            .FirstOrDefault()
+            ?? throw new RulesNotImplementedException(
+                $"affordance {input.Affordance} was not offered at damage step 6");
+
+        procedure.Trigger(WindowKind.Interrupt, chosen.Card);
+        var containingOccurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException("damage step 6 has no containing occurrence");
+        if (!ReferenceEquals(containingOccurrence, procedure))
+        {
+            containingOccurrence.Trigger(WindowKind.Interrupt, chosen.Card);
+        }
+        events.AddRange(abilities.Resolve(
+            world, procedure, chosen, input.Spent, input.Targets,
+            input.DefinedValues, input.Allocated));
+        world.Agenda.ThenContinuation(step with
+        {
+            What = Steps.ResumeWouldBeDefeated,
+            ProcedureAbilities = [.. pending.Where(ability => ability != chosen)],
+            ProcedurePlayersPassed = [],
+            Tier = chosen.Type,
+            OccurrenceId = null,
+        }, containingOccurrence);
+    }
+
+    private static void ResumeWouldBeDefeated(
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        List<GameEvent> events)
+    {
+        var target = world.Cards[step.Subject];
+        if (Damage.Health(world, facts, target) - target.Damage > 0)
+        {
+            return;
+        }
+
+        ContinueWouldBeDefeated(world, facts, abilities, step, events);
+    }
+
+    private static void ContinueWouldBeDefeated(
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        List<GameEvent> events)
+    {
+        var procedure = step.ProcedureOccurrence
+            ?? throw new InvalidOperationException("damage step 6 has no occurrence");
+        var carried = (step.ProcedureAbilities ?? []).ToList();
+        if (carried.Count == 1 && AbilityTypes.IsMandatory(carried[0].Type))
+        {
+            var next = carried[0];
+            var containing = world.Agenda.Occurrence
+                ?? throw new InvalidOperationException(
+                    "damage step 6 resume has no containing occurrence");
+            procedure.Trigger(WindowKind.Interrupt, next.Card);
+            if (!ReferenceEquals(containing, procedure))
+            {
+                containing.Trigger(WindowKind.Interrupt, next.Card);
+            }
+            events.AddRange(abilities.Resolve(world, procedure, next, [], []));
+            world.Agenda.ThenContinuation(step with
+            {
+                ProcedureAbilities = [],
+                ProcedurePlayersPassed = [],
+                Tier = next.Type,
+                OccurrenceId = null,
+            }, containing);
+            return;
+        }
+        var pending = carried.Count > 0
+            ? carried
+            : FirstInterruptTier(abilities, world, procedure, after: step.Tier);
+        if (pending.Count > 0)
+        {
+            ScheduleProcedureChoice(world, step with
+            {
+                What = Steps.ChooseWouldBeDefeated,
+                ProcedureAbilities = pending,
+                ProcedurePlayersPassed = [],
+                OccurrenceId = null,
+            });
+            return;
+        }
+
+        FinishWouldBeDefeated(world, facts, step, events);
+    }
+
+    private static void FinishWouldBeDefeated(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        var target = world.Cards[step.Subject];
+        if (Damage.Health(world, facts, target) - target.Damage <= 0)
+        {
+            Defeat.Character(
+                world, facts, target, step.ProcedureTrigger, events,
+                how: step.ProcedureVerb, by: step.ProcedureBy);
+        }
+    }
+
+    private static Prompt ChooseCardDefeatedAbility(
+        World world, ICardAbilities abilities, PhaseStep step)
+    {
+        var pending = step.ProcedureAbilities ?? [];
+        if (pending.Count == 0)
+        {
+            throw new InvalidOperationException("damage step 7 has no pending abilities");
+        }
+
+        bool mandatory = pending.All(ability => AbilityTypes.IsMandatory(ability.Type));
+        int player = ProcedurePlayer(world, step, pending, mandatory);
+        var offered = mandatory
+            ? pending
+            : pending.Where(ability => ability.Player < 0 || ability.Player == player).ToList();
+        return new Prompt(
+            player,
+            mandatory ? Question.Order : Question.Opportunity,
+            AbilityTypes.PriorityOf(pending[0].Type),
+            Steps.CardDefeated,
+            mandatory
+                ? $"order abilities when card {step.Subject} is defeated"
+                : $"interrupt when card {step.Subject} is defeated",
+            !mandatory,
+            [.. offered.Select(ability => abilities.Describe(world, ability))]);
+    }
+
+    private static void ResolveCardDefeatedAbility(
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        Decision input, List<GameEvent> events)
+    {
+        var occurrence = step.ProcedureOccurrence
+            ?? throw new InvalidOperationException("damage step 7 has no occurrence");
+        var pending = step.ProcedureAbilities ?? [];
+        bool mandatory = pending.All(ability => AbilityTypes.IsMandatory(ability.Type));
+
+        if (input.IsDecline)
+        {
+            if (mandatory)
+            {
+                throw new RulesNotImplementedException(
+                    "a forced damage-step ability ordering cannot be declined");
+            }
+            int player = ProcedurePlayer(world, step, pending, mandatory: false);
+            var passed = (step.ProcedurePlayersPassed ?? []).Append(player).Distinct().ToList();
+            if (HasOptionalProcedurePlayer(world, pending, passed))
+            {
+                ScheduleProcedureChoice(world, step with
+                {
+                    ProcedurePlayersPassed = passed,
+                    OccurrenceId = null,
+                });
+            }
+            else
+            {
+                FinalizeCardDefeat(world, facts, step, events);
+            }
+            return;
+        }
+
+        int resolvingPlayer = ProcedurePlayer(world, step, pending, mandatory);
+        var offered = mandatory
+            ? pending
+            : pending.Where(ability =>
+                ability.Player < 0 || ability.Player == resolvingPlayer).ToList();
+        var chosen = offered
+            .Select(ability => (Ability: ability, Offer: abilities.Describe(world, ability)))
+            .Where(pair => pair.Offer.Id == input.Affordance)
+            .Select(pair => (PendingAbility?)pair.Ability)
+            .FirstOrDefault()
+            ?? throw new RulesNotImplementedException(
+                $"affordance {input.Affordance} was not offered at damage step 7");
+
+        occurrence.Trigger(WindowKind.Interrupt, chosen.Card);
+        var containingOccurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException("damage step 7 has no containing occurrence");
+        if (!ReferenceEquals(containingOccurrence, occurrence))
+        {
+            containingOccurrence.Trigger(WindowKind.Interrupt, chosen.Card);
+        }
+        events.AddRange(abilities.Resolve(
+            world, occurrence, chosen, input.Spent, input.Targets,
+            input.DefinedValues, input.Allocated));
+        world.Agenda.ThenContinuation(step with
+        {
+            What = Steps.ResumeCardDefeatedAbility,
+            ProcedureAbilities = [.. pending.Where(ability => ability != chosen)],
+            ProcedurePlayersPassed = [],
+            Tier = chosen.Type,
+            OccurrenceId = null,
+        }, containingOccurrence);
+    }
+
+    private static void ResumeCardDefeatedAbility(
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        List<GameEvent> events)
+    {
+        var occurrence = step.ProcedureOccurrence
+            ?? throw new InvalidOperationException("damage step 7 has no occurrence");
+        var carried = (step.ProcedureAbilities ?? []).ToList();
+        if (carried.Count == 1 && AbilityTypes.IsMandatory(carried[0].Type))
+        {
+            var next = carried[0];
+            var containing = world.Agenda.Occurrence
+                ?? throw new InvalidOperationException(
+                    "damage step 7 resume has no containing occurrence");
+            occurrence.Trigger(WindowKind.Interrupt, next.Card);
+            if (!ReferenceEquals(containing, occurrence))
+            {
+                containing.Trigger(WindowKind.Interrupt, next.Card);
+            }
+            events.AddRange(abilities.Resolve(world, occurrence, next, [], []));
+            world.Agenda.ThenContinuation(step with
+            {
+                ProcedureAbilities = [],
+                ProcedurePlayersPassed = [],
+                Tier = next.Type,
+                OccurrenceId = null,
+            }, containing);
+            return;
+        }
+        var pending = carried.Count > 0
+            ? carried
+            : FirstInterruptTier(
+                abilities, world, occurrence, excludeCard: step.Subject,
+                after: step.Tier);
+        if (pending.Count > 0)
+        {
+            ScheduleProcedureChoice(world, step with
+            {
+                What = Steps.ChooseCardDefeatedAbility,
+                ProcedureAbilities = pending,
+                ProcedurePlayersPassed = [],
+                OccurrenceId = null,
+            });
+            return;
+        }
+
+        FinalizeCardDefeat(world, facts, step, events);
+    }
+
+    private static List<PendingAbility> FirstInterruptTier(
+        ICardAbilities abilities, World world, Occurrence occurrence,
+        int excludeCard = -1, AbilityType? after = null)
+    {
+        var tiers = AbilityWindow.Tiers(
+            abilities.Waiting(world, occurrence, WindowKind.Interrupt)
+                .Where(ability => ability.Card != excludeCard),
+            WindowKind.Interrupt,
+            occurrence);
+        var tier = tiers.FirstOrDefault(candidate => after is null
+            || candidate.Priority > AbilityTypes.PriorityOf(after.Value));
+        if (tier.Abilities is null)
+        {
+            return [];
+        }
+        var (forced, optional) = AbilityWindow.Split(tier);
+        return forced.Count > 0 ? [.. forced] : [.. optional];
+    }
+
+    private static int ProcedurePlayer(
+        World world, PhaseStep step, IReadOnlyList<PendingAbility> pending,
+        bool mandatory)
+    {
+        if (mandatory)
+        {
+            return world.FirstPlayer;
+        }
+        var passed = (step.ProcedurePlayersPassed ?? []).ToHashSet();
+        return world.PlayerOrder.FirstOrDefault(player =>
+            !passed.Contains(player)
+            && pending.Any(ability => ability.Player < 0 || ability.Player == player),
+            step.Seat >= 0 ? step.Seat : world.FirstPlayer);
+    }
+
+    private static bool HasOptionalProcedurePlayer(
+        World world, IReadOnlyList<PendingAbility> pending, IReadOnlyList<int> passed)
+    {
+        var skipped = passed.ToHashSet();
+        return world.PlayerOrder.Any(player =>
+            !skipped.Contains(player)
+            && pending.Any(ability => ability.Player < 0 || ability.Player == player));
+    }
+
+    private static void FinalizeCardDefeat(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        var card = world.Cards[step.Subject];
+        if (facts.Kind(card.FaceId) == CardKind.EncounterSideScheme)
+        {
+            Defeat.FinalizeScheme(world, facts, card, step.ProcedureTrigger, events);
+        }
+        else
+        {
+            Defeat.FinalizeCharacter(world, facts, card, step.ProcedureTrigger, events);
+        }
+    }
+
+    private static Prompt ChooseRevealAbility(
+        World world, ICardFacts facts, PhaseStep step)
+    {
+        var card = world.Cards[step.Subject];
+        var handles = step.ProcedureCandidates ?? [];
+        var abilities = step.ProcedureAbilities ?? [];
+        if (handles.Count != abilities.Count || handles.Count < 2)
+        {
+            throw new InvalidOperationException("reveal ordering has no simultaneous abilities");
+        }
+
+        return new Prompt(
+            world.FirstPlayer,
+            Question.Order,
+            TimingPriority.Occurrence,
+            Steps.CardRevealed,
+            $"order When Revealed abilities on {card.FaceId}",
+            false,
+            [.. handles.Select((handle, index) => new Affordance(
+                handle,
+                "Resolve",
+                card.ObjectId,
+                world.FirstPlayer,
+                RevealAbilityLabel(facts, card, abilities[index])))]);
+    }
+
+    private static string RevealAbilityLabel(
+        ICardFacts facts, Card card, PendingAbility ability) => ability.Ordinal switch
+    {
+        Reveal.InciteResolutionOrdinal => "Incite",
+        Reveal.SurgeResolutionOrdinal => "Surge",
+        _ => $"{facts.Title(card.FaceId)} When Revealed {ability.Ordinal + 1}",
+    };
+
+    private static void ResolveRevealAbility(
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        Decision input, List<GameEvent> events)
+    {
+        var pending = step.ProcedureAbilities ?? [];
+        var handles = step.ProcedureCandidates ?? [];
+        int chosenIndex = Enumerable.Range(0, handles.Count)
+            .FirstOrDefault(index => handles[index] == input.Affordance, -1);
+        if (input.IsDecline || chosenIndex < 0 || chosenIndex >= pending.Count)
+        {
+            throw new RulesNotImplementedException(
+                $"affordance {input.Affordance} was not offered for reveal ordering");
+        }
+
+        var occurrence = step.ProcedureOccurrence
+            ?? throw new InvalidOperationException("reveal ordering has no occurrence");
+        var containingOccurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException("reveal ordering has no containing occurrence");
+        ResolveOneRevealAbility(
+            world, facts, abilities, world.Cards[step.Subject], step.Seat,
+            pending[chosenIndex], occurrence, events);
+
+        var remainingAbilities = pending.Where((_, index) => index != chosenIndex).ToList();
+        var remainingHandles = handles.Where((_, index) => index != chosenIndex).ToList();
+        var chosen = pending[chosenIndex];
+        world.Agenda.ThenContinuation(step with
+        {
+            What = Steps.ResumeRevealAbility,
+            ProcedureAbilities = remainingAbilities,
+            ProcedureCandidates = remainingHandles,
+            ProcedureSource = chosen.Card,
+            Tier = chosen.Type,
+            AbilityOrdinal = chosen.Ordinal,
+            OccurrenceId = null,
+        }, containingOccurrence);
+    }
+
+    private static void ResumeRevealAbility(
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        List<GameEvent> events)
+    {
+        var occurrence = step.ProcedureOccurrence
+            ?? throw new InvalidOperationException("reveal ordering has no occurrence");
+        if (step.ProcedureSource >= 0
+            && step.AbilityOrdinal >= 0
+            && step.Tier is { } completedType)
+        {
+            occurrence.Complete(new PendingAbility(
+                step.ProcedureSource, completedType, step.Seat, step.AbilityOrdinal));
+        }
+
+        var pending = step.ProcedureAbilities ?? [];
+        var handles = step.ProcedureCandidates ?? [];
+        if (pending.Count > 1)
+        {
+            ScheduleProcedureChoice(world, step with
+            {
+                What = Steps.ChooseRevealAbility,
+                ProcedureSource = -1,
+                Tier = null,
+                AbilityOrdinal = -1,
+                OccurrenceId = null,
+            });
+            return;
+        }
+
+        if (pending.Count == 1)
+        {
+            var next = pending[0];
+            var containingOccurrence = world.Agenda.Occurrence
+                ?? throw new InvalidOperationException(
+                    "reveal continuation has no containing occurrence");
+            ResolveOneRevealAbility(
+                world, facts, abilities, world.Cards[step.Subject], step.Seat,
+                next, occurrence, events);
+            world.Agenda.ThenContinuation(step with
+            {
+                What = Steps.ResumeRevealAbility,
+                ProcedureAbilities = [],
+                ProcedureCandidates = [],
+                ProcedureSource = next.Card,
+                Tier = next.Type,
+                AbilityOrdinal = next.Ordinal,
+                OccurrenceId = null,
+            }, containingOccurrence);
+            return;
+        }
+
+        FinishEncounterRevealTail(
+            world, facts, world.Cards[step.Subject], step.Seat, step.Round,
+            occurrence, events, beforeResponses: false);
+    }
+
+    private static void ResolveOneRevealAbility(
+        World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
+        PendingAbility ability, Occurrence occurrence, List<GameEvent> events)
+    {
+        if (ability.Ordinal is Reveal.InciteResolutionOrdinal or Reveal.SurgeResolutionOrdinal)
+        {
+            Reveal.ResolveKeyword(
+                world, facts, abilities, card, player, ability, events, occurrence);
+            return;
+        }
+
+        events.AddRange(abilities.Resolve(world, occurrence, ability, [], []));
+    }
+
+    private static Prompt ChoosePostRevealAbility(World world, PhaseStep step)
+    {
+        var card = world.Cards[step.Subject];
+        return new Prompt(
+            world.FirstPlayer,
+            Question.Order,
+            TimingPriority.ForcedResponse,
+            Steps.CardRevealed,
+            $"order responses after {card.FaceId} is revealed",
+            false,
+            [
+                new Affordance(1, "Resolve", card.ObjectId, world.FirstPlayer, "Quickstrike"),
+                new Affordance(2, "Resolve", card.ObjectId, world.FirstPlayer, "Teamwork"),
+            ]);
+    }
+
+    private static void ResolvePostRevealAbility(
+        World world, ICardFacts facts, PhaseStep step, Decision input,
+        List<GameEvent> events)
+    {
+        if (input.IsDecline || input.Affordance is not (1 or 2))
+        {
+            throw new RulesNotImplementedException(
+                $"affordance {input.Affordance} was not offered after reveal");
+        }
+
+        var card = world.Cards[step.Subject];
+        if (input.Affordance == 1)
+        {
+            Reveal.Quickstrike(world, facts, card, step.Seat, step.Round);
+            Reveal.Teamwork(world, facts, card, step.Seat, step.Round);
+        }
+        else
+        {
+            Reveal.Teamwork(world, facts, card, step.Seat, step.Round);
+            Reveal.Quickstrike(world, facts, card, step.Seat, step.Round);
+        }
+
+        FinishEncounterRevealDiscard(
+            world, facts, card, step.Seat, step.Round,
+            step.ProcedureOccurrence
+                ?? throw new InvalidOperationException("post-reveal order has no occurrence"));
+    }
+
+    private static void AttachRevealedCard(
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        Decision input, List<GameEvent> events)
+    {
+        var candidates = step.ProcedureCandidates ?? [];
+        if (input.IsDecline || !candidates.Contains(input.Affordance))
+        {
+            throw new RulesNotImplementedException(
+                $"card {input.Affordance} was not offered as an attachment target");
+        }
+
+        var card = world.Cards[step.Subject];
+        var occurrence = step.AbilityOccurrence
+            ?? world.Agenda.Occurrence
+            ?? throw new InvalidOperationException("an attachment choice has no reveal occurrence");
+        Reveal.Resolve(
+            world, facts, card, step.Seat, events, occurrence, input.Affordance);
+        FinishEncounterReveal(
+            world, facts, abilities, card, step.Seat, step.Round, occurrence, events);
+    }
+
     private static void FinalizeAllyEntry(
         World world, ICardFacts facts, ICardAbilities abilities, int allyId,
         List<GameEvent> events)
@@ -1183,18 +1930,18 @@ public static class VillainPhase
     /// Step 2, one enemy at a time — <c>rr:villain-phase.step.2</c>, "in player
     /// order, each player resolves".
     /// </summary>
-    private static void PlanActivations(World world, ICardFacts facts, PhaseStep step)
+    private static Prompt? PlanActivations(World world, ICardFacts facts, PhaseStep step)
     {
         var playerOrder = step.ActivationPlayers ?? world.PlayerOrder.ToList();
         if (step.Index >= playerOrder.Count)
         {
-            return;
+            return null;
         }
 
         var villain = world.TheCardIn(DeckType.VillainArea);
         if (villain is null)
         {
-            return;
+            return null;
         }
 
         int seat = playerOrder[step.Index];
@@ -1212,7 +1959,7 @@ public static class VillainPhase
                 ActivationPlayers = playerOrder,
                 OccurrenceId = null,
             });
-            return;
+            return null;
         }
 
         // `rr:activation.1`: hero form and the enemy attacks, alter-ego form
@@ -1221,14 +1968,48 @@ public static class VillainPhase
         var identity = world.Seats[seat].IdentityCard;
         bool attacking = facts.Kind(identity.FaceId) != CardKind.AlterEgo;
 
+        var remaining = world
+            .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat))
+            .Cards
+            .Where(minion => !activated.Contains(minion.ObjectId))
+            .OrderBy(minion => minion.ObjectId)
+            .ToList();
+
+        bool chosenOrderHasCandidate = step.ActivationOrder?.Any(candidate =>
+            !activated.Contains(candidate)
+            && remaining.Any(minion => minion.ObjectId == candidate)) == true;
+        if (activated.Contains(villain.ObjectId)
+            && !chosenOrderHasCandidate
+            && remaining.Count > 1)
+        {
+            var ids = remaining.Select(minion => minion.ObjectId).ToList();
+            return new Prompt(
+                seat,
+                Question.Order,
+                TimingPriority.Untimed,
+                Steps.EnemiesActivate,
+                $"{world.Seats[seat].Name} orders engaged minion activations",
+                false,
+                [new Affordance(
+                    villain.ObjectId,
+                    "Order",
+                    villain.ObjectId,
+                    seat,
+                    "engaged minions",
+                    new TargetRequest(ids, ids.Count, ids.Count, Rule: "rr:minion.3"))]);
+        }
+
         int? enemy = !activated.Contains(villain.ObjectId)
             ? villain.ObjectId
-            : world
-                .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat))
-                .Cards
-                .OrderBy(minion => minion.ObjectId)
-                .Select(minion => (int?)minion.ObjectId)
-                .FirstOrDefault(candidate => candidate is { } id && !activated.Contains(id));
+            : step.ActivationOrder?
+                .Where(candidate => !activated.Contains(candidate)
+                    && remaining.Any(minion => minion.ObjectId == candidate))
+                .Select(candidate => (int?)candidate)
+                .FirstOrDefault();
+
+        enemy ??= remaining
+            .Select(minion => (int?)minion.ObjectId)
+            .FirstOrDefault();
 
         if (enemy is { } next)
         {
@@ -1239,22 +2020,67 @@ public static class VillainPhase
             {
                 ActivatedEnemies = [.. activated, next],
                 ActivationPlayers = playerOrder,
+                ActivationOrder = step.ActivationOrder,
                 OccurrenceId = null,
             });
-            return;
+            return null;
         }
 
         // `rr:minion.4`: a minion that becomes engaged while engaged minions
         // are activating joins this procedure. The continuation above therefore
         // re-reads the area only after the preceding activation has completely
         // resolved. The list prevents a surviving minion from being chosen
-        // again. Player-chosen ordering is not implemented; object-id order is
-        // the engine's deterministic choice until that prompt exists.
+        // again. A newly engaged group is ordered when this chosen order has
+        // been exhausted.
         world.Agenda.Then(step with
         {
             Index = step.Index + 1,
             ActivatedEnemies = [],
             ActivationPlayers = playerOrder,
+            ActivationOrder = null,
+            OccurrenceId = null,
+        });
+        return null;
+    }
+
+    private static void OrderMinionActivations(World world, PhaseStep step, Decision input)
+    {
+        var playerOrder = step.ActivationPlayers ?? world.PlayerOrder.ToList();
+        if (step.Index < 0 || step.Index >= playerOrder.Count)
+        {
+            throw new RulesNotImplementedException(
+                "the minion-order continuation has no engaged player");
+        }
+        int seat = playerOrder[step.Index];
+        var villain = world.TheCardIn(DeckType.VillainArea)
+            ?? throw new RulesNotImplementedException(
+                "minion activations cannot be ordered without a villain");
+        var activated = step.ActivatedEnemies ?? [];
+        var candidates = world
+            .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat))
+            .Cards
+            .Where(minion => !activated.Contains(minion.ObjectId))
+            .Select(minion => minion.ObjectId)
+            .OrderBy(id => id)
+            .ToList();
+        var request = new TargetRequest(
+            candidates, candidates.Count, candidates.Count, Rule: "rr:minion.3");
+
+        if (input.IsDecline
+            || input.Affordance != villain.ObjectId
+            || !request.Allows(input.Targets))
+        {
+            throw new RulesNotImplementedException(
+                $"player {seat} must order every engaged minion activation; "
+                + $"offered [{string.Join(',', candidates)}], chose "
+                + $"[{string.Join(',', input.Targets)}], affordance "
+                + $"{input.Affordance} (expected {villain.ObjectId})");
+        }
+
+        world.Agenda.Then(step with
+        {
+            ActivationOrder = [.. input.Targets],
+            ProcedureCandidates = [.. candidates],
             OccurrenceId = null,
         });
     }
@@ -1545,39 +2371,118 @@ public static class VillainPhase
             Trigger = "villain phase", Verb = "Reveal",
         });
 
+        if (facts.Kind(card.FaceId) == CardKind.Attachment
+            && abilities.AttachmentTargets(world, card) is { Count: > 1 } targets)
+        {
+            world.Agenda.ThenContinuation(new PhaseStep(
+                Steps.ChooseAttachmentTarget,
+                round,
+                2,
+                Subject: card.ObjectId,
+                Seat: player,
+                Plan: true,
+                ProcedureCandidates: [.. targets],
+                AbilityOccurrence: revealOccurrence), revealOccurrence);
+            world.Agenda.BeforeResponses(revealOccurrence);
+            return;
+        }
+
         // `rr:reveal.step.2` -- **where the card goes is decided by its type**,
         // and it happens before step 3's "When Revealed" abilities. A minion
         // that entered play is already engaged when its own ability resolves.
         Reveal.Resolve(world, facts, card, player, events, world.Agenda.Occurrence);
 
+        FinishEncounterReveal(
+            world, facts, abilities, card, player, round, revealOccurrence, events);
+    }
+
+    private static void FinishEncounterReveal(
+        World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
+        int round, Occurrence revealOccurrence, List<GameEvent> events)
+    {
+
         // Step 3. "Resolve each **When Revealed** ability on that card
         // *(including those provided by keywords)*."
         //
-        // **The order between them is the first player's choice and this does
-        // not ask.** `rr:forced.5`: "if two or more forced abilities would
-        // initiate at the same moment, the first player determines the order in
-        // which the abilities initiate" -- and a card carrying surge and its own
-        // When Revealed text has exactly two. The prompt is not implemented, so
-        // the order here is fixed and deterministic rather than chosen. See
-        // MARVEL-187.
-        var occurrence = world.Agenda.Occurrence
-            ?? throw new InvalidOperationException("a reveal has no occurrence");
+        // `rr:forced.5`: "if two or more forced abilities would initiate at
+        // the same moment, the first player determines the order in which the
+        // abilities initiate." Keyword-provided and printed When Revealed
+        // abilities are therefore one ordering question.
+        var occurrence = revealOccurrence;
         if (!abilities.CancelWhenRevealed(world, card, player, occurrence))
         {
+            var keyword = Reveal.KeywordAbilities(world, facts, card, player);
+            var printed = abilities.WhenRevealedAbilities(world, card, player);
+            var simultaneous = keyword.Concat(printed).ToList();
+            if (simultaneous.Count > 1)
+            {
+                if (facts.Kind(card.FaceId) == CardKind.Treachery)
+                {
+                    occurrence.BeginCard(card.ObjectId, simultaneous);
+                }
+                var handles = simultaneous
+                    .Select((_, index) => 1_000_000 + index)
+                    .ToList();
+                world.Agenda.ThenContinuation(new PhaseStep(
+                    Steps.ChooseRevealAbility,
+                    round,
+                    3,
+                    Subject: card.ObjectId,
+                    Seat: player,
+                    Plan: true,
+                    ProcedureAbilities: simultaneous,
+                    ProcedureCandidates: handles,
+                    ProcedureOccurrence: occurrence), occurrence);
+                world.Agenda.BeforeResponses(occurrence);
+                return;
+            }
+
             Reveal.Keywords(world, facts, abilities, card, player, events, occurrence);
             events.AddRange(abilities.WhenRevealed(world, card, player, occurrence));
         }
 
+        FinishEncounterRevealTail(
+            world, facts, card, player, round, revealOccurrence, events);
+    }
+
+    private static void FinishEncounterRevealTail(
+        World world, ICardFacts facts, Card card, int player, int round,
+        Occurrence revealOccurrence, List<GameEvent> events,
+        bool beforeResponses = true)
+    {
         // `rr:quickstrike.2` puts this after the card's own abilities, and it
         // is the one keyword that does something *after* them rather than
         // beside them.
-        Reveal.Quickstrike(world, facts, card, player, round);
+        bool quickstrike = Reveal.QuickstrikeApplies(world, facts, card, player);
+        bool teamwork = Reveal.TeamworkApplies(world, facts, card);
+        if (quickstrike && teamwork)
+        {
+            world.Agenda.ThenContinuation(new PhaseStep(
+                Steps.ChoosePostRevealAbility,
+                round,
+                3,
+                Subject: card.ObjectId,
+                Seat: player,
+                Plan: true,
+                ProcedureOccurrence: revealOccurrence), revealOccurrence);
+            if (beforeResponses)
+            {
+                world.Agenda.BeforeResponses(revealOccurrence);
+            }
+            return;
+        }
 
-        // `rr:teamwork.2` puts this in the same place, after the card's own
-        // abilities. A minion carrying both keywords activates twice, which is
-        // what two forced responses to one moment do -- `rr:forced.5` gives the
-        // first player their order, and asking is MARVEL-187.
+        Reveal.Quickstrike(world, facts, card, player, round);
         Reveal.Teamwork(world, facts, card, player, round);
+
+        FinishEncounterRevealDiscard(
+            world, facts, card, player, round, revealOccurrence, beforeResponses);
+    }
+
+    private static void FinishEncounterRevealDiscard(
+        World world, ICardFacts facts, Card card, int player, int round,
+        Occurrence revealOccurrence, bool beforeResponses = true)
+    {
 
         // Step 4. "If the card is a treachery, discard it." This is agenda
         // work rather than an inline move because `rr:treachery.2.1` keeps a
@@ -1597,7 +2502,10 @@ public static class VillainPhase
             // Reveal responses wait for all four reveal steps. Move both the
             // work initiated by the final effect and this discard continuation
             // ahead of that response window, preserving their scheduled order.
-            world.Agenda.BeforeResponses(revealOccurrence);
+            if (beforeResponses)
+            {
+                world.Agenda.BeforeResponses(revealOccurrence);
+            }
         }
     }
 

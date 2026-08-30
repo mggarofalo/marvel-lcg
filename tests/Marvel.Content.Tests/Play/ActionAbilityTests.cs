@@ -662,16 +662,20 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:choose-game-element.3.1")]
+    [Rule("rr:scheme-card-type.1")]
     [Rule("rr:player-turn.5")]
     [Fact]
     public void ACardSpecificChoiceSuspendsInsideTheActionOccurrence()
     {
         Card? practice = null;
         Card? discard = null;
+        Card? side = null;
         var (game, world) = Playing(board =>
         {
             var scheme = board.TheCardIn(DeckType.MainSchemesArea)!;
             scheme.PlaceTokens("k_threat", 2);
+            side = board.CreateCard("01107", board.AreaOf(DeckType.SideSchemesArea));
+            side.PlaceTokens("k_threat", 1);
             practice = board.CreateCard("01023", board.Seats[0].Hand);
             discard = board.CreateCard("01087", board.Seats[0].Hand);
         });
@@ -682,6 +686,10 @@ public sealed partial class ActionAbilityTests
         var suspended = game.Resolve(Decision.Take(action.Id));
 
         Assert.Equal(Question.Element, suspended.Prompt!.Asking);
+        Assert.Contains(suspended.Prompt.Affordances,
+            option => option.Id == world.TheCardIn(DeckType.MainSchemesArea)!.ObjectId);
+        Assert.Contains(suspended.Prompt.Affordances,
+            option => option.Id == side!.ObjectId);
         Assert.Equal(Steps.ChooseOption, world.Agenda.Current!.Value.What);
         Assert.True(world.Agenda.Current.Value.Plan);
         var occurrence = Assert.IsType<Occurrence>(world.Agenda.Occurrence);

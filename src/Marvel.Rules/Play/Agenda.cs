@@ -120,6 +120,34 @@ public enum Stage
 /// but must not make a continuation mistake the next surviving player for the
 /// player whose enemies have already activated.
 /// </param>
+/// <param name="ProcedureCandidates">
+/// The object ids offered by a rules procedure that suspended for a player
+/// decision. The list is engine continuation data: the rulebook determines
+/// who chooses and what is legal, while the agenda preserves the exact question
+/// across serialization and replay.
+/// </param>
+/// <param name="ActivationOrder">
+/// The engaged player's chosen order for the remaining minion activations.
+/// A minion that engages later is deliberately absent and starts a new ordering
+/// question once this list has been exhausted.
+/// </param>
+/// <param name="ProcedureAbilities">
+/// The stable addresses of simultaneous or optional abilities offered by a
+/// suspended rules procedure.
+/// </param>
+/// <param name="ProcedurePlayersPassed">
+/// Seats that passed the current optional procedure opportunity.
+/// </param>
+/// <param name="ProcedureOccurrence">
+/// The rulebook occurrence local to a suspended procedure, when it differs
+/// from the agenda occurrence that contains it.
+/// </param>
+/// <param name="ProcedureSource">The source card needed when the procedure resumes.</param>
+/// <param name="ProcedureTrigger">Event-stream provenance preserved by the procedure.</param>
+/// <param name="ProcedureVerb">The kind of effect preserved by the procedure.</param>
+/// <param name="ProcedureBy">The acting seat preserved by the procedure, or -1.</param>
+/// <param name="ProcedureAmount">A numeric result preserved for procedure cleanup.</param>
+/// <param name="ProcedureFlag">A boolean rule result preserved for procedure cleanup.</param>
 /// <param name="AbilityOrdinal">
 /// Which same-tier authored ability suspended. The ordinal is engine save data;
 /// it avoids guessing when one card has more than one ability at the same timing.
@@ -145,6 +173,13 @@ public readonly record struct PhaseStep(
     bool SurgeGained = false, IReadOnlyList<int>? Discarded = null,
     IReadOnlyList<int>? ActivatedEnemies = null,
     IReadOnlyList<int>? ActivationPlayers = null, int AbilityOrdinal = -1,
+    IReadOnlyList<int>? ProcedureCandidates = null,
+    IReadOnlyList<int>? ActivationOrder = null,
+    IReadOnlyList<PendingAbility>? ProcedureAbilities = null,
+    IReadOnlyList<int>? ProcedurePlayersPassed = null,
+    Occurrence? ProcedureOccurrence = null, int ProcedureSource = -1,
+    string ProcedureTrigger = "", string ProcedureVerb = "", int ProcedureBy = -1,
+    long ProcedureAmount = 0, bool ProcedureFlag = false,
     IReadOnlyList<string>? AbilityPath = null,
     IReadOnlyList<int>? AbilityActivationIds = null,
     IReadOnlyDictionary<string, long>? AbilityResults = null,
@@ -868,6 +903,42 @@ public sealed class Agenda
         }
     }
 
+    /// <summary>Advance one exact agenda item that owns an occurrence.</summary>
+    /// <remarks>
+    /// A procedure continuation deliberately shares its parent's occurrence.
+    /// Once such a continuation has moved in front of the parent, occurrence
+    /// identity alone is no longer enough to identify which item just applied.
+    /// The step value is engine agenda data and supplies that missing address.
+    /// </remarks>
+    public bool Advance(PhaseStep owner, Occurrence occurrence)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        int at = items.FindIndex(item => item.Step.Equals(owner)
+            && ReferenceEquals(item.Occurrence, occurrence));
+        if (at < 0)
+        {
+            throw new InvalidOperationException("the agenda item is not outstanding");
+        }
+
+        var (step, stage, found) = items[at];
+        switch (stage)
+        {
+            case Stage.Interrupts:
+                items[at] = (step, Stage.Apply, found);
+                return true;
+            case Stage.Apply:
+                items[at] = (step, Stage.Responses, found);
+                return true;
+            default:
+                items.RemoveAt(at);
+                if (at == 0)
+                {
+                    scheduled = 0;
+                }
+                return false;
+        }
+    }
+
     /// <summary>Remove a replaced occurrence and both of its remaining windows.</summary>
     public void Cancel(Occurrence occurrence)
     {
@@ -1278,6 +1349,36 @@ public static class Steps
 
     /// <summary>Choose an ally to discard after exceeding the ally limit.</summary>
     public const string ChooseAllyForLimit = "ChooseAllyForLimit";
+
+    /// <summary>Choose a restricted card to discard — <c>rr:restricted</c>.</summary>
+    public const string ChooseRestrictedCard = "ChooseRestrictedCard";
+
+    /// <summary>Choose an eligible host for a revealed attachment.</summary>
+    public const string ChooseAttachmentTarget = "ChooseAttachmentTarget";
+
+    /// <summary>Resolve damage step 6 through a player decision.</summary>
+    public const string ChooseWouldBeDefeated = "ChooseWouldBeDefeated";
+
+    /// <summary>Continue damage step 6 after a selected ability fully resolves.</summary>
+    public const string ResumeWouldBeDefeated = "ResumeWouldBeDefeated";
+
+    /// <summary>Resolve damage step 7 through a player decision.</summary>
+    public const string ChooseCardDefeatedAbility = "ChooseCardDefeatedAbility";
+
+    /// <summary>Continue damage step 7 after a selected ability fully resolves.</summary>
+    public const string ResumeCardDefeatedAbility = "ResumeCardDefeatedAbility";
+
+    /// <summary>Order simultaneous keyword and printed reveal abilities.</summary>
+    public const string ChooseRevealAbility = "ChooseRevealAbility";
+
+    /// <summary>Continue reveal step 3 after one ability fully resolves.</summary>
+    public const string ResumeRevealAbility = "ResumeRevealAbility";
+
+    /// <summary>Finish an attack after a suspended damage procedure resolves.</summary>
+    public const string FinishAttackDamage = "FinishAttackDamage";
+
+    /// <summary>Order simultaneous post-reveal keyword responses.</summary>
+    public const string ChoosePostRevealAbility = "ChoosePostRevealAbility";
 
     /// <summary>Apply an ally's entry state after an ally-limit choice.</summary>
     public const string FinalizeAllyEntry = "FinalizeAllyEntry";

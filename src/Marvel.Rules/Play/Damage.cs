@@ -23,8 +23,20 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Damage
 {
+    /// <summary>Whether dealing damage finished, defeated, or suspended.</summary>
+    public enum Outcome
+    {
+        /// <summary>The damage procedure finished without defeating the target.</summary>
+        NotDefeated,
+        /// <summary>The damage procedure finished and defeated the target.</summary>
+        Defeated,
+        /// <summary>The damage is placed but a defeat decision remains outstanding.</summary>
+        Suspended,
+    }
+
     /// <summary>The characters and amount actually damaged by one attack.</summary>
-    public sealed record AttackResult(IReadOnlyList<Card> Characters, long Amount);
+    public sealed record AttackResult(
+        IReadOnlyList<Card> Characters, long Amount, bool Suspended = false);
 
     /// <summary>
     /// Deals damage to a character, and defeats it if that was enough.
@@ -53,6 +65,13 @@ public static class Damage
     public static bool Deal(
         World world, ICardFacts facts, Card source, Card target, long amount,
         string trigger, string verb, List<GameEvent> events, int by = -1)
+        => DealOutcome(world, facts, source, target, amount, trigger, verb, events, by)
+            == Outcome.Defeated;
+
+    /// <summary>Deals damage while preserving a possible procedure suspension.</summary>
+    public static Outcome DealOutcome(
+        World world, ICardFacts facts, Card source, Card target, long amount,
+        string trigger, string verb, List<GameEvent> events, int by = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -62,7 +81,7 @@ public static class Damage
 
         if (amount <= 0)
         {
-            return false;
+            return Outcome.NotDefeated;
         }
 
         // `rr:cannot` -- "cannot" is absolute. A character forbidden from
@@ -70,7 +89,7 @@ public static class Damage
         // there is no imminent damage to replace and no tough card to spend.
         if (!world.Abilities.CanTakeDamage(world, target, source))
         {
-            return false;
+            return Outcome.NotDefeated;
         }
 
         // `rr:damage.step.1` -- "abilities that trigger when [character] would
@@ -81,7 +100,7 @@ public static class Damage
         amount = world.Abilities.WouldBeDealt(world, target, source, amount, events);
         if (amount <= 0)
         {
-            return false;
+            return Outcome.NotDefeated;
         }
 
         // `rr:tough.2`: "if a character with a tough status card would take any
@@ -106,7 +125,7 @@ public static class Damage
             // `rr:tough.3`: "as a tough status card prevents damage fully, the
             // character who had the tough status card is **not considered to
             // have taken damage**." So no health event, and no defeat.
-            return false;
+            return Outcome.NotDefeated;
         }
 
         long printed = Health(world, facts, target);
@@ -126,7 +145,14 @@ public static class Damage
         // `rr:would.1` then makes the original condition invalid.
         if (after <= 0)
         {
-            world.Abilities.WouldBeDefeated(world, target, events);
+            int beforeProcedure = world.Agenda.Count;
+            if (!world.Abilities.WouldBeDefeated(
+                    world, target, source, trigger, verb, by, events))
+            {
+                return world.Agenda.Count > beforeProcedure
+                    ? Outcome.Suspended
+                    : Outcome.NotDefeated;
+            }
             after = Math.Max(0, Health(world, facts, target) - target.Damage);
         }
 
@@ -138,8 +164,19 @@ public static class Damage
         // about what caused one and cards ask: Gene Pool answers "after an ally
         // is defeated **by anything other than consequential damage**", and
         // consequential damage is one of the verbs this is called with.
-        return after <= 0
-            && Defeat.Character(world, facts, target, trigger, events, how: verb, by: by);
+        if (after > 0)
+        {
+            return Outcome.NotDefeated;
+        }
+
+        int beforeDefeat = world.Agenda.Count;
+        bool defeated = Defeat.Character(
+            world, facts, target, trigger, events, how: verb, by: by);
+        if (!defeated && world.Agenda.Count > beforeDefeat)
+        {
+            return Outcome.Suspended;
+        }
+        return defeated ? Outcome.Defeated : Outcome.NotDefeated;
     }
 
     /// <summary>
@@ -279,9 +316,14 @@ public static class Damage
         var damaged = new List<Card>();
         int firstDamageEvent = events.Count;
         long before = target.Damage;
-        if (Deal(world, facts, source, target, amount, trigger, verb, events, by: attacker.Owner)
-            && beyond > 0
-            && Keywords.Has(world, attacker, Keywords.Overkill, facts))
+        bool overkill = beyond > 0
+            && Keywords.Has(world, attacker, Keywords.Overkill, facts);
+        bool canRetaliate = retaliate
+            && !Keywords.Has(world, attacker, Keywords.Ranged, facts);
+        var outcome = DealOutcome(
+            world, facts, source, target, amount, trigger, verb, events,
+            by: attacker.Owner);
+        if (outcome == Outcome.Defeated && overkill)
         {
             Spill(world, facts, source, target, spillPlayer, beyond, trigger, events);
         }
@@ -302,12 +344,48 @@ public static class Damage
         }
 
         // `rr:ranged.1` -- "this attack ignores the retaliate keyword".
-        if (retaliate && !Keywords.Has(world, attacker, Keywords.Ranged, facts))
+        if (outcome == Outcome.Suspended)
+        {
+            world.Agenda.Then(new PhaseStep(
+                Steps.FinishAttackDamage,
+                world.Agenda.Current?.Round ?? 0,
+                5,
+                Subject: target.ObjectId,
+                Seat: spillPlayer,
+                Plan: true,
+                Character: attacker.ObjectId,
+                ProcedureSource: source.ObjectId,
+                ProcedureTrigger: trigger,
+                ProcedureAmount: beyond,
+                ProcedureFlag: overkill,
+                FinalStep: canRetaliate));
+        }
+        else if (canRetaliate)
         {
             Retaliate(world, facts, target, attacker, trigger, events);
         }
 
-        return new AttackResult(damaged, dealt);
+        return new AttackResult(damaged, dealt, outcome == Outcome.Suspended);
+    }
+
+    /// <summary>Resolve overkill and retaliate after a suspended defeat decision.</summary>
+    public static void FinishAttack(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        var target = world.Cards[step.Subject];
+        var attacker = world.Cards[step.Character];
+        var source = world.Cards[step.ProcedureSource];
+        bool defeated = !DeckTypes.IsInPlay(target.Area.Type);
+        if (defeated && step.ProcedureFlag && step.ProcedureAmount > 0)
+        {
+            Spill(
+                world, facts, source, target, step.Seat, step.ProcedureAmount,
+                step.ProcedureTrigger, events);
+        }
+        if (step.FinalStep)
+        {
+            Retaliate(world, facts, target, attacker, step.ProcedureTrigger, events);
+        }
     }
 
     /// <summary>
