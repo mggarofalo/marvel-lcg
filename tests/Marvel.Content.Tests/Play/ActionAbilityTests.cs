@@ -10986,21 +10986,21 @@ public sealed class ActionAbilityTests
             { "seq": [
               { "putIntoPlay": {
                 "card": { "cardsIn": {
-                  "areas": [ "encounterDiscardPile" ], "title": "Sandman"
+                  "areas": [ "encounterDeck" ], "title": "Hydra Mercenary"
                 } },
                 "where": "engagedWithYou"
               } },
               { "dealDamage": {
-                "cards": { "query": "minions" }, "amount": 100
+                "cards": { "query": "minionsEngagedWithYou" }, "amount": 100
               } },
               { "removeFromGame": { "cardsIn": {
-                "area": "encounterDiscardPile", "title": "Sandman"
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
               } } }
             ] }
             """,
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
-        Card? sandman = null;
+        Card? hydra = null;
 
         Assert.Throws<RulesNotImplementedException>(() => Playing(
             board =>
@@ -11010,15 +11010,62 @@ public sealed class ActionAbilityTests
                     "16183", board.AreaOf(
                         DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
                 Statuses.Give(board, protectedMinion, Statuses.Tough);
-                sandman = board.CreateCard(
-                    "01102", board.AreaOf(DeckType.EncounterDeck));
+                hydra = board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDeck));
                 board.CreateCard(
-                    "01102", board.AreaOf(DeckType.EncounterDiscardPile));
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
             },
             hero: true,
             abilities: runner));
 
         Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EncounterDeck, hydra!.Area.Type);
+    }
+
+    [Rule("rr:toughness.1")]
+    [Fact]
+    public void EnteredCharactersProjectTheirPrintedToughness()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "putIntoPlay": {
+                "card": { "cardsIn": {
+                  "areas": [ "encounterDeck" ], "title": "Sandman"
+                } },
+                "where": "engagedWithYou"
+              } },
+              { "dealDamage": {
+                "cards": { "titled": "Sandman" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? sandman = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                sandman = Assert.Single(
+                    board.AreaOf(DeckType.EncounterDeck).Cards,
+                    card => string.Equals(
+                        board.Facts.Title(card.FaceId),
+                        "Sandman",
+                        StringComparison.Ordinal));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
         Assert.Equal(DeckType.EncounterDeck, sandman!.Area.Type);
     }
 

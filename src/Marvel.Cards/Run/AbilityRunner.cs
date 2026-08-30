@@ -16955,6 +16955,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     {
                         state.Departed.Remove(card.ObjectId);
                         state.Entered.Add(card.ObjectId);
+                        if (effect.Field("where") is { } where
+                            && string.Equals(
+                                Word(where), "engagedWithYou",
+                                StringComparison.Ordinal))
+                        {
+                            state.EngagedWith[card.ObjectId] = Resolver(cast);
+                        }
+                        if (StateFields.Modified(
+                                cast.World, card, "toughness",
+                                cast.World.Facts, cast.World.Players) > 0)
+                        {
+                            state.Tough[card.ObjectId] = Math.Max(
+                                1, state.ToughOf(cast, card));
+                        }
                     }
                 }
                 couldDiscard |= MayChangeAnyArea(
@@ -17115,6 +17129,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     "minions" or "attackableMinions" =>
                         cast.World.Facts.Kind(card.FaceId) == CardKind.Minion,
+                    "minionsEngagedWithYou" =>
+                        cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                        && state.EngagedWith.GetValueOrDefault(
+                            card.ObjectId, -1) == Resolver(cast),
+                    "enemiesEngagedWithChosenPlayer" =>
+                        cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                        && state.EngagedWith.GetValueOrDefault(
+                            card.ObjectId, -1) == ChosenPlayer(cast).Owner,
                     "enemies" or "attackableEnemies" =>
                         cast.World.Facts.Kind(card.FaceId) is
                             CardKind.Minion or CardKind.EncounterVillain,
@@ -17228,6 +17250,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public HashSet<int> Departed { get; } = [];
         public HashSet<int> Entered { get; } = [];
         public Dictionary<int, int> Hosts { get; } = [];
+        public Dictionary<int, int> EngagedWith { get; } = [];
         public int ActiveVillain { get; set; } =
             cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
         public int VillainAttachmentHost { get; set; } = -1;
@@ -17274,6 +17297,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 clone.Hosts[card] = host;
             }
+            foreach (var (card, player) in EngagedWith)
+            {
+                clone.EngagedWith[card] = player;
+            }
             clone.ActiveVillain = ActiveVillain;
             clone.VillainAttachmentHost = VillainAttachmentHost;
             return clone;
@@ -17300,6 +17327,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Concat(Entered.Order().Select(card => $"i{card}"))
                 .Concat(Hosts.OrderBy(pair => pair.Key)
                     .Select(pair => $"h{pair.Key}:{pair.Value}"))
+                .Concat(EngagedWith.OrderBy(pair => pair.Key)
+                    .Select(pair => $"e{pair.Key}:{pair.Value}"))
                 .Append($"v{ActiveVillain}:{VillainAttachmentHost}"));
     }
 
