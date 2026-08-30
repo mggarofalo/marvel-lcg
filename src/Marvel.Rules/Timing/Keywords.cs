@@ -90,7 +90,10 @@ public static class Keywords
             }
         }
 
-        return facts.Attributes(card.FaceId).ContainsKey(Printed(keyword));
+        // A facedown Drone keeps the player card's printed id for object and
+        // digest identity, but none of that face's printed text is active.
+        return !State.FacedownDrones.Is(card)
+            && facts.Attributes(card.FaceId).ContainsKey(Printed(keyword));
     }
 
     // The printed spelling of a keyword, which the card data capitalises.

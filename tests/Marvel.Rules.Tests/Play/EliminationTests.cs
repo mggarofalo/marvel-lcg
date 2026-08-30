@@ -38,8 +38,9 @@ public sealed class EliminationTests
         // "Each of those minions engages the next clockwise player, **retaining
         // any tokens, attached cards, boost cards, tucked cards, and status
         // cards on them**." All of those hang off the minion's object id rather
-        // than off the area, so moving the card keeps them.
-        var printed = Cards();
+        // than off the area, so moving the card keeps them. Permanent does not
+        // change that instruction: the attachment is retained, not removed.
+        var printed = Cards().With("attachment", ("Permanent", "1"));
         var world = Board(printed, players: 2);
         var minion = world.CreateCard(
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));

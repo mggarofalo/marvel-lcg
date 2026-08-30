@@ -406,7 +406,9 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (StateFields.Modified(world, card, "victory", facts, world.Players) <= 0)
+        // Presence and value are separate: Victory 0 still supplies this
+        // replacement ability even though it contributes no points.
+        if (!Timing.Keywords.Has(world, card, "victory", facts))
         {
             return false;
         }
@@ -441,8 +443,8 @@ public static class Defeat
         foreach (var attachment in world.Areas
                      .Where(area => area.Host == host.ObjectId)
                      .SelectMany(area => area.Cards)
-                     .Where(card => StateFields.Modified(
-                         world, card, "victory", facts, world.Players) > 0)
+                     .Where(card => Timing.Keywords.Has(
+                         world, card, "victory", facts))
                      .ToList())
         {
             ToVictoryDisplay(world, facts, attachment, trigger, events);

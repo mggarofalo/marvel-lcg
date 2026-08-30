@@ -699,6 +699,30 @@ public sealed class KeywordTests
         Assert.Equal(2, Defeat.VictoryPoints(world, printed));
     }
 
+    [Rule("rr:victory-x.1.2")]
+    [Rule("rr:victory-x.3")]
+    [Fact]
+    public void ADefeatedHostsVictoryZeroAttachmentStillJoinsTheDisplay()
+    {
+        // Victory X names the destination even when X is zero; zero changes
+        // the point value, not whether the keyword exists.
+        var printed = new Printed()
+            .With("minion", ("HP", "1"))
+            .With("attachment", ("Victory", "0"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
+        Agendas.Happening(world);
+
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
+
+        Assert.Equal(DeckType.VictoryDisplay, attachment.Area.Type);
+        Assert.Equal(0, Defeat.VictoryPoints(world, printed));
+    }
+
     [Rule("rr:loses")]
     [Rule("rr:victory-x.2")]
     [Fact]

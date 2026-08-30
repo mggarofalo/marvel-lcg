@@ -259,9 +259,28 @@ public static class Elimination
     /// <summary>Proves every step-three/four departure before elimination mutates state.</summary>
     private static void Preflight(World world, ICardFacts facts, int player)
     {
+        // Step 2 moves these minions and every hosted descendant intact; none
+        // of them is a step-three/four departure. Build the retained set with
+        // the same cycle-checking traversal that the move itself uses.
+        var retained = new HashSet<int>();
+        if (Next(world, player) is not null)
+        {
+            var engaged = world.AreaOf(
+                DeckType.EngagedEnemiesArea, PlayArea.Of(player));
+            foreach (var minion in engaged.Cards)
+            {
+                retained.Add(minion.ObjectId);
+                foreach (var (_, card) in HostedTree(world, minion))
+                {
+                    retained.Add(card.ObjectId);
+                }
+            }
+        }
+
         var leaving = Mine(world, player)
             .Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
+            .Where(card => !retained.Contains(card.ObjectId))
             .ToList();
 
         foreach (var card in leaving)

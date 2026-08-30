@@ -94,6 +94,28 @@ public sealed class SearchAndDiscardCardsTests
         Assert.Equal(queued + 1, Queue(world).Cards.Count);
     }
 
+    [Rule("rr:permanent.4")]
+    [Fact]
+    public void CaughtOffGuardDoesNotOfferACrossSetPermanentAndSurges()
+    {
+        // A permanent is "not [a] valid target" for an effect that would make
+        // it leave play. With no legal upgrade or support, Caught Off Guard
+        // asks no question and gains surge instead of offering a doomed choice.
+        var world = Deal();
+        var permanent = world.CreateCard(
+            "27182a",
+            world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        int queued = Queue(world).Cards.Count;
+
+        var card = world.CreateCard(
+            AuthoredCards.CaughtOffGuard, world.AreaOf(DeckType.RevealingArea));
+        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+
+        Assert.Empty(world.Agenda.Outstanding);
+        Assert.Equal(queued + 1, Queue(world).Cards.Count);
+        Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
+    }
+
     [Rule("rr:ownership-and-control.8")]
     [Fact]
     public void AnotherPlayersUpgradeIsNotYoursToDiscard()

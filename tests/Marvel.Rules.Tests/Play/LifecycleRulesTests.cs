@@ -275,7 +275,8 @@ public sealed class LifecycleRulesTests
         // A player taking control of a scenario-specific player card with a
         // player back "becomes the owner of that card."
         var facts = new Facts();
-        var world = Board(facts);
+        facts.Classes["ally"] = "Scenario";
+        var world = Board(facts, players: 2);
         var ally = world.CreateCard("ally", world.AreaOf(DeckType.AsideDeck));
 
         CardPlay.PutAllyIntoPlay(
@@ -283,6 +284,11 @@ public sealed class LifecycleRulesTests
 
         Assert.Equal(0, ally.Owner);
         Assert.Equal(PlayArea.Of(0), ally.Area.PlayArea);
+
+        CardPlay.TakeControl(world, facts, ally, 1);
+
+        Assert.Equal(1, ally.Owner);
+        Assert.Equal(PlayArea.Of(1), ally.Area.PlayArea);
     }
 
     [Rule("rr:ownership-and-control.6")]
@@ -310,6 +316,35 @@ public sealed class LifecycleRulesTests
 
         Assert.Equal(PlayArea.Of(0), ally.Area.PlayArea);
         Assert.Equal(PlayArea.Of(0), upgrade.Area.PlayArea);
+    }
+
+    [Rule("rr:max-maximum.3")]
+    [Rule("rr:max-maximum.3.1")]
+    [Fact]
+    public void AHostedMaximumBlocksTheWholeControlTransferAtomically()
+    {
+        // A maximum applies to every card the destination player would
+        // control, including an upgrade that follows its host. The root and
+        // its hosted tree remain together when that destination is illegal.
+        var facts = new Facts();
+        facts.Maxima["limited"] = 1;
+        var world = Board(facts, players: 2);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(
+                DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var moving = world.CreateCard(
+            "limited", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), ally.ObjectId, cardOwner: 0));
+        world.CreateCard(
+            "limited", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(1), cardOwner: 1));
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.TakeControl(world, facts, ally, 1));
+
+        Assert.Equal(PlayArea.Of(0), ally.Area.PlayArea);
+        Assert.Equal(PlayArea.Of(0), moving.Area.PlayArea);
+        Assert.Equal(ally.ObjectId, moving.Area.Host);
     }
 
     [Rule("rr:ownership-and-control.7.3")]
@@ -432,6 +467,10 @@ public sealed class LifecycleRulesTests
 
         public Dictionary<string, string> Uses { get; } = new(StringComparer.Ordinal);
 
+        public Dictionary<string, string> Classes { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<string, long> Maxima { get; } = new(StringComparer.Ordinal);
+
         public CardKind Kind(string faceId) => faceId switch
         {
             "alterego" => CardKind.AlterEgo,
@@ -439,7 +478,7 @@ public sealed class LifecycleRulesTests
             "ally" => CardKind.Ally,
             "event" => CardKind.Event,
             "resource" => CardKind.Resource,
-            "upgrade" or "gamma" => CardKind.Upgrade,
+            "upgrade" or "gamma" or "limited" => CardKind.Upgrade,
             "permanent" or "same" or "other" or "quiver" => CardKind.Support,
             "shooter" => CardKind.Upgrade,
             "sideA" or "sideB" => CardKind.EncounterSideScheme,
@@ -465,12 +504,22 @@ public sealed class LifecycleRulesTests
             {
                 attributes["Uses"] = uses;
             }
+            if (Classes.TryGetValue(faceId, out string? printedClass))
+            {
+                attributes["Class"] = printedClass;
+            }
+            if (Maxima.ContainsKey(faceId))
+            {
+                attributes["MaxPerUnitKind"] = "player";
+            }
             return attributes;
         }
 
         public long PrintedValue(
             string faceId, string attribute, int players, long fallback = 0) =>
-            faceId == "permanent" && attribute == "Permanent" ? 1
+            Maxima.TryGetValue(faceId, out long maximum)
+                && attribute == "MaxPerUnit" ? maximum
+                : faceId == "permanent" && attribute == "Permanent" ? 1
                 : attribute == "Cost" ? 0
                 : fallback;
 

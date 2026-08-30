@@ -5512,9 +5512,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "grantUntil" => Find(node.Require("card"), cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
-            "discard" or "dealEncounterCard" =>
-                Find(node.Field("card") ?? node.Argument, cast) is null
-                    ? TargetLegality.Invalid : TargetLegality.Valid,
+            "discard" => Find(node.Field("card") ?? node.Argument, cast) is { } discarded
+                && Rules.Play.Discard.EffectCanRemove(
+                    cast.World, cast.World.Facts, cast.Source, discarded)
+                    ? TargetLegality.Valid : TargetLegality.Invalid,
+            "dealEncounterCard" => Find(node.Field("card") ?? node.Argument, cast) is null
+                ? TargetLegality.Invalid : TargetLegality.Valid,
             "heal" => Find(node.Require("card"), cast) is { Damage: > 0 }
                 && Amount(node.Require("amount"), cast) > 0
                     ? TargetLegality.Valid : TargetLegality.Invalid,
@@ -7852,6 +7855,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     node.Argument, candidate, currentVillain,
                     cast, discarded, traits, modifiers, engagement)
                 && !AnotherCopyAttachedInTrace(candidate, cast, discarded),
+            "discardable" => TraceSelectorMatches(
+                    node.Argument, candidate, currentVillain,
+                    cast, discarded, traits, modifiers, engagement)
+                && (TraceModified(candidate, "permanent", cast, discarded) <= 0
+                    || Rules.Play.Discard.SameSet(
+                        cast.World.Facts, cast.Source, candidate)),
             "minBy" or "maxBy" => TraceRankedSelectorIncludesCard(
                 node, candidate, currentVillain, cast, discarded, traits,
                 modifiers, engagement),
@@ -15365,6 +15374,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                             && string.Equals(
                                 cast.World.Facts.Title(attached.FaceId), title,
                                 StringComparison.Ordinal))),
+            ];
+        }
+
+        if (value is AbilityValue.Map
+            && Tree(value) is { Kind: "discardable" } discardable)
+        {
+            return
+            [
+                .. Every(discardable.Argument, cast).Where(card =>
+                    Rules.Play.Discard.EffectCanRemove(
+                        cast.World, cast.World.Facts, cast.Source, card)),
             ];
         }
 

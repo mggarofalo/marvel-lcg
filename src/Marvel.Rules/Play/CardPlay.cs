@@ -908,20 +908,13 @@ public static class CardPlay
             return;
         }
 
-        long maximum = facts.PrintedValue(card.FaceId, "MaxPerUnit", world.Players);
-        string unit = facts.Attributes(card.FaceId)
-            .GetValueOrDefault("MaxPerUnitKind", "player");
-        if (maximum > 0
-            && string.Equals(unit, "player", StringComparison.Ordinal)
-            && CountControlled(world, facts, card, player) >= maximum)
+        var moving = ControlTree(world, card);
+        PreflightControlMaxima(world, facts, moving, player);
+        MoveControlTree(world, moving, player);
+        foreach (var (_, controlled) in moving)
         {
-            throw new RulesNotImplementedException(
-                $"player {player} already controls the maximum number of "
-                + $"'{facts.Title(card.FaceId)}'");
+            TakeScenarioCardOwnership(facts, controlled, player);
         }
-
-        MoveControlTree(world, card, player);
-        TakeScenarioCardOwnership(facts, card, player);
     }
 
     /// <summary>Returns a temporarily controlled card to its owner's control.</summary>
@@ -941,7 +934,7 @@ public static class CardPlay
     }
 
     /// <summary>Transfers a root and every card hosted by it to one play area.</summary>
-    private static void MoveControlTree(World world, Card root, int player)
+    private static List<(Area Source, Card Card)> ControlTree(World world, Card root)
     {
         var moving = new List<(Area Source, Card Card)> { (root.Area, root) };
         var pending = new Stack<Card>([root]);
@@ -964,6 +957,52 @@ public static class CardPlay
             }
         }
 
+        return moving;
+    }
+
+    /// <summary>Validates every root and descendant before a control tree moves.</summary>
+    private static void PreflightControlMaxima(
+        World world, ICardFacts facts, IReadOnlyList<(Area Source, Card Card)> moving,
+        int player)
+    {
+        var movingIds = moving.Select(item => item.Card.ObjectId).ToHashSet();
+        foreach (var (_, candidate) in moving.Where(item =>
+                     DeckTypes.IsInPlay(item.Source.Type)))
+        {
+            long maximum = facts.PrintedValue(
+                candidate.FaceId, "MaxPerUnit", world.Players);
+            string unit = facts.Attributes(candidate.FaceId)
+                .GetValueOrDefault("MaxPerUnitKind", "player");
+            if (maximum <= 0 || !string.Equals(unit, "player", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            string title = facts.Title(candidate.FaceId);
+            long alreadyThere = world.Areas
+                .Where(area => area.PlayArea == PlayArea.Of(player))
+                .SelectMany(area => area.Cards)
+                .Count(card => DeckTypes.IsInPlay(card.Area.Type)
+                    && !movingIds.Contains(card.ObjectId)
+                    && string.Equals(
+                        facts.Title(card.FaceId), title, StringComparison.Ordinal));
+            long arriving = moving.Count(item =>
+                DeckTypes.IsInPlay(item.Source.Type)
+                && string.Equals(
+                    facts.Title(item.Card.FaceId), title, StringComparison.Ordinal));
+            if (alreadyThere + arriving > maximum)
+            {
+                throw new RulesNotImplementedException(
+                    $"player {player} would control more than {maximum} copies of "
+                    + $"'{title}' after the control change");
+            }
+        }
+    }
+
+    private static void MoveControlTree(
+        World world, IReadOnlyList<(Area Source, Card Card)> moving, int player)
+    {
+
         foreach (var (source, movingCard) in moving)
         {
             bool faceUp = movingCard.FaceUp;
@@ -978,17 +1017,21 @@ public static class CardPlay
     }
 
     /// <summary>Applies the scenario-player-card ownership exception.</summary>
+    /// <remarks>
+    /// The Rules Reference names a player card back; the joined card dataset
+    /// does not store backs. The engine maps that physical distinction to a
+    /// player-card kind created for the scenario, or to the printed Campaign,
+    /// Encounter, or Scenario class after ownership has already transferred.
+    /// </remarks>
     internal static void TakeScenarioCardOwnership(
         ICardFacts facts, Card card, int player)
     {
-        if (card.Owner >= 0)
-        {
-            return;
-        }
-
+        string printedClass = facts.Attributes(card.FaceId)
+            .GetValueOrDefault("Class", string.Empty);
         if (facts.Kind(card.FaceId) is CardKind.Ally or CardKind.Support
-            or CardKind.Upgrade or CardKind.Event or CardKind.Resource
-            )
+                or CardKind.Upgrade or CardKind.Event or CardKind.Resource
+            && (card.Owner < 0
+                || printedClass is "Campaign" or "Encounter" or "Scenario"))
         {
             card.TransferScenarioOwnership(player);
         }

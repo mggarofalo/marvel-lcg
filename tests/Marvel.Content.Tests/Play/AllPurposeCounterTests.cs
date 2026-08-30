@@ -119,10 +119,11 @@ public sealed class AllPurposeCounterTests
     [Rule("rr:victory-x.1.3")]
     [Rule("rr:victory-x.4")]
     [Fact]
-    public void AUsesCardWithVictoryGoesToTheDisplayAtItsLastCounter()
+    public void AUsesCardWithVictoryZeroGoesToTheDisplayAtItsLastCounter()
     {
         // The uses-provided instruction replaces the ordinary last-counter
         // discard with the victory display when the card also has Victory X.
+        // X may be zero; keyword presence and point value are different facts.
         Card? shooter = null;
         var (game, world) = Playing(board =>
         {
@@ -133,7 +134,7 @@ public sealed class AllPurposeCounterTests
             board.Effects.Register(new ContinuousEffect(
                 EffectSource.ConstantAbility,
                 "victory",
-                Amount: 2,
+                Amount: 0,
                 Card: shooter.ObjectId,
                 Affects: shooter.ObjectId,
                 Lasts: Duration.WhileInPlay));
