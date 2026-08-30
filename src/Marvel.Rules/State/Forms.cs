@@ -133,6 +133,58 @@ public static class Forms
     public static bool In(World world, Seat seat, ICardFacts facts, string form) =>
         Of(world, seat, facts).Contains(form);
 
+    /// <summary>Flips a keyword-form card and schedules the form-change window.</summary>
+    /// <remarks>
+    /// <c>rr:form-change-form.6.2</c> makes this a form change for triggered
+    /// effects but excludes it from the identity's once-per-turn flip limit.
+    /// Accordingly this schedules <see cref="Steps.FormChanged"/> and never
+    /// writes <see cref="Seat.FormChangedInRound"/>.
+    /// </remarks>
+    public static void ChangeAdditional(
+        World world, Seat seat, ICardFacts facts, Card formCard,
+        bool faceUp, int round, string trigger, List<Events.GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(seat);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(formCard);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (!DeckTypes.IsInPlay(formCard.Area.Type)
+            || formCard.Owner != seat.Index
+            || facts.FormKeyword(formCard.FaceId) is null)
+        {
+            throw new Play.RulesNotImplementedException(
+                $"card {formCard.ObjectId} does not grant '{seat.Name}' an additional form");
+        }
+
+        if (formCard.FaceUp == faceUp)
+        {
+            return;
+        }
+
+        if (faceUp)
+        {
+            formCard.TurnFaceUp();
+        }
+        else
+        {
+            formCard.TurnFaceDown();
+        }
+
+        events.Add(new Events.CardsFlipped([formCard.ObjectId], faceUp)
+        {
+            Trigger = trigger, Verb = "Change_Form",
+        });
+        world.Agenda.Then(new PhaseStep(
+            Steps.FormChanged,
+            round,
+            0,
+            Index: seat.Index,
+            Subject: formCard.ObjectId,
+            Seat: seat.Index));
+    }
+
     /// <summary>
     /// Flip a seat's identity card to its other side.
     /// </summary>

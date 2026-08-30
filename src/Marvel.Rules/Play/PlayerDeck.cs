@@ -20,6 +20,36 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class PlayerDeck
 {
+    /// <summary>Discards at most the cards in the current player deck.</summary>
+    /// <remarks>
+    /// <c>rr:player-deck.3</c>: when this effect empties and reshuffles the
+    /// deck, it stops; the replacement deck is not part of the same discard.
+    /// The starting count is therefore the boundary even though
+    /// <see cref="Discard.Card"/> performs the immediate reset.
+    /// </remarks>
+    public static IReadOnlyList<Card> DiscardTop(
+        World world, int player, long count, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(events);
+        if (count <= 0)
+        {
+            return [];
+        }
+
+        var deck = world.Seats[player].Deck;
+        long remaining = Math.Min(count, deck.Cards.Count);
+        var discarded = new List<Card>();
+        for (long index = 0; index < remaining; index++)
+        {
+            var card = deck.Cards[^1];
+            Discard.Card(world, card, trigger, events);
+            discarded.Add(card);
+        }
+
+        return discarded;
+    }
+
     /// <summary>
     /// Rebuild a player's deck from their discard pile if it is time to.
     /// </summary>

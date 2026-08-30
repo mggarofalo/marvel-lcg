@@ -883,16 +883,16 @@
     {
       "card": "01188",
       "name": "Caught Off Guard",
-      "note": "When Revealed: Discard an upgrade or support you control. If no cards were discarded this way, this card gains surge. Written as if/else on whether there is one, rather than as a discard followed by a check: the instruction is mandatory, so 'no cards were discarded this way' happens exactly when there was nothing to discard. That also keeps the choice last in its branch, which is what the interpreter can resume. rr:choose-game-element.1 asks the player resolving the card, which is the player it was dealt to.",
+      "note": "When Revealed: Discard an upgrade or support you control. If no cards were discarded this way, this card gains surge. Written as if/else on whether there is a legal discard target, rather than as a discard followed by a check: the instruction is mandatory, so 'no cards were discarded this way' happens exactly when there was nothing legal to discard. The discardable selector applies Permanent target legality to both the condition and the prompt. That also keeps the choice last in its branch, which is what the interpreter can resume. rr:choose-game-element.1 asks the player resolving the card, which is the player it was dealt to.",
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
           "effect": {
             "if": {
-              "test": { "exists": { "query": "upgradesAndSupportsYouControl" } },
+              "test": { "exists": { "discardable": { "query": "upgradesAndSupportsYouControl" } } },
               "then": {
                 "chooseCard": {
-                  "from": { "query": "upgradesAndSupportsYouControl" },
+                  "from": { "discardable": { "query": "upgradesAndSupportsYouControl" } },
                   "effect": { "discard": "chosen" }
                 }
               },

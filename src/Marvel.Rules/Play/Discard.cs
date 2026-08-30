@@ -22,6 +22,44 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Discard
 {
+    /// <summary>Discards a card targeted by a card effect.</summary>
+    public static void CardFromEffect(
+        World world, ICardFacts facts, State.Card source, State.Card target,
+        string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(target);
+
+        if (!EffectCanRemove(world, facts, source, target))
+        {
+            throw new RulesNotImplementedException(
+                $"card {source.ObjectId} cannot remove permanent card {target.ObjectId} "
+                + "because they are not from the same set");
+        }
+
+        Card(world, target, trigger, events);
+    }
+
+    /// <summary>Whether a card effect may make one permanent target leave play.</summary>
+    public static bool EffectCanRemove(
+        World world, ICardFacts facts, State.Card source, State.Card target) =>
+        // Removed is terminal even when an effect explicitly names it. Whether
+        // another out-of-play area was expressly named belongs to the caller's
+        // selector, not this Permanent rule primitive.
+        target.Area.Type != DeckType.RemovedArea
+        && (!DeckTypes.IsInPlay(target.Area.Type)
+            || StateFields.Modified(world, target, "permanent", facts, world.Players) <= 0
+            || SameSet(facts, source, target));
+
+    /// <summary>Whether two printed cards belong to the same non-empty set.</summary>
+    public static bool SameSet(ICardFacts facts, State.Card first, State.Card second)
+    {
+        string set = facts.EncounterSet(first.FaceId);
+        return set.Length > 0
+            && string.Equals(set, facts.EncounterSet(second.FaceId), StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// Puts a card in its owner's discard pile, or removes a spent status component.
     /// </summary>
@@ -44,6 +82,7 @@ public static class Discard
         if (DeckTypes.IsInPlay(card.Area.Type))
         {
             Attachments(world, card, trigger, events);
+            ResetLeavingState(world, card, trigger, events);
         }
 
         // A status card is discarded by its keyword rule, but it is not an
@@ -128,6 +167,19 @@ public static class Discard
         PreflightAttachments(world, host, AttachedTo(world, host.ObjectId));
     }
 
+    /// <summary>Preflights a host after named direct cards leave by an earlier interrupt.</summary>
+    internal static void PreflightAttachmentsExcept(
+        World world, State.Card host, IReadOnlySet<int> leavingFirst)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(leavingFirst);
+        PreflightAttachments(
+            world, host,
+            [.. AttachedTo(world, host.ObjectId)
+                .Where(card => !leavingFirst.Contains(card.ObjectId))]);
+    }
+
     private static void PreflightAttachments(
         World world, State.Card host, IReadOnlyList<State.Card> direct)
     {
@@ -177,4 +229,31 @@ public static class Discard
             .Where(area => area.Host == host)
             .SelectMany(area => area.Cards),
     ];
+
+    /// <summary>Removes departure state that remains observable while out of play.</summary>
+    public static void ResetLeavingState(
+        World world, State.Card card, string trigger, List<GameEvent> events)
+    {
+        // Most state fields are dormant outside play and reset if the card
+        // becomes a new copy on re-entry. An acceleration token is different:
+        // rr:acceleration-token.2.1 counts it from any in-play host, so clause
+        // .3 expressly removes it when a non-main-scheme host leaves.
+        if (card.Area.Type == DeckType.MainSchemesArea)
+        {
+            return;
+        }
+
+        long held = card.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
+        if (held <= 0)
+        {
+            return;
+        }
+
+        card.PlaceTokens(EncounterDeck.AccelerationToken, -held);
+        events.Add(new FieldSet(
+            card.ObjectId, EncounterDeck.AccelerationToken, held, 0)
+        {
+            Trigger = trigger, Verb = "Remove",
+        });
+    }
 }

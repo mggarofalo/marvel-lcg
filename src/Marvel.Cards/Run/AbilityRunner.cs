@@ -502,7 +502,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         world, card, occurrence, controller, [], this);
                     eligibility.SetPaymentMayMutate(
                         ability.Cost is not null
-                        || world.Facts.Kind(card.FaceId) == CardKind.Event);
+                        || world.Facts.Kind(card.FaceId) == CardKind.Event,
+                        ability.Cost);
                     if ((ability.When is not null && !Test(ability.When, eligibility))
                         || (controller >= 0 && !CanInitiate(ability, eligibility)))
                     {
@@ -598,7 +599,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Tier = found.Trigger.Timing,
         };
         cast.SetPaymentMayMutate(
-            found.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event);
+            found.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
+            found.Cost);
 
         if (!Available(world, card, found, occurrence))
         {
@@ -1825,7 +1827,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         World world, Card card, CardAbility ability, int player, Cast eligibility)
     {
         eligibility.SetPaymentMayMutate(
-            ability.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event);
+            ability.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
+            ability.Cost);
         return MayInitiate(world, ability, card, player)
         && Available(world, card, ability)
         && InForm(world, player, ability.Trigger.Form)
@@ -3969,22 +3972,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return locallyLegal;
         }
 
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
+        var priorSteps = cast.PriorSteps;
+        bool priorFiltering = cast.FilteringContinuationOption;
         try
         {
             ResolutionOutcome? pendingOutcome = cast.HasPendingDependency
                 ? ResolutionOf(option, cast)
                 : null;
             var before = new BindingCandidateState(
-                prior is null ? [] : [prior], prior is null);
+                prior is null ? [] : [prior.Card], prior is null);
             var outcomes = BindingCandidatesAfter(option, cast, before);
+            cast.SetPriorSteps([.. priorSteps, option]);
+            cast.SetFilteringContinuationOption(true);
             return ContinuationCanResolve(outcomes, cast, pendingOutcome);
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
+            cast.SetPriorSteps(priorSteps);
+            cast.SetFilteringContinuationOption(priorFiltering);
         }
     }
 
@@ -3997,8 +4006,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static List<Card> LegalCardChoices(AbilityNode choice, Cast cast)
     {
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         var legal = new List<Card>();
         try
         {
@@ -4014,7 +4023,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
         return legal;
@@ -4029,8 +4038,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return legal;
         }
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
+        var priorSteps = cast.PriorSteps;
+        bool priorFiltering = cast.FilteringContinuationOption;
         try
         {
             return legal.Where(candidate =>
@@ -4044,13 +4055,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 var outcomes = BindingCandidatesAfter(
                     effect, cast,
                     new BindingCandidateState([candidate], MayBeEmpty: false));
+                cast.SetPriorSteps([.. priorSteps, effect]);
+                cast.SetFilteringContinuationOption(true);
                 return ContinuationCanResolve(outcomes, cast, pendingOutcome);
             }).ToList();
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
+            cast.SetPriorSteps(priorSteps);
+            cast.SetFilteringContinuationOption(priorFiltering);
         }
     }
 
@@ -4061,6 +4076,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var outerCandidates = cast.PriorBindingCandidates;
         bool outerMayBeEmpty = cast.PriorBindingMayBeEmpty;
         bool outerBindingMayChange = cast.PriorBindingMayChange;
+        bool outerChecking = cast.CheckingInitiation;
         bool CanResolve(Card? binding)
         {
             cast.ChooseSelection(binding);
@@ -4080,6 +4096,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         try
         {
+            cast.SetCheckingInitiation(true);
             return outcomes.Cards.Any(CanResolve)
                 || outcomes.MayBeEmpty && CanResolve(null);
         }
@@ -4088,6 +4105,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             cast.SetPriorBindingCandidates(outerCandidates);
             cast.SetPriorBindingMayBeEmpty(outerMayBeEmpty);
             cast.SetPriorBindingMayChange(outerBindingMayChange);
+            cast.SetCheckingInitiation(outerChecking);
         }
     }
 
@@ -4344,13 +4362,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Whether one authored ability can begin before any cost is paid.</summary>
     private static bool CanInitiate(CardAbility ability, Cast cast)
     {
-        if (!CanInitiateLabels(ability, cast))
+        bool outer = cast.CheckingInitiation;
+        cast.SetCheckingInitiation(true);
+        try
         {
-            return false;
+            if (!CanInitiateLabels(ability, cast))
+            {
+                return false;
+            }
+            cast.LabelsPreflighted = true;
+            if ((ability.Labels?.Count ?? 0) > 0
+                && LabeledAbilities.WouldBeCancelled(
+                    cast.World, cast.World.Facts, Resolver(cast),
+                    cast.Source, ability.Labels!))
+            {
+                return true;
+            }
+            return CanInitiate(ability.Effect, cast)
+                && TargetLegalityOf(ability.Effect, cast) != TargetLegality.Invalid;
         }
-        cast.LabelsPreflighted = true;
-        return CanInitiate(ability.Effect, cast)
-            && TargetLegalityOf(ability.Effect, cast) != TargetLegality.Invalid;
+        finally
+        {
+            cast.SetCheckingInitiation(outer);
+        }
     }
 
     /// <summary>Whether an ability envelope can establish every labeled lifecycle.</summary>
@@ -4490,6 +4524,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var steps = Nodes(node.Argument).ToList();
         bool outerContinuation = cast.HasContinuation;
         bool outerPriorMutation = cast.PriorStepMayMutate;
+        var outerPriorSteps = cast.PriorSteps;
         ulong outerPriorFormChanges = cast.PriorFormsMayChange;
         bool outerPriorBinding = cast.PriorBindingMayChange;
         var outerPriorCandidates = cast.PriorBindingCandidates;
@@ -4500,12 +4535,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             outerPriorCandidates,
             outerPriorBindingMayBeEmpty
                 || outerPriorCandidates.Count == 0 && cast.Chosen is null);
+        var priorSteps = outerPriorSteps.ToList();
         try
         {
             for (int step = 0; step < steps.Count; step++)
             {
                 cast.SetContinuation(outerContinuation || step < steps.Count - 1);
                 cast.SetPriorStepMayMutate(outerPriorMutation || step > 0);
+                cast.SetPriorSteps(priorSteps);
                 cast.SetPriorFormsMayChange(priorFormChanges);
                 cast.SetPriorBindingMayChange(priorBinding);
                 cast.SetPriorBindingCandidates(priorCandidates.Cards);
@@ -4515,6 +4552,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     PreflightDependentOutcomesAfterMutation(steps[step], cast);
                 }
                 if (!CanInitiate(steps[step], cast))
+                {
+                    return false;
+                }
+                if (step + 1 < steps.Count
+                    && !ChoicesHaveStableAreaContinuation(
+                        steps[step], steps.Skip(step + 1).ToList(), cast))
                 {
                     return false;
                 }
@@ -4529,6 +4572,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                             steps.Skip(step + 1).ToList())
                         : BindingCandidatesAfter(
                             steps[step], cast, priorCandidates);
+                priorSteps.Add(steps[step]);
             }
 
             return true;
@@ -4537,10 +4581,197 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             cast.SetContinuation(outerContinuation);
             cast.SetPriorStepMayMutate(outerPriorMutation);
+            cast.SetPriorSteps(outerPriorSteps);
             cast.SetPriorFormsMayChange(outerPriorFormChanges);
             cast.SetPriorBindingMayChange(outerPriorBinding);
             cast.SetPriorBindingCandidates(outerPriorCandidates);
             cast.SetPriorBindingMayBeEmpty(outerPriorBindingMayBeEmpty);
+        }
+    }
+
+    private static bool ChoicesHaveStableAreaContinuation(
+        AbilityNode effect, IReadOnlyList<AbilityNode> suffix, Cast cast)
+    {
+        var sensitiveAreas = new HashSet<DeckType>();
+        foreach (var step in suffix)
+        {
+            CollectSingularAreaDependencies(step, cast, sensitiveAreas);
+        }
+        if (sensitiveAreas.Count == 0)
+        {
+            return true;
+        }
+
+        return ChoicesAreStable(effect, sensitiveAreas, cast);
+    }
+
+    private static bool ChoicesAreStable(
+        AbilityNode effect, HashSet<DeckType> sensitiveAreas, Cast cast)
+    {
+        if (effect.Kind == "seq")
+        {
+            var steps = Nodes(effect.Argument).ToList();
+            for (int step = 0; step < steps.Count; step++)
+            {
+                var after = new HashSet<DeckType>(sensitiveAreas);
+                foreach (var later in steps.Skip(step + 1))
+                {
+                    CollectSingularAreaDependencies(later, cast, after);
+                }
+                if (!ChoicesAreStable(steps[step], after, cast))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        var priorChosen = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
+
+        try
+        {
+            if (effect.Kind == "choose")
+            {
+                return Nodes(effect.Require("options")).Any(option =>
+                    OptionIsLegal(option, cast)
+                    && !MayChangeAnyArea(option, sensitiveAreas, cast)
+                    && ChoicesAreStable(option, sensitiveAreas, cast));
+            }
+
+            if (effect.Kind == "chooseCard")
+            {
+                var chosenEffect = Tree(effect.Require("effect"));
+                return LegalCardChoices(effect, cast).Any(candidate =>
+                {
+                    cast.ChooseSelection(candidate);
+                    return !MayChangeAnyArea(
+                            chosenEffect, sensitiveAreas, cast)
+                        && ChoicesAreStable(
+                            chosenEffect, sensitiveAreas, cast);
+                });
+            }
+
+            if (effect.Kind == "forEach" && CurrentlyZeroForEach(effect, cast))
+            {
+                return true;
+            }
+            if (effect.Kind == "eachPlayer")
+            {
+                int priorPlayer = cast.Player;
+                try
+                {
+                    return cast.World.PlayerOrder.All(player =>
+                    {
+                        cast.RestorePlayer(player);
+                        return ChoicesAreStable(
+                            Tree(effect.Require("effect")), sensitiveAreas, cast);
+                    });
+                }
+                finally
+                {
+                    cast.RestorePlayer(priorPlayer);
+                }
+            }
+
+            var children = effect.Kind switch
+            {
+                "if" => ReachableMutationBranches(effect, cast),
+                "forEach" => [Tree(effect.Require("effect"))],
+                _ => StructuralChildren(effect),
+            };
+            return children.All(child =>
+                ChoicesAreStable(child, sensitiveAreas, cast));
+        }
+        finally
+        {
+            cast.RestoreChosen(priorChosen);
+            cast.RestorePlayerSelection(priorSelection);
+        }
+    }
+
+    private static void CollectSingularAreaDependencies(
+        AbilityNode node, Cast cast, HashSet<DeckType> areas)
+    {
+        if (node.Kind == "search")
+        {
+            areas.UnionWith(SearchAreaTypes(node, cast));
+        }
+
+        foreach (var selector in SingularSelectors(node))
+        {
+            CollectCardsInDependencies(selector, cast, areas);
+        }
+        CollectSingularAreaDependencies(node.Argument, cast, areas);
+    }
+
+    private static IEnumerable<AbilityValue> SingularSelectors(
+        AbilityNode node) => node.Kind switch
+    {
+        "attachTo" or "exhaust" or "removeFromGame" or "reveal"
+            or "returnToHand" or "addToHand" or "returnOwnedToHand" =>
+            [node.Argument],
+        "discard" or "dealEncounterCard" =>
+            [node.Field("card") ?? node.Argument],
+        "grantUntil" or "heal" or "putIntoPlay" or "placeCounters"
+            or "removeCounters" => [node.Require("card")],
+        "removeThreat" => [node.Require("scheme")],
+        "placeAtRandom" => [node.Require("on")],
+        "soakDamage" => [node.Require("onto")],
+        "moveDamage" or "moveAttackDamage" =>
+            [node.Require("from"), node.Require("to")],
+        "hasStatus" or "hasTrait" or "cardSet" or "isTitle" or "isKind" =>
+            [node.Require("card")],
+        "wasDefeated" => [node.Argument],
+        _ => [],
+    };
+
+    private static void CollectCardsInDependencies(
+        AbilityValue value, Cast cast, HashSet<DeckType> areas)
+    {
+        switch (value)
+        {
+            case AbilityValue.List list:
+                foreach (var item in list.Values)
+                {
+                    CollectCardsInDependencies(item, cast, areas);
+                }
+                break;
+            case AbilityValue.Map map:
+                foreach (var (kind, argument) in map.Entries)
+                {
+                    if (kind == "cardsIn")
+                    {
+                        areas.UnionWith(CardsInAreaTypes(
+                            new AbilityNode(kind, argument), cast));
+                    }
+                    else
+                    {
+                        CollectCardsInDependencies(argument, cast, areas);
+                    }
+                }
+                break;
+        }
+    }
+
+    private static void CollectSingularAreaDependencies(
+        AbilityValue value, Cast cast, HashSet<DeckType> areas)
+    {
+        switch (value)
+        {
+            case AbilityValue.List list:
+                foreach (var item in list.Values)
+                {
+                    CollectSingularAreaDependencies(item, cast, areas);
+                }
+                break;
+            case AbilityValue.Map map:
+                foreach (var (kind, argument) in map.Entries)
+                {
+                    CollectSingularAreaDependencies(
+                        new AbilityNode(kind, argument), cast, areas);
+                }
+                break;
         }
     }
 
@@ -4884,8 +5115,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static BindingCandidateState ChooseCardBindingCandidatesAfter(
         AbilityNode node, Cast cast, BindingCandidateState before)
     {
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         var possible = new List<Card>();
         bool mayBeEmpty = false;
         try
@@ -4928,12 +5159,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             if (before.Cards.Count == 0 && !before.MayBeEmpty)
             {
-                AddOutcome(prior);
+                AddOutcome(prior?.Card);
             }
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
         return new BindingCandidateState(
@@ -4944,8 +5175,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         AbilityNode node, Cast cast, BindingCandidateState before,
         IReadOnlyList<AbilityNode>? continuation = null)
     {
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         var outcomes = new List<BindingCandidateState>();
         try
         {
@@ -4975,12 +5206,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             if (before.Cards.Count == 0 && !before.MayBeEmpty)
             {
-                AddOutcomes(prior);
+                AddOutcomes(prior?.Card);
             }
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
         return new BindingCandidateState(
@@ -4997,8 +5228,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var suffix = new AbilityNode(
             "seq",
             new AbilityValue.List(continuation.Select(NodeValue).ToList()));
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         var outerCandidates = cast.PriorBindingCandidates;
         bool outerMayBeEmpty = cast.PriorBindingMayBeEmpty;
         bool outerBindingMayChange = cast.PriorBindingMayChange;
@@ -5021,7 +5252,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
             cast.SetPriorBindingCandidates(outerCandidates);
             cast.SetPriorBindingMayBeEmpty(outerMayBeEmpty);
@@ -5218,8 +5449,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return CanChooseFromCurrentBinding();
         }
 
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         try
         {
             bool any = false;
@@ -5237,7 +5468,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
     }
@@ -5256,8 +5487,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 return false;
             }
-            var prior = cast.Chosen;
-            var priorSelection = cast.PlayerSelection;
+            var prior = cast.CaptureChosen();
+            var priorSelection = cast.CapturePlayerSelection();
             try
             {
                 bool any = cast.PriorBindingCandidates.Any(candidate =>
@@ -5269,7 +5500,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             finally
             {
-                cast.Choose(prior);
+                cast.RestoreChosen(prior);
                 cast.RestorePlayerSelection(priorSelection);
             }
         }
@@ -5336,8 +5567,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return false;
         }
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         try
         {
             return cast.PriorBindingCandidates.All(candidate =>
@@ -5348,7 +5579,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
     }
@@ -5356,7 +5587,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool CrisisIgnoringRemovalCanAffect(
         AbilityNode node, Cast cast, Card scheme)
     {
-        var prior = cast.Chosen;
+        var prior = cast.CaptureChosen();
         try
         {
             // SchedulePower binds the declared power target before it runs the
@@ -5366,7 +5597,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
         }
     }
 
@@ -5502,8 +5733,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "chooseCard" => CanInitiateChooseCard(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
 
-            "removeFromGame" or "reveal" or "returnToHand" =>
-                Cards(Every(node.Argument, cast)),
+            "removeFromGame" => RemoveFromGameTargetLegality(node, cast),
+            "reveal" or "returnToHand" => Cards(Every(node.Argument, cast)),
             "exhaust" => Cards(Every(node.Argument, cast).Where(card => card.Ready)),
             "ready" => Cards(Every(node.Argument, cast).Where(card =>
                 !card.Ready && cast.Abilities.CanReady(cast.World, card, cast.Source))),
@@ -5512,9 +5743,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "grantUntil" => Find(node.Require("card"), cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
-            "discard" or "dealEncounterCard" =>
-                Find(node.Field("card") ?? node.Argument, cast) is null
-                    ? TargetLegality.Invalid : TargetLegality.Valid,
+            "discard" => (node.Field("card") ?? node.Argument) is { } discardTarget
+                && Find(discardTarget, cast) is { } discarded
+                && CanRemoveByEffect(discardTarget, cast, discarded)
+                    ? TargetLegality.Valid : TargetLegality.Invalid,
+            "dealEncounterCard" => Find(node.Field("card") ?? node.Argument, cast) is null
+                ? TargetLegality.Invalid : TargetLegality.Valid,
             "heal" => Find(node.Require("card"), cast) is { Damage: > 0 }
                 && Amount(node.Require("amount"), cast) > 0
                     ? TargetLegality.Valid : TargetLegality.Invalid,
@@ -5562,8 +5796,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return TargetLegality.Invalid;
         }
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         try
         {
             var outcomes = new List<TargetLegality>();
@@ -5582,7 +5816,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
     }
@@ -5614,6 +5848,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         bool binding = bindingMayChange;
         var outerCandidates = cast.PriorBindingCandidates;
         bool outerMayBeEmpty = cast.PriorBindingMayBeEmpty;
+        var outerPriorSteps = cast.PriorSteps;
+        var priorSteps = outerPriorSteps.ToList();
         var candidates = new BindingCandidateState(
             outerCandidates,
             outerMayBeEmpty
@@ -5624,6 +5860,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             for (int index = 0; index < children.Count; index++)
             {
                 var child = children[index];
+                cast.SetPriorSteps(priorSteps);
                 cast.SetPriorBindingCandidates(candidates.Cards);
                 cast.SetPriorBindingMayBeEmpty(candidates.MayBeEmpty);
                 found.Add(TargetLegalityOf(child, cast, binding));
@@ -5635,6 +5872,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     : BindingCandidatesAfter(child, cast, candidates);
                 binding |= candidates.Cards.Count > 0
                     || ContainsNode(child, "chooseCard", cast);
+                priorSteps.Add(child);
             }
             return CombineTargetLegality(found);
         }
@@ -5642,6 +5880,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             cast.SetPriorBindingCandidates(outerCandidates);
             cast.SetPriorBindingMayBeEmpty(outerMayBeEmpty);
+            cast.SetPriorSteps(outerPriorSteps);
         }
     }
 
@@ -5664,6 +5903,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return [.. Every(node.Require("card"), cast).Where(card =>
             Statuses.Count(cast.World, card, status)
                 < Statuses.Limit(cast.World, cast.World.Facts, card, status))];
+    }
+
+    private static TargetLegality RemoveFromGameTargetLegality(
+        AbilityNode node, Cast cast)
+    {
+        return Find(node.Argument, cast) is { } removed
+            && CanRemoveByEffect(node.Argument, cast, removed)
+                ? TargetLegality.Valid : TargetLegality.Invalid;
     }
 
     private enum TargetLegality
@@ -5933,7 +6180,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.World.Facts,
                 Word(node.Require("to"))),
             "removeFromGame" => Find(node.Argument, cast) is { } card
-                && card.Area.Type != DeckType.RemovedArea,
+                && CanRemoveByEffect(node.Argument, cast, card),
             "exhaust" => Find(node.Argument, cast)?.Ready == true,
             "ready" => Every(node.Argument, cast).Any(card =>
                 !card.Ready && cast.Abilities.CanReady(cast.World, card, cast.Source)),
@@ -6034,9 +6281,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "ready" => ResolutionOfCards(
                 Every(node.Argument, cast), card => !card.Ready
                     && cast.Abilities.CanReady(cast.World, card, cast.Source)),
-            "discard" => Find(node.Field("card") ?? node.Argument, cast) is not null
-                ? ResolutionOutcome.Full
-                : ResolutionOutcome.None,
+            "discard" => (node.Field("card") ?? node.Argument) is { } discardTarget
+                && Find(discardTarget, cast) is { } discarded
+                && CanRemoveByEffect(discardTarget, cast, discarded)
+                    ? ResolutionOutcome.Full
+                    : ResolutionOutcome.None,
             "draw" => CombinedOutcomes(Seats(node.Require("player"), cast).Select(player =>
                 ResolutionOfAmount(
                     cast.World.Seats[player].Deck.Cards.Count
@@ -6306,7 +6555,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         if (node.Kind is "attack" or "thwart")
         {
-            var prior = cast.Chosen;
+            var prior = cast.CaptureChosen();
             try
             {
                 var target = Find(node.Require("target"), cast);
@@ -6324,7 +6573,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             finally
             {
-                cast.Choose(prior);
+                cast.RestoreChosen(prior);
             }
         }
         if (node.Kind == "thwartSchemes")
@@ -7852,6 +8101,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     node.Argument, candidate, currentVillain,
                     cast, discarded, traits, modifiers, engagement)
                 && !AnotherCopyAttachedInTrace(candidate, cast, discarded),
+            "discardable" => TraceSelectorMatches(
+                    node.Argument, candidate, currentVillain,
+                    cast, discarded, traits, modifiers, engagement)
+                && (TraceModified(candidate, "permanent", cast, discarded) <= 0
+                    || Rules.Play.Discard.SameSet(
+                        cast.World.Facts, cast.Source, candidate)),
             "minBy" or "maxBy" => TraceRankedSelectorIncludesCard(
                 node, candidate, currentVillain, cast, discarded, traits,
                 modifiers, engagement),
@@ -8115,7 +8370,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (!TraceSelectorMatches(
                 node.Require("of"), candidate, currentVillain,
                 cast, discarded, traits, modifiers, engagement)
-            || TraceModified(candidate, "permanent", cast, discarded) > 0)
+            || TraceModified(candidate, "permanent", cast, discarded) > 0
+                && !Rules.Play.Discard.SameSet(
+                    cast.World.Facts, cast.Source, candidate))
         {
             return false;
         }
@@ -8134,7 +8391,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 && TraceSelectorMatches(
                     node.Require("of"), card, currentVillain,
                     cast, discarded, traits, modifiers, engagement)
-                && TraceModified(card, "permanent", cast, discarded) <= 0)
+                && (TraceModified(card, "permanent", cast, discarded) <= 0
+                    || Rules.Play.Discard.SameSet(
+                        cast.World.Facts, cast.Source, card)))
             .ToList();
         string key = Word(node.Require("by"));
         long Rank(Card card) => key switch
@@ -8290,9 +8549,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return false;
         }
 
-        foreach (var value in areas.Values)
+        var searchedAreas = areas.Values
+            .Select(value => Area(Tree(value).Kind, cast))
+            .ToList();
+
+        var searched = SearchAreaTypes(node, cast);
+        if (cast.CheckingInitiation
+            && (cast.PriorSteps.Any(step =>
+                    MayChangeAnyArea(step, searched, cast))
+                || cast.PaymentCost is { } cost
+                    && MayChangeAnyArea(cost, searched, cast)))
         {
-            _ = Area(Tree(value).Kind, cast);
+            if (cast.FilteringContinuationOption)
+            {
+                return false;
+            }
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' searches an area after its matching "
+                + "cards may change");
+        }
+
+        string wanted = Word(node.Require("for"));
+        int matches = searchedAreas.SelectMany(area => area.Cards)
+            .Count(card => string.Equals(
+                card.FaceId, wanted, StringComparison.Ordinal));
+        if (matches > 1)
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' searched and found {matches} copies of "
+                + $"'{wanted}'; rr:search.1 gives the player that choice and asking is "
+                + "not implemented");
         }
         return true;
     }
@@ -12778,13 +13064,73 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static void Discard(AbilityNode node, Cast cast)
     {
-        if (Find(node.Field("card") ?? node.Argument, cast) is { } target)
+        var selector = node.Field("card") ?? node.Argument;
+        if (Find(selector, cast) is { } target)
         {
             // rr:target.2 lets a multi-target ability initiate when at least
-            // one target is valid. A different target can therefore be absent
-            // by resolution, and this effect simply has nothing to discard.
-            Rules.Play.Discard.Card(cast.World, target, cast.Trigger, cast.Events);
+            // one target is valid. A different component can therefore have
+            // an invalid target and simply does not resolve against it.
+            if (CanRemoveByEffect(selector, cast, target))
+            {
+                Rules.Play.Discard.CardFromEffect(
+                    cast.World, cast.World.Facts, cast.Source, target,
+                    cast.Trigger, cast.Events);
+            }
         }
+    }
+
+    /// <summary>Whether this exact selector may make its current target depart.</summary>
+    private static bool CanRemoveByEffect(
+        AbilityValue selector, Cast cast, Card target)
+    {
+        // `rr:in-play-and-out-of-play.4`: a retained binding does not authorize
+        // a later component to follow a card into an out-of-play area. Cards
+        // resolving in the boost/reveal/processing staging areas remain live
+        // ability subjects; every other out-of-play target must be found by a
+        // selector that expressly names its current area.
+        bool reachable = DeckTypes.IsInPlay(target.Area.Type)
+            || target.Area.Type is DeckType.BoostingArea
+                or DeckType.ProcessingArea
+                or DeckType.RevealingArea
+            || selector is AbilityValue.Word { Value: "chosen" }
+                && cast.WasSelectedInCurrentArea(target)
+            || ExplicitlySelectsOutOfPlayCard(selector, cast, target);
+        bool bindingIsCurrent = selector switch
+        {
+            AbilityValue.Word { Value: "this" } =>
+                cast.SourceBindingIsCurrent(target),
+            AbilityValue.Word { Value: "chosen" } =>
+                cast.ChosenBindingIsCurrent(target),
+            _ => true,
+        };
+        return reachable && bindingIsCurrent
+            && Rules.Play.Discard.EffectCanRemove(
+                cast.World, cast.World.Facts, cast.Source, target);
+    }
+
+    /// <summary>Whether a selector names the out-of-play area holding one card.</summary>
+    private static bool ExplicitlySelectsOutOfPlayCard(
+        AbilityValue value, Cast cast, Card target)
+    {
+        if (value is AbilityValue.Map map)
+        {
+            if (map.Entries.Count == 1)
+            {
+                var (kind, argument) = map.Entries.First();
+                if (kind == "cardsIn"
+                    && CardsIn(new AbilityNode(kind, argument), cast)
+                        .Any(card => card.ObjectId == target.ObjectId))
+                {
+                    return true;
+                }
+            }
+            return map.Entries.Values.Any(child =>
+                ExplicitlySelectsOutOfPlayCard(child, cast, target));
+        }
+
+        return value is AbilityValue.List list
+            && list.Values.Any(child =>
+                ExplicitlySelectsOutOfPlayCard(child, cast, target));
     }
 
     // ---- reading a value ---------------------------------------------------
@@ -12841,6 +13187,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would remove a card that is not there");
 
+        if (!CanRemoveByEffect(node.Argument, cast, card))
+        {
+            // Another component can make a multi-target effect valid under
+            // rr:target.3.4; this invalid component simply does not resolve.
+            return;
+        }
+
         var from = card.Area;
         var removed = cast.World.AreaOf(DeckType.RemovedArea);
         var constantsEnding = cast.World.Effects.PreflightConstantsEnding(card);
@@ -12848,6 +13201,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (DeckTypes.IsInPlay(from.Type))
         {
             Rules.Play.Discard.Attachments(
+                cast.World, card, cast.Trigger, cast.Events);
+            Rules.Play.Discard.ResetLeavingState(
                 cast.World, card, cast.Trigger, cast.Events);
         }
         World.MoveToTop(card, removed);
@@ -12976,7 +13331,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             && !Characteristics.IsLost(cast.World, cast.Source, "uses")
             && Reveal.Uses(cast.World.Facts.Attributes(cast.Source.FaceId)).Count > 0)
         {
-            Rules.Play.Discard.Card(cast.World, cast.Source, cast.Trigger, cast.Events);
+            if (!Defeat.ToVictoryDisplay(
+                    cast.World, cast.World.Facts, cast.Source,
+                    cast.Trigger, cast.Events))
+            {
+                Rules.Play.Discard.Card(
+                    cast.World, cast.Source, cast.Trigger, cast.Events);
+            }
         }
     }
 
@@ -13126,12 +13487,32 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void RevealCard(Card? card, Cast cast)
     {
-        if (card is null)
+        if (!ScheduleReveal(card, cast))
         {
             return;
         }
 
-        World.MoveToTop(card, cast.World.AreaOf(DeckType.RevealingArea));
+        cast.ResolveEffect();
+    }
+
+    /// <summary>Moves one card into the reveal procedure and schedules it.</summary>
+    private static bool ScheduleReveal(Card? card, Cast cast)
+    {
+        if (card is null)
+        {
+            return false;
+        }
+
+        var from = card.Area;
+        var revealing = cast.World.AreaOf(DeckType.RevealingArea);
+        World.MoveToTop(card, revealing);
+        cast.Events.Add(new CardsMoved(
+            Places.Reference(from), Places.Reference(revealing),
+            [new Landing(card.ObjectId, revealing.Cards.Count - 1)])
+        {
+            Trigger = cast.Trigger,
+            Verb = "Reveal",
+        });
         cast.World.Agenda.Then(new PhaseStep(
             Steps.RevealEncounterCard,
             cast.World.Agenda.Current?.Round ?? 0,
@@ -13139,7 +13520,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Index: cast.Player,
             Subject: card.ObjectId,
             Seat: cast.Player));
-        cast.ResolveEffect();
+        return true;
     }
 
     /// <summary>
@@ -13226,17 +13607,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "not implemented");
         }
 
-        bool applied = found.Count == 1;
-        if (applied)
-        {
-            cast.World.Agenda.Then(new PhaseStep(
-                Steps.RevealEncounterCard,
-                cast.World.Agenda.Current?.Round ?? 0,
-                4,
-                Index: cast.Player,
-                Subject: found[0].ObjectId,
-                Seat: cast.Player));
-        }
+        // The found card is added to the revealing area before the searched
+        // deck is shuffled. `rr:search` says the found card is added to the
+        // indicated area, and the shuffle therefore applies to the cards that
+        // remain rather than consuming the wire-format RNG with that card
+        // still in its old area.
+        bool applied = found.Count == 1 && ScheduleReveal(found[0], cast);
 
         cast.Results["found"] = found.Count;
 
@@ -13686,9 +14062,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         foreach (var (name, value) in results
             ?? new Dictionary<string, long>(StringComparer.Ordinal))
         {
-            if (name == PersistedChosen)
+            if (name is PersistedChosen or PersistedChosenArea
+                or PersistedChosenIncarnation or PersistedSourceIncarnation)
             {
-                RestorePersistedChosen(cast, value, overwrite: false);
                 continue;
             }
             if (cast.RestoreCrisisIgnoringThwart(name, value))
@@ -13697,6 +14073,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             cast.Results[name] = value;
         }
+        cast.RestoreSourceIncarnation(
+            results?.TryGetValue(PersistedSourceIncarnation, out long incarnation) == true
+                ? checked((int)incarnation)
+                : -1);
+        RestorePersistedChosen(cast, results, overwrite: false);
     }
 
     private static void RestorePersistedChosen(
@@ -13704,23 +14085,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         if (results?.TryGetValue(PersistedChosen, out long chosen) == true)
         {
-            RestorePersistedChosen(cast, chosen, overwrite);
-        }
-    }
-
-    private static void RestorePersistedChosen(
-        Cast cast, long chosen, bool overwrite)
-    {
-        if (chosen < 0 || chosen >= cast.World.Cards.Count)
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' has invalid persisted chosen-card metadata");
-        }
-        var card = cast.World.Cards[(int)chosen];
-        cast.RestorePlayerSelection(card);
-        if (overwrite || cast.Chosen is null)
-        {
-            cast.Choose(card);
+            if (chosen < 0 || chosen >= cast.World.Cards.Count)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has invalid persisted chosen-card metadata");
+            }
+            if (!results.TryGetValue(PersistedChosenArea, out long savedArea)
+                || !results.TryGetValue(
+                    PersistedChosenIncarnation, out long savedIncarnation))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has persisted chosen-card metadata "
+                    + "without target provenance");
+            }
+            var card = cast.World.Cards[(int)chosen];
+            cast.RestorePersistedSelection(
+                card, checked((int)savedArea), checked((int)savedIncarnation),
+                overwriteChosen: overwrite);
         }
     }
 
@@ -14448,7 +14829,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         IReadOnlyList<Card> targets, long powerAmount)
     {
         var effect = Tree(node.Require("effect"));
-        var continuationChosen = cast.PlayerSelection ?? cast.Chosen;
+        var continuationChosen = cast.CaptureCurrentSelection();
         cast.Choose(target);
         if (SuspendsPowerEffect(
             effect, cast, bindingMayChange: powerAmount >= 0))
@@ -14482,10 +14863,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (continuationChosen is null)
         {
             abilityResults.Remove(PersistedChosen);
+            abilityResults.Remove(PersistedChosenArea);
+            abilityResults.Remove(PersistedChosenIncarnation);
         }
         else
         {
-            abilityResults[PersistedChosen] = continuationChosen.ObjectId;
+            PersistChosen(continuationChosen, abilityResults);
         }
         var discarded = cast.Discarded.Select(card => card.ObjectId).ToList();
         bool automaticThwartTarget = node.Field("automaticTarget") is not null
@@ -14866,12 +15249,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             : [Area(Word(node.Require("from")), cast)];
         foreach (var deck in decks)
         {
-            for (long discarded = 0; discarded < count && deck.Cards.Count > 0; discarded++)
+            if (deck.Type == DeckType.PlayerDeck && deck.PlayArea.IsPlayers)
             {
-                var card = deck.Cards[^1];
-                Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-                cast.Discarded.Add(card);
+                cast.Discarded.AddRange(PlayerDeck.DiscardTop(
+                    cast.World, deck.PlayArea.Player, count, cast.Trigger, cast.Events));
+                continue;
             }
+
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' discards from unsupported deck {deck.Type}");
         }
     }
 
@@ -15090,6 +15476,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.Source, cast.Tier, abilityOrdinal, cast.AbilityFace),
                 results);
         }
+        PersistSource(cast, results);
         PersistChosen(cast, results);
         return results;
     }
@@ -15099,18 +15486,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         var results = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
         cast.PersistCrisisIgnoringThwarts(ability, results);
+        PersistSource(cast, results);
         PersistChosen(cast, results);
         return results;
     }
 
     private const string PersistedChosen = "__continuation.chosen";
+    private const string PersistedChosenArea = "__continuation.chosen_area";
+    private const string PersistedChosenIncarnation = "__continuation.chosen_incarnation";
+    private const string PersistedSourceIncarnation = "__continuation.source_incarnation";
+
+    private static void PersistSource(Cast cast, Dictionary<string, long> results) =>
+        results[PersistedSourceIncarnation] = cast.SourceBindingIncarnation;
 
     private static void PersistChosen(Cast cast, Dictionary<string, long> results)
     {
-        if ((cast.PlayerSelection ?? cast.Chosen) is { } chosen)
+        if (cast.CaptureCurrentSelection() is { } chosen)
         {
-            results[PersistedChosen] = chosen.ObjectId;
+            PersistChosen(chosen, results);
         }
+    }
+
+    private static void PersistChosen(
+        Cast.CardBinding chosen, Dictionary<string, long> results)
+    {
+        results[PersistedChosen] = chosen.Card.ObjectId;
+        results[PersistedChosenArea] = chosen.Area;
+        results[PersistedChosenIncarnation] = chosen.Incarnation;
     }
 
     /// <summary>Propagate one reveal-scoped Surge gain to work already suspended.</summary>
@@ -15340,6 +15742,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                             && string.Equals(
                                 cast.World.Facts.Title(attached.FaceId), title,
                                 StringComparison.Ordinal))),
+            ];
+        }
+
+        if (value is AbilityValue.Map
+            && Tree(value) is { Kind: "discardable" } discardable)
+        {
+            return
+            [
+                .. Every(discardable.Argument, cast).Where(card =>
+                    CanRemoveByEffect(discardable.Argument, cast, card)),
             ];
         }
 
@@ -15670,8 +16082,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // grant. Reading print alone would miss a permanence handed out in
         // play.
         var among = Every(node.Require("of"), cast)
-            .Where(card => StateFields.Modified(
-                cast.World, card, "permanent", cast.World.Facts, cast.World.Players) <= 0)
+            .Where(card => CanRemoveByEffect(node.Require("of"), cast, card))
             .ToList();
 
         if (among.Count == 0)
@@ -15713,6 +16124,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return Query(node, cast);
         }
 
+        if (!SingularAreaQueryIsStable(node, cast))
+        {
+            return null;
+        }
         var found = CardsIn(node, cast);
         return found.Count switch
         {
@@ -15724,9 +16139,1641 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         };
     }
 
+    private static bool SingularAreaQueryIsStable(
+        AbilityNode query, Cast cast)
+    {
+        if (!cast.CheckingInitiation)
+        {
+            return true;
+        }
+
+        var areas = CardsInAreaTypes(query, cast);
+        bool priorCanChange = EffectsMayChangeAnyArea(
+            cast.PriorSteps, areas, cast);
+        bool paymentCanChange = cast.PaymentCost is { } cost
+            && MayChangeAnyArea(cost, areas, cast);
+        if (priorCanChange || paymentCanChange)
+        {
+            if (cast.FilteringContinuationOption)
+            {
+                return false;
+            }
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' reaches a singular area query after its "
+                + "matching cards may change"
+                + (cast.PriorSteps.Count > 0
+                    ? " during prior effects"
+                    : " during payment"));
+        }
+        return true;
+    }
+
+    private static HashSet<DeckType> CardsInAreaTypes(
+        AbilityNode query, Cast cast)
+    {
+        var names = query.Field("areas") is AbilityValue.List several
+            ? several.Values.Select(Word)
+            : [Word(query.Require("area"))];
+        return names.Select(name => Area(name, cast).Type).ToHashSet();
+    }
+
+    private static bool MayChangeAnyArea(
+        AbilityNode effect, IReadOnlySet<DeckType> queried, Cast cast,
+        long multiplier = 1)
+    {
+        bool Includes(params DeckType[] areas) => areas.Any(queried.Contains);
+
+        bool SelectedCardMovesToDiscard(AbilityValue selector) =>
+            Every(selector, cast).Any(card =>
+                queried.Contains(card.Area.Type)
+                || card.Owner < 0
+                    && queried.Contains(DeckType.EncounterDiscardPile)
+                || card.Owner >= 0 && queried.Contains(DeckType.DiscardPile));
+
+        bool SelectedCardMoves(AbilityValue selector, params DeckType[] destinations) =>
+            Every(selector, cast).Any(card => queried.Contains(card.Area.Type))
+            || Includes(destinations);
+
+        bool DamageCouldDiscard(AbilityNode damage)
+        {
+            long amount = SaturatingSum(
+                SaturatingMultiply(
+                    Amount(damage.Require("amount"), cast), multiplier),
+                [EventModifier(cast, "eventDamage")]);
+            if (cast.Power == BasicPowers.AttackVerb)
+            {
+                amount = SaturatingSum(
+                    amount, [EventModifier(cast, "attackDamage")]);
+            }
+            return DamageTargets(damage.Require("cards"), cast).Any(card =>
+                cast.Abilities.CanTakeDamage(cast.World, card, cast.Source)
+                && Statuses.Count(cast.World, card, Statuses.Tough) == 0
+                && Damage.Health(cast.World, cast.World.Facts, card) - card.Damage <= amount
+                && (cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                        && queried.Contains(DeckType.EncounterDiscardPile)
+                    || cast.World.Facts.Kind(card.FaceId) == CardKind.Ally
+                        && queried.Contains(DeckType.DiscardPile)));
+        }
+
+        bool ThreatRemovalCouldDiscard(AbilityNode removal)
+        {
+            if (!queried.Contains(DeckType.EncounterDiscardPile))
+            {
+                return false;
+            }
+            long amount = SaturatingSum(
+                SaturatingMultiply(
+                    Amount(removal.Require("amount"), cast), multiplier),
+                [EventModifier(cast, "eventThreatRemoval")]);
+            return Every(removal.Require("scheme"), cast).Any(scheme =>
+                cast.World.Facts.Kind(scheme.FaceId) == CardKind.EncounterSideScheme
+                && scheme.Tokens.GetValueOrDefault("k_threat") <= amount
+                && DefeatTreeChangesArea(scheme, queried, cast));
+        }
+
+        bool MovedDamageCouldDiscard(AbilityNode movement)
+        {
+            var from = Find(movement.Require("from"), cast);
+            var to = Find(movement.Require("to"), cast);
+            if (from is null || to is null)
+            {
+                return false;
+            }
+            long amount = Math.Min(
+                from.Damage,
+                SaturatingMultiply(
+                    Amount(movement.Require("amount"), cast), multiplier));
+            return amount > 0
+                && cast.Abilities.CanTakeDamage(cast.World, to, cast.Source)
+                && Statuses.Count(cast.World, to, Statuses.Tough) == 0
+                && Damage.Health(cast.World, cast.World.Facts, to) - to.Damage <= amount
+                && (cast.World.Facts.Kind(to.FaceId) == CardKind.Minion
+                        && queried.Contains(DeckType.EncounterDiscardPile)
+                    || cast.World.Facts.Kind(to.FaceId) == CardKind.Ally
+                        && queried.Contains(DeckType.DiscardPile));
+        }
+
+        bool direct = effect.Kind switch
+        {
+            "draw" or "drawToHandSize" or "drawToPrintedHandSize" =>
+                Includes(DeckType.PlayerDeck, DeckType.HandsArea),
+            "discard" => SelectedCardMovesToDiscard(
+                effect.Field("card") ?? effect.Argument),
+            "removeFromGame" => SelectedCardMoves(
+                effect.Argument, DeckType.RemovedArea),
+            "returnToHand" => SelectedCardMoves(
+                effect.Argument, DeckType.HandsArea),
+            "reveal" => SelectedCardMoves(
+                effect.Argument, DeckType.RevealingArea),
+            "putIntoPlay" => SelectedCardMoves(
+                effect.Require("card"),
+                DeckType.AlliesArea, DeckType.SupportsArea, DeckType.UpgradesArea,
+                DeckType.EngagedEnemiesArea, DeckType.SideSchemesArea),
+            "search" => SearchAreaTypes(effect, cast).Any(queried.Contains)
+                || queried.Contains(DeckType.RevealingArea),
+            "shuffleInto" => Includes(
+                DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
+                DeckType.AsideDeck),
+            "dealEncounterCard" or "dealEncounterCards" or "revealTop"
+                or "discardTop" or "discardUntil" or "createDrones" =>
+                Includes(
+                    DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
+                    DeckType.RevealingArea, DeckType.DealtEncounterCardsDeck),
+            "dealDamage" or "dealAttackDamage" => DamageCouldDiscard(effect),
+            "moveDamage" or "moveAttackDamage" =>
+                MovedDamageCouldDiscard(effect),
+            "removeThreat" => ThreatRemovalCouldDiscard(effect),
+            "indirectDamage" => queried.Contains(DeckType.DiscardPile),
+            "discardFromHand" or "discardUpToFromHand" or "discardAnyFromHand"
+                or "spend" or "spendPrinted" or "spendEnergyX" =>
+                Includes(DeckType.HandsArea, DeckType.DiscardPile),
+            _ => false,
+        };
+        if (direct)
+        {
+            return true;
+        }
+
+        if (effect.Kind == "forEach")
+        {
+            if (CurrentlyZeroForEach(effect, cast))
+            {
+                return false;
+            }
+            long count = ForEachCount(effect, cast);
+            return MayChangeAnyArea(
+                Tree(effect.Require("effect")), queried, cast,
+                SaturatingMultiply(multiplier, count));
+        }
+        if (effect.Kind == "eachPlayer")
+        {
+            int priorPlayer = cast.Player;
+            try
+            {
+                return cast.World.PlayerOrder.Any(player =>
+                {
+                    cast.RestorePlayer(player);
+                    return MayChangeAnyArea(
+                        Tree(effect.Require("effect")), queried, cast, multiplier);
+                });
+            }
+            finally
+            {
+                cast.RestorePlayer(priorPlayer);
+            }
+        }
+        if (effect.Kind is "seq" or "and")
+        {
+            return EffectsMayChangeAnyArea(
+                Nodes(effect.Argument).ToList(), queried, cast, multiplier);
+        }
+
+        IEnumerable<AbilityNode> reachable = effect.Kind switch
+        {
+            // A choice has not run during the enclosing sequence preflight.
+            // Its selected option/effect is added to PriorSteps when that
+            // answer is validated against the saved continuation.
+            "choose" or "chooseCard" => [],
+            "if" => ReachableMutationBranches(effect, cast),
+            "defense" or "delayUntil"
+                or "attack" or "thwart" => [Tree(effect.Require("effect"))],
+            _ => StructuralChildren(effect),
+        };
+        return reachable.Any(child =>
+            MayChangeAnyArea(child, queried, cast, multiplier));
+    }
+
+    private static bool EffectsMayChangeAnyArea(
+        IReadOnlyList<AbilityNode> effects, IReadOnlySet<DeckType> queried,
+        Cast cast, long baseMultiplier = 1)
+    {
+        bool couldDiscard = false;
+
+        bool DiscardedByDamage(AreaProjectionState state, Card target) =>
+            state.DamageOf(target) >= state.HealthOf(cast, target)
+            && DefeatTreeChangesArea(target, queried, cast);
+
+        bool RootLeavesOnDefeat(Card root)
+        {
+            var kind = cast.World.Facts.Kind(root.FaceId);
+            if (kind is CardKind.Minion or CardKind.Ally
+                or CardKind.EncounterSideScheme)
+            {
+                return true;
+            }
+            if (kind != CardKind.EncounterVillain)
+            {
+                return false;
+            }
+            var villainDeck = cast.World.AreaOf(DeckType.VillainDeck).Cards;
+            var next = villainDeck.Count > 0 ? villainDeck[^1] : null;
+            return next is null || !string.Equals(
+                cast.World.Facts.Title(root.FaceId),
+                cast.World.Facts.Title(next.FaceId),
+                StringComparison.Ordinal);
+        }
+
+        void MarkDiscardedTree(AreaProjectionState state, Card root)
+        {
+            var pending = new Stack<Card>();
+            pending.Push(root);
+            while (pending.TryPop(out var card))
+            {
+                if (!state.Departed.Add(card.ObjectId))
+                {
+                    continue;
+                }
+                foreach (var child in ProjectedHostedCards(
+                             state, card.ObjectId).ToList())
+                {
+                    pending.Push(child);
+                }
+            }
+        }
+
+        IEnumerable<Card> ProjectedHostedCards(
+            AreaProjectionState state, int host) => cast.World.Cards
+            .Where(card => !state.Departed.Contains(card.ObjectId))
+            .Where(card => state.Hosts.TryGetValue(card.ObjectId, out int projected)
+                ? projected == host
+                : card.Area.Host == host);
+
+        void MarkHostedCardsDiscarded(AreaProjectionState state, int host)
+        {
+            foreach (var child in ProjectedHostedCards(state, host).ToList())
+            {
+                MarkDiscardedTree(state, child);
+            }
+        }
+
+        bool HostedCardsChangeArea(AreaProjectionState state, int host) =>
+            ProjectedHostedCards(state, host)
+            .Any(card => DiscardTreeChangesArea(card));
+
+        bool DefeatedHostsCardsChangeArea(
+            AreaProjectionState state, int host) =>
+            ProjectedHostedCards(state, host).Any(card =>
+            {
+                bool movesToVictory = cast.World.Facts.Kind(card.FaceId) is
+                        CardKind.Attachment or CardKind.Upgrade
+                    && Keywords.Has(
+                        cast.World, card, "victory", cast.World.Facts);
+                return movesToVictory
+                    ? ProjectedHostedCards(state, card.ObjectId)
+                        .Any(child => DiscardTreeChangesArea(child))
+                    : DiscardTreeChangesArea(card);
+            });
+
+        Card? NextVillainStage(AreaProjectionState state) =>
+            cast.World.AreaOf(DeckType.VillainDeck).Cards
+                .LastOrDefault(card => !state.Entered.Contains(card.ObjectId));
+
+        bool DiscardTreeChangesArea(Card root)
+        {
+            var pending = new Stack<Card>();
+            var seen = new HashSet<int>();
+            pending.Push(root);
+            while (pending.Count > 0)
+            {
+                var card = pending.Pop();
+                if (!seen.Add(card.ObjectId))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' reaches a hosted-card cycle while "
+                        + "projecting a discard");
+                }
+                var destination = card.Owner < 0
+                    ? DeckType.EncounterDiscardPile : DeckType.DiscardPile;
+                if (queried.Contains(destination))
+                {
+                    return true;
+                }
+                foreach (var child in cast.World.Areas
+                             .Where(area => area.Host == card.ObjectId)
+                             .SelectMany(area => area.Cards))
+                {
+                    pending.Push(child);
+                }
+            }
+            return false;
+        }
+
+        void DealProjected(
+            AreaProjectionState state, Card target, long amount,
+            long repetitions)
+        {
+            if (cast.World.Facts.Kind(target.FaceId) == CardKind.EncounterVillain
+                && state.ActiveVillain >= 0)
+            {
+                target = cast.World.Cards[state.ActiveVillain];
+            }
+            if (amount <= 0 || repetitions <= 0
+                || state.Departed.Contains(target.ObjectId)
+                || !cast.Abilities.CanTakeDamage(
+                    cast.World, target, cast.Source))
+            {
+                return;
+            }
+            long prevented = Math.Min(state.ToughOf(cast, target), repetitions);
+            state.Tough[target.ObjectId] =
+                state.ToughOf(cast, target) - prevented;
+            long dealt = SaturatingMultiply(amount, repetitions - prevented);
+            state.Damage[target.ObjectId] = SaturatingSum(
+                state.DamageOf(target), [dealt]);
+            couldDiscard |= DiscardedByDamage(state, target);
+            if (state.DamageOf(target) < state.HealthOf(cast, target))
+            {
+                return;
+            }
+
+            if (cast.World.Facts.Kind(target.FaceId) == CardKind.EncounterVillain)
+            {
+                var next = NextVillainStage(state);
+                bool carries = next is not null && string.Equals(
+                    cast.World.Facts.Title(target.FaceId),
+                    cast.World.Facts.Title(next.FaceId),
+                    StringComparison.Ordinal);
+                int attachmentHost = state.VillainAttachmentHost >= 0
+                    ? state.VillainAttachmentHost : target.ObjectId;
+                if (!carries)
+                {
+                    couldDiscard |= HostedCardsChangeArea(state, attachmentHost);
+                    MarkHostedCardsDiscarded(state, attachmentHost);
+                }
+                state.Departed.Add(target.ObjectId);
+                state.ActiveVillain = next?.ObjectId ?? -1;
+                if (next is not null)
+                {
+                    state.Entered.Add(next.ObjectId);
+                    state.Damage[next.ObjectId] = 0;
+                    if (StateFields.Modified(
+                            cast.World, next, "toughness",
+                            cast.World.Facts, cast.World.Players) > 0)
+                    {
+                        state.Tough[next.ObjectId] = Math.Max(
+                            1, state.ToughOf(cast, next));
+                    }
+                    if (carries)
+                    {
+                        foreach (string status in new[]
+                                 {
+                                     Statuses.Tough,
+                                     Statuses.Stunned,
+                                     Statuses.Confused,
+                                 })
+                        {
+                            long carried = state.StatusOf(cast, target, status);
+                            if (status == Statuses.Tough)
+                            {
+                                state.Tough[next.ObjectId] = Math.Max(
+                                    state.ToughOf(cast, next), carried);
+                            }
+                            else
+                            {
+                                state.Status[(next.ObjectId, status)] = carried;
+                            }
+                        }
+                        foreach (var attachment in ProjectedHostedCards(
+                                     state, attachmentHost).ToList())
+                        {
+                            state.Hosts[attachment.ObjectId] = next.ObjectId;
+                        }
+                        state.VillainAttachmentHost = next.ObjectId;
+                    }
+                }
+                return;
+            }
+
+            if (RootLeavesOnDefeat(target))
+            {
+                couldDiscard |= DefeatedHostsCardsChangeArea(
+                    state, target.ObjectId);
+                MarkDiscardedTree(state, target);
+            }
+        }
+
+        List<AreaProjectionState> TraceSequence(
+            IEnumerable<AbilityNode> sequence,
+            List<AreaProjectionState> states, long multiplier = 1)
+        {
+            foreach (var step in sequence)
+            {
+                states = Trace(step, states, baseMultiplier: multiplier);
+            }
+            return states;
+        }
+
+        List<AreaProjectionState> Trace(
+            AbilityNode effect, List<AreaProjectionState> states,
+            long repetitions = 1, long baseMultiplier = 1)
+        {
+            if (repetitions <= 0 || states.Count == 0)
+            {
+                return states;
+            }
+
+            if (effect.Kind is "dealDamage" or "dealAttackDamage")
+            {
+                long amount = SaturatingSum(
+                    SaturatingMultiply(
+                        Amount(effect.Require("amount"), cast), baseMultiplier),
+                    [EventModifier(cast, "eventDamage"),
+                     effect.Kind == "dealAttackDamage"
+                         || cast.Power == BasicPowers.AttackVerb
+                            ? EventModifier(cast, "attackDamage")
+                            : 0]);
+                foreach (var state in states)
+                {
+                    foreach (var target in ProjectedEvery(
+                                 effect.Require("cards"), state, cast))
+                    {
+                        DealProjected(state, target, amount, repetitions);
+                    }
+                }
+                return states;
+            }
+
+            if (effect.Kind is "moveDamage" or "moveAttackDamage")
+            {
+                long requested = SaturatingMultiply(
+                    Amount(effect.Require("amount"), cast), baseMultiplier);
+                foreach (var state in states)
+                {
+                    var from = ProjectedFind(effect.Require("from"), state, cast);
+                    var to = ProjectedFind(effect.Require("to"), state, cast);
+                    if (from is null || to is null
+                        || !cast.Abilities.CanTakeDamage(
+                            cast.World, to, cast.Source))
+                    {
+                        continue;
+                    }
+                    for (long repeat = 0;
+                         repeat < repetitions && state.DamageOf(from) > 0;
+                         repeat++)
+                    {
+                        long moved = Math.Min(state.DamageOf(from), requested);
+                        state.Damage[from.ObjectId] = state.DamageOf(from) - moved;
+                        DealProjected(state, to, moved, 1);
+                    }
+                }
+                return states;
+            }
+
+            if (effect.Kind == "heal")
+            {
+                foreach (var state in states)
+                {
+                    var healed = ProjectedFind(effect.Require("card"), state, cast);
+                    if (healed is null)
+                    {
+                        continue;
+                    }
+                    long amount = SaturatingMultiply(
+                        SaturatingMultiply(
+                            Amount(effect.Require("amount"), cast), baseMultiplier),
+                        repetitions);
+                    state.Damage[healed.ObjectId] = Math.Max(
+                        0, state.DamageOf(healed) - amount);
+                }
+                return states;
+            }
+
+            if (effect.Kind == "removeThreat")
+            {
+                long amount = SaturatingSum(
+                    SaturatingMultiply(
+                        Amount(effect.Require("amount"), cast), baseMultiplier),
+                    [EventModifier(cast, "eventThreatRemoval")]);
+                foreach (var state in states)
+                {
+                    foreach (var scheme in ProjectedEvery(
+                                 effect.Require("scheme"), state, cast))
+                    {
+                        long removed = SaturatingMultiply(amount, repetitions);
+                        state.Threat[scheme.ObjectId] = Math.Max(
+                            0, state.ThreatOf(scheme) - removed);
+                        couldDiscard |= state.ThreatOf(scheme) == 0
+                            && cast.World.Facts.Kind(scheme.FaceId)
+                                == CardKind.EncounterSideScheme
+                            && DefeatTreeChangesArea(scheme, queried, cast);
+                        if (state.ThreatOf(scheme) == 0
+                            && cast.World.Facts.Kind(scheme.FaceId)
+                                == CardKind.EncounterSideScheme)
+                        {
+                            MarkDiscardedTree(state, scheme);
+                        }
+                    }
+                }
+                return states;
+            }
+
+            if (effect.Kind == "forEach")
+            {
+                if (CurrentlyZeroForEach(effect, cast))
+                {
+                    return states;
+                }
+                var repeated = Tree(effect.Require("effect"));
+                long count = ForEachCount(effect, cast);
+                return repeated.Kind is "dealDamage" or "dealAttackDamage"
+                    or "removeThreat"
+                    ? Trace(
+                        repeated, states, repetitions,
+                        SaturatingMultiply(baseMultiplier, count))
+                    : Trace(
+                        repeated, states,
+                        SaturatingMultiply(repetitions, count), baseMultiplier);
+            }
+
+            if (effect.Kind == "giveStatus")
+            {
+                string status = Word(effect.Require("status"));
+                foreach (var state in states)
+                {
+                    foreach (var target in ProjectedEvery(
+                                 effect.Require("card"), state, cast))
+                    {
+                        long limit = Statuses.Limit(
+                            cast.World, cast.World.Facts, target, status);
+                        long held = state.StatusOf(cast, target, status);
+                        if (held >= limit)
+                        {
+                            continue;
+                        }
+                        state.Status[(target.ObjectId, status)] = held + 1;
+                        if (status == Statuses.Tough)
+                        {
+                            state.Tough[target.ObjectId] = held + 1;
+                        }
+                        bool vulnerable = status is Statuses.Stunned
+                                or Statuses.Confused
+                            && StateFields.Modified(
+                                cast.World, target, "vulnerable",
+                                cast.World.Facts, cast.World.Players) > 0
+                            && held + 1 >= limit && limit > 0;
+                        if (vulnerable && DiscardTreeChangesArea(target))
+                        {
+                            couldDiscard = true;
+                        }
+                    }
+                }
+                return states;
+            }
+
+            if (effect.Kind == "grantUntil"
+                && effect.Field("trait") is { } gainedTrait)
+            {
+                string trait = Word(gainedTrait);
+                foreach (var state in states)
+                {
+                    var target = ProjectedFind(
+                        effect.Require("card"), state, cast);
+                    if (target is null)
+                    {
+                        continue;
+                    }
+                    if (!state.Traits.TryGetValue(
+                            target.ObjectId, out var granted))
+                    {
+                        state.Traits[target.ObjectId] = granted = [];
+                    }
+                    granted.Add(trait);
+                }
+                return states;
+            }
+
+            if (effect.Kind == "grantUntil"
+                && effect.Field("keyword") is { } grantedField)
+            {
+                string field = Word(grantedField);
+                long amount = effect.Field("amount") is { } given
+                    ? Amount(given, cast) : 0;
+                foreach (var state in states)
+                {
+                    var target = ProjectedFind(
+                        effect.Require("card"), state, cast);
+                    if (target is not null)
+                    {
+                        var key = (target.ObjectId, field);
+                        state.Modifiers[key] = SaturatingSum(
+                            state.Modifiers.GetValueOrDefault(key), [amount]);
+                    }
+                }
+                return states;
+            }
+
+            if (effect.Kind == "eachPlayer")
+            {
+                int priorPlayer = cast.Player;
+                try
+                {
+                    foreach (int player in cast.World.PlayerOrder)
+                    {
+                        cast.RestorePlayer(player);
+                        states = Trace(
+                            Tree(effect.Require("effect")), states,
+                            repetitions, baseMultiplier);
+                    }
+                    return states;
+                }
+                finally
+                {
+                    cast.RestorePlayer(priorPlayer);
+                }
+            }
+
+            if (effect.Kind == "and")
+            {
+                if (repetitions > 1)
+                {
+                    for (long repeat = 0; repeat < repetitions; repeat++)
+                    {
+                        states = Trace(
+                            effect, states, 1, baseMultiplier);
+                    }
+                    return states;
+                }
+                var simultaneous = Nodes(effect.Argument).ToList();
+                const int MaximumProjectedAndEffects = 12;
+                if (simultaneous.Count > MaximumProjectedAndEffects)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' has an and-group with "
+                        + $"{simultaneous.Count} effects; projecting more than "
+                        + $"{MaximumProjectedAndEffects} orders is not implemented");
+                }
+
+                var frontier = states
+                    .Select(state => (Mask: 0UL, State: state.Clone()))
+                    .ToList();
+                for (int depth = 0; depth < simultaneous.Count; depth++)
+                {
+                    var next = new List<(ulong Mask, AreaProjectionState State)>();
+                    foreach (var (mask, state) in frontier)
+                    {
+                        for (int index = 0; index < simultaneous.Count; index++)
+                        {
+                            ulong bit = 1UL << index;
+                            if ((mask & bit) != 0)
+                            {
+                                continue;
+                            }
+                            foreach (var projected in Trace(
+                                         simultaneous[index], [state.Clone()],
+                                         baseMultiplier: baseMultiplier))
+                            {
+                                next.Add((mask | bit, projected));
+                            }
+                        }
+                    }
+                    frontier = next
+                        .GroupBy(candidate =>
+                            (candidate.Mask, candidate.State.Key()))
+                        .Select(group => group.First()).ToList();
+                }
+                return AreaProjectionState.Distinct(
+                    frontier.Select(candidate => candidate.State));
+            }
+
+            if (effect.Kind == "if")
+            {
+                var test = Tree(effect.Require("test"));
+                var branched = new List<AreaProjectionState>();
+                foreach (var state in states)
+                {
+                    bool? projected = ProjectedTest(test, state, cast);
+                    var branches = projected is { } result
+                        ? effect.Field(result ? "then" : "else") is { } taken
+                            ? [Tree(taken)]
+                            : []
+                        : ReachableMutationBranches(effect, cast).ToList();
+                    if (branches.Count == 0)
+                    {
+                        branched.Add(state);
+                        continue;
+                    }
+                    foreach (var branch in branches)
+                    {
+                        branched.AddRange(Trace(
+                            branch, [state.Clone()], repetitions, baseMultiplier));
+                    }
+                }
+                return AreaProjectionState.Distinct(branched);
+            }
+
+            if (effect.Kind is "then" or "otherwise")
+            {
+                var predecessor = Tree(effect.Require("effect"));
+                var dependent = Tree(effect.Require(effect.Kind));
+                var required = effect.Kind == "then"
+                    ? ResolutionOutcome.Full : ResolutionOutcome.None;
+                var branched = new List<AreaProjectionState>();
+                foreach (var state in states)
+                {
+                    var outcome = ProjectedResolution(
+                        predecessor, state, cast);
+                    var projected = outcome == ResolutionOutcome.None
+                        ? [state]
+                        : Trace(
+                            predecessor, [state], repetitions,
+                            baseMultiplier);
+                    if (outcome == required)
+                    {
+                        projected = Trace(
+                            dependent, projected, repetitions,
+                            baseMultiplier);
+                    }
+                    branched.AddRange(projected);
+                }
+                return AreaProjectionState.Distinct(branched);
+            }
+
+            if (effect.Kind is "choose" or "chooseCard")
+            {
+                return states;
+            }
+
+            if (effect.Kind is "attack" or "thwart")
+            {
+                var projected = new List<AreaProjectionState>();
+                foreach (var state in states)
+                {
+                    var target = ProjectedFind(
+                        effect.Require("target"), state, cast);
+                    if (target is null)
+                    {
+                        projected.Add(state);
+                        continue;
+                    }
+                    var prior = cast.CaptureChosen();
+                    try
+                    {
+                        cast.Choose(target);
+                        projected.AddRange(Trace(
+                            Tree(effect.Require("effect")), [state],
+                            repetitions, baseMultiplier));
+                    }
+                    finally
+                    {
+                        cast.RestoreChosen(prior);
+                    }
+                }
+                return projected;
+            }
+
+            if (effect.Kind == "thwartSchemes")
+            {
+                var projected = new List<AreaProjectionState>();
+                foreach (var state in states)
+                {
+                    var schemes = ProjectedEvery(
+                        effect.Require("schemes"), state, cast);
+                    if (schemes.Count == 0)
+                    {
+                        projected.Add(state);
+                        continue;
+                    }
+                    var prior = cast.CaptureChosen();
+                    var priorTargets = cast.PowerTargets;
+                    try
+                    {
+                        cast.Choose(schemes[0]);
+                        cast.SetPowerTargets(schemes);
+                        projected.AddRange(Trace(
+                            Tree(effect.Require("power")), [state],
+                            repetitions, baseMultiplier));
+                    }
+                    finally
+                    {
+                        cast.RestoreChosen(prior);
+                        cast.SetPowerTargets(priorTargets);
+                    }
+                }
+                return projected;
+            }
+
+            if (effect.Kind is "defense" or "delayUntil")
+            {
+                return Trace(
+                    Tree(effect.Require("effect")), states,
+                    repetitions, baseMultiplier);
+            }
+
+            if (effect.Kind == "discard")
+            {
+                foreach (var state in states)
+                {
+                    foreach (var card in ProjectedEvery(
+                                 effect.Field("card") ?? effect.Argument,
+                                 state,
+                                 cast))
+                    {
+                        couldDiscard |= queried.Contains(card.Area.Type)
+                            || DiscardTreeChangesArea(card);
+                        MarkDiscardedTree(state, card);
+                    }
+                }
+                return states;
+            }
+
+            if (effect.Kind == "attachTo")
+            {
+                foreach (var state in states)
+                {
+                    var host = ProjectedFind(effect.Argument, state, cast);
+                    if (host is null)
+                    {
+                        continue;
+                    }
+                    couldDiscard |= queried.Contains(cast.Source.Area.Type)
+                        || queried.Contains(DeckType.UpgradesArea);
+                    state.Departed.Remove(cast.Source.ObjectId);
+                    state.Entered.Add(cast.Source.ObjectId);
+                    state.Hosts[cast.Source.ObjectId] = host.ObjectId;
+                }
+                return states;
+            }
+
+            if (effect.Kind is "removeFromGame" or "returnToHand" or "reveal")
+            {
+                var destination = effect.Kind switch
+                {
+                    "removeFromGame" => DeckType.RemovedArea,
+                    "returnToHand" => DeckType.HandsArea,
+                    _ => DeckType.RevealingArea,
+                };
+                foreach (var state in states)
+                {
+                    foreach (var card in ProjectedEvery(
+                                 effect.Argument, state, cast))
+                    {
+                        couldDiscard |= queried.Contains(card.Area.Type)
+                            || queried.Contains(destination)
+                            || HostedCardsChangeArea(state, card.ObjectId);
+                        MarkDiscardedTree(state, card);
+                    }
+                }
+                return states;
+            }
+
+            if (effect.Kind == "putIntoPlay")
+            {
+                foreach (var state in states)
+                {
+                    var selector = effect.Require("card");
+                    var cards = ProjectedEvery(selector, state, cast);
+                    if (cards.Count == 0
+                        && selector is AbilityValue.Word { Value: "this" }
+                        && state.SourceReferenceCurrent)
+                    {
+                        cards.Add(cast.Source);
+                    }
+                    foreach (var card in cards)
+                    {
+                        state.Departed.Remove(card.ObjectId);
+                        state.Entered.Add(card.ObjectId);
+                        if (effect.Field("where") is { } where
+                            && string.Equals(
+                                Word(where), "engagedWithYou",
+                                StringComparison.Ordinal))
+                        {
+                            state.EngagedWith[card.ObjectId] = Resolver(cast);
+                        }
+                        if (StateFields.Modified(
+                                cast.World, card, "toughness",
+                                cast.World.Facts, cast.World.Players) > 0)
+                        {
+                            state.Tough[card.ObjectId] = Math.Max(
+                                1, state.ToughOf(cast, card));
+                        }
+                        if (selector is AbilityValue.Word { Value: "this" })
+                        {
+                            // Moving out of play and entering play creates a
+                            // new incarnation. Later `this` references retain
+                            // the old binding and no longer denote the card.
+                            state.SourceReferenceCurrent = false;
+                        }
+                    }
+                }
+                couldDiscard |= MayChangeAnyArea(
+                    effect, queried, cast, baseMultiplier);
+                return states;
+            }
+
+            if (effect.Kind is "draw" or "drawToHandSize"
+                or "drawToPrintedHandSize" or "search"
+                or "shuffleInto" or "dealEncounterCard" or "dealEncounterCards"
+                or "revealTop" or "discardTop" or "discardUntil"
+                or "createDrones" or "indirectDamage" or "discardFromHand"
+                or "discardUpToFromHand" or "discardAnyFromHand" or "spend"
+                or "spendPrinted" or "spendEnergyX")
+            {
+                couldDiscard |= MayChangeAnyArea(
+                    effect, queried, cast, baseMultiplier);
+                return states;
+            }
+
+            if (repetitions > 1)
+            {
+                for (long repeat = 0; repeat < repetitions; repeat++)
+                {
+                    states = Trace(effect, states, 1, baseMultiplier);
+                }
+                return states;
+            }
+            return TraceSequence(
+                StructuralChildren(effect), states, baseMultiplier);
+        }
+
+        _ = TraceSequence(
+            effects, [new AreaProjectionState(cast)], baseMultiplier);
+        return couldDiscard;
+    }
+
+    private static bool DefeatTreeChangesArea(
+        Card root, IReadOnlySet<DeckType> queried, Cast cast)
+    {
+        var kind = cast.World.Facts.Kind(root.FaceId);
+        bool rootDiscards = kind is CardKind.Minion or CardKind.Ally
+                or CardKind.EncounterSideScheme
+            && !Keywords.Has(cast.World, root, "victory", cast.World.Facts);
+        if (rootDiscards
+            && queried.Contains(root.Owner < 0
+                ? DeckType.EncounterDiscardPile : DeckType.DiscardPile))
+        {
+            return true;
+        }
+
+        if (kind == CardKind.EncounterVillain)
+        {
+            var villainDeck = cast.World.AreaOf(DeckType.VillainDeck).Cards;
+            var next = villainDeck.Count > 0 ? villainDeck[^1] : null;
+            if (next is not null && string.Equals(
+                cast.World.Facts.Title(root.FaceId),
+                cast.World.Facts.Title(next.FaceId),
+                StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+        else if (kind is not (
+            CardKind.Minion or CardKind.Ally or CardKind.EncounterSideScheme))
+        {
+            return false;
+        }
+
+        var direct = cast.World.Areas
+            .Where(area => area.Host == root.ObjectId)
+            .SelectMany(area => area.Cards)
+            .ToList();
+        var pending = new Stack<Card>();
+        var seen = new HashSet<int> { root.ObjectId };
+        foreach (var card in direct)
+        {
+            bool movesToVictory = cast.World.Facts.Kind(card.FaceId) is
+                    CardKind.Attachment or CardKind.Upgrade
+                && DeckTypes.IsInPlay(card.Area.Type)
+                && Keywords.Has(cast.World, card, "victory", cast.World.Facts);
+            if (movesToVictory)
+            {
+                foreach (var child in cast.World.Areas
+                             .Where(area => area.Host == card.ObjectId)
+                             .SelectMany(area => area.Cards))
+                {
+                    pending.Push(child);
+                }
+                seen.Add(card.ObjectId);
+            }
+            else
+            {
+                pending.Push(card);
+            }
+        }
+        while (pending.TryPop(out var card))
+        {
+            if (!seen.Add(card.ObjectId))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' reaches a hosted-card cycle while "
+                    + "projecting defeat");
+            }
+            if (queried.Contains(card.Owner < 0
+                    ? DeckType.EncounterDiscardPile : DeckType.DiscardPile))
+            {
+                return true;
+            }
+            foreach (var child in cast.World.Areas
+                         .Where(area => area.Host == card.ObjectId)
+                         .SelectMany(area => area.Cards))
+            {
+                pending.Push(child);
+            }
+        }
+        return false;
+    }
+
+    private static List<Card> ProjectedEvery(
+        AbilityValue selector, AreaProjectionState state, Cast cast)
+    {
+        var found = Every(selector, cast)
+            .Where(card => !state.Departed.Contains(card.ObjectId))
+            .ToList();
+        if (selector is AbilityValue.Word)
+        {
+            if (selector is AbilityValue.Word { Value: "this" }
+                && !state.SourceReferenceCurrent)
+            {
+                return [];
+            }
+            return found;
+        }
+
+        var node = Tree(selector);
+        if (node.Kind == "enemiesWithTrait")
+        {
+            string wanted = Word(node.Argument);
+            return
+            [
+                .. ProjectedEvery(
+                        new AbilityValue.Map(new Dictionary<string, AbilityValue>
+                        {
+                            ["query"] = new AbilityValue.Word("enemies"),
+                        }),
+                        state,
+                        cast)
+                    .Where(card => state.HasTrait(cast, card, wanted)),
+            ];
+        }
+        if (node.Kind is "minBy" or "maxBy")
+        {
+            var among = ProjectedEvery(node.Require("of"), state, cast)
+                .Where(card => state.Entered.Contains(card.ObjectId)
+                    ? Rules.Play.Discard.EffectCanRemove(
+                        cast.World, cast.World.Facts, cast.Source, card)
+                    : CanRemoveByEffect(node.Require("of"), cast, card))
+                .ToList();
+            if (among.Count == 0)
+            {
+                return [];
+            }
+            string key = Word(node.Require("by"));
+            long Rank(Card card) => key switch
+            {
+                "cost" => cast.World.Facts.PrintedValue(
+                    card.FaceId, "Cost", cast.World.Players),
+                "attack" => state.ModifiedOf(cast, card, "attack"),
+                "printedHealth" => cast.World.Facts.PrintedValue(
+                    card.FaceId, "HP", cast.World.Players),
+                _ => throw new AbilityException(
+                    $"'{key}' is not a value cards can be ranked by"),
+            };
+            long extreme = node.Kind == "minBy"
+                ? among.Min(Rank) : among.Max(Rank);
+            return [.. among.Where(card => Rank(card) == extreme)];
+        }
+        if (node.Kind == "withTrait")
+        {
+            string wanted = Word(node.Require("trait"));
+            return
+            [
+                .. ProjectedEvery(node.Require("cards"), state, cast)
+                    .Where(card => state.HasTrait(cast, card, wanted)),
+            ];
+        }
+        if (node.Kind == "query"
+            && string.Equals(
+                Word(node.Argument), "villain", StringComparison.Ordinal)
+            && state.ActiveVillain >= 0)
+        {
+            found.RemoveAll(card => cast.World.Facts.Kind(card.FaceId)
+                == CardKind.EncounterVillain);
+            found.Add(cast.World.Cards[state.ActiveVillain]);
+        }
+        else if (node.Kind == "query")
+        {
+            string query = Word(node.Argument);
+            if (query is "attackableEnemies" or "attackableMinions")
+            {
+                string candidates = query == "attackableEnemies"
+                    ? "enemies" : "minions";
+                found = ProjectedEvery(
+                    new AbilityValue.Map(new Dictionary<string, AbilityValue>
+                    {
+                        ["query"] = new AbilityValue.Word(candidates),
+                    }),
+                    state,
+                    cast);
+                found = found.Where(card =>
+                        cast.World.Abilities.CanTakeDamage(
+                            cast.World, card, cast.Source))
+                    .Where(card => query != "attackableMinions"
+                        || cast.World.Facts.Kind(card.FaceId) == CardKind.Minion)
+                    .ToList();
+                bool guard = found.Any(card =>
+                    cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                    && state.ModifiedOf(cast, card, "guard") > 0
+                    && (state.EngagedWith.GetValueOrDefault(
+                            card.ObjectId, -1) == Resolver(cast)
+                        || !state.EngagedWith.ContainsKey(card.ObjectId)
+                            && card.Area.PlayArea == PlayArea.Of(Resolver(cast))));
+                if (guard)
+                {
+                    found.RemoveAll(card => cast.World.Facts.Kind(card.FaceId)
+                        == CardKind.EncounterVillain);
+                }
+            }
+            else
+            {
+                found.AddRange(state.Entered
+                    .Select(id => cast.World.Cards[id])
+                    .Where(card => !state.Departed.Contains(card.ObjectId))
+                    .Where(card => query switch
+                    {
+                        "minions" => cast.World.Facts.Kind(card.FaceId)
+                            == CardKind.Minion,
+                        "minionsEngagedWithYou" =>
+                            cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                            && state.EngagedWith.GetValueOrDefault(
+                                card.ObjectId, -1) == Resolver(cast),
+                        "enemiesEngagedWithChosenPlayer" =>
+                            cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                            && state.EngagedWith.GetValueOrDefault(
+                                card.ObjectId, -1) == ChosenPlayer(cast).Owner,
+                        "enemies" => cast.World.Facts.Kind(card.FaceId) is
+                            CardKind.Minion or CardKind.EncounterVillain,
+                        "characters" => cast.World.Facts.Kind(card.FaceId) is
+                            CardKind.Minion or CardKind.EncounterVillain
+                                or CardKind.Ally or CardKind.Hero or CardKind.AlterEgo,
+                        "sideSchemes" or "schemes" or "thwartableSchemes" =>
+                            cast.World.Facts.Kind(card.FaceId)
+                                == CardKind.EncounterSideScheme,
+                        _ => false,
+                    }));
+            }
+        }
+        else if (node.Kind == "titled")
+        {
+            string title = Word(node.Argument);
+            found.AddRange(state.Entered
+                .Select(id => cast.World.Cards[id])
+                .Where(card => !state.Departed.Contains(card.ObjectId))
+                .Where(card => string.Equals(
+                    cast.World.Facts.Title(card.FaceId),
+                    title,
+                    StringComparison.Ordinal)));
+        }
+        return [.. found.DistinctBy(card => card.ObjectId)];
+    }
+
+    private static Card? ProjectedFind(
+        AbilityValue selector, AreaProjectionState state, Cast cast)
+    {
+        var found = ProjectedEvery(selector, state, cast);
+        return found.Count switch
+        {
+            0 => null,
+            1 => found[0],
+            _ => throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' projects {found.Count} cards where one is required"),
+        };
+    }
+
+    private static bool? ProjectedTest(
+        AbilityNode test, AreaProjectionState state, Cast cast)
+    {
+        if (test.Kind == "hasStatus"
+            && ProjectedFind(test.Require("card"), state, cast) is { } target)
+        {
+            return state.StatusOf(
+                cast, target, Word(test.Require("status"))) > 0;
+        }
+        if (test.Kind == "not")
+        {
+            return ProjectedTest(Tree(test.Argument), state, cast) is { } inner
+                ? !inner : null;
+        }
+        if (test.Kind is "and" or "or")
+        {
+            var values = Nodes(test.Argument)
+                .Select(child => ProjectedTest(child, state, cast)).ToList();
+            if (test.Kind == "and" && values.Any(value => value == false))
+            {
+                return false;
+            }
+            if (test.Kind == "or" && values.Any(value => value == true))
+            {
+                return true;
+            }
+            return values.Any(value => value is null)
+                ? null
+                : test.Kind == "and";
+        }
+        return null;
+    }
+
+    private static ResolutionOutcome ProjectedResolution(
+        AbilityNode effect, AreaProjectionState state, Cast cast) =>
+        effect.Kind switch
+        {
+            "seq" or "and" => CombinedOutcomes(
+                Nodes(effect.Argument).Select(child =>
+                    ProjectedResolution(child, state, cast))),
+            "if" => ProjectedTest(
+                    Tree(effect.Require("test")), state, cast)
+                is { } result
+                    ? effect.Field(result ? "then" : "else") is { } branch
+                        ? ProjectedResolution(Tree(branch), state, cast)
+                        : ResolutionOutcome.None
+                    : throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' has a projected dependent condition "
+                        + "whose outcome is not implemented"),
+            "forEach" when ForEachCount(effect, cast) == 0 =>
+                ResolutionOutcome.None,
+            "forEach" => ProjectedResolution(
+                Tree(effect.Require("effect")), state, cast),
+            "heal" => ResolutionOfAmount(
+                ProjectedFind(effect.Require("card"), state, cast) is { } healed
+                    ? state.DamageOf(healed) : 0,
+                Amount(effect.Require("amount"), cast)),
+            "removeThreat" => CombinedOutcomes(
+                ProjectedEvery(effect.Require("scheme"), state, cast).Select(scheme =>
+                    ResolutionOfAmount(
+                        state.ThreatOf(scheme),
+                        Amount(effect.Require("amount"), cast)))),
+            _ => ResolutionOf(effect, cast),
+        };
+
+    private sealed class AreaProjectionState(Cast cast)
+    {
+        public Dictionary<int, long> Damage { get; } = [];
+        public Dictionary<int, long> Tough { get; } = [];
+        public Dictionary<int, long> Threat { get; } = [];
+        public Dictionary<(int Card, string Status), long> Status { get; } = [];
+        public HashSet<int> Departed { get; } = [];
+        public HashSet<int> Entered { get; } = [];
+        public Dictionary<int, int> Hosts { get; } = [];
+        public Dictionary<int, int> EngagedWith { get; } = [];
+        public Dictionary<int, HashSet<string>> Traits { get; } = [];
+        public Dictionary<(int Card, string Field), long> Modifiers { get; } = [];
+        public bool SourceReferenceCurrent { get; set; } = true;
+        public int ActiveVillain { get; set; } =
+            cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        public int VillainAttachmentHost { get; set; } = -1;
+
+        public long DamageOf(Card card) =>
+            Damage.GetValueOrDefault(card.ObjectId, card.Damage);
+
+        public long ToughOf(Cast current, Card card) => Tough.GetValueOrDefault(
+            card.ObjectId,
+            Statuses.Count(current.World, card, Statuses.Tough));
+
+        public long StatusOf(Cast current, Card card, string status) =>
+            status == Statuses.Tough
+                ? ToughOf(current, card)
+                : Status.GetValueOrDefault(
+                    (card.ObjectId, status),
+                    Statuses.Count(current.World, card, status));
+
+        public long ThreatOf(Card card) => Threat.GetValueOrDefault(
+            card.ObjectId, card.Tokens.GetValueOrDefault("k_threat"));
+
+        public long HealthOf(Cast current, Card card) => SaturatingSum(
+            FacedownDrones.BaseValue(
+                card, current.World.Facts, "HP", current.World.Players),
+            [ModifiedOf(current, card, "health")]);
+
+        public long ModifiedOf(Cast current, Card card, string field)
+        {
+            long value = StateFields.Modified(
+                current.World, card, field,
+                current.World.Facts, current.World.Players);
+            var effects = current.World.Effects.Active();
+            foreach (var effect in effects)
+            {
+                if (effect.Source == EffectSource.ConstantAbility
+                    && effect.Card is int hostedSource
+                    && !Departed.Contains(hostedSource)
+                    && Hosts.TryGetValue(hostedSource, out int projectedHost)
+                    && string.Equals(effect.Kind, field, StringComparison.Ordinal))
+                {
+                    bool liveApplies = effect.AppliesTo(current.World, card);
+                    if (liveApplies && projectedHost != card.ObjectId)
+                    {
+                        value -= effect.Amount;
+                    }
+                    else if (!liveApplies && projectedHost == card.ObjectId)
+                    {
+                        value += effect.Amount;
+                    }
+                }
+                if (effect.Source == EffectSource.ConstantAbility
+                    && effect.Card is int source
+                    && Departed.Contains(source)
+                    && string.Equals(effect.Kind, field, StringComparison.Ordinal)
+                    && effect.AppliesTo(current.World, card))
+                {
+                    value -= effect.Amount;
+                }
+            }
+            if (ProjectedPredicateInputsChanged(current)
+                && ConditionalConstantMayModify(current, card, field))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{current.Source.FaceId}' changes game state before reading "
+                    + $"a conditional constant '{field}' modifier on "
+                    + $"'{card.FaceId}'; projecting that predicate is not implemented");
+            }
+            value = SaturatingSum(
+                value,
+                [Modifiers.GetValueOrDefault((card.ObjectId, field))]);
+
+            string? printedModifier = field switch
+            {
+                "attack" => "ATK+",
+                "scheme" => "SCH+",
+                "thwart" => "THW+",
+                _ => null,
+            };
+            if (printedModifier is null)
+            {
+                return value;
+            }
+            foreach (var attached in current.World.Cards.Where(candidate =>
+                         candidate.Area.Host == card.ObjectId
+                         && DeckTypes.IsInPlay(candidate.Area.Type)))
+            {
+                if (Departed.Contains(attached.ObjectId)
+                    || Hosts.TryGetValue(attached.ObjectId, out int projected)
+                        && projected != card.ObjectId)
+                {
+                    value -= current.World.Facts.PrintedValue(
+                        attached.FaceId, printedModifier, current.World.Players);
+                }
+            }
+            foreach (var (attachedId, host) in Hosts)
+            {
+                var attached = current.World.Cards[attachedId];
+                if (host == card.ObjectId
+                    && attached.Area.Host != card.ObjectId
+                    && !Departed.Contains(attachedId))
+                {
+                    value += current.World.Facts.PrintedValue(
+                        attached.FaceId, printedModifier, current.World.Players);
+                }
+            }
+            return value;
+        }
+
+        private bool ProjectedPredicateInputsChanged(Cast current) =>
+            Damage.Any(pair => pair.Value
+                != current.World.Cards[pair.Key].Damage)
+            || Tough.Any(pair => pair.Value != Statuses.Count(
+                current.World, current.World.Cards[pair.Key], Statuses.Tough))
+            || Threat.Any(pair => pair.Value != current.World.Cards[pair.Key]
+                .Tokens.GetValueOrDefault("k_threat"))
+            || Status.Any(pair => pair.Value != Statuses.Count(
+                current.World,
+                current.World.Cards[pair.Key.Card], pair.Key.Status))
+            || Departed.Count > 0
+            || Entered.Count > 0
+            || Hosts.Count > 0
+            || EngagedWith.Count > 0
+            || Traits.Count > 0
+            || Modifiers.Count > 0
+            || ActiveVillain != (current.World.TheCardIn(
+                DeckType.VillainArea)?.ObjectId ?? -1);
+
+        private bool ConditionalConstantMayModify(
+            Cast current, Card target, string field)
+        {
+            if (current.Abilities is not AbilityRunner runner)
+            {
+                return false;
+            }
+            var sources = current.World.Areas
+                .Where(area => DeckTypes.IsInPlay(area.Type))
+                .SelectMany(area => area.Cards)
+                .Concat(Entered.Select(id => current.World.Cards[id]))
+                .Where(source => !Departed.Contains(source.ObjectId))
+                .DistinctBy(source => source.ObjectId);
+            return sources
+                .Any(source => runner.On(source)
+                    .Where(ability =>
+                        ability.Trigger.Timing == AbilityType.Constant)
+                    .Any(ability => ConditionalGrant(
+                        ability.Effect, field, ability.When is not null,
+                        source, target, current)));
+        }
+
+        private bool ConditionalGrant(
+            AbilityNode node, string field, bool conditioned,
+            Card source, Card target, Cast current)
+        {
+            if (node.Kind == "if")
+            {
+                return Branches.Select(node.Field)
+                    .Where(value => value is not null)
+                    .Any(value => ConditionalGrant(
+                        Tree(value!), field, conditioned: true,
+                        source, target, current));
+            }
+            if (node.Kind is "grant" or "grantEach"
+                && node.Field("keyword") is { } keyword
+                && string.Equals(Word(keyword), field, StringComparison.Ordinal))
+            {
+                bool dynamicAmount = node.Field("amount") is { } amount
+                    && amount is not AbilityValue.Number;
+                return (conditioned || dynamicAmount)
+                    && GrantCouldAffect(node, source, target, current);
+            }
+            if (node.Kind is "seq" or "and")
+            {
+                return Nodes(node.Argument).Any(child =>
+                    ConditionalGrant(
+                        child, field, conditioned, source, target, current));
+            }
+            return false;
+        }
+
+        private bool GrantCouldAffect(
+            AbilityNode grant, Card source, Card target, Cast current)
+        {
+            var selector = grant.Require(
+                grant.Kind == "grant" ? "card" : "cards");
+            if (selector is AbilityValue.Word { Value: "this" })
+            {
+                return source.ObjectId == target.ObjectId;
+            }
+            if (selector is AbilityValue.Word { Value: "attachedTo" })
+            {
+                return Hosts.GetValueOrDefault(
+                    source.ObjectId, source.Area.Host) == target.ObjectId;
+            }
+            if (selector is AbilityValue.Map
+                && Tree(selector) is { Kind: "titled" } titled)
+            {
+                return string.Equals(
+                    current.World.Facts.Title(target.FaceId),
+                    Word(titled.Argument), StringComparison.Ordinal);
+            }
+            if (selector is AbilityValue.Map
+                && Tree(selector) is { Kind: "query" } query
+                && query.Argument is AbilityValue.Word { Value: "villain" })
+            {
+                return current.World.Facts.Kind(target.FaceId)
+                    == CardKind.EncounterVillain;
+            }
+            // Other selectors may change membership with the projected facts.
+            // Failing closed is required until that membership is projected.
+            return true;
+        }
+
+        public bool HasTrait(Cast current, Card card, string trait)
+        {
+            var active = current.World.Effects.Active()
+                .Where(effect => effect.Source != EffectSource.ConstantAbility
+                    || effect.Card is not int source
+                    || !Departed.Contains(source))
+                .ToList();
+            bool lost = active.Any(effect =>
+                ProjectedTraitEffectApplies(current, effect, card)
+                && string.Equals(
+                    effect.Kind,
+                    Characteristics.Lost + Rules.State.Traits.Granted + trait,
+                    StringComparison.Ordinal));
+            if (lost)
+            {
+                return false;
+            }
+            return FacedownDrones.InherentTraits(card, current.World.Facts)
+                    .Contains(trait, StringComparer.Ordinal)
+                || active.Any(effect =>
+                    ProjectedTraitEffectApplies(current, effect, card)
+                    && string.Equals(
+                        effect.Kind,
+                        Rules.State.Traits.Granted + trait,
+                        StringComparison.Ordinal))
+                || Traits.TryGetValue(card.ObjectId, out var granted)
+                    && granted.Contains(trait);
+        }
+
+        private bool ProjectedTraitEffectApplies(
+            Cast current, ContinuousEffect effect, Card card)
+        {
+            if (effect.Source == EffectSource.ConstantAbility
+                && effect.Card is int source
+                && Hosts.TryGetValue(source, out int projectedHost)
+                && current.World.Cards[source].Area.Host == effect.Affects)
+            {
+                return projectedHost == card.ObjectId;
+            }
+            return effect.AppliesTo(current.World, card);
+        }
+
+        public AreaProjectionState Clone()
+        {
+            var clone = new AreaProjectionState(cast);
+            foreach (var (card, amount) in Damage)
+            {
+                clone.Damage[card] = amount;
+            }
+            foreach (var (card, count) in Tough)
+            {
+                clone.Tough[card] = count;
+            }
+            foreach (var (card, amount) in Threat)
+            {
+                clone.Threat[card] = amount;
+            }
+            foreach (var (key, count) in Status)
+            {
+                clone.Status[key] = count;
+            }
+            clone.Departed.UnionWith(Departed);
+            clone.Entered.UnionWith(Entered);
+            foreach (var (card, host) in Hosts)
+            {
+                clone.Hosts[card] = host;
+            }
+            foreach (var (card, player) in EngagedWith)
+            {
+                clone.EngagedWith[card] = player;
+            }
+            foreach (var (card, traits) in Traits)
+            {
+                clone.Traits[card] = [.. traits];
+            }
+            foreach (var (key, amount) in Modifiers)
+            {
+                clone.Modifiers[key] = amount;
+            }
+            clone.ActiveVillain = ActiveVillain;
+            clone.VillainAttachmentHost = VillainAttachmentHost;
+            clone.SourceReferenceCurrent = SourceReferenceCurrent;
+            return clone;
+        }
+
+        public static List<AreaProjectionState> Distinct(
+            IEnumerable<AreaProjectionState> states) =>
+            states.GroupBy(state => state.Key(), StringComparer.Ordinal)
+                .Select(group => group.First()).ToList();
+
+        public string Key() => string.Join(
+            ";",
+            Damage.OrderBy(pair => pair.Key)
+                .Select(pair => $"d{pair.Key}:{pair.Value}")
+                .Concat(Tough.OrderBy(pair => pair.Key)
+                    .Select(pair => $"s{pair.Key}:{pair.Value}"))
+                .Concat(Threat.OrderBy(pair => pair.Key)
+                    .Select(pair => $"t{pair.Key}:{pair.Value}"))
+                .Concat(Status.OrderBy(pair => pair.Key.Card)
+                    .ThenBy(pair => pair.Key.Status, StringComparer.Ordinal)
+                    .Select(pair =>
+                        $"x{pair.Key.Card}:{pair.Key.Status}:{pair.Value}"))
+                .Concat(Departed.Order().Select(card => $"o{card}"))
+                .Concat(Entered.Order().Select(card => $"i{card}"))
+                .Concat(Hosts.OrderBy(pair => pair.Key)
+                    .Select(pair => $"h{pair.Key}:{pair.Value}"))
+                .Concat(EngagedWith.OrderBy(pair => pair.Key)
+                    .Select(pair => $"e{pair.Key}:{pair.Value}"))
+                .Concat(Traits.OrderBy(pair => pair.Key)
+                    .SelectMany(pair => pair.Value.Order(StringComparer.Ordinal)
+                        .Select(trait => $"g{pair.Key}:{trait}")))
+                .Concat(Modifiers.OrderBy(pair => pair.Key.Card)
+                    .ThenBy(pair => pair.Key.Field, StringComparer.Ordinal)
+                    .Select(pair =>
+                        $"m{pair.Key.Card}:{pair.Key.Field}:{pair.Value}"))
+                .Append($"v{ActiveVillain}:{VillainAttachmentHost}")
+                .Append($"r{SourceReferenceCurrent}"));
+    }
+
+    private static IEnumerable<AbilityNode> ReachableMutationBranches(
+        AbilityNode conditional, Cast cast)
+    {
+        var test = Tree(conditional.Require("test"));
+        bool canSwitch = PriorStepCanChange(test, cast)
+            || cast.PaymentMayMutate && PaymentCanChange(test)
+            || cast.PriorBindingMayChange && BindingCanChange(test.Argument);
+        if (canSwitch)
+        {
+            return Branches.Select(conditional.Field)
+                .Where(value => value is not null)
+                .Select(value => Tree(value!));
+        }
+        return conditional.Field(Test(test, cast) ? "then" : "else") is { } active
+            ? [Tree(active)]
+            : [];
+    }
+
+    private static HashSet<DeckType> SearchAreaTypes(
+        AbilityNode search, Cast cast) =>
+        Nodes(search.Require("in"))
+            .Select(where => Area(where.Kind, cast).Type)
+            .ToHashSet();
+
     private static Card? Named(string name, Cast cast) => name switch
     {
-        "this" => cast.Source,
+        "this" => cast.SourceReference,
         "that" => cast.Altered,
 
         // "Stun **the attacking character**." Not the attacking player:
@@ -16169,7 +18216,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         /// <summary>Whether initiation payment may change outcome-relevant state.</summary>
         public bool PaymentMayMutate { get; private set; }
 
-        public void SetPaymentMayMutate(bool value) => PaymentMayMutate = value;
+        public AbilityNode? PaymentCost { get; private set; }
+
+        public void SetPaymentMayMutate(bool value, AbilityNode? cost = null)
+        {
+            PaymentMayMutate = value;
+            PaymentCost = cost;
+        }
+
+        public bool CheckingInitiation { get; private set; }
+
+        public void SetCheckingInitiation(bool value) => CheckingInitiation = value;
+
+        public bool FilteringContinuationOption { get; private set; }
+
+        public void SetFilteringContinuationOption(bool value) =>
+            FilteringContinuationOption = value;
+
+        public IReadOnlyList<AbilityNode> PriorSteps { get; private set; } = [];
+
+        public void SetPriorSteps(IReadOnlyList<AbilityNode> steps) =>
+            PriorSteps = steps;
 
         /// <summary>Whether an earlier sequence step may have changed the board.</summary>
         public bool PriorStepMayMutate { get; private set; }
@@ -16305,24 +18372,117 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public bool HasPendingDependency => AbilityPath.Any(frame =>
             frame.EndsWith(":Pending", StringComparison.Ordinal));
 
+        public sealed record CardBinding(Card Card, int Area, int Incarnation);
+
+        private CardBinding? chosenBinding;
+        private CardBinding? playerSelectionBinding;
+        private int sourceIncarnation = Source.Incarnation;
+
         /// <summary>The card the player picked, once they have.</summary>
-        public Card? Chosen { get; private set; }
+        public Card? Chosen => CurrentCard(chosenBinding, "chosen");
 
         /// <summary>The outer card selection used by chosen-player references.</summary>
-        public Card? PlayerSelection { get; private set; }
+        public Card? PlayerSelection =>
+            CurrentCard(playerSelectionBinding, "player selection");
+
+        public Card? SourceReference
+        {
+            get
+            {
+                if (sourceIncarnation < 0)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{Source.FaceId}' continuation has no source-card provenance");
+                }
+                return Source.Incarnation == sourceIncarnation ? Source : null;
+            }
+        }
+
+        public int SourceBindingIncarnation => sourceIncarnation;
+
+        public void RestoreSourceIncarnation(int incarnation) =>
+            sourceIncarnation = incarnation;
 
         /// <summary>Records the card a <c>chooseCard</c> was answered with.</summary>
         /// <param name="card">What they picked.</param>
-        public void Choose(Card? card) => Chosen = card;
+        public void Choose(Card? card)
+        {
+            chosenBinding = Bind(card);
+        }
 
         /// <summary>Records a player answer in both chosen namespaces.</summary>
         public void ChooseSelection(Card? card)
         {
-            Chosen = card;
-            PlayerSelection = card;
+            var binding = Bind(card);
+            chosenBinding = binding;
+            playerSelectionBinding = binding;
         }
 
-        public void RestorePlayerSelection(Card? card) => PlayerSelection = card;
+        public CardBinding? CaptureChosen() => chosenBinding;
+
+        public CardBinding? CapturePlayerSelection() => playerSelectionBinding;
+
+        public CardBinding? CaptureCurrentSelection() =>
+            playerSelectionBinding ?? chosenBinding;
+
+        public void RestoreChosen(CardBinding? binding) => chosenBinding = binding;
+
+        public void RestorePlayerSelection(CardBinding? binding) =>
+            playerSelectionBinding = binding;
+
+        public void RestorePersistedSelection(
+            Card card, int area, int incarnation, bool overwriteChosen)
+        {
+            var binding = new CardBinding(card, area, incarnation);
+            playerSelectionBinding = binding;
+            if (overwriteChosen || chosenBinding is null)
+            {
+                chosenBinding = binding;
+            }
+        }
+
+        public bool WasSelectedInCurrentArea(Card card) =>
+            CurrentBindingFor(card) is { } binding
+            && binding.Area == card.Area.Id
+            && binding.Incarnation == card.Incarnation;
+
+        public bool ChosenBindingIsCurrent(Card card) =>
+            chosenBinding is { } binding
+            && binding.Card.ObjectId == card.ObjectId
+            && binding.Incarnation == card.Incarnation;
+
+        public bool SourceBindingIsCurrent(Card card) =>
+            Source.ObjectId == card.ObjectId
+            && sourceIncarnation == card.Incarnation;
+
+        private CardBinding? CurrentBindingFor(Card card) =>
+            playerSelectionBinding is { } player
+            && player.Card.ObjectId == card.ObjectId
+                ? player
+                : chosenBinding is { } chosen
+                && chosen.Card.ObjectId == card.ObjectId
+                    ? chosen
+                    : null;
+
+        private static CardBinding? Bind(Card? card) => card is null
+            ? null
+            : new CardBinding(card, card.Area.Id, card.Incarnation);
+
+        private Card? CurrentCard(CardBinding? binding, string name)
+        {
+            if (binding is not { } found)
+            {
+                return null;
+            }
+            if (found.Incarnation < 0 || found.Area < 0)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{Source.FaceId}' continuation has no {name} provenance");
+            }
+            return found.Card.Incarnation == found.Incarnation
+                ? found.Card
+                : null;
+        }
 
         /// <summary>
         /// Which of the card's abilities is running, or null.
@@ -16345,7 +18505,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public string? Power { get; init; }
 
         /// <summary>Every game element selected for this labelled power.</summary>
-        public IReadOnlyList<Card> PowerTargets { get; init; } = [];
+        public IReadOnlyList<Card> PowerTargets { get; set; } = [];
+
+        public void SetPowerTargets(IReadOnlyList<Card> targets) =>
+            PowerTargets = targets;
 
         /// <summary>The card attributed as performer of the labelled power.</summary>
         public Card? PowerActor { get; init; }

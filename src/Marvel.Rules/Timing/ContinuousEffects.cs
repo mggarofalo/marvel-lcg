@@ -558,8 +558,23 @@ public sealed class ContinuousEffects(World world)
             [source], includeHostedCards, moveRoots: false);
     }
 
+    /// <summary>Proves one ordered transaction whose complete card set will depart.</summary>
+    internal ConstantEnding PreflightConstantsEnding(
+        IReadOnlyList<Card> sources,
+        IReadOnlySet<int> attachmentPreflightExemptions)
+    {
+        ArgumentNullException.ThrowIfNull(sources);
+        ArgumentNullException.ThrowIfNull(attachmentPreflightExemptions);
+        return PreflightDepartures(
+            [.. sources.DistinctBy(card => card.ObjectId)],
+            includeHostedCards: false,
+            moveRoots: false,
+            attachmentPreflightExemptions);
+    }
+
     private ConstantEnding PreflightDepartures(
-        Card[] sources, bool includeHostedCards, bool moveRoots)
+        Card[] sources, bool includeHostedCards, bool moveRoots,
+        IReadOnlySet<int>? attachmentPreflightExemptions = null)
     {
         if (sources.Length == 0)
         {
@@ -640,16 +655,9 @@ public sealed class ContinuousEffects(World world)
                         || HasHostedAncestor(card, [root.ObjectId]))
                     .Select(card => card.ObjectId)
                     .ToArray());
-            var definiteTrees = sources
+            var definiteSources = planned
                 .Where(source => definiteIds.Contains(source.ObjectId))
-                .ToDictionary(
-                    source => source.ObjectId,
-                    source => planned
-                        .Where(card => definiteIds.Contains(card.ObjectId)
-                            && (card.ObjectId == source.ObjectId
-                                || HasHostedAncestor(card, [source.ObjectId])))
-                        .Select(card => card.ObjectId)
-                        .ToArray());
+                .ToArray();
 
             // The derived-effect simulation has found every tentative cascade
             // root. End it before projecting physical absence, so constants
@@ -659,7 +667,8 @@ public sealed class ContinuousEffects(World world)
             simulationEnded = true;
 
             var selected = PreflightSelectedDepartures(
-                roots, definiteIds, definiteTrees, rootTrees);
+                roots, definiteIds, definiteSources, rootTrees,
+                attachmentPreflightExemptions ?? new HashSet<int>());
             var departures = definiteIds
                 .Concat(selected.SelectMany(card => rootTrees[card.ObjectId]))
                 .Distinct()
@@ -679,8 +688,9 @@ public sealed class ContinuousEffects(World world)
     private Card[] PreflightSelectedDepartures(
         Card[] roots,
         IReadOnlySet<int> definiteIds,
-        Dictionary<int, int[]> definiteTrees,
-        Dictionary<int, int[]> rootTrees)
+        IReadOnlyList<Card> definiteSources,
+        Dictionary<int, int[]> rootTrees,
+        IReadOnlySet<int> attachmentPreflightExemptions)
     {
         var selected = new HashSet<int>();
         while (true)
@@ -709,16 +719,9 @@ public sealed class ContinuousEffects(World world)
                 .Where(card => !HasHostedAncestor(card, selected))
                 .ToArray();
 
-            // A hosted card is still in play when attachment legality is
-            // checked immediately before its host leaves. Do not project that
-            // tree away: its own constant can make it Permanent. Definite
-            // source trees are checked on the current board; tentative Uses
-            // roots are checked with only the initiating source projected.
-            foreach (var (root, tree) in definiteTrees)
-            {
-                Discard.PreflightProjectedAttachments(
-                    world, world.Cards[root], tree.Skip(1).Select(id => world.Cards[id]));
-            }
+            PreflightDefiniteAttachments(
+                definiteSources, definiteIds, attachmentPreflightExemptions);
+
             using (ProjectOut([.. definiteIds]))
             {
                 foreach (var root in selectedRoots)
@@ -731,6 +734,51 @@ public sealed class ContinuousEffects(World world)
             }
 
             return selectedRoots;
+        }
+    }
+
+    /// <summary>Checks each hosted card at the board where its direct host departs.</summary>
+    private void PreflightDefiniteAttachments(
+        IReadOnlyList<Card> sources,
+        IReadOnlySet<int> definiteIds,
+        IReadOnlySet<int> attachmentPreflightExemptions)
+    {
+        foreach (var source in sources)
+        {
+            var direct = world.Areas
+                .Where(area => area.Host == source.ObjectId)
+                .SelectMany(area => area.Cards)
+                .Where(card => definiteIds.Contains(card.ObjectId))
+                .Where(card => !attachmentPreflightExemptions.Contains(card.ObjectId))
+                .ToArray();
+            if (direct.Length == 0)
+            {
+                continue;
+            }
+
+            // Project only the direct host and earlier ancestors. The hosted
+            // cards remain in play, so their own constants can react to the
+            // host's absence before Permanent is read. A captured Victory root
+            // begins a separate earlier departure group while the defeated
+            // host's constants are still active.
+            var projected = new List<int>();
+            var leaving = source;
+            while (definiteIds.Contains(leaving.ObjectId))
+            {
+                projected.Add(leaving.ObjectId);
+                if (attachmentPreflightExemptions.Contains(leaving.ObjectId)
+                    || leaving.Area.Host < 0
+                    || leaving.Area.Host >= world.Cards.Count)
+                {
+                    break;
+                }
+                leaving = world.Cards[leaving.Area.Host];
+            }
+
+            using (ProjectOut(projected))
+            {
+                Discard.PreflightProjectedAttachments(world, source, direct);
+            }
         }
     }
 

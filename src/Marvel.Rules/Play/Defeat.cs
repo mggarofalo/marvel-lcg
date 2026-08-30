@@ -155,10 +155,7 @@ public static class Defeat
             case CardKind.Minion:
                 // `rr:defeat.1` -- discarded, to its owner's pile, which for a
                 // minion is the encounter discard. Unless it is worth points.
-                if (!ToVictoryDisplay(world, facts, card, trigger, events))
-                {
-                    Discard.Card(world, card, trigger, events);
-                }
+                MoveDefeatedCard(world, facts, card, trigger, events);
 
                 return;
 
@@ -232,10 +229,7 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(scheme);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (!ToVictoryDisplay(world, facts, scheme, trigger, events))
-        {
-            Discard.Card(world, scheme, trigger, events);
-        }
+        MoveDefeatedCard(world, facts, scheme, trigger, events);
     }
 
     /// <summary>Put damage step 8 after nested step-7 agenda work.</summary>
@@ -404,16 +398,27 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (StateFields.Modified(world, card, "victory", facts, world.Players) <= 0)
+        // Presence and value are separate: Victory 0 still supplies this
+        // replacement ability even though it contributes no points.
+        if (!Timing.Keywords.Has(world, card, "victory", facts))
         {
             return false;
         }
 
+        MoveToVictoryDisplay(world, card, trigger, events);
+        return true;
+    }
+
+    /// <summary>Commits a Victory destination already proved on the trigger board.</summary>
+    private static void MoveToVictoryDisplay(
+        World world, Card card, string trigger, List<GameEvent> events)
+    {
         var display = world.AreaOf(DeckType.VictoryDisplay);
         var from = card.Area;
         var constantsEnding = world.Effects.PreflightConstantsEnding(card);
         using var departure = constantsEnding.Begin();
         Discard.Attachments(world, card, trigger, events);
+        Discard.ResetLeavingState(world, card, trigger, events);
         World.MoveToTop(card, display);
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(display),
@@ -422,8 +427,104 @@ public static class Defeat
             Trigger = trigger, Verb = "Victory",
         });
         constantsEnding.Complete(trigger, events);
+    }
 
-        return true;
+    /// <summary>Total points currently in the shared victory display.</summary>
+    public static long VictoryPoints(World world, ICardFacts facts) =>
+        world.AreaOf(DeckType.VictoryDisplay).Cards.Sum(card =>
+            StateFields.Modified(world, card, "victory", facts, world.Players));
+
+    /// <summary>Moves victory attachments away before ordinary hosted-card cleanup.</summary>
+    private static void VictoryAttachments(
+        World world, IReadOnlyList<Card> attachments, string trigger,
+        List<GameEvent> events)
+    {
+        foreach (var attachment in attachments)
+        {
+            MoveToVictoryDisplay(world, attachment, trigger, events);
+        }
+    }
+
+    private static List<Card> VictoryAttachmentsOn(
+        World world, ICardFacts facts, Card host) =>
+    [
+        .. world.Areas
+            .Where(area => area.Host == host.ObjectId
+                && DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Where(card => facts.Kind(card.FaceId) is
+                CardKind.Attachment or CardKind.Upgrade)
+            .Where(card => Timing.Keywords.Has(world, card, "victory", facts)),
+    ];
+
+    /// <summary>Preflights the hosted tree in its Victory-interrupt order.</summary>
+    private static List<Card> PreflightDefeatAttachments(
+        World world, ICardFacts facts, Card host)
+    {
+        var victory = VictoryAttachmentsOn(world, facts, host);
+
+        // A Victory attachment leaves before its host. Permanent on that same
+        // card therefore never reaches rr:permanent.5, but any hosted
+        // descendant still has to be proved removable from the Victory card.
+        foreach (var attachment in victory)
+        {
+            Discard.PreflightAttachments(world, attachment);
+        }
+
+        Discard.PreflightAttachmentsExcept(
+            world, host, victory.Select(card => card.ObjectId).ToHashSet());
+        return victory;
+    }
+
+    /// <summary>Moves Victory interrupts and their defeated host as one transaction.</summary>
+    private static void MoveDefeatedCard(
+        World world, ICardFacts facts, Card host, string trigger,
+        List<GameEvent> events)
+    {
+        var victory = PreflightDefeatAttachments(world, facts, host);
+        bool hostHasVictory = Timing.Keywords.Has(world, host, "victory", facts);
+        var victoryRoots = victory.Select(card => card.ObjectId).ToHashSet();
+        var constantsEnding = world.Effects.PreflightConstantsEnding(
+            DefeatDepartureCards(world, [host]), victoryRoots);
+        using var departure = constantsEnding.Begin();
+
+        VictoryAttachments(world, victory, trigger, events);
+        if (hostHasVictory)
+        {
+            MoveToVictoryDisplay(world, host, trigger, events);
+        }
+        else
+        {
+            Discard.Card(world, host, trigger, events);
+        }
+
+        constantsEnding.Complete(trigger, events);
+    }
+
+    /// <summary>The complete physical card set removed by one host defeat.</summary>
+    private static List<Card> DefeatDepartureCards(
+        World world, IReadOnlyList<Card> roots)
+    {
+        var cards = new List<Card>();
+        var seen = new HashSet<int>();
+        var pending = new Stack<Card>(roots.Reverse());
+        while (pending.TryPop(out var card))
+        {
+            if (!seen.Add(card.ObjectId))
+            {
+                throw new RulesNotImplementedException(
+                    $"attachment {card.ObjectId} forms a hosting cycle");
+            }
+            cards.Add(card);
+            foreach (var child in world.Areas
+                         .Where(area => area.Host == card.ObjectId)
+                         .SelectMany(area => area.Cards)
+                         .Reverse())
+            {
+                pending.Push(child);
+            }
+        }
+        return cards;
     }
 
     /// <summary>

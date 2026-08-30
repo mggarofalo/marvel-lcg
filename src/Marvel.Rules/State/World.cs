@@ -577,6 +577,16 @@ public sealed class World
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(destination);
+
+        // `rr:removed-from-the-game.2`: this is a terminal game state, not a
+        // set-aside pile. Effects that may later retrieve a card use
+        // AsideDeck instead.
+        if (card.Area.Type == DeckType.RemovedArea)
+        {
+            throw new InvalidOperationException(
+                $"card {card.ObjectId} was removed from the game and cannot reenter it");
+        }
+
         card.Area.Remove(card);
         destination.Append(card);
     }

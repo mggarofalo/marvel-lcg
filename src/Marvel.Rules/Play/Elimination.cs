@@ -34,6 +34,8 @@ public static class Elimination
             return;
         }
 
+        Preflight(world, facts, player);
+
         seat.Eliminated = true;
 
         // `rr:player-elimination.5.1`: eliminating the attacked player in the
@@ -238,6 +240,10 @@ public static class Elimination
         var constantsEnding = world.Effects.PreflightConstantsEnding(card);
         using var departure = constantsEnding.Begin();
         Discard.Attachments(world, card, trigger, events);
+        if (DeckTypes.IsInPlay(card.Area.Type))
+        {
+            Discard.ResetLeavingState(world, card, trigger, events);
+        }
         var removed = world.AreaOf(DeckType.RemovedArea);
         var from = card.Area;
         World.MoveToTop(card, removed);
@@ -248,6 +254,52 @@ public static class Elimination
             Trigger = trigger, Verb = "Eliminate",
         });
         constantsEnding.Complete(trigger, events);
+    }
+
+    /// <summary>Proves every step-three/four departure before elimination mutates state.</summary>
+    private static void Preflight(World world, ICardFacts facts, int player)
+    {
+        // Step 2 moves these minions and every hosted descendant intact; none
+        // of them is a step-three/four departure. Build the retained set with
+        // the same cycle-checking traversal that the move itself uses.
+        var retained = new HashSet<int>();
+        if (Next(world, player) is not null)
+        {
+            var engaged = world.AreaOf(
+                DeckType.EngagedEnemiesArea, PlayArea.Of(player));
+            foreach (var minion in engaged.Cards)
+            {
+                retained.Add(minion.ObjectId);
+                foreach (var (_, card) in HostedTree(world, minion))
+                {
+                    retained.Add(card.ObjectId);
+                }
+            }
+        }
+
+        var leaving = Mine(world, player)
+            .Where(area => DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Where(card => !retained.Contains(card.ObjectId))
+            .ToList();
+
+        foreach (var card in leaving)
+        {
+            if (facts.Kind(card.FaceId) == CardKind.Attachment
+                && StateFields.Modified(
+                    world, card, "permanent", facts, world.Players) > 0)
+            {
+                throw new RulesNotImplementedException(
+                    $"card {card.ObjectId} is a permanent attachment on an eliminated "
+                    + "player's board, and rr:player-elimination.1 resolves its "
+                    + "'attach to' text, which is not modelled");
+            }
+        }
+
+        foreach (var card in leaving)
+        {
+            Discard.PreflightAttachments(world, card);
+        }
     }
 
     /// <summary>

@@ -96,6 +96,9 @@ public static class WorldSetup
 
         int players = seats.Count;
         var happened = events ?? [];
+        int setupEventCursor = happened.Count;
+        var deferredReveals = new List<(int Card, int Incarnation)>();
+        var deferredRevealSet = new HashSet<(int Card, int Incarnation)>();
 
         // The seed goes to the world, not to a local generator: the reshuffle
         // in `rr:player-deck.1` draws from this same stream years of turns
@@ -208,6 +211,9 @@ public static class WorldSetup
         //     entering play, which `Play.Reveal` already answers.
         SetupCards(world, facts, happened);
         FinishSetupAgenda(world, facts, happened);
+        TrackSetupEntrants(
+            world, facts, happened, ref setupEventCursor,
+            deferredReveals, deferredRevealSet);
 
         // 12. `rr:appendix-ii-setup.step.12`, "Resolve Scenario Setup and When
         //     Revealed Abilities", which is three sub-steps in a stated order.
@@ -218,6 +224,9 @@ public static class WorldSetup
             // 12a. "Resolve any 'Setup' abilities on main scheme card 1A."
             happened.AddRange(world.Abilities.Setup(world, scheme));
             FinishSetupAgenda(world, facts, happened);
+            TrackSetupEntrants(
+                world, facts, happened, ref setupEventCursor,
+                deferredReveals, deferredRevealSet);
 
             // 12b. "Flip the main scheme card to side 1B and resolve any 'When
             //      Revealed' abilities on that side."
@@ -233,6 +242,9 @@ public static class WorldSetup
 
             happened.AddRange(world.Abilities.WhenRevealed(world, scheme, world.FirstPlayer));
             FinishSetupAgenda(world, facts, happened);
+            TrackSetupEntrants(
+                world, facts, happened, ref setupEventCursor,
+                deferredReveals, deferredRevealSet);
         }
 
         // 12c. "Resolve any 'Setup' and 'When Revealed' abilities on the
@@ -243,8 +255,39 @@ public static class WorldSetup
         {
             happened.AddRange(world.Abilities.Setup(world, villain));
             FinishSetupAgenda(world, facts, happened);
+            TrackSetupEntrants(
+                world, facts, happened, ref setupEventCursor,
+                deferredReveals, deferredRevealSet);
             happened.AddRange(world.Abilities.WhenRevealed(world, villain, world.FirstPlayer));
             FinishSetupAgenda(world, facts, happened);
+            TrackSetupEntrants(
+                world, facts, happened, ref setupEventCursor,
+                deferredReveals, deferredRevealSet);
+        }
+
+        // `rr:when-revealed-abilities.1`: encounter cards that entered play
+        // during setup wait for this step rather than firing at the moment they
+        // moved. Drain by recorded entry order; a deferred ability can itself
+        // put another encounter card into play, which joins the end of the same
+        // deterministic queue.
+        for (int next = 0; next < deferredReveals.Count; next++)
+        {
+            var address = deferredReveals[next];
+            var card = world.Cards[address.Card];
+            if (card.Incarnation != address.Incarnation
+                || !DeckTypes.IsInPlay(card.Area.Type))
+            {
+                continue;
+            }
+
+            Play.Reveal.Keywords(
+                world, facts, world.Abilities, card, world.FirstPlayer, happened);
+            happened.AddRange(
+                world.Abilities.WhenRevealed(world, card, world.FirstPlayer));
+            FinishSetupAgenda(world, facts, happened);
+            TrackSetupEntrants(
+                world, facts, happened, ref setupEventCursor,
+                deferredReveals, deferredRevealSet);
         }
 
         // 14. "Draw Cards." Opening hands, off the top of an already-shuffled
@@ -288,6 +331,39 @@ public static class WorldSetup
                 $"setup asked '{asked.Label}', and rr:appendix-ii-setup has nobody to ask");
         }
     }
+
+    /// <summary>Records encounter cards that entered play since the last setup step.</summary>
+    private static void TrackSetupEntrants(
+        World world,
+        ICardFacts facts,
+        List<Events.GameEvent> happened,
+        ref int cursor,
+        List<(int Card, int Incarnation)> pending,
+        HashSet<(int Card, int Incarnation)> seen)
+    {
+        foreach (var moved in happened.Skip(cursor).OfType<Events.CardsMoved>())
+        {
+            foreach (var landing in moved.Cards)
+            {
+                var card = world.Cards[landing.Card];
+                var address = (card.ObjectId, card.Incarnation);
+                if (DeckTypes.IsInPlay(card.Area.Type)
+                    && IsDeferredSetupEncounterCard(facts, card)
+                    && seen.Add(address))
+                {
+                    pending.Add(address);
+                }
+            }
+        }
+
+        cursor = happened.Count;
+    }
+
+    private static bool IsDeferredSetupEncounterCard(ICardFacts facts, Card card) =>
+        card.Owner == World.Scenario
+        && facts.Kind(card.FaceId) is CardKind.Attachment or CardKind.Obligation
+            or CardKind.Treachery or CardKind.Minion or CardKind.EncounterSideScheme
+            or CardKind.Environment;
 
     /// <summary>
     /// Step 11 — every card with the setup keyword, put into play.

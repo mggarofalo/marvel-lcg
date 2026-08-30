@@ -438,9 +438,11 @@ public static class CardPlay
     /// <para>
     /// <c>rr:play-put-into-play</c> ignores the ally's resource cost and the
     /// ordinary restrictions on playing it, then places it in its controller's
-    /// play area. The card's <see cref="Card.Owner"/> does not change; if it
-    /// later leaves play, <c>rr:ownership-and-control.7.2</c> sends it to its
-    /// owner's corresponding out-of-play area.
+    /// play area. Ordinarily the card's <see cref="Card.Owner"/> does not
+    /// change; if it later leaves play, <c>rr:ownership-and-control.7.2</c>
+    /// sends it to its owner's corresponding out-of-play area. The scenario
+    /// player-card exception in <c>rr:ownership-and-control.2.2</c> instead
+    /// makes its entering controller its owner.
     /// </para>
     /// <para>
     /// <c>rr:play-put-into-play.3</c> says this is not playing the card, so no
@@ -906,24 +908,133 @@ public static class CardPlay
             return;
         }
 
-        long maximum = facts.PrintedValue(card.FaceId, "MaxPerUnit", world.Players);
-        string unit = facts.Attributes(card.FaceId)
-            .GetValueOrDefault("MaxPerUnitKind", "player");
-        if (maximum > 0
-            && string.Equals(unit, "player", StringComparison.Ordinal)
-            && CountControlled(world, facts, card, player) >= maximum)
+        var moving = ControlTree(world, card);
+        PreflightControlMaxima(world, facts, moving, player);
+        MoveControlTree(world, moving, player);
+        foreach (var (_, controlled) in moving)
+        {
+            TakeScenarioCardOwnership(facts, controlled, player);
+        }
+    }
+
+    /// <summary>Returns a temporarily controlled card to its owner's control.</summary>
+    public static void ReturnToOwnerControl(World world, ICardFacts facts, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        if (card.Owner < 0)
         {
             throw new RulesNotImplementedException(
-                $"player {player} already controls the maximum number of "
-                + $"'{facts.Title(card.FaceId)}'");
+                $"card {card.ObjectId} has no player owner whose control can resume");
         }
 
-        var destination = world.AreaOf(
-            card.Area.Type,
-            PlayArea.Of(player),
-            host: card.Area.Host,
-            cardOwner: card.Owner);
-        World.MoveToTop(card, destination);
+        // `rr:ownership-and-control.7.1`: when the ability changing control
+        // ceases, the card reverts to its owner's control. Reuse TakeControl so
+        // maxima are checked before any member of the hosted tree moves.
+        TakeControl(world, facts, card, card.Owner);
+    }
+
+    /// <summary>Transfers a root and every card hosted by it to one play area.</summary>
+    private static List<(Area Source, Card Card)> ControlTree(World world, Card root)
+    {
+        var moving = new List<(Area Source, Card Card)> { (root.Area, root) };
+        var pending = new Stack<Card>([root]);
+        var seen = new HashSet<int>();
+        while (pending.TryPop(out var host))
+        {
+            if (!seen.Add(host.ObjectId))
+            {
+                throw new RulesNotImplementedException(
+                    $"card {host.ObjectId} forms a hosting cycle during a control change");
+            }
+
+            foreach (var child in world.Areas
+                         .Where(area => area.Host == host.ObjectId)
+                         .SelectMany(area => area.Cards)
+                         .Reverse())
+            {
+                moving.Add((child.Area, child));
+                pending.Push(child);
+            }
+        }
+
+        return moving;
+    }
+
+    /// <summary>Validates every root and descendant before a control tree moves.</summary>
+    private static void PreflightControlMaxima(
+        World world, ICardFacts facts, IReadOnlyList<(Area Source, Card Card)> moving,
+        int player)
+    {
+        var movingIds = moving.Select(item => item.Card.ObjectId).ToHashSet();
+        foreach (var (_, candidate) in moving.Where(item =>
+                     DeckTypes.IsInPlay(item.Source.Type)))
+        {
+            long maximum = facts.PrintedValue(
+                candidate.FaceId, "MaxPerUnit", world.Players);
+            string unit = facts.Attributes(candidate.FaceId)
+                .GetValueOrDefault("MaxPerUnitKind", "player");
+            if (maximum <= 0 || !string.Equals(unit, "player", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            string title = facts.Title(candidate.FaceId);
+            long alreadyThere = world.Areas
+                .Where(area => area.PlayArea == PlayArea.Of(player))
+                .SelectMany(area => area.Cards)
+                .Count(card => DeckTypes.IsInPlay(card.Area.Type)
+                    && !movingIds.Contains(card.ObjectId)
+                    && string.Equals(
+                        facts.Title(card.FaceId), title, StringComparison.Ordinal));
+            long arriving = moving.Count(item =>
+                DeckTypes.IsInPlay(item.Source.Type)
+                && string.Equals(
+                    facts.Title(item.Card.FaceId), title, StringComparison.Ordinal));
+            if (alreadyThere + arriving > maximum)
+            {
+                throw new RulesNotImplementedException(
+                    $"player {player} would control more than {maximum} copies of "
+                    + $"'{title}' after the control change");
+            }
+        }
+    }
+
+    private static void MoveControlTree(
+        World world, IReadOnlyList<(Area Source, Card Card)> moving, int player)
+    {
+
+        foreach (var (source, movingCard) in moving)
+        {
+            bool faceUp = movingCard.FaceUp;
+            var destination = world.AreaOf(
+                source.Type, PlayArea.Of(player), source.Host, source.CardOwner);
+            World.MoveToTop(movingCard, destination);
+            if (!faceUp)
+            {
+                movingCard.TurnFaceDown();
+            }
+        }
+    }
+
+    /// <summary>Applies the scenario-player-card ownership exception.</summary>
+    /// <remarks>
+    /// The Rules Reference names a player card back; the joined card dataset
+    /// does not store backs. The engine maps that physical distinction to a
+    /// player-card kind created for the scenario, or to the printed Campaign,
+    /// Encounter, or Scenario class after ownership has already transferred.
+    /// </remarks>
+    internal static void TakeScenarioCardOwnership(
+        ICardFacts facts, Card card, int player)
+    {
+        string printedClass = facts.Attributes(card.FaceId)
+            .GetValueOrDefault("Class", string.Empty);
+        if (facts.Kind(card.FaceId) is CardKind.Ally or CardKind.Support
+                or CardKind.Upgrade or CardKind.Event or CardKind.Resource
+            && (card.Owner < 0
+                || printedClass is "Campaign" or "Encounter" or "Scenario"))
+        {
+            card.TransferScenarioOwnership(player);
+        }
     }
 
     /// <summary>Where a played card goes — <c>rr:enters-play</c>.</summary>
