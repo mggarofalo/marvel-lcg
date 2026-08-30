@@ -14286,6 +14286,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         long amount = SaturatingMultiply(
             Amount(node.Require("amount"), cast), multiplier);
+        amount = SaturatingSum(amount, [EventModifier(cast, "eventDamage")]);
+        if (cast.Power == BasicPowers.AttackVerb)
+        {
+            amount = SaturatingSum(amount, [EventModifier(cast, "attackDamage")]);
+        }
         string verb = node.Field("attack") is null ? "Deal_Damage" : "Attack";
         foreach (var target in Every(node.Require("cards"), cast))
         {
@@ -14341,17 +14346,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             cast.World.Effects.Register(temporaryOverkill);
         }
 
+        var attackModifiers = EventModifierEffects(cast, "attackDamage");
+        long amount = SaturatingSum(
+            Amount(node.Require("amount"), cast),
+            [EventModifier(cast, "eventDamage"),
+             SaturatingSum(0, attackModifiers.Select(effect => effect.Amount))]);
         foreach (var target in DamageTargets(node.Require("cards"), cast))
         {
             var damaged = Damage.Attack(
                 cast.World, cast.World.Facts, attacker, cast.Source, target,
-                Amount(node.Require("amount"), cast), cast.Trigger, "Attack", cast.Events,
+                amount, cast.Trigger, "Attack", cast.Events,
                 retaliate: false);
             cast.Attacked.Add(target);
             if (damaged.Characters.Count > 0)
             {
                 cast.Occurrence.Also(Steps.DamageDealt);
             }
+        }
+        foreach (var modifier in attackModifiers)
+        {
+            cast.World.Effects.Use(modifier);
         }
 
         if (temporaryOverkill is not null)
@@ -14583,13 +14597,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.World.Facts,
                 cast.Abilities,
                 scheme,
-                SaturatingMultiply(Amount(node.Require("amount"), cast), multiplier),
+                SaturatingSum(
+                    SaturatingMultiply(Amount(node.Require("amount"), cast), multiplier),
+                    [EventModifier(cast, "eventThreatRemoval")]),
                 cast.Trigger,
                 "Remove_Threat",
                 cast.Events,
                 by: Resolver(cast),
                 overridesCannotFrom: OverriddenThreatRemovalSource(node, cast));
         }
+    }
+
+    private static long EventModifier(Cast cast, string kind) =>
+        SaturatingSum(0, EventModifierEffects(cast, kind).Select(effect => effect.Amount));
+
+    private static IReadOnlyList<ContinuousEffect> EventModifierEffects(
+        Cast cast, string kind)
+    {
+        if (cast.World.Facts.Kind(cast.Source.FaceId) != CardKind.Event)
+        {
+            return [];
+        }
+
+        return [.. cast.World.Effects.Active().Where(effect =>
+            string.Equals(effect.Kind, kind, StringComparison.Ordinal)
+            && effect.Affects == cast.Source.ObjectId)];
     }
 
     /// <summary>

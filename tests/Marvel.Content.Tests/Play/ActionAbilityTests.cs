@@ -258,6 +258,129 @@ public sealed class ActionAbilityTests
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
+    [Rule("rr:event.5")]
+    [Fact]
+    public void AnEventDamageModifierAppliesToEveryDamageInstance()
+    {
+        // When an event "deals multiple instances of damage, each of those
+        // instances is modified." Two one-damage instances with +2 each deal
+        // six, not four.
+        var runner = Runner(
+            "01005",
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } },
+              { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }
+            ] }
+            """);
+        Card? played = null;
+        var payments = new List<Card>();
+        var (_, world) = Playing(
+            board =>
+            {
+                played = board.CreateCard("01005", board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    payments.Add(board.CreateCard("01087", board.Seats[0].Hand));
+                }
+            },
+            hero: true,
+            abilities: runner);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "eventDamage", Amount: 2,
+            Card: played!.ObjectId, Affects: played.ObjectId));
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == played.ObjectId);
+
+        runner.Act(world, action, [.. payments.Select(card => card.ObjectId)], []);
+
+        Assert.Equal(6, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
+    [Rule("rr:event.5")]
+    [Fact]
+    public void AnEventThreatModifierAppliesToEveryRemovalInstance()
+    {
+        // The same clause says that when an event "removes multiple instances
+        // of threat, each of those instances is modified."
+        var runner = Runner(
+            "01005",
+            "Action",
+            """
+            { "seq": [
+              { "removeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } },
+              { "removeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }
+            ] }
+            """);
+        Card? played = null;
+        var payments = new List<Card>();
+        var (_, world) = Playing(
+            board =>
+            {
+                board.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 10);
+                played = board.CreateCard("01005", board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    payments.Add(board.CreateCard("01087", board.Seats[0].Hand));
+                }
+            },
+            hero: true,
+            abilities: runner);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "eventThreatRemoval", Amount: 2,
+            Card: played!.ObjectId, Affects: played.ObjectId));
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == played.ObjectId);
+
+        runner.Act(world, action, [.. payments.Select(card => card.ObjectId)], []);
+
+        Assert.Equal(
+            4,
+            world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:event.5.1")]
+    [Fact]
+    public void AnAttackModifierAppliesOnlyToAnEventsFirstAttack()
+    {
+        // A modifier to damage "an attack" deals applies to "only the first"
+        // when an event initiates multiple attacks. The first deals three and
+        // the second deals one.
+        var runner = Runner(
+            "01005",
+            "Action",
+            """
+            { "seq": [
+              { "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } },
+              { "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } }
+            ] }
+            """);
+        Card? played = null;
+        var payments = new List<Card>();
+        var (_, world) = Playing(
+            board =>
+            {
+                played = board.CreateCard("01005", board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    payments.Add(board.CreateCard("01087", board.Seats[0].Hand));
+                }
+            },
+            hero: true,
+            abilities: runner);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "attackDamage", Amount: 2,
+            Card: played!.ObjectId, Affects: played.ObjectId,
+            Lasts: new Duration(Uses: 1)));
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == played.ObjectId);
+
+        runner.Act(world, action, [.. payments.Select(card => card.ObjectId)], []);
+
+        Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
     [Rule("rr:player-elimination.5")]
     [Rule("rr:player-elimination.step.5")]
     [Rule("rr:upgrade.1")]

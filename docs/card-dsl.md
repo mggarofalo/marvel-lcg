@@ -1570,6 +1570,14 @@ payment. Combining `takeDamage` with an event's printed price is deliberately
 not represented yet: that needs an event-payment transaction and raises before
 anything moves.
 
+Event modifiers are lasting effects attached to the event object while it
+resolves. `eventDamage` and `eventThreatRemoval` add their amount to every
+matching instance, as `rr:event.5` requires; they are not consumed after the
+first node. `attackDamage` is a one-use modifier: when one event performs
+multiple attacks, the first attack consumes it and later attacks do not receive
+it (`rr:event.5.1`). Keeping the event and attack kinds distinct prevents a
+modifier that says “an attack” from accidentally becoming event-wide.
+
 ### A suspended choice has to say which ability it came from
 
 `choose` and `chooseCard` stop the ability and put a `ChooseOption` step on the
