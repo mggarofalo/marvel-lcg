@@ -142,6 +142,11 @@ public enum Stage
 /// The rulebook occurrence local to a suspended procedure, when it differs
 /// from the agenda occurrence that contains it.
 /// </param>
+/// <param name="ProcedureOwnerOccurrence">
+/// The outer occurrence that owns a result produced by an internal procedure.
+/// This is engine continuation data used when that result must join the
+/// owner's eventual response window.
+/// </param>
 /// <param name="ProcedureSource">The source card needed when the procedure resumes.</param>
 /// <param name="ProcedureTrigger">Event-stream provenance preserved by the procedure.</param>
 /// <param name="ProcedureVerb">The kind of effect preserved by the procedure.</param>
@@ -183,6 +188,7 @@ public readonly record struct PhaseStep(
     IReadOnlyList<PendingAbility>? ProcedureAbilities = null,
     IReadOnlyList<int>? ProcedurePlayersPassed = null,
     Occurrence? ProcedureOccurrence = null, int ProcedureSource = -1,
+    Occurrence? ProcedureOwnerOccurrence = null,
     string ProcedureTrigger = "", string ProcedureVerb = "", int ProcedureBy = -1,
     long ProcedureAmount = 0,
     IReadOnlyDictionary<int, long>? ProcedureAmounts = null,

@@ -1326,7 +1326,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <inheritdoc/>
     public bool WouldBeDefeated(
         World world, Card target, Card source, string trigger, string verb, int by,
-        List<GameEvent> events)
+        List<GameEvent> events, Occurrence? recordDefeatOn = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(target);
@@ -1346,14 +1346,16 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             if (mandatory.Count == 0)
             {
                 SuspendWouldBeDefeated(
-                    world, target, source, trigger, verb, by, occurrence, optional);
+                    world, target, source, trigger, verb, by, occurrence, optional,
+                    recordDefeatOn);
                 return false;
             }
 
             if (mandatory.Count > 1)
             {
                 SuspendWouldBeDefeated(
-                    world, target, source, trigger, verb, by, occurrence, mandatory);
+                    world, target, source, trigger, verb, by, occurrence, mandatory,
+                    recordDefeatOn);
                 return false;
             }
 
@@ -1374,7 +1376,8 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static void SuspendWouldBeDefeated(
         World world, Card target, Card source, string trigger, string verb, int by,
-        Occurrence occurrence, IReadOnlyList<PendingAbility> pending)
+        Occurrence occurrence, IReadOnlyList<PendingAbility> pending,
+        Occurrence? recordDefeatOn)
     {
         var step = new PhaseStep(
             Steps.ChooseWouldBeDefeated,
@@ -1385,6 +1388,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             Plan: true,
             ProcedureAbilities: [.. pending],
             ProcedureOccurrence: occurrence,
+            ProcedureOwnerOccurrence: recordDefeatOn,
             ProcedureSource: source.ObjectId,
             ProcedureTrigger: trigger,
             ProcedureVerb: verb,

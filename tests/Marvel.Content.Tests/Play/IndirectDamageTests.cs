@@ -338,7 +338,7 @@ public sealed class IndirectDamageTests
         // Gene Pool's "After an ally is defeated" Forced Response therefore
         // belongs to the outer attack-damage occurrence and feeds the pool.
         var world = Deal();
-        var runner = AuthoredCards.Runner();
+        var runner = DeclinedDefeatAndGenePoolRunner();
         world.Abilities = runner;
         world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
         var pool = world.CreateCard(
@@ -368,6 +368,10 @@ public sealed class IndirectDamageTests
                 assign.Affordances[0].Id,
                 [ally.ObjectId, .. Enumerable.Repeat(
                     world.Seats[0].IdentityCard.ObjectId, amount - 1)], []), events);
+
+        var save = Sequence.Work(world, Cards, runner, events)!;
+        Assert.Equal(Question.Opportunity, save.Asking);
+        Sequence.Answer(world, Cards, runner, save, Decision.Decline, events);
 
         var remaining = Sequence.Work(world, Cards, runner, events);
         while (remaining is not null)
@@ -658,4 +662,21 @@ public sealed class IndirectDamageTests
           }]}
         ]}
         """));
+
+    private static AbilityRunner DeclinedDefeatAndGenePoolRunner() =>
+        new(AbilityCatalog.Parse(
+            """
+            {"cards":[
+              {"card":"13019","abilities":[{
+                "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
+                           "subject":"this"},
+                "effect":{"heal":{"card":"this","amount":{"damageOn":"this"}}}
+              }]},
+              {"card":"45071","abilities":[{
+                "trigger":{"event":"WhenCardDefeated","timing":"ForcedResponse",
+                           "subject":"game"},
+                "effect":{"placeThreat":{"scheme":"this","amount":3}}
+              }]}
+            ]}
+            """));
 }

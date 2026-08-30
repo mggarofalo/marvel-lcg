@@ -254,7 +254,8 @@ public static class Damage
         {
             int beforeProcedure = world.Agenda.Count;
             if (!world.Abilities.WouldBeDefeated(
-                    world, target, source, trigger, verb, by, events))
+                    world, target, source, trigger, verb, by, events,
+                    recordDefeatOn))
             {
                 return world.Agenda.Count > beforeProcedure
                     ? Outcome.Suspended

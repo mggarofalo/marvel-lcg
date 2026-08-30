@@ -284,7 +284,7 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>True when step 6 completed synchronously; false when it suspended.</returns>
     bool WouldBeDefeated(
         World world, Card target, Card source, string trigger, string verb, int by,
-        List<GameEvent> events)
+        List<GameEvent> events, Timing.Occurrence? recordDefeatOn = null)
     {
         WouldBeDefeated(world, target, events);
         return true;
@@ -1561,7 +1561,8 @@ public static class VillainPhase
         {
             Defeat.Character(
                 world, facts, target, step.ProcedureTrigger, events,
-                how: step.ProcedureVerb, by: step.ProcedureBy);
+                how: step.ProcedureVerb, by: step.ProcedureBy,
+                recordOn: step.ProcedureOwnerOccurrence);
         }
     }
 
