@@ -1086,6 +1086,35 @@ public sealed partial class AbilityRunner
         cast.Suspend();
     }
 
+    /// <summary>Resume an initiated ability after its take-damage cost settles.</summary>
+    private static void SuspendAfterCost(Cast cast, int abilityOrdinal)
+    {
+        var results = ContinuationResults(cast, abilityOrdinal);
+        results["costProcedurePending"] = 1;
+        cast.World.Agenda.Then(new PhaseStep(
+            Steps.ResumeAbility,
+            cast.World.Agenda.Current?.Round ?? 0,
+            2,
+            Subject: cast.Source.ObjectId,
+            Seat: cast.Player,
+            Plan: true,
+            Tier: cast.Tier,
+            FinalStep: cast.FinalStep,
+            FinalPlayer: cast.FinalPlayer,
+            EachPlayerFrame: cast.EachPlayerFrame,
+            Trigger: cast.Trigger,
+            SurgeGained: cast.GainedKeywords.Contains("surge"),
+            Discarded: [.. cast.Discarded.Select(card => card.ObjectId)],
+            AbilityOrdinal: abilityOrdinal,
+            AbilityPath: [],
+            AbilityResults: results,
+            AbilityOccurrence: cast.Occurrence,
+            AbilityFace: cast.AbilityFace,
+            AbilityPlayer: cast.AbilityPlayer,
+            AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
+            AbilityHasContinuation: cast.HasContinuation));
+    }
+
     private static Dictionary<string, long> ContinuationResults(
         Cast cast, CardAbility ability)
     {

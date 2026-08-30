@@ -198,6 +198,27 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             continuation.AbilityOrdinal, path, continuation.AbilityFace);
         cast.TrackResolution(continuation.AbilityOrdinal);
         RestorePersisted(cast, continuation);
+        if (cast.Results.GetValueOrDefault("costProcedurePending") > 0)
+        {
+            var ability = AbilityAt(
+                source, continuation.Tier, continuation.AbilityOrdinal,
+                continuation.AbilityFace);
+            Use(world, source, ability, cast.Occurrence);
+            if (world.Facts.Kind(source.FaceId) == CardKind.Event)
+            {
+                cast.Occurrence.BeginCard(
+                    source.ObjectId,
+                    [new PendingAbility(
+                        source.ObjectId,
+                        ability.Trigger.Timing,
+                        continuation.Seat,
+                        continuation.AbilityOrdinal)]);
+            }
+            Run(ability, cast);
+            cast.CompleteResolution();
+            DiscardEvent(source, cast);
+            return cast.Events;
+        }
         if (cast.Results.GetValueOrDefault("activationMade") > 0
             || cast.Results.GetValueOrDefault("procedureApplied") > 0)
         {
@@ -653,6 +674,11 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         else
         {
             Pay(found.Cost, paying, chosen, values, cast);
+        }
+        if (cast.Suspended)
+        {
+            SuspendAfterCost(cast, ability.Ordinal);
+            return events;
         }
         Use(world, card, found, occurrence);
         if (world.Facts.Kind(card.FaceId) == CardKind.Event)
@@ -1839,6 +1865,11 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         else
         {
             Pay(found.Cost, paying, chosen, values, cast);
+        }
+        if (cast.Suspended)
+        {
+            SuspendAfterCost(cast, ability.Ordinal);
+            return events;
         }
         Use(world, card, found, occurrence);
         if (world.Facts.Kind(card.FaceId) == CardKind.Event)

@@ -124,7 +124,7 @@ public static class Defeat
         if (!world.Abilities.WhenCardDefeated(
                 world, character, defeated, trigger, events))
         {
-            return true;
+            return false;
         }
 
         if (!ReferenceEquals(world.Agenda.Occurrence, occurrence))
