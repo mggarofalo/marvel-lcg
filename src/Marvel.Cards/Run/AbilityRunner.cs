@@ -16348,10 +16348,35 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return true;
         }
 
-        var damage = new List<(Card Target, long Amount, long Repetitions)>();
+        var damage = new List<(
+            Card Target, long Amount, long Repetitions, int ReorderGroup)>();
         var threat = new List<(Card Target, long Amount, long Repetitions)>();
+        var projectedDamage = new Dictionary<int, long>();
+        var projectedTough = new Dictionary<int, long>();
+        int nextReorderGroup = 0;
 
-        void Collect(AbilityNode effect, long repetitions = 1)
+        long ProjectedDamage(Card card) => projectedDamage.GetValueOrDefault(
+            card.ObjectId, card.Damage);
+
+        void ProjectDamage(Card card, long amount, long repetitions)
+        {
+            if (amount <= 0 || repetitions <= 0)
+            {
+                return;
+            }
+            long tough = projectedTough.GetValueOrDefault(
+                card.ObjectId,
+                Statuses.Count(cast.World, card, Statuses.Tough));
+            long prevented = Math.Min(tough, repetitions);
+            projectedTough[card.ObjectId] = tough - prevented;
+            long dealt = SaturatingMultiply(amount, repetitions - prevented);
+            projectedDamage[card.ObjectId] = SaturatingSum(
+                ProjectedDamage(card), [dealt]);
+        }
+
+        void Collect(
+            AbilityNode effect, long repetitions = 1,
+            long baseMultiplier = 1, int reorderGroup = 0)
         {
             if (repetitions <= 0)
             {
@@ -16360,14 +16385,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             if (effect.Kind is "dealDamage" or "dealAttackDamage")
             {
                 long amount = SaturatingSum(
-                    Amount(effect.Require("amount"), cast),
+                    SaturatingMultiply(
+                        Amount(effect.Require("amount"), cast), baseMultiplier),
                     [EventModifier(cast, "eventDamage"),
                      effect.Kind == "dealAttackDamage"
                          || cast.Power == BasicPowers.AttackVerb
                             ? EventModifier(cast, "attackDamage")
                             : 0]);
-                damage.AddRange(DamageTargets(effect.Require("cards"), cast)
-                    .Select(target => (target, amount, repetitions)));
+                foreach (var target in DamageTargets(
+                             effect.Require("cards"), cast))
+                {
+                    damage.Add((target, amount, repetitions, reorderGroup));
+                    ProjectDamage(target, amount, repetitions);
+                }
                 return;
             }
             if (effect.Kind is "moveDamage" or "moveAttackDamage")
@@ -16377,9 +16407,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 if (from is not null && to is not null
                     && cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
                 {
-                    damage.Add((to, Math.Min(
-                        from.Damage, Amount(effect.Require("amount"), cast)),
-                        repetitions));
+                    long requested = SaturatingMultiply(
+                        Amount(effect.Require("amount"), cast), baseMultiplier);
+                    long moved = Math.Min(ProjectedDamage(from), requested);
+                    projectedDamage[from.ObjectId] =
+                        ProjectedDamage(from) - moved;
+                    damage.Add((to, moved, 1, reorderGroup));
+                    ProjectDamage(to, moved, 1);
+                }
+                return;
+            }
+            if (effect.Kind == "heal")
+            {
+                if (Find(effect.Require("card"), cast) is { } healed)
+                {
+                    long amount = SaturatingMultiply(
+                        Amount(effect.Require("amount"), cast), baseMultiplier);
+                    projectedDamage[healed.ObjectId] = Math.Max(
+                        0, ProjectedDamage(healed)
+                            - SaturatingMultiply(amount, repetitions));
                 }
                 return;
             }
@@ -16396,10 +16442,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 if (!CurrentlyZeroForEach(effect, cast))
                 {
-                    Collect(
-                        Tree(effect.Require("effect")),
-                        SaturatingMultiply(
-                            repetitions, ForEachCount(effect, cast)));
+                    var repeated = Tree(effect.Require("effect"));
+                    long count = ForEachCount(effect, cast);
+                    if (repeated.Kind is "dealDamage" or "dealAttackDamage")
+                    {
+                        // The runner combines a target-fixed repetition into
+                        // one damage instance before Tough is applied.
+                        Collect(
+                            repeated, repetitions,
+                            SaturatingMultiply(baseMultiplier, count),
+                            reorderGroup);
+                    }
+                    else
+                    {
+                        Collect(
+                            repeated,
+                            SaturatingMultiply(repetitions, count),
+                            baseMultiplier, reorderGroup);
+                    }
                 }
                 return;
             }
@@ -16411,12 +16471,23 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     foreach (int player in cast.World.PlayerOrder)
                     {
                         cast.RestorePlayer(player);
-                        Collect(Tree(effect.Require("effect")), repetitions);
+                        Collect(
+                            Tree(effect.Require("effect")), repetitions,
+                            baseMultiplier, reorderGroup);
                     }
                 }
                 finally
                 {
                     cast.RestorePlayer(priorPlayer);
+                }
+                return;
+            }
+            if (effect.Kind == "and")
+            {
+                int group = ++nextReorderGroup;
+                foreach (var child in Nodes(effect.Argument))
+                {
+                    Collect(child, repetitions, baseMultiplier, group);
                 }
                 return;
             }
@@ -16429,7 +16500,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             };
             foreach (var child in children)
             {
-                Collect(child, repetitions);
+                Collect(child, repetitions, baseMultiplier, reorderGroup);
             }
         }
 
@@ -16451,18 +16522,41 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             long tough = Statuses.Count(cast.World, target, Statuses.Tough);
             long remaining = Damage.Health(
                 cast.World, cast.World.Facts, target) - target.Damage;
-            foreach (var packet in group)
+            var packets = group.ToList();
+            for (int position = 0; position < packets.Count;)
             {
-                long repetitions = packet.Repetitions;
-                long prevented = Math.Min(tough, repetitions);
-                tough -= prevented;
-                repetitions -= prevented;
-                if (packet.Amount > 0 && repetitions > 0
-                    && SaturatingMultiply(packet.Amount, repetitions) >= remaining)
+                int reorderGroup = packets[position].ReorderGroup;
+                int end = position + 1;
+                if (reorderGroup != 0)
                 {
-                    return true;
+                    while (end < packets.Count
+                           && packets[end].ReorderGroup == reorderGroup)
+                    {
+                        end++;
+                    }
                 }
-                remaining -= SaturatingMultiply(packet.Amount, repetitions);
+
+                var ordered = packets.GetRange(position, end - position);
+                if (reorderGroup != 0)
+                {
+                    ordered.Sort((left, right) =>
+                        left.Amount.CompareTo(right.Amount));
+                }
+                foreach (var packet in ordered)
+                {
+                    long repetitions = packet.Repetitions;
+                    long prevented = Math.Min(tough, repetitions);
+                    tough -= prevented;
+                    repetitions -= prevented;
+                    long dealt = SaturatingMultiply(
+                        packet.Amount, repetitions);
+                    if (dealt > 0 && dealt >= remaining)
+                    {
+                        return true;
+                    }
+                    remaining -= dealt;
+                }
+                position = end;
             }
         }
 

@@ -5552,7 +5552,7 @@ public sealed class ActionAbilityTests
 
         Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(0, minion!.Damage);
-        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
     }
 
     [Rule("rr:each-player.1")]
@@ -9848,6 +9848,204 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
         Assert.Equal(DeckType.RemovedArea, discarded!.Area.Type);
+    }
+
+    [Rule("rr:tough.2")]
+    [Rule("rr:for-each.1")]
+    [Fact]
+    public void CombinedRepeatedDamageIsOneToughPreventedInstance()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "forEach": { "count": 2, "effect": {
+                "dealDamage": {
+                  "cards": { "titled": "Hydra Mercenary" }, "amount": 1
+                }
+              } } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        Card? minion = null;
+        Card? discarded = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 1);
+                discarded = board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+        Statuses.Give(world, minion!, Statuses.Tough);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+
+        runner.Act(world, action, [], []);
+
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
+        Assert.False(Statuses.Has(world, minion, Statuses.Tough));
+        Assert.Equal(DeckType.RemovedArea, discarded!.Area.Type);
+    }
+
+    [Rule("rr:cost.6")]
+    [Rule("rr:move.1")]
+    [Fact]
+    public void DamageCreatedBeforeAMoveIsProjectedBeforeCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "titled": "Hawkeye" }, "amount": 1
+              } },
+              { "moveDamage": {
+                "from": { "titled": "Hawkeye" },
+                "to": { "titled": "Hydra Mercenary" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? ally = null;
+        Card? minion = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                ally = board.CreateCard(
+                    "01066", board.AreaOf(
+                        DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 1);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(0, ally!.Damage);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
+    }
+
+    [Rule("rr:move.1")]
+    [Fact]
+    public void RepeatedMoveCannotReuseHealedDamage()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "moveDamage": {
+                "from": "you", "to": { "titled": "Hydra Mercenary" },
+                "amount": 1
+              } },
+              { "moveDamage": {
+                "from": "you", "to": { "titled": "Hydra Mercenary" },
+                "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        Card? minion = null;
+        Card? discarded = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(1);
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 2);
+                discarded = board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+
+        runner.Act(world, action, [], []);
+
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(
+            Damage.Health(world, world.Facts, minion!) - 1, minion!.Damage);
+        Assert.Equal(DeckType.RemovedArea, discarded!.Area.Type);
+    }
+
+    [Rule("rr:and")]
+    [Rule("rr:first-player.3")]
+    [Rule("rr:cost.6")]
+    [Fact]
+    public void ReorderableDamageProjectsEveryPermittedOrderBeforeCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "and": [
+                { "dealDamage": {
+                  "cards": { "titled": "Hydra Mercenary" }, "amount": 3
+                } },
+                { "dealDamage": {
+                  "cards": { "titled": "Hydra Mercenary" }, "amount": 1
+                } }
+              ] },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? minion = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 3);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+        Statuses.Give(world, minion!, Statuses.Tough);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            runner.Actions(world, 0));
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
     }
 
     [Rule("rr:search.1")]
