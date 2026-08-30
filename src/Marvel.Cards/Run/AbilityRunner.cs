@@ -3969,21 +3969,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return locallyLegal;
         }
 
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         try
         {
             ResolutionOutcome? pendingOutcome = cast.HasPendingDependency
                 ? ResolutionOf(option, cast)
                 : null;
             var before = new BindingCandidateState(
-                prior is null ? [] : [prior], prior is null);
+                prior is null ? [] : [prior.Card], prior is null);
             var outcomes = BindingCandidatesAfter(option, cast, before);
             return ContinuationCanResolve(outcomes, cast, pendingOutcome);
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
     }
@@ -3997,8 +3997,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static List<Card> LegalCardChoices(AbilityNode choice, Cast cast)
     {
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         var legal = new List<Card>();
         try
         {
@@ -4014,7 +4014,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
         return legal;
@@ -4029,8 +4029,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return legal;
         }
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         try
         {
             return legal.Where(candidate =>
@@ -4049,7 +4049,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
     }
@@ -4884,8 +4884,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static BindingCandidateState ChooseCardBindingCandidatesAfter(
         AbilityNode node, Cast cast, BindingCandidateState before)
     {
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         var possible = new List<Card>();
         bool mayBeEmpty = false;
         try
@@ -4928,12 +4928,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             if (before.Cards.Count == 0 && !before.MayBeEmpty)
             {
-                AddOutcome(prior);
+                AddOutcome(prior?.Card);
             }
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
         return new BindingCandidateState(
@@ -4944,8 +4944,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         AbilityNode node, Cast cast, BindingCandidateState before,
         IReadOnlyList<AbilityNode>? continuation = null)
     {
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         var outcomes = new List<BindingCandidateState>();
         try
         {
@@ -4975,12 +4975,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             if (before.Cards.Count == 0 && !before.MayBeEmpty)
             {
-                AddOutcomes(prior);
+                AddOutcomes(prior?.Card);
             }
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
         return new BindingCandidateState(
@@ -4997,8 +4997,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var suffix = new AbilityNode(
             "seq",
             new AbilityValue.List(continuation.Select(NodeValue).ToList()));
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         var outerCandidates = cast.PriorBindingCandidates;
         bool outerMayBeEmpty = cast.PriorBindingMayBeEmpty;
         bool outerBindingMayChange = cast.PriorBindingMayChange;
@@ -5021,7 +5021,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
             cast.SetPriorBindingCandidates(outerCandidates);
             cast.SetPriorBindingMayBeEmpty(outerMayBeEmpty);
@@ -5218,8 +5218,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return CanChooseFromCurrentBinding();
         }
 
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         try
         {
             bool any = false;
@@ -5237,7 +5237,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
     }
@@ -5256,8 +5256,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 return false;
             }
-            var prior = cast.Chosen;
-            var priorSelection = cast.PlayerSelection;
+            var prior = cast.CaptureChosen();
+            var priorSelection = cast.CapturePlayerSelection();
             try
             {
                 bool any = cast.PriorBindingCandidates.Any(candidate =>
@@ -5269,7 +5269,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             finally
             {
-                cast.Choose(prior);
+                cast.RestoreChosen(prior);
                 cast.RestorePlayerSelection(priorSelection);
             }
         }
@@ -5336,8 +5336,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return false;
         }
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         try
         {
             return cast.PriorBindingCandidates.All(candidate =>
@@ -5348,7 +5348,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
     }
@@ -5356,7 +5356,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool CrisisIgnoringRemovalCanAffect(
         AbilityNode node, Cast cast, Card scheme)
     {
-        var prior = cast.Chosen;
+        var prior = cast.CaptureChosen();
         try
         {
             // SchedulePower binds the declared power target before it runs the
@@ -5366,7 +5366,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
         }
     }
 
@@ -5502,8 +5502,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "chooseCard" => CanInitiateChooseCard(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
 
-            "removeFromGame" => Cards(Every(node.Argument, cast).Where(card =>
-                CanRemoveByEffect(node.Argument, cast, card))),
+            "removeFromGame" => Find(node.Argument, cast) is { } removed
+                && CanRemoveByEffect(node.Argument, cast, removed)
+                    ? TargetLegality.Valid : TargetLegality.Invalid,
             "reveal" or "returnToHand" => Cards(Every(node.Argument, cast)),
             "exhaust" => Cards(Every(node.Argument, cast).Where(card => card.Ready)),
             "ready" => Cards(Every(node.Argument, cast).Where(card =>
@@ -5566,8 +5567,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             return TargetLegality.Invalid;
         }
-        var prior = cast.Chosen;
-        var priorSelection = cast.PlayerSelection;
+        var prior = cast.CaptureChosen();
+        var priorSelection = cast.CapturePlayerSelection();
         try
         {
             var outcomes = new List<TargetLegality>();
@@ -5586,7 +5587,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         finally
         {
-            cast.Choose(prior);
+            cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
         }
     }
@@ -6312,7 +6313,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         if (node.Kind is "attack" or "thwart")
         {
-            var prior = cast.Chosen;
+            var prior = cast.CaptureChosen();
             try
             {
                 var target = Find(node.Require("target"), cast);
@@ -6330,7 +6331,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             finally
             {
-                cast.Choose(prior);
+                cast.RestoreChosen(prior);
             }
         }
         if (node.Kind == "thwartSchemes")
@@ -12825,7 +12826,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             || selector is AbilityValue.Word { Value: "chosen" }
                 && cast.WasSelectedInCurrentArea(target)
             || ExplicitlySelectsOutOfPlayCard(selector, cast, target);
-        return reachable
+        bool bindingIsCurrent = selector switch
+        {
+            AbilityValue.Word { Value: "this" } =>
+                cast.SourceBindingIsCurrent(target),
+            AbilityValue.Word { Value: "chosen" } =>
+                cast.ChosenBindingIsCurrent(target),
+            _ => true,
+        };
+        return reachable && bindingIsCurrent
             && Rules.Play.Discard.EffectCanRemove(
                 cast.World, cast.World.Facts, cast.Source, target);
     }
@@ -13769,7 +13778,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         foreach (var (name, value) in results
             ?? new Dictionary<string, long>(StringComparer.Ordinal))
         {
-            if (name is PersistedChosen or PersistedChosenArea)
+            if (name is PersistedChosen or PersistedChosenArea
+                or PersistedChosenIncarnation or PersistedSourceIncarnation)
             {
                 continue;
             }
@@ -13779,6 +13789,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             cast.Results[name] = value;
         }
+        cast.RestoreSourceIncarnation(
+            results?.TryGetValue(PersistedSourceIncarnation, out long incarnation) == true
+                ? checked((int)incarnation)
+                : -1);
         RestorePersistedChosen(cast, results, overwrite: false);
     }
 
@@ -13793,15 +13807,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     $"'{cast.Source.FaceId}' has invalid persisted chosen-card metadata");
             }
             var card = cast.World.Cards[(int)chosen];
-            cast.RestorePlayerSelection(card);
-            if (overwrite || cast.Chosen is null)
-            {
-                cast.Choose(card);
-            }
-            if (results.TryGetValue(PersistedChosenArea, out long area))
-            {
-                cast.RestoreSelectionOrigin(card, checked((int)area));
-            }
+            int area = results.TryGetValue(PersistedChosenArea, out long savedArea)
+                ? checked((int)savedArea)
+                : -1;
+            int incarnation = results.TryGetValue(
+                    PersistedChosenIncarnation, out long savedIncarnation)
+                ? checked((int)savedIncarnation)
+                : -1;
+            cast.RestorePersistedSelection(
+                card, area, incarnation, overwriteChosen: overwrite);
         }
     }
 
@@ -14529,10 +14543,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         IReadOnlyList<Card> targets, long powerAmount)
     {
         var effect = Tree(node.Require("effect"));
-        var continuationChosen = cast.PlayerSelection ?? cast.Chosen;
-        int continuationChosenArea = continuationChosen is null
-            ? -1
-            : cast.SelectionOrigin(continuationChosen);
+        var continuationChosen = cast.CaptureCurrentSelection();
         cast.Choose(target);
         if (SuspendsPowerEffect(
             effect, cast, bindingMayChange: powerAmount >= 0))
@@ -14567,11 +14578,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             abilityResults.Remove(PersistedChosen);
             abilityResults.Remove(PersistedChosenArea);
+            abilityResults.Remove(PersistedChosenIncarnation);
         }
         else
         {
-            abilityResults[PersistedChosen] = continuationChosen.ObjectId;
-            abilityResults[PersistedChosenArea] = continuationChosenArea;
+            PersistChosen(continuationChosen, abilityResults);
         }
         var discarded = cast.Discarded.Select(card => card.ObjectId).ToList();
         bool automaticThwartTarget = node.Field("automaticTarget") is not null
@@ -15179,6 +15190,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.Source, cast.Tier, abilityOrdinal, cast.AbilityFace),
                 results);
         }
+        PersistSource(cast, results);
         PersistChosen(cast, results);
         return results;
     }
@@ -15188,20 +15200,33 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         var results = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
         cast.PersistCrisisIgnoringThwarts(ability, results);
+        PersistSource(cast, results);
         PersistChosen(cast, results);
         return results;
     }
 
     private const string PersistedChosen = "__continuation.chosen";
     private const string PersistedChosenArea = "__continuation.chosen_area";
+    private const string PersistedChosenIncarnation = "__continuation.chosen_incarnation";
+    private const string PersistedSourceIncarnation = "__continuation.source_incarnation";
+
+    private static void PersistSource(Cast cast, Dictionary<string, long> results) =>
+        results[PersistedSourceIncarnation] = cast.SourceBindingIncarnation;
 
     private static void PersistChosen(Cast cast, Dictionary<string, long> results)
     {
-        if ((cast.PlayerSelection ?? cast.Chosen) is { } chosen)
+        if (cast.CaptureCurrentSelection() is { } chosen)
         {
-            results[PersistedChosen] = chosen.ObjectId;
-            results[PersistedChosenArea] = cast.SelectionOrigin(chosen);
+            PersistChosen(chosen, results);
         }
+    }
+
+    private static void PersistChosen(
+        Cast.CardBinding chosen, Dictionary<string, long> results)
+    {
+        results[PersistedChosen] = chosen.Card.ObjectId;
+        results[PersistedChosenArea] = chosen.Area;
+        results[PersistedChosenIncarnation] = chosen.Incarnation;
     }
 
     /// <summary>Propagate one reveal-scoped Surge gain to work already suspended.</summary>
@@ -15826,7 +15851,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static Card? Named(string name, Cast cast) => name switch
     {
-        "this" => cast.Source,
+        "this" => cast.SourceReference,
         "that" => cast.Altered,
 
         // "Stun **the attacking character**." Not the attacking player:
@@ -16405,52 +16430,97 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public bool HasPendingDependency => AbilityPath.Any(frame =>
             frame.EndsWith(":Pending", StringComparison.Ordinal));
 
-        /// <summary>The card the player picked, once they have.</summary>
-        public Card? Chosen { get; private set; }
+        public sealed record CardBinding(Card Card, int Area, int Incarnation);
 
-        private readonly Dictionary<int, int> selectionOrigins = [];
+        private CardBinding? chosenBinding;
+        private CardBinding? playerSelectionBinding;
+        private int sourceIncarnation = Source.Incarnation;
+
+        /// <summary>The card the player picked, once they have.</summary>
+        public Card? Chosen => chosenBinding is { } chosen
+            && chosen.Card.Incarnation == chosen.Incarnation
+                ? chosen.Card
+                : null;
 
         /// <summary>The outer card selection used by chosen-player references.</summary>
-        public Card? PlayerSelection { get; private set; }
+        public Card? PlayerSelection => playerSelectionBinding is { } selected
+            && selected.Card.Incarnation == selected.Incarnation
+                ? selected.Card
+                : null;
+
+        public Card? SourceReference => Source.Incarnation == sourceIncarnation
+            ? Source
+            : null;
+
+        public int SourceBindingIncarnation => sourceIncarnation;
+
+        public void RestoreSourceIncarnation(int incarnation) =>
+            sourceIncarnation = incarnation;
 
         /// <summary>Records the card a <c>chooseCard</c> was answered with.</summary>
         /// <param name="card">What they picked.</param>
         public void Choose(Card? card)
         {
-            Chosen = card;
-            RememberSelectionOrigin(card);
+            chosenBinding = Bind(card);
         }
 
         /// <summary>Records a player answer in both chosen namespaces.</summary>
         public void ChooseSelection(Card? card)
         {
-            Chosen = card;
-            PlayerSelection = card;
-            RememberSelectionOrigin(card);
+            var binding = Bind(card);
+            chosenBinding = binding;
+            playerSelectionBinding = binding;
         }
 
-        public void RestorePlayerSelection(Card? card)
+        public CardBinding? CaptureChosen() => chosenBinding;
+
+        public CardBinding? CapturePlayerSelection() => playerSelectionBinding;
+
+        public CardBinding? CaptureCurrentSelection() =>
+            playerSelectionBinding ?? chosenBinding;
+
+        public void RestoreChosen(CardBinding? binding) => chosenBinding = binding;
+
+        public void RestorePlayerSelection(CardBinding? binding) =>
+            playerSelectionBinding = binding;
+
+        public void RestorePersistedSelection(
+            Card card, int area, int incarnation, bool overwriteChosen)
         {
-            PlayerSelection = card;
-            RememberSelectionOrigin(card);
-        }
-
-        public int SelectionOrigin(Card card) =>
-            selectionOrigins.GetValueOrDefault(card.ObjectId, card.Area.Id);
-
-        public bool WasSelectedInCurrentArea(Card card) =>
-            SelectionOrigin(card) == card.Area.Id;
-
-        public void RestoreSelectionOrigin(Card card, int area) =>
-            selectionOrigins[card.ObjectId] = area;
-
-        private void RememberSelectionOrigin(Card? card)
-        {
-            if (card is not null)
+            var binding = new CardBinding(card, area, incarnation);
+            playerSelectionBinding = binding;
+            if (overwriteChosen || chosenBinding is null)
             {
-                selectionOrigins.TryAdd(card.ObjectId, card.Area.Id);
+                chosenBinding = binding;
             }
         }
+
+        public bool WasSelectedInCurrentArea(Card card) =>
+            CurrentBindingFor(card) is { } binding
+            && binding.Area == card.Area.Id
+            && binding.Incarnation == card.Incarnation;
+
+        public bool ChosenBindingIsCurrent(Card card) =>
+            chosenBinding is { } binding
+            && binding.Card.ObjectId == card.ObjectId
+            && binding.Incarnation == card.Incarnation;
+
+        public bool SourceBindingIsCurrent(Card card) =>
+            Source.ObjectId == card.ObjectId
+            && sourceIncarnation == card.Incarnation;
+
+        private CardBinding? CurrentBindingFor(Card card) =>
+            playerSelectionBinding is { } player
+            && player.Card.ObjectId == card.ObjectId
+                ? player
+                : chosenBinding is { } chosen
+                && chosen.Card.ObjectId == card.ObjectId
+                    ? chosen
+                    : null;
+
+        private static CardBinding? Bind(Card? card) => card is null
+            ? null
+            : new CardBinding(card, card.Area.Id, card.Incarnation);
 
         /// <summary>
         /// Which of the card's abilities is running, or null.

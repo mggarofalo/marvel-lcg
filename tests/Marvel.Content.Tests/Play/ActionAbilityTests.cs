@@ -2372,7 +2372,13 @@ public sealed class ActionAbilityTests
         var runner = Runner(
             "01101",
             "ForcedAction",
-            """{ "seq": [ { "discard": "this" }, { "putIntoPlay": { "card": "this", "where": "engagedWithYou" } } ] }""",
+            """
+            { "seq": [
+              { "discard": "this" },
+              { "putIntoPlay": { "card": "this", "where": "engagedWithYou" } },
+              { "discard": "this" }
+            ] }
+            """,
             limit: 1);
         Card? source = null;
         var (game, _) = Playing(
@@ -2387,6 +2393,7 @@ public sealed class ActionAbilityTests
         game.Resolve(Decision.Take(forced.Id));
 
         Assert.True(source.Incarnation > firstCopy);
+        Assert.Equal(DeckType.EngagedEnemiesArea, source.Area.Type);
         Assert.Equal(GamePhase.PlayerTurn, game.Phase);
         Assert.False(game.Pending!.Cancellable);
         Assert.Contains(game.Pending.Affordances, option => option.AnchorId == source.ObjectId);
@@ -9433,6 +9440,74 @@ public sealed class ActionAbilityTests
 
         Assert.Equal(DeckType.RemovedArea, target!.Area.Type);
         Assert.Contains(target, world.AreaOf(DeckType.RemovedArea).Cards);
+    }
+
+    [Rule("rr:cost.6")]
+    [Rule("rr:search.1")]
+    [Fact]
+    public void AmbiguousOutOfPlayRemovalRaisesBeforeActionCost()
+    {
+        // A singular remove node cannot choose between two matching search
+        // results. The ambiguity is found while the action is offered, before
+        // its exhaust cost can change the source.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "removeFromGame": { "cardsIn": {
+              "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+            } } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("01101", board.AreaOf(DeckType.EncounterDiscardPile));
+                board.CreateCard("08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:in-play-and-out-of-play.4")]
+    [Rule("rr:permanent.4")]
+    [Rule("rr:removed-from-the-game")]
+    [Fact]
+    public void PermanentDoesNotProtectAnExplicitOutOfPlayTarget()
+    {
+        // Permanent prevents an effect from making a card leave play. This
+        // target is already in an expressly named discard pile, so a card from
+        // another set may remove it from the game.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "removeFromGame": { "cardsIn": {
+              "area": "encounterDiscardPile", "title": "Compact Darts"
+            } } }
+            """);
+        Card? source = null;
+        Card? target = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                target = board.CreateCard(
+                    "27182a", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(DeckType.RemovedArea, target!.Area.Type);
     }
 
     [Rule("rr:permanent.4")]

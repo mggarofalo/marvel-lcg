@@ -48,7 +48,8 @@ public static class Discard
         // another out-of-play area was expressly named belongs to the caller's
         // selector, not this Permanent rule primitive.
         target.Area.Type != DeckType.RemovedArea
-        && (StateFields.Modified(world, target, "permanent", facts, world.Players) <= 0
+        && (!DeckTypes.IsInPlay(target.Area.Type)
+            || StateFields.Modified(world, target, "permanent", facts, world.Players) <= 0
             || SameSet(facts, source, target));
 
     /// <summary>Whether two printed cards belong to the same non-empty set.</summary>
