@@ -40,4 +40,23 @@ public sealed class DecisionTests
         Assert.Empty(new Decision(1, [2]).Spent);
         Assert.Null(new Decision(1, [2]).Resources);
     }
+
+    [Rule("rr:non-numerical-variable.1")]
+    [Fact]
+    public void ACostVariableIsDefinedSeparatelyFromItsPayment()
+    {
+        // X is chosen before modifiers and payment. The generators remain a
+        // separate answer, so overpaying cannot silently redefine X.
+        var decision = Decision.Take(
+            affordance: 4,
+            targets: [],
+            paying: [7, 9],
+            values: new Dictionary<string, long>(StringComparer.Ordinal)
+            {
+                ["X"] = 3,
+            });
+
+        Assert.Equal(3, decision.DefinedValues["X"]);
+        Assert.Equal([7, 9], decision.Spent);
+    }
 }

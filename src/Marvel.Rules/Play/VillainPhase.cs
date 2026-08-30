@@ -296,12 +296,16 @@ public interface ICardAbilities : IWindowAbilities
     /// no type, only a card — and <c>rr:initiating-abilities</c> keeps choosing
     /// and paying in different steps, so the two lists arrive separately.
     /// </param>
+    /// <param name="values">
+    /// Numerical variables the player defined while initiating the cost.
+    /// </param>
     /// <returns>What changed.</returns>
     IReadOnlyList<GameEvent> Act(
         World world,
         PendingAbility ability,
         IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen);
+        IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values = null);
 
     /// <summary>Resolves an accepted Action inside its live agenda occurrence.</summary>
     IReadOnlyList<GameEvent> Act(
@@ -309,7 +313,9 @@ public interface ICardAbilities : IWindowAbilities
         PendingAbility ability,
         IReadOnlyList<int> paying,
         IReadOnlyList<int> chosen,
-        Occurrence occurrence) => Act(world, ability, paying, chosen);
+        Occurrence occurrence,
+        IReadOnlyDictionary<string, long>? values = null) =>
+        Act(world, ability, paying, chosen, values);
 
     /// <summary>
     /// Resolves the <b>Special</b> ability on a card named by another ability —
@@ -625,7 +631,8 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Act(
         World world, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen) =>
+        IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values = null) =>
         throw new RulesNotImplementedException(
             "no card has an action, so none of them can be triggered");
 
@@ -918,7 +925,8 @@ public static class VillainPhase
                 try
                 {
                     events.AddRange(abilities.Act(
-                        world, action.Ability, action.Paying, action.Chosen, occurrence));
+                        world, action.Ability, action.Paying, action.Chosen, occurrence,
+                        action.DefinedValues));
                 }
                 catch
                 {

@@ -1619,16 +1619,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Act(
         World world, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen)
+        IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values = null)
         => Act(
             world, ability, paying, chosen,
             new Occurrence(
-                0, [Steps.TurnAction], Subject: ability.Card, Player: ability.Player));
+                0, [Steps.TurnAction], Subject: ability.Card, Player: ability.Player),
+            values);
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Act(
         World world, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen, Occurrence occurrence)
+        IReadOnlyList<int> chosen, Occurrence occurrence,
+        IReadOnlyDictionary<string, long>? values = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(paying);
@@ -1663,9 +1666,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
         // before step 6 resolves.
-        ValidatePayment(found.Cost, paying, chosen, cast);
+        ValidatePayment(found.Cost, paying, chosen, values, cast);
         PayEvent(card, paying, cast, found.Effect);
-        Pay(found.Cost, paying, chosen, cast);
+        Pay(found.Cost, paying, chosen, values, cast);
         Use(world, card, found);
         if (world.Facts.Kind(card.FaceId) == CardKind.Event)
         {
@@ -2034,9 +2037,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         if (cost is { Kind: "spendEnergyX" })
         {
+            long maximum = CardPlay.Generators(
+                    world, world.Facts, world.Seats[player])
+                .Sum(source => source.Generates.LongCount(resource =>
+                    resource is Resources.Energy or Resources.Wild));
             return new CostOption(
-                card.ObjectId, "1", ["Y"],
-                Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]));
+                card.ObjectId, "X", ["Y"],
+                Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]),
+                Variables: [new VariableRequest("X", 1, maximum)]);
         }
 
         if (cost is not { Kind: "spend" })
@@ -2500,6 +2508,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Pays an ability's cost — <c>rr:initiating-abilities.step.5</c>.</summary>
     private static void Pay(
         AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, Cast cast)
+        => Pay(cost, paying, chosen, values: null, cast);
+
+    private static void Pay(
+        AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values, Cast cast)
     {
         if (cost is null)
         {
@@ -2518,7 +2531,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             foreach (var step in steps.Where(step => step.Kind != "spend"))
             {
-                Pay(step, paying, chosen, cast);
+                Pay(step, paying, chosen, values, cast);
             }
             return;
         }
@@ -2548,11 +2561,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.World, cast.World.Facts, cast.World.Seats[cast.Player])
                 .Where(source => selected.Contains(source.Effect))
                 .Select(source => source.Generates));
+            long x = DefinedVariable(values, "X", cast.Source);
             CardPlay.Spend(
                 cast.World, cast.World.Facts, [cast.World.Seats[cast.Player].Hand], paying,
-                generated.Length, new string('Y', generated.Length), itself: -1,
+                x, new string(Resources.Energy, checked((int)x)), itself: -1,
                 cast.Player, cast.Events);
-            cast.Results["energy"] = generated.Length;
+            cast.Results["energy"] = x;
             return;
         }
 
@@ -2575,6 +2589,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <summary>Validates every selected cost before any simultaneous cost is paid.</summary>
     private static void ValidatePayment(
         AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, Cast cast)
+        => ValidatePayment(cost, paying, chosen, values: null, cast);
+
+    private static void ValidatePayment(
+        AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values, Cast cast)
     {
         if (cost is null)
         {
@@ -2614,7 +2633,43 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         foreach (var step in steps.Where(step => step.Kind != "spend"))
         {
-            if (step.Kind == "discardFromHand")
+            if (step.Kind == "spendEnergyX")
+            {
+                long x = DefinedVariable(values, "X", cast.Source);
+                var request = Price(cast.World, cast.Source, cast.Player, step)!
+                    .VariableRequests.Single(variable =>
+                        string.Equals(variable.Name, "X", StringComparison.Ordinal));
+                if (!request.Allows(x))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' defines X as {x}, outside the offered "
+                        + $"range {request.Min}..{request.Max}");
+                }
+
+                var generators = CardPlay.Generators(
+                    cast.World, cast.World.Facts, cast.World.Seats[cast.Player]).ToList();
+                var selected = paying.ToHashSet();
+                if (paying.Count == 0
+                    || paying.Distinct().Count() != paying.Count
+                    || paying.Any(id => generators.All(source => source.Effect != id)))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' names an invalid generator for X");
+                }
+
+                string generated = string.Concat(generators
+                    .Where(source => selected.Contains(source.Effect))
+                    .Select(source => source.Generates));
+                if (!Resources.Pays(
+                        generated, x,
+                        new string(Resources.Energy, checked((int)x))))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' defines X as {x}, but the payment "
+                        + $"generates '{generated}'");
+                }
+            }
+            else if (step.Kind == "discardFromHand")
             {
                 long many = Number(step.Argument);
                 var hand = cast.World.Seats[cast.Player].Hand;
@@ -2643,6 +2698,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
     }
+
+    private static long DefinedVariable(
+        IReadOnlyDictionary<string, long>? values, string name, Card source) =>
+        values is not null && values.TryGetValue(name, out long value)
+            ? value
+            : throw new RulesNotImplementedException(
+                $"'{source.FaceId}' requires an explicit value for {name}");
 
     /// <summary>
     /// "Discard a card from your hand" — a cost whose payment is a card and not

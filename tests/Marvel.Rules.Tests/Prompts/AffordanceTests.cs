@@ -113,6 +113,21 @@ public sealed class AffordanceTests
         Assert.Equal(["mental"], cost.Rule);
     }
 
+    [Rule("rr:non-numerical-variable.1")]
+    [Fact]
+    public void AVariableCostCarriesTheValueThePlayerMustDefine()
+    {
+        var cost = new CostOption(
+            0, "1", Rule: ["energy"],
+            Variables: [new VariableRequest("X", 1, 6)]);
+
+        var variable = Assert.Single(cost.VariableRequests);
+        Assert.Equal("X", variable.Name);
+        Assert.True(variable.Allows(4));
+        Assert.False(variable.Allows(0));
+        Assert.False(variable.Allows(7));
+    }
+
     [Fact]
     public void APromptSaysWhetherDecliningIsLegal()
     {

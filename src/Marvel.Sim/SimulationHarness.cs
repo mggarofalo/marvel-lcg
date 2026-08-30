@@ -12,7 +12,7 @@ namespace Marvel.Sim;
 
 internal static class SimulationHarness
 {
-    private const int RecordSchema = 1;
+    private const int RecordSchema = 2;
     private const int RecentEventLimit = 20;
 
     public static void ValidateConfig(SimulationConfig config)
@@ -102,6 +102,7 @@ internal static class SimulationHarness
                         "step", gameIndex, step, prompt, attempted,
                         input.Targets,
                         input.Spent,
+                        input.DefinedValues,
                         happened,
                         game.State.Digest().Fingerprint());
                     recent.Enqueue(recordedStep);
@@ -155,6 +156,8 @@ internal static class SimulationHarness
                     attempted,
                     input?.Targets ?? [],
                     input?.Spent ?? [],
+                    input?.DefinedValues
+                        ?? new Dictionary<string, long>(StringComparer.Ordinal),
                     lastGood,
                     game?.State.Digest().Canonical(),
                     [.. recent],
@@ -335,7 +338,13 @@ internal static class SimulationHarness
                         step.Resources,
                         policyDecision.Spent,
                         $"game {currentGame} step {step.Step} policy resources");
-                    var decision = step.Decision.Resolve(asked, step.Targets, step.Resources);
+                    RequireEqual(
+                        JsonSerializer.Serialize(step.Values, RecordJson.Options),
+                        JsonSerializer.Serialize(
+                            policyDecision.DefinedValues, RecordJson.Options),
+                        $"game {currentGame} step {step.Step} policy variables");
+                    var decision = step.Decision.Resolve(
+                        asked, step.Targets, step.Resources, step.Values);
                     var resolved = game.Resolve(decision);
                     replayPolicy.DecisionResolved();
                     replayRecent.Enqueue(step);
@@ -564,7 +573,8 @@ internal static class SimulationHarness
                     try
                     {
                         var decision = failure.Decision.Resolve(
-                            game.Pending, failure.Targets, failure.Resources);
+                            game.Pending, failure.Targets, failure.Resources,
+                            failure.Values);
                         game.Resolve(decision);
                     }
                     catch (Exception error)

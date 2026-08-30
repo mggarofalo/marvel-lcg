@@ -147,6 +147,7 @@ Affordance    Id, Verb, AnchorId, AnchorPlayer, Label,
 TargetRequest Legal[], Min, Max, Groups[][], MustIncludeTraits[], Rule, IsSearch
 CostOption    Target, Cost, Rule[], OrCost, OrRule[], ResourceSource[]
 ResourceSource Effect, Generates
+VariableRequest Name, Min, Max
 ```
 
 Two constraints carried over from the event stream, for the same reasons:
@@ -168,6 +169,12 @@ never a replacement for it.
 The two sides are deliberately asymmetric. A prompt is **absent** when the game
 is over, and never empty — a decision with no options is not put to a player. The
 event list is very often empty: 35.3% of recorded steps change no state at all.
+
+A cost of X adds a `VariableRequest` beside its resource sources, and the
+answer carries the chosen value in `Decision.Values`. This is an engine wire
+choice: the rulebook requires X to be defined before payment and modifiers,
+but does not define a command format. Keeping the value separate from the
+selected generators means overpayment cannot silently redefine X.
 
 ## Reproducing the numbers
 

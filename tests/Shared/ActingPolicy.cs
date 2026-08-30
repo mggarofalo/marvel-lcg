@@ -81,7 +81,15 @@ public sealed class ActingPolicy(int seed, int declineOneIn = 4)
     }
 
     private Decision Taking(Affordance taken) =>
-        Decision.Take(taken.Id, Targets(taken), Paying(taken));
+        Decision.Take(taken.Id, Targets(taken), Paying(taken), Values(taken));
+
+    private static Dictionary<string, long> Values(Affordance taken) =>
+        taken.CostOptions
+            .SelectMany(cost => cost.VariableRequests)
+            .ToDictionary(
+                variable => variable.Name,
+                variable => variable.Min,
+                StringComparer.Ordinal);
 
     /// <summary>A legal selection from what an affordance asks for.</summary>
     private IReadOnlyList<int> Targets(Affordance taken)
@@ -133,7 +141,13 @@ public sealed class ActingPolicy(int seed, int declineOneIn = 4)
                     cost.Cost, System.Globalization.CultureInfo.InvariantCulture,
                     out long amount))
             {
-                continue;
+                var variable = cost.VariableRequests.FirstOrDefault(variable =>
+                    string.Equals(variable.Name, cost.Cost, StringComparison.Ordinal));
+                if (variable.Name is null)
+                {
+                    continue;
+                }
+                amount = variable.Min;
             }
 
             string required = string.Concat(cost.Rule ?? []);

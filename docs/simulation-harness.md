@@ -297,7 +297,9 @@ Arrays retain domain order. The stream starts with one run header, then contains
 one `start`, zero or more `step` records, and one `result` or `failure` record
 per game. One final `summary` record makes the aggregate machine-readable.
 
-The numeric `schema` is `1`. Replay rejects any other value.
+The numeric `schema` is `2`. Replay rejects any other value. Schema 2 adds the
+explicit numerical variables chosen while initiating a cost; without them a
+record could not replay a cost of X independently of its payment.
 
 ### Header record
 
@@ -306,7 +308,7 @@ The run header records the configuration shared by every game:
 ```json
 {
   "type": "header",
-  "schema": 1,
+  "schema": 2,
   "scenario": "rhino",
   "difficulty": "expert",
   "heroes": ["spider_man", "she_hulk"],
@@ -357,6 +359,7 @@ One step records the prompt before the decision and state after resolution:
   },
   "targets": [49],
   "resources": [12, 17],
+  "values": {"X": 2},
   "events": [],
   "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 }

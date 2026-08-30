@@ -15,9 +15,14 @@ namespace Marvel.Rules.Play;
 /// The generators spent to pay for it, by <c>ResourceSource.Effect</c>. Empty
 /// when the affordance is free, and empty on a decline.
 /// </param>
+/// <param name="Values">
+/// Numerical variables defined while initiating the affordance, keyed by the
+/// printed variable name. Empty when the affordance asks for none.
+/// </param>
 /// <remarks>
 /// <para>
-/// Three fields and no more: <c>id</c>, <c>targets</c> and <c>resources</c>.
+/// Four fields and no more: <c>id</c>, <c>targets</c>, <c>resources</c> and
+/// <c>values</c>.
 /// A decline is the absence of an id rather than a fourth field, because
 /// declining is choosing nothing and not a choice of its own kind.
 /// </para>
@@ -53,7 +58,8 @@ namespace Marvel.Rules.Play;
 public sealed record Decision(
     int Affordance,
     IReadOnlyList<int> Targets,
-    IReadOnlyList<int>? Resources = null)
+    IReadOnlyList<int>? Resources = null,
+    IReadOnlyDictionary<string, long>? Values = null)
 {
     /// <summary>Take nothing. The engine's empty command.</summary>
     public static readonly Decision Decline = new(-1, []);
@@ -63,6 +69,13 @@ public sealed record Decision(
 
     /// <summary>The generators spent, never null.</summary>
     public IReadOnlyList<int> Spent => Resources ?? [];
+
+    /// <summary>The numerical variables explicitly defined by this answer.</summary>
+    public IReadOnlyDictionary<string, long> DefinedValues => Values
+        ?? EmptyValues;
+
+    private static IReadOnlyDictionary<string, long> EmptyValues { get; } =
+        new Dictionary<string, long>(StringComparer.Ordinal);
 
     /// <summary>Takes an affordance with no targets.</summary>
     /// <param name="affordance">The affordance's id, from the prompt that offered it.</param>
@@ -80,4 +93,10 @@ public sealed record Decision(
     public static Decision Take(
         int affordance, IReadOnlyList<int> targets, IReadOnlyList<int> paying) =>
         new(affordance, targets, paying);
+
+    /// <summary>Takes an affordance with explicit numerical variable values.</summary>
+    public static Decision Take(
+        int affordance, IReadOnlyList<int> targets, IReadOnlyList<int> paying,
+        IReadOnlyDictionary<string, long> values) =>
+        new(affordance, targets, paying, values);
 }
