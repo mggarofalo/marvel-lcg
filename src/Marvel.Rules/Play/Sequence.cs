@@ -90,16 +90,7 @@ public static class Sequence
                 // Answering a plan may schedule nested work. Advance the plan
                 // that was being worked rather than whichever item is now at
                 // the front of the agenda.
-                if (step.What is Steps.ResumeWouldBeDefeated
-                    or Steps.ResumeCardDefeatedAbility
-                    or Steps.ResumeRevealAbility)
-                {
-                    world.Agenda.Advance(step, planOccurrence);
-                }
-                else
-                {
-                    world.Agenda.Advance(planOccurrence);
-                }
+                world.Agenda.Advance(step, planOccurrence);
                 continue;
             }
 
@@ -137,8 +128,12 @@ public static class Sequence
                     return statusCancelled;
                 }
 
+                IWindowAbilities offeredAbilities =
+                    step.What == Steps.PrepareIndirectAttackDamage
+                        ? new OptionalDamageInterrupts(abilities)
+                        : abilities;
                 if (Offering.Work(
-                    world, abilities, occurrence, kind, events, scope,
+                    world, offeredAbilities, occurrence, kind, events, scope,
                     ResolvePriorityStatus) is { } asked)
                 {
                     return asked;
@@ -189,6 +184,31 @@ public static class Sequence
         }
 
         return null;
+    }
+
+    private sealed class OptionalDamageInterrupts(IWindowAbilities inner)
+        : IWindowAbilities
+    {
+        public IReadOnlyList<PendingAbility> Waiting(
+            World world, Occurrence occurrence, WindowKind window) =>
+            [.. inner.Waiting(world, occurrence, window).Where(ability =>
+                window != WindowKind.Interrupt
+                || !AbilityTypes.IsMandatory(ability.Type))];
+
+        public IReadOnlyList<GameEvent> Resolve(
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) =>
+            inner.Resolve(world, occurrence, ability, paying, chosen);
+
+        public IReadOnlyList<GameEvent> Resolve(
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+            IReadOnlyDictionary<string, long>? values = null,
+            IReadOnlyList<ResourceAllocation>? allocations = null) =>
+            inner.Resolve(world, occurrence, ability, paying, chosen, values, allocations);
+
+        public Affordance Describe(World world, PendingAbility ability) =>
+            inner.Describe(world, ability);
     }
 
     /// <summary>

@@ -954,6 +954,15 @@ public static class VillainPhase
             case Steps.AssignIndirectAttackDamage:
                 return Attack.IndirectDamagePrompt(world, facts, step);
 
+            case Steps.PrepareIndirectAttackDamage:
+                // Its interrupt and response windows are the procedure. The
+                // simultaneous placement waits in ApplyIndirectAttackDamage.
+                break;
+
+            case Steps.ApplyIndirectAttackDamage:
+                Attack.ApplyIndirectDamage(world, facts, step, events);
+                break;
+
             case Steps.FinishIndirectAttackDamage:
                 Attack.FinishIndirectDamage(world, facts, step, events);
                 break;

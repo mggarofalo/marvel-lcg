@@ -667,6 +667,7 @@ public static class Attack
                     Character: activation.Enemy,
                     ProcedureFlag: activation.Attacking),
                 occurrence);
+            world.Agenda.BeforeResponses(occurrence);
             return;
         }
 
@@ -857,11 +858,13 @@ public static class Attack
             }
             else
             {
+                var occurrence = world.Agenda.Occurrence
+                    ?? throw new RulesNotImplementedException(
+                        "indirect attack damage has no containing occurrence");
                 world.Agenda.ThenContinuation(
                     assignment,
-                    world.Agenda.Occurrence
-                        ?? throw new RulesNotImplementedException(
-                            "indirect attack damage has no containing occurrence"));
+                    occurrence);
+                world.Agenda.BeforeResponses(occurrence);
             }
             return;
         }
@@ -998,6 +1001,43 @@ public static class Attack
             }
             assigned[id] = share;
         }
+
+        int round = world.Agenda.Current?.Round ?? 0;
+        var windows = assigned
+            .OrderBy(pair => pair.Key)
+            .Select((pair, index) => new PhaseStep(
+                Steps.PrepareIndirectAttackDamage,
+                round,
+                5,
+                Index: index,
+                Subject: pair.Key,
+                Seat: step.Seat,
+                ProcedureSource: step.Subject,
+                ProcedureAmount: pair.Value))
+            .ToList();
+        windows.Add(new PhaseStep(
+            Steps.ApplyIndirectAttackDamage,
+            round,
+            5,
+            Subject: step.Subject,
+            Seat: step.Seat,
+            Character: step.Character,
+            Plan: true,
+            ProcedureCandidates: [.. input.Targets],
+            ProcedureOccurrence: occurrence));
+        world.Agenda.Now(windows);
+    }
+
+    /// <summary>Place an assigned indirect attack after every recipient window.</summary>
+    public static void ApplyIndirectDamage(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        var occurrence = step.ProcedureOccurrence ?? world.Agenda.Occurrence
+            ?? throw new RulesNotImplementedException(
+                "indirect attack damage has no containing occurrence");
+        var assigned = (step.ProcedureCandidates ?? [])
+            .GroupBy(id => id)
+            .ToDictionary(group => group.Key, group => (long)group.Count());
 
         var attacker = world.Cards[step.Subject];
         var placed = new List<Damage.PlacedDamage>();

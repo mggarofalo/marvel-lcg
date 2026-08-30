@@ -239,6 +239,17 @@ public readonly record struct PhaseStep(
                     thwart.Thwarter,
                     thwart.Scheme,
                     thwart.Player),
+            Steps.PrepareIndirectAttackDamage => Occurrence.ForAttack(
+                id,
+                Conditions,
+                world,
+                facts,
+                ProcedureSource,
+                Subject,
+                Seat),
+            Steps.DealAttackDamage when world.Attack is { Indirect: true } attack =>
+                Occurrence.ForAttack(
+                    id, [], world, facts, attack.Enemy, attack.Target, attack.Player),
             Steps.DealAttackDamage when world.Attack is { } attack => Occurrence.ForAttack(
                 id,
                 Conditions,
@@ -323,6 +334,7 @@ public readonly record struct PhaseStep(
     public Occurrence? ScheduledOccurrence => What is
         Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
             or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
+            or Steps.PrepareIndirectAttackDamage
             ? null
             : new Occurrence(
                 OccurrenceId ?? Moment.Id(Round, Number, Index), Conditions, Subject, Seat);
@@ -1385,6 +1397,12 @@ public static class Steps
     /// <summary>Assign the calculated damage from one indirect enemy attack.</summary>
     public const string AssignIndirectAttackDamage = "AssignIndirectAttackDamage";
 
+    /// <summary>Open one recipient's damage-step interrupt window.</summary>
+    public const string PrepareIndirectAttackDamage = "PrepareIndirectAttackDamage";
+
+    /// <summary>Place every assigned share after recipient windows finish.</summary>
+    public const string ApplyIndirectAttackDamage = "ApplyIndirectAttackDamage";
+
     /// <summary>Finish retaliation after indirect damage suspended on defeat.</summary>
     public const string FinishIndirectAttackDamage = "FinishIndirectAttackDamage";
 
@@ -1492,6 +1510,7 @@ public static class Steps
         // `rr:triggering-condition.2` still gives both one occurrence and one
         // pair of windows.
         [DealAttackDamage] = [DamageWouldBeDealt],
+        [PrepareIndirectAttackDamage] = [DamageWouldBeDealt],
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],

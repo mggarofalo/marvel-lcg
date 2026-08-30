@@ -192,6 +192,59 @@ public sealed class InfiniteHunterTests
         Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
     }
 
+    [Rule("rr:attack-enemy-activation.step.3.b")]
+    [Rule("rr:response")]
+    [Fact]
+    public void SuspendedBoostFinishesBeforeTheFlipResponseWindow()
+    {
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            {"cards":[
+              {"card":"45065","abilities":[{
+                "trigger":{"event":"WhenCardRevealed","timing":"Boost","subject":"this"},
+                "effect":{"choose":{"options":[
+                  {"placeThreat":{"scheme":{"query":"mainScheme"},"amount":2}},
+                  {"grantUntil":{"card":"activatingEnemy","keyword":"attack",
+                                 "amount":2,"until":"EndOfActivation"}}
+                ]}}
+              }]},
+              {"card":"01006","abilities":[{
+                "trigger":{"event":"WhenBoostCardsFlipped","timing":"ForcedResponse",
+                           "subject":"game"},
+                "effect":{"placeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}
+              }]}
+            ]}
+            """));
+        var (world, _) = Board();
+        world.Abilities = runner;
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        world.CreateCard(
+            "01006", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long before = main.Tokens.GetValueOrDefault("k_threat");
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var hunter = world.CreateCard(AuthoredCards.InfiniteHunter, deck);
+        World.MoveToTop(hunter, deck);
+        var events = new List<GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var choose = Sequence.Work(world, Cards, runner, events)!;
+
+        Assert.Equal(Question.Option, choose.Asking);
+        Assert.Equal(before, main.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(DeckType.BoostingArea, hunter.Area.Type);
+
+        Sequence.Answer(world, Cards, runner, choose, Decision.Take(1), events);
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
+
+        Assert.Equal(before + 1, main.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(DeckType.EncounterDiscardPile, hunter.Area.Type);
+    }
+
     [Rule("rr:activation")]
     [Rule("rr:alteration-effect")]
     [Theory]

@@ -281,6 +281,142 @@ public sealed class IndirectDamageTests
         Assert.Equal(amount - 1, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:indirect-damage.3")]
+    [Rule("rr:damage.step.6")]
+    [Fact]
+    public void TwoIndirectRecipientsEachFinishTheirDefeatInterrupt()
+    {
+        var runner = HealingAllyRunner();
+        var world = Deal();
+        world.Abilities = runner;
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var first = world.CreateCard(
+            Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var second = world.CreateCard(
+            Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        first.TakeDamage(Damage.Health(world, Cards, first) - 1);
+        second.TakeDamage(Damage.Health(world, Cards, second) - 1);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Attack.MakeIndirect(world);
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var assign = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(
+            world, Cards, runner, assign,
+            Decision.Take(
+                Assert.Single(assign.Affordances).Id,
+                [first.ObjectId, second.ObjectId], []), events);
+
+        foreach (var ally in new[] { first, second })
+        {
+            var interrupt = Sequence.Work(world, Cards, runner, events)!;
+            Assert.Equal(Question.Opportunity, interrupt.Asking);
+            Sequence.Answer(
+                world, Cards, runner, interrupt,
+                Decision.Take(Assert.Single(interrupt.Affordances).Id), events);
+        }
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
+
+        Assert.Equal(0, first.Damage);
+        Assert.Equal(0, second.Damage);
+        Assert.Equal(DeckType.AlliesArea, first.Area.Type);
+        Assert.Equal(DeckType.AlliesArea, second.Area.Type);
+    }
+
+    [Rule("rr:indirect-damage.3.2")]
+    [Rule("rr:damage.step.1")]
+    [Fact]
+    public void UnassignedIdentityCannotSpendBackflipOnIndirectDamage()
+    {
+        var runner = BackflipRunner();
+        var world = Deal();
+        world.Abilities = runner;
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var backflip = world.CreateCard("01003", world.Seats[0].Hand);
+        var ally = world.CreateCard(
+            Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Attack.MakeIndirect(world);
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var assign = Sequence.Work(world, Cards, runner, events)!;
+        int amount = Assert.Single(assign.Affordances).Targets!.Min;
+        Sequence.Answer(
+            world, Cards, runner, assign,
+            Decision.Take(
+                assign.Affordances[0].Id,
+                [.. Enumerable.Repeat(ally.ObjectId, amount)], []), events);
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
+
+        Damage.Deal(
+            world, Cards, villain, world.Seats[0].IdentityCard,
+            1, "later", "Damage", events);
+
+        Assert.Equal(DeckType.HandsArea, backflip.Area.Type);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:indirect-damage.3.2")]
+    [Rule("rr:damage.step.1")]
+    [Fact]
+    public void IdentityAssignedIndirectDamageCanUseBackflipAfterAnAllyDefends()
+    {
+        var runner = BackflipRunner();
+        var world = Deal();
+        world.Abilities = runner;
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var backflip = world.CreateCard("01003", world.Seats[0].Hand);
+        var ally = world.CreateCard(
+            Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Attack.MakeIndirect(world);
+        var allyDefense = Assert.Single(
+            defend.Affordances, option => option.AnchorId == ally.ObjectId);
+        Sequence.Answer(
+            world, Cards, runner, defend,
+            Decision.Take(allyDefense.Id), events);
+        var assign = Sequence.Work(world, Cards, runner, events)!;
+        int amount = Assert.Single(assign.Affordances).Targets!.Min;
+        Sequence.Answer(
+            world, Cards, runner, assign,
+            Decision.Take(
+                assign.Affordances[0].Id,
+                [.. Enumerable.Repeat(
+                    world.Seats[0].IdentityCard.ObjectId, amount)], []), events);
+
+        var interrupt = Sequence.Work(world, Cards, runner, events)!;
+        Assert.Equal(Question.Opportunity, interrupt.Asking);
+        var offeredBackflip = Assert.Single(
+            interrupt.Affordances, option => option.Id == backflip.ObjectId);
+        Sequence.Answer(
+            world, Cards, runner, interrupt,
+            Decision.Take(offeredBackflip.Id), events);
+        var remaining = Sequence.Work(world, Cards, runner, events);
+        while (remaining is not null)
+        {
+            Assert.Equal(Question.Opportunity, remaining.Asking);
+            Sequence.Answer(
+                world, Cards, runner, remaining, Decision.Decline, events);
+            remaining = Sequence.Work(world, Cards, runner, events);
+        }
+
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(DeckType.DiscardPile, backflip.Area.Type);
+    }
+
     [Rule("rr:indirect-damage.4")]
     [Fact]
     public void ASupportIsNotACharacterAndTakesNone()
@@ -369,4 +505,23 @@ public sealed class IndirectDamageTests
         world.Abilities = AuthoredCards.Runner();
         return world;
     }
+
+    private static AbilityRunner HealingAllyRunner() => new(AbilityCatalog.Parse(
+        """
+        {"cards":[{"card":"13019","abilities":[{
+          "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
+                     "subject":"this"},
+          "effect":{"heal":{"card":"this","amount":{"damageOn":"this"}}}
+        }]}]}
+        """));
+
+    private static AbilityRunner BackflipRunner() => new(AbilityCatalog.Parse(
+        """
+        {"cards":[{"card":"01003","abilities":[{
+          "trigger":{"event":"WhenDamageWouldBeDealt","timing":"Interrupt",
+                     "target":"you"},
+          "when":{"isYourIdentity":"trigger.target"},
+          "effect":{"preventDamage":"trigger.target"}
+        }]}]}
+        """));
 }
