@@ -16354,6 +16354,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var projectedDamage = new Dictionary<int, long>();
         var projectedTough = new Dictionary<int, long>();
         int nextReorderGroup = 0;
+        bool recordPackets = true;
+        bool reorderedCouldDiscard = false;
 
         long ProjectedDamage(Card card) => projectedDamage.GetValueOrDefault(
             card.ObjectId, card.Damage);
@@ -16395,7 +16397,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 foreach (var target in DamageTargets(
                              effect.Require("cards"), cast))
                 {
-                    damage.Add((target, amount, repetitions, reorderGroup));
+                    if (recordPackets)
+                    {
+                        damage.Add((target, amount, repetitions, reorderGroup));
+                    }
                     ProjectDamage(target, amount, repetitions);
                 }
                 return;
@@ -16412,7 +16417,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     long moved = Math.Min(ProjectedDamage(from), requested);
                     projectedDamage[from.ObjectId] =
                         ProjectedDamage(from) - moved;
-                    damage.Add((to, moved, 1, reorderGroup));
+                    if (recordPackets)
+                    {
+                        damage.Add((to, moved, 1, reorderGroup));
+                    }
                     ProjectDamage(to, moved, 1);
                 }
                 return;
@@ -16432,10 +16440,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             if (effect.Kind == "removeThreat")
             {
                 long amount = SaturatingSum(
-                    Amount(effect.Require("amount"), cast),
+                    SaturatingMultiply(
+                        Amount(effect.Require("amount"), cast), baseMultiplier),
                     [EventModifier(cast, "eventThreatRemoval")]);
-                threat.AddRange(Every(effect.Require("scheme"), cast)
-                    .Select(target => (target, amount, repetitions)));
+                if (recordPackets)
+                {
+                    threat.AddRange(Every(effect.Require("scheme"), cast)
+                        .Select(target => (target, amount, repetitions)));
+                }
                 return;
             }
             if (effect.Kind == "forEach")
@@ -16444,7 +16456,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     var repeated = Tree(effect.Require("effect"));
                     long count = ForEachCount(effect, cast);
-                    if (repeated.Kind is "dealDamage" or "dealAttackDamage")
+                    if (repeated.Kind is "dealDamage" or "dealAttackDamage"
+                        or "removeThreat")
                     {
                         // The runner combines a target-fixed repetition into
                         // one damage instance before Tough is applied.
@@ -16485,9 +16498,78 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             if (effect.Kind == "and")
             {
                 int group = ++nextReorderGroup;
-                foreach (var child in Nodes(effect.Argument))
+                var andEffects = Nodes(effect.Argument).ToList();
+                var initialDamage = new Dictionary<int, long>(projectedDamage);
+                var initialTough = new Dictionary<int, long>(projectedTough);
+
+                foreach (var child in andEffects)
                 {
                     Collect(child, repetitions, baseMultiplier, group);
+                }
+
+                var maximumDamage = new Dictionary<int, long>(projectedDamage);
+                var minimumTough = new Dictionary<int, long>(projectedTough);
+                var authored = Enumerable.Range(0, andEffects.Count).ToList();
+                bool priorRecording = recordPackets;
+                recordPackets = false;
+                foreach (var order in PlayerPermutations(authored)
+                             .Where(order => !order.SequenceEqual(authored)))
+                {
+                    projectedDamage.Clear();
+                    foreach (var (card, amount) in initialDamage)
+                    {
+                        projectedDamage[card] = amount;
+                    }
+                    projectedTough.Clear();
+                    foreach (var (card, count) in initialTough)
+                    {
+                        projectedTough[card] = count;
+                    }
+                    foreach (int position in order)
+                    {
+                        Collect(
+                            andEffects[position], repetitions,
+                            baseMultiplier, group);
+                    }
+
+                    foreach (var card in cast.World.Cards)
+                    {
+                        long amount = ProjectedDamage(card);
+                        if (amount >= Damage.Health(
+                                cast.World, cast.World.Facts, card)
+                            && (cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                                    && queried.Contains(
+                                        DeckType.EncounterDiscardPile)
+                                || cast.World.Facts.Kind(card.FaceId) == CardKind.Ally
+                                    && queried.Contains(DeckType.DiscardPile)))
+                        {
+                            reorderedCouldDiscard = true;
+                        }
+                        maximumDamage[card.ObjectId] = Math.Max(
+                            maximumDamage.GetValueOrDefault(
+                                card.ObjectId, card.Damage),
+                            amount);
+                        long tough = projectedTough.GetValueOrDefault(
+                            card.ObjectId,
+                            Statuses.Count(cast.World, card, Statuses.Tough));
+                        minimumTough[card.ObjectId] = Math.Min(
+                            minimumTough.GetValueOrDefault(
+                                card.ObjectId,
+                                Statuses.Count(
+                                    cast.World, card, Statuses.Tough)),
+                            tough);
+                    }
+                }
+                recordPackets = priorRecording;
+                projectedDamage.Clear();
+                foreach (var (card, amount) in maximumDamage)
+                {
+                    projectedDamage[card] = amount;
+                }
+                projectedTough.Clear();
+                foreach (var (card, count) in minimumTough)
+                {
+                    projectedTough[card] = count;
                 }
                 return;
             }
@@ -16507,6 +16589,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         foreach (var effect in effects)
         {
             Collect(effect);
+        }
+
+        if (reorderedCouldDiscard)
+        {
+            return true;
         }
 
         foreach (var group in damage.GroupBy(packet => packet.Target.ObjectId))
