@@ -87,6 +87,13 @@ ally does not (`.3.2`). Neither declaration itself exhausts the character,
 because `.2.2` and `.3.3` explicitly allow card text to declare an already
 exhausted character without exhausting it.
 
+A non-basic hero established by a defense-labeled ability may still make a
+basic defense in step 2 (`rr:defend-defense.4.3`). If that same ability then
+declares an ally, the engine retains its provisional hero as persisted fallback
+state for the Mutant Protectors ruling. Defender departure is evaluated only
+until step 5 begins; damage defeating an ally does not retroactively make the
+completed attack undefended.
+
 ## Boost icons are a lasting effect
 
 `rr:attack-enemy-activation.step.3.c` increases the enemy's ATK by one per boost

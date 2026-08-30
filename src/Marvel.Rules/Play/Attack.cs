@@ -35,6 +35,13 @@ public sealed record DefenderChoice(IReadOnlyList<Card> Candidates, bool Require
 /// </remarks>
 public static class Attack
 {
+    // The rulebook does not define an engine key for the defender retained by
+    // a defense-labeled ability. This persisted lasting-effect spelling is ours.
+    private const string DefenseFallback = "defenseFallback";
+
+    // Likewise, this is the engine's persisted marker that step 5 has applied.
+    private const string AttackDamageResolved = "attackDamageResolved";
+
     /// <summary>
     /// The affordance verb for the basic defense power —
     /// <c>rr:defend-defense.2</c>.
@@ -197,7 +204,8 @@ public static class Attack
     /// character as a non-basic defender before its printed effect reaches the
     /// declaration, so naming that same character remains legal.
     /// </remarks>
-    public static bool CanDeclareByAbility(World world, ICardFacts facts, Card defender)
+    public static bool CanDeclareByAbility(
+        World world, ICardFacts facts, Card defender, int replaceableDefender = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -212,7 +220,9 @@ public static class Attack
 
         var kind = FacedownDrones.Kind(defender, facts);
         return kind is CardKind.Hero or CardKind.Ally
-            && (attack.Defender < 0 || attack.Defender == defender.ObjectId);
+            && (attack.Defender < 0
+                || attack.Defender == defender.ObjectId
+                || attack.Defender == replaceableDefender);
     }
 
     /// <summary>Apply a card instruction that declares a hero or ally the defender.</summary>
@@ -225,19 +235,35 @@ public static class Attack
     /// without exhausting even when the character is already exhausted.
     /// </remarks>
     public static void DeclareByAbility(
-        World world, ICardFacts facts, Card defender)
+        World world, ICardFacts facts, Card defender, int replaceableDefender = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(defender);
 
-        if (!CanDeclareByAbility(world, facts, defender))
+        if (!CanDeclareByAbility(world, facts, defender, replaceableDefender))
         {
             throw new RulesNotImplementedException(
                 $"card {defender.ObjectId} cannot be declared the defender of the current attack");
         }
 
         var attack = Current(world);
+        if (attack.Defender >= 0
+            && attack.Defender == replaceableDefender
+            && attack.Defender != defender.ObjectId)
+        {
+            // Mutant Protectors is the first printed shape: its defense label
+            // makes the identity the defender, then its text declares an ally.
+            // The official ruling retains that identity as the non-basic
+            // defender if the ally leaves before damage. A bounded effect keeps
+            // that provenance saveable without adding a second defender role.
+            world.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: DefenseFallback,
+                Amount: attack.Defender,
+                Affects: defender.ObjectId,
+                Lasts: Duration.UntilEndOf(TimingPoints.EndOfAttack)));
+        }
         int player = defender.Area.PlayArea.Player;
         world.Attack = attack with
         {
@@ -473,14 +499,6 @@ public static class Attack
         }
 
         var attack = Current(world);
-        // A card instruction can declare the defender during the initiation
-        // interrupt. `rr:defend-defense.2` and `.3` both exclude every other
-        // friendly character once one is defending, so step 2 has no further
-        // question to ask.
-        if (attack.IsDefended)
-        {
-            return null;
-        }
         var choice = Choice(world, facts, abilities, attack);
         if (choice.Candidates.Count == 0)
         {
@@ -531,11 +549,6 @@ public static class Attack
         ArgumentNullException.ThrowIfNull(events);
 
         var attack = Current(world);
-        if (attack.IsDefended)
-        {
-            throw new RulesNotImplementedException(
-                $"attack by card {attack.Enemy} already has defender {attack.Defender}");
-        }
         var choice = Choice(world, facts, abilities, attack);
         if (input.IsDecline)
         {
@@ -734,6 +747,16 @@ public static class Attack
         long amount = attack.CalculatedDamage
             ?? throw new RulesNotImplementedException(
                 "attack damage reached step 5 before step 4 calculated it");
+
+        // The departure rule applies only before attack damage is dealt. The
+        // step is resolved even when its calculated amount is zero, so mark it
+        // before that early return. The marker also prevents a nested damage
+        // consequence from rewriting the attack after assignment has begun.
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: AttackDamageResolved,
+            Affects: attack.Enemy,
+            Lasts: Duration.UntilEndOf(TimingPoints.EndOfAttack)));
         if (amount <= 0)
         {
             return;
@@ -981,7 +1004,21 @@ public static class Attack
     private static DefenderChoice Choice(
         World world, ICardFacts facts, ICardAbilities abilities, EnemyAttack attack)
     {
-        var legal = Defenders(world, facts);
+        List<Card> legal;
+        if (attack.IsDefended)
+        {
+            var current = world.Cards[attack.Defender];
+            legal = !attack.BasicDefense
+                && current.Ready
+                && FacedownDrones.Kind(current, facts) == CardKind.Hero
+                && BasicPowers.CanUsePower(facts, current, "DEF")
+                    ? [current]
+                    : [];
+        }
+        else
+        {
+            legal = Defenders(world, facts);
+        }
         var choice = abilities.Defenders(world, attack, legal);
         if (choice.Required && choice.Candidates.Count == 0)
         {
@@ -1060,6 +1097,33 @@ public static class Attack
             || DeckTypes.IsInPlay(defender.Area.Type))
         {
             return;
+        }
+
+        if (world.Effects.Active().Any(effect =>
+            effect.Kind == AttackDamageResolved
+            && effect.Affects == attack.Enemy))
+        {
+            return;
+        }
+
+        var fallback = world.Effects.Active().LastOrDefault(effect =>
+            effect.Kind == DefenseFallback
+            && effect.Affects == defender.ObjectId);
+        if (fallback is { Amount: >= 0 and <= int.MaxValue })
+        {
+            int fallbackId = (int)fallback.Amount;
+            var fallbackDefender = world.Cards[fallbackId];
+            if (DeckTypes.IsInPlay(fallbackDefender.Area.Type))
+            {
+                world.Attack = attack with
+                {
+                    Defender = fallbackId,
+                    Target = fallbackId,
+                    Player = fallbackDefender.Area.PlayArea.Player,
+                    BasicDefense = false,
+                };
+                return;
+            }
         }
 
         var retargeted = attack with

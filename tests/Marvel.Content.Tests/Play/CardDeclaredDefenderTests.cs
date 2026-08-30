@@ -107,6 +107,45 @@ public sealed class CardDeclaredDefenderTests
         Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Tough));
     }
 
+    [Rule("rr:defend-defense.3.2")]
+    [Rule("rr:defend-defense.4")]
+    [Fact]
+    public void ADefenseAbilityCanReplaceItsProvisionalIdentityWithADeclaredAlly()
+    {
+        // Mutant Protectors has this exact shape: the defense label first makes
+        // the identity the defender, then the printed effect declares a
+        // different ally. Only the provisional defender from this same ability
+        // is replaceable.
+        var (world, villain) = Board();
+        var source = world.CreateCard(
+            "01081", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var ally = world.CreateCard(
+            "01076", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        world.Attack = new EnemyAttack(
+            villain.ObjectId, 0, world.Seats[0].IdentityCard.ObjectId);
+        world.Activation = new EnemyActivation(villain.ObjectId, 0, Attacking: true);
+        var runner = Runner(
+            "01081",
+            """
+            { "defense": { "effect": {
+              "declareDefender": { "card": { "titled": "Luke Cage" } }
+            } } }
+            """,
+            eventName: "WhenBoostCardGiven");
+        var occurrence = Occurrence.ForAttack(
+            1, ["WhenBoostCardGiven"], world, Cards,
+            villain.ObjectId, world.Seats[0].IdentityCard.ObjectId, 0);
+
+        var pending = Assert.Single(
+            runner.Waiting(world, occurrence, WindowKind.Interrupt),
+            ability => ability.Card == source.ObjectId);
+        runner.Resolve(world, occurrence, pending, [], []);
+
+        Assert.Equal(ally.ObjectId, world.Attack!.Defender);
+        Assert.Equal(ally.ObjectId, world.Attack.Target);
+        Assert.False(world.Attack.BasicDefense);
+    }
+
     private static void ResolveInitiationInterrupt(
         World world, AbilityRunner runner, Card villain)
     {

@@ -150,6 +150,93 @@ public sealed class EnemyAttackDefenderTests
         Assert.Equal(first.ObjectId, world.Attack.Target);
     }
 
+    [Rule("rr:defend-defense.4.3")]
+    [Fact]
+    public void ANonBasicDefenseHeroCanStillMakeABasicDefenseAtStepTwo()
+    {
+        // A defense-labeled ability is not a basic defense, but the same hero
+        // "can still be declared the defender" during the ordinary step. No
+        // other character is offered once that player's identity is defending.
+        var (world, facts, villain) = Board(defense: 2);
+        var hero = world.Seats[0].IdentityCard;
+        Begin(world, villain, hero);
+        Attack.BeginDefenseAbility(world, 0, hero);
+
+        var asked = Attack.DeclareDefender(world, facts, new NoCardAbilities());
+
+        Assert.Equal(hero.ObjectId, Assert.Single(asked!.Affordances).AnchorId);
+        Attack.Defend(
+            world, facts, new NoCardAbilities(), Decision.Take(hero.ObjectId), []);
+        Assert.True(world.Attack!.BasicDefense);
+        Assert.False(hero.Ready);
+    }
+
+    [Rule("rr:defend-defense.4")]
+    [Rule("rr:attack-enemy-activation.3.2")]
+    [Fact]
+    public void ADefenseAbilityIdentityReturnsIfItsDeclaredAllyLeavesBeforeDamage()
+    {
+        // The defense label first makes the identity a non-basic defender. The
+        // Mutant Protectors ruling retains that role behind the explicitly
+        // declared ally, so the identity returns rather than the attack becoming
+        // undefended if that ally leaves before damage.
+        var (world, facts, villain) = Board();
+        var hero = world.Seats[0].IdentityCard;
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        Begin(world, villain, hero);
+        Attack.BeginDefenseAbility(world, 0, hero);
+        Attack.DeclareByAbility(world, facts, ally, replaceableDefender: hero.ObjectId);
+
+        World.MoveToTop(
+            ally, world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        Attack.RefreshDefender(world, facts);
+
+        Assert.Equal(hero.ObjectId, world.Attack!.Defender);
+        Assert.Equal(hero.ObjectId, world.Attack.Target);
+        Assert.False(world.Attack.BasicDefense);
+    }
+
+    [Rule("rr:attack-enemy-activation.3.2")]
+    [Theory]
+    [InlineData(0)]
+    [InlineData(5)]
+    public void AnAllyLeavingAfterDamageDoesNotRewriteTheCompletedAttack(long damage)
+    {
+        // The defender-departure rule is expressly limited to before attack
+        // damage. Once step 5 has applied, either its own damage or later
+        // response text may move the ally, but the completed attack still
+        // remembers the character that defended and was attacked.
+        var (world, facts, villain) = Board();
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("filler", world.Seats[0].Deck);
+        Begin(world, villain, ally);
+        world.Attack = world.Attack! with
+        {
+            Defender = ally.ObjectId,
+            CalculatedDamage = damage,
+        };
+        world.Agenda.Add(new PhaseStep(
+            Steps.DealAttackDamage, Round: 1, Number: 5,
+            Subject: villain.ObjectId, Seat: 0));
+        var occurrence = world.Agenda.Begin(world, facts);
+        world.Agenda.Advance(occurrence);
+
+        Attack.DealDamage(world, facts, []);
+        if (DeckTypes.IsInPlay(ally.Area.Type))
+        {
+            World.MoveToTop(
+                ally, world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        }
+        Attack.RefreshDefender(world, facts);
+
+        Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
+        Assert.Equal(ally.ObjectId, world.Attack!.Defender);
+        Assert.Equal(ally.ObjectId, world.Attack.Target);
+        Assert.True(world.Attack.IsDefended);
+    }
+
     [Rule("rr:attacks-against-allies.2")]
     [Fact]
     public void AHeroCanDefendAnAttackThatWasInitiatedAgainstAnAlly()

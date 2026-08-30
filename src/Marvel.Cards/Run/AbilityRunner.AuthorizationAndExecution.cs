@@ -266,6 +266,7 @@ public sealed partial class AbilityRunner
             cast.AbilityActor = performer;
             if (labels.Contains(Attack.DefenseVerb, StringComparer.Ordinal))
             {
+                cast.Results["defenseAbilityDefender"] = performer.ObjectId;
                 Attack.BeginDefenseAbility(cast.World, Resolver(cast), performer);
             }
         }
@@ -631,7 +632,9 @@ public sealed partial class AbilityRunner
                 var declared = Find(node.Require("card"), cast)
                     ?? throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' cannot find the character it declares as defender");
-                Attack.DeclareByAbility(cast.World, cast.World.Facts, declared);
+                Attack.DeclareByAbility(
+                    cast.World, cast.World.Facts, declared,
+                    ReplaceableDefenseDefender(cast));
                 cast.ResolveEffect();
                 break;
 
@@ -734,6 +737,7 @@ public sealed partial class AbilityRunner
                 {
                     if (cast.AbilityActor is null)
                     {
+                        cast.Results["defenseAbilityDefender"] = defender.ObjectId;
                         Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
                     }
                     RunChild(Tree(node.Require("effect")), "defense:effect", cast);
@@ -1175,5 +1179,11 @@ public sealed partial class AbilityRunner
             Trigger = cast.Trigger, Verb = "Attach",
         });
     }
+
+    // The rules define the role, not this persisted result-key spelling. The
+    // value survives a suspended printed sequence so only this defense ability
+    // may replace the provisional defender it established.
+    private static int ReplaceableDefenseDefender(Cast cast) =>
+        checked((int)cast.Results.GetValueOrDefault("defenseAbilityDefender", -1));
 
 }

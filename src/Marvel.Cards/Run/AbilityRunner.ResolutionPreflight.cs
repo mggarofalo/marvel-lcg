@@ -140,7 +140,9 @@ public sealed partial class AbilityRunner
                 Every(node.Argument, cast), card => !card.Ready
                     && cast.Abilities.CanReady(cast.World, card, cast.Source)),
             "declareDefender" => Find(node.Require("card"), cast) is { } declared
-                && Attack.CanDeclareByAbility(cast.World, cast.World.Facts, declared)
+                && Attack.CanDeclareByAbility(
+                    cast.World, cast.World.Facts, declared,
+                    ReplaceableDefenseDefender(cast))
                     ? ResolutionOutcome.Full
                     : ResolutionOutcome.None,
             "discard" => (node.Field("card") ?? node.Argument) is { } discardTarget
