@@ -192,6 +192,72 @@ public sealed class ActionAbilityTests
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
+    [Rule("rr:cost.12")]
+    [Fact]
+    public void TakingDamageAsACostIsUnpaidWhenDamageIsPrevented()
+    {
+        // A take-damage cost "is not considered paid unless all of that
+        // damage was taken." Preventing even part of it therefore suppresses
+        // the post-arrow draw.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost:
+            """
+            { "takeDamage": { "cards": "you", "amount": 2 } }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+        int held = world.Seats[0].Hand.Cards.Count;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "preventDamage",
+            Amount: 1,
+            Card: source!.ObjectId,
+            Affects: world.Seats[0].IdentityCard.ObjectId,
+            Lasts: new Duration(Uses: 1)));
+
+        var failure = Assert.Throws<RulesNotImplementedException>(() =>
+            runner.Act(world, action, [], []));
+
+        Assert.Contains("only 1 was taken", failure.Message);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Rule("rr:cost.12")]
+    [Fact]
+    public void TakingAllDamagePaysTheCost()
+    {
+        // The cost is paid when "all of that damage was taken," so the effect
+        // after the arrow resolves.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost:
+            """
+            { "takeDamage": { "cards": "you", "amount": 2 } }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.Act(world, action, [], []);
+
+        Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
     [Rule("rr:player-elimination.5")]
     [Rule("rr:player-elimination.step.5")]
     [Rule("rr:upgrade.1")]

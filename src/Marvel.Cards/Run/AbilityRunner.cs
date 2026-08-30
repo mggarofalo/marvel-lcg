@@ -1983,6 +1983,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     world, card, player, cost.Require("cards")) is { } damageTarget
                 && Number(cost.Require("amount")) > 0
                 && world.Abilities.CanTakeDamage(world, damageTarget, card),
+            { Kind: "takeDamage" } => CostTarget(
+                    world, card, player, cost.Require("cards")) is { } takingTarget
+                && Number(cost.Require("amount")) > 0
+                && world.Abilities.CanTakeDamage(world, takingTarget, card),
 
             _ => throw new RulesNotImplementedException(
                 $"'{card.FaceId}' has a cost of '{cost.Kind}', which is not implemented"),
@@ -2850,6 +2854,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (cost.Kind == "seq")
         {
             var steps = Nodes(cost.Argument).ToList();
+            // A take-damage cost is not paid unless all of the damage is
+            // taken. Resolve that uncertain component before any payment that
+            // cannot fail after validation, so a prevention never leaves an
+            // otherwise simultaneous card or resource cost paid by itself.
+            foreach (var step in steps.Where(step => step.Kind == "takeDamage"))
+            {
+                Pay(step, paying, chosen, values, cast);
+            }
             var spends = steps.Where(step => step.Kind is "spend" or "spendPrinted").ToList();
             if (spends.Count > 0)
             {
@@ -2865,7 +2877,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
 
             foreach (var step in steps.Where(
-                         step => step.Kind is not ("spend" or "spendPrinted")))
+                         step => step.Kind is not ("spend" or "spendPrinted" or "takeDamage")))
             {
                 Pay(step, paying, chosen, values, cast);
             }
@@ -2927,6 +2939,30 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return;
         }
 
+        if (cost.Kind == "takeDamage")
+        {
+            var target = CostTarget(
+                    cast.World, cast.Source, cast.Player, cost.Require("cards"))
+                ?? throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' cannot find its take-damage cost target");
+            long amount = Number(cost.Require("amount"));
+            long before = target.Damage;
+            Damage.Deal(
+                cast.World, cast.World.Facts, cast.Source, target, amount,
+                cast.Trigger, CardPlay.Verb, cast.Events);
+            long taken = target.Damage - before;
+            if (taken != amount)
+            {
+                // `rr:cost.12`: "If any of the damage is prevented, then the
+                // cost has not been paid." The prevention itself has happened,
+                // but neither another cost nor the post-arrow effect has.
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' requires {amount} damage to be taken as a "
+                    + $"cost, but only {taken} was taken; rr:cost.12 leaves it unpaid");
+            }
+            return;
+        }
+
         Run(cost, cast);
     }
 
@@ -2958,6 +2994,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var steps = cost.Kind == "seq" ? Nodes(cost.Argument).ToList() : [cost];
+        if (cast.World.Facts.Kind(cast.Source.FaceId) == CardKind.Event
+            && steps.Any(step => step.Kind == "takeDamage"))
+        {
+            // Playing an event pays its printed resource price through
+            // PayEvent. Rolling that payment back after damage prevention is a
+            // transaction the engine does not yet represent, so refuse it
+            // before the event or a generator moves.
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' is an event with a take-damage cost; "
+                + "atomic printed and damage payment is not implemented");
+        }
         var spends = steps.Where(step => step.Kind is "spend" or "spendPrinted").ToList();
         if (spends.Count > 0)
         {

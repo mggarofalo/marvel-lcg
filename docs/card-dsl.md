@@ -1554,6 +1554,22 @@ control. The target request is also the payment record, and forged, duplicate,
 out-of-range, or exhausted choices are rejected before any selected card is
 exhausted or discarded.
 
+Damage has two cost verbs because the rulebook gives them opposite prevention
+semantics:
+
+```json
+{ "dealDamage": { "cards": "you", "amount": 1 } }
+{ "takeDamage": { "cards": "you", "amount": 1 } }
+```
+
+`dealDamage` is paid even when prevention stops every point (`rr:cost.11`).
+`takeDamage` is paid only when the target actually takes the entire amount
+(`rr:cost.12`). The latter runs before other components of a simultaneous
+ability cost, so prevention cannot strand a resource, discard, or exhaustion
+payment. Combining `takeDamage` with an event's printed price is deliberately
+not represented yet: that needs an event-payment transaction and raises before
+anything moves.
+
 ### A suspended choice has to say which ability it came from
 
 `choose` and `chooseCard` stop the ability and put a `ChooseOption` step on the
