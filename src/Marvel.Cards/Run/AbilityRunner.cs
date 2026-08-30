@@ -311,7 +311,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             .IndexOf(ability);
         cast.RestoreAbility(ordinal, abilityPath ?? [], abilityFace);
         cast.TrackResolution(ordinal);
+        var attackModifiers = power == BasicPowers.AttackVerb
+            ? EventModifierEffects(cast, "attackDamage")
+            : [];
         Run(effect, cast);
+
+        // A modifier to "an attack" lasts through every damage node belonging
+        // to that attack, then is consumed once. This is deliberately at the
+        // wrapper boundary rather than in generic dealDamage: one attack may
+        // damage several characters, while a later wrapper is a later attack.
+        foreach (var modifier in attackModifiers)
+        {
+            world.Effects.Use(modifier);
+        }
 
         if (power == BasicPowers.AttackVerb)
         {
@@ -2162,7 +2174,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             ("query", "heroesAndAllies") =>
             [
-                .. world.PlayerOrder.Select(seat => world.Seats[seat].IdentityCard),
+                .. world.PlayerOrder
+                    .Where(seat => Forms.In(world, world.Seats[seat], world.Facts, "hero"))
+                    .Select(seat => world.Seats[seat].IdentityCard),
                 .. world.Areas.Where(area => area.Type == DeckType.AlliesArea)
                     .SelectMany(area => area.Cards),
             ],
@@ -2471,6 +2485,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "allocation is not represented");
         }
 
+        // Validate the player's complete icon allocation before step 1 moves
+        // the event. A malformed allocation is an invalid payment answer and
+        // `rr:initiating-abilities.step.5` must reject it without changing the
+        // board.
+        bool declarationSensitive = PaidResourceQueries(effect.Argument).Any()
+            || effect.Kind == "paidWithResource";
+        string paid = assigned.Count > 0
+            ? AllocatedResources(generators, paying, assigned, components, card)
+            : declarationSensitive
+                ? DeclaredPaidResources(generated, total, required)
+                : Resources.Paid(generated, total, required);
+
         // `rr:initiating-abilities.step.1` and `rr:event`: the event leaves the
         // hand faceup and out of play before costs are paid, and remains there
         // while a choice suspends its resolution. RevealingArea already has
@@ -2488,13 +2514,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Verb = CardPlay.Verb,
         });
 
-        bool declarationSensitive = PaidResourceQueries(effect.Argument).Any()
-            || effect.Kind == "paidWithResource";
-        string paid = assigned.Count > 0
-            ? AllocatedResources(generators, paying, assigned, components, card)
-            : declarationSensitive
-                ? DeclaredPaidResources(generated, total, required)
-                : Resources.Paid(generated, total, required);
         cast.PaidWith(paid);
         foreach (char resource in paid.Distinct())
         {

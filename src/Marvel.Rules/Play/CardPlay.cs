@@ -406,6 +406,13 @@ public static class CardPlay
         ArgumentNullException.ThrowIfNull(paying);
         ArgumentNullException.ThrowIfNull(events);
 
+        if (facts.Kind(card.FaceId) == CardKind.Event)
+        {
+            throw new RulesNotImplementedException(
+                $"event '{card.FaceId}' cannot use an out-of-zone play permission "
+                + "until its Action selection can be represented");
+        }
+
         if (!Permitted(
                 world, facts, seat, card, targets, abilities,
                 outOfPlayPermission: true))

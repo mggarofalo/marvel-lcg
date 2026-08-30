@@ -363,6 +363,22 @@ public sealed class CardPlayTests
         Assert.Equal(DeckType.DiscardPile, second.Area.Type);
     }
 
+    [Fact]
+    public void AnEventPermissionRaisesBeforeItsActionCanBeMisresolved()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var card = world.CreateCard(
+            "event", world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.PlayWithPermission(
+                world, printed, new Silent(), world.Seats[0], card, [], []));
+
+        Assert.Equal(DeckType.DiscardPile, card.Area.Type);
+    }
+
     [Rule("rr:dash-value.1")]
     [Fact]
     public void AnOmittedCostCannotBePlayedForZero()

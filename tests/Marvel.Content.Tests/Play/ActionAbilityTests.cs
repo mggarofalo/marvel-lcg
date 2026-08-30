@@ -381,6 +381,58 @@ public sealed class ActionAbilityTests
         Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
+    [Rule("rr:event.5.1")]
+    [Fact]
+    public void AnAttackModifierIsConsumedAtTheAttackWrapperBoundary()
+    {
+        // Each wrapper is one attack even when its effect uses generic damage.
+        // The modifier remains through the first wrapper and is gone before
+        // the second attack begins.
+        var runner = Runner(
+            "01005",
+            "Action",
+            """
+            { "seq": [
+              { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "dealDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              } },
+              { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "dealDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              } }
+            ] }
+            """);
+        Card? played = null;
+        var payments = new List<Card>();
+        var (game, world) = Playing(
+            board =>
+            {
+                played = board.CreateCard("01005", board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    payments.Add(board.CreateCard("01087", board.Seats[0].Hand));
+                }
+            },
+            hero: true,
+            abilities: runner);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "attackDamage", Amount: 2,
+            Card: played!.ObjectId, Affects: played.ObjectId,
+            Lasts: new Duration(Uses: 1)));
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == played.ObjectId);
+
+        game.Resolve(Decision.Take(
+            action.Id, [], [.. payments.Select(card => card.ObjectId)]));
+
+        Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
     [Rule("rr:player-elimination.5")]
     [Rule("rr:player-elimination.step.5")]
     [Rule("rr:upgrade.1")]
@@ -1337,6 +1389,38 @@ public sealed class ActionAbilityTests
         Assert.Same(world.Seats[0].Hand, doubleEnergy!.Area);
     }
 
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void AnInvalidCombinedEventAllocationChangesNoState()
+    {
+        const string eventCard = "01004";
+        var runner = Runner(
+            eventCard, "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spend": "Y" }""");
+        Card? card = null;
+        Card? doubleEnergy = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                card = board.CreateCard(eventCard, board.Seats[0].Hand);
+                doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
+            },
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world, action, [doubleEnergy!.ObjectId], [],
+            allocations:
+            [
+                new ResourceAllocation(doubleEnergy.ObjectId, Cost: 0, PaidAs: "Y"),
+            ]));
+
+        Assert.Same(world.Seats[0].Hand, card!.Area);
+        Assert.Same(world.Seats[0].Hand, doubleEnergy!.Area);
+    }
+
     [Rule("rr:printed.1")]
     [Rule("rr:text-box.1.1")]
     [Fact]
@@ -1526,6 +1610,7 @@ public sealed class ActionAbilityTests
             runner.Describe(world, ability).Targets);
 
         Assert.Contains(friendly!.ObjectId, targets.Legal);
+        Assert.DoesNotContain(world.Seats[1].IdentityCard.ObjectId, targets.Legal);
         runner.Act(world, ability, [], [friendly.ObjectId]);
 
         Assert.False(friendly.Ready);
