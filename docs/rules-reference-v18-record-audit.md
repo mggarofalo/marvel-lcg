@@ -884,7 +884,7 @@ items.
 | `rr:printed` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:printed.1` | Unimplemented behavior | MARVEL-288 | Text-box printed-resource generators require an explicit dataset field and cost operator. |
 | `rr:printed.1.1` | Unimplemented behavior | MARVEL-288 | Printed-resource costs must prohibit wild substitution in the advanced tranche. |
-| `rr:qualifiers` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
+| `rr:qualifiers` | Executable and cited | — | A behavior test proves one qualifier filters every applicable type in a combined selector. |
 | `rr:quickstrike` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:quickstrike.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:quickstrike.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -896,10 +896,10 @@ items.
 | `rr:rec` | Redirect or summary | — | This record redirects readers to Basic Power, Recover, Recovery; the destination carries the rule. |
 | `rr:recover-recovery` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:recover-recovery.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:referential-ability` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:referential-ability.step.1` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:referential-ability.step.2` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:referential-ability.step.3` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
+| `rr:referential-ability` | Executable and cited | — | Shared-title references use the cited precedence implemented by the narrower steps. |
+| `rr:referential-ability.step.1` | Executable and cited | — | A self-reference beats an identity card sharing the source's title. |
+| `rr:referential-ability.step.2` | Executable and cited | — | An identity-associated card beats an unrelated player card with the same title. |
+| `rr:referential-ability.step.3` | Executable and cited | — | A player-card reference includes player cards and excludes same-titled encounter cards. |
 | `rr:remaining-hit-points` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:remaining-hit-points.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:remaining-hit-points.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -1057,24 +1057,24 @@ items.
 | `rr:target` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:target.1` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:target.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:target.2.1` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.2.2` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.2.3` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
+| `rr:target.2.1` | Executable and cited | — | Basic attack and thwart behavior tests require valid targets. |
+| `rr:target.2.2` | Executable and cited | — | An empty choose selector removes the unanswerable action. |
+| `rr:target.2.3` | Executable and cited | — | A draw action requires a card currently in the named player's deck. |
 | `rr:target.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:target.3.1` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
-| `rr:target.3.2` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.3.3` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.3.4` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.3.5` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.3.6` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.3.7` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.3.8` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.3.9` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.4` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
-| `rr:target.4.1` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
+| `rr:target.3.2` | Executable and cited | — | Zero ATK and THW powers can exhaust against otherwise-valid targets. |
+| `rr:target.3.3` | Executable and cited | — | A cost that could create an effect target is excluded from target validity. |
+| `rr:target.3.4` | Executable and cited | — | One valid effect target keeps a multi-effect ability initiable. |
+| `rr:target.3.5` | Executable and cited | — | A cannot-ready prohibition removes the card from offering and execution. |
+| `rr:target.3.6` | Executable and cited | — | Tough prevention leaves the damage target valid and discards Tough on resolution. |
+| `rr:target.3.7` | Executable and cited | — | A cannot-take-damage target is excluded from a damage-only group effect. |
+| `rr:target.3.8` | Executable and cited | — | Guard removes a prohibited villain from attack targets. |
+| `rr:target.3.9` | Executable and cited | — | Patrol removes the prohibited main scheme from thwart targets. |
+| `rr:target.4` | Executable and cited | — | A group effect initiates when its villain target remains valid. |
+| `rr:target.4.1` | Executable and cited | — | The same group effect skips a minion that cannot take its damage. |
 | `rr:target.4.2` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:target.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:target.6` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns this executable rule. |
+| `rr:target.6` | Executable and cited | — | A search with a searchable area initiates even when no card matches. |
 | `rr:target-threat` | Not enforceable by an engine | — | This record defines printed anatomy; main-scheme clauses carry the executable threshold behavior. |
 | `rr:team-up` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:team-up.1` | Outside the supported product boundary | MARVEL-272 | The parent citation proves the play restriction; this combined clause also requires deck-building validation. |
@@ -1085,8 +1085,8 @@ items.
 | `rr:temporary` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:temporary.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:text-box` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
-| `rr:text-box.1` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns references that isolate printed abilities in a text box. |
-| `rr:text-box.1.1` | Unimplemented behavior | MARVEL-291 | The target and reference-legality work item owns icons treated as abilities within a text box. |
+| `rr:text-box.1` | Outside the supported product boundary | MARVEL-264 | No core-set card ability refers to another card's text box; expansion cards that blank or replace text boxes own the executable behavior. |
+| `rr:text-box.1.1` | Unimplemented behavior | MARVEL-288 | Printed-resource costs must recognize resource icons generated by abilities in a card's text box without treating unrelated printed icons as generators. |
 | `rr:that` | Redirect or summary | — | This record redirects readers to Alteration Effect, Target; the destination carries the rule. |
 | `rr:then` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:then.1` | Executable and cited | — | A behavior test directly cites this record. |

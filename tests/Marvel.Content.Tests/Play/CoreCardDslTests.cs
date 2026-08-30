@@ -153,6 +153,57 @@ public sealed class CoreCardDslTests
         Assert.Equal(DeckType.HandsArea, second.Area.Type);
     }
 
+    [Rule("rr:target.2.3")]
+    [Rule("rr:target.4")]
+    [Rule("rr:target.4.1")]
+    [Fact]
+    public void MariaHillSkipsAPlayerWhoseDeckIsCurrentlyEmpty()
+    {
+        // The other player's nonempty deck is one valid target, so the group
+        // draw resolves. The first player's empty deck is not a valid target
+        // at initiation and is skipped rather than replenished from discard.
+        var world = Hero("01029a", players: 2);
+        var maria = world.CreateCard(
+            "01067", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var firstDiscard = world.AreaOf(
+            DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0);
+        var staysDiscarded = world.CreateCard("01087", firstDiscard);
+        var secondDraws = world.CreateCard("01087", world.Seats[1].Deck);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var occurrence = new Occurrence(
+            1, [Steps.CardPlayed], Subject: maria.ObjectId, Player: 0);
+
+        runner.Resolve(
+            world, occurrence,
+            new PendingAbility(maria.ObjectId, AbilityType.Response, 0), [], []);
+
+        Assert.Equal(DeckType.DiscardPile, staysDiscarded.Area.Type);
+        Assert.Empty(world.Seats[0].Hand.Cards);
+        Assert.Equal(DeckType.HandsArea, secondDraws.Area.Type);
+    }
+
+    [Rule("rr:target.4")]
+    [Rule("rr:target.4.1")]
+    [Fact]
+    public void HeartShapedHerbSkipsItsEmptyMinionGroup()
+    {
+        // The villain is a valid Tough target, so the whole ability resolves.
+        // With no engaged minions, its second group contributes no target and
+        // no failure after the villain has already changed state.
+        var world = Hero("01029a");
+        var herb = world.CreateCard(
+            "01158", world.AreaOf(DeckType.RevealingArea));
+        var villain = world.CreateCard(
+            "01094", world.AreaOf(DeckType.VillainArea));
+
+        AuthoredCards.Runner().WhenRevealed(world, herb, 0);
+
+        Assert.True(Statuses.Has(world, villain, Statuses.Tough));
+        Assert.Empty(world.AreaOf(
+            DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards);
+    }
+
     [Rule("rr:initiating-abilities.step.5")]
     [Rule("rr:heal")]
     [Fact]

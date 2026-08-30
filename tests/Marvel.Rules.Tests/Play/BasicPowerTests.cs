@@ -93,6 +93,7 @@ public sealed class BasicPowerTests
     }
 
     [Rule("rr:attack-player-ability-type.1")]
+    [Rule("rr:target.2.1")]
     [Fact]
     public void ABasicAttackExhaustsAndDealsTheCharactersAttackValue()
     {
@@ -197,6 +198,7 @@ public sealed class BasicPowerTests
     }
 
     [Rule("rr:guard.1")]
+    [Rule("rr:target.3.8")]
     [Fact]
     public void AGuardingMinionTakesEveryVillainOffTheList()
     {
@@ -272,6 +274,7 @@ public sealed class BasicPowerTests
 
     [Rule("rr:thwart.1")]
     [Rule("rr:thwart.1.1")]
+    [Rule("rr:target.2.1")]
     [Fact]
     public void ABasicThwartExhaustsAndRemovesThreatButNeedsSomeToRemove()
     {
@@ -291,6 +294,44 @@ public sealed class BasicPowerTests
 
         Assert.False(world.Seats[0].IdentityCard.Ready);
         Assert.Equal(3, scheme.Tokens["k_threat"]);
+    }
+
+    [Rule("rr:target.3.2")]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AZeroPowerCanBeUsedAgainstAnOtherwiseValidTarget(bool attack)
+    {
+        // “A character with an ATK, SCH, or THW of 0 can perform an
+        // activation or basic power using that value against a target that is
+        // otherwise valid.” Zero changes no token, but it does not invalidate
+        // the target or prevent the power's exhaust cost.
+        var printed = new Printed()
+            .With("hero", ("ATK", "0"), ("THW", "0"))
+            .With("villain", ("HP", "10"));
+        var world = Board(printed);
+        var target = attack
+            ? world.TheCardIn(DeckType.VillainArea)!
+            : world.TheCardIn(DeckType.MainSchemesArea)!;
+        if (!attack)
+        {
+            target.PlaceTokens("k_threat", 1);
+        }
+
+        if (attack)
+        {
+            BasicPowers.BasicAttack(world, printed, 0, target, []);
+        }
+        else
+        {
+            BasicPowers.BasicThwart(world, printed, 0, target, []);
+        }
+        Agendas.Finish(world, printed);
+
+        Assert.False(world.Seats[0].IdentityCard.Ready);
+        Assert.Equal(attack ? 0 : 1, attack
+            ? target.Damage
+            : target.Tokens.GetValueOrDefault("k_threat"));
     }
 
     [Rule("rr:threat")]
