@@ -80,6 +80,8 @@ public sealed class SpiderManCardsTests
 
     [Rule("rr:event.4")]
     [Rule("rr:event.2")]
+    [Rule("rr:cancel.2")]
+    [Rule("rr:cancel.3")]
     [Rule("rr:stun-stunned.1")]
     [Rule("rr:initiating-abilities.step.5")]
     [Rule("rr:initiating-abilities.step.6")]
@@ -90,8 +92,9 @@ public sealed class SpiderManCardsTests
         // cancel the attack." An event's attack is "considered to be performed
         // by that player's identity", so the hero's stun cancels Swinging Web
         // Kick. Initiation is after the event's costs are paid. Canceling only
-        // the effect still leaves those resources spent and the played event
-        // in its owner's discard pile.
+        // Canceling ability effects leaves their costs paid; if an event's
+        // effects are canceled, it is still played and discarded. Thus the
+        // resources remain spent and the event enters its owner's discard.
         var world = Deal(hero: true);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
@@ -171,10 +174,14 @@ public sealed class SpiderManCardsTests
     }
 
     [Rule("rr:prevent")]
+    [Rule("rr:prevent.1.2")]
     [Rule("rr:damage.step.3")]
     [Fact]
     public void BackflipPreventsTheImminentAttackDamage()
     {
+        // "If an effect prevents all damage dealt to a character, that
+        // character is not considered to have taken damage." Seven remains
+        // the dealt amount while the taken amount becomes zero.
         var world = Deal(hero: true);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;

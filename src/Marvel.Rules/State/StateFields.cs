@@ -420,13 +420,31 @@ public static class StateFields
             return 0;
         }
 
-        long value = field == "ally_limit"
-            && FacedownDrones.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo
-                ? AllyLimit
-                : PrintedFrom.TryGetValue(field, out string? attribute)
-                    ? FacedownDrones.BaseValue(card, facts, attribute, players)
-                    : 0;
-        return value + Adjustments(world, card, field, facts, players);
+        bool hasBaseValue;
+        long value;
+        if (field == "ally_limit"
+            && FacedownDrones.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo)
+        {
+            value = AllyLimit;
+            hasBaseValue = true;
+        }
+        else if (PrintedFrom.TryGetValue(field, out string? attribute))
+        {
+            value = FacedownDrones.BaseValue(card, facts, attribute, players);
+            hasBaseValue = true;
+        }
+        else
+        {
+            // Some consumers ask for a signed adjustment and add the base
+            // themselves. `Damage.Health` is one; clamping its -2 here would
+            // incorrectly turn a printed 10 modified to 8 back into 10.
+            value = 0;
+            hasBaseValue = false;
+        }
+
+        long modified = value + Adjustments(world, card, field, facts, players);
+        // `rr:modifiers.4`: clamp complete values, not adjustment-only fields.
+        return hasBaseValue ? Math.Max(0, modified) : modified;
     }
 
     /// <summary>Printed values, filled once the card has registered.</summary>
@@ -453,7 +471,9 @@ public static class StateFields
             {
                 value = Characteristics.IsLost(world, card, field)
                     ? 0
-                    : value + Adjustments(world, card, field, facts, players);
+                    : Math.Max(
+                        0,
+                        value + Adjustments(world, card, field, facts, players));
             }
 
             fields[field] = value;

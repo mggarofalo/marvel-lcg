@@ -163,12 +163,13 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:cost.11")]
+    [Rule("rr:prevent.1.4")]
     [Fact]
     public void DealingDamageAsACostIsPaidWhenTheDamageIsPrevented()
     {
-        // Focused Rage deals one damage as its cost. Tough prevents all of
-        // that damage, but dealing damage is still considered paid and the
-        // post-arrow draw resolves.
+        // Focused Rage deals one damage as its cost. "That cost is considered
+        // paid even if some or all of that damage is prevented," so Tough can
+        // prevent all of it and the post-arrow draw still resolves.
         Card? rage = null;
         var (game, world) = Playing(
             board =>
@@ -193,6 +194,7 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:cost.12")]
+    [Rule("rr:prevent.1.5")]
     [Fact]
     public void TakingDamageAsACostIsUnpaidWhenDamageIsPrevented()
     {

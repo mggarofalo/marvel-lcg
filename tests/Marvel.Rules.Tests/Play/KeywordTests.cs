@@ -441,24 +441,34 @@ public sealed class KeywordTests
 
     [Rule("rr:assault")]
     [Rule("rr:assault.1")]
+    [Rule("rr:assault.3")]
     [Fact]
     public void AssaultMakesAThwartUseAttackInstead()
     {
         // "While a character is making a basic thwart against this scheme, that
         // character uses its **ATK instead of its THW**." ATK 4 against THW 1,
-        // so the difference is three threat.
+        // so the difference is three threat. Clause 3 adds that an ability
+        // increasing the character's "basic power" can increase that ATK;
+        // the live +2 modifier makes the assault thwart remove six.
         var printed = new Printed()
             .With("hero", ("ATK", "4"), ("THW", "1"))
             .With("sideScheme", ("Assault", "1"));
         var world = Board(printed);
         world.Seats[0].IdentityCard.TurnTo("hero");
+        var hero = world.Seats[0].IdentityCard;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "attack",
+            Amount: 2,
+            Card: hero.ObjectId,
+            Affects: hero.ObjectId));
         var side = world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
         side.PlaceTokens("k_threat", 9);
 
         BasicPowers.BasicThwart(world, printed, 0, side, []);
         Agendas.Finish(world, printed);
 
-        Assert.Equal(5, side.Tokens["k_threat"]);
+        Assert.Equal(3, side.Tokens["k_threat"]);
     }
 
     [Rule("rr:retaliate-x")]
@@ -591,8 +601,11 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:villainous")]
+    [Rule("rr:villainous.1")]
     [Theory]
-    // `rr:attack-enemy-activation.step.1`: "if a villain, **or a minion with the
+    // Villainous is equivalent to the Forced Interrupt "when this character
+    // uses a basic power, give it a boost card." The activation rule says that
+    // "if a villain, **or a minion with the
     // villainous keyword**, is attacking, give it one facedown boost card. (If
     // a minion without the villainous keyword is attacking, skip this step.)"
     [InlineData("villain", 0, true)]
@@ -1951,10 +1964,12 @@ public sealed class KeywordTests
     }
 
     [Rule("rr:amplify-icon")]
+    [Rule("rr:amplify-icon.1")]
     [Theory]
     [InlineData(0, 3)]
-    // "Add one additional boost icon to that card for each amplify icon in
-    // play", so a boost card worth 1 with two amplify icons is worth 3.
+    // "Each boost card gains [boost]." Equivalently, "add one additional
+    // boost icon [...] for each amplify icon in play", so a boost card worth
+    // 1 with two amplify icons is worth 3.
     [InlineData(1, 4)]
     [InlineData(2, 5)]
     public void AmplifyIconsAddToEveryBoostCard(int amplify, int expected)

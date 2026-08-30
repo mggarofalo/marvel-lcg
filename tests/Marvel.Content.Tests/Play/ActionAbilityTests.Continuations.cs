@@ -14,13 +14,14 @@ namespace Marvel.Content.Tests.Play;
 public sealed partial class ActionAbilityTests
 {
     [Rule("rr:guard.1")]
+    [Rule("rr:engage.3")]
     [Fact]
     public void AOneTimeGuardEntryKeepsItsOriginalEngagementAcrossFrames()
     {
-        // Guard protects only the engaged player. Hydra Mercenary enters
-        // engaged with player zero once; the next frame does not put it into
-        // play again or move that engagement to player one, so Rhino takes the
-        // later damage and the lethal continuation must be rejected up front.
+        // A card ability cannot make a minion engage the player it is already
+        // engaged with. Hydra Mercenary enters engaged with player zero once;
+        // the next frame does not put it into play again or move that
+        // engagement to player one, so the lethal continuation is rejected.
         var runner = GuardEntryRunner();
         World? world = null;
         Card? source = null;

@@ -1675,6 +1675,7 @@ public sealed partial class ActionAbilityTests
 
     [Rule("rr:play-put-into-play")]
     [Rule("rr:engage.1")]
+    [Rule("rr:engage.2")]
     [Rule("rr:villain-defeat.4")]
     [Rule("rr:labeled-ability.4")]
     [Theory]
@@ -1682,9 +1683,10 @@ public sealed partial class ActionAbilityTests
     [InlineData(true)]
     public void EnteredMinionInvalidatesEngagementCount(bool repeated)
     {
-        // Putting Hydra Mercenary into play engaged with the resolving player
-        // changes that player's engaged-minion count from zero to one. The
-        // resulting villain grant must be recognized before paying the cost.
+        // A minion an ability instructs a player to engage "is also considered
+        // to have engaged that player." Putting Hydra Mercenary into play this
+        // way changes the engaged-minion count from zero to one, which must be
+        // recognized before paying the cost.
         var runner = EnteredEngagementCountVillainGrantRunner(repeated);
         Card? source = null;
         Card? mercenary = null;

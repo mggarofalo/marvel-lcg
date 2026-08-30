@@ -44,6 +44,8 @@ public sealed class StampedeTests
     [Fact]
     public void TheDamagedCharacterIsStunned()
     {
+        // A delayed effect "is not treated as a new triggered ability": it
+        // resolves at its condition without opening another offered window.
         var world = Hero();
         var identity = world.Seats[0].IdentityCard;
 
@@ -54,13 +56,16 @@ public sealed class StampedeTests
     }
 
     [Rule("rr:tough.3")]
+    [Rule("rr:prevent.1.2")]
+    [Rule("rr:prevent.1.3")]
     [Fact]
     public void AToughCharacterTakesNoDamageAndIsNotStunned()
     {
-        // The false branch, and the reason the card says "damaged" rather than
-        // "attacked". The tough card eats the whole attack, so nobody was
-        // damaged and nobody is stunned -- and the tough card is spent, which
-        // is what makes this different from the attack never happening.
+        // Preventing all means the character "is not considered to have taken
+        // damage"; for an attack, the attacker still dealt damage but did not
+        // "attack and damage" that character. The false branch is therefore
+        // taken and nobody is stunned -- while Tough being spent proves the
+        // attack and its damage instance still happened.
         var world = Hero();
         var identity = world.Seats[0].IdentityCard;
         Statuses.Give(world, identity, Statuses.Tough);

@@ -38,28 +38,32 @@ public sealed class BasicPowerTests
     }
 
     [Rule("rr:dash-value.3")]
+    [Rule("rr:attachment.1.2")]
+    [Rule("rr:modifiers.7")]
     [Fact]
     public void AReferencedDashIsAnUnmodifiableZero()
     {
-        var printed = new Printed().With("hero", ("ATK", "–"));
+        // "A value of a dash (–) cannot be modified."
+        var printed = new Printed()
+            .With("hero", ("ATK", "–"))
+            .With("attachment", ("ATK+", "4"));
         var world = Board(printed);
         var hero = world.Seats[0].IdentityCard;
-        world.Effects.Register(new ContinuousEffect(
-            EffectSource.LastingEffect,
-            Kind: "attack",
-            Amount: 4,
-            Card: hero.ObjectId,
-            Affects: hero.ObjectId));
+        world.CreateCard(
+            "attachment",
+            world.AreaOf(
+                DeckType.UpgradesArea, hero.Area.PlayArea, hero.ObjectId, cardOwner: 0));
 
         Assert.Equal(0, StateFields.Modified(world, hero, "attack", printed, world.Players));
     }
 
     [Rule("rr:dash-value.3")]
+    [Rule("rr:modifiers.7")]
     [Fact]
     public void AnOmittedDashPowerIsAnUnmodifiableZero()
     {
         // The generated dataset omits a basic-power field when the printed
-        // card shows a dash. A modifier cannot turn that dash into a number.
+        // card shows a dash. "A value of a dash (–) cannot be modified."
         var printed = new Printed();
         var world = Board(printed);
         var hero = world.Seats[0].IdentityCard;
@@ -72,6 +76,48 @@ public sealed class BasicPowerTests
 
         Assert.False(BasicPowers.CanUsePower(printed, hero, "THW"));
         Assert.Equal(0, StateFields.Modified(world, hero, "thwart", printed, world.Players));
+    }
+
+    [Rule("rr:modifiers.4")]
+    [Fact]
+    public void AModifiedValueCannotFallBelowZero()
+    {
+        // "After all active modifiers have been taken into account, if a
+        // value is below zero, it is treated as zero."
+        var printed = new Printed().With("hero", ("ATK", "1"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "attack",
+            Amount: -2,
+            Card: hero.ObjectId,
+            Affects: hero.ObjectId));
+
+        Assert.Equal(0, StateFields.Modified(world, hero, "attack", printed, world.Players));
+        var fields = StateFields.For(
+            hero, printed, world.Players, inPlay: true, hasHeldPools: true,
+            hasFirstPlayerToken: false, world);
+        Assert.Equal(0, fields["attack"]);
+    }
+
+    [Fact]
+    public void AHealthAdjustmentRemainsSignedUntilItJoinsPrintedHealth()
+    {
+        // Health is a derived total: the generic field reader supplies only
+        // the signed adjustment, and Damage.Health adds the printed base.
+        var printed = new Printed().With("hero", ("HP", "10"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Kind: "health",
+            Amount: -2,
+            Card: hero.ObjectId,
+            Affects: hero.ObjectId));
+
+        Assert.Equal(-2, StateFields.Modified(world, hero, "health", printed, world.Players));
+        Assert.Equal(8, Damage.Health(world, printed, hero));
     }
 
     [Rule("rr:star-icon.5")]
@@ -657,12 +703,14 @@ public sealed class BasicPowerTests
     }
 
     [Rule("rr:villain-defeat")]
+    [Rule("rr:villain-villain-deck")]
     [Rule("rr:hit-points.2.2")]
     [Fact]
     public void DefeatingAVillainStageRemovesItAndRevealsTheNext()
     {
-        // "If a villain's hit point dial is reduced to zero, that stage of the
-        // villain is defeated." Remove that stage and reveal the next one.
+        // The villain is "represented by a sequential deck of one or more
+        // cards." If its hit point dial reaches zero, remove that stage and
+        // reveal the next one.
         var printed = new Printed()
             .With("hero", ("ATK", "9"))
             .With("villain", ("HP", "5"))
@@ -812,11 +860,12 @@ public sealed class BasicPowerTests
     }
 
     [Rule("rr:villain-defeat")]
+    [Rule("rr:winning-the-game")]
     [Fact]
     public void DefeatingTheFinalStageWinsTheGame()
     {
-        // "**If the final stage of the villain deck is defeated, the players
-        // win the game.**" The other ending is the villain completing the main
+        // "If the final villain stage is defeated, the players win the game."
+        // The other ending is the villain completing the main
         // scheme, and a boolean could not tell them apart.
         var printed = new Printed().With("hero", ("ATK", "9")).With("villain", ("HP", "5"));
         var world = Board(printed);
@@ -938,6 +987,7 @@ public sealed class BasicPowerTests
             "scheme" => CardKind.MainScheme,
             "minion" => CardKind.Minion,
             "upgrade" => CardKind.Attachment,
+            "attachment" => CardKind.Attachment,
             "tough" or "stunned" => CardKind.Status,
             _ => CardKind.EncounterVillain,
         };

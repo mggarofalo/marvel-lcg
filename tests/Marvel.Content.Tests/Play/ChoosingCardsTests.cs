@@ -200,9 +200,9 @@ public sealed class ChoosingCardsTests
     public void APlayerCardDoesNotOfferAnOptionThatCannotPartiallyResolve()
     {
         // A player-card option "cannot be chosen if it cannot be at least
-        // partially resolved." Nick Fury's core choice includes removing 2
-        // threat. At zero threat the scheme is a target, but that option still
-        // cannot resolve at all; drawing cards remains legal.
+        // partially resolved," including one that "require[s] one or more
+        // targets" when none is valid. Nick Fury's core choice includes
+        // removing 2 threat; at zero threat that option cannot resolve at all.
         var runner = NickFuryRunner();
         var world = Deal();
         var fury = world.CreateCard(
@@ -223,13 +223,14 @@ public sealed class ChoosingCardsTests
     }
 
     [Rule("rr:choose-option.2")]
+    [Rule("rr:choose-option.2.2")]
     [Rule("rr:crisis-icon.1")]
     [Fact]
     public void APlayerCardCannotChooseMainSchemeThreatThroughCrisis()
     {
-        // A crisis icon makes the main scheme an invalid target for threat
-        // removal by a player card. Threat being present is not enough to make
-        // Nick Fury's branch partially resolvable.
+        // A player-card option requiring targets cannot be chosen when none
+        // are valid. Crisis makes the main scheme an invalid threat-removal
+        // target even while it holds threat.
         var runner = NickFuryRunner();
         var world = Deal();
         world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 2);

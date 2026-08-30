@@ -140,9 +140,12 @@ public sealed class CoreFinalCardBatchTests
 
     [Rule("rr:choose-game-element.3.1")]
     [Rule("rr:threat")]
+    [Rule("rr:thwart.2")]
     [Fact]
     public void LegalPracticeDiscardsOneToFiveCardsAndRemovesThatMuchThreat()
     {
+        // A Hero Action (thwart) is a thwart, and "unless specified by the
+        // ability's text, a hero does not exhaust" to use one.
         var world = Board(players: 1, identity: "01019a,01019b");
         world.Seats[0].IdentityCard.TurnTo("01019b");
         var scheme = world.CreateCard("01151", world.AreaOf(DeckType.SideSchemesArea));
@@ -166,6 +169,7 @@ public sealed class CoreFinalCardBatchTests
         Assert.Equal(3, scheme.Tokens["k_threat"]);
         Assert.DoesNotContain(first, world.Seats[0].Hand.Cards);
         Assert.DoesNotContain(second, world.Seats[0].Hand.Cards);
+        Assert.True(world.Seats[0].IdentityCard.Ready);
         var threat = Assert.Single(events.OfType<FieldSet>(), change =>
             change.Card == scheme.ObjectId && change.Verb == "Remove_Threat");
         Assert.Equal(Steps.TurnAction, threat.Trigger);

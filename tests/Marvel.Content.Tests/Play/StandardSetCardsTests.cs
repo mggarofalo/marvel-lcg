@@ -33,11 +33,13 @@ public sealed class StandardSetCardsTests
 
     [Rule("rr:exhausted")]
     [Rule("rr:you-your")]
+    [Rule("rr:you-your.4")]
     [Fact]
     public void ExhaustionExhaustsTheRevealingPlayersIdentity()
     {
-        // "Exhaust your identity card." The second player's, on a board with
-        // two, so that "your" is a claim rather than a coincidence.
+        // If an ability exhausts "you", its resolving player "exhausts their
+        // identity." This is the second player's on a two-player board, so
+        // "your" is a claim rather than a coincidence.
         var world = Deal("spider_man", "she_hulk");
 
         Reveal(world, AuthoredCards.Exhaustion, player: 1);
@@ -152,10 +154,14 @@ public sealed class StandardSetCardsTests
     }
 
     [Rule("rr:reveal.step.2")]
+    [Rule("rr:nemesis-encounter-set.3")]
+    [Rule("rr:nemesis-encounter-set.4")]
     [Fact]
     public void ShadowOfThePastBringsTheNemesisSetIn()
     {
-        // The card that reaches furthest of any in the pool -- 132 of the 135
+        // The "nemesis minion" is the minion in the identity's nemesis set,
+        // and its "nemesis side scheme" is that set's side scheme. The card
+        // that reaches furthest of any in the pool -- 132 of the 135
         // campaigns. Spider-Man's nemesis set is Vulture, Highway Robbery and
         // three treacheries, all set aside at the deal.
         //

@@ -269,6 +269,7 @@ public sealed class SinisterSyndicateTests
     /// upgrade made without an owner is discarded to the encounter pile.
     /// </remarks>
     [Rule("rr:attack-enemy-activation.5")]
+    [Rule("rr:you-your.1")]
     [Rule("rr:you-your.7")]
     [Fact]
     public void WhiteRabbitTakesACardFromTheAttackedPlayersHandBeforeTheBoost()
@@ -276,6 +277,7 @@ public sealed class SinisterSyndicateTests
         // "★ **Forced Interrupt:** When White Rabbit attacks you, discard 1
         // card at random from your hand."
         //
+        // The sentence's "you" and "your" both refer to the same player.
         // Two seats, and the hand that shrinks is the attacked player's.
         // `rr:you-your.7` is why: "you" is the attacked player for a trigger of
         // this shape, and the interpreter reads it off the occurrence rather

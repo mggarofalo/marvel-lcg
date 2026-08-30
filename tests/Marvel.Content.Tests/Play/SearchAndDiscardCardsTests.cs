@@ -118,10 +118,13 @@ public sealed class SearchAndDiscardCardsTests
     }
 
     [Rule("rr:ownership-and-control.8")]
+    [Rule("rr:you-your.10")]
     [Fact]
     public void AnotherPlayersUpgradeIsNotYoursToDiscard()
     {
-        // "An upgrade or support **you control**." That phrase "only refers to
+        // A game function against a non-identity card "you" control is
+        // performed against the card in that player's play area. "An upgrade
+        // or support **you control**" only refers to
         // cards in play currently under that player's control." Control is
         // which play area the card is in, so the other player's upgrade is not
         // offered -- and with nothing of your own, the card surges instead of

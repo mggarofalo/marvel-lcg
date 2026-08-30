@@ -12,13 +12,13 @@ public sealed class LabeledAbilityTests
     [Rule("rr:labeled-ability.1")]
     [Rule("rr:labeled-ability.2")]
     [Rule("rr:labeled-ability.4")]
+    [Rule("rr:you-your.12")]
     [Fact]
     public void EventLabelsArePerformedByTheIdentityAfterCosts()
     {
-        // "The identity of the player using the labeled ability is considered
-        // to be performing the labeled effect when the labeled ability begins
-        // resolving (after costs have been paid)." Attack and thwart labels
-        // are both made by that identity.
+        // Events' attacks and thwarts "are also considered to be performed by
+        // that player's identity": the identity begins the labeled effect
+        // after costs have been paid. Both labels name that same performer.
         var (world, facts) = Board();
         var identity = world.Seats[0].IdentityCard;
         var source = world.CreateCard(
@@ -81,6 +81,7 @@ public sealed class LabeledAbilityTests
     }
 
     [Rule("rr:support.3")]
+    [Rule("rr:you-your.18")]
     [Fact]
     public void SupportAbilityIsNotPerformedByTheIdentity()
     {
@@ -101,7 +102,22 @@ public sealed class LabeledAbilityTests
         Assert.True(Statuses.Has(world, identity, Statuses.Stunned));
     }
 
+    [Rule("rr:you-your.16")]
+    [Fact]
+    public void EncounterCardAbilityIsNotPerformedByTheIdentity()
+    {
+        // Triggered abilities from encounter cards "are not considered to be
+        // performed by that player's identity, whether those abilities are
+        // optional or forced." The encounter card remains the performer.
+        var (world, facts) = Board();
+        var encounter = world.CreateCard(
+            "encounter", world.AreaOf(DeckType.EnvironmentArea));
+
+        Assert.Same(encounter, LabeledAbilities.Performer(world, facts, 0, encounter));
+    }
+
     [Rule("rr:upgrade.4")]
+    [Rule("rr:you-your.14")]
     [Fact]
     public void UpgradeUsesTheIdentityExceptWhenHostedByAnotherFriendlyCharacter()
     {
@@ -127,6 +143,7 @@ public sealed class LabeledAbilityTests
     }
 
     [Rule("rr:resource-card.2")]
+    [Rule("rr:you-your.13")]
     [Fact]
     public void ResourceCardAbilitiesAreAnExtensionOfTheIdentity()
     {
@@ -159,6 +176,7 @@ public sealed class LabeledAbilityTests
             "resource" => CardKind.Resource,
             "support" => CardKind.Support,
             "upgrade" => CardKind.Upgrade,
+            "encounter" => CardKind.Environment,
             "ally" => CardKind.Ally,
             "villain" => CardKind.EncounterVillain,
             "stunned" or "confused" => CardKind.Status,
