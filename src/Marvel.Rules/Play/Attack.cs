@@ -47,6 +47,49 @@ public static class Attack
     /// </remarks>
     public const string DefenseVerb = "Defense";
 
+    /// <summary>Expose the imminent attack to initiation interrupts.</summary>
+    /// <remarks>
+    /// Card instructions can declare a defender "when an enemy attacks". By
+    /// <c>rr:attack-enemy-activation.5</c>, those interrupts share the attack
+    /// initiation window, before the occurrence itself applies. The pending
+    /// attack therefore has to be saveable board state while that window is
+    /// open; its six steps are still scheduled only when the occurrence
+    /// applies.
+    /// </remarks>
+    public static void Prepare(World world, ICardFacts facts, PhaseStep step)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        if (world.Attack is not null)
+        {
+            return;
+        }
+
+        var target = step.Character >= 0
+            ? world.Cards[step.Character]
+            : world.Seats[step.Seat].IdentityCard;
+        world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId);
+        world.Activation = new EnemyActivation(
+            step.Subject, step.Seat, Attacking: true, Id: step.ActivationId);
+        world.FinishedAttack = null;
+    }
+
+    /// <summary>Discard an imminent attack replaced by a higher-priority status card.</summary>
+    public static void CancelPrepared(World world, int enemy)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        if (world.Attack is { Enemy: var attacker } && attacker == enemy)
+        {
+            world.Attack = null;
+        }
+        if (world.Activation is { Enemy: var activating, Attacking: true }
+            && activating == enemy)
+        {
+            world.Activation = null;
+        }
+    }
+
     /// <summary>
     /// During an attack's initiation interrupt, make that same attack resolve
     /// against every other hero in deterministic seat order.
@@ -145,6 +188,70 @@ public static class Attack
         }
     }
 
+    /// <summary>Whether a card instruction can declare this character the defender.</summary>
+    /// <remarks>
+    /// Card-declared defenders do not use the ordinary step-2 readiness check:
+    /// <c>rr:defend-defense.2.2</c> and <c>.3.3</c> expressly permit an ability
+    /// that declares without exhausting to name an exhausted hero or ally.
+    /// A defense-labeled ability may already have established the same
+    /// character as a non-basic defender before its printed effect reaches the
+    /// declaration, so naming that same character remains legal.
+    /// </remarks>
+    public static bool CanDeclareByAbility(World world, ICardFacts facts, Card defender)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(defender);
+
+        if (world.Attack is not { } attack
+            || !DeckTypes.IsInPlay(defender.Area.Type)
+            || defender.Area.PlayArea.Player < 0)
+        {
+            return false;
+        }
+
+        var kind = FacedownDrones.Kind(defender, facts);
+        return kind is CardKind.Hero or CardKind.Ally
+            && (attack.Defender < 0 || attack.Defender == defender.ObjectId);
+    }
+
+    /// <summary>Apply a card instruction that declares a hero or ally the defender.</summary>
+    /// <remarks>
+    /// <c>rr:defend-defense.2.1</c> makes a card-declared hero a basic
+    /// defender, including its DEF reduction. <c>.3.2</c> makes a
+    /// card-declared ally the defender without a DEF reduction. Exhaustion is
+    /// deliberately not performed here: it is a separate printed instruction,
+    /// and <c>.2.2</c>/<c>.3.3</c> allow declarations that explicitly happen
+    /// without exhausting even when the character is already exhausted.
+    /// </remarks>
+    public static void DeclareByAbility(
+        World world, ICardFacts facts, Card defender)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(defender);
+
+        if (!CanDeclareByAbility(world, facts, defender))
+        {
+            throw new RulesNotImplementedException(
+                $"card {defender.ObjectId} cannot be declared the defender of the current attack");
+        }
+
+        var attack = Current(world);
+        int player = defender.Area.PlayArea.Player;
+        world.Attack = attack with
+        {
+            Defender = defender.ObjectId,
+            Target = defender.ObjectId,
+            Player = player,
+            BasicDefense = FacedownDrones.Kind(defender, facts) == CardKind.Hero,
+        };
+        if (world.Activation is { Attacking: true } activation)
+        {
+            world.Activation = activation with { Player = player };
+        }
+    }
+
     /// <summary>
     /// The attack initiates: it targets a player, and its steps go on the
     /// agenda.
@@ -173,6 +280,7 @@ public static class Attack
         if (BasicPowers.Cancelled(
             world, facts, world.Cards[step.Subject], Statuses.Stunned, events))
         {
+            CancelPrepared(world, step.Subject);
             world.PendingAdditionalAttackPlayers = [];
             return;
         }
@@ -183,22 +291,16 @@ public static class Attack
         // attack a player's alter-ego or an ally that player controls", and
         // `rr:attacks-against-allies.1` keeps the player attacked either way,
         // so the seat is unchanged and only the character moves.
-        var target = step.Character >= 0
-            ? world.Cards[step.Character]
-            : world.Seats[step.Seat].IdentityCard;
+        Prepare(world, facts, step);
         var additional = world.PendingAdditionalAttackPlayers;
         world.PendingAdditionalAttackPlayers = [];
-        world.Attack = new EnemyAttack(
-            step.Subject, step.Seat, target.ObjectId, AdditionalPlayers: additional);
+        world.Attack = Current(world) with { AdditionalPlayers = additional };
 
         // `rr:activation` -- "whenever an enemy attacks or schemes, it is
         // considered to have activated". The umbrella, which a scheme sets too;
         // `world.Attack` is the six steps below it.
-        world.Activation = new EnemyActivation(
+        world.Activation ??= new EnemyActivation(
             step.Subject, step.Seat, Attacking: true, Id: step.ActivationId);
-
-        // One attack's facts do not outlive the start of the next.
-        world.FinishedAttack = null;
 
         world.Agenda.Then(new PhaseStep(
             Steps.GiveBoostCard, step.Round, 1, Index: step.Seat, Subject: step.Subject,
@@ -371,6 +473,14 @@ public static class Attack
         }
 
         var attack = Current(world);
+        // A card instruction can declare the defender during the initiation
+        // interrupt. `rr:defend-defense.2` and `.3` both exclude every other
+        // friendly character once one is defending, so step 2 has no further
+        // question to ask.
+        if (attack.IsDefended)
+        {
+            return null;
+        }
         var choice = Choice(world, facts, abilities, attack);
         if (choice.Candidates.Count == 0)
         {
@@ -421,6 +531,11 @@ public static class Attack
         ArgumentNullException.ThrowIfNull(events);
 
         var attack = Current(world);
+        if (attack.IsDefended)
+        {
+            throw new RulesNotImplementedException(
+                $"attack by card {attack.Enemy} already has defender {attack.Defender}");
+        }
         var choice = Choice(world, facts, abilities, attack);
         if (input.IsDecline)
         {
@@ -588,6 +703,7 @@ public static class Attack
             return;
         }
 
+        RefreshDefender(world, facts);
         var attack = Current(world);
         world.Attack = attack with { CalculatedDamage = Amount(world, facts, attack) };
     }
@@ -613,6 +729,7 @@ public static class Attack
             return;
         }
 
+        RefreshDefender(world, facts);
         var attack = Current(world);
         long amount = attack.CalculatedDamage
             ?? throw new RulesNotImplementedException(
@@ -914,4 +1031,43 @@ public static class Attack
     private static EnemyAttack Current(World world) =>
         world.Attack
         ?? throw new RulesNotImplementedException("no attack is being resolved");
+
+    /// <summary>Make an attack undefended when its defending ally has left play.</summary>
+    /// <remarks>
+    /// <c>rr:attack-enemy-activation.3.2</c>: if the defending ally leaves
+    /// before attack damage is dealt, the attack has no defending character
+    /// and the identity of that ally's controller becomes its target. The
+    /// controller was captured as <see cref="EnemyAttack.Player"/> when the
+    /// ally defended; after the ally moves, its discard-pile area records its
+    /// owner instead and is too late to answer that rules question.
+    /// </remarks>
+    public static void RefreshDefender(World world, ICardFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        if (world.Attack is not { } attack)
+        {
+            return;
+        }
+
+        if (attack.Defender < 0)
+        {
+            return;
+        }
+
+        var defender = world.Cards[attack.Defender];
+        if (FacedownDrones.Kind(defender, facts) != CardKind.Ally
+            || DeckTypes.IsInPlay(defender.Area.Type))
+        {
+            return;
+        }
+
+        var retargeted = attack with
+        {
+            Defender = -1,
+            Target = world.Seats[attack.Player].IdentityCard.ObjectId,
+            BasicDefense = false,
+        };
+        world.Attack = retargeted;
+    }
 }

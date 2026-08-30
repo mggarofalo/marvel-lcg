@@ -35,6 +35,8 @@ public sealed partial class AbilityRunner
             !target.Ready && cast.Abilities.CanReady(cast.World, target, cast.Source)),
         "soakDamage" => Find(node.Require("onto"), cast) is not null,
         "giveStatus" => StatusTargets(node, cast).Count > 0,
+        "declareDefender" => Find(node.Require("card"), cast) is { } declared
+            && Attack.CanDeclareByAbility(cast.World, cast.World.Facts, declared),
         "attachTo" => Find(node.Argument, cast) is not null,
         "grantUntil" => Find(node.Require("card"), cast) is not null,
         // The delayed effect's game element is supplied by its future
@@ -1455,6 +1457,9 @@ public sealed partial class AbilityRunner
             "ready" => Cards(Every(node.Argument, cast).Where(card =>
                 !card.Ready && cast.Abilities.CanReady(cast.World, card, cast.Source))),
             "giveStatus" => Cards(StatusTargets(node, cast)),
+            "declareDefender" => Find(node.Require("card"), cast) is { } declared
+                && Attack.CanDeclareByAbility(cast.World, cast.World.Facts, declared)
+                    ? TargetLegality.Valid : TargetLegality.Invalid,
             "attachTo" => Find(node.Argument, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "grantUntil" => Find(node.Require("card"), cast) is null

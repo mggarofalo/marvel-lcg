@@ -627,6 +627,14 @@ public sealed partial class AbilityRunner
                 cast.ResolveEffect();
                 break;
 
+            case "declareDefender":
+                var declared = Find(node.Require("card"), cast)
+                    ?? throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' cannot find the character it declares as defender");
+                Attack.DeclareByAbility(cast.World, cast.World.Facts, declared);
+                cast.ResolveEffect();
+                break;
+
             case "attachTo":
                 AttachTo(node, cast);
                 break;
@@ -818,6 +826,13 @@ public sealed partial class AbilityRunner
         {
             cast.ResolveEffect();
         }
+
+        // `rr:attack-enemy-activation.3.2`: a defending ally that leaves play
+        // immediately stops defending and exposes its controller's identity.
+        // Recheck after every node so later text in the same ability, and the
+        // next boost ability, reads the new attack roles rather than a stale
+        // defender that has already moved.
+        Attack.RefreshDefender(cast.World, cast.World.Facts);
     }
 
     private static bool EventMeansEffectApplied(string kind) => kind is not (

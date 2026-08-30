@@ -170,11 +170,11 @@ items.
 | `rr:attack-enemy-activation.1.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.1.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.2.1` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
-| `rr:attack-enemy-activation.2.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:attack-enemy-activation.2.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:attack-enemy-activation.2.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.3` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.3.1` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
-| `rr:attack-enemy-activation.3.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:attack-enemy-activation.3.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:attack-enemy-activation.3.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.4.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.5` | Executable and cited | — | A behavior test directly cites this record. |
@@ -201,8 +201,8 @@ items.
 | `rr:attacks-against-allies.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attacks-against-allies.1.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attacks-against-allies.1.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attacks-against-allies.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
-| `rr:attacks-against-allies.3` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:attacks-against-allies.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:attacks-against-allies.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:base-value` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:basic-card` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:basic-card.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
@@ -346,12 +346,12 @@ items.
 | `rr:defend-defense` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:defend-defense.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:defend-defense.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:defend-defense.2.1` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
-| `rr:defend-defense.2.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:defend-defense.2.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:defend-defense.2.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:defend-defense.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:defend-defense.3.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:defend-defense.3.2` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
-| `rr:defend-defense.3.3` | Unimplemented behavior | MARVEL-285 | The defender and ally-target implementation work item owns this executable rule. |
+| `rr:defend-defense.3.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:defend-defense.3.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:defend-defense.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:defend-defense.4.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:defend-defense.4.2` | Executable and cited | — | A behavior test directly cites this record. |
