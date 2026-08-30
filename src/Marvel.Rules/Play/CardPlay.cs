@@ -825,6 +825,52 @@ public static class CardPlay
                 facts.Title(attached.FaceId), title, StringComparison.Ordinal));
     }
 
+    /// <summary>Transfers control of an in-play player card to another player.</summary>
+    /// <remarks>
+    /// The destination is validated before the card moves. In particular,
+    /// <c>rr:max-maximum.3.1</c> forbids taking control of another copy of a
+    /// “Max 1 per player” card already controlled there.
+    /// </remarks>
+    public static void TakeControl(
+        World world, ICardFacts facts, Card card, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(card);
+        if (player < 0 || player >= world.Seats.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(player));
+        }
+        if (!DeckTypes.IsInPlay(card.Area.Type) || !card.Area.PlayArea.IsPlayers)
+        {
+            throw new RulesNotImplementedException(
+                $"card {card.ObjectId} is not an in-play player card whose control can transfer");
+        }
+        if (card.Area.PlayArea == PlayArea.Of(player))
+        {
+            return;
+        }
+
+        long maximum = facts.PrintedValue(card.FaceId, "MaxPerUnit", world.Players);
+        string unit = facts.Attributes(card.FaceId)
+            .GetValueOrDefault("MaxPerUnitKind", "player");
+        if (maximum > 0
+            && string.Equals(unit, "player", StringComparison.Ordinal)
+            && CountControlled(world, facts, card, player) >= maximum)
+        {
+            throw new RulesNotImplementedException(
+                $"player {player} already controls the maximum number of "
+                + $"'{facts.Title(card.FaceId)}'");
+        }
+
+        var destination = world.AreaOf(
+            card.Area.Type,
+            PlayArea.Of(player),
+            host: card.Area.Host,
+            cardOwner: card.Owner);
+        World.MoveToTop(card, destination);
+    }
+
     /// <summary>Where a played card goes — <c>rr:enters-play</c>.</summary>
     private static void Enter(
         World world, ICardFacts facts, ICardAbilities abilities, Seat seat, Card card,

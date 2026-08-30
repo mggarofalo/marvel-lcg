@@ -33,7 +33,8 @@ public static class AbilityCatalog
         new(StringComparer.Ordinal)
         {
             "name", "note", "trigger", "effect", "cost", "limitPerRound", "when",
-            "anyPlayer", "labels", "printedResources",
+            "anyPlayer", "labels", "printedResources", "maxPerRound", "maxPerPhase",
+            "maxPerGame", "maxPerInstance",
         };
 
     private static readonly HashSet<string> TriggerKeys =
@@ -186,7 +187,37 @@ public static class AbilityCatalog
             element.TryGetProperty("when", out var condition) ? Node(condition, card) : null,
             Flag(element, "anyPlayer", card),
             Labels(element, card),
-            printedResources);
+            printedResources,
+            Maximum(element, card));
+    }
+
+    private static AbilityMaximum? Maximum(JsonElement ability, string card)
+    {
+        var written = new[]
+        {
+            (Key: "maxPerRound", Period: MaximumPeriod.Round),
+            (Key: "maxPerPhase", Period: MaximumPeriod.Phase),
+            (Key: "maxPerGame", Period: MaximumPeriod.Game),
+            (Key: "maxPerInstance", Period: MaximumPeriod.Instance),
+        }
+            .Where(candidate => ability.TryGetProperty(candidate.Key, out _))
+            .ToList();
+        if (written.Count > 1)
+        {
+            throw new AbilityException($"'{card}' gives one ability several maxima");
+        }
+        if (written.Count == 0)
+        {
+            return null;
+        }
+
+        var maximum = written[0];
+        long amount = ability.GetProperty(maximum.Key).GetInt64();
+        if (amount <= 0)
+        {
+            throw new AbilityException($"'{card}' gives an ability a non-positive maximum");
+        }
+        return new AbilityMaximum(amount, maximum.Period);
     }
 
     private static List<string> Labels(JsonElement ability, string card)

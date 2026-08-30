@@ -62,6 +62,23 @@ public sealed class AbilityDataTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void OneAbilityCannotDeclareSeveralMaximumPeriods()
+    {
+        var refused = Assert.Throws<AbilityException>(() => AbilityCatalog.Parse(
+            """
+            { "cards": [ { "card": "01003", "abilities": [ {
+              "trigger": { "event": "WhenActionTriggered", "timing": "Action",
+                           "subject": "game" },
+              "maxPerRound": 1,
+              "maxPerGame": 1,
+              "effect": { "draw": { "player": "you", "count": 1 } }
+            } ] } ] }
+            """));
+
+        Assert.Contains("several maxima", refused.Message, StringComparison.Ordinal);
+    }
+
     [Rule("rr:ability.14")]
     [Fact]
     public void AQuotedTimingTriggerIsAuthoredOnlyAsAReference()

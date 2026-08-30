@@ -504,7 +504,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     // never reaches the window at all.
                     if (!Payable(world, card, controller, ability.Cost)
                         || !EventPayable(world, card, controller, ability)
-                        || !Available(world, card, ability))
+                        || !Available(world, card, ability, occurrence))
                     {
                         continue;
                     }
@@ -588,6 +588,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         cast.SetPaymentMayMutate(
             found.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event);
 
+        if (!Available(world, card, found, occurrence))
+        {
+            throw new RulesNotImplementedException(
+                $"'{card.FaceId}' has reached its printed maximum for this "
+                + "ability's period");
+        }
+
         // **A forced ability is resolved, never offered, and so never priced.**
         // `rr:forced.1` makes it resolve when its condition is met, which is
         // why `Offering.Work` runs it without asking anybody anything -- and a
@@ -632,7 +639,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             Pay(found.Cost, paying, chosen, values, cast);
         }
-        Use(world, card, found);
+        Use(world, card, found, occurrence);
         if (world.Facts.Kind(card.FaceId) == CardKind.Event)
         {
             occurrence.BeginCard(card.ObjectId, [ability]);
@@ -910,14 +917,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// round without anything having to remember to clear it.
     /// </para>
     /// </remarks>
-    private bool Available(World world, Card card, CardAbility ability) =>
-        ability.Limit is not { } limit
-        || world.Effects.Active().Count(effect =>
-            effect.Card == card.ObjectId
-            && string.Equals(effect.Kind, Spent(card, ability), StringComparison.Ordinal)) < limit;
+    private bool Available(
+        World world, Card card, CardAbility ability, Occurrence? occurrence = null)
+    {
+        if (ability.Limit is { } limit
+            && world.Effects.Active().Count(effect =>
+                effect.Card == card.ObjectId
+                && string.Equals(
+                    effect.Kind, Spent(card, ability), StringComparison.Ordinal)) >= limit)
+        {
+            return false;
+        }
+
+        if (ability.Maximum is not { } maximum)
+        {
+            return true;
+        }
+        if (maximum.Period == MaximumPeriod.Instance && occurrence is null)
+        {
+            throw new RulesNotImplementedException(
+                $"'{card.FaceId}' has a per-instance maximum outside an occurrence window");
+        }
+
+        string key = MaximumSpent(world, card, maximum.Period, occurrence);
+        return world.Effects.Active().Count(effect =>
+            string.Equals(effect.Kind, key, StringComparison.Ordinal)) < maximum.Uses;
+    }
 
     /// <summary>Records one use of a limited ability, until the round ends.</summary>
-    private void Use(World world, Card card, CardAbility ability)
+    private void Use(
+        World world, Card card, CardAbility ability, Occurrence? occurrence = null)
     {
         if (ability.Limit is not null)
         {
@@ -928,6 +957,35 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Affects: card.ObjectId,
                 Lasts: Duration.UntilEndOf(TimingPoints.EndOfRound)));
         }
+
+        if (ability.Maximum is { } maximum)
+        {
+            Duration lasts = maximum.Period switch
+            {
+                MaximumPeriod.Round => Duration.UntilEndOf(TimingPoints.EndOfRound),
+                MaximumPeriod.Phase => Duration.UntilEndOf(TimingPoints.EndOfPhase),
+                MaximumPeriod.Game or MaximumPeriod.Instance => Duration.WhileInPlay,
+                _ => throw new ArgumentOutOfRangeException(nameof(ability)),
+            };
+            world.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: MaximumSpent(world, card, maximum.Period, occurrence),
+                Card: card.ObjectId,
+                Lasts: lasts));
+        }
+    }
+
+    private static string MaximumSpent(
+        World world, Card card, MaximumPeriod period, Occurrence? occurrence)
+    {
+        string title = world.Facts.Title(card.FaceId);
+        string instance = period == MaximumPeriod.Instance
+            ? ":" + (occurrence?.Id
+                ?? throw new RulesNotImplementedException(
+                    $"'{card.FaceId}' has a per-instance maximum without an occurrence"))
+                .ToString(System.Globalization.CultureInfo.InvariantCulture)
+            : string.Empty;
+        return $"maximum:{period}:{title}{instance}";
     }
 
     /// <summary>The effect kind that stands for one use of this instance of an ability.</summary>
@@ -1701,7 +1759,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             Pay(found.Cost, paying, chosen, values, cast);
         }
-        Use(world, card, found);
+        Use(world, card, found, occurrence);
         if (world.Facts.Kind(card.FaceId) == CardKind.Event)
         {
             occurrence.BeginCard(card.ObjectId, [ability]);

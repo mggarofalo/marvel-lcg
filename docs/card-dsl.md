@@ -1388,6 +1388,14 @@ top discard card does not. A printed cost component also travels with
 `Printed: true`, so a wild cannot be declared as a required energy, mental, or
 physical icon.
 
+Card maxima are separate from `limitPerRound`. An ability may carry exactly one
+of `maxPerRound`, `maxPerPhase`, `maxPerGame`, or `maxPerInstance`; the value is
+shared across every copy of the card by printed title and, for an instance
+maximum, is additionally keyed to the triggering occurrence. A Limit remains
+per instance of an ability. The interpreter records a maximum as soon as the
+card or ability is initiated, so cancellation does not refund it. `min` remains
+the value-level spelling of “to a maximum of N” inside one resolution.
+
 #### The two questions an action never had to ask
 
 An action is *taken by a seat*, so the request carries who is acting; both the

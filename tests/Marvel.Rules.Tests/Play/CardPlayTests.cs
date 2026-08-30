@@ -1140,6 +1140,25 @@ public sealed class CardPlayTests
         Assert.Equal(1, copy.Area.PlayArea.Player);
     }
 
+    [Rule("rr:max-maximum.3.1")]
+    [Fact]
+    public void ControlCannotTransferIntoAnAlreadyReachedPerPlayerMaximum()
+    {
+        var printed = Cards().With("limited", ("Cost", "0"), ("MaxPerUnit", "1"));
+        var world = Table(printed);
+        var owned = world.CreateCard(
+            "limited", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var other = world.CreateCard(
+            "limited", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            CardPlay.TakeControl(world, printed, other, player: 0));
+
+        Assert.Equal(0, owned.Area.PlayArea.Player);
+        Assert.Equal(1, other.Area.PlayArea.Player);
+        Assert.Equal(1, other.Owner);
+    }
+
     [Rule("rr:max-maximum")]
     [Rule("rr:max-maximum.4")]
     [Fact]

@@ -2099,6 +2099,213 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Rule("rr:max-maximum")]
+    [Rule("rr:max-maximum.1")]
+    [Fact]
+    public void APeriodMaximumIsSharedByTitleAcrossPlayersAndExpires()
+    {
+        // “Max 1 per round” is across all copies by title for all players,
+        // unlike a Limit, which belongs to each instance of an ability.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            maximum: "Round");
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                first = InPlay(board, AuthoredCards.AuntMay);
+                second = board.CreateCard(
+                    AuthoredCards.AuntMay,
+                    board.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+            },
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == first!.ObjectId);
+
+        runner.Act(world, action, [], []);
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 1), pending => pending.Card == second!.ObjectId);
+        world.Effects.Expire(TimingPoints.EndOfRound);
+        Assert.Contains(
+            runner.Actions(world, 1), pending => pending.Card == second!.ObjectId);
+    }
+
+    [Rule("rr:max-maximum.1")]
+    [Fact]
+    public void APhaseMaximumExpiresAtTheEndOfEitherPhase()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            maximum: "Phase");
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                first = InPlay(board, AuthoredCards.AuntMay);
+                second = InPlay(board, AuthoredCards.AuntMay);
+            },
+            abilities: runner);
+        runner.Act(
+            world,
+            Assert.Single(runner.Actions(world, 0), pending =>
+                pending.Card == first!.ObjectId),
+            [],
+            []);
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
+        world.Effects.Expire(TimingPoints.EndOfPhase);
+        Assert.Contains(
+            runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
+    }
+
+    [Rule("rr:max-maximum.1")]
+    [Fact]
+    public void AGameMaximumSurvivesPhaseAndRoundBoundaries()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            maximum: "Game");
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                first = InPlay(board, AuthoredCards.AuntMay);
+                second = InPlay(board, AuthoredCards.AuntMay);
+            },
+            abilities: runner);
+        runner.Act(
+            world,
+            Assert.Single(runner.Actions(world, 0), pending =>
+                pending.Card == first!.ObjectId),
+            [],
+            []);
+
+        world.Effects.Expire(TimingPoints.EndOfPhase);
+        world.Effects.Expire(TimingPoints.EndOfRound);
+
+        Assert.DoesNotContain(
+            runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
+    }
+
+    [Rule("rr:max-maximum.1.1")]
+    [Fact]
+    public void ACanceledUseStillCountsTowardACardMaximum()
+    {
+        var runner = Runner(
+            "01017",
+            "Action",
+            """{ "attack": { "target": { "query": "villain" }, "effect": { "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } } } }""",
+            maximum: "Round");
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                first = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                second = board.CreateCard(
+                    "01017",
+                    board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        board.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == first!.ObjectId);
+
+        runner.Act(world, action, [], []);
+
+        Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
+        Assert.DoesNotContain(
+            runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
+    }
+
+    [Rule("rr:max-maximum.5")]
+    [Fact]
+    public void APerInstanceMaximumIsSharedAcrossCopiesForOneOccurrence()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Response",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            eventName: "WhenDamageWouldBeDealt",
+            maximum: "Instance");
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                first = InPlay(board, AuthoredCards.AuntMay);
+                second = InPlay(board, AuthoredCards.AuntMay);
+            },
+            abilities: runner);
+        var occurrence = new Occurrence(
+            91,
+            ["WhenDamageWouldBeDealt"],
+            Player: 0,
+            Target: world.Seats[0].IdentityCard.ObjectId);
+        var offered = runner.Waiting(world, occurrence, WindowKind.Response);
+
+        Assert.Equal(2, offered.Count);
+        runner.Resolve(world, occurrence, offered.Single(pending =>
+            pending.Card == first!.ObjectId), [], []);
+
+        Assert.Empty(runner.Waiting(world, occurrence, WindowKind.Response));
+        Assert.Equal(
+            2,
+            runner.Waiting(
+                world,
+                new Occurrence(
+                    92,
+                    ["WhenDamageWouldBeDealt"],
+                    Player: 0,
+                    Target: world.Seats[0].IdentityCard.ObjectId),
+                WindowKind.Response).Count);
+        Assert.NotNull(second);
+    }
+
+    [Rule("rr:max-maximum.6")]
+    [Fact]
+    public void AMaximumWithinAnAbilityCapsOnlyThatResolution()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "dealDamage": {
+              "cards": { "query": "villain" },
+              "amount": { "min": [ 20, 10 ] }
+            } }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
+
+        runner.Act(world, action, [], []);
+
+        Assert.Equal(10, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
     [Rule("rr:labeled-ability.5")]
     [Rule("rr:labeled-ability.6")]
     [Rule("rr:labeled-ability.6.2")]
@@ -14716,7 +14923,8 @@ public sealed class ActionAbilityTests
         long? limit = null,
         bool anyPlayer = false,
         bool includeAuthored = false,
-        string? labels = null)
+        string? labels = null,
+        string? maximum = null)
     {
         var local = Marvel.Cards.Dsl.AbilityCatalog.Parse(
             $$"""
@@ -14726,6 +14934,7 @@ public sealed class ActionAbilityTests
                 {{(limit is null ? string.Empty : $"\"limitPerRound\": {limit.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)},")}}
                 {{(anyPlayer ? "\"anyPlayer\": true," : string.Empty)}}
                 {{(labels is null ? string.Empty : $"\"labels\": {labels},")}}
+                {{(maximum is null ? string.Empty : $"\"maxPer{maximum}\": 1,")}}
                 "effect": {{effect}}
             } ] } ] }
             """);

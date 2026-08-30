@@ -91,7 +91,8 @@ public static class PhaseEnd
 
         End(world,
             new Occurrence(0, [VillainPhaseEnds, RoundEnds]),
-            [TimingPoints.EndOfVillainPhase, TimingPoints.EndOfRound, TimingPoints.EndOfTurn],
+            [TimingPoints.EndOfVillainPhase, TimingPoints.EndOfPhase,
+                TimingPoints.EndOfRound, TimingPoints.EndOfTurn],
             events);
     }
 
@@ -110,7 +111,7 @@ public static class PhaseEnd
     public static void EndPlayerPhase(World world, List<GameEvent> events) =>
         End(world,
             new Occurrence(0, [PlayerPhaseEnds]),
-            [TimingPoints.EndOfPlayerPhase],
+            [TimingPoints.EndOfPlayerPhase, TimingPoints.EndOfPhase],
             events);
 
     /// <summary>

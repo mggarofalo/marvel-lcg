@@ -113,6 +113,9 @@ public static class TimingPoints
     /// <summary>The end of the villain phase — <c>rr:villain-phase.step.6.a</c>.</summary>
     public const string EndOfVillainPhase = "EndOfVillainPhase";
 
+    /// <summary>The end of whichever player or villain phase is current.</summary>
+    public const string EndOfPhase = "EndOfPhase";
+
     /// <summary>
     /// The end of the round, which is the end of the villain phase —
     /// <c>rr:villain-phase.step.6</c> is titled "End of Villain Phase and
