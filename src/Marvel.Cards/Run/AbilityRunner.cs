@@ -17460,7 +17460,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
             }
             if (ProjectedPredicateInputsChanged(current)
-                && ConditionalConstantMayModify(current, field))
+                && ConditionalConstantMayModify(current, card, field))
             {
                 throw new RulesNotImplementedException(
                     $"'{current.Source.FaceId}' changes game state before reading "
@@ -17527,7 +17527,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             || ActiveVillain != (current.World.TheCardIn(
                 DeckType.VillainArea)?.ObjectId ?? -1);
 
-        private bool ConditionalConstantMayModify(Cast current, string field)
+        private bool ConditionalConstantMayModify(
+            Cast current, Card target, string field)
         {
             if (current.Abilities is not AbilityRunner runner)
             {
@@ -17537,34 +17538,74 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Where(area => DeckTypes.IsInPlay(area.Type))
                 .SelectMany(area => area.Cards)
                 .Where(source => !Departed.Contains(source.ObjectId))
-                .SelectMany(source => runner.On(source))
-                .Where(ability => ability.Trigger.Timing == AbilityType.Constant)
-                .Any(ability => ConditionalGrant(
-                    ability.Effect, field, ability.When is not null));
+                .Any(source => runner.On(source)
+                    .Where(ability =>
+                        ability.Trigger.Timing == AbilityType.Constant)
+                    .Any(ability => ConditionalGrant(
+                        ability.Effect, field, ability.When is not null,
+                        source, target, current)));
         }
 
         private static bool ConditionalGrant(
-            AbilityNode node, string field, bool conditioned)
+            AbilityNode node, string field, bool conditioned,
+            Card source, Card target, Cast current)
         {
             if (node.Kind == "if")
             {
                 return Branches.Select(node.Field)
                     .Where(value => value is not null)
                     .Any(value => ConditionalGrant(
-                        Tree(value!), field, conditioned: true));
+                        Tree(value!), field, conditioned: true,
+                        source, target, current));
             }
             if (node.Kind is "grant" or "grantEach"
                 && node.Field("keyword") is { } keyword
                 && string.Equals(Word(keyword), field, StringComparison.Ordinal))
             {
-                return conditioned;
+                bool dynamicAmount = node.Field("amount") is { } amount
+                    && amount is not AbilityValue.Number;
+                return (conditioned || dynamicAmount)
+                    && GrantCouldAffect(node, source, target, current);
             }
             if (node.Kind is "seq" or "and")
             {
                 return Nodes(node.Argument).Any(child =>
-                    ConditionalGrant(child, field, conditioned));
+                    ConditionalGrant(
+                        child, field, conditioned, source, target, current));
             }
             return false;
+        }
+
+        private static bool GrantCouldAffect(
+            AbilityNode grant, Card source, Card target, Cast current)
+        {
+            var selector = grant.Require(
+                grant.Kind == "grant" ? "card" : "cards");
+            if (selector is AbilityValue.Word { Value: "this" })
+            {
+                return source.ObjectId == target.ObjectId;
+            }
+            if (selector is AbilityValue.Word { Value: "attachedTo" })
+            {
+                return source.Area.Host == target.ObjectId;
+            }
+            if (selector is AbilityValue.Map
+                && Tree(selector) is { Kind: "titled" } titled)
+            {
+                return string.Equals(
+                    current.World.Facts.Title(target.FaceId),
+                    Word(titled.Argument), StringComparison.Ordinal);
+            }
+            if (selector is AbilityValue.Map
+                && Tree(selector) is { Kind: "query" } query
+                && query.Argument is AbilityValue.Word { Value: "villain" })
+            {
+                return current.World.Facts.Kind(target.FaceId)
+                    == CardKind.EncounterVillain;
+            }
+            // Other selectors may change membership with the projected facts.
+            // Failing closed is required until that membership is projected.
+            return true;
         }
 
         public bool HasTrait(Cast current, Card card, string trait)

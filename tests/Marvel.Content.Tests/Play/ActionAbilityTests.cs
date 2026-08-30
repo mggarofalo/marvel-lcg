@@ -11723,6 +11723,103 @@ public sealed class ActionAbilityTests
         Assert.Equal(0, Statuses.Count(world!, hydra, Statuses.Stunned));
     }
 
+    [Rule("rr:ability.9")]
+    [Fact]
+    public void UnrelatedConditionalHealthConstantDoesNotBlockVillainProjection()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "query": "villain" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            includeAuthored: true);
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var pool = board.CreateCard(
+                    "45071", board.AreaOf(DeckType.SideSchemesArea));
+                pool.PlaceTokens("k_threat", 9);
+                board.CreateCard(
+                    "45069", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+    }
+
+    [Rule("rr:ability.9")]
+    [Fact]
+    public void DynamicConstantAmountRefusesStaleProjectedRanking()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "titled": "Titania" }, "amount": 5
+              } },
+              { "giveStatus": {
+                "card": { "titled": "Titania" }, "status": "tough"
+              } },
+              { "dealDamage": {
+                "cards": { "maxBy": {
+                  "of": { "query": "minions" }, "by": "attack"
+                } },
+                "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            includeAuthored: true);
+        Card? source = null;
+        Card? titania = null;
+        Card? hydra = null;
+        World? world = null;
+
+        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                titania = board.CreateCard(
+                    "01162", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                hydra = board.CreateCard(
+                    "08028", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("conditional constant", refused.Message);
+        Assert.True(source!.Ready);
+        Assert.Equal(0, titania!.Damage);
+        Assert.Equal(0, Statuses.Count(world!, titania, Statuses.Tough));
+        Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
+    }
+
     [Rule("rr:villain-defeat.3.2")]
     [Rule("rr:villain-defeat.4.2")]
     [Fact]
