@@ -402,7 +402,14 @@ public static class WorldSetup
             }
 
             var from = card.Area;
-            Play.Reveal.Resolve(world, facts, card, world.FirstPlayer, happened);
+            int? controller = world.Abilities.SetupController(world, card);
+            if (controller is { } player)
+            {
+                Play.CardPlay.TakeScenarioCardOwnership(facts, card, player);
+            }
+            Play.Reveal.Resolve(
+                world, facts, card, world.FirstPlayer, happened,
+                setupController: controller);
 
             if (card.Area == from)
             {

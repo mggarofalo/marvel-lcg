@@ -65,6 +65,46 @@ public sealed class SetupCardTests
         Assert.Equal(villain.ObjectId, card.Area.Host);
     }
 
+    [Rule("rr:appendix-ii-setup.step.11")]
+    [Rule("rr:attach-to")]
+    [Theory]
+    [InlineData("16149")]
+    [InlineData("21129")]
+    public void ASetupAttachmentIsPutIntoPlayAttachedToTheVillain(string faceId)
+    {
+        // Step 11 puts each Setup card into play. Both cards say "Attach to
+        // the villain," and rr:attach-to requires that attachment as the card
+        // enters play; neither card is revealed to get there.
+        var world = Deal(faceId);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+
+        var card = Assert.Single(world.Cards, each => each.FaceId == faceId);
+
+        Assert.Equal(DeckType.UpgradesArea, card.Area.Type);
+        Assert.Equal(villain.ObjectId, card.Area.Host);
+    }
+
+    [Rule("rr:appendix-ii-setup.step.11")]
+    [Rule("rr:ownership-and-control.2.2")]
+    [Theory]
+    [InlineData("16142", DeckType.SupportsArea)]
+    [InlineData("40130", DeckType.AlliesArea)]
+    public void AScenarioPlayerCardStartsUnderTheFirstPlayersControl(
+        string faceId, DeckType expectedArea)
+    {
+        // Each card says "The first player controls" it. When that player
+        // takes control, rr:ownership-and-control.2.2 makes a scenario-specific
+        // player card become owned by that player as well.
+        var world = Deal(faceId);
+
+        var card = Assert.Single(world.Cards, each => each.FaceId == faceId);
+
+        Assert.Equal(expectedArea, card.Area.Type);
+        Assert.Equal(PlayArea.Of(world.FirstPlayer), card.Area.PlayArea);
+        Assert.Equal(world.FirstPlayer, card.Owner);
+        Assert.Equal(world.FirstPlayer, card.Area.CardOwner);
+    }
+
     [Rule("rr:traits")]
     [Fact]
     public void TheAttachedVillainGainsTheTraitTheAttachmentNames()
@@ -192,13 +232,13 @@ public sealed class SetupCardTests
     [Fact]
     public void ACardTheEngineCannotPlaceStopsTheDealByName()
     {
-        // The Infinity Gauntlet has the setup keyword and its placement is not
-        // written, so there is nowhere to put it. Leaving it in the pile it was
+        // Power Stone has the setup keyword, but this deliberately silent card
+        // layer supplies none of its placement text. Leaving it in the pile it was
         // searched out of would deal a board quietly missing a card the rules
         // put on the table — which is the failure this whole file exists to
         // stop, one level up from a card that does nothing.
         var refused = Assert.Throws<RulesNotImplementedException>(
-            () => Deal("21129", AuthoredCards.Runner()));
+            () => Deal("16149", new NoCardAbilities()));
 
         Assert.Contains("nowhere to put it", refused.Message, StringComparison.Ordinal);
     }

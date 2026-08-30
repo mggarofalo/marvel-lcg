@@ -1,7 +1,7 @@
 {
   "dataset_version": 1,
   "authored_by": "the C# port, by hand, against the published Rules Reference",
-  "notes": "Card abilities as data -- docs/card-dsl.md. A card listed here has been read; one with an empty 'abilities' has been read and found to do nothing, which is a different thing from nobody having looked at it. Printed text is quoted from datasets/cards/cards.json, which is extracted rather than authored. The Rules Reference decides every behaviour here; where a card's printed words do not settle a case, the note on that card says so and says what was chosen instead.",
+  "notes": "Card abilities and declarative placement as data -- docs/card-dsl.md. A card with an 'abilities' array has been read; an empty array means it was read and found to do nothing, which is different from nobody having looked at it. A placement-only row establishes its placement and that it has no When Revealed ability, but deliberately makes no claim about its other text. Printed text is quoted from datasets/cards/cards.json, which is extracted rather than authored. The Rules Reference decides every behaviour here; where a card's printed words do not settle a case, the note on that card says so and says what was chosen instead.",
   "cards": [
     {
       "card": "01001a",
@@ -1666,6 +1666,30 @@
           }
         }
       ]
+    },
+    {
+      "card": "16142",
+      "name": "Milano",
+      "note": "Setup. The first player controls the Milano. rr:ownership-and-control.2.2 transfers ownership of this scenario-specific player card when that player takes control. controlledBy is placement metadata only: the resource ability is deliberately not claimed as authored and will still raise if reached.",
+      "controlledBy": "firstPlayer"
+    },
+    {
+      "card": "16149",
+      "name": "Power Stone",
+      "note": "Setup. Attach to the villain. Permanent. The attach-to phrase is rr:attach-to placement metadata. The forced response that moves the Power Stone after attack damage is deliberately not claimed as authored and will still raise if reached.",
+      "attachTo": { "query": "villain" }
+    },
+    {
+      "card": "21129",
+      "name": "Infinity Gauntlet",
+      "note": "Setup. Attach to the villain. Permanent. The attach-to phrase is rr:attach-to placement metadata. Its Special ability and the infinity stone deck are deliberately not claimed as authored and will still raise if reached.",
+      "attachTo": { "query": "villain" }
+    },
+    {
+      "card": "40130",
+      "name": "Hope Summers",
+      "note": "Setup. The first player controls Hope Summers. rr:ownership-and-control.2.2 transfers ownership of this scenario-specific player card when that player takes control. controlledBy is placement metadata only: Hope's remaining text is deliberately not claimed as authored and will still raise if reached.",
+      "controlledBy": "firstPlayer"
     },
     {
       "card": "40151",

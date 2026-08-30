@@ -709,7 +709,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
-        if (!book.Authored.Contains(card.FaceId))
+        if (!book.KnowsWhenRevealed(card.FaceId))
         {
             throw new RulesNotImplementedException(
                 $"card '{card.FaceId}' was revealed and no ability data is written for it; "
@@ -732,7 +732,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(occurrence);
 
-        if (!book.Authored.Contains(card.FaceId))
+        if (!book.KnowsWhenRevealed(card.FaceId))
         {
             // Authored-and-does-nothing is a different thing from nobody having
             // read the card, and only one of them is safe to treat as silence.
@@ -1465,6 +1465,14 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "rr:first-player.1 gives that choice to the first player, and attaching "
                 + "during a reveal has no target prompt yet"),
         };
+    }
+
+    /// <inheritdoc/>
+    public int? SetupController(World world, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+        return book.FirstPlayerControls(card.FaceId) ? world.FirstPlayer : null;
     }
 
     /// <inheritdoc/>
