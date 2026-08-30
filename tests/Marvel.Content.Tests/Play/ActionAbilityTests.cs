@@ -10975,6 +10975,148 @@ public sealed class ActionAbilityTests
         Assert.Equal(villain.ObjectId, attachment.Area.Host);
     }
 
+    [Rule("rr:enters-play")]
+    [Fact]
+    public void EnteredMinionParticipatesInLaterProjectedQueries()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "putIntoPlay": {
+                "card": { "cardsIn": {
+                  "areas": [ "encounterDiscardPile" ], "title": "Sandman"
+                } },
+                "where": "engagedWithYou"
+              } },
+              { "dealDamage": {
+                "cards": { "query": "minions" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Sandman"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? sandman = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var protectedMinion = board.CreateCard(
+                    "16183", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, protectedMinion, Statuses.Tough);
+                sandman = board.CreateCard(
+                    "01102", board.AreaOf(DeckType.EncounterDeck));
+                board.CreateCard(
+                    "01102", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EncounterDeck, sandman!.Area.Type);
+    }
+
+    [Rule("rr:attachment.1")]
+    [Rule("rr:victory-x.1")]
+    [Fact]
+    public void ProjectedAttachmentJoinsItsHostsDefeatTree()
+    {
+        var runner = Runner(
+            "01098",
+            "Action",
+            """
+            { "seq": [
+              { "attachTo": { "titled": "Badoon Headhunter" } },
+              { "dealDamage": {
+                "cards": { "titled": "Badoon Headhunter" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        Card? minion = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = board.CreateCard(
+                    "01098", board.AreaOf(DeckType.UpgradesArea));
+                minion = board.CreateCard(
+                    "16183", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 1);
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world,
+            new PendingAbility(source!.ObjectId, AbilityType.Action, 0),
+            [],
+            []));
+
+        Assert.Equal(DeckType.UpgradesArea, source!.Area.Type);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
+    }
+
+    [Rule("rr:thwart")]
+    [Rule("rr:victory-x")]
+    [Fact]
+    public void ThwartSchemesSkipsProjectedDepartedSchemes()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "removeThreat": {
+                "scheme": { "titled": "Kree Supremacy" }, "amount": 1
+              } },
+              { "thwartSchemes": {
+                "schemes": { "query": "thwartableSchemes" },
+                "power": { "thwart": {
+                  "target": "chosen",
+                  "effect": { "discard": {
+                    "titled": "Hydra Mercenary"
+                  } }
+                } }
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var scheme = board.CreateCard(
+                    "16182a", board.AreaOf(DeckType.SideSchemesArea));
+                scheme.PlaceTokens("k_threat", 1);
+                board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+    }
+
     [Rule("rr:labeled-ability.6")]
     [Fact]
     public void CancelledLabelSkipsAreaSensitivePostArrowEffects()
