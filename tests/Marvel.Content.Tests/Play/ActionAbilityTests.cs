@@ -9681,6 +9681,88 @@ public sealed class ActionAbilityTests
     }
 
     [Rule("rr:cost.6")]
+    [Rule("rr:choose-option.2")]
+    [Fact]
+    public void NestedChoiceWithNoContinuationSafeOptionIsNotOfferedBeforeCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "choose": { "options": [
+                  { "discard": { "titled": "Hydra Mercenary" } },
+                  { "discard": { "titled": "Hydra Mercenary" } }
+                ] } }
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner);
+
+        Assert.DoesNotContain(game.Pending!.Affordances, option =>
+            option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+    }
+
+    [Rule("rr:choose-option.2")]
+    [Rule("rr:target.2.2")]
+    [Fact]
+    public void PluralCardsInChoiceDoesNotRequireSingularAreaStability()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "choose": { "options": [
+                { "discard": { "titled": "Hydra Mercenary" } },
+                { "discard": { "titled": "Hydra Mercenary" } }
+              ] } },
+              { "chooseCard": {
+                "from": { "cardsIn": {
+                  "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+                } },
+                "effect": { "removeFromGame": "chosen" }
+              } }
+            ] }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(game.Pending!.Affordances, option =>
+            option.AnchorId == source!.ObjectId);
+    }
+
+    [Rule("rr:cost.6")]
     [Rule("rr:each-player")]
     [Fact]
     public void EachPlayerAreaMutationChecksEverySeatBeforeCost()
@@ -9965,6 +10047,95 @@ public sealed class ActionAbilityTests
 
         Assert.True(source!.Ready);
         Assert.Equal(2, scheme!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:cost.6")]
+    [Rule("rr:defeat.1")]
+    [Fact]
+    public void SequentialThreatRemovalProjectsItsCombinedAmountBeforeCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "removeThreat": {
+                "scheme": { "titled": "Breakin' & Takin'" }, "amount": 1
+              } },
+              { "removeThreat": {
+                "scheme": { "titled": "Breakin' & Takin'" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Breakin' & Takin'"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? scheme = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                scheme = board.CreateCard(
+                    "01107", board.AreaOf(DeckType.SideSchemesArea));
+                scheme.PlaceTokens("k_threat", 2);
+                board.CreateCard(
+                    "01107", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(2, scheme!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:cost.6")]
+    [Rule("rr:defeat.1")]
+    [Rule("rr:move.1")]
+    [Fact]
+    public void LethalMovedDamageRaisesBeforeHealingOrActionCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "moveDamage": {
+                "from": "you", "to": { "titled": "Hydra Mercenary" },
+                "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? minion = null;
+        Card? identity = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                identity = board.Seats[0].IdentityCard;
+                identity.TakeDamage(1);
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 1);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(1, identity!.Damage);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
     }
 
     [Rule("rr:cost.6")]
