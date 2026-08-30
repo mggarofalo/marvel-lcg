@@ -179,10 +179,18 @@ public static class Sequence
             var applying = world.Agenda.Occurrence
                 ?? throw new InvalidOperationException(
                     $"an applying '{step.What}' agenda step has no occurrence");
+            var healthBefore = world.Effects.CaptureCharacterHealth();
             if (VillainPhase.Take(world, facts, abilities, step, events) is { } asking)
             {
                 return asking;
             }
+
+            // State changed during the step can switch on a conditional
+            // Stalwart constant. Its existing status cards leave before the
+            // response window to that step opens (`rr:stalwart.2`).
+            Statuses.RemoveAfflictionsIfStalwart(
+                world, facts, "stalwart", events);
+            world.Effects.SettleLostHealth(healthBefore, step.What, events);
 
             // A player Action advances itself before moving any suspended
             // continuations in front of its response window. Those children
@@ -269,10 +277,12 @@ public static class Sequence
             var occurrence = world.Agenda.Occurrence
                 ?? throw new InvalidOperationException("an asking agenda step has no occurrence");
             VillainPhase.Answered(world, facts, abilities, step, input, events);
-            if (step.What is Steps.ChooseWouldBeDefeated
+            if ((step.What is Steps.ChooseOption
+                or Steps.ChooseWouldBeDefeated
                 or Steps.ChooseCardDefeatedAbility
                 or Steps.ChooseRevealAbility
                 or Steps.AssignIndirectAttackDamage)
+                && world.Agenda.IsOutstanding(step, occurrence))
             {
                 // Resolving one selected ability can insert its own work and a
                 // procedure continuation ahead of this question. These paths
@@ -322,9 +332,13 @@ public static class Sequence
         // `rr:initiating-abilities.step.5` -- what the player spent is part of
         // the answer, not something the engine picks for them. Empty when the
         // affordance was free, which is almost all of them.
+        var healthBefore = world.Effects.CaptureCharacterHealth();
         events.AddRange(abilities.Resolve(
             world, window.Occurrence, ability, input.Spent, input.Targets,
             input.DefinedValues, input.Allocated));
+        Statuses.RemoveAfflictionsIfStalwart(
+            world, facts, "stalwart", events);
+        world.Effects.SettleLostHealth(healthBefore, asked.Trigger, events);
 
         if (window.Occurrence.Threat is { Replaced: true })
         {

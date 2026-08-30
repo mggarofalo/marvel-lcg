@@ -367,6 +367,10 @@ public sealed partial class AbilityRunner
                     0,
                     Damage.Health(cast.World, cast.World.Facts, remaining) - remaining.Damage)
                 : 0,
+            // `rr:hit-points.1`: "starting hit points" means the identity's
+            // printed hit point value. It deliberately excludes attachments,
+            // constant abilities, and lasting effects that raise its dial.
+            "startingHealth" => StartingHealth(node.Argument, cast),
             "if" => Test(Tree(node.Require("test")), cast)
                 ? Amount(node.Require("then"), cast)
                 : node.Field("else") is { } otherwise
@@ -389,6 +393,25 @@ public sealed partial class AbilityRunner
                 $"'{cast.Source.FaceId}' asks for the amount '{node.Kind}', "
                 + "which is not implemented"),
         };
+    }
+
+    private static long StartingHealth(AbilityValue value, Cast cast)
+    {
+        if (Find(value, cast) is not { } identity)
+        {
+            return 0;
+        }
+
+        if (FacedownDrones.Kind(identity, cast.World.Facts)
+            is not (CardKind.Hero or CardKind.AlterEgo))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' asks for starting hit points of "
+                + $"non-identity card {identity.ObjectId}");
+        }
+
+        return FacedownDrones.BaseValue(
+            identity, cast.World.Facts, "HP", cast.World.Players);
     }
 
     private static long Number(AbilityValue value) =>

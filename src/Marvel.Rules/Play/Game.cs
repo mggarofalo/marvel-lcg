@@ -408,26 +408,55 @@ public sealed class Game
         // it here rather than switching on the verb is what keeps the two from
         // needing separate verbs -- the recording spells an ally's attack
         // `Attack`, the same as a hero's.
-        var user = Pending!.Affordances
-            .FirstOrDefault(option => option.Id == input.Affordance) is { } taken
+        var taken = Pending!.Affordances
+            .FirstOrDefault(option => option.Id == input.Affordance);
+        var user = taken is not null
             ? world.Cards[taken.AnchorId]
             : world.Seats[Active].IdentityCard;
+
+        bool selectsBasicTarget = verb is BasicPowers.AttackVerb
+            or BasicPowers.ThwartVerb;
+        if (selectsBasicTarget
+            && taken?.Targets is { } requested
+            && !requested.Allows(input.Targets))
+        {
+            throw new RulesNotImplementedException(
+                $"basic {verb} target selection does not satisfy affordance {taken.Id}");
+        }
 
         bool byAlly = facts.Kind(user.FaceId) == CardKind.Ally;
         switch (verb)
         {
             case BasicPowers.AttackVerb when byAlly:
             case BasicPowers.ThwartVerb when byAlly:
+                if (input.Targets.Count == 0)
+                {
+                    BasicPowers.CancelledBasicPower(
+                        world, facts, user, verb, happened);
+                    break;
+                }
                 BasicPowers.AllyPower(
                     world, facts, user, world.Cards[Only(input, verb)], verb, happened);
                 break;
 
             case BasicPowers.AttackVerb:
+                if (input.Targets.Count == 0)
+                {
+                    BasicPowers.CancelledBasicPower(
+                        world, facts, user, verb, happened);
+                    break;
+                }
                 BasicPowers.BasicAttack(
                     world, facts, Active, world.Cards[Only(input, verb)], happened);
                 break;
 
             case BasicPowers.ThwartVerb:
+                if (input.Targets.Count == 0)
+                {
+                    BasicPowers.CancelledBasicPower(
+                        world, facts, user, verb, happened);
+                    break;
+                }
                 BasicPowers.BasicThwart(
                     world, facts, Active, world.Cards[Only(input, verb)], happened);
                 break;
@@ -1145,7 +1174,7 @@ public sealed class Game
             Costs: [price]);
     }
 
-    /// <summary>Offers a targeted basic power, if it has a legal target.</summary>
+    /// <summary>Offers a basic power if it has a target or a status to clear.</summary>
     /// <remarks>
     /// Anchored to the character using it, which is the identity for a hero's
     /// own power and the ally for <c>rr:player-turn.4</c>. Two allies attacking
@@ -1154,7 +1183,13 @@ public sealed class Game
     private void Offer(
         List<Affordance> options, Card character, string verb, IReadOnlyList<Card> targets)
     {
-        if (targets.Count == 0)
+        string cancellingStatus = string.Equals(
+            verb, BasicPowers.AttackVerb, StringComparison.Ordinal)
+                ? Statuses.Stunned
+                : Statuses.Confused;
+        bool targetlessStatusAttempt = targets.Count == 0
+            && Statuses.Afflicted(world, facts, character, cancellingStatus);
+        if (targets.Count == 0 && !targetlessStatusAttempt)
         {
             return;
         }
@@ -1165,7 +1200,9 @@ public sealed class Game
             // `rr:thwart.1` are each one enemy or one scheme. An ability that
             // hits several is a different thing (`.5`) and is not a basic power.
             Targets = new TargetRequest(
-                [.. targets.Select(target => target.ObjectId)], Min: 1, Max: 1),
+                [.. targets.Select(target => target.ObjectId)],
+                Min: targetlessStatusAttempt ? 0 : 1,
+                Max: targetlessStatusAttempt ? 0 : 1),
         });
     }
 

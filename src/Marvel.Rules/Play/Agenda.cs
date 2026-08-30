@@ -474,6 +474,14 @@ public sealed class Agenda
                 and not Steps.ResumeAbility),
     ];
 
+    /// <summary>Whether one exact occurrence owner remains on the agenda.</summary>
+    public bool IsOutstanding(PhaseStep owner, Occurrence occurrence)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        return items.Any(item => item.Step.Equals(owner)
+            && ReferenceEquals(item.Occurrence, occurrence));
+    }
+
     /// <summary>Remember gained Surge on every continuation of one revealed card.</summary>
     /// <remarks>
     /// A reveal can schedule a continuation and then resolve another printed
@@ -678,6 +686,34 @@ public sealed class Agenda
         items.InsertRange(ownerAt, children);
         items.Insert(
             ownerAt + children.Count,
+            (continuation with
+            {
+                Plan = true,
+                OccurrenceId = occurrence.Id,
+            }, Stage.Apply, occurrence));
+        scheduled = 0;
+    }
+
+    /// <summary>Insert an ability continuation immediately before its exact owner.</summary>
+    /// <remarks>
+    /// A nested rules procedure has already moved its own frames ahead of the
+    /// owner. Inserting at the owner's current index leaves those frames first
+    /// while keeping pre-existing enclosing continuations behind the ability
+    /// that must finish before they resume.
+    /// </remarks>
+    public void ContinueBeforeOwner(
+        Occurrence occurrence, PhaseStep owner, PhaseStep continuation)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        int ownerAt = items.FindIndex(item => item.Step.Equals(owner)
+            && ReferenceEquals(item.Occurrence, occurrence));
+        if (ownerAt < 0)
+        {
+            throw new InvalidOperationException("the continuation owner is not on the agenda");
+        }
+
+        items.Insert(
+            ownerAt,
             (continuation with
             {
                 Plan = true,

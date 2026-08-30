@@ -39,6 +39,144 @@ public sealed class WouldBeDefeatedTests
         Assert.Equal(DeckType.EncounterDiscardPile, upgrade.Area.Type);
     }
 
+    [Rule("rr:hit-points.3.1")]
+    [Rule("rr:would.1")]
+    [Fact]
+    public void HealthGrantEndingStillOpensTheWouldBeDefeatedInterrupt()
+    {
+        // Biomechanical Upgrades is not limited to damage-caused defeat. When
+        // +3 HP ends, its forced interrupt heals the now-lethal minion and
+        // discards itself, invalidating the imminent defeat.
+        var (world, minion, upgrade) = Board();
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            "health",
+            Amount: 3,
+            Affects: minion.ObjectId,
+            Lasts: Duration.UntilEndOf(TimingPoints.EndOfRound)));
+        minion.TakeDamage(3);
+        Agendas.Happening(world);
+
+        world.Effects.Expire(TimingPoints.EndOfRound, []);
+
+        Assert.Equal(0, minion.Damage);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, upgrade.Area.Type);
+    }
+
+    [Rule("rr:hit-points.3.1")]
+    [Rule("rr:damage.step.7")]
+    [Rule("rr:interrupt.1")]
+    [Fact]
+    public void AStepSevenChoiceCanOpenAHealthLossDefeatInterrupt()
+    {
+        // Spider-Tracer resolves in the defeated minion's procedure-local
+        // occurrence. Its chosen threat removal turns off Infinite Soldier's
+        // +3 HP, but the resulting optional defeat interrupt belongs ahead of
+        // the containing agenda frame. Both identities must survive suspension.
+        var world = Empty(
+            """
+            {"cards":[
+              {"card":"01007","abilities":[{
+                "trigger":{"event":"WhenCardDefeated","timing":"ForcedInterrupt",
+                           "subject":"attachedTo"},
+                "effect":{"seq":[
+                  {"chooseCard":{
+                    "from":{"query":"schemes"},
+                    "effect":{"removeThreat":{"scheme":"chosen","amount":3}}
+                  }},
+                  {"placeThreat":{"scheme":{"titled":"Gene Pool"},"amount":1}}
+                ]}
+              }]},
+              {"card":"45069","abilities":[{
+                "trigger":{"timing":"Constant","subject":"this"},
+                "effect":{"if":{
+                  "test":{"atLeast":{
+                    "value":{"tokensOn":{"titled":"Gene Pool"}},"count":9
+                  }},
+                  "then":{"grant":{
+                    "card":"this","keyword":"health","amount":3
+                  }}
+                }}
+              }]},
+              {"card":"01098","abilities":[{
+                "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
+                           "subject":"attachedTo"},
+                "effect":{"heal":{
+                  "card":"attachedTo","amount":{"damageOn":"attachedTo"}
+                }}
+              }]},
+              {"card":"01101","abilities":[{
+                "trigger":{"event":"WhenCardDefeated","timing":"WhenDefeated",
+                           "subject":"this"},
+                "effect":{"if":{
+                    "test":{"atLeast":{
+                      "value":{"tokensOn":{"titled":"Gene Pool"}},"count":7
+                    }},
+                    "then":{"placeThreat":{
+                      "scheme":{"titled":"Gene Pool"},"amount":10
+                    }},
+                    "else":{"placeThreat":{
+                      "scheme":{"titled":"Gene Pool"},"amount":20
+                    }}
+                  }}
+              }]}
+            ]}
+            """);
+        var pool = world.CreateCard(
+            "45071", world.AreaOf(DeckType.SideSchemesArea));
+        pool.PlaceTokens("k_threat", 9);
+        var soldier = world.CreateCard(
+            "45069",
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        soldier.TakeDamage(3);
+        world.CreateCard(
+            "01098",
+            world.AreaOf(
+                DeckType.UpgradesArea, soldier.Area.PlayArea,
+                soldier.ObjectId));
+        var defeated = world.CreateCard(
+            Mercenary,
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var tracer = world.CreateCard(
+            "01007",
+            world.AreaOf(
+                DeckType.UpgradesArea, defeated.Area.PlayArea,
+                defeated.ObjectId, cardOwner: 0));
+        Agendas.Happening(world);
+        Assert.Equal(6, Damage.Health(world, Cards, soldier));
+        var events = new List<GameEvent>();
+
+        Damage.Deal(world, Cards, defeated, defeated, 3, "test", "test", events);
+        var order = Assert.IsType<Prompt>(
+            Sequence.Work(world, Cards, world.Abilities, events));
+        Assert.Equal(Question.Order, order.Asking);
+        Sequence.Answer(
+            world, Cards, world.Abilities, order,
+            Decision.Take(tracer.ObjectId), events);
+        var chooseScheme = Assert.IsType<Prompt>(
+            Sequence.Work(world, Cards, world.Abilities, events));
+        Assert.Contains(
+            chooseScheme.Affordances, option => option.Id == pool.ObjectId);
+        Sequence.Answer(
+            world, Cards, world.Abilities, chooseScheme,
+            Decision.Take(pool.ObjectId), events);
+
+        var saveSoldier = Assert.IsType<Prompt>(
+            Sequence.Work(world, Cards, world.Abilities, events));
+        Assert.Equal(Question.Opportunity, saveSoldier.Asking);
+        Assert.Equal(6, pool.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(DeckType.EngagedEnemiesArea, soldier.Area.Type);
+
+        Sequence.Answer(
+            world, Cards, world.Abilities, saveSoldier,
+            Decision.Decline, events);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
+
+        Assert.NotEqual(DeckType.EngagedEnemiesArea, soldier.Area.Type);
+        Assert.Equal(17, pool.Tokens.GetValueOrDefault("k_threat"));
+    }
+
     [Rule("rr:damage.step.6")]
     [Fact]
     public void NonlethalDamageDoesNotTriggerTheInterrupt()

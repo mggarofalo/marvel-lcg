@@ -277,6 +277,9 @@ public sealed partial class AbilityRunner
     private static void Run(AbilityNode node, Cast cast)
     {
         int eventsBefore = cast.Events.Count;
+        var agendaOwner = cast.World.Agenda.Current;
+        var agendaOccurrence = cast.World.Agenda.Occurrence;
+        var healthBefore = cast.World.Effects.CaptureCharacterHealth();
         switch (node.Kind)
         {
             case "seq":
@@ -833,6 +836,20 @@ public sealed partial class AbilityRunner
         if (cast.Events.Count > eventsBefore && EventMeansEffectApplied(node.Kind))
         {
             cast.ResolveEffect();
+        }
+
+        // A conditional constant can become Stalwart because this node changed
+        // threat, counters, traits, or another dependency. `rr:stalwart.2`
+        // removes existing stunned/confused cards at that transition, before
+        // later text in the same ability reads the board.
+        Statuses.RemoveAfflictionsIfStalwart(
+            cast.World, cast.World.Facts, "stalwart", cast.Events);
+        bool healthDefeatSuspended = cast.World.Effects.SettleLostHealth(
+            healthBefore, cast.Trigger, cast.Events);
+        if (healthDefeatSuspended && !cast.Suspended)
+        {
+            SuspendAfterProcedure(
+                node, cast, agendaOwner, agendaOccurrence);
         }
 
         // `rr:attack-enemy-activation.3.2`: a defending ally that leaves play

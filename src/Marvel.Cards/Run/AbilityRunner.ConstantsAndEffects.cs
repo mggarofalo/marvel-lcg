@@ -224,6 +224,12 @@ public sealed partial class AbilityRunner
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
             Lasts: Duration.UntilEndOf(Word(node.Require("until")))));
+
+        if (string.Equals(keyword, "stalwart", StringComparison.Ordinal))
+        {
+            Statuses.RemoveAfflictionsIfStalwart(
+                cast.World, cast.World.Facts, target, cast.Trigger, cast.Events);
+        }
     }
 
     private static void EnsureLastingPeriodOpen(AbilityNode node, Cast cast)
