@@ -200,6 +200,10 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         RestorePersisted(cast, continuation);
         if (cast.Results.GetValueOrDefault("costProcedurePending") > 0)
         {
+            // The cost has settled. Do not persist its resume marker into a
+            // later suspension inside the effect, or that continuation would
+            // restart the whole effect instead of resuming its own path.
+            cast.Results.Remove("costProcedurePending");
             var ability = AbilityAt(
                 source, continuation.Tier, continuation.AbilityOrdinal,
                 continuation.AbilityFace);
