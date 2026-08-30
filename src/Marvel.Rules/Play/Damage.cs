@@ -39,6 +39,13 @@ public static class Damage
         IReadOnlyList<Card> Characters, long Amount, bool Suspended = false,
         long Excess = 0, long Dealt = 0, long Taken = 0);
 
+    /// <summary>Damage fixed through step 4, ready for simultaneous placement.</summary>
+    internal sealed record PlacedDamage(Card Target, long Dealt, long Taken)
+    {
+        /// <summary>Whether the character actually took damage.</summary>
+        public bool Landed => Taken > 0;
+    }
+
     /// <summary>
     /// Deals damage to a character, and defeats it if that was enough.
     /// </summary>
@@ -89,11 +96,42 @@ public static class Damage
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(events);
 
-        dealt = 0;
-        taken = 0;
+        var placed = Place(
+            world, facts, source, target, amount, trigger, verb, events);
+        dealt = placed.Dealt;
+        taken = placed.Taken;
+        return FinishPlaced(
+            world, facts, source, placed, trigger, verb, events, by);
+    }
+
+    /// <summary>
+    /// Resolve damage through placement while deferring defeat, so simultaneous
+    /// damage can be placed on every recipient before any one leaves play.
+    /// </summary>
+    internal static PlacedDamage Place(
+        World world, ICardFacts facts, Card source, Card target, long amount,
+        string trigger, string verb, List<GameEvent> events)
+    {
+        var prepared = Prepare(
+            world, facts, source, target, amount, trigger, events);
+        ApplyPlaced(world, facts, prepared, trigger, verb, events);
+        return prepared;
+    }
+
+    /// <summary>Resolve damage through step 4 without changing hit points.</summary>
+    internal static PlacedDamage Prepare(
+        World world, ICardFacts facts, Card source, Card target, long amount,
+        string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(events);
+
         if (amount <= 0)
         {
-            return Outcome.NotDefeated;
+            return new PlacedDamage(target, 0, 0);
         }
 
         // `rr:cannot` -- "cannot" is absolute. A character forbidden from
@@ -101,7 +139,7 @@ public static class Damage
         // there is no imminent damage to replace and no tough card to spend.
         if (!world.Abilities.CanTakeDamage(world, target, source))
         {
-            return Outcome.NotDefeated;
+            return new PlacedDamage(target, 0, 0);
         }
 
         // `rr:damage.step.1` -- "abilities that trigger when [character] would
@@ -112,9 +150,9 @@ public static class Damage
         amount = world.Abilities.WouldBeDealt(world, target, source, amount, events);
         if (amount <= 0)
         {
-            return Outcome.NotDefeated;
+            return new PlacedDamage(target, 0, 0);
         }
-        dealt = amount;
+        long dealt = amount;
 
         // `rr:tough.2`: "if a character with a tough status card would take any
         // amount of damage, **prevent all of that damage** and discard a tough
@@ -128,6 +166,7 @@ public static class Damage
         // `amount <= 0` return above is that clause.
         if (Statuses.Has(world, target, Statuses.Tough))
         {
+            world.Abilities.DamagePreventedByTough(world, target, source, events);
             var tough = world.Areas
                 .Where(area => area.Type == DeckType.StatusArea && area.Host == target.ObjectId)
                 .SelectMany(area => area.Cards)
@@ -138,7 +177,7 @@ public static class Damage
             // `rr:tough.3`: "as a tough status card prevents damage fully, the
             // character who had the tough status card is **not considered to
             // have taken damage**." So no health event, and no defeat.
-            return Outcome.NotDefeated;
+            return new PlacedDamage(target, dealt, 0);
         }
 
         // `rr:damage.step.3` and `.3.2`: modifying what the character takes
@@ -148,19 +187,45 @@ public static class Damage
         amount = world.Abilities.WouldTake(world, target, source, amount, events);
         if (amount <= 0)
         {
-            return Outcome.NotDefeated;
+            return new PlacedDamage(target, dealt, 0);
         }
-        taken = amount;
+        long taken = amount;
 
-        long printed = Health(world, facts, target);
-        long before = Math.Max(0, printed - target.Damage);
-        target.TakeDamage(amount);
-        long after = Math.Max(0, printed - target.Damage);
+        return new PlacedDamage(target, dealt, taken);
+    }
 
-        events.Add(new FieldSet(target.ObjectId, "health", before, after)
+    /// <summary>Place one already-fixed share of simultaneous damage at step 5.</summary>
+    internal static void ApplyPlaced(
+        World world, ICardFacts facts, PlacedDamage placed,
+        string trigger, string verb, List<GameEvent> events)
+    {
+        if (!placed.Landed)
+        {
+            return;
+        }
+
+        long printed = Health(world, facts, placed.Target);
+        long before = Math.Max(0, printed - placed.Target.Damage);
+        placed.Target.TakeDamage(placed.Taken);
+        long after = Math.Max(0, printed - placed.Target.Damage);
+        events.Add(new FieldSet(placed.Target.ObjectId, "health", before, after)
         {
             Trigger = trigger, Verb = verb,
         });
+    }
+
+    /// <summary>Resolve damage step 6 and defeat after step 5 placement.</summary>
+    internal static Outcome FinishPlaced(
+        World world, ICardFacts facts, Card source, PlacedDamage placed,
+        string trigger, string verb, List<GameEvent> events, int by = -1)
+    {
+        if (!placed.Landed)
+        {
+            return Outcome.NotDefeated;
+        }
+
+        var target = placed.Target;
+        long after = Math.Max(0, Health(world, facts, target) - target.Damage);
 
         // `rr:damage.step.6` -- abilities that trigger "when [character]
         // would be defeated". Step 5 has placed the damage, so the condition

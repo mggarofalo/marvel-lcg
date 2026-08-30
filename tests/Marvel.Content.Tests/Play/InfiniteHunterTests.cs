@@ -138,6 +138,60 @@ public sealed class InfiniteHunterTests
         Assert.Equal(["placeThreat", "seq"], asked.Affordances.Select(option => option.Label));
     }
 
+    [Rule("rr:attack-enemy-activation.step.3.a")]
+    [Rule("rr:attack-enemy-activation.step.3.e")]
+    [Fact]
+    public void ABoostChoiceFinishesBeforeTheNextBoostCardTurnsFaceup()
+    {
+        var (world, runner) = Board();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var second = deck.Cards[^1];
+        var hunter = world.CreateCard(AuthoredCards.InfiniteHunter, deck);
+        World.MoveToTop(hunter, deck);
+        var events = new List<GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Attack.GiveAdditionalBoostCard(world, villain, "test", events);
+        while (defend.Asking != Question.Defender)
+        {
+            Sequence.Answer(
+                world, Cards, runner, defend,
+                defend.Cancellable
+                    ? Decision.Decline
+                    : Decision.Take(Assert.Single(defend.Affordances).Id),
+                events);
+            defend = Sequence.Work(world, Cards, runner, events)!;
+        }
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var choose = Sequence.Work(world, Cards, runner, events)!;
+
+        Assert.Equal(Question.Option, choose.Asking);
+        Assert.Equal(DeckType.BoostingArea, hunter.Area.Type);
+        Assert.True(hunter.FaceUp);
+        Assert.Equal(DeckType.BoostCardsDeck, second.Area.Type);
+        Assert.False(second.FaceUp);
+
+        Sequence.Answer(world, Cards, runner, choose, Decision.Take(1), events);
+        var asked = Sequence.Work(world, Cards, runner, events);
+        while (asked is not null)
+        {
+            Sequence.Answer(
+                world, Cards, runner, asked,
+                asked.Cancellable
+                    ? Decision.Decline
+                    : Decision.Take(Assert.Single(asked.Affordances).Id),
+                events);
+            asked = Sequence.Work(world, Cards, runner, events);
+        }
+
+        Assert.Equal(DeckType.EncounterDiscardPile, hunter.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
+    }
+
     [Rule("rr:activation")]
     [Rule("rr:alteration-effect")]
     [Theory]

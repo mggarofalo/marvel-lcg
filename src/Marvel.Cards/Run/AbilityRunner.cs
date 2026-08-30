@@ -1298,6 +1298,24 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public void DamagePreventedByTough(
+        World world, Card target, Card source, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(events);
+
+        var prevention = world.Effects.Active().Where(effect =>
+            string.Equals(effect.Kind, "preventDamage", StringComparison.Ordinal)
+            && effect.Affects == target.ObjectId).ToList();
+        foreach (var effect in prevention)
+        {
+            world.Effects.Use(effect);
+        }
+    }
+
+    /// <inheritdoc/>
     public void WouldBeDefeated(World world, Card target, List<GameEvent> events)
     {
         _ = WouldBeDefeated(

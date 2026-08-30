@@ -228,6 +228,59 @@ public sealed class IndirectDamageTests
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:indirect-damage.3")]
+    [Rule("rr:damage.step.6")]
+    [Fact]
+    public void IndirectAttackAssignmentWaitsForARecipientsDefeatInterrupt()
+    {
+        // The ally's optional interrupt suspends damage step 6 after both
+        // shares have been placed. The assignment itself must advance exactly
+        // once: accepting the heal resumes defeat and then the attack, without
+        // replaying the allocation or skipping its live choice.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            {"cards":[{"card":"13019","abilities":[{
+              "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
+                         "subject":"this"},
+              "effect":{"heal":{"card":"this","amount":{"damageOn":"this"}}}
+            }]}]}
+            """));
+        var world = Deal();
+        world.Abilities = runner;
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var ally = world.CreateCard(
+            Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        ally.TakeDamage(Damage.Health(world, Cards, ally) - 1);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Attack.MakeIndirect(world);
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var assign = Sequence.Work(world, Cards, runner, events)!;
+        int amount = Assert.Single(assign.Affordances).Targets!.Min;
+        Sequence.Answer(
+            world, Cards, runner, assign,
+            Decision.Take(
+                assign.Affordances[0].Id,
+                [ally.ObjectId, .. Enumerable.Repeat(
+                    world.Seats[0].IdentityCard.ObjectId, amount - 1)], []),
+            events);
+
+        var interrupt = Sequence.Work(world, Cards, runner, events)!;
+        Assert.Equal(Question.Opportunity, interrupt.Asking);
+        Sequence.Answer(
+            world, Cards, runner, interrupt,
+            Decision.Take(Assert.Single(interrupt.Affordances).Id), events);
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
+
+        Assert.Equal(0, ally.Damage);
+        Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.Equal(amount - 1, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:indirect-damage.4")]
     [Fact]
     public void ASupportIsNotACharacterAndTakesNone()

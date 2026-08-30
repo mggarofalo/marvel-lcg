@@ -115,14 +115,17 @@ public sealed class BasicPowerTests
     [Rule("rr:consequential-damage.2")]
     [Rule("rr:consequential-damage.2.1")]
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
     public void AnAllyPowerAbortsWithoutConsequentialDamageIfItsTargetLeaves(
-        bool attacking)
+        bool attacking, bool reenters)
     {
         // If the target leaves before the basic power applies, the ally still
         // paid its exhaust cost but is not considered to have attacked or
-        // thwarted and takes no consequential damage.
+        // thwarted and takes no consequential damage. The same physical card
+        // returning is a new copy and does not restore the chosen target.
         var printed = new Printed()
             .With("ally", ("ATK", "2"), ("THW", "2"), ("HP", "3"))
             .With("villain", ("HP", "10"));
@@ -140,11 +143,22 @@ public sealed class BasicPowerTests
         BasicPowers.AllyPower(
             world, printed, ally, target,
             attacking ? BasicPowers.AttackVerb : BasicPowers.ThwartVerb, []);
+        var originalArea = target.Area;
         World.MoveToTop(target, world.AreaOf(DeckType.EncounterDiscardPile));
+        if (reenters)
+        {
+            World.MoveToTop(target, originalArea);
+            if (!attacking)
+            {
+                target.PlaceTokens("k_threat", 2);
+            }
+        }
         Agendas.Finish(world, printed);
 
         Assert.False(ally.Ready);
         Assert.Equal(0, ally.Damage);
+        Assert.Equal(attacking ? 0 : 2, target.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(0, target.Damage);
         Assert.Empty(world.Agenda.Outstanding);
     }
 

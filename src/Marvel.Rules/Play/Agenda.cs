@@ -1388,6 +1388,9 @@ public static class Steps
     /// <summary>Finish retaliation after indirect damage suspended on defeat.</summary>
     public const string FinishIndirectAttackDamage = "FinishIndirectAttackDamage";
 
+    /// <summary>Apply icons and discard after one boost ability finishes.</summary>
+    public const string FinishBoostCard = "FinishBoostCard";
+
     /// <summary>Resolve damage step 6 through a player decision.</summary>
     public const string ChooseWouldBeDefeated = "ChooseWouldBeDefeated";
 

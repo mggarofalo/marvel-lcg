@@ -629,69 +629,124 @@ public static class Attack
         var waiting = BoostCards(world, activation.Enemy);
         string trigger = Activated(activation);
 
-        // "one at a time and in the order in which they were dealt", which is
-        // bottom-first -- rr:attack-enemy-activation.step.3.
-        while (waiting.Cards.Count > 0)
+        if (waiting.Cards.Count == 0)
         {
-            var boost = waiting.Cards[0];
-
-            // Through the boosting area: passing through is what registers the
-            // card's token pools, and the discarded card's `k_threat` key is on
-            // the wire.
-            World.MoveToTop(boost, world.AreaOf(DeckType.BoostingArea));
-            events.Add(new CardsFlipped([boost.ObjectId], true)
-            {
-                Trigger = trigger, Verb = "Boost",
-            });
-
-            // rr:attack-enemy-activation.step.3.c -- increase the enemy's ATK
-            // by one per boost icon, for this attack. A bounded modifier is a
-            // lasting effect (`rr:lasting-effects`), and "until the end of this
-            // attack" is the rulebook's own example of a duration.
-            // `rr:amplify-icon`: "when a boost card is turned faceup **during
-            // an enemy activation**, add one additional boost icon to that card
-            // for each amplify icon in play." Per card, so two boost cards with
-            // one amplify icon in play gain one each.
-            long icons = Characteristics.IsLost(world, boost, "boost_const")
-                ? 0
-                : StateFields.Modified(
-                        world, boost, "boost_const", facts, world.Players)
-                    + MainScheme.Amplify(world, facts);
-            if (icons > 0)
-            {
-                // Which value and for how long is the only place the two
-                // activations part company. `rr:scheme-enemy-activation.step.2.c`
-                // raises SCH where `.step.3.c` raises ATK, and the durations are
-                // the two the rulebook names: an attack ends at step 6, a scheme
-                // has no step past the threat, so `rr:activation.6` is its end.
-                world.Effects.Register(new ContinuousEffect(
-                    EffectSource.LastingEffect,
-                    Kind: activation.Attacking ? "attack" : "scheme",
-                    Amount: icons,
-                    Card: boost.ObjectId,
-                    Affects: activation.Enemy,
-                    Lasts: Duration.UntilEndOf(activation.Attacking
-                        ? TimingPoints.EndOfAttack
-                        : TimingPoints.EndOfActivation)));
-            }
-
-            // rr:attack-enemy-activation.step.3.b and rr:boost-boost-icon.2 --
-            // a "Boost" ability under the divider line resolves here, while the
-            // card is faceup in the boosting area and before step 3.d discards
-            // it. The printed `Boost` attribute counts icons and cannot say
-            // whether there is a star, so `ICardFacts.HasBoostAbility` reads the
-            // text box, which is the only place the star survives.
-            events.AddRange(abilities.Boost(world, boost, activation.Player));
-            var discard = world.AreaOf(DeckType.EncounterDiscardPile);
-            var from = boost.Area;
-            World.MoveToTop(boost, discard);
-            events.Add(new CardsMoved(
-                Places.Reference(from), Places.Reference(discard),
-                [new Landing(boost.ObjectId, discard.Cards.Count - 1)])
-            {
-                Trigger = trigger, Verb = "Boost",
-            });
+            return;
         }
+
+        // "One at a time and in the order in which they were dealt", which is
+        // bottom-first. This call handles exactly one card so an ability that
+        // asks a question can suspend before step 3c or the next card begins.
+        var boost = waiting.Cards[0];
+
+        // Through the boosting area: passing through is what registers the
+        // card's token pools, and the discarded card's `k_threat` key is on
+        // the wire.
+        World.MoveToTop(boost, world.AreaOf(DeckType.BoostingArea));
+        events.Add(new CardsFlipped([boost.ObjectId], true)
+        {
+            Trigger = trigger, Verb = "Boost",
+        });
+
+        // rr:attack-enemy-activation.step.3.b and rr:boost-boost-icon.2 --
+        // resolve the ability before its icons are applied or it is discarded.
+        var occurrence = world.Agenda.Occurrence
+            ?? throw new RulesNotImplementedException(
+                "a boost ability has no activation occurrence");
+        int beforeAbility = world.Agenda.Count;
+        events.AddRange(abilities.Boost(world, boost, activation.Player));
+        if (world.Agenda.Count > beforeAbility)
+        {
+            world.Agenda.ThenContinuation(
+                new PhaseStep(
+                    Steps.FinishBoostCard,
+                    world.Agenda.Current?.Round ?? 0,
+                    3,
+                    Subject: boost.ObjectId,
+                    Seat: activation.Player,
+                    Character: activation.Enemy,
+                    ProcedureFlag: activation.Attacking),
+                occurrence);
+            return;
+        }
+
+        FinishBoostCard(
+            world, facts, abilities,
+            new PhaseStep(
+                Steps.FinishBoostCard, 0, 3,
+                Subject: boost.ObjectId,
+                Seat: activation.Player,
+                Character: activation.Enemy,
+                ProcedureFlag: activation.Attacking),
+            events);
+    }
+
+    /// <summary>Apply step 3c and 3d after one boost ability has completed.</summary>
+    public static void FinishBoostCard(
+        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        List<GameEvent> events)
+    {
+        var boost = world.Cards[step.Subject];
+        string trigger = step.ProcedureFlag ? Steps.AttackInitiated : Steps.EnemySchemes;
+
+        // A Boost ability can end the activation. Its assigned boost card is
+        // still cleaned up, but rr:activation.6 permits no icon application,
+        // later boost card, or other activation step afterwards.
+        if (world.Activation is not { } activation
+            || activation.Enemy != step.Character
+            || activation.Player != step.Seat
+            || activation.Attacking != step.ProcedureFlag
+            || !DeckTypes.IsInPlay(world.Cards[step.Character].Area.Type))
+        {
+            DiscardBoostCard(world, boost, trigger, events);
+            return;
+        }
+
+        // rr:attack-enemy-activation.step.3.c -- count icons after the Boost
+        // ability, because step 3b precedes this one. Amplify applies per card.
+        long icons = Characteristics.IsLost(world, boost, "boost_const")
+            ? 0
+            : StateFields.Modified(world, boost, "boost_const", facts, world.Players)
+                + MainScheme.Amplify(world, facts);
+        if (icons > 0)
+        {
+            world.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: activation.Attacking ? "attack" : "scheme",
+                Amount: icons,
+                Card: boost.ObjectId,
+                Affects: activation.Enemy,
+                Lasts: Duration.UntilEndOf(activation.Attacking
+                    ? TimingPoints.EndOfAttack
+                    : TimingPoints.EndOfActivation)));
+        }
+
+        // A Boost ability can move itself into play. Step 3d discards the card
+        // only while it remains the boost card being applied.
+        DiscardBoostCard(world, boost, trigger, events);
+
+        // Step 3e reaches the next card only after this card's four preceding
+        // substeps have completed.
+        FlipBoostCards(world, facts, abilities, events);
+    }
+
+    private static void DiscardBoostCard(
+        World world, Card boost, string trigger, List<GameEvent> events)
+    {
+        if (boost.Area.Type != DeckType.BoostingArea)
+        {
+            return;
+        }
+
+        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
+        var from = boost.Area;
+        World.MoveToTop(boost, discard);
+        events.Add(new CardsMoved(
+            Places.Reference(from), Places.Reference(discard),
+            [new Landing(boost.ObjectId, discard.Cards.Count - 1)])
+        {
+            Trigger = trigger, Verb = "Boost",
+        });
     }
 
     /// <summary>
@@ -788,6 +843,7 @@ public static class Attack
                 Seat: attack.Player,
                 Character: attack.Target,
                 ProcedureAmount: assign,
+                ProcedureOccurrence: world.Agenda.Occurrence,
                 ProcedureCandidates: [.. candidates.Select(card => card.ObjectId)]);
             if (candidates.Count == 1)
             {
@@ -902,6 +958,17 @@ public static class Attack
         World world, ICardFacts facts, PhaseStep step, Decision input,
         List<GameEvent> events)
     {
+        if (input.IsDecline || input.Affordance != step.Subject
+            || input.Spent.Count > 0 || input.DefinedValues.Count > 0
+            || input.Allocated.Count > 0)
+        {
+            throw new RulesNotImplementedException(
+                "the indirect attack damage answer was not the offered assignment");
+        }
+
+        var occurrence = step.ProcedureOccurrence ?? world.Agenda.Occurrence
+            ?? throw new RulesNotImplementedException(
+                "indirect attack damage has no containing occurrence");
         var eligible = IndirectCandidates(world, facts, step.Seat)
             .Where(card => (step.ProcedureCandidates ?? []).Contains(card.ObjectId))
             .ToDictionary(card => card.ObjectId);
@@ -933,50 +1000,63 @@ public static class Attack
         }
 
         var attacker = world.Cards[step.Subject];
-        long dealt = 0;
-        bool damaged = false;
-        bool suspended = false;
+        var placed = new List<Damage.PlacedDamage>();
         foreach (var (id, amount) in assigned.OrderBy(pair => pair.Key))
         {
             var target = world.Cards[id];
-            long before = target.Damage;
-            var outcome = Damage.DealWithAmounts(
+            placed.Add(Damage.Prepare(
                 world, facts, attacker, target, amount,
-                Steps.AttackInitiated, "Attack", events,
-                out long dealtToTarget, out _);
-            suspended |= outcome == Damage.Outcome.Suspended;
-            long landed = Math.Max(0, target.Damage - before);
-            dealt += dealtToTarget;
-            damaged |= landed > 0;
-            if (landed > 0)
-            {
-                DelayedEffects.Occur(world, "WhenDamageDealt", target.ObjectId, events);
-            }
+                Steps.AttackInitiated, events));
         }
+        foreach (var damage in placed)
+        {
+            Damage.ApplyPlaced(
+                world, facts, damage, Steps.AttackInitiated, "Attack", events);
+        }
+
+        // rr:indirect-damage.3 -- every assigned share is dealt
+        // simultaneously. All step-5 placement therefore finishes before a
+        // delayed damage effect or defeat can change the board seen by another
+        // recipient's already-assigned damage.
+        foreach (var damage in placed.Where(damage => damage.Landed))
+        {
+            DelayedEffects.Occur(
+                world, "WhenDamageDealt", damage.Target.ObjectId, events);
+        }
+
+        long dealt = placed.Sum(damage => damage.Dealt);
+        bool damaged = placed.Any(damage => damage.Landed);
 
         if (damaged)
         {
-            world.Attack = Current(world) with { Damaged = true };
-            world.Agenda.Occurrence?.Also(Steps.DamageDealt);
+            if (world.Attack is { } currentAttack)
+            {
+                world.Attack = currentAttack with { Damaged = true };
+            }
+            else if (world.FinishedAttack is { } finishedAttack)
+            {
+                world.FinishedAttack = finishedAttack with { Damaged = true };
+            }
+            occurrence.Also(Steps.DamageDealt);
         }
         if (world.Activation is { } activation)
         {
             world.Activation = activation with { DamageDealt = activation.DamageDealt + dealt };
         }
-
-        if (suspended)
+        else if (world.FinishedActivation is { } finishedActivation)
         {
-            world.Agenda.ThenContinuation(
-                new PhaseStep(
-                    Steps.FinishIndirectAttackDamage,
-                    world.Agenda.Current?.Round ?? 0,
-                    5,
-                    Subject: step.Subject,
-                    Character: step.Character,
-                    Plan: true),
-                world.Agenda.Occurrence
-                    ?? throw new RulesNotImplementedException(
-                        "suspended indirect attack damage has no occurrence"));
+            world.FinishedActivation = finishedActivation with
+            {
+                DamageDealt = finishedActivation.DamageDealt + dealt,
+            };
+        }
+
+        if (FinishIndirectDefeats(
+                world, facts, attacker,
+                [.. placed.Where(damage => damage.Landed)
+                    .Select(damage => damage.Target.ObjectId)],
+                step.Character, occurrence, events))
+        {
             return;
         }
 
@@ -994,11 +1074,60 @@ public static class Attack
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
         var attacker = world.Cards[step.Subject];
+        var occurrence = step.ProcedureOccurrence ?? world.Agenda.Occurrence
+            ?? throw new RulesNotImplementedException(
+                "indirect attack damage continuation has no occurrence");
+        if (FinishIndirectDefeats(
+                world, facts, attacker, step.ProcedureCandidates ?? [],
+                step.Character, occurrence, events))
+        {
+            return;
+        }
+
         if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
         {
             Damage.Retaliate(world, facts, world.Cards[step.Character], attacker,
                 Steps.AttackInitiated, events);
         }
+    }
+
+    private static bool FinishIndirectDefeats(
+        World world, ICardFacts facts, Card attacker,
+        IReadOnlyList<int> recipients, int attacked, Occurrence occurrence,
+        List<GameEvent> events)
+    {
+        for (int index = 0; index < recipients.Count; index++)
+        {
+            var target = world.Cards[recipients[index]];
+            if (!DeckTypes.IsInPlay(target.Area.Type))
+            {
+                continue;
+            }
+
+            var outcome = Damage.FinishPlaced(
+                world, facts, attacker,
+                new Damage.PlacedDamage(target, Dealt: 0, Taken: 1),
+                Steps.AttackInitiated, "Attack", events);
+            if (outcome != Damage.Outcome.Suspended)
+            {
+                continue;
+            }
+
+            world.Agenda.ThenContinuation(
+                new PhaseStep(
+                    Steps.FinishIndirectAttackDamage,
+                    world.Agenda.Current?.Round ?? 0,
+                    5,
+                    Subject: attacker.ObjectId,
+                    Character: attacked,
+                    ProcedureCandidates: [.. recipients.Skip(index + 1)],
+                    ProcedureOccurrence: occurrence,
+                    Plan: true),
+                occurrence);
+            return true;
+        }
+
+        return false;
     }
 
     private static List<Card> IndirectCandidates(World world, ICardFacts facts, int player) =>

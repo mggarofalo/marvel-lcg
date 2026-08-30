@@ -233,10 +233,11 @@ public static class Sequence
             VillainPhase.Answered(world, facts, abilities, step, input, events);
             if (step.What is Steps.ChooseWouldBeDefeated
                 or Steps.ChooseCardDefeatedAbility
-                or Steps.ChooseRevealAbility)
+                or Steps.ChooseRevealAbility
+                or Steps.AssignIndirectAttackDamage)
             {
                 // Resolving one selected ability can insert its own work and a
-                // procedure continuation ahead of this question. All three
+                // procedure continuation ahead of this question. These paths
                 // deliberately share the containing occurrence, so identity
                 // alone would advance the new continuation and replay the
                 // answered question.

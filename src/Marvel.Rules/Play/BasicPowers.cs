@@ -329,7 +329,8 @@ public static class BasicPowers
             finalPlayer,
             abilityPlayer,
             abilityActor,
-            abilityHasContinuation);
+            abilityHasContinuation,
+            enemy.Incarnation);
         world.CharacterAttack = attack;
         var step = new PhaseStep(
             Steps.CharacterAttacks,
@@ -458,7 +459,8 @@ public static class BasicPowers
             finalPlayer,
             abilityPlayer,
             abilityActor,
-            abilityHasContinuation);
+            abilityHasContinuation,
+            scheme.Incarnation);
         world.CharacterThwart = thwart;
         var step = new PhaseStep(
             Steps.CharacterThwarts,
@@ -507,7 +509,8 @@ public static class BasicPowers
         }
 
         if (thwart.AbilityIndex < 0
-            && !DeckTypes.IsInPlay(world.Cards[thwart.Scheme].Area.Type))
+            && (!DeckTypes.IsInPlay(world.Cards[thwart.Scheme].Area.Type)
+                || world.Cards[thwart.Scheme].Incarnation != thwart.TargetIncarnation))
         {
             world.Agenda.CancelConsequentialDamage(
                 thwart.Thwarter, thwart.Scheme, attack: false);
@@ -574,7 +577,8 @@ public static class BasicPowers
             ?? throw new RulesNotImplementedException(
                 "a character attack resolved without an occurrence for its response window");
         if (attack.AbilityIndex < 0
-            && !DeckTypes.IsInPlay(world.Cards[attack.Enemy].Area.Type))
+            && (!DeckTypes.IsInPlay(world.Cards[attack.Enemy].Area.Type)
+                || world.Cards[attack.Enemy].Incarnation != attack.TargetIncarnation))
         {
             // `rr:consequential-damage.2` and `.2.1`: if an ally's basic-power
             // target leaves before application, the exhausted ally neither

@@ -259,6 +259,39 @@ public sealed class CoreCardDslTests
         Assert.Equal(DeckType.DiscardPile, flight.Area.Type);
     }
 
+    [Rule("rr:tough.2")]
+    [Rule("rr:damage.step.3")]
+    [Fact]
+    public void ToughExpiresPreventionCommittedToThatDamageInstance()
+    {
+        // Cosmic Flight has already committed its one-use prevention when
+        // Tough stops the whole instance at step 2. Both defenses expire with
+        // that damage; the prevention cannot leak into a later instance.
+        var world = Hero("01010a");
+        var flight = world.CreateCard(
+            "01017", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var villain = world.CreateCard("01134", world.AreaOf(DeckType.VillainArea));
+        var hero = world.Seats[0].IdentityCard;
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        Statuses.Give(world, hero, Statuses.Tough);
+        var occurrence = Occurrence.ForAttack(
+            1, [Steps.DamageWouldBeDealt], world, Cards,
+            villain.ObjectId, hero.ObjectId, player: 0);
+        var interrupt = Assert.Single(
+            runner.Waiting(world, occurrence, WindowKind.Interrupt),
+            pending => pending.Card == flight.ObjectId);
+        runner.Resolve(world, occurrence, interrupt, [], []);
+
+        Damage.Deal(world, Cards, villain, hero, 5, "test", "Damage", []);
+        Damage.Deal(world, Cards, villain, hero, 2, "test", "Damage", []);
+
+        Assert.False(Statuses.Has(world, hero, Statuses.Tough));
+        Assert.Equal(2, hero.Damage);
+        Assert.DoesNotContain(
+            world.Effects.Active(), effect => effect.Kind == "preventDamage");
+    }
+
     [Rule("rr:printed")]
     [Fact]
     public void SplitPersonalityDrawsToTheNewFacesPrintedHandSize()

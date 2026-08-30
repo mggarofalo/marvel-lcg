@@ -257,6 +257,17 @@ public interface ICardAbilities : IWindowAbilities
     long WouldTake(
         World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
 
+    /// <summary>Consume prevention committed to damage stopped by Tough.</summary>
+    /// <remarks>
+    /// Tough resolves at damage step 2, before step 3 changes the amount taken.
+    /// An interrupt already resolved for this damage instance must nevertheless
+    /// expire with that instance rather than prevent unrelated later damage.
+    /// </remarks>
+    void DamagePreventedByTough(
+        World world, Card target, Card source, List<GameEvent> events)
+    {
+    }
+
     /// <summary>
     /// Step 6 of dealing damage — <c>rr:damage.step.6</c>.
     /// </summary>
@@ -664,6 +675,12 @@ public class NoCardAbilities : ICardAbilities
         World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
 
     /// <inheritdoc/>
+    public virtual void DamagePreventedByTough(
+        World world, Card target, Card source, List<GameEvent> events)
+    {
+    }
+
+    /// <inheritdoc/>
     public virtual void WouldBeDefeated(
         World world, Card target, List<GameEvent> events)
     {
@@ -920,6 +937,10 @@ public static class VillainPhase
 
             case Steps.FlipBoostCards:
                 Attack.FlipBoostCards(world, facts, abilities, events);
+                break;
+
+            case Steps.FinishBoostCard:
+                Attack.FinishBoostCard(world, facts, abilities, step, events);
                 break;
 
             case Steps.CalculateAttackDamage:

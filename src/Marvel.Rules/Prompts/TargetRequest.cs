@@ -85,9 +85,8 @@ public sealed record TargetRequest(
 
         // `rr:choose-game-element.3.1`: "The same target cannot be chosen
         // multiple times this way." This applies before either representation
-        // below: a grouped selection does not make two references to one
-        // object into two targets, and a flat request's count must not be met
-        // by repeating one legal id.
+        // below. Indirect damage is the explicit exception represented here:
+        // its entries allocate points rather than choosing a target repeatedly.
         if (!AllowRepeated && selection.Distinct().Count() != selection.Count)
         {
             return false;

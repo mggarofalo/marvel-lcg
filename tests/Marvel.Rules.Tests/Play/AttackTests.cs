@@ -69,6 +69,56 @@ public sealed class AttackTests
         Assert.Equal(3, world.Activation!.DamageDealt);
     }
 
+    [Rule("rr:attack-enemy-activation.step.3.b")]
+    [Rule("rr:attack-enemy-activation.step.3.c")]
+    [Fact]
+    public void BoostAbilityChangesAreVisibleWhenIconsAreApplied()
+    {
+        // The Boost ability is step 3b. It gives its own card two icons, which
+        // step 3c must read afterwards; applying the printed zero first would
+        // leave only the villain's two ATK.
+        var printed = Printed(atk: 2, boost: 0);
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.Agenda.Abandon();
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.GiveAdditionalBoostCard(world, villain, "test", []);
+
+        Attack.FlipBoostCards(world, printed, new IconChangingBoost(), []);
+        Attack.CalculateDamage(world, printed);
+        Attack.DealDamage(world, printed, []);
+
+        Assert.Equal(4, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:activation.6")]
+    [Rule("rr:attack-enemy-activation.step.3.d")]
+    [Fact]
+    public void LethalBoostDamageCleansUpWithoutContinuingTheEndedActivation()
+    {
+        var printed = Printed(atk: 2, boost: 0);
+        var world = Board(printed, players: 2);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.Seats[0].IdentityCard.TakeDamage(9);
+        world.Agenda.Abandon();
+        Attack.Initiate(
+            world, printed,
+            new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.GiveAdditionalBoostCard(world, villain, "test", []);
+
+        Attack.FlipBoostCards(world, printed, new DamagingBoost(), []);
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.False(world.Seats[1].Eliminated);
+        Assert.Null(world.Attack);
+        Assert.Null(world.Activation);
+        Assert.Equal(
+            "boost",
+            Assert.Single(world.AreaOf(DeckType.EncounterDiscardPile).Cards).FaceId);
+    }
+
     [Rule("rr:indirect-damage.5")]
     [Rule("rr:indirect-damage.5.1")]
     [Fact]
@@ -113,6 +163,95 @@ public sealed class AttackTests
         Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
         Assert.Equal(world.Seats[0].IdentityCard.ObjectId, world.FinishedAttack!.Target);
         Assert.Equal(4, Assert.Single(abilities.Results).DamageDealt);
+    }
+
+    [Rule("rr:indirect-damage.3")]
+    [Fact]
+    public void IndirectAttackDamageIsPlacedOnEveryRecipientSimultaneously()
+    {
+        // A delayed effect from the identity's damage stuns it. This test's
+        // damage guard makes that stun prohibit later damage to the ally. The
+        // ally must already have received its assigned point before the delayed
+        // effect occurs, because all assigned indirect damage is simultaneous.
+        var printed = Printed(atk: 2, boost: 0);
+        var world = Board(printed);
+        var identity = world.Seats[0].IdentityCard;
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var abilities = new StunSensitiveDamage(identity.ObjectId, ally.ObjectId);
+        world.Abilities = abilities;
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.DelayedEffect,
+            Kind: DelayedEffects.StunTheSubject,
+            Card: world.TheCardIn(DeckType.VillainArea)!.ObjectId,
+            Affects: null,
+            Lasts: Duration.NextTime(Steps.DamageDealt)));
+        var events = new List<GameEvent>();
+
+        var defend = Sequence.Work(world, printed, abilities, events)!;
+        Attack.MakeIndirect(world);
+        Sequence.Answer(world, printed, abilities, defend, Decision.Decline, events);
+        var assign = Sequence.Work(world, printed, abilities, events)!;
+        Sequence.Answer(
+            world, printed, abilities, assign,
+            Decision.Take(
+                Assert.Single(assign.Affordances).Id,
+                [identity.ObjectId, ally.ObjectId], []),
+            events);
+        Sequence.Finish(world, printed, abilities, events);
+
+        Assert.Equal(1, identity.Damage);
+        Assert.Equal(1, ally.Damage);
+        Assert.True(Statuses.Has(world, identity, Statuses.Stunned));
+    }
+
+    [Rule("rr:indirect-damage.1")]
+    [Fact]
+    public void IndirectAttackDamageRejectsAnUnofferedAffordance()
+    {
+        var printed = Printed(atk: 2, boost: 0);
+        var world = Board(printed);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var abilities = new NoCardAbilities();
+        var events = new List<GameEvent>();
+
+        var defend = Sequence.Work(world, printed, abilities, events)!;
+        Attack.MakeIndirect(world);
+        Sequence.Answer(world, printed, abilities, defend, Decision.Decline, events);
+        var assign = Sequence.Work(world, printed, abilities, events)!;
+
+        Assert.Throws<RulesNotImplementedException>(() => Sequence.Answer(
+            world, printed, abilities, assign,
+            Decision.Take(-999, [world.Seats[0].IdentityCard.ObjectId, ally.ObjectId], []),
+            events));
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, ally.Damage);
+    }
+
+    [Rule("rr:indirect-damage.5")]
+    [Rule("rr:player-elimination.5.1")]
+    [Fact]
+    public void LethalIndirectAttackDamageFinishesAfterEliminatingItsTargetPlayer()
+    {
+        // With one eligible character the assignment is automatic. Eliminating
+        // that player ends the live attack. The assignment cap limits the
+        // twenty calculated damage to ten, and the remaining player keeps the
+        // game alive.
+        var printed = Printed(atk: 20, boost: 0);
+        var world = Board(printed, players: 2);
+        var abilities = new CompletionRecorder();
+        var events = new List<GameEvent>();
+
+        var defend = Sequence.Work(world, printed, abilities, events)!;
+        Attack.MakeIndirect(world);
+        Sequence.Answer(world, printed, abilities, defend, Decision.Decline, events);
+        Sequence.Finish(world, printed, abilities, events);
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.False(world.Seats[1].Eliminated);
+        Assert.True(world.FinishedAttack!.Damaged);
+        Assert.Equal(10, Assert.Single(abilities.Results).DamageDealt);
     }
 
     [Rule("rr:attack-enemy-activation.step.1")]
@@ -1043,6 +1182,27 @@ public sealed class AttackTests
                 2, "Boost", "Deal_Damage", events);
             return events;
         }
+    }
+
+    private sealed class IconChangingBoost : NoCardAbilities
+    {
+        public override IReadOnlyList<GameEvent> Boost(World world, Card card, int player)
+        {
+            world.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect,
+                Kind: "boost_const",
+                Amount: 2,
+                Card: card.ObjectId,
+                Affects: card.ObjectId));
+            return [];
+        }
+    }
+
+    private sealed class StunSensitiveDamage(int identity, int ally) : NoCardAbilities
+    {
+        public override bool CanTakeDamage(World world, Card target, Card source) =>
+            target.ObjectId != ally
+            || !Statuses.Has(world, world.Cards[identity], Statuses.Stunned);
     }
 
     private sealed class Facts(int atk, int boost, int def) : ICardFacts
