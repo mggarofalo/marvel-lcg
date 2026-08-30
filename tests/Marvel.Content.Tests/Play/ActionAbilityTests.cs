@@ -11919,6 +11919,103 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
     }
 
+    [Rule("rr:attachment.1")]
+    [Rule("rr:ability")]
+    [Fact]
+    public void DepartedRehostedAttachmentStopsProjectedHealthGrant()
+    {
+        var runner = Runner(
+            "01163",
+            "Action",
+            """
+            { "seq": [
+              { "attachTo": { "titled": "Hydra Mercenary" } },
+              { "removeFromGame": "this" },
+              { "dealDamage": {
+                "cards": { "titled": "Hydra Mercenary" }, "amount": 3
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            includeAuthored: true);
+        Card? attachment = null;
+        Card? originalHost = null;
+        Card? hydra = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                originalHost = board.CreateCard(
+                    "16183", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                attachment = board.CreateCard(
+                    "01163", board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        originalHost.ObjectId));
+                hydra = board.CreateCard(
+                    "08028", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(attachment!.Ready);
+        Assert.Equal(originalHost!.ObjectId, attachment.Area.Host);
+        Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
+    }
+
+    [Rule("rr:attachment.1")]
+    [Rule("rr:traits.1")]
+    [Fact]
+    public void RehostedAttachmentRetargetsProjectedTraitGrant()
+    {
+        var runner = Runner(
+            "40151",
+            "Action",
+            """
+            { "seq": [
+              { "attachTo": { "titled": "Hydra Mercenary" } },
+              { "dealDamage": {
+                "cards": { "enemiesWithTrait": "AERIAL" }, "amount": 3
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            includeAuthored: true);
+        Card? attachment = null;
+        Card? originalHost = null;
+        Card? hydra = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                originalHost = board.CreateCard(
+                    "16183", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                attachment = board.CreateCard(
+                    "40151", board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        originalHost.ObjectId));
+                hydra = board.CreateCard(
+                    "08028", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.Equal(originalHost!.ObjectId, attachment!.Area.Host);
+        Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
+    }
+
     [Rule("rr:villain-defeat.3.2")]
     [Rule("rr:villain-defeat.4.2")]
     [Fact]

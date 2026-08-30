@@ -17452,6 +17452,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 if (effect.Source == EffectSource.ConstantAbility
                     && effect.Card is int hostedSource
+                    && !Departed.Contains(hostedSource)
                     && Hosts.TryGetValue(hostedSource, out int projectedHost)
                     && string.Equals(effect.Kind, field, StringComparison.Ordinal))
                 {
@@ -17635,7 +17636,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     || !Departed.Contains(source))
                 .ToList();
             bool lost = active.Any(effect =>
-                effect.AppliesTo(current.World, card)
+                ProjectedTraitEffectApplies(current, effect, card)
                 && string.Equals(
                     effect.Kind,
                     Characteristics.Lost + Rules.State.Traits.Granted + trait,
@@ -17647,13 +17648,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return FacedownDrones.InherentTraits(card, current.World.Facts)
                     .Contains(trait, StringComparer.Ordinal)
                 || active.Any(effect =>
-                    effect.Affects == card.ObjectId
+                    ProjectedTraitEffectApplies(current, effect, card)
                     && string.Equals(
                         effect.Kind,
                         Rules.State.Traits.Granted + trait,
                         StringComparison.Ordinal))
                 || Traits.TryGetValue(card.ObjectId, out var granted)
                     && granted.Contains(trait);
+        }
+
+        private bool ProjectedTraitEffectApplies(
+            Cast current, ContinuousEffect effect, Card card)
+        {
+            if (effect.Source == EffectSource.ConstantAbility
+                && effect.Card is int source
+                && Hosts.TryGetValue(source, out int projectedHost)
+                && current.World.Cards[source].Area.Host == effect.Affects)
+            {
+                return projectedHost == card.ObjectId;
+            }
+            return effect.AppliesTo(current.World, card);
         }
 
         public AreaProjectionState Clone()
