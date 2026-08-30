@@ -11456,6 +11456,107 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
     }
 
+    [Rule("rr:guard.1")]
+    [Rule("rr:lasting-effects")]
+    [Fact]
+    public void LastingGuardGrantChangesProjectedAttackableEnemies()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "grantUntil": {
+                "card": { "titled": "Hydra Mercenary" },
+                "keyword": "guard", "amount": 1, "until": "EndOfRound"
+              } },
+              { "dealDamage": {
+                "cards": { "query": "attackableEnemies" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? minion = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                villain.TakeDamage(
+                    Damage.Health(board, board.Facts, villain) - 1);
+                minion = board.CreateCard(
+                    "08028", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, minion, Statuses.Tough);
+                board.CreateCard(
+                    "01098", board.AreaOf(
+                        DeckType.UpgradesArea, villain.Area.PlayArea,
+                        villain.ObjectId));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
+    }
+
+    [Rule("rr:ability.step.1")]
+    [Rule("rr:hit-points.2.3")]
+    [Fact]
+    public void ChangedThreatRefusesStaleConditionalHealthProjection()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "removeThreat": {
+                "scheme": { "titled": "Gene Pool" }, "amount": 1
+              } },
+              { "dealDamage": {
+                "cards": { "titled": "Infinite Soldier" }, "amount": 3
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Infinite Soldier"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""",
+            includeAuthored: true);
+        Card? source = null;
+        Card? pool = null;
+        Card? soldier = null;
+
+        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                pool = board.CreateCard(
+                    "45071", board.AreaOf(DeckType.SideSchemesArea));
+                pool.PlaceTokens("k_threat", 9);
+                soldier = board.CreateCard(
+                    "45069", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "45069", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.Contains("conditional constant", refused.Message);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, pool!.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(0, soldier!.Damage);
+        Assert.Equal(DeckType.EngagedEnemiesArea, soldier.Area.Type);
+    }
+
     [Rule("rr:villain-defeat.3.2")]
     [Rule("rr:villain-defeat.4.2")]
     [Fact]

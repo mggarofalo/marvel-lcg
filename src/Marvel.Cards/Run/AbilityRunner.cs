@@ -17288,7 +17288,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     .ToList();
                 bool guard = found.Any(card =>
                     cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
-                    && Keywords.Has(cast.World, card, "guard", cast.World.Facts)
+                    && state.ModifiedOf(cast, card, "guard") > 0
                     && (state.EngagedWith.GetValueOrDefault(
                             card.ObjectId, -1) == Resolver(cast)
                         || !state.EngagedWith.ContainsKey(card.ObjectId)
@@ -17436,7 +17436,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             long value = StateFields.Modified(
                 current.World, card, field,
                 current.World.Facts, current.World.Players);
-            foreach (var effect in current.World.Effects.Active())
+            var effects = current.World.Effects.Active();
+            foreach (var effect in effects)
             {
                 if (effect.Source == EffectSource.ConstantAbility
                     && effect.Card is int source
@@ -17446,6 +17447,19 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 {
                     value -= effect.Amount;
                 }
+            }
+            if (ProjectedPredicateInputsChanged(current)
+                && effects.Any(effect =>
+                    effect.Source == EffectSource.ConstantAbility
+                    && (effect.Card is not int source
+                        || !Departed.Contains(source))
+                    && string.Equals(effect.Kind, field, StringComparison.Ordinal)
+                    && effect.AppliesTo(current.World, card)))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{current.Source.FaceId}' changes game state before reading "
+                    + $"a conditional constant '{field}' modifier on "
+                    + $"'{card.FaceId}'; projecting that predicate is not implemented");
             }
             value = SaturatingSum(
                 value,
@@ -17487,6 +17501,25 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
             return value;
         }
+
+        private bool ProjectedPredicateInputsChanged(Cast current) =>
+            Damage.Any(pair => pair.Value
+                != current.World.Cards[pair.Key].Damage)
+            || Tough.Any(pair => pair.Value != Statuses.Count(
+                current.World, current.World.Cards[pair.Key], Statuses.Tough))
+            || Threat.Any(pair => pair.Value != current.World.Cards[pair.Key]
+                .Tokens.GetValueOrDefault("k_threat"))
+            || Status.Any(pair => pair.Value != Statuses.Count(
+                current.World,
+                current.World.Cards[pair.Key.Card], pair.Key.Status))
+            || Departed.Count > 0
+            || Entered.Count > 0
+            || Hosts.Count > 0
+            || EngagedWith.Count > 0
+            || Traits.Count > 0
+            || Modifiers.Count > 0
+            || ActiveVillain != (current.World.TheCardIn(
+                DeckType.VillainArea)?.ObjectId ?? -1);
 
         public bool HasTrait(Cast current, Card card, string trait)
         {
