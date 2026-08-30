@@ -237,6 +237,44 @@ public sealed class EnemyAttackDefenderTests
         Assert.True(world.Attack.IsDefended);
     }
 
+    [Rule("rr:attack-enemy-activation.3.2")]
+    [Fact]
+    public void DamageAgainstOneAdditionalTargetDoesNotMarkTheNextTargetsDamageResolved()
+    {
+        // One attack can resolve against several heroes. Finishing step 5 for
+        // the first target does not put the later target past its own step 5;
+        // an ally leaving before that later damage must still expose the hero.
+        var (world, facts, villain) = Board(players: 2);
+        var first = world.Seats[0].IdentityCard;
+        Begin(world, villain, first);
+        world.Attack = world.Attack! with
+        {
+            CalculatedDamage = 0,
+            AdditionalPlayers = [1],
+        };
+        world.Agenda.Add(new PhaseStep(
+            Steps.DealAttackDamage, Round: 1, Number: 5,
+            Subject: villain.ObjectId, Seat: 0));
+        var occurrence = world.Agenda.Begin(world, facts);
+        world.Agenda.Advance(occurrence);
+        Attack.DealDamage(world, facts, []);
+
+        Attack.NextTarget(world, 1);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+        world.Attack = world.Attack! with
+        {
+            Defender = ally.ObjectId,
+            Target = ally.ObjectId,
+        };
+        World.MoveToTop(
+            ally, world.AreaOf(DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1));
+        Attack.RefreshDefender(world, facts);
+
+        Assert.False(world.Attack!.IsDefended);
+        Assert.Equal(world.Seats[1].IdentityCard.ObjectId, world.Attack.Target);
+    }
+
     [Rule("rr:attacks-against-allies.2")]
     [Fact]
     public void AHeroCanDefendAnAttackThatWasInitiatedAgainstAnAlly()

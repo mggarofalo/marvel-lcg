@@ -755,7 +755,7 @@ public static class Attack
         world.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: AttackDamageResolved,
-            Affects: attack.Enemy,
+            Affects: attack.Target,
             Lasts: Duration.UntilEndOf(TimingPoints.EndOfAttack)));
         if (amount <= 0)
         {
@@ -1101,7 +1101,7 @@ public static class Attack
 
         if (world.Effects.Active().Any(effect =>
             effect.Kind == AttackDamageResolved
-            && effect.Affects == attack.Enemy))
+            && effect.Affects == attack.Target))
         {
             return;
         }
