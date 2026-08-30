@@ -10424,6 +10424,145 @@ public sealed class ActionAbilityTests
             action.Card == source!.ObjectId);
     }
 
+    [Rule("rr:labeled-ability.4")]
+    [Rule("rr:cost.6")]
+    [Fact]
+    public void LabelledAttackBodyIsProjectedBeforeCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "attack": {
+                "target": { "titled": "Hydra Mercenary" },
+                "effect": { "dealAttackDamage": {
+                  "cards": { "titled": "Hydra Mercenary" }, "amount": 1
+                } }
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? minion = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 1);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
+    }
+
+    [Rule("rr:then.1")]
+    [Rule("rr:cost.6")]
+    [Fact]
+    public void WrappedDependentOutcomeUsesProjectedStateBeforeCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": { "cards": "you", "amount": 1 } },
+              { "then": {
+                "effect": { "seq": [
+                  { "heal": { "card": "you", "amount": 1 } }
+                ] },
+                "then": { "dealDamage": {
+                  "cards": { "titled": "Hydra Mercenary" }, "amount": 1
+                } }
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? minion = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 1);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
+    }
+
+    [Rule("rr:vulnerable.1")]
+    [Rule("rr:attach-to.1")]
+    [Rule("rr:cost.6")]
+    [Fact]
+    public void VulnerableDiscardProjectsHostedCardsBeforeCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "giveStatus": {
+                "card": { "titled": "Scientist Supreme" },
+                "status": "stunned"
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? vulnerable = null;
+        Card? attachment = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                vulnerable = board.CreateCard(
+                    "50125", board.AreaOf(
+                        DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                attachment = board.CreateCard(
+                    "01098", board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0),
+                        vulnerable.ObjectId));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner,
+            scenario: "klaw"));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.AlliesArea, vulnerable!.Area.Type);
+        Assert.Equal(vulnerable.ObjectId, attachment!.Area.Host);
+    }
+
     [Rule("rr:search.1")]
     [Fact]
     public void InactiveBranchDoesNotMakeALaterAreaQueryUnstable()

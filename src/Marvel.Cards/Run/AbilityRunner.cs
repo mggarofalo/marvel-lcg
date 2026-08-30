@@ -16349,6 +16349,36 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 || cast.World.Facts.Kind(target.FaceId) == CardKind.Ally
                     && queried.Contains(DeckType.DiscardPile));
 
+        bool DiscardTreeChangesArea(Card root)
+        {
+            var pending = new Stack<Card>();
+            var seen = new HashSet<int>();
+            pending.Push(root);
+            while (pending.Count > 0)
+            {
+                var card = pending.Pop();
+                if (!seen.Add(card.ObjectId))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' reaches a hosted-card cycle while "
+                        + "projecting a discard");
+                }
+                var destination = card.Owner < 0
+                    ? DeckType.EncounterDiscardPile : DeckType.DiscardPile;
+                if (queried.Contains(destination))
+                {
+                    return true;
+                }
+                foreach (var child in cast.World.Areas
+                             .Where(area => area.Host == card.ObjectId)
+                             .SelectMany(area => area.Cards))
+                {
+                    pending.Push(child);
+                }
+            }
+            return false;
+        }
+
         void DealProjected(
             AreaProjectionState state, Card target, long amount,
             long repetitions)
@@ -16519,14 +16549,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                                 cast.World, target, "vulnerable",
                                 cast.World.Facts, cast.World.Players) > 0
                             && held + 1 >= limit && limit > 0;
-                        if (vulnerable
-                            && (cast.World.Facts.Kind(target.FaceId)
-                                    == CardKind.Minion
-                                    && queried.Contains(
-                                        DeckType.EncounterDiscardPile)
-                                || cast.World.Facts.Kind(target.FaceId)
-                                    == CardKind.Ally
-                                    && queried.Contains(DeckType.DiscardPile)))
+                        if (vulnerable && DiscardTreeChangesArea(target))
                         {
                             couldDiscard = true;
                         }
@@ -16666,6 +16689,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 return states;
             }
 
+            if (effect.Kind is "attack" or "thwart" or "defense"
+                or "delayUntil")
+            {
+                return Trace(
+                    Tree(effect.Require("effect")), states,
+                    repetitions, baseMultiplier);
+            }
+
             if (effect.Kind is "draw" or "drawToHandSize"
                 or "drawToPrintedHandSize" or "discard" or "removeFromGame"
                 or "returnToHand" or "reveal" or "putIntoPlay" or "search"
@@ -16734,6 +16765,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         AbilityNode effect, AreaProjectionState state, Cast cast) =>
         effect.Kind switch
         {
+            "seq" or "and" => CombinedOutcomes(
+                Nodes(effect.Argument).Select(child =>
+                    ProjectedResolution(child, state, cast))),
+            "if" => ProjectedTest(
+                    Tree(effect.Require("test")), state, cast)
+                is { } result
+                && effect.Field(result ? "then" : "else") is { } branch
+                    ? ProjectedResolution(Tree(branch), state, cast)
+                    : throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' has a projected dependent condition "
+                        + "whose outcome is not implemented"),
+            "forEach" when ForEachCount(effect, cast) == 0 =>
+                ResolutionOutcome.None,
+            "forEach" => ProjectedResolution(
+                Tree(effect.Require("effect")), state, cast),
             "heal" => ResolutionOfAmount(
                 Find(effect.Require("card"), cast) is { } healed
                     ? state.DamageOf(healed) : 0,
