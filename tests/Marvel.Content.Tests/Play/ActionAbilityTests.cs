@@ -10829,6 +10829,152 @@ public sealed class ActionAbilityTests
             action.Card == source!.ObjectId);
     }
 
+    [Rule("rr:otherwise.1")]
+    [Rule("rr:victory-x.1")]
+    [Fact]
+    public void DepartedTargetMakesProjectedOtherwiseFallbackReachable()
+    {
+        // The defeated Victory minion is no longer an in-play title reference,
+        // so healing it resolves nothing and the otherwise discard applies.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "titled": "Badoon Headhunter" }, "amount": 1
+              } },
+              { "otherwise": {
+                "effect": { "heal": {
+                  "card": { "titled": "Badoon Headhunter" }, "amount": 1
+                } },
+                "otherwise": { "discard": {
+                  "titled": "Hydra Mercenary"
+                } }
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? victory = null;
+        Card? hydra = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                victory = board.CreateCard(
+                    "16183", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                victory.TakeDamage(
+                    Damage.Health(board, board.Facts, victory) - 1);
+                hydra = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, victory!.Area.Type);
+        Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
+    }
+
+    [Rule("rr:in-play-and-out-of-play.4")]
+    [Fact]
+    public void ExplicitMovementUpdatesLaterProjectedTitleReferences()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "removeFromGame": { "titled": "Hydra Mercenary" } },
+              { "discard": { "titled": "Hydra Mercenary" } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+    }
+
+    [Rule("rr:villain-defeat.3.2")]
+    [Rule("rr:villain-defeat.4.2")]
+    [Fact]
+    public void ConsecutiveVillainStagesProjectCarriedAttachmentDeparture()
+    {
+        // Rhino I carries the attachment to Rhino II. Defeating the final
+        // stage then discards it ordinarily, even when it has Victory X.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "query": "villain" }, "amount": 100
+              } },
+              { "dealDamage": {
+                "cards": { "query": "villain" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? villain = null;
+        Card? attachment = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                villain = board.TheCardIn(DeckType.VillainArea)!;
+                attachment = board.CreateCard(
+                    "01098", board.AreaOf(
+                        DeckType.UpgradesArea, villain.Area.PlayArea,
+                        villain.ObjectId));
+                board.Effects.Register(new ContinuousEffect(
+                    EffectSource.ConstantAbility,
+                    "victory",
+                    Amount: 1,
+                    Card: attachment.ObjectId,
+                    Affects: attachment.ObjectId,
+                    Lasts: Duration.WhileInPlay));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(0, villain!.Damage);
+        Assert.True(DeckTypes.IsInPlay(attachment!.Area.Type));
+        Assert.Equal(villain.ObjectId, attachment.Area.Host);
+    }
+
     [Rule("rr:labeled-ability.6")]
     [Fact]
     public void CancelledLabelSkipsAreaSensitivePostArrowEffects()
