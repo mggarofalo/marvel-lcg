@@ -17409,11 +17409,34 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public long ThreatOf(Card card) => Threat.GetValueOrDefault(
             card.ObjectId, card.Tokens.GetValueOrDefault("k_threat"));
 
-        public bool HasTrait(Cast current, Card card, string trait) =>
-            Traits.TryGetValue(card.ObjectId, out var granted)
-                && granted.Contains(trait)
-            || Rules.State.Traits.Has(
-                current.World, card, trait, current.World.Facts);
+        public bool HasTrait(Cast current, Card card, string trait)
+        {
+            var active = current.World.Effects.Active()
+                .Where(effect => effect.Source != EffectSource.ConstantAbility
+                    || effect.Card is not int source
+                    || !Departed.Contains(source))
+                .ToList();
+            bool lost = active.Any(effect =>
+                effect.AppliesTo(current.World, card)
+                && string.Equals(
+                    effect.Kind,
+                    Characteristics.Lost + Rules.State.Traits.Granted + trait,
+                    StringComparison.Ordinal));
+            if (lost)
+            {
+                return false;
+            }
+            return FacedownDrones.InherentTraits(card, current.World.Facts)
+                    .Contains(trait, StringComparer.Ordinal)
+                || active.Any(effect =>
+                    effect.Affects == card.ObjectId
+                    && string.Equals(
+                        effect.Kind,
+                        Rules.State.Traits.Granted + trait,
+                        StringComparison.Ordinal))
+                || Traits.TryGetValue(card.ObjectId, out var granted)
+                    && granted.Contains(trait);
+        }
 
         public AreaProjectionState Clone()
         {

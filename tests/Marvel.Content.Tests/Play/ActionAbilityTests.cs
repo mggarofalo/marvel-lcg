@@ -11299,6 +11299,62 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.EngagedEnemiesArea, specialist!.Area.Type);
     }
 
+    [Rule("rr:ability")]
+    [Rule("rr:traits.1")]
+    [Fact]
+    public void DepartedConstantSourceStopsProjectedTraitGrant()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "discard": { "titled": "Helicarrier" } },
+              { "dealDamage": {
+                "cards": { "enemiesWithTrait": "CRIMINAL" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? grantSource = null;
+        Card? hydra = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                grantSource = board.CreateCard(
+                    "01092", board.AreaOf(
+                        DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+                hydra = board.CreateCard(
+                    "08028", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                var criminal = board.CreateCard(
+                    "02007", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, criminal, Statuses.Tough);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+                board.Effects.Register(new ContinuousEffect(
+                    EffectSource.ConstantAbility,
+                    Rules.State.Traits.Granted + "CRIMINAL",
+                    Amount: 1,
+                    Card: grantSource.ObjectId,
+                    Affects: hydra.ObjectId,
+                    Lasts: Duration.WhileInPlay));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+        Assert.Equal(DeckType.SupportsArea, grantSource!.Area.Type);
+        Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
+    }
+
     [Rule("rr:villain-defeat.3.2")]
     [Rule("rr:villain-defeat.4.2")]
     [Fact]
