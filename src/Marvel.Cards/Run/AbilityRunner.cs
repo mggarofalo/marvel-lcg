@@ -5502,9 +5502,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "chooseCard" => CanInitiateChooseCard(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
 
-            "removeFromGame" => Find(node.Argument, cast) is { } removed
-                && CanRemoveByEffect(node.Argument, cast, removed)
-                    ? TargetLegality.Valid : TargetLegality.Invalid,
+            "removeFromGame" => RemoveFromGameTargetLegality(node, cast),
             "reveal" or "returnToHand" => Cards(Every(node.Argument, cast)),
             "exhaust" => Cards(Every(node.Argument, cast).Where(card => card.Ready)),
             "ready" => Cards(Every(node.Argument, cast).Where(card =>
@@ -5670,6 +5668,32 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Statuses.Count(cast.World, card, status)
                 < Statuses.Limit(cast.World, cast.World.Facts, card, status))];
     }
+
+    private static TargetLegality RemoveFromGameTargetLegality(
+        AbilityNode node, Cast cast)
+    {
+        if ((cast.PaymentMayMutate || cast.PriorStepMayMutate)
+            && ContainsCardsIn(node.Argument))
+        {
+            // A prior move can change the cardinality of this area query. The
+            // singular resolver must not discover ambiguity after an action's
+            // cost or an earlier component has already changed the board.
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' reaches a singular area removal after "
+                + "state may change");
+        }
+        return Find(node.Argument, cast) is { } removed
+            && CanRemoveByEffect(node.Argument, cast, removed)
+                ? TargetLegality.Valid : TargetLegality.Invalid;
+    }
+
+    private static bool ContainsCardsIn(AbilityValue value) => value switch
+    {
+        AbilityValue.Map map => map.Entries.ContainsKey("cardsIn")
+            || map.Entries.Values.Any(ContainsCardsIn),
+        AbilityValue.List list => list.Values.Any(ContainsCardsIn),
+        _ => false,
+    };
 
     private enum TargetLegality
     {
@@ -13218,9 +13242,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// </remarks>
     private static void RevealCard(Card? card, Cast cast)
     {
-        if (card is null)
+        if (!ScheduleReveal(card, cast))
         {
             return;
+        }
+
+        cast.ResolveEffect();
+    }
+
+    /// <summary>Moves one card into the reveal procedure and schedules it.</summary>
+    private static bool ScheduleReveal(Card? card, Cast cast)
+    {
+        if (card is null)
+        {
+            return false;
         }
 
         World.MoveToTop(card, cast.World.AreaOf(DeckType.RevealingArea));
@@ -13231,7 +13266,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Index: cast.Player,
             Subject: card.ObjectId,
             Seat: cast.Player));
-        cast.ResolveEffect();
+        return true;
     }
 
     /// <summary>
@@ -13318,17 +13353,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "not implemented");
         }
 
-        bool applied = found.Count == 1;
-        if (applied)
-        {
-            cast.World.Agenda.Then(new PhaseStep(
-                Steps.RevealEncounterCard,
-                cast.World.Agenda.Current?.Round ?? 0,
-                4,
-                Index: cast.Player,
-                Subject: found[0].ObjectId,
-                Seat: cast.Player));
-        }
+        // The found card is added to the revealing area before the searched
+        // deck is shuffled. `rr:search` says the found card is added to the
+        // indicated area, and the shuffle therefore applies to the cards that
+        // remain rather than consuming the wire-format RNG with that card
+        // still in its old area.
+        bool applied = found.Count == 1 && ScheduleReveal(found[0], cast);
 
         cast.Results["found"] = found.Count;
 
@@ -13806,16 +13836,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' has invalid persisted chosen-card metadata");
             }
+            if (!results.TryGetValue(PersistedChosenArea, out long savedArea)
+                || !results.TryGetValue(
+                    PersistedChosenIncarnation, out long savedIncarnation))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' has persisted chosen-card metadata "
+                    + "without target provenance");
+            }
             var card = cast.World.Cards[(int)chosen];
-            int area = results.TryGetValue(PersistedChosenArea, out long savedArea)
-                ? checked((int)savedArea)
-                : -1;
-            int incarnation = results.TryGetValue(
-                    PersistedChosenIncarnation, out long savedIncarnation)
-                ? checked((int)savedIncarnation)
-                : -1;
             cast.RestorePersistedSelection(
-                card, area, incarnation, overwriteChosen: overwrite);
+                card, checked((int)savedArea), checked((int)savedIncarnation),
+                overwriteChosen: overwrite);
         }
     }
 
@@ -16437,20 +16469,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         private int sourceIncarnation = Source.Incarnation;
 
         /// <summary>The card the player picked, once they have.</summary>
-        public Card? Chosen => chosenBinding is { } chosen
-            && chosen.Card.Incarnation == chosen.Incarnation
-                ? chosen.Card
-                : null;
+        public Card? Chosen => CurrentCard(chosenBinding, "chosen");
 
         /// <summary>The outer card selection used by chosen-player references.</summary>
-        public Card? PlayerSelection => playerSelectionBinding is { } selected
-            && selected.Card.Incarnation == selected.Incarnation
-                ? selected.Card
-                : null;
+        public Card? PlayerSelection =>
+            CurrentCard(playerSelectionBinding, "player selection");
 
-        public Card? SourceReference => Source.Incarnation == sourceIncarnation
-            ? Source
-            : null;
+        public Card? SourceReference
+        {
+            get
+            {
+                if (sourceIncarnation < 0)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{Source.FaceId}' continuation has no source-card provenance");
+                }
+                return Source.Incarnation == sourceIncarnation ? Source : null;
+            }
+        }
 
         public int SourceBindingIncarnation => sourceIncarnation;
 
@@ -16521,6 +16557,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         private static CardBinding? Bind(Card? card) => card is null
             ? null
             : new CardBinding(card, card.Area.Id, card.Incarnation);
+
+        private Card? CurrentCard(CardBinding? binding, string name)
+        {
+            if (binding is not { } found)
+            {
+                return null;
+            }
+            if (found.Incarnation < 0 || found.Area < 0)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{Source.FaceId}' continuation has no {name} provenance");
+            }
+            return found.Card.Incarnation == found.Incarnation
+                ? found.Card
+                : null;
+        }
 
         /// <summary>
         /// Which of the card's abilities is running, or null.

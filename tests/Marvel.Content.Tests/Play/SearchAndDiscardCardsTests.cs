@@ -138,6 +138,7 @@ public sealed class SearchAndDiscardCardsTests
         Assert.Equal(queued + 1, Queue(world, 1).Cards.Count);
     }
 
+    [Rule("rr:search")]
     [Rule("rr:search.2")]
     [Fact]
     public void RhinosSecondStageFindsTheSideSchemeAndSchedulesItsReveal()
@@ -157,6 +158,7 @@ public sealed class SearchAndDiscardCardsTests
         var scheduled = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.RevealEncounterCard, scheduled.What);
         Assert.Equal(wanted.ObjectId, scheduled.Subject);
+        Assert.Equal(DeckType.RevealingArea, wanted.Area.Type);
     }
 
     [Rule("rr:search.3")]
@@ -170,8 +172,13 @@ public sealed class SearchAndDiscardCardsTests
         // it is not a deck -- and shuffling one would draw from the game's
         // single random stream, which is a wire format.
         var world = Deal();
+        var wanted = world.AreaOf(DeckType.EncounterDeck).Cards
+            .Single(card => card.FaceId == BreakinAndTakin);
         var discard = world.AreaOf(DeckType.EncounterDiscardPile);
-        foreach (var card in world.AreaOf(DeckType.EncounterDeck).Cards.Take(4).ToList())
+        foreach (var card in world.AreaOf(DeckType.EncounterDeck).Cards
+            .Where(card => card.FaceId != BreakinAndTakin)
+            .Take(4)
+            .ToList())
         {
             World.MoveToTop(card, discard);
         }
@@ -184,8 +191,16 @@ public sealed class SearchAndDiscardCardsTests
         AuthoredCards.Runner().WhenRevealed(world, stage, 0);
 
         var after = world.AreaOf(DeckType.EncounterDeck).Cards.Select(c => c.ObjectId).ToList();
-        Assert.NotEqual(before, after);
-        Assert.Equal(before.Order(), after.Order());
+        Assert.NotEqual(before.Where(id => id != wanted.ObjectId), after);
+        Assert.Equal(before.Where(id => id != wanted.ObjectId).Order(), after.Order());
+        Assert.Equal(
+            [
+                "01106", "01102", "01187", "01186", "01190", "01104", "01112",
+                "01112", "01110", "01109", "01165", "01189", "01099", "01187",
+                "01106", "01099", "01105", "01104", "01108", "01110", "01106",
+                "01105", "01111", "01098", "01188", "01101",
+            ],
+            world.AreaOf(DeckType.EncounterDeck).Cards.Select(card => card.FaceId));
         Assert.Equal(pile, discard.Cards.Select(c => c.ObjectId));
     }
 

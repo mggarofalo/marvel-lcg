@@ -9474,6 +9474,49 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
     }
 
+    [Rule("rr:cost.6")]
+    [Rule("rr:search.1")]
+    [Fact]
+    public void EarlierMoveCannotCreateRemovalAmbiguityAfterActionCost()
+    {
+        // The first component would add a second Hydra Mercenary to the named
+        // discard pile. The singular second component cannot choose between
+        // them, so the engine refuses the action before its exhaust cost or
+        // the first discard changes the board.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "discard": { "titled": "Hydra Mercenary" } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? inPlay = null;
+        Card? discarded = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                inPlay = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                discarded = board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, inPlay!.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, discarded!.Area.Type);
+    }
+
     [Rule("rr:in-play-and-out-of-play.4")]
     [Rule("rr:permanent.4")]
     [Rule("rr:removed-from-the-game")]
@@ -15458,6 +15501,33 @@ public sealed class ActionAbilityTests
 
         Assert.True(source.Ready);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void LegacyContinuationWithoutSourceProvenanceRaisesInsteadOfSkipping()
+    {
+        // Continuation metadata from before card-incarnation bindings cannot
+        // prove that `this` still means the same copy. That ambiguity raises;
+        // it must not silently turn the remaining discard into a no-op.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "draw": { "player": "you", "count": 1 } }, { "discard": "this" } ] }""");
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        var legacy = new PhaseStep(
+            Steps.ResumeAbility, 1, 2, Subject: source!.ObjectId, Seat: 0,
+            Tier: AbilityType.Action, AbilityOrdinal: 0,
+            AbilityPath: ["seq:0"], AbilityFace: source.FaceId,
+            AbilityHasContinuation: false);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => runner.ResumeAbility(world, legacy));
+
+        Assert.Contains("source-card provenance", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.SupportsArea, source.Area.Type);
     }
 
     [Fact]
