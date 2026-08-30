@@ -5502,8 +5502,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             "chooseCard" => CanInitiateChooseCard(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
 
-            "removeFromGame" or "reveal" or "returnToHand" =>
-                Cards(Every(node.Argument, cast)),
+            "removeFromGame" => Cards(Every(node.Argument, cast).Where(card =>
+                Rules.Play.Discard.EffectCanRemove(
+                    cast.World, cast.World.Facts, cast.Source, card))),
+            "reveal" or "returnToHand" => Cards(Every(node.Argument, cast)),
             "exhaust" => Cards(Every(node.Argument, cast).Where(card => card.Ready)),
             "ready" => Cards(Every(node.Argument, cast).Where(card =>
                 !card.Ready && cast.Abilities.CanReady(cast.World, card, cast.Source))),
@@ -12794,11 +12796,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (Find(node.Field("card") ?? node.Argument, cast) is { } target)
         {
             // rr:target.2 lets a multi-target ability initiate when at least
-            // one target is valid. A different target can therefore be absent
-            // by resolution, and this effect simply has nothing to discard.
-            Rules.Play.Discard.CardFromEffect(
-                cast.World, cast.World.Facts, cast.Source, target,
-                cast.Trigger, cast.Events);
+            // one target is valid. A different component can therefore have
+            // an invalid target and simply does not resolve against it.
+            if (Rules.Play.Discard.EffectCanRemove(
+                    cast.World, cast.World.Facts, cast.Source, target))
+            {
+                Rules.Play.Discard.CardFromEffect(
+                    cast.World, cast.World.Facts, cast.Source, target,
+                    cast.Trigger, cast.Events);
+            }
         }
     }
 
@@ -12859,9 +12865,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (!Rules.Play.Discard.EffectCanRemove(
                 cast.World, cast.World.Facts, cast.Source, card))
         {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' cannot remove permanent card {card.ObjectId} "
-                + "because it is from another set");
+            // Another component can make a multi-target effect valid under
+            // rr:target.3.4; this invalid component simply does not resolve.
+            return;
         }
 
         var from = card.Area;

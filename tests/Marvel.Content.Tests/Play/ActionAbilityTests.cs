@@ -9252,6 +9252,54 @@ public sealed class ActionAbilityTests
             game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
     }
 
+    [Rule("rr:permanent.4")]
+    [Rule("rr:target.3.4")]
+    [Theory]
+    [InlineData("discard")]
+    [InlineData("removeFromGame")]
+    public void InvalidPermanentRemovalComponentDoesNotAbortAValidSibling(
+        string removal)
+    {
+        // One valid target makes the combined effect legal, but an invalid
+        // component does not resolve against that target. Exhaust succeeds;
+        // the cross-set Permanent neither leaves play nor turns the component
+        // into an exception after mutation.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            $$"""
+            { "chooseCard": {
+              "from": { "titled": "Compact Darts" },
+              "effect": { "seq": [
+                { "exhaust": "chosen" },
+                { "{{removal}}": "chosen" }
+              ] }
+            } }
+            """);
+        Card? source = null;
+        Card? permanent = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                permanent = board.CreateCard(
+                    "27182a", board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+            },
+            hero: true,
+            abilities: runner);
+
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        var suspended = game.Resolve(Decision.Take(action.Id));
+        Assert.Equal(Question.Element, suspended.Prompt!.Asking);
+
+        game.Resolve(Decision.Take(permanent!.ObjectId));
+
+        Assert.False(permanent.Ready);
+        Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
+    }
+
     [Rule("rr:permanent.5")]
     [Rule("rr:labeled-ability.4")]
     [Fact]

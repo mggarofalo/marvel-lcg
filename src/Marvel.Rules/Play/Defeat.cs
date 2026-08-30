@@ -155,6 +155,7 @@ public static class Defeat
             case CardKind.Minion:
                 // `rr:defeat.1` -- discarded, to its owner's pile, which for a
                 // minion is the encounter discard. Unless it is worth points.
+                Discard.PreflightAttachments(world, card);
                 VictoryAttachments(world, facts, card, trigger, events);
                 if (!ToVictoryDisplay(world, facts, card, trigger, events))
                 {
@@ -233,6 +234,7 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(scheme);
         ArgumentNullException.ThrowIfNull(events);
 
+        Discard.PreflightAttachments(world, scheme);
         VictoryAttachments(world, facts, scheme, trigger, events);
         if (!ToVictoryDisplay(world, facts, scheme, trigger, events))
         {

@@ -723,6 +723,41 @@ public sealed class KeywordTests
         Assert.Equal(0, Defeat.VictoryPoints(world, printed));
     }
 
+    [Rule("rr:permanent.5")]
+    [Rule("rr:victory-x.1.2")]
+    [Fact]
+    public void VictorySiblingDoesNotMoveBeforePermanentDepartureRefuses()
+    {
+        // The complete hosted tree is proved removable before the Victory
+        // interrupt moves any sibling. Unsupported Permanent reattachment
+        // therefore leaves every card in its original area.
+        var printed = new Printed()
+            .With("minion", ("HP", "1"))
+            .With("attachment", ("Victory", "2"))
+            .With("permanentish", ("Permanent", "1"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var victory = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
+        var permanent = world.CreateCard(
+            "permanentish", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
+        var events = new List<GameEvent>();
+        Agendas.Happening(world);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Damage.Deal(world, printed, minion, minion, 1, "test", "test", events));
+
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, victory.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
+        Assert.DoesNotContain(events.OfType<CardsMoved>(), moved =>
+            moved.Cards.Any(card => card.Card == victory.ObjectId
+                || card.Card == permanent.ObjectId));
+    }
+
     [Rule("rr:loses")]
     [Rule("rr:victory-x.2")]
     [Fact]
