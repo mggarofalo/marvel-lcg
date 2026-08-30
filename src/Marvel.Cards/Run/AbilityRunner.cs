@@ -4371,6 +4371,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 return false;
             }
             cast.LabelsPreflighted = true;
+            if ((ability.Labels?.Count ?? 0) > 0
+                && LabeledAbilities.WouldBeCancelled(
+                    cast.World, cast.World.Facts, Resolver(cast),
+                    cast.Source, ability.Labels!))
+            {
+                return true;
+            }
             return CanInitiate(ability.Effect, cast)
                 && TargetLegalityOf(ability.Effect, cast) != TargetLegality.Invalid;
         }
@@ -16344,7 +16351,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         bool DiscardedByDamage(AreaProjectionState state, Card target) =>
             state.DamageOf(target) >= Damage.Health(
                 cast.World, cast.World.Facts, target)
-            && DiscardTreeChangesArea(target);
+            && DefeatTreeChangesArea(target);
 
         bool DiscardTreeChangesArea(Card root)
         {
@@ -16363,6 +16370,65 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 var destination = card.Owner < 0
                     ? DeckType.EncounterDiscardPile : DeckType.DiscardPile;
                 if (queried.Contains(destination))
+                {
+                    return true;
+                }
+                foreach (var child in cast.World.Areas
+                             .Where(area => area.Host == card.ObjectId)
+                             .SelectMany(area => area.Cards))
+                {
+                    pending.Push(child);
+                }
+            }
+            return false;
+        }
+
+        bool DefeatTreeChangesArea(Card root)
+        {
+            var kind = cast.World.Facts.Kind(root.FaceId);
+            bool rootDiscards = kind is CardKind.Minion or CardKind.Ally
+                && !Keywords.Has(
+                    cast.World, root, "victory", cast.World.Facts);
+            if (rootDiscards
+                && queried.Contains(root.Owner < 0
+                    ? DeckType.EncounterDiscardPile : DeckType.DiscardPile))
+            {
+                return true;
+            }
+
+            if (kind == CardKind.EncounterVillain)
+            {
+                var villainDeck = cast.World.AreaOf(DeckType.VillainDeck).Cards;
+                var next = villainDeck.Count > 0 ? villainDeck[^1] : null;
+                if (next is not null && string.Equals(
+                    cast.World.Facts.Title(root.FaceId),
+                    cast.World.Facts.Title(next.FaceId),
+                    StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+            else if (kind is not (CardKind.Minion or CardKind.Ally))
+            {
+                return false;
+            }
+
+            var pending = new Stack<Card>(cast.World.Areas
+                .Where(area => area.Host == root.ObjectId)
+                .SelectMany(area => area.Cards));
+            var seen = new HashSet<int>();
+            while (pending.TryPop(out var card))
+            {
+                if (!seen.Add(card.ObjectId))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' reaches a hosted-card cycle while "
+                        + "projecting defeat");
+                }
+                bool victory = Keywords.Has(
+                    cast.World, card, "victory", cast.World.Facts);
+                if (!victory && queried.Contains(card.Owner < 0
+                        ? DeckType.EncounterDiscardPile : DeckType.DiscardPile))
                 {
                     return true;
                 }
@@ -16704,6 +16770,30 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 finally
                 {
                     cast.RestoreChosen(prior);
+                }
+            }
+
+            if (effect.Kind == "thwartSchemes")
+            {
+                var schemes = Every(effect.Require("schemes"), cast);
+                if (schemes.Count == 0)
+                {
+                    return states;
+                }
+                var prior = cast.CaptureChosen();
+                var priorTargets = cast.PowerTargets;
+                try
+                {
+                    cast.Choose(schemes[0]);
+                    cast.SetPowerTargets(schemes);
+                    return Trace(
+                        Tree(effect.Require("power")), states,
+                        repetitions, baseMultiplier);
+                }
+                finally
+                {
+                    cast.RestoreChosen(prior);
+                    cast.SetPowerTargets(priorTargets);
                 }
             }
 
@@ -17633,7 +17723,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public string? Power { get; init; }
 
         /// <summary>Every game element selected for this labelled power.</summary>
-        public IReadOnlyList<Card> PowerTargets { get; init; } = [];
+        public IReadOnlyList<Card> PowerTargets { get; set; } = [];
+
+        public void SetPowerTargets(IReadOnlyList<Card> targets) =>
+            PowerTargets = targets;
 
         /// <summary>The card attributed as performer of the labelled power.</summary>
         public Card? PowerActor { get; init; }
