@@ -433,6 +433,54 @@ public sealed class ActionAbilityTests
         Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
+    [Rule("rr:event.5.1")]
+    [Fact]
+    public void EveryDamageInstanceInsideTheFirstAttackIsModified()
+    {
+        // Both damage nodes belong to one attack wrapper. The one-use modifier
+        // is consumed after that attack, not after its first damage instance.
+        var runner = Runner(
+            "01005",
+            "Action",
+            """
+            { "attack": {
+              "target": { "query": "villain" },
+              "effect": { "seq": [
+                { "dealAttackDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } },
+                { "dealAttackDamage": {
+                  "cards": { "query": "villain" }, "amount": 1
+                } }
+              ] }
+            } }
+            """);
+        Card? played = null;
+        var payments = new List<Card>();
+        var (game, world) = Playing(
+            board =>
+            {
+                played = board.CreateCard("01005", board.Seats[0].Hand);
+                for (int index = 0; index < 3; index++)
+                {
+                    payments.Add(board.CreateCard("01087", board.Seats[0].Hand));
+                }
+            },
+            hero: true,
+            abilities: runner);
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "attackDamage", Amount: 2,
+            Card: played!.ObjectId, Affects: played.ObjectId,
+            Lasts: new Duration(Uses: 1)));
+        var action = Assert.Single(
+            game.Pending!.Affordances, option => option.AnchorId == played.ObjectId);
+
+        game.Resolve(Decision.Take(
+            action.Id, [], [.. payments.Select(card => card.ObjectId)]));
+
+        Assert.Equal(6, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
     [Rule("rr:player-elimination.5")]
     [Rule("rr:player-elimination.step.5")]
     [Rule("rr:upgrade.1")]

@@ -14382,7 +14382,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 cast.Occurrence.Also(Steps.DamageDealt);
             }
         }
-        foreach (var modifier in attackModifiers)
+        // Inside an attack wrapper, every damage instance belongs to the same
+        // attack and the wrapper consumes these after its whole effect. A
+        // direct dealAttackDamage node is itself the attack and consumes here.
+        foreach (var modifier in cast.Power == BasicPowers.AttackVerb
+                     ? []
+                     : attackModifiers)
         {
             cast.World.Effects.Use(modifier);
         }
