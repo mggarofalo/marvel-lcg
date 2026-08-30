@@ -338,6 +338,31 @@ public sealed class CardPlayTests
         Assert.Same(world.Seats[0].Hand, card.Area);
     }
 
+    [Rule("rr:play-restrictions-and-permissions.2")]
+    [Fact]
+    public void APermissionCanPlayAnOwnedCardFromTheDiscardPile()
+    {
+        // A permission may allow "an ally card to be played from a player's
+        // discard pile." The zone and timing are overridden; its printed cost
+        // and other play restrictions remain in force.
+        var printed = Cards().With("ally", ("Cost", "2"));
+        var world = Board(printed);
+        var seat = world.Seats[0];
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        var first = world.Cards[Pay(world, "res")];
+        var second = world.Cards[Pay(world, "res")];
+
+        CardPlay.PlayWithPermission(
+            world, printed, new Silent(), seat, ally,
+            [first.ObjectId, second.ObjectId], []);
+
+        Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, first.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, second.Area.Type);
+    }
+
     [Rule("rr:dash-value.1")]
     [Fact]
     public void AnOmittedCostCannotBePlayedForZero()

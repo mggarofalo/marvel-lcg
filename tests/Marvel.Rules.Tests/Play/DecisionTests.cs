@@ -41,6 +41,7 @@ public sealed class DecisionTests
         Assert.Null(new Decision(1, [2]).Resources);
     }
 
+    [Rule("rr:non-numerical-variable")]
     [Rule("rr:non-numerical-variable.1")]
     [Fact]
     public void ACostVariableIsDefinedSeparatelyFromItsPayment()
