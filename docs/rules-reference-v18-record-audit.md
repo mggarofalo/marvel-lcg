@@ -154,11 +154,11 @@ items.
 | `rr:attack-enemy-activation.step.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.3` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:attack-enemy-activation.step.3.a` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:attack-enemy-activation.step.3.a` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.3.b` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.3.c` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.3.d` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-enemy-activation.step.3.e` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:attack-enemy-activation.step.3.e` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.6` | Executable and cited | — | A behavior test directly cites this record. |
@@ -187,12 +187,12 @@ items.
 | `rr:attack-player-ability-type.step.9` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.1.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-player-ability-type.1.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:attack-player-ability-type.1.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attack-player-ability-type.2.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:attack-player-ability-type.2.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:attack-player-ability-type.3` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:attack-player-ability-type.3.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:attack-player-ability-type.2.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:attack-player-ability-type.2.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:attack-player-ability-type.3` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:attack-player-ability-type.3.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-player-ability-type.5` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:attack-player-ability-type.5.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -218,7 +218,7 @@ items.
 | `rr:boost-boost-icon` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:boost-boost-icon.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:boost-boost-icon.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:boost-boost-icon.3` | Unimplemented behavior | MARVEL-286 | The multi-part damage work item owns separating boost-ability damage from activation damage. |
+| `rr:boost-boost-icon.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:boost-boost-icon.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:boost-boost-icon.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:boost-boost-icon.6` | Executable and cited | — | A behavior test directly cites this record. |
@@ -281,8 +281,8 @@ items.
 | `rr:confuse-confused.7` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:consequential-damage` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:consequential-damage.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:consequential-damage.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:consequential-damage.2.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:consequential-damage.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:consequential-damage.2.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:consequential-damage.2.2` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:constant-ability` | Redirect or summary | — | This record redirects readers to Ability; the destination carries the rule. |
 | `rr:control` | Redirect or summary | — | This record redirects readers to Ownership and Control; the destination carries the rule. |
@@ -326,10 +326,10 @@ items.
 | `rr:damage.step.9` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:damage.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:damage.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:damage.3` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:damage.3.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:damage.3.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:damage.3.3` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:damage.3` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:damage.3.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:damage.3.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:damage.3.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:dash-value` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:dash-value.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:dash-value.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -577,11 +577,11 @@ items.
 | `rr:indirect-damage.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:indirect-damage.3` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:indirect-damage.3.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:indirect-damage.3.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:indirect-damage.3.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:indirect-damage.4` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:indirect-damage.4.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:indirect-damage.5` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:indirect-damage.5.1` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:indirect-damage.4.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:indirect-damage.5` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:indirect-damage.5.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:indirect-damage.6` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:infinite-hit-points` | Redirect or summary | — | This record redirects readers to Hit Points; the destination carries the rule. |
 | `rr:initiating-abilities` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
@@ -763,8 +763,8 @@ items.
 | `rr:otherwise.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:overkill` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:overkill.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:overkill.2` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
-| `rr:overkill.3` | Unimplemented behavior | MARVEL-286 | The multi-part attack and damage implementation work item owns this executable rule. |
+| `rr:overkill.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:overkill.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:overkill.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:overpay` | Redirect or summary | — | This record redirects readers to Cost; the destination carries the rule. |
 | `rr:ownership-and-control` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |

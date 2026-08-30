@@ -57,6 +57,10 @@ namespace Marvel.Rules.State;
 /// <param name="AbilityPlayer">The player resolving the containing ability.</param>
 /// <param name="AbilityActor">The performer attributed to the containing labeled ability.</param>
 /// <param name="AbilityHasContinuation">Whether structural ancestor work remains.</param>
+/// <param name="TargetIncarnation">
+/// The scheme copy that was chosen. Object ids survive leaving play, so this
+/// distinguishes that target from the same physical card entering play again.
+/// </param>
 public sealed record CharacterThwart(
     int Thwarter,
     int Scheme,
@@ -80,4 +84,5 @@ public sealed record CharacterThwart(
     bool FinalPlayer = false,
     int AbilityPlayer = -1,
     int AbilityActor = -1,
-    bool AbilityHasContinuation = false);
+    bool AbilityHasContinuation = false,
+    int TargetIncarnation = -1);

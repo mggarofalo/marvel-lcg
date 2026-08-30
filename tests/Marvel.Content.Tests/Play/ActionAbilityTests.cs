@@ -340,13 +340,15 @@ public sealed partial class ActionAbilityTests
             world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
     }
 
+    [Rule("rr:attack-player-ability-type.3")]
+    [Rule("rr:attack-player-ability-type.3.1")]
     [Rule("rr:event.5.1")]
     [Fact]
     public void AnAttackModifierAppliesOnlyToAnEventsFirstAttack()
     {
-        // A modifier to damage "an attack" deals applies to "only the first"
-        // when an event initiates multiple attacks. The first deals three and
-        // the second deals one.
+        // Each listed damage instance is a separate attack. A modifier to one
+        // attack therefore increases only the first: it deals three and the
+        // second deals one.
         var runner = Runner(
             "01005",
             "Action",
@@ -381,6 +383,8 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
+    [Rule("rr:attack-player-ability-type.2.1")]
+    [Rule("rr:attack-player-ability-type.3.1")]
     [Rule("rr:event.5.1")]
     [Fact]
     public void AnAttackModifierIsConsumedAtTheAttackWrapperBoundary()
@@ -433,12 +437,15 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
+    [Rule("rr:attack-player-ability-type.2.1")]
+    [Rule("rr:attack-player-ability-type.2.2")]
     [Rule("rr:event.5.1")]
     [Fact]
     public void EveryDamageInstanceInsideTheFirstAttackIsModified()
     {
-        // Both damage nodes belong to one attack wrapper. The one-use modifier
-        // is consumed after that attack, not after its first damage instance.
+        // A labelled attack remains one attack across multiple damage
+        // instances, and an increase applies to each instance that does not
+        // say "additional". Both one-damage nodes therefore become three.
         var runner = Runner(
             "01005",
             "Action",

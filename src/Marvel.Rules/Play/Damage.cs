@@ -34,9 +34,17 @@ public static class Damage
         Suspended,
     }
 
-    /// <summary>The characters and amount actually damaged by one attack.</summary>
+    /// <summary>The characters, damage, and excess produced by one attack.</summary>
     public sealed record AttackResult(
-        IReadOnlyList<Card> Characters, long Amount, bool Suspended = false);
+        IReadOnlyList<Card> Characters, long Amount, bool Suspended = false,
+        long Excess = 0, long Dealt = 0, long Taken = 0);
+
+    /// <summary>Damage fixed through step 4, ready for simultaneous placement.</summary>
+    internal sealed record PlacedDamage(Card Target, long Dealt, long Taken)
+    {
+        /// <summary>Whether the character actually took damage.</summary>
+        public bool Landed => Taken > 0;
+    }
 
     /// <summary>
     /// Deals damage to a character, and defeats it if that was enough.
@@ -72,6 +80,15 @@ public static class Damage
     public static Outcome DealOutcome(
         World world, ICardFacts facts, Card source, Card target, long amount,
         string trigger, string verb, List<GameEvent> events, int by = -1)
+        => DealWithAmounts(
+            world, facts, source, target, amount, trigger, verb, events,
+            out _, out _, by);
+
+    /// <summary>Deals damage and reports the distinct dealt and taken amounts.</summary>
+    internal static Outcome DealWithAmounts(
+        World world, ICardFacts facts, Card source, Card target, long amount,
+        string trigger, string verb, List<GameEvent> events,
+        out long dealt, out long taken, int by = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -79,9 +96,51 @@ public static class Damage
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(events);
 
+        var placed = Place(
+            world, facts, source, target, amount, trigger, verb, events);
+        dealt = placed.Dealt;
+        taken = placed.Taken;
+        return FinishPlaced(
+            world, facts, source, placed, trigger, verb, events, by);
+    }
+
+    /// <summary>
+    /// Resolve damage through placement while deferring defeat, so simultaneous
+    /// damage can be placed on every recipient before any one leaves play.
+    /// </summary>
+    internal static PlacedDamage Place(
+        World world, ICardFacts facts, Card source, Card target, long amount,
+        string trigger, string verb, List<GameEvent> events)
+    {
+        var prepared = Prepare(
+            world, facts, source, target, amount, trigger, events);
+        ApplyPlaced(world, facts, prepared, trigger, verb, events);
+        return prepared;
+    }
+
+    /// <summary>Resolve damage through step 4 without changing hit points.</summary>
+    internal static PlacedDamage Prepare(
+        World world, ICardFacts facts, Card source, Card target, long amount,
+        string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(events);
+
+        amount = Replace(world, target, source, amount, events);
+        return PrepareAfterReplacement(
+            world, facts, source, target, amount, trigger, events);
+    }
+
+    /// <summary>Resolve damage step 1 and return the still-imminent amount.</summary>
+    internal static long Replace(
+        World world, Card target, Card source, long amount, List<GameEvent> events)
+    {
         if (amount <= 0)
         {
-            return Outcome.NotDefeated;
+            return 0;
         }
 
         // `rr:cannot` -- "cannot" is absolute. A character forbidden from
@@ -89,7 +148,7 @@ public static class Damage
         // there is no imminent damage to replace and no tough card to spend.
         if (!world.Abilities.CanTakeDamage(world, target, source))
         {
-            return Outcome.NotDefeated;
+            return 0;
         }
 
         // `rr:damage.step.1` -- "abilities that trigger when [character] would
@@ -97,11 +156,20 @@ public static class Damage
         // sits. It comes before the tough card, which is step 2, and a card
         // that replaces all of the damage leaves nothing for the rest of the
         // nine steps to do.
-        amount = world.Abilities.WouldBeDealt(world, target, source, amount, events);
+        return world.Abilities.WouldBeDealt(world, target, source, amount, events);
+    }
+
+    /// <summary>Continue damage after step 1 has fixed the amount dealt.</summary>
+    internal static PlacedDamage PrepareAfterReplacement(
+        World world, ICardFacts facts, Card source, Card target, long amount,
+        string trigger, List<GameEvent> events)
+    {
         if (amount <= 0)
         {
-            return Outcome.NotDefeated;
+            return new PlacedDamage(target, 0, 0);
         }
+
+        long dealt = amount;
 
         // `rr:tough.2`: "if a character with a tough status card would take any
         // amount of damage, **prevent all of that damage** and discard a tough
@@ -115,6 +183,7 @@ public static class Damage
         // `amount <= 0` return above is that clause.
         if (Statuses.Has(world, target, Statuses.Tough))
         {
+            world.Abilities.DamagePreventedByTough(world, target, source, events);
             var tough = world.Areas
                 .Where(area => area.Type == DeckType.StatusArea && area.Host == target.ObjectId)
                 .SelectMany(area => area.Cards)
@@ -125,18 +194,56 @@ public static class Damage
             // `rr:tough.3`: "as a tough status card prevents damage fully, the
             // character who had the tough status card is **not considered to
             // have taken damage**." So no health event, and no defeat.
-            return Outcome.NotDefeated;
+            return new PlacedDamage(target, dealt, 0);
         }
 
-        long printed = Health(world, facts, target);
-        long before = Math.Max(0, printed - target.Damage);
-        target.TakeDamage(amount);
-        long after = Math.Max(0, printed - target.Damage);
+        // `rr:damage.step.3` and `.3.2`: modifying what the character takes
+        // (including prevention) does not rewrite the amount the source dealt.
+        // Step 1 has already fixed that dealt amount; only placement below uses
+        // the reduced taken amount.
+        amount = world.Abilities.WouldTake(world, target, source, amount, events);
+        if (amount <= 0)
+        {
+            return new PlacedDamage(target, dealt, 0);
+        }
+        long taken = amount;
 
-        events.Add(new FieldSet(target.ObjectId, "health", before, after)
+        return new PlacedDamage(target, dealt, taken);
+    }
+
+    /// <summary>Place one already-fixed share of simultaneous damage at step 5.</summary>
+    internal static void ApplyPlaced(
+        World world, ICardFacts facts, PlacedDamage placed,
+        string trigger, string verb, List<GameEvent> events)
+    {
+        if (!placed.Landed)
+        {
+            return;
+        }
+
+        long printed = Health(world, facts, placed.Target);
+        long before = Math.Max(0, printed - placed.Target.Damage);
+        placed.Target.TakeDamage(placed.Taken);
+        long after = Math.Max(0, printed - placed.Target.Damage);
+        events.Add(new FieldSet(placed.Target.ObjectId, "health", before, after)
         {
             Trigger = trigger, Verb = verb,
         });
+    }
+
+    /// <summary>Resolve damage step 6 and defeat after step 5 placement.</summary>
+    internal static Outcome FinishPlaced(
+        World world, ICardFacts facts, Card source, PlacedDamage placed,
+        string trigger, string verb, List<GameEvent> events, int by = -1,
+        Occurrence? recordDefeatOn = null)
+    {
+        if (!placed.Landed)
+        {
+            return Outcome.NotDefeated;
+        }
+
+        var target = placed.Target;
+        long after = Math.Max(0, Health(world, facts, target) - target.Damage);
 
         // `rr:damage.step.6` -- abilities that trigger "when [character]
         // would be defeated". Step 5 has placed the damage, so the condition
@@ -147,7 +254,8 @@ public static class Damage
         {
             int beforeProcedure = world.Agenda.Count;
             if (!world.Abilities.WouldBeDefeated(
-                    world, target, source, trigger, verb, by, events))
+                    world, target, source, trigger, verb, by, events,
+                    recordDefeatOn))
             {
                 return world.Agenda.Count > beforeProcedure
                     ? Outcome.Suspended
@@ -171,7 +279,8 @@ public static class Damage
 
         int beforeDefeat = world.Agenda.Count;
         bool defeated = Defeat.Character(
-            world, facts, target, trigger, events, how: verb, by: by);
+            world, facts, target, trigger, events, how: verb, by: by,
+            recordOn: recordDefeatOn);
         if (!defeated && world.Agenda.Count > beforeDefeat)
         {
             return Outcome.Suspended;
@@ -295,9 +404,9 @@ public static class Damage
             }
         }
 
-        // Worked out before the damage, because `rr:overkill.1` is "the damage
-        // beyond its hit points" and after the defeat the character is gone.
-        long beyond = Math.Max(0, amount - Math.Max(0, Health(world, facts, target) - target.Damage));
+        // Remaining hit points are captured before the damage because the
+        // defeated character may leave play before overkill is resolved.
+        long remaining = Math.Max(0, Health(world, facts, target) - target.Damage);
         // The same is true of control. A defeated ally moves to its owner's
         // discard pile, but `rr:overkill.1` sends excess damage to the identity
         // of the player who **controlled** it while it was defeated.
@@ -316,13 +425,17 @@ public static class Damage
         var damaged = new List<Card>();
         int firstDamageEvent = events.Count;
         long before = target.Damage;
-        bool overkill = beyond > 0
-            && Keywords.Has(world, attacker, Keywords.Overkill, facts);
+        bool hasOverkill = Keywords.Has(world, attacker, Keywords.Overkill, facts);
         bool canRetaliate = retaliate
             && !Keywords.Has(world, attacker, Keywords.Ranged, facts);
-        var outcome = DealOutcome(
+        var outcome = DealWithAmounts(
             world, facts, source, target, amount, trigger, verb, events,
-            by: attacker.Owner);
+            out long dealtAmount, out long takenAmount, by: attacker.Owner);
+        // Prevention changes what is taken without changing what was dealt,
+        // but `rr:overkill.4` specifically withholds prevented excess. The
+        // spill is therefore the taken amount beyond the former hit points.
+        long beyond = Math.Max(0, takenAmount - remaining);
+        bool overkill = beyond > 0 && hasOverkill;
         if (outcome == Outcome.Defeated && overkill)
         {
             Spill(world, facts, source, target, spillPlayer, beyond, trigger, events);
@@ -365,7 +478,14 @@ public static class Damage
             Retaliate(world, facts, target, attacker, trigger, events);
         }
 
-        return new AttackResult(damaged, dealt, outcome == Outcome.Suspended);
+        // `rr:overkill.3`: a card ability that counts excess damage uses the
+        // same value the overkill keyword calculated. Expose that calculation
+        // rather than asking every card to reconstruct the defeated target's
+        // former remaining hit points after it has left play.
+        long excess = outcome == Outcome.Defeated ? beyond : 0;
+        return new AttackResult(
+            damaged, dealt, outcome == Outcome.Suspended, excess,
+            dealtAmount, takenAmount);
     }
 
     /// <summary>Resolve overkill and retaliate after a suspended defeat decision.</summary>

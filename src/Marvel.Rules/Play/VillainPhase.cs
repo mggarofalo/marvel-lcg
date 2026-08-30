@@ -249,6 +249,25 @@ public interface ICardAbilities : IWindowAbilities
     long WouldBeDealt(
         World world, Card target, Card source, long amount, List<GameEvent> events);
 
+    /// <summary>Step 3 of dealing damage — modify how much the character takes.</summary>
+    /// <remarks>
+    /// <c>rr:damage.3.2</c> distinguishes this from <see cref="WouldBeDealt"/>:
+    /// prevention changes the amount taken without changing the amount dealt.
+    /// </remarks>
+    long WouldTake(
+        World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
+
+    /// <summary>Consume prevention committed to damage stopped by Tough.</summary>
+    /// <remarks>
+    /// Tough resolves at damage step 2, before step 3 changes the amount taken.
+    /// An interrupt already resolved for this damage instance must nevertheless
+    /// expire with that instance rather than prevent unrelated later damage.
+    /// </remarks>
+    void DamagePreventedByTough(
+        World world, Card target, Card source, List<GameEvent> events)
+    {
+    }
+
     /// <summary>
     /// Step 6 of dealing damage — <c>rr:damage.step.6</c>.
     /// </summary>
@@ -265,7 +284,7 @@ public interface ICardAbilities : IWindowAbilities
     /// <returns>True when step 6 completed synchronously; false when it suspended.</returns>
     bool WouldBeDefeated(
         World world, Card target, Card source, string trigger, string verb, int by,
-        List<GameEvent> events)
+        List<GameEvent> events, Timing.Occurrence? recordDefeatOn = null)
     {
         WouldBeDefeated(world, target, events);
         return true;
@@ -652,6 +671,16 @@ public class NoCardAbilities : ICardAbilities
         World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
 
     /// <inheritdoc/>
+    public virtual long WouldTake(
+        World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
+
+    /// <inheritdoc/>
+    public virtual void DamagePreventedByTough(
+        World world, Card target, Card source, List<GameEvent> events)
+    {
+    }
+
+    /// <inheritdoc/>
     public virtual void WouldBeDefeated(
         World world, Card target, List<GameEvent> events)
     {
@@ -910,12 +939,32 @@ public static class VillainPhase
                 Attack.FlipBoostCards(world, facts, abilities, events);
                 break;
 
+            case Steps.FinishBoostCard:
+                Attack.FinishBoostCard(world, facts, abilities, step, events);
+                break;
+
             case Steps.CalculateAttackDamage:
                 Attack.CalculateDamage(world, facts);
                 break;
 
             case Steps.DealAttackDamage:
                 Attack.DealDamage(world, facts, events);
+                break;
+
+            case Steps.AssignIndirectAttackDamage:
+                return Attack.IndirectDamagePrompt(world, facts, step);
+
+            case Steps.PrepareIndirectAttackDamage:
+                // Its interrupt and response windows are the procedure. The
+                // simultaneous placement waits in ApplyIndirectAttackDamage.
+                break;
+
+            case Steps.ApplyIndirectAttackDamage:
+                Attack.ApplyIndirectDamage(world, facts, step, events);
+                break;
+
+            case Steps.FinishIndirectAttackDamage:
+                Attack.FinishIndirectDamage(world, facts, step, events);
                 break;
 
             case Steps.NextAttackTarget:
@@ -1148,6 +1197,10 @@ public static class VillainPhase
         {
             case Steps.DeclareDefender:
                 Attack.Defend(world, facts, abilities, input, events);
+                break;
+
+            case Steps.AssignIndirectAttackDamage:
+                Attack.AssignIndirectDamage(world, facts, step, input, events);
                 break;
 
             case Steps.ChooseOption:
@@ -1508,7 +1561,8 @@ public static class VillainPhase
         {
             Defeat.Character(
                 world, facts, target, step.ProcedureTrigger, events,
-                how: step.ProcedureVerb, by: step.ProcedureBy);
+                how: step.ProcedureVerb, by: step.ProcedureBy,
+                recordOn: step.ProcedureOwnerOccurrence);
         }
     }
 

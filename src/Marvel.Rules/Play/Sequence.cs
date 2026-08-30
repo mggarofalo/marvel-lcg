@@ -90,16 +90,7 @@ public static class Sequence
                 // Answering a plan may schedule nested work. Advance the plan
                 // that was being worked rather than whichever item is now at
                 // the front of the agenda.
-                if (step.What is Steps.ResumeWouldBeDefeated
-                    or Steps.ResumeCardDefeatedAbility
-                    or Steps.ResumeRevealAbility)
-                {
-                    world.Agenda.Advance(step, planOccurrence);
-                }
-                else
-                {
-                    world.Agenda.Advance(planOccurrence);
-                }
+                world.Agenda.Advance(step, planOccurrence);
                 continue;
             }
 
@@ -113,6 +104,24 @@ public static class Sequence
                 // `rr:triggering-condition.1` is per occurrence, and the
                 // occurrence is what remembers which abilities have used it.
                 var occurrence = world.Agenda.Begin(world, facts);
+
+                if (step.What == Steps.PrepareIndirectAttackDamage)
+                {
+                    long prepared = Attack.PrepareIndirectDamage(
+                        world, step, events);
+                    if (prepared <= 0)
+                    {
+                        // `rr:replacement-effect.1`: a fully replaced effect
+                        // is no longer imminent, so it has neither optional
+                        // interrupts nor a response window.
+                        if (world.Windows.Current is not null)
+                        {
+                            world.Windows.Close();
+                        }
+                        world.Agenda.Cancel(occurrence);
+                        continue;
+                    }
+                }
 
                 // `rr:status-cards.2`: status-card abilities have timing
                 // priority over every conflicting triggered ability. A stun
@@ -137,8 +146,12 @@ public static class Sequence
                     return statusCancelled;
                 }
 
+                IWindowAbilities offeredAbilities =
+                    step.What == Steps.PrepareIndirectAttackDamage
+                        ? new OptionalDamageInterrupts(abilities)
+                        : abilities;
                 if (Offering.Work(
-                    world, abilities, occurrence, kind, events, scope,
+                    world, offeredAbilities, occurrence, kind, events, scope,
                     ResolvePriorityStatus) is { } asked)
                 {
                     return asked;
@@ -191,6 +204,31 @@ public static class Sequence
         return null;
     }
 
+    private sealed class OptionalDamageInterrupts(IWindowAbilities inner)
+        : IWindowAbilities
+    {
+        public IReadOnlyList<PendingAbility> Waiting(
+            World world, Occurrence occurrence, WindowKind window) =>
+            [.. inner.Waiting(world, occurrence, window).Where(ability =>
+                window != WindowKind.Interrupt
+                || !AbilityTypes.IsMandatory(ability.Type))];
+
+        public IReadOnlyList<GameEvent> Resolve(
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) =>
+            inner.Resolve(world, occurrence, ability, paying, chosen);
+
+        public IReadOnlyList<GameEvent> Resolve(
+            World world, Occurrence occurrence, PendingAbility ability,
+            IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+            IReadOnlyDictionary<string, long>? values = null,
+            IReadOnlyList<ResourceAllocation>? allocations = null) =>
+            inner.Resolve(world, occurrence, ability, paying, chosen, values, allocations);
+
+        public Affordance Describe(World world, PendingAbility ability) =>
+            inner.Describe(world, ability);
+    }
+
     /// <summary>
     /// Give a player's answer to the window that asked for it.
     /// </summary>
@@ -233,10 +271,11 @@ public static class Sequence
             VillainPhase.Answered(world, facts, abilities, step, input, events);
             if (step.What is Steps.ChooseWouldBeDefeated
                 or Steps.ChooseCardDefeatedAbility
-                or Steps.ChooseRevealAbility)
+                or Steps.ChooseRevealAbility
+                or Steps.AssignIndirectAttackDamage)
             {
                 // Resolving one selected ability can insert its own work and a
-                // procedure continuation ahead of this question. All three
+                // procedure continuation ahead of this question. These paths
                 // deliberately share the containing occurrence, so identity
                 // alone would advance the new continuation and replay the
                 // answered question.

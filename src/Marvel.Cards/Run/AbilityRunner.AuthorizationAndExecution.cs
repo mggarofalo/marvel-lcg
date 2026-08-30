@@ -709,6 +709,10 @@ public sealed partial class AbilityRunner
                 Indirect(node, cast);
                 break;
 
+            case "makeAttackIndirect":
+                Attack.MakeIndirect(cast.World);
+                break;
+
             case "dealDamage":
                 DealDamage(node, cast);
                 break;
@@ -977,10 +981,10 @@ public sealed partial class AbilityRunner
         "isKind" => Find(node.Require("card"), cast) is { } subject
             && cast.World.Facts.Kind(subject.FaceId) == Kind(Word(node.Require("kind"))),
 
-        "isYourIdentity" => (cast.Occurrence.Is(Steps.DamageWouldBeDealt)
-                && cast.World.Attack is { } attack
-                    ? attack.Target
-                    : Find(node.Argument, cast)?.ObjectId)
+        // Damage occurrences name the exact recipient. That differs from the
+        // declared attack target for indirect damage, whose assignment can
+        // name any friendly hero or ally after defense is settled.
+        "isYourIdentity" => Find(node.Argument, cast)?.ObjectId
             == cast.World.Seats[Resolver(cast)].IdentityCard.ObjectId,
 
         // "Defeated **by anything other than consequential damage**." What did

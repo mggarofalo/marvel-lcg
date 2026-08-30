@@ -216,6 +216,64 @@ public static class BasicPowers
         InitiateAttack(world, character, enemy, player);
     }
 
+    /// <summary>Make a basic attack under permission not to exhaust.</summary>
+    /// <remarks>
+    /// <c>rr:attack-player-ability-type.1.2</c> explicitly permits the granting
+    /// ability to use an exhausted hero or ally. This method is the permission
+    /// boundary: ordinary basic attacks continue through <see cref="BasicAttack"/>
+    /// and must pay their exhaust cost.
+    /// </remarks>
+    public static void BasicAttackWithoutExhausting(
+        World world, ICardFacts facts, Card character, Card enemy,
+        List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(character);
+        ArgumentNullException.ThrowIfNull(enemy);
+        ArgumentNullException.ThrowIfNull(events);
+
+        int player = character.Area.PlayArea.Player;
+        var kind = FacedownDrones.Kind(character, facts);
+        bool hero = kind == CardKind.Hero
+            && player >= 0
+            && world.Seats[player].IdentityCard.ObjectId == character.ObjectId
+            && Forms.In(world, world.Seats[player], facts, Forms.Hero);
+        bool ally = kind == CardKind.Ally
+            && character.Area.Type == DeckType.AlliesArea
+            && player >= 0;
+        if ((!hero && !ally) || !CanUsePower(facts, character, "ATK"))
+        {
+            throw new RulesNotImplementedException(
+                $"card {character.ObjectId} cannot make the permitted basic attack");
+        }
+
+        if (!Statuses.Afflicted(world, facts, character, Statuses.Stunned)
+            && !Attackable(world, facts, player).Any(card => card.ObjectId == enemy.ObjectId))
+        {
+            throw new RulesNotImplementedException(
+                $"card {enemy.ObjectId} is not an enemy card {character.ObjectId} can attack");
+        }
+
+        if (Cancelled(world, facts, character, Statuses.Stunned, events))
+        {
+            return;
+        }
+
+        InitiateAttack(world, character, enemy, player);
+        if (ally)
+        {
+            world.Agenda.Then(new PhaseStep(
+                Steps.AllyConsequentialDamage,
+                world.Agenda.Current?.Round ?? 0,
+                9,
+                Index: player,
+                Subject: character.ObjectId,
+                Seat: player,
+                Character: enemy.ObjectId));
+        }
+    }
+
     /// <summary>
     /// Puts a character's attack on the agenda —
     /// <c>rr:attack-player-ability-type</c>.
@@ -271,7 +329,8 @@ public static class BasicPowers
             finalPlayer,
             abilityPlayer,
             abilityActor,
-            abilityHasContinuation);
+            abilityHasContinuation,
+            enemy.Incarnation);
         world.CharacterAttack = attack;
         var step = new PhaseStep(
             Steps.CharacterAttacks,
@@ -400,7 +459,8 @@ public static class BasicPowers
             finalPlayer,
             abilityPlayer,
             abilityActor,
-            abilityHasContinuation);
+            abilityHasContinuation,
+            scheme.Incarnation);
         world.CharacterThwart = thwart;
         var step = new PhaseStep(
             Steps.CharacterThwarts,
@@ -446,6 +506,15 @@ public static class BasicPowers
         {
             throw new RulesNotImplementedException(
                 "a character thwart is resolving and the board holds none");
+        }
+
+        if (thwart.AbilityIndex < 0
+            && (!DeckTypes.IsInPlay(world.Cards[thwart.Scheme].Area.Type)
+                || world.Cards[thwart.Scheme].Incarnation != thwart.TargetIncarnation))
+        {
+            world.Agenda.CancelConsequentialDamage(
+                thwart.Thwarter, thwart.Scheme, attack: false);
+            return;
         }
 
         if (thwart.AbilityIndex >= 0)
@@ -507,6 +576,18 @@ public static class BasicPowers
         var occurrence = world.Agenda.Occurrence
             ?? throw new RulesNotImplementedException(
                 "a character attack resolved without an occurrence for its response window");
+        if (attack.AbilityIndex < 0
+            && (!DeckTypes.IsInPlay(world.Cards[attack.Enemy].Area.Type)
+                || world.Cards[attack.Enemy].Incarnation != attack.TargetIncarnation))
+        {
+            // `rr:consequential-damage.2` and `.2.1`: if an ally's basic-power
+            // target leaves before application, the exhausted ally neither
+            // attacked nor takes consequential damage. No AttackEnds condition
+            // is added because the attack itself aborted.
+            world.Agenda.CancelConsequentialDamage(
+                attack.Attacker, attack.Enemy, attack: true);
+            return;
+        }
         if (attack.AbilityIndex >= 0)
         {
             world.Abilities.ResolveCardAttack(world, attack, occurrence, events);

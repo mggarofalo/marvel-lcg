@@ -53,6 +53,31 @@ public sealed class DamageSourceTests
         Assert.Same(source, abilities.ReplacementSource);
     }
 
+    [Rule("rr:damage.3")]
+    [Rule("rr:damage.3.1")]
+    [Rule("rr:damage.3.2")]
+    [Rule("rr:damage.3.3")]
+    [Fact]
+    public void DealtDamageIsModifiedBeforeTakenDamageIsModified()
+    {
+        // Increasing the three damage dealt to five also makes five the amount
+        // the character would take. Preventing one at the later take boundary
+        // leaves four to place without changing the already-fixed five dealt.
+        var facts = new Printed();
+        var world = Board(facts);
+        var source = world.CreateCard(
+            "source", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var target = world.CreateCard(
+            "target", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var abilities = new DamageModifier();
+        world.Abilities = abilities;
+
+        Damage.Deal(world, facts, source, target, 3, "test", "Deal_Damage", []);
+
+        Assert.Equal(5, abilities.AmountThatWouldBeTaken);
+        Assert.Equal(4, target.Damage);
+    }
+
     [Rule("rr:attack-player-ability-type.2")]
     [Rule("rr:cannot")]
     [Rule("rr:retaliate-x")]
@@ -101,6 +126,22 @@ public sealed class DamageSourceTests
             ReplacementVisited = true;
             ReplacementSource = source;
             return amount;
+        }
+    }
+
+    private sealed class DamageModifier : NoCardAbilities
+    {
+        public long AmountThatWouldBeTaken { get; private set; }
+
+        public override long WouldBeDealt(
+            World world, Card target, Card source, long amount, List<GameEvent> events) =>
+            amount + 2;
+
+        public override long WouldTake(
+            World world, Card target, Card source, long amount, List<GameEvent> events)
+        {
+            AmountThatWouldBeTaken = amount;
+            return amount - 1;
         }
     }
 

@@ -396,6 +396,8 @@ public sealed class StatusTests
 
     [Rule("rr:overkill")]
     [Rule("rr:overkill.1")]
+    [Rule("rr:overkill.2")]
+    [Rule("rr:overkill.3")]
     [Rule("rr:excess-damage")]
     [Fact]
     public void OverkillCarriesTheExcessFromADefeatedMinionToTheVillain()
@@ -404,6 +406,7 @@ public sealed class StatusTests
         // remaining hit points." If overkill defeats a minion, that excess is
         // dealt to the villain: six against two is four beyond.
         var printed = Cards().With("hero", ("ATK", "6"), ("HP", "10"))
+            .With("villain", ("Retaliate", "2"))
             .With("minion", ("HP", "2"));
         var world = Board(printed);
         var hero = world.Seats[0].IdentityCard;
@@ -412,11 +415,14 @@ public sealed class StatusTests
             "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
         Grant(world, hero, Marvel.Rules.Timing.Keywords.Overkill);
-        BasicPowers.BasicAttack(world, printed, 0, minion, []);
-        Agendas.Finish(world, printed);
+        Agendas.Happening(world);
+        var result = Damage.Attack(
+            world, printed, hero, minion, 6, "test", "Attack", []);
 
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Equal(4, villain.Damage);
+        Assert.Equal(0, hero.Damage);
+        Assert.Equal(4, result.Excess);
     }
 
     [Rule("rr:overkill.1")]
@@ -506,6 +512,43 @@ public sealed class StatusTests
 
         Assert.Equal(0, minion.Damage);
         Assert.Equal(0, villain.Damage);
+    }
+
+    [Rule("rr:damage.3.2")]
+    [Rule("rr:overkill.3")]
+    [Rule("rr:overkill.4")]
+    [Fact]
+    public void PreventedExcessIsExcludedFromOverkillAndItsReportedValue()
+    {
+        // Six is still the damage dealt, but preventing three means the
+        // two-hit-point minion takes three. Only one taken point is excess, so
+        // overkill deals one and reports that same value to card abilities.
+        var printed = Cards().With("minion", ("HP", "2"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Abilities = new PreventThree();
+        Grant(world, hero, Marvel.Rules.Timing.Keywords.Overkill);
+        Agendas.Happening(world);
+
+        var result = Damage.Attack(
+            world, printed, hero, minion, 6, "test", "Attack", []);
+
+        Assert.Equal(6, result.Dealt);
+        Assert.Equal(3, result.Taken);
+        Assert.Equal(1, result.Excess);
+        Assert.Equal(1, villain.Damage);
+    }
+
+    private sealed class PreventThree : NoCardAbilities
+    {
+        public override long WouldTake(
+            World world, Card target, Card source, long amount,
+            List<Marvel.Rules.Events.GameEvent> events) => target.FaceId == "minion"
+                ? Math.Max(0, amount - 3)
+                : amount;
     }
 
     /// <summary>Grants a keyword the way a card ability does.</summary>

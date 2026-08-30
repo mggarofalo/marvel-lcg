@@ -138,6 +138,265 @@ public sealed class InfiniteHunterTests
         Assert.Equal(["placeThreat", "seq"], asked.Affordances.Select(option => option.Label));
     }
 
+    [Rule("rr:attack-enemy-activation.step.3.a")]
+    [Rule("rr:attack-enemy-activation.step.3.e")]
+    [Fact]
+    public void ABoostChoiceFinishesBeforeTheNextBoostCardTurnsFaceup()
+    {
+        var (world, runner) = Board();
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var second = deck.Cards[^1];
+        var hunter = world.CreateCard(AuthoredCards.InfiniteHunter, deck);
+        World.MoveToTop(hunter, deck);
+        var events = new List<GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Attack.GiveAdditionalBoostCard(world, villain, "test", events);
+        while (defend.Asking != Question.Defender)
+        {
+            Sequence.Answer(
+                world, Cards, runner, defend,
+                defend.Cancellable
+                    ? Decision.Decline
+                    : Decision.Take(Assert.Single(defend.Affordances).Id),
+                events);
+            defend = Sequence.Work(world, Cards, runner, events)!;
+        }
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var choose = Sequence.Work(world, Cards, runner, events)!;
+
+        Assert.Equal(Question.Option, choose.Asking);
+        Assert.Equal(DeckType.BoostingArea, hunter.Area.Type);
+        Assert.True(hunter.FaceUp);
+        Assert.Equal(DeckType.BoostCardsDeck, second.Area.Type);
+        Assert.False(second.FaceUp);
+
+        Sequence.Answer(world, Cards, runner, choose, Decision.Take(1), events);
+        var asked = Sequence.Work(world, Cards, runner, events);
+        while (asked is not null)
+        {
+            Sequence.Answer(
+                world, Cards, runner, asked,
+                asked.Cancellable
+                    ? Decision.Decline
+                    : Decision.Take(Assert.Single(asked.Affordances).Id),
+                events);
+            asked = Sequence.Work(world, Cards, runner, events);
+        }
+
+        Assert.Equal(DeckType.EncounterDiscardPile, hunter.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
+    }
+
+    [Rule("rr:attack-enemy-activation.step.3.b")]
+    [Rule("rr:response")]
+    [Fact]
+    public void SuspendedBoostFinishesBeforeTheFlipResponseWindow()
+    {
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            {"cards":[
+              {"card":"45065","abilities":[{
+                "trigger":{"event":"WhenCardRevealed","timing":"Boost","subject":"this"},
+                "effect":{"choose":{"options":[
+                  {"placeThreat":{"scheme":{"query":"mainScheme"},"amount":2}},
+                  {"grantUntil":{"card":"activatingEnemy","keyword":"attack",
+                                 "amount":2,"until":"EndOfActivation"}}
+                ]}}
+              }]},
+              {"card":"01006","abilities":[{
+                "trigger":{"event":"WhenBoostCardsFlipped","timing":"ForcedResponse",
+                           "subject":"game"},
+                "effect":{"placeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}
+              }]}
+            ]}
+            """));
+        var (world, _) = Board();
+        world.Abilities = runner;
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
+        world.CreateCard(
+            "01006", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long before = main.Tokens.GetValueOrDefault("k_threat");
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var hunter = world.CreateCard(AuthoredCards.InfiniteHunter, deck);
+        World.MoveToTop(hunter, deck);
+        var events = new List<GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var choose = Sequence.Work(world, Cards, runner, events)!;
+
+        Assert.Equal(Question.Option, choose.Asking);
+        Assert.Equal(before, main.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(DeckType.BoostingArea, hunter.Area.Type);
+
+        Sequence.Answer(world, Cards, runner, choose, Decision.Take(1), events);
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
+
+        Assert.Equal(before + 1, main.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(DeckType.EncounterDiscardPile, hunter.Area.Type);
+    }
+
+    [Rule("rr:attack-enemy-activation.step.3.b")]
+    [Rule("rr:damage.step.6")]
+    [Fact]
+    public void BoostFinishingWaitsForNestedDefeatInterrupt()
+    {
+        // A boost ability can itself start a resumable rules procedure. The
+        // boost card remains in its step-3 window until that child finishes;
+        // its icons, discard, and the next boost cannot jump ahead of the
+        // outstanding damage-step-6 interrupt.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            {"cards":[
+              {"card":"45065","abilities":[{
+                "trigger":{"event":"WhenCardRevealed","timing":"Boost","subject":"this"},
+                "effect":{"dealDamage":{"cards":"you","amount":20}}
+              }]},
+              {"card":"01017","abilities":[{
+                "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
+                           "subject":"attachedTo"},
+                "effect":{"heal":{"card":"attachedTo",
+                                    "amount":{"damageOn":"attachedTo"}}}
+              }]}
+            ]}
+            """));
+        var (world, _) = Board();
+        world.Abilities = runner;
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        world.CreateCard(
+            "01017",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0),
+                host: identity.ObjectId, cardOwner: 0));
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var hunter = world.CreateCard(AuthoredCards.InfiniteHunter, deck);
+        World.MoveToTop(hunter, deck);
+        var events = new List<GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var save = Sequence.Work(world, Cards, runner, events)!;
+
+        Assert.Equal(Question.Opportunity, save.Asking);
+        Assert.Equal(DeckType.BoostingArea, hunter.Area.Type);
+        Assert.True(identity.Damage >= Damage.Health(world, Cards, identity));
+
+        Sequence.Answer(
+            world, Cards, runner, save,
+            Decision.Take(Assert.Single(save.Affordances).Id), events);
+        var remaining = Sequence.Work(world, Cards, runner, events);
+        while (remaining is not null)
+        {
+            Sequence.Answer(
+                world, Cards, runner, remaining,
+                remaining.Cancellable
+                    ? Decision.Decline
+                    : Decision.Take(Assert.Single(remaining.Affordances).Id),
+                events);
+            remaining = Sequence.Work(world, Cards, runner, events);
+        }
+
+        // The interrupt healed the boost ability's lethal damage; the
+        // enclosing attack then completed normally and dealt Unus's 2 ATK.
+        Assert.Equal(2, identity.Damage);
+        Assert.Equal(DeckType.HeroArea, identity.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, hunter.Area.Type);
+    }
+
+    [Rule("rr:attack-enemy-activation.step.3.b")]
+    [Rule("rr:damage.step.6")]
+    [Fact]
+    public void BoostFinishingWaitsForEveryNestedDefeatInterrupt()
+    {
+        // Step 3b says to "resolve any boost abilities on the card" before
+        // step 3c counts its icons. A multi-target ability is still resolving
+        // while either target has an outstanding damage-step-6 interrupt, so
+        // the card stays faceup in the boosting area through both decisions.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            {"cards":[
+              {"card":"45065","abilities":[{
+                "trigger":{"event":"WhenCardRevealed","timing":"Boost","subject":"this"},
+                "effect":{"dealDamage":{
+                  "cards":{"query":"charactersYouControl"},"amount":20}}
+              }]},
+              {"card":"01017","abilities":[{
+                "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
+                           "subject":"attachedTo"},
+                "effect":{"heal":{"card":"attachedTo",
+                                    "amount":{"damageOn":"attachedTo"}}}
+              }]},
+              {"card":"01030","abilities":[{
+                "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
+                           "subject":"this"},
+                "effect":{"heal":{"card":"this","amount":{"damageOn":"this"}}}
+              }]}
+            ]}
+            """));
+        var (world, _) = Board();
+        world.Abilities = runner;
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        world.CreateCard(
+            "01017",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0),
+                host: identity.ObjectId, cardOwner: 0));
+        var ally = world.CreateCard(
+            WarMachine,
+            world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var hunter = world.CreateCard(AuthoredCards.InfiniteHunter, deck);
+        World.MoveToTop(hunter, deck);
+        var events = new List<GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+
+        for (int decision = 0; decision < 2; decision++)
+        {
+            var save = Sequence.Work(world, Cards, runner, events)!;
+            Assert.Equal(Question.Opportunity, save.Asking);
+            Assert.Equal(DeckType.BoostingArea, hunter.Area.Type);
+            Sequence.Answer(
+                world, Cards, runner, save,
+                Decision.Take(Assert.Single(save.Affordances).Id), events);
+        }
+
+        var remaining = Sequence.Work(world, Cards, runner, events);
+        while (remaining is not null)
+        {
+            Sequence.Answer(
+                world, Cards, runner, remaining,
+                remaining.Cancellable
+                    ? Decision.Decline
+                    : Decision.Take(Assert.Single(remaining.Affordances).Id),
+                events);
+            remaining = Sequence.Work(world, Cards, runner, events);
+        }
+
+        Assert.Equal(2, identity.Damage);
+        Assert.Equal(0, ally.Damage);
+        Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, hunter.Area.Type);
+    }
+
     [Rule("rr:activation")]
     [Rule("rr:alteration-effect")]
     [Theory]

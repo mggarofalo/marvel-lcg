@@ -142,11 +142,21 @@ public enum Stage
 /// The rulebook occurrence local to a suspended procedure, when it differs
 /// from the agenda occurrence that contains it.
 /// </param>
+/// <param name="ProcedureOwnerOccurrence">
+/// The outer occurrence that owns a result produced by an internal procedure.
+/// This is engine continuation data used when that result must join the
+/// owner's eventual response window.
+/// </param>
 /// <param name="ProcedureSource">The source card needed when the procedure resumes.</param>
 /// <param name="ProcedureTrigger">Event-stream provenance preserved by the procedure.</param>
 /// <param name="ProcedureVerb">The kind of effect preserved by the procedure.</param>
 /// <param name="ProcedureBy">The acting seat preserved by the procedure, or -1.</param>
 /// <param name="ProcedureAmount">A numeric result preserved for procedure cleanup.</param>
+/// <param name="ProcedureAmounts">
+/// Numeric results shared by the frames of one rules procedure. The spelling
+/// is engine continuation data; it lets a resumable procedure preserve a
+/// per-card result across player windows without replaying the rule step.
+/// </param>
 /// <param name="ProcedureFlag">A boolean rule result preserved for procedure cleanup.</param>
 /// <param name="AbilityOrdinal">
 /// Which same-tier authored ability suspended. The ordinal is engine save data;
@@ -178,8 +188,11 @@ public readonly record struct PhaseStep(
     IReadOnlyList<PendingAbility>? ProcedureAbilities = null,
     IReadOnlyList<int>? ProcedurePlayersPassed = null,
     Occurrence? ProcedureOccurrence = null, int ProcedureSource = -1,
+    Occurrence? ProcedureOwnerOccurrence = null,
     string ProcedureTrigger = "", string ProcedureVerb = "", int ProcedureBy = -1,
-    long ProcedureAmount = 0, bool ProcedureFlag = false,
+    long ProcedureAmount = 0,
+    IReadOnlyDictionary<int, long>? ProcedureAmounts = null,
+    bool ProcedureFlag = false,
     IReadOnlyList<string>? AbilityPath = null,
     IReadOnlyList<int>? AbilityActivationIds = null,
     IReadOnlyDictionary<string, long>? AbilityResults = null,
@@ -239,6 +252,17 @@ public readonly record struct PhaseStep(
                     thwart.Thwarter,
                     thwart.Scheme,
                     thwart.Player),
+            Steps.PrepareIndirectAttackDamage => Occurrence.ForAttack(
+                id,
+                Conditions,
+                world,
+                facts,
+                ProcedureSource,
+                Subject,
+                Seat),
+            Steps.DealAttackDamage when world.Attack is { Indirect: true } attack =>
+                Occurrence.ForAttack(
+                    id, [], world, facts, attack.Enemy, attack.Target, attack.Player),
             Steps.DealAttackDamage when world.Attack is { } attack => Occurrence.ForAttack(
                 id,
                 Conditions,
@@ -323,6 +347,7 @@ public readonly record struct PhaseStep(
     public Occurrence? ScheduledOccurrence => What is
         Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
             or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
+            or Steps.PrepareIndirectAttackDamage
             ? null
             : new Occurrence(
                 OccurrenceId ?? Moment.Id(Round, Number, Index), Conditions, Subject, Seat);
@@ -486,6 +511,32 @@ public sealed class Agenda
         }
     }
 
+    /// <summary>Persist one per-card result on every frame of a rules procedure.</summary>
+    /// <remarks>
+    /// Each frame receives its own dictionary when an agenda is deserialized,
+    /// so correctness cannot depend on several steps retaining one shared
+    /// collection reference. The containing occurrence identifies the frames;
+    /// the dictionary spelling is an engine save-format choice.
+    /// </remarks>
+    public void RecordProcedureAmount(Occurrence procedure, int card, long amount)
+    {
+        ArgumentNullException.ThrowIfNull(procedure);
+        for (int index = 0; index < items.Count; index++)
+        {
+            var (step, stage, occurrence) = items[index];
+            if (step.ProcedureOccurrence?.Id != procedure.Id)
+            {
+                continue;
+            }
+
+            var amounts = step.ProcedureAmounts is { } existing
+                ? new Dictionary<int, long>(existing)
+                : [];
+            amounts[card] = amount;
+            items[index] = (step with { ProcedureAmounts = amounts }, stage, occurrence);
+        }
+    }
+
     /// <summary>Put a step at the end of the list.</summary>
     /// <param name="step">What to do.</param>
     public void Add(PhaseStep step)
@@ -592,6 +643,47 @@ public sealed class Agenda
         items.Insert(
             Math.Min(scheduled, items.Count),
             (step with { Plan = true, OccurrenceId = occurrence.Id }, Stage.Apply, occurrence));
+    }
+
+    /// <summary>Put every child and then a continuation before its exact owner.</summary>
+    /// <remarks>
+    /// Several nested procedure frames may share the owner's occurrence. The
+    /// step name distinguishes the original owner from those children, so the
+    /// continuation remains behind every child even when more than one of them
+    /// has already moved ahead of the owner.
+    /// </remarks>
+    public void BeforeOwnerAfterContinuations(
+        Occurrence occurrence, string owner, PhaseStep continuation)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        int ownerAt = items.FindIndex(item =>
+            ReferenceEquals(item.Occurrence, occurrence)
+            && item.Step.What == owner);
+        if (ownerAt < 0)
+        {
+            throw new InvalidOperationException(
+                $"the '{owner}' occurrence owner is not on the agenda");
+        }
+
+        var children = items
+            .Where((item, index) =>
+                index != ownerAt && ReferenceEquals(item.Occurrence, occurrence))
+            .ToList();
+        items.RemoveAll(item =>
+            ReferenceEquals(item.Occurrence, occurrence)
+            && item.Step.What != owner);
+        ownerAt = items.FindIndex(item =>
+            ReferenceEquals(item.Occurrence, occurrence)
+            && item.Step.What == owner);
+        items.InsertRange(ownerAt, children);
+        items.Insert(
+            ownerAt + children.Count,
+            (continuation with
+            {
+                Plan = true,
+                OccurrenceId = occurrence.Id,
+            }, Stage.Apply, occurrence));
+        scheduled = 0;
     }
 
     /// <summary>Schedule one complete enemy activation and return its stable id.</summary>
@@ -953,6 +1045,32 @@ public sealed class Agenda
         if (at == 0)
         {
             scheduled = 0;
+        }
+    }
+
+    /// <summary>Remove the consequential-damage step for an aborted ally power.</summary>
+    /// <remarks>
+    /// The rulebook does not define an agenda operation. This is the engine's
+    /// representation of <c>rr:consequential-damage.2</c>: when the target left
+    /// before the basic power applied, the already-exhausted ally takes no
+    /// consequential damage.
+    /// </remarks>
+    public void CancelConsequentialDamage(int ally, int target, bool attack)
+    {
+        string what = attack
+            ? Steps.AllyConsequentialDamage
+            : Steps.AllyThwartConsequentialDamage;
+        int at = items.FindIndex(item =>
+            item.Step.What == what
+            && item.Step.Subject == ally
+            && item.Step.Character == target);
+        if (at >= 0)
+        {
+            items.RemoveAt(at);
+            if (at <= scheduled)
+            {
+                scheduled = Math.Max(0, scheduled - 1);
+            }
         }
     }
 
@@ -1356,6 +1474,21 @@ public static class Steps
     /// <summary>Choose an eligible host for a revealed attachment.</summary>
     public const string ChooseAttachmentTarget = "ChooseAttachmentTarget";
 
+    /// <summary>Assign the calculated damage from one indirect enemy attack.</summary>
+    public const string AssignIndirectAttackDamage = "AssignIndirectAttackDamage";
+
+    /// <summary>Open one recipient's damage-step interrupt window.</summary>
+    public const string PrepareIndirectAttackDamage = "PrepareIndirectAttackDamage";
+
+    /// <summary>Place every assigned share after recipient windows finish.</summary>
+    public const string ApplyIndirectAttackDamage = "ApplyIndirectAttackDamage";
+
+    /// <summary>Finish retaliation after indirect damage suspended on defeat.</summary>
+    public const string FinishIndirectAttackDamage = "FinishIndirectAttackDamage";
+
+    /// <summary>Apply icons and discard after one boost ability finishes.</summary>
+    public const string FinishBoostCard = "FinishBoostCard";
+
     /// <summary>Resolve damage step 6 through a player decision.</summary>
     public const string ChooseWouldBeDefeated = "ChooseWouldBeDefeated";
 
@@ -1457,6 +1590,7 @@ public static class Steps
         // `rr:triggering-condition.2` still gives both one occurrence and one
         // pair of windows.
         [DealAttackDamage] = [DamageWouldBeDealt],
+        [PrepareIndirectAttackDamage] = [DamageWouldBeDealt],
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
