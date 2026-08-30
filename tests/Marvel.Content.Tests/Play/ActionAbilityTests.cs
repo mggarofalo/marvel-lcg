@@ -10986,7 +10986,7 @@ public sealed class ActionAbilityTests
             { "seq": [
               { "putIntoPlay": {
                 "card": { "cardsIn": {
-                  "areas": [ "encounterDeck" ], "title": "Hydra Mercenary"
+                  "areas": [ "encounterDeck" ], "title": "Hired Gun"
                 } },
                 "where": "engagedWithYou"
               } },
@@ -10994,7 +10994,7 @@ public sealed class ActionAbilityTests
                 "cards": { "query": "minionsEngagedWithYou" }, "amount": 100
               } },
               { "removeFromGame": { "cardsIn": {
-                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+                "area": "encounterDiscardPile", "title": "Hired Gun"
               } } }
             ] }
             """,
@@ -11011,15 +11011,186 @@ public sealed class ActionAbilityTests
                         DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
                 Statuses.Give(board, protectedMinion, Statuses.Tough);
                 hydra = board.CreateCard(
-                    "08028", board.AreaOf(DeckType.EncounterDeck));
+                    "02007", board.AreaOf(DeckType.EncounterDeck));
                 board.CreateCard(
-                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+                    "02007", board.AreaOf(DeckType.EncounterDiscardPile));
             },
             hero: true,
             abilities: runner));
 
         Assert.True(source!.Ready);
         Assert.Equal(DeckType.EncounterDeck, hydra!.Area.Type);
+    }
+
+    [Rule("rr:enters-play")]
+    [Fact]
+    public void EnteredMinionParticipatesInLaterProjectedRankedQueries()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "putIntoPlay": {
+                "card": { "cardsIn": {
+                  "areas": [ "encounterDeck" ], "title": "Hired Gun"
+                } },
+                "where": "engagedWithYou"
+              } },
+              { "dealDamage": {
+                "cards": { "minBy": {
+                  "of": { "query": "minions" }, "by": "printedHealth"
+                } },
+                "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hired Gun"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? hydra = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var protectedMinion = board.CreateCard(
+                    "16183", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, protectedMinion, Statuses.Tough);
+                hydra = board.CreateCard(
+                    "02007", board.AreaOf(DeckType.EncounterDeck));
+                board.CreateCard(
+                    "02007", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EncounterDeck, hydra!.Area.Type);
+    }
+
+    [Rule("rr:status-cards.1")]
+    [Rule("rr:toughness.1")]
+    [Fact]
+    public void EnteredMinionReceivesLaterProjectedStatus()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "putIntoPlay": {
+                "card": { "cardsIn": {
+                  "areas": [ "encounterDeck" ], "title": "Hired Gun"
+                } },
+                "where": "engagedWithYou"
+              } },
+              { "giveStatus": {
+                "card": { "query": "minionsEngagedWithYou" },
+                "status": "tough"
+              } },
+              { "dealDamage": {
+                "cards": { "titled": "Hired Gun" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hired Gun"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? hydra = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                hydra = board.CreateCard(
+                    "02007", board.AreaOf(DeckType.EncounterDeck));
+                board.CreateCard(
+                    "02007", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+        Assert.Equal(DeckType.EncounterDeck, hydra!.Area.Type);
+    }
+
+    [Rule("rr:in-play-and-out-of-play.4")]
+    [Fact]
+    public void ReenteringSourceInvalidatesLaterProjectedThisBinding()
+    {
+        var runner = Runner(
+            "02007",
+            "Action",
+            """
+            { "seq": [
+              { "discard": "this" },
+              { "putIntoPlay": { "card": "this", "where": "engagedWithYou" } },
+              { "removeFromGame": { "titled": "Hired Gun" } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "removed", "title": "Hired Gun"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = board.CreateCard(
+                    "02007", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard("02007", board.AreaOf(DeckType.RemovedArea));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.Equal(DeckType.EngagedEnemiesArea, source!.Area.Type);
+    }
+
+    [Rule("rr:villain-defeat.3.2")]
+    [Rule("rr:villain-defeat.4.2")]
+    [Fact]
+    public void AttachmentAddedAfterAdvancementProjectsFinalStageDeparture()
+    {
+        var runner = Runner(
+            "01098",
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "query": "villain" }, "amount": 100
+              } },
+              { "attachTo": { "query": "villain" } },
+              { "dealDamage": {
+                "cards": { "query": "villain" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """);
+        Card? attachment = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                attachment = board.CreateCard(
+                    "01098", board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.Equal(DeckType.UpgradesArea, attachment!.Area.Type);
+        Assert.Equal(-1, attachment.Area.Host);
     }
 
     [Rule("rr:toughness.1")]
@@ -11067,6 +11238,97 @@ public sealed class ActionAbilityTests
         Assert.Contains(runner.Actions(world, 0), action =>
             action.Card == source!.ObjectId);
         Assert.Equal(DeckType.EncounterDeck, sandman!.Area.Type);
+    }
+
+    [Rule("rr:toughness.1")]
+    [Rule("rr:villain-defeat.3.2")]
+    [Fact]
+    public void EnteredVillainStageProjectsItsPrintedToughness()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "query": "villain" }, "amount": 100
+              } },
+              { "dealDamage": {
+                "cards": { "query": "villain" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                board.CreateCard("01096", board.AreaOf(DeckType.VillainDeck));
+                board.CreateCard(
+                    "01098", board.AreaOf(
+                        DeckType.UpgradesArea, villain.Area.PlayArea,
+                        villain.ObjectId));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+    }
+
+    [Rule("rr:guard.1")]
+    [Rule("rr:victory-x")]
+    [Fact]
+    public void EnteredGuardRecomputesProjectedAttackableEnemies()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "putIntoPlay": {
+                "card": { "cardsIn": {
+                  "areas": [ "encounterDeck" ], "title": "Absorbing Man"
+                } },
+                "where": "engagedWithYou"
+              } },
+              { "dealDamage": {
+                "cards": { "query": "attackableEnemies" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var villain = board.TheCardIn(DeckType.VillainArea)!;
+                villain.TakeDamage(
+                    Damage.Health(board, board.Facts, villain) - 1);
+                board.CreateCard("55056", board.AreaOf(DeckType.EncounterDeck));
+                board.CreateCard(
+                    "01098", board.AreaOf(
+                        DeckType.UpgradesArea, villain.Area.PlayArea,
+                        villain.ObjectId));
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
     }
 
     [Rule("rr:attachment.1")]
