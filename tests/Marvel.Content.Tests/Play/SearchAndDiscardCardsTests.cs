@@ -1,5 +1,6 @@
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -153,12 +154,16 @@ public sealed class SearchAndDiscardCardsTests
 
         var stage = world.CreateCard(
             AuthoredCards.RhinoTwo, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, stage, 0);
+        var events = AuthoredCards.Runner().WhenRevealed(world, stage, 0);
 
         var scheduled = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.RevealEncounterCard, scheduled.What);
         Assert.Equal(wanted.ObjectId, scheduled.Subject);
         Assert.Equal(DeckType.RevealingArea, wanted.Area.Type);
+        var moved = Assert.Single(events.OfType<CardsMoved>(), move =>
+            move.Cards.Any(landing => landing.Card == wanted.ObjectId));
+        Assert.Equal(nameof(DeckType.EncounterDeck), moved.From.Zone);
+        Assert.Equal(nameof(DeckType.RevealingArea), moved.To.Zone);
     }
 
     [Rule("rr:search.3")]

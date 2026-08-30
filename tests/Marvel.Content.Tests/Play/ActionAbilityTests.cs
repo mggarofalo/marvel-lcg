@@ -9421,7 +9421,8 @@ public sealed class ActionAbilityTests
             { "removeFromGame": { "cardsIn": {
               "area": "encounterDiscardPile", "title": "Hydra Mercenary"
             } } }
-            """);
+            """,
+            cost: """{ "exhaust": "this" }""");
         Card? source = null;
         Card? target = null;
         var (game, world) = Playing(
@@ -9440,6 +9441,7 @@ public sealed class ActionAbilityTests
 
         Assert.Equal(DeckType.RemovedArea, target!.Area.Type);
         Assert.Contains(target, world.AreaOf(DeckType.RemovedArea).Cards);
+        Assert.False(source!.Ready);
     }
 
     [Rule("rr:cost.6")]
@@ -9515,6 +9517,81 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
         Assert.Equal(DeckType.EngagedEnemiesArea, inPlay!.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, discarded!.Area.Type);
+    }
+
+    [Rule("rr:cost.6")]
+    [Rule("rr:search.1")]
+    [Fact]
+    public void EarlierMoveCannotCreateDiscardAmbiguityAfterActionCost()
+    {
+        // Every singular cardsIn consumer has the same atomicity boundary.
+        // The second discard would need a player choice after the first adds a
+        // matching card, so the action is refused before either component or
+        // its exhaust cost runs.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "discard": { "titled": "Hydra Mercenary" } },
+              { "discard": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? inPlay = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                inPlay = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, inPlay!.Area.Type);
+    }
+
+    [Rule("rr:cost.6")]
+    [Rule("rr:search.1")]
+    [Fact]
+    public void AmbiguousSearchRaisesBeforeActionCost()
+    {
+        // Searching two named areas finds two copies and therefore requires
+        // the player's rr:search.1 choice. Until that prompt exists, the
+        // unsupported branch raises while the source can still remain ready.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "search": {
+              "in": [ { "encounterDeck": 1 }, { "encounterDiscardPile": 1 } ],
+              "for": "08028"
+            } }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.CreateCard("08028", board.AreaOf(DeckType.EncounterDeck));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
     }
 
     [Rule("rr:in-play-and-out-of-play.4")]
