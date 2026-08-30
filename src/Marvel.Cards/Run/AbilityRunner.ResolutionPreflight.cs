@@ -80,7 +80,8 @@ public sealed partial class AbilityRunner
                 or "dealEncounterCards" or "dealEncounterCard"
                 or "revealTop" or "reveal" or "placeAtRandom"
                 or "returnToHand" or "discardUntil" or "recoverDiscardedByResource"
-                or "shuffleInto" or "search" or "giveStatus" or "attachTo"
+                or "shuffleInto" or "search" or "giveStatus" or "declareDefender"
+                or "attachTo"
                 or "grantUntil" or "delayUntil" or "discard" or "enemyAttacks"
                 or "enemySchemes" or "putIntoPlay" or "shuffle" =>
                     HasRequiredTargets(node, cast),
@@ -138,6 +139,12 @@ public sealed partial class AbilityRunner
             "ready" => ResolutionOfCards(
                 Every(node.Argument, cast), card => !card.Ready
                     && cast.Abilities.CanReady(cast.World, card, cast.Source)),
+            "declareDefender" => Find(node.Require("card"), cast) is { } declared
+                && Attack.CanDeclareByAbility(
+                    cast.World, cast.World.Facts, declared,
+                    ReplaceableDefenseDefender(cast))
+                    ? ResolutionOutcome.Full
+                    : ResolutionOutcome.None,
             "discard" => (node.Field("card") ?? node.Argument) is { } discardTarget
                 && Find(discardTarget, cast) is { } discarded
                 && CanRemoveByEffect(discardTarget, cast, discarded)

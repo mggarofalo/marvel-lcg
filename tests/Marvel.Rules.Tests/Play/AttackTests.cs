@@ -612,6 +612,8 @@ public sealed class AttackTests
         Assert.False(Statuses.Has(world, villain, Statuses.Stunned));
         Assert.False(observer.SawAttackInitiation);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Null(world.Attack);
+        Assert.Null(world.Activation);
     }
 
     [Rule("rr:initiating-abilities.1")]

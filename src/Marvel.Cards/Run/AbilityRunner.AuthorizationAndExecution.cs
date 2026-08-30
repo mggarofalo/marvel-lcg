@@ -266,6 +266,7 @@ public sealed partial class AbilityRunner
             cast.AbilityActor = performer;
             if (labels.Contains(Attack.DefenseVerb, StringComparer.Ordinal))
             {
+                cast.Results["defenseAbilityDefender"] = performer.ObjectId;
                 Attack.BeginDefenseAbility(cast.World, Resolver(cast), performer);
             }
         }
@@ -627,6 +628,16 @@ public sealed partial class AbilityRunner
                 cast.ResolveEffect();
                 break;
 
+            case "declareDefender":
+                var declared = Find(node.Require("card"), cast)
+                    ?? throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' cannot find the character it declares as defender");
+                Attack.DeclareByAbility(
+                    cast.World, cast.World.Facts, declared,
+                    ReplaceableDefenseDefender(cast));
+                cast.ResolveEffect();
+                break;
+
             case "attachTo":
                 AttachTo(node, cast);
                 break;
@@ -726,6 +737,7 @@ public sealed partial class AbilityRunner
                 {
                     if (cast.AbilityActor is null)
                     {
+                        cast.Results["defenseAbilityDefender"] = defender.ObjectId;
                         Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
                     }
                     RunChild(Tree(node.Require("effect")), "defense:effect", cast);
@@ -818,6 +830,13 @@ public sealed partial class AbilityRunner
         {
             cast.ResolveEffect();
         }
+
+        // `rr:attack-enemy-activation.3.2`: a defending ally that leaves play
+        // immediately stops defending and exposes its controller's identity.
+        // Recheck after every node so later text in the same ability, and the
+        // next boost ability, reads the new attack roles rather than a stale
+        // defender that has already moved.
+        Attack.RefreshDefender(cast.World, cast.World.Facts);
     }
 
     private static bool EventMeansEffectApplied(string kind) => kind is not (
@@ -1160,5 +1179,11 @@ public sealed partial class AbilityRunner
             Trigger = cast.Trigger, Verb = "Attach",
         });
     }
+
+    // The rules define the role, not this persisted result-key spelling. The
+    // value survives a suspended printed sequence so only this defense ability
+    // may replace the provisional defender it established.
+    private static int ReplaceableDefenseDefender(Cast cast) =>
+        checked((int)cast.Results.GetValueOrDefault("defenseAbilityDefender", -1));
 
 }

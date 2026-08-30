@@ -128,6 +128,12 @@ public static class Sequence
                         && step.What == Steps.Attack
                         && BasicPowers.Cancelled(
                             world, facts, world.Cards[step.Subject], Statuses.Stunned, events);
+                    if (!statusCancelled
+                        && kind == WindowKind.Interrupt
+                        && step.What == Steps.Attack)
+                    {
+                        Attack.Prepare(world, facts, step);
+                    }
                     return statusCancelled;
                 }
 
@@ -140,6 +146,7 @@ public static class Sequence
 
                 if (statusCancelled)
                 {
+                    Attack.CancelPrepared(world, step.Subject);
                     world.PendingAdditionalAttackPlayers = [];
                     if (world.Windows.Current is not null)
                     {

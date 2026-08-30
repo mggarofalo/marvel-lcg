@@ -73,6 +73,27 @@ One value rather than a stack, because `rr:activation.8` queues activations
 rather than nesting them: one initiated during another *"resolves after the
 current activation has finished resolving"*.
 
+The value begins during the initiation interrupt window, before the six steps
+are scheduled. That is necessary for card text such as "when an enemy attacks,
+declare [a character] the defender": `rr:attack-enemy-activation.5` puts that
+instruction in the initiation window, and the chosen defender must survive the
+window into step 2. A status card still has priority; if stunned replaces the
+attack, the prepared attack and activation are cleared before any authored
+interrupt can observe them.
+
+Card-declared defense is distinct from the ordinary step-2 choice. A declared
+hero makes a basic defense and applies DEF (`rr:defend-defense.2.1`); a declared
+ally does not (`.3.2`). Neither declaration itself exhausts the character,
+because `.2.2` and `.3.3` explicitly allow card text to declare an already
+exhausted character without exhausting it.
+
+A non-basic hero established by a defense-labeled ability may still make a
+basic defense in step 2 (`rr:defend-defense.4.3`). If that same ability then
+declares an ally, the engine retains its provisional hero as persisted fallback
+state for the Mutant Protectors ruling. Defender departure is evaluated only
+until step 5 begins; damage defeating an ally does not retroactively make the
+completed attack undefended.
+
 ## Boost icons are a lasting effect
 
 `rr:attack-enemy-activation.step.3.c` increases the enemy's ATK by one per boost
