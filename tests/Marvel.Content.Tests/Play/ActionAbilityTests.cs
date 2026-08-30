@@ -10688,6 +10688,147 @@ public sealed class ActionAbilityTests
             action.Card == source!.ObjectId);
     }
 
+    [Rule("rr:victory-x.1.2")]
+    [Fact]
+    public void NestedVictoryAttachmentProjectsItsOrdinaryDiscard()
+    {
+        // Only a Victory attachment directly on the defeated character uses
+        // the Forced Interrupt that moves it to the victory display. Its own
+        // hosted card leaves through ordinary attachment cleanup, even when
+        // that nested card also has Victory X.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "titled": "Hydra Mercenary" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        Card? minion = null;
+        Card? direct = null;
+        Card? nested = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 1);
+                direct = board.CreateCard(
+                    "01098", board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
+                nested = board.CreateCard(
+                    "01098", board.AreaOf(
+                        DeckType.UpgradesArea, PlayArea.Of(0), direct.ObjectId));
+                foreach (var attachment in new[] { direct, nested })
+                {
+                    board.Effects.Register(new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        "victory",
+                        Amount: 1,
+                        Card: attachment.ObjectId,
+                        Affects: attachment.ObjectId,
+                        Lasts: Duration.WhileInPlay));
+                }
+                board.CreateCard(
+                    "01098", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
+        Assert.Equal(minion.ObjectId, direct!.Area.Host);
+        Assert.Equal(direct.ObjectId, nested!.Area.Host);
+    }
+
+    [Rule("rr:victory-x")]
+    [Fact]
+    public void VictorySideSchemeDoesNotProjectToEncounterDiscard()
+    {
+        // A side scheme with Victory X enters the victory display when it is
+        // defeated instead of entering the encounter discard pile.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "removeThreat": {
+                "scheme": { "titled": "Kree Supremacy" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Kree Supremacy"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var scheme = board.CreateCard(
+                    "16182a", board.AreaOf(DeckType.SideSchemesArea));
+                scheme.PlaceTokens("k_threat", 1);
+                board.CreateCard(
+                    "16182a", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+    }
+
+    [Rule("rr:victory-x.1")]
+    [Fact]
+    public void LaterSelectorCannotSeeProjectedDepartedVictoryMinion()
+    {
+        // After the Victory minion leaves play, a later title reference no
+        // longer denotes it. Its no-op discard therefore cannot destabilize an
+        // unrelated singular encounter-discard query.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "titled": "Badoon Headhunter" }, "amount": 1
+              } },
+              { "discard": { "titled": "Badoon Headhunter" } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var minion = board.CreateCard(
+                    "16183", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 1);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+    }
+
     [Rule("rr:labeled-ability.6")]
     [Fact]
     public void CancelledLabelSkipsAreaSensitivePostArrowEffects()
