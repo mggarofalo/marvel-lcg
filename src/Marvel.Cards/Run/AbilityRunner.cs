@@ -16348,42 +16348,55 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return true;
         }
 
-        var damage = new List<(
-            Card Target, long Amount, long Repetitions, int ReorderGroup)>();
-        var threat = new List<(Card Target, long Amount, long Repetitions)>();
-        var projectedDamage = new Dictionary<int, long>();
-        var projectedTough = new Dictionary<int, long>();
-        int nextReorderGroup = 0;
-        bool recordPackets = true;
-        bool reorderedCouldDiscard = false;
+        bool couldDiscard = false;
 
-        long ProjectedDamage(Card card) => projectedDamage.GetValueOrDefault(
-            card.ObjectId, card.Damage);
+        bool DiscardedByDamage(AreaProjectionState state, Card target) =>
+            state.DamageOf(target) >= Damage.Health(
+                cast.World, cast.World.Facts, target)
+            && (cast.World.Facts.Kind(target.FaceId) == CardKind.Minion
+                    && queried.Contains(DeckType.EncounterDiscardPile)
+                || cast.World.Facts.Kind(target.FaceId) == CardKind.Ally
+                    && queried.Contains(DeckType.DiscardPile));
 
-        void ProjectDamage(Card card, long amount, long repetitions)
+        void DealProjected(
+            AreaProjectionState state, Card target, long amount,
+            long repetitions)
         {
-            if (amount <= 0 || repetitions <= 0)
+            if (amount <= 0 || repetitions <= 0
+                || !cast.Abilities.CanTakeDamage(
+                    cast.World, target, cast.Source))
             {
                 return;
             }
-            long tough = projectedTough.GetValueOrDefault(
-                card.ObjectId,
-                Statuses.Count(cast.World, card, Statuses.Tough));
-            long prevented = Math.Min(tough, repetitions);
-            projectedTough[card.ObjectId] = tough - prevented;
+            long prevented = Math.Min(state.ToughOf(cast, target), repetitions);
+            state.Tough[target.ObjectId] =
+                state.ToughOf(cast, target) - prevented;
             long dealt = SaturatingMultiply(amount, repetitions - prevented);
-            projectedDamage[card.ObjectId] = SaturatingSum(
-                ProjectedDamage(card), [dealt]);
+            state.Damage[target.ObjectId] = SaturatingSum(
+                state.DamageOf(target), [dealt]);
+            couldDiscard |= DiscardedByDamage(state, target);
         }
 
-        void Collect(
-            AbilityNode effect, long repetitions = 1,
-            long baseMultiplier = 1, int reorderGroup = 0)
+        List<AreaProjectionState> TraceSequence(
+            IEnumerable<AbilityNode> sequence,
+            List<AreaProjectionState> states)
         {
-            if (repetitions <= 0)
+            foreach (var step in sequence)
             {
-                return;
+                states = Trace(step, states);
             }
+            return states;
+        }
+
+        List<AreaProjectionState> Trace(
+            AbilityNode effect, List<AreaProjectionState> states,
+            long repetitions = 1, long baseMultiplier = 1)
+        {
+            if (repetitions <= 0 || states.Count == 0)
+            {
+                return states;
+            }
+
             if (effect.Kind is "dealDamage" or "dealAttackDamage")
             {
                 long amount = SaturatingSum(
@@ -16394,88 +16407,101 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                          || cast.Power == BasicPowers.AttackVerb
                             ? EventModifier(cast, "attackDamage")
                             : 0]);
-                foreach (var target in DamageTargets(
-                             effect.Require("cards"), cast))
+                foreach (var state in states)
                 {
-                    if (recordPackets)
+                    foreach (var target in DamageTargets(
+                                 effect.Require("cards"), cast))
                     {
-                        damage.Add((target, amount, repetitions, reorderGroup));
+                        DealProjected(state, target, amount, repetitions);
                     }
-                    ProjectDamage(target, amount, repetitions);
                 }
-                return;
+                return states;
             }
+
             if (effect.Kind is "moveDamage" or "moveAttackDamage")
             {
                 var from = Find(effect.Require("from"), cast);
                 var to = Find(effect.Require("to"), cast);
-                if (from is not null && to is not null
-                    && cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
+                if (from is null || to is null
+                    || !cast.Abilities.CanTakeDamage(
+                        cast.World, to, cast.Source))
                 {
-                    long requested = SaturatingMultiply(
-                        Amount(effect.Require("amount"), cast), baseMultiplier);
-                    long moved = Math.Min(ProjectedDamage(from), requested);
-                    projectedDamage[from.ObjectId] =
-                        ProjectedDamage(from) - moved;
-                    if (recordPackets)
-                    {
-                        damage.Add((to, moved, 1, reorderGroup));
-                    }
-                    ProjectDamage(to, moved, 1);
+                    return states;
                 }
-                return;
+                long requested = SaturatingMultiply(
+                    Amount(effect.Require("amount"), cast), baseMultiplier);
+                foreach (var state in states)
+                {
+                    for (long repeat = 0;
+                         repeat < repetitions && state.DamageOf(from) > 0;
+                         repeat++)
+                    {
+                        long moved = Math.Min(state.DamageOf(from), requested);
+                        state.Damage[from.ObjectId] = state.DamageOf(from) - moved;
+                        DealProjected(state, to, moved, 1);
+                    }
+                }
+                return states;
             }
+
             if (effect.Kind == "heal")
             {
                 if (Find(effect.Require("card"), cast) is { } healed)
                 {
                     long amount = SaturatingMultiply(
-                        Amount(effect.Require("amount"), cast), baseMultiplier);
-                    projectedDamage[healed.ObjectId] = Math.Max(
-                        0, ProjectedDamage(healed)
-                            - SaturatingMultiply(amount, repetitions));
+                        SaturatingMultiply(
+                            Amount(effect.Require("amount"), cast), baseMultiplier),
+                        repetitions);
+                    foreach (var state in states)
+                    {
+                        state.Damage[healed.ObjectId] = Math.Max(
+                            0, state.DamageOf(healed) - amount);
+                    }
                 }
-                return;
+                return states;
             }
+
             if (effect.Kind == "removeThreat")
             {
                 long amount = SaturatingSum(
                     SaturatingMultiply(
                         Amount(effect.Require("amount"), cast), baseMultiplier),
                     [EventModifier(cast, "eventThreatRemoval")]);
-                if (recordPackets)
+                foreach (var state in states)
                 {
-                    threat.AddRange(Every(effect.Require("scheme"), cast)
-                        .Select(target => (target, amount, repetitions)));
+                    foreach (var scheme in Every(
+                                 effect.Require("scheme"), cast))
+                    {
+                        long removed = SaturatingMultiply(amount, repetitions);
+                        state.Threat[scheme.ObjectId] = Math.Max(
+                            0, state.ThreatOf(scheme) - removed);
+                        couldDiscard |= state.ThreatOf(scheme) == 0
+                            && cast.World.Facts.Kind(scheme.FaceId)
+                                == CardKind.EncounterSideScheme
+                            && queried.Contains(DeckType.EncounterDiscardPile);
+                    }
                 }
-                return;
+                return states;
             }
+
             if (effect.Kind == "forEach")
             {
-                if (!CurrentlyZeroForEach(effect, cast))
+                if (CurrentlyZeroForEach(effect, cast))
                 {
-                    var repeated = Tree(effect.Require("effect"));
-                    long count = ForEachCount(effect, cast);
-                    if (repeated.Kind is "dealDamage" or "dealAttackDamage"
-                        or "removeThreat")
-                    {
-                        // The runner combines a target-fixed repetition into
-                        // one damage instance before Tough is applied.
-                        Collect(
-                            repeated, repetitions,
-                            SaturatingMultiply(baseMultiplier, count),
-                            reorderGroup);
-                    }
-                    else
-                    {
-                        Collect(
-                            repeated,
-                            SaturatingMultiply(repetitions, count),
-                            baseMultiplier, reorderGroup);
-                    }
+                    return states;
                 }
-                return;
+                var repeated = Tree(effect.Require("effect"));
+                long count = ForEachCount(effect, cast);
+                return repeated.Kind is "dealDamage" or "dealAttackDamage"
+                    or "removeThreat"
+                    ? Trace(
+                        repeated, states, repetitions,
+                        SaturatingMultiply(baseMultiplier, count))
+                    : Trace(
+                        repeated, states,
+                        SaturatingMultiply(repetitions, count), baseMultiplier);
             }
+
             if (effect.Kind == "eachPlayer")
             {
                 int priorPlayer = cast.Player;
@@ -16484,178 +16510,124 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     foreach (int player in cast.World.PlayerOrder)
                     {
                         cast.RestorePlayer(player);
-                        Collect(
-                            Tree(effect.Require("effect")), repetitions,
-                            baseMultiplier, reorderGroup);
+                        states = Trace(
+                            Tree(effect.Require("effect")), states,
+                            repetitions, baseMultiplier);
                     }
+                    return states;
                 }
                 finally
                 {
                     cast.RestorePlayer(priorPlayer);
                 }
-                return;
             }
+
             if (effect.Kind == "and")
             {
-                int group = ++nextReorderGroup;
-                var andEffects = Nodes(effect.Argument).ToList();
-                var initialDamage = new Dictionary<int, long>(projectedDamage);
-                var initialTough = new Dictionary<int, long>(projectedTough);
-
-                foreach (var child in andEffects)
+                var simultaneous = Nodes(effect.Argument).ToList();
+                var order = Enumerable.Range(0, simultaneous.Count).ToList();
+                var branched = new List<AreaProjectionState>();
+                foreach (var state in states)
                 {
-                    Collect(child, repetitions, baseMultiplier, group);
-                }
-
-                var maximumDamage = new Dictionary<int, long>(projectedDamage);
-                var minimumTough = new Dictionary<int, long>(projectedTough);
-                var authored = Enumerable.Range(0, andEffects.Count).ToList();
-                bool priorRecording = recordPackets;
-                recordPackets = false;
-                foreach (var order in PlayerPermutations(authored)
-                             .Where(order => !order.SequenceEqual(authored)))
-                {
-                    projectedDamage.Clear();
-                    foreach (var (card, amount) in initialDamage)
+                    foreach (var permutation in PlayerPermutations(order))
                     {
-                        projectedDamage[card] = amount;
-                    }
-                    projectedTough.Clear();
-                    foreach (var (card, count) in initialTough)
-                    {
-                        projectedTough[card] = count;
-                    }
-                    foreach (int position in order)
-                    {
-                        Collect(
-                            andEffects[position], repetitions,
-                            baseMultiplier, group);
-                    }
-
-                    foreach (var card in cast.World.Cards)
-                    {
-                        long amount = ProjectedDamage(card);
-                        if (amount >= Damage.Health(
-                                cast.World, cast.World.Facts, card)
-                            && (cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
-                                    && queried.Contains(
-                                        DeckType.EncounterDiscardPile)
-                                || cast.World.Facts.Kind(card.FaceId) == CardKind.Ally
-                                    && queried.Contains(DeckType.DiscardPile)))
-                        {
-                            reorderedCouldDiscard = true;
-                        }
-                        maximumDamage[card.ObjectId] = Math.Max(
-                            maximumDamage.GetValueOrDefault(
-                                card.ObjectId, card.Damage),
-                            amount);
-                        long tough = projectedTough.GetValueOrDefault(
-                            card.ObjectId,
-                            Statuses.Count(cast.World, card, Statuses.Tough));
-                        minimumTough[card.ObjectId] = Math.Min(
-                            minimumTough.GetValueOrDefault(
-                                card.ObjectId,
-                                Statuses.Count(
-                                    cast.World, card, Statuses.Tough)),
-                            tough);
+                        var projected = TraceSequence(
+                            permutation.Select(index => simultaneous[index]),
+                            [state.Clone()]);
+                        branched.AddRange(projected);
                     }
                 }
-                recordPackets = priorRecording;
-                projectedDamage.Clear();
-                foreach (var (card, amount) in maximumDamage)
-                {
-                    projectedDamage[card] = amount;
-                }
-                projectedTough.Clear();
-                foreach (var (card, count) in minimumTough)
-                {
-                    projectedTough[card] = count;
-                }
-                return;
+                return AreaProjectionState.Distinct(branched);
             }
 
-            IEnumerable<AbilityNode> children = effect.Kind switch
+            if (effect.Kind == "if")
             {
-                "if" => ReachableMutationBranches(effect, cast),
-                "choose" or "chooseCard" => [],
-                _ => StructuralChildren(effect),
-            };
-            foreach (var child in children)
-            {
-                Collect(child, repetitions, baseMultiplier, reorderGroup);
+                var branches = ReachableMutationBranches(effect, cast).ToList();
+                if (branches.Count <= 1)
+                {
+                    return branches.Count == 0
+                        ? states
+                        : Trace(branches[0], states, repetitions, baseMultiplier);
+                }
+                var branched = new List<AreaProjectionState>();
+                foreach (var state in states)
+                {
+                    foreach (var branch in branches)
+                    {
+                        branched.AddRange(Trace(
+                            branch, [state.Clone()], repetitions, baseMultiplier));
+                    }
+                }
+                return AreaProjectionState.Distinct(branched);
             }
+
+            if (effect.Kind is "choose" or "chooseCard")
+            {
+                return states;
+            }
+
+            if (repetitions > 1)
+            {
+                for (long repeat = 0; repeat < repetitions; repeat++)
+                {
+                    states = Trace(effect, states, 1, baseMultiplier);
+                }
+                return states;
+            }
+            return TraceSequence(StructuralChildren(effect), states);
         }
 
-        foreach (var effect in effects)
+        _ = TraceSequence(effects, [new AreaProjectionState(cast)]);
+        return couldDiscard;
+    }
+
+    private sealed class AreaProjectionState(Cast cast)
+    {
+        public Dictionary<int, long> Damage { get; } = [];
+        public Dictionary<int, long> Tough { get; } = [];
+        public Dictionary<int, long> Threat { get; } = [];
+
+        public long DamageOf(Card card) =>
+            Damage.GetValueOrDefault(card.ObjectId, card.Damage);
+
+        public long ToughOf(Cast current, Card card) => Tough.GetValueOrDefault(
+            card.ObjectId,
+            Statuses.Count(current.World, card, Statuses.Tough));
+
+        public long ThreatOf(Card card) => Threat.GetValueOrDefault(
+            card.ObjectId, card.Tokens.GetValueOrDefault("k_threat"));
+
+        public AreaProjectionState Clone()
         {
-            Collect(effect);
-        }
-
-        if (reorderedCouldDiscard)
-        {
-            return true;
-        }
-
-        foreach (var group in damage.GroupBy(packet => packet.Target.ObjectId))
-        {
-            var target = group.First().Target;
-            if (!(cast.World.Facts.Kind(target.FaceId) == CardKind.Minion
-                    && queried.Contains(DeckType.EncounterDiscardPile)
-                || cast.World.Facts.Kind(target.FaceId) == CardKind.Ally
-                    && queried.Contains(DeckType.DiscardPile)))
+            var clone = new AreaProjectionState(cast);
+            foreach (var (card, amount) in Damage)
             {
-                continue;
+                clone.Damage[card] = amount;
             }
-            long tough = Statuses.Count(cast.World, target, Statuses.Tough);
-            long remaining = Damage.Health(
-                cast.World, cast.World.Facts, target) - target.Damage;
-            var packets = group.ToList();
-            for (int position = 0; position < packets.Count;)
+            foreach (var (card, count) in Tough)
             {
-                int reorderGroup = packets[position].ReorderGroup;
-                int end = position + 1;
-                if (reorderGroup != 0)
-                {
-                    while (end < packets.Count
-                           && packets[end].ReorderGroup == reorderGroup)
-                    {
-                        end++;
-                    }
-                }
-
-                var ordered = packets.GetRange(position, end - position);
-                if (reorderGroup != 0)
-                {
-                    ordered.Sort((left, right) =>
-                        left.Amount.CompareTo(right.Amount));
-                }
-                foreach (var packet in ordered)
-                {
-                    long repetitions = packet.Repetitions;
-                    long prevented = Math.Min(tough, repetitions);
-                    tough -= prevented;
-                    repetitions -= prevented;
-                    long dealt = SaturatingMultiply(
-                        packet.Amount, repetitions);
-                    if (dealt > 0 && dealt >= remaining)
-                    {
-                        return true;
-                    }
-                    remaining -= dealt;
-                }
-                position = end;
+                clone.Tough[card] = count;
             }
+            foreach (var (card, amount) in Threat)
+            {
+                clone.Threat[card] = amount;
+            }
+            return clone;
         }
 
-        return threat
-            .Where(packet =>
-                cast.World.Facts.Kind(packet.Target.FaceId)
-                    == CardKind.EncounterSideScheme
-                && queried.Contains(DeckType.EncounterDiscardPile))
-            .GroupBy(packet => packet.Target.ObjectId)
-            .Any(group => group.Sum(packet => SaturatingMultiply(
-                    packet.Amount, packet.Repetitions))
-                >= group.First().Target.Tokens.GetValueOrDefault("k_threat"));
+        public static List<AreaProjectionState> Distinct(
+            IEnumerable<AreaProjectionState> states) =>
+            states.GroupBy(state => state.Key(), StringComparer.Ordinal)
+                .Select(group => group.First()).ToList();
+
+        private string Key() => string.Join(
+            ";",
+            Damage.OrderBy(pair => pair.Key)
+                .Select(pair => $"d{pair.Key}:{pair.Value}")
+                .Concat(Tough.OrderBy(pair => pair.Key)
+                    .Select(pair => $"s{pair.Key}:{pair.Value}"))
+                .Concat(Threat.OrderBy(pair => pair.Key)
+                    .Select(pair => $"t{pair.Key}:{pair.Value}")));
     }
 
     private static IEnumerable<AbilityNode> ReachableMutationBranches(

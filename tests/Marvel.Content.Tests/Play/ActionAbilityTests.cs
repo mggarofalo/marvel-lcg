@@ -10097,6 +10097,66 @@ public sealed class ActionAbilityTests
         Assert.Equal(0, minion.Damage);
     }
 
+    [Rule("rr:and")]
+    [Rule("rr:first-player.3")]
+    [Fact]
+    public void ReorderableDamageInventoryKeepsCardsCorrelated()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "and": [
+                { "moveDamage": {
+                  "from": { "titled": "Hawkeye" },
+                  "to": { "titled": "Black Cat" }, "amount": 1
+                } },
+                { "moveDamage": {
+                  "from": { "titled": "Black Cat" },
+                  "to": { "titled": "Hawkeye" }, "amount": 1
+                } }
+              ] },
+              { "moveDamage": {
+                "from": { "titled": "Hawkeye" },
+                "to": { "titled": "Hydra Mercenary" }, "amount": 1
+              } },
+              { "moveDamage": {
+                "from": { "titled": "Black Cat" },
+                "to": { "titled": "Hydra Mercenary" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var hawkeye = board.CreateCard(
+                    "01066", board.AreaOf(
+                        DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                hawkeye.TakeDamage(1);
+                board.CreateCard(
+                    "01002", board.AreaOf(
+                        DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                var minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 2);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+    }
+
     [Rule("rr:search.1")]
     [Fact]
     public void InactiveBranchDoesNotMakeALaterAreaQueryUnstable()
