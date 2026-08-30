@@ -642,7 +642,7 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
-    public void AWindowEventWithPrintedAndArrowCostsIsNotOfferedOrResolved()
+    public void AWindowEventWithPrintedAndArrowCostsUsesOneAllocatedPayment()
     {
         Card? card = null;
         Card? energy = null;
@@ -669,15 +669,21 @@ public sealed class ActionAbilityTests
             Player: 0,
             Target: world.Seats[0].IdentityCard.ObjectId);
 
-        Assert.Empty(runner.Waiting(world, occurrence, WindowKind.Interrupt));
-        Assert.Throws<RulesNotImplementedException>(() => runner.Resolve(
+        Assert.Contains(
+            runner.Waiting(world, occurrence, WindowKind.Interrupt),
+            pending => pending.Card == eventCard.ObjectId);
+        runner.Resolve(
             world,
             occurrence,
             new PendingAbility(eventCard.ObjectId, AbilityType.Interrupt, 0),
             [payment.ObjectId],
-            []));
-        Assert.Same(world.Seats[0].Hand, eventCard.Area);
-        Assert.Same(world.Seats[0].Hand, payment.Area);
+            [],
+            allocations:
+            [
+                new ResourceAllocation(payment.ObjectId, Cost: 1, PaidAs: "Y"),
+            ]);
+        Assert.Equal(DeckType.DiscardPile, eventCard.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
     }
 
     [Fact]
@@ -716,7 +722,7 @@ public sealed class ActionAbilityTests
 
         Assert.Contains(
             price.Generators, source => source.Effect == doubleMental!.ObjectId);
-        Assert.DoesNotContain(
+        Assert.Contains(
             price.Generators, source => source.Effect == physical!.ObjectId);
 
         Assert.Throws<RulesNotImplementedException>(() => runner.Act(
@@ -928,7 +934,7 @@ public sealed class ActionAbilityTests
         Assert.Contains(price.Generators, source => source.Effect == doubleEnergy!.ObjectId);
         Assert.Contains(price.Generators, source => source.Effect == doubleMental!.ObjectId);
         Assert.Contains(price.Generators, source => source.Effect == safeTriple!.ObjectId);
-        Assert.DoesNotContain(
+        Assert.Contains(
             price.Generators, source => source.Effect == ambiguousTriple!.ObjectId);
     }
 
@@ -981,7 +987,7 @@ public sealed class ActionAbilityTests
     }
 
     [Fact]
-    public void ARemainingWildDeclarationChoiceIsNotOfferedOrInferred()
+    public void ARemainingWildDeclarationChoiceIsOfferedButNotInferred()
     {
         const string requiredEvent = "27016"; // one of two wilds must be physical.
         Card? card = null;
@@ -1002,7 +1008,7 @@ public sealed class ActionAbilityTests
 
         var action = Assert.Single(
             runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
-        Assert.DoesNotContain(
+        Assert.Contains(
             Assert.Single(runner.Describe(world, action).CostOptions).Generators,
             source => source.Effect == doubleWild!.ObjectId);
         Assert.Throws<RulesNotImplementedException>(() => runner.Act(
@@ -1012,6 +1018,19 @@ public sealed class ActionAbilityTests
             []));
         Assert.Same(world.Seats[0].Hand, card!.Area);
         Assert.Same(world.Seats[0].Hand, doubleWild!.Area);
+
+        runner.Act(
+            world,
+            action,
+            [doubleWild.ObjectId],
+            [],
+            allocations:
+            [
+                new ResourceAllocation(doubleWild.ObjectId, Cost: 0, PaidAs: "RG"),
+            ]);
+
+        Assert.Equal(DeckType.DiscardPile, card.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, doubleWild.Area.Type);
     }
 
     [Rule("rr:cost.5")]
@@ -1049,6 +1068,84 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.DiscardPile, doubleEnergy.Area.Type);
         Assert.NotNull(game.Pending);
         Assert.Equal(Question.TurnOption, game.Pending.Asking);
+    }
+
+    [Rule("rr:cost.5")]
+    [Rule("rr:cost.5.1")]
+    [Fact]
+    public void OneDoubleResourceCanBeAllocatedAcrossAnEventsTwoCosts()
+    {
+        // An event's printed cost and its cost before the arrow are paid
+        // simultaneously, and the player "chooses how to divide" a generated
+        // double resource between them. One command therefore assigns one icon
+        // to each component while naming the generator only once.
+        const string eventCard = "01004";
+        var runner = Runner(
+            eventCard,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spend": "Y" }""");
+        Card? card = null;
+        Card? doubleEnergy = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                card = board.CreateCard(eventCard, board.Seats[0].Hand);
+                doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
+            },
+            abilities: runner);
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == card!.ObjectId);
+        var price = Assert.Single(action.CostOptions);
+
+        Assert.Equal("2", price.Cost);
+        Assert.Equal(2, price.ResourceCosts.Count);
+        Assert.Equal(["1", "1"], price.ResourceCosts.Select(cost => cost.Cost));
+
+        game.Resolve(Decision.Take(
+            action.Id,
+            [],
+            [doubleEnergy!.ObjectId],
+            new Dictionary<string, long>(StringComparer.Ordinal),
+            [
+                new ResourceAllocation(doubleEnergy.ObjectId, Cost: 0, PaidAs: "Y"),
+                new ResourceAllocation(doubleEnergy.ObjectId, Cost: 1, PaidAs: "Y"),
+            ]));
+
+        Assert.Equal(DeckType.DiscardPile, card!.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, doubleEnergy!.Area.Type);
+    }
+
+    [Rule("rr:cost.5")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void ACombinedEventCostWithoutAnAllocationChangesNoState()
+    {
+        const string eventCard = "01004";
+        var runner = Runner(
+            eventCard,
+            "Action",
+            """{ "draw": { "player": "you", "count": 1 } }""",
+            cost: """{ "spend": "Y" }""");
+        Card? card = null;
+        Card? doubleEnergy = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                card = board.CreateCard(eventCard, board.Seats[0].Hand);
+                doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
+            },
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world, action, [doubleEnergy!.ObjectId], []));
+
+        Assert.Contains("allocation was not supplied", thrown.Message, StringComparison.Ordinal);
+        Assert.Same(world.Seats[0].Hand, card!.Area);
+        Assert.Same(world.Seats[0].Hand, doubleEnergy!.Area);
     }
 
     [Rule("rr:cost.5")]

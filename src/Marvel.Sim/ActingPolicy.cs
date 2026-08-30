@@ -163,8 +163,13 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
             };
         }
 
+        var values = Values(option);
         return Decision.Take(
-            option.Id, targets ?? Targets(world, option), payment, Values(option));
+            option.Id,
+            targets ?? Targets(world, option),
+            payment,
+            values,
+            Allocations(option, payment, values));
     }
 
     private static Dictionary<string, long> Values(Affordance option) =>
@@ -174,6 +179,15 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
                 variable => variable.Name,
                 variable => variable.Min,
                 StringComparer.Ordinal);
+
+    private static IReadOnlyList<ResourceAllocation> Allocations(
+        Affordance option,
+        IReadOnlyList<int> payment,
+        IReadOnlyDictionary<string, long> values) =>
+        option.CostOptions
+            .Select(cost => ResourcePayment.Allocate(cost, payment, values))
+            .FirstOrDefault(allocation => allocation is not null)
+        ?? [];
 
     private static Affordance? Find(Prompt asked, string verb) =>
         asked.Affordances.FirstOrDefault(option =>

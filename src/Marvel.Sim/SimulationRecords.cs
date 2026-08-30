@@ -57,6 +57,7 @@ internal sealed record StepRecord(
     IReadOnlyList<int> Targets,
     IReadOnlyList<int> Resources,
     IReadOnlyDictionary<string, long> Values,
+    IReadOnlyList<ResourceAllocation> Allocations,
     IReadOnlyList<JsonElement> Events,
     string Digest);
 
@@ -85,6 +86,7 @@ internal sealed record FailureRecord(
     IReadOnlyList<int> Targets,
     IReadOnlyList<int> Resources,
     IReadOnlyDictionary<string, long> Values,
+    IReadOnlyList<ResourceAllocation> Allocations,
     string? LastGoodDigest,
     string? PostFailureDigest,
     IReadOnlyList<StepRecord> RecentSteps,
@@ -179,7 +181,8 @@ internal sealed record DecisionSelector(
 
     public Decision Resolve(
         Prompt prompt, IReadOnlyList<int> targets, IReadOnlyList<int> resources,
-        IReadOnlyDictionary<string, long> values)
+        IReadOnlyDictionary<string, long> values,
+        IReadOnlyList<ResourceAllocation> allocations)
     {
         if (Decline)
         {
@@ -230,7 +233,7 @@ internal sealed record DecisionSelector(
                 $"recorded variables are not allowed by '{selected.Label}'");
         }
 
-        return Decision.Take(selected.Id, targets, resources, values);
+        return Decision.Take(selected.Id, targets, resources, values, allocations);
     }
 
     private static bool PaymentIsOffered(

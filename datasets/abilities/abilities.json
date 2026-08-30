@@ -110,7 +110,7 @@
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Resource", "subject": "this", "form": "hero" },
           "cost": { "seq": [ { "exhaust": "this" }, { "removeCounters": "web" } ] },
-          "effect": { "generate": "W" }
+          "effect": { "generate": "G" }
         }
       ]
     },

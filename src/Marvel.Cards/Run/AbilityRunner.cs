@@ -503,8 +503,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     // nobody can pay for is not an offer that fails at step 5; it
                     // never reaches the window at all.
                     if (!Payable(world, card, controller, ability.Cost)
-                        || !EventPayable(world, card, controller, ability.Effect)
-                        || HasUnsupportedCombinedEventCost(world, card, ability)
+                        || !EventPayable(world, card, controller, ability)
                         || !Available(world, card, ability))
                     {
                         continue;
@@ -533,8 +532,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // offered as `Foresight`, so a client has something to render without
         // knowing what the ability does. One string does for both fields
         // because the engine carries one -- see the remarks on `Affordance.Id`.
-        var price = EventPrice(world, card, ability.Player, found.Effect)
-            ?? Price(world, card, ability.Player, found.Cost);
+        var price = CombinedPrice(world, card, ability.Player, found);
         return new Affordance(
             Id: ability.Card,
             Verb: found.Name,
@@ -548,7 +546,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Resolve(
         World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen)
+        IReadOnlyList<int> chosen) =>
+        Resolve(world, occurrence, ability, paying, chosen, values: null, allocations: null);
+
+    /// <inheritdoc/>
+    public IReadOnlyList<GameEvent> Resolve(
+        World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying,
+        IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values = null,
+        IReadOnlyList<ResourceAllocation>? allocations = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
@@ -595,13 +601,6 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "resolves without any player being asked to pay one");
         }
 
-        if (HasUnsupportedCombinedEventCost(world, card, found))
-        {
-            throw new RulesNotImplementedException(
-                $"event '{card.FaceId}' has both a printed resource cost and an ability "
-                + "cost, whose combined payment is not represented");
-        }
-
         if (resolving >= 0 && !CanInitiate(found, cast))
         {
             // A mandatory ability with no valid target does not become a
@@ -622,9 +621,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // asked whether the cost could be paid at all. What it cannot check is
         // that the player named a payment that works, and `CardPlay.Spend`
         // refuses one that does not.
-        ValidatePayment(found.Cost, paying, chosen, cast);
-        PayEvent(card, paying, cast, found.Effect);
-        Pay(found.Cost, paying, chosen, cast);
+        ValidatePayment(found.Cost, paying, chosen, values, cast);
+        PayEvent(card, paying, cast, found.Effect, allocations, found.Cost);
+        if (world.Facts.Kind(card.FaceId) == CardKind.Event
+            && ResourceRequirement(found.Cost, card).Length > 0)
+        {
+            PayNonResourceCosts(found.Cost, paying, chosen, values, cast);
+        }
+        else
+        {
+            Pay(found.Cost, paying, chosen, values, cast);
+        }
         Use(world, card, found);
         if (world.Facts.Kind(card.FaceId) == CardKind.Event)
         {
@@ -1620,18 +1627,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     public IReadOnlyList<GameEvent> Act(
         World world, PendingAbility ability, IReadOnlyList<int> paying,
         IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values = null)
+        IReadOnlyDictionary<string, long>? values = null,
+        IReadOnlyList<ResourceAllocation>? allocations = null)
         => Act(
             world, ability, paying, chosen,
             new Occurrence(
                 0, [Steps.TurnAction], Subject: ability.Card, Player: ability.Player),
-            values);
+            values, allocations);
 
     /// <inheritdoc/>
     public IReadOnlyList<GameEvent> Act(
         World world, PendingAbility ability, IReadOnlyList<int> paying,
         IReadOnlyList<int> chosen, Occurrence occurrence,
-        IReadOnlyDictionary<string, long>? values = null)
+        IReadOnlyDictionary<string, long>? values = null,
+        IReadOnlyList<ResourceAllocation>? allocations = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(paying);
@@ -1667,8 +1676,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
         // before step 6 resolves.
         ValidatePayment(found.Cost, paying, chosen, values, cast);
-        PayEvent(card, paying, cast, found.Effect);
-        Pay(found.Cost, paying, chosen, values, cast);
+        PayEvent(card, paying, cast, found.Effect, allocations, found.Cost);
+        if (world.Facts.Kind(card.FaceId) == CardKind.Event
+            && ResourceRequirement(found.Cost, card).Length > 0)
+        {
+            PayNonResourceCosts(found.Cost, paying, chosen, values, cast);
+        }
+        else
+        {
+            Pay(found.Cost, paying, chosen, values, cast);
+        }
         Use(world, card, found);
         if (world.Facts.Kind(card.FaceId) == CardKind.Event)
         {
@@ -1705,7 +1722,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     player, [], this);
                 if (ActionAvailable(world, card, ability, player, eligibility)
                     && Payable(world, card, player, ability.Cost)
-                    && EventPayable(world, card, player, ability.Effect))
+                    && EventPayable(world, card, player, ability))
                 {
                     int ordinal = written.Take(index).Count(candidate =>
                         candidate.Trigger.Timing == ability.Trigger.Timing);
@@ -1725,20 +1742,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         eligibility.SetPaymentMayMutate(
             ability.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event);
         return MayInitiate(world, ability, card, player)
-        // Printed event cost plus an arrow cost is one simultaneous payment.
-        // The current prompt carries only one resource selection, so refuse
-        // this shape before either payment can mutate state. MARVEL-288 owns
-        // the combined wire and allocation semantics.
-        && !HasUnsupportedCombinedEventCost(world, card, ability)
         && Available(world, card, ability)
         && InForm(world, player, ability.Trigger.Form)
         && (ability.When is null || Test(ability.When, eligibility))
         && CanInitiate(ability, eligibility);
     }
-
-    private static bool HasUnsupportedCombinedEventCost(
-        World world, Card card, CardAbility ability) =>
-        world.Facts.Kind(card.FaceId) == CardKind.Event && ability.Cost is not null;
 
     /// <summary>The exact same-timing ability named by a pending ordinal.</summary>
     private CardAbility Pending(Card card, PendingAbility pending) =>
@@ -1932,7 +1940,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         };
 
     private static bool EventPayable(
-        World world, Card card, int player, AbilityNode effect)
+        World world, Card card, int player, CardAbility ability)
     {
         if (world.Facts.Kind(card.FaceId) != CardKind.Event)
         {
@@ -1946,10 +1954,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         long cost = CardPlay.CostOf(
             world, world.Facts, world.Seats[player], card).Amount;
-        string pool = string.Concat(EventGenerators(world, card, player, effect)
+        string required = Resources.Required(world, card, world.Facts)
+            + ResourceRequirement(ability.Cost, card);
+        cost += required.Length
+            - Resources.Required(world, card, world.Facts).Length;
+        string pool = string.Concat(EventGenerators(world, card, player, ability.Effect)
             .SelectMany(source => source.Generates));
-        return Resources.Pays(pool, cost, Resources.Required(world, card, world.Facts));
+        return Resources.Pays(pool, cost, required);
     }
+
+    private static string ResourceRequirement(AbilityNode? cost, Card card) => cost switch
+    {
+        null => string.Empty,
+        { Kind: "spend" } => Word(cost.Argument),
+        { Kind: "seq" } => string.Concat(Nodes(cost.Argument)
+            .Where(step => step.Kind == "spend")
+            .Select(step => Word(step.Argument))),
+        { Kind: "spendEnergyX" } => throw new RulesNotImplementedException(
+            $"event '{card.FaceId}' combines a printed cost with a variable X cost"),
+        _ => string.Empty,
+    };
 
     /// <summary>
     /// What a cost still has to be told, or null.
@@ -2060,6 +2084,51 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]));
     }
 
+    private static CostOption? CombinedPrice(
+        World world, Card card, int player, CardAbility ability)
+    {
+        var printed = EventPrice(world, card, player, ability.Effect);
+        var arrow = Price(world, card, player, ability.Cost);
+        if (printed is null || arrow is null)
+        {
+            return printed ?? arrow;
+        }
+
+        if (!long.TryParse(
+                printed.Cost, System.Globalization.CultureInfo.InvariantCulture,
+                out long printedAmount)
+            || !long.TryParse(
+                arrow.Cost, System.Globalization.CultureInfo.InvariantCulture,
+                out long arrowAmount)
+            || printed.HasAlternative || arrow.HasAlternative
+            || printed.VariableRequests.Count > 0 || arrow.VariableRequests.Count > 0)
+        {
+            throw new RulesNotImplementedException(
+                $"event '{card.FaceId}' has combined resource costs whose price "
+                + "cannot be represented");
+        }
+
+        return new CostOption(
+            Target: card.ObjectId,
+            Cost: checked(printedAmount + arrowAmount).ToString(
+                System.Globalization.CultureInfo.InvariantCulture),
+            Rule:
+            [
+                string.Concat(printed.Rule ?? []),
+                string.Concat(arrow.Rule ?? []),
+            ],
+            Sources: printed.Generators
+                .Concat(arrow.Generators)
+                .GroupBy(source => source.Effect)
+                .Select(group => group.First())
+                .ToList(),
+            Components:
+            [
+                new ResourceCost(printed.Cost, printed.Rule),
+                new ResourceCost(arrow.Cost, arrow.Rule),
+            ]);
+    }
+
     private static CostOption? EventPrice(
         World world, Card card, int player, AbilityNode effect)
     {
@@ -2082,102 +2151,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static List<ResourceSource> EventGenerators(
         World world, Card card, int player, AbilityNode effect)
     {
-        var sources = CardPlay.Paying(world, world.Facts, world.Seats[player], card)
+        return CardPlay.Paying(world, world.Facts, world.Seats[player], card)
             .SelectMany(seat => CardPlay.Generators(world, world.Facts, seat, card))
             .Where(source => source.Effect != card.ObjectId)
             .GroupBy(source => source.Effect)
             .Select(group => group.First())
             .ToList();
-        bool declarationSensitive = PaidResourceQueries(effect.Argument).Any()
-            || effect.Kind == "paidWithResource";
-        if (!declarationSensitive)
-        {
-            return sources;
-        }
-
-        var adjusted = CardPlay.CostOf(
-            world, world.Facts, world.Seats[player], card);
-        string required = Resources.Required(world, card, world.Facts);
-        // Group by what a source generates. Paid-resource outcomes cannot
-        // distinguish two identities producing the same letters. Any source
-        // that can participate safely has a witness consisting of that source
-        // plus an inclusion-minimal payer, so at most cost + 1 sources need be
-        // considered even when an indivisible source overproduces. This stays
-        // bounded by cost and signature rather than by every helping hand.
-        var groups = sources
-            .GroupBy(source => source.Generates, StringComparer.Ordinal)
-            .Select(group => group.ToList())
-            .ToList();
-        var counts = new int[groups.Count];
-        var participating = new HashSet<string>(StringComparer.Ordinal);
-        List<ResourceSource>? first = null;
-        FindPatterns(group: 0, remainingSources: checked((int)adjusted.Amount + 1));
-        if (first is null)
-        {
-            return [];
-        }
-
-        return [.. first.Concat(sources.Where(source =>
-                participating.Contains(source.Generates) && !first.Contains(source)))];
-
-        void FindPatterns(int group, int remainingSources)
-        {
-            if (group == groups.Count)
-            {
-                var payment = groups.SelectMany(
-                        (members, index) => members.Take(counts[index]))
-                    .OrderBy(source => sources.IndexOf(source))
-                    .ToList();
-                string generated = string.Concat(
-                    payment.Select(source => source.Generates));
-                if (!Resources.Pays(generated, adjusted.Amount, required)
-                    || HasAmbiguousPaidResourceAllocation(
-                        effect, generated, adjusted.Amount, required))
-                {
-                    return;
-                }
-
-                if (first is null
-                    || payment.Count < first.Count
-                    || (payment.Count == first.Count && EarlierThan(payment, first)))
-                {
-                    first = payment;
-                }
-                foreach (var source in payment)
-                {
-                    participating.Add(source.Generates);
-                }
-                return;
-            }
-
-            int maximum = Math.Min(
-                groups[group].Count,
-                remainingSources);
-            for (int take = 0; take <= maximum; take++)
-            {
-                counts[group] = take;
-                FindPatterns(group + 1, remainingSources - take);
-            }
-            counts[group] = 0;
-        }
-
-        bool EarlierThan(List<ResourceSource> left, List<ResourceSource> right)
-        {
-            for (int index = 0; index < left.Count; index++)
-            {
-                int comparison = sources.IndexOf(left[index])
-                    .CompareTo(sources.IndexOf(right[index]));
-                if (comparison != 0)
-                {
-                    return comparison < 0;
-                }
-            }
-            return false;
-        }
     }
 
     private static void PayEvent(
-        Card card, IReadOnlyList<int> paying, Cast cast, AbilityNode effect)
+        Card card, IReadOnlyList<int> paying, Cast cast, AbilityNode effect,
+        IReadOnlyList<ResourceAllocation>? allocations = null,
+        AbilityNode? additionalCost = null)
     {
         if (cast.World.Facts.Kind(card.FaceId) != CardKind.Event)
         {
@@ -2218,24 +2203,45 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         string generated = string.Concat(generators
             .Where(source => selected.Contains(source.Effect))
             .Select(source => source.Generates));
-        string required = Resources.Required(cast.World, card, cast.World.Facts);
-        if (!Resources.Pays(generated, adjusted.Amount, required))
+        string printedRequired = Resources.Required(
+            cast.World, card, cast.World.Facts);
+        string additionalRequired = ResourceRequirement(additionalCost, card);
+        string required = printedRequired + additionalRequired;
+        long total = checked(adjusted.Amount + additionalRequired.Length);
+        var components = new List<ResourceCost>
+        {
+            new(
+                adjusted.Amount.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture),
+                printedRequired.Length > 0 ? [printedRequired] : null),
+        };
+        if (additionalRequired.Length > 0)
+        {
+            components.Add(new ResourceCost(
+                additionalRequired.Length.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture),
+                [additionalRequired]));
+        }
+
+        if (!Resources.Pays(generated, total, required))
         {
             throw new RulesNotImplementedException(
-                $"the cost is {adjusted.Amount}"
+                $"the cost is {total}"
                 + (required.Length > 0 ? $" requiring '{required}'" : string.Empty)
                 + $" and the payment generates '{generated}'; "
                 + "rr:initiating-abilities.step.5 aborts without paying");
         }
 
-        if (HasAmbiguousPaidResourceAllocation(
-                effect, generated, adjusted.Amount, required))
+        var assigned = allocations ?? [];
+        if (components.Count > 1 && assigned.Count == 0)
         {
-            // Decision.Resources deliberately carries an unordered set of
-            // sources. With unlike excess icons it cannot say which icons the
-            // player allocated to the cost, and paid-with-resource effects can
-            // distinguish those legal allocations. Fail before the event
-            // leaves the hand; MARVEL-288 owns an explicit allocation wire.
+            throw new RulesNotImplementedException(
+                $"event {card.ObjectId} has simultaneous printed and arrow resource "
+                + "costs whose icon allocation was not supplied");
+        }
+        if (assigned.Count == 0 && HasAmbiguousPaidResourceAllocation(
+                effect, generated, total, required))
+        {
             throw new RulesNotImplementedException(
                 $"event {card.ObjectId} overpays with unlike resource types, whose paid "
                 + "allocation is not represented");
@@ -2260,9 +2266,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         bool declarationSensitive = PaidResourceQueries(effect.Argument).Any()
             || effect.Kind == "paidWithResource";
-        string paid = declarationSensitive
-            ? DeclaredPaidResources(generated, adjusted.Amount, required)
-            : Resources.Paid(generated, adjusted.Amount, required);
+        string paid = assigned.Count > 0
+            ? AllocatedResources(generators, paying, assigned, components, card)
+            : declarationSensitive
+                ? DeclaredPaidResources(generated, total, required)
+                : Resources.Paid(generated, total, required);
         cast.PaidWith(paid);
         foreach (char resource in paid.Distinct())
         {
@@ -2276,7 +2284,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         CardPlay.Spend(
             cast.World, cast.World.Facts, [.. payingSeats.Select(seat => seat.Hand)], paying,
-            adjusted.Amount,
+            total,
             required, card.ObjectId,
             cast.Player, cast.Events, payingFor: card,
             resourcePayers: resourcePayers);
@@ -2290,6 +2298,83 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             cast.Occurrence.Also(Steps.CardPlayed);
         }
+    }
+
+    private static string AllocatedResources(
+        IReadOnlyList<ResourceSource> generators,
+        IReadOnlyList<int> paying,
+        IReadOnlyList<ResourceAllocation> allocations,
+        List<ResourceCost> components,
+        Card card)
+    {
+        var selected = paying.ToHashSet();
+        var remaining = generators
+            .Where(source => selected.Contains(source.Effect))
+            .ToDictionary(
+                source => source.Effect,
+                source => source.Generates.ToList());
+        var paid = Enumerable.Range(0, components.Count)
+            .Select(_ => new System.Text.StringBuilder())
+            .ToList();
+
+        foreach (var allocation in allocations)
+        {
+            if (!remaining.TryGetValue(allocation.Source, out var available)
+                || allocation.Cost < 0 || allocation.Cost >= components.Count
+                || allocation.PaidAs.Length == 0)
+            {
+                throw new RulesNotImplementedException(
+                    $"event {card.ObjectId} carries an invalid resource allocation");
+            }
+
+            foreach (char declared in allocation.PaidAs)
+            {
+                if (!Resources.Types.Contains(declared))
+                {
+                    throw new RulesNotImplementedException(
+                        $"event {card.ObjectId} declares unknown resource '{declared}'");
+                }
+
+                int icon = available.IndexOf(declared);
+                if (icon < 0 && declared != Resources.Wild)
+                {
+                    icon = available.IndexOf(Resources.Wild);
+                }
+                if (icon < 0)
+                {
+                    throw new RulesNotImplementedException(
+                        $"event {card.ObjectId} allocates '{declared}' from generator "
+                        + $"{allocation.Source}, which cannot produce it");
+                }
+
+                available.RemoveAt(icon);
+                paid[allocation.Cost].Append(declared);
+            }
+        }
+
+        for (int index = 0; index < components.Count; index++)
+        {
+            if (!long.TryParse(
+                    components[index].Cost,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out long amount))
+            {
+                throw new RulesNotImplementedException(
+                    $"event {card.ObjectId} has a non-numeric allocation component");
+            }
+            string assigned = paid[index].ToString();
+            string required = string.Concat(components[index].Rule ?? []);
+            if (assigned.Length != amount
+                || !Resources.Pays(assigned, amount, required))
+            {
+                throw new RulesNotImplementedException(
+                    $"event {card.ObjectId} assigns '{assigned}' to cost {index}, "
+                    + $"which costs {amount}"
+                    + (required.Length > 0 ? $" requiring '{required}'" : string.Empty));
+            }
+        }
+
+        return string.Concat(paid.Select(component => component.ToString()));
     }
 
     private static bool HasAmbiguousPaidResourceAllocation(
@@ -2503,6 +2588,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     cast.Player);
             }
         }
+    }
+
+    /// <summary>Pays an ability's cost — <c>rr:initiating-abilities.step.5</c>.</summary>
+    private static void PayNonResourceCosts(
+        AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+        IReadOnlyDictionary<string, long>? values, Cast cast)
+    {
+        if (cost is null || cost.Kind is "spend" or "spendEnergyX")
+        {
+            return;
+        }
+        if (cost.Kind == "seq")
+        {
+            foreach (var step in Nodes(cost.Argument))
+            {
+                PayNonResourceCosts(step, paying, chosen, values, cast);
+            }
+            return;
+        }
+
+        Pay(cost, paying, chosen, values, cast);
     }
 
     /// <summary>Pays an ability's cost — <c>rr:initiating-abilities.step.5</c>.</summary>

@@ -482,7 +482,8 @@ public sealed class Game
         // value independent of the caller's mutable decision lists.
         world.Agenda.AddPlayerAction(Round, new PlayerAction(
             ability, [.. input.Spent], [.. input.Targets],
-            new Dictionary<string, long>(input.DefinedValues, StringComparer.Ordinal)));
+            new Dictionary<string, long>(input.DefinedValues, StringComparer.Ordinal),
+            [.. input.Allocated]));
         if (ability.Type == AbilityType.ForcedAction)
         {
             // Resolving the ability once satisfies rr:action.2 for this player

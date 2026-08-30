@@ -80,8 +80,16 @@ public sealed class ActingPolicy(int seed, int declineOneIn = 4)
             : Taking(taken);
     }
 
-    private Decision Taking(Affordance taken) =>
-        Decision.Take(taken.Id, Targets(taken), Paying(taken), Values(taken));
+    private Decision Taking(Affordance taken)
+    {
+        var paying = Paying(taken);
+        var values = Values(taken);
+        var allocations = taken.CostOptions
+            .Select(cost => ResourcePayment.Allocate(cost, paying, values))
+            .FirstOrDefault(allocation => allocation is not null)
+            ?? [];
+        return Decision.Take(taken.Id, Targets(taken), paying, values, allocations);
+    }
 
     private static Dictionary<string, long> Values(Affordance taken) =>
         taken.CostOptions

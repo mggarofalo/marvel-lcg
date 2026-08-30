@@ -25,6 +25,10 @@ namespace Marvel.Rules.Prompts;
 /// of the affordance because a cost of X cannot infer the player's choice from
 /// whichever generators they later use.
 /// </param>
+/// <param name="Components">
+/// The simultaneous resource costs represented by this one payment. Empty for
+/// an ordinary single cost.
+/// </param>
 /// <remarks>
 /// <para>
 /// <b>Generation and payment are two things, and this record only describes the
@@ -59,7 +63,8 @@ public sealed record CostOption(
     string OrCost = "",
     IReadOnlyList<string>? OrRule = null,
     IReadOnlyList<ResourceSource>? Sources = null,
-    IReadOnlyList<VariableRequest>? Variables = null)
+    IReadOnlyList<VariableRequest>? Variables = null,
+    IReadOnlyList<ResourceCost>? Components = null)
 {
     /// <summary>Whether the cost has a second legal reading.</summary>
     public bool HasAlternative => OrCost.Length > 0;
@@ -69,7 +74,14 @@ public sealed record CostOption(
 
     /// <summary>The variable values this cost asks the player to define.</summary>
     public IReadOnlyList<VariableRequest> VariableRequests => Variables ?? [];
+
+    /// <summary>The resource-cost components sharing this payment.</summary>
+    public IReadOnlyList<ResourceCost> ResourceCosts => Components
+        ?? [new ResourceCost(Cost, Rule)];
 }
+
+/// <summary>One component of a simultaneous resource payment.</summary>
+public sealed record ResourceCost(string Cost, IReadOnlyList<string>? Rule = null);
 
 /// <summary>A numerical value the player must define while initiating a cost.</summary>
 /// <param name="Name">The printed variable, such as <c>X</c>.</param>

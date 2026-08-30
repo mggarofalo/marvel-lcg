@@ -103,6 +103,7 @@ internal static class SimulationHarness
                         input.Targets,
                         input.Spent,
                         input.DefinedValues,
+                        input.Allocated,
                         happened,
                         game.State.Digest().Fingerprint());
                     recent.Enqueue(recordedStep);
@@ -158,6 +159,7 @@ internal static class SimulationHarness
                     input?.Spent ?? [],
                     input?.DefinedValues
                         ?? new Dictionary<string, long>(StringComparer.Ordinal),
+                    input?.Allocated ?? [],
                     lastGood,
                     game?.State.Digest().Canonical(),
                     [.. recent],
@@ -344,7 +346,8 @@ internal static class SimulationHarness
                             policyDecision.DefinedValues, RecordJson.Options),
                         $"game {currentGame} step {step.Step} policy variables");
                     var decision = step.Decision.Resolve(
-                        asked, step.Targets, step.Resources, step.Values);
+                        asked, step.Targets, step.Resources, step.Values,
+                        step.Allocations);
                     var resolved = game.Resolve(decision);
                     replayPolicy.DecisionResolved();
                     replayRecent.Enqueue(step);
@@ -574,7 +577,7 @@ internal static class SimulationHarness
                     {
                         var decision = failure.Decision.Resolve(
                             game.Pending, failure.Targets, failure.Resources,
-                            failure.Values);
+                            failure.Values, failure.Allocations);
                         game.Resolve(decision);
                     }
                     catch (Exception error)

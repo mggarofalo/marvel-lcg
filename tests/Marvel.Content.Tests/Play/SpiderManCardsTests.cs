@@ -276,7 +276,7 @@ public sealed class SpiderManCardsTests
 
         string generated = runner.UseResource(world, 0, shooter.ObjectId, []);
 
-        Assert.Equal("W", generated);
+        Assert.Equal("G", generated);
         Assert.False(shooter.Ready);
         Assert.Equal(0, shooter.Tokens.GetValueOrDefault("c_web"));
         Assert.Equal(DeckType.DiscardPile, shooter.Area.Type);

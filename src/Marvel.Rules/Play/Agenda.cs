@@ -305,11 +305,15 @@ public sealed record PlayerAction(
     PendingAbility Ability,
     IReadOnlyList<int> Paying,
     IReadOnlyList<int> Chosen,
-    IReadOnlyDictionary<string, long>? Values = null)
+    IReadOnlyDictionary<string, long>? Values = null,
+    IReadOnlyList<ResourceAllocation>? Allocations = null)
 {
     /// <summary>The numerical variables defined when this action was accepted.</summary>
     public IReadOnlyDictionary<string, long> DefinedValues => Values
         ?? EmptyValues;
+
+    /// <summary>The accepted paid-icon allocations.</summary>
+    public IReadOnlyList<ResourceAllocation> Allocated => Allocations ?? [];
 
     private static IReadOnlyDictionary<string, long> EmptyValues { get; } =
         new Dictionary<string, long>(StringComparer.Ordinal);

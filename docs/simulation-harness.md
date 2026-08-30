@@ -273,13 +273,22 @@ A taken affordance stores:
     "occurrence": 0
   },
   "targets": [49],
-  "resources": [12, 17]
+  "resources": [12, 17],
+  "values": {},
+  "allocations": [
+    {"source": 12, "cost": 0, "paid_as": "Y"},
+    {"source": 17, "cost": 1, "paid_as": "R"}
+  ]
 }
 ```
 
 Target order is significant and remains unchanged. Resource order has no
 tabletop meaning, but it determines the order of generated events, so the
 record retains the policy's order to make exact replay possible.
+Allocation `cost` is a zero-based index into the selected cost option's
+resource components; `paid_as` records one letter per icon actually paid,
+including the type declared for a wild. Variable names and allocation choices
+are replayed exactly rather than reconstructed from the later board.
 
 Before taking an affordance, the runner requires exactly one legal option with
 the selected selector occurrence. A missing occurrence fails before
@@ -360,6 +369,7 @@ One step records the prompt before the decision and state after resolution:
   "targets": [49],
   "resources": [12, 17],
   "values": {"X": 2},
+  "allocations": [],
   "events": [],
   "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 }

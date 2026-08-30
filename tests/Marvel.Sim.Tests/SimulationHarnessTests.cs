@@ -59,11 +59,11 @@ public sealed class SimulationHarnessTests
             111,
             selector.Resolve(
                 replayed, [], [],
-                new Dictionary<string, long>(StringComparer.Ordinal)).Affordance);
+                new Dictionary<string, long>(StringComparer.Ordinal), []).Affordance);
         Assert.Throws<ReplayDivergenceException>(() =>
             selector.Resolve(
                 Prompt(new Affordance(1, "Action", 8, 1, "Choose")),
-                [], [], new Dictionary<string, long>(StringComparer.Ordinal)));
+                [], [], new Dictionary<string, long>(StringComparer.Ordinal), []));
     }
 
     [Fact]
