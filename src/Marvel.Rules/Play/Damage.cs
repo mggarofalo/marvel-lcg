@@ -129,9 +129,18 @@ public static class Damage
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(events);
 
+        amount = Replace(world, target, source, amount, events);
+        return PrepareAfterReplacement(
+            world, facts, source, target, amount, trigger, events);
+    }
+
+    /// <summary>Resolve damage step 1 and return the still-imminent amount.</summary>
+    internal static long Replace(
+        World world, Card target, Card source, long amount, List<GameEvent> events)
+    {
         if (amount <= 0)
         {
-            return new PlacedDamage(target, 0, 0);
+            return 0;
         }
 
         // `rr:cannot` -- "cannot" is absolute. A character forbidden from
@@ -139,7 +148,7 @@ public static class Damage
         // there is no imminent damage to replace and no tough card to spend.
         if (!world.Abilities.CanTakeDamage(world, target, source))
         {
-            return new PlacedDamage(target, 0, 0);
+            return 0;
         }
 
         // `rr:damage.step.1` -- "abilities that trigger when [character] would
@@ -147,11 +156,19 @@ public static class Damage
         // sits. It comes before the tough card, which is step 2, and a card
         // that replaces all of the damage leaves nothing for the rest of the
         // nine steps to do.
-        amount = world.Abilities.WouldBeDealt(world, target, source, amount, events);
+        return world.Abilities.WouldBeDealt(world, target, source, amount, events);
+    }
+
+    /// <summary>Continue damage after step 1 has fixed the amount dealt.</summary>
+    internal static PlacedDamage PrepareAfterReplacement(
+        World world, ICardFacts facts, Card source, Card target, long amount,
+        string trigger, List<GameEvent> events)
+    {
         if (amount <= 0)
         {
             return new PlacedDamage(target, 0, 0);
         }
+
         long dealt = amount;
 
         // `rr:tough.2`: "if a character with a tough status card would take any

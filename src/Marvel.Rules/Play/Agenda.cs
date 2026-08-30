@@ -147,6 +147,11 @@ public enum Stage
 /// <param name="ProcedureVerb">The kind of effect preserved by the procedure.</param>
 /// <param name="ProcedureBy">The acting seat preserved by the procedure, or -1.</param>
 /// <param name="ProcedureAmount">A numeric result preserved for procedure cleanup.</param>
+/// <param name="ProcedureAmounts">
+/// Numeric results shared by the frames of one rules procedure. The spelling
+/// is engine continuation data; it lets a resumable procedure preserve a
+/// per-card result across player windows without replaying the rule step.
+/// </param>
 /// <param name="ProcedureFlag">A boolean rule result preserved for procedure cleanup.</param>
 /// <param name="AbilityOrdinal">
 /// Which same-tier authored ability suspended. The ordinal is engine save data;
@@ -179,7 +184,9 @@ public readonly record struct PhaseStep(
     IReadOnlyList<int>? ProcedurePlayersPassed = null,
     Occurrence? ProcedureOccurrence = null, int ProcedureSource = -1,
     string ProcedureTrigger = "", string ProcedureVerb = "", int ProcedureBy = -1,
-    long ProcedureAmount = 0, bool ProcedureFlag = false,
+    long ProcedureAmount = 0,
+    IReadOnlyDictionary<int, long>? ProcedureAmounts = null,
+    bool ProcedureFlag = false,
     IReadOnlyList<string>? AbilityPath = null,
     IReadOnlyList<int>? AbilityActivationIds = null,
     IReadOnlyDictionary<string, long>? AbilityResults = null,
@@ -495,6 +502,32 @@ public sealed class Agenda
                         : null,
                 }, stage, occurrence);
             }
+        }
+    }
+
+    /// <summary>Persist one per-card result on every frame of a rules procedure.</summary>
+    /// <remarks>
+    /// Each frame receives its own dictionary when an agenda is deserialized,
+    /// so correctness cannot depend on several steps retaining one shared
+    /// collection reference. The containing occurrence identifies the frames;
+    /// the dictionary spelling is an engine save-format choice.
+    /// </remarks>
+    public void RecordProcedureAmount(Occurrence procedure, int card, long amount)
+    {
+        ArgumentNullException.ThrowIfNull(procedure);
+        for (int index = 0; index < items.Count; index++)
+        {
+            var (step, stage, occurrence) = items[index];
+            if (step.ProcedureOccurrence?.Id != procedure.Id)
+            {
+                continue;
+            }
+
+            var amounts = step.ProcedureAmounts is { } existing
+                ? new Dictionary<int, long>(existing)
+                : [];
+            amounts[card] = amount;
+            items[index] = (step with { ProcedureAmounts = amounts }, stage, occurrence);
         }
     }
 

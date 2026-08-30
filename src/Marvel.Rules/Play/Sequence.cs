@@ -105,6 +105,24 @@ public static class Sequence
                 // occurrence is what remembers which abilities have used it.
                 var occurrence = world.Agenda.Begin(world, facts);
 
+                if (step.What == Steps.PrepareIndirectAttackDamage)
+                {
+                    long prepared = Attack.PrepareIndirectDamage(
+                        world, step, events);
+                    if (prepared <= 0)
+                    {
+                        // `rr:replacement-effect.1`: a fully replaced effect
+                        // is no longer imminent, so it has neither optional
+                        // interrupts nor a response window.
+                        if (world.Windows.Current is not null)
+                        {
+                            world.Windows.Close();
+                        }
+                        world.Agenda.Cancel(occurrence);
+                        continue;
+                    }
+                }
+
                 // `rr:status-cards.2`: status-card abilities have timing
                 // priority over every conflicting triggered ability. A stun
                 // replaces the attack before its initiation interrupt window,

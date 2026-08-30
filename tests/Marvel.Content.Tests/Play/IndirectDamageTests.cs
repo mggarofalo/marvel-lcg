@@ -417,6 +417,62 @@ public sealed class IndirectDamageTests
         Assert.Equal(DeckType.DiscardPile, backflip.Area.Type);
     }
 
+    [Rule("rr:forced.4")]
+    [Rule("rr:replacement-effect.1")]
+    [Rule("rr:damage.step.1")]
+    [Fact]
+    public void ForcedReplacementRunsBeforeBackflipIsOffered()
+    {
+        // `rr:forced.4`: "forced interrupts take priority and initiate before
+        // non-forced interrupts." The attachment replaces all of this
+        // recipient's assigned damage, and `rr:replacement-effect.1` says a
+        // replaced effect "is no longer considered imminent" — so Backflip
+        // must never be offered or spent on it. Discarding the attachment in
+        // the same forced effect leaves the later damage unambiguous: a leaked
+        // Backflip prevention would stop it, while the card correctly left in
+        // hand cannot.
+        var runner = ForcedSoakAndBackflipRunner();
+        var world = Deal();
+        world.Abilities = runner;
+        var identity = world.Seats[0].IdentityCard;
+        identity.TurnTo(AuthoredCards.SpiderMan);
+        var backflip = world.CreateCard("01003", world.Seats[0].Hand);
+        world.CreateCard(
+            Ally, world.AreaOf(
+                DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var soak = world.CreateCard(
+            "01098",
+            world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0),
+                host: identity.ObjectId));
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        world.Agenda.Add(new PhaseStep(
+            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var defend = Sequence.Work(world, Cards, runner, events)!;
+        Attack.MakeIndirect(world);
+        Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
+        var assign = Sequence.Work(world, Cards, runner, events)!;
+        int amount = Assert.Single(assign.Affordances).Targets!.Min;
+        Sequence.Answer(
+            world, Cards, runner, assign,
+            Decision.Take(
+                assign.Affordances[0].Id,
+                [.. Enumerable.Repeat(identity.ObjectId, amount)], []), events);
+
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
+        Assert.Equal(0, identity.Damage);
+        Assert.Equal(amount, soak.Damage);
+        Assert.Equal(DeckType.EncounterDiscardPile, soak.Area.Type);
+        Assert.Equal(DeckType.HandsArea, backflip.Area.Type);
+
+        Damage.Deal(world, Cards, villain, identity, 1, "later", "Damage", events);
+
+        Assert.Equal(1, identity.Damage);
+        Assert.Equal(DeckType.HandsArea, backflip.Area.Type);
+    }
+
     [Rule("rr:indirect-damage.4")]
     [Fact]
     public void ASupportIsNotACharacterAndTakesNone()
@@ -523,5 +579,25 @@ public sealed class IndirectDamageTests
           "when":{"isYourIdentity":"trigger.target"},
           "effect":{"preventDamage":"trigger.target"}
         }]}]}
+        """));
+
+    private static AbilityRunner ForcedSoakAndBackflipRunner() => new(AbilityCatalog.Parse(
+        """
+        {"cards":[
+          {"card":"01003","abilities":[{
+            "trigger":{"event":"WhenDamageWouldBeDealt","timing":"Interrupt",
+                       "target":"you"},
+            "when":{"isYourIdentity":"trigger.target"},
+            "effect":{"preventDamage":"trigger.target"}
+          }]},
+          {"card":"01098","abilities":[{
+            "trigger":{"event":"WhenDamageWouldBeDealt","timing":"ForcedInterrupt",
+                       "subject":"attachedTo"},
+            "effect":{"seq":[
+              {"soakDamage":{"onto":"this"}},
+              {"discard":"this"}
+            ]}
+          }]}
+        ]}
         """));
 }

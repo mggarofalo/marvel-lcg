@@ -667,7 +667,13 @@ public static class Attack
                     Character: activation.Enemy,
                     ProcedureFlag: activation.Attacking),
                 occurrence);
-            world.Agenda.BeforeResponses(occurrence);
+            // A nested damage/defeat procedure may already have moved itself
+            // ahead of this flip. In that case FinishBoostCard was inserted
+            // behind that child and is already before the exact flip owner.
+            if (world.Agenda.Current is { What: Steps.FlipBoostCards })
+            {
+                world.Agenda.BeforeResponses(occurrence);
+            }
             return;
         }
 
@@ -1013,7 +1019,9 @@ public static class Attack
                 Subject: pair.Key,
                 Seat: step.Seat,
                 ProcedureSource: step.Subject,
-                ProcedureAmount: pair.Value))
+                ProcedureAmount: pair.Value,
+                ProcedureAmounts: new Dictionary<int, long>(),
+                ProcedureOccurrence: occurrence))
             .ToList();
         windows.Add(new PhaseStep(
             Steps.ApplyIndirectAttackDamage,
@@ -1024,8 +1032,31 @@ public static class Attack
             Character: step.Character,
             Plan: true,
             ProcedureCandidates: [.. input.Targets],
-            ProcedureOccurrence: occurrence));
+            ProcedureOccurrence: occurrence,
+            ProcedureAmounts: new Dictionary<int, long>()));
         world.Agenda.Now(windows);
+    }
+
+    /// <summary>Resolve step 1 for one assigned indirect-damage recipient.</summary>
+    public static long PrepareIndirectDamage(
+        World world, PhaseStep step, List<GameEvent> events)
+    {
+        if (step.ProcedureOccurrence is not { } procedure)
+        {
+            throw new RulesNotImplementedException(
+                "indirect attack damage has no containing occurrence");
+        }
+        if (step.ProcedureAmounts?.ContainsKey(step.Subject) == true)
+        {
+            return step.ProcedureAmounts[step.Subject];
+        }
+
+        var attacker = world.Cards[step.ProcedureSource];
+        var target = world.Cards[step.Subject];
+        long amount = Damage.Replace(
+            world, target, attacker, step.ProcedureAmount, events);
+        world.Agenda.RecordProcedureAmount(procedure, step.Subject, amount);
+        return amount;
     }
 
     /// <summary>Place an assigned indirect attack after every recipient window.</summary>
@@ -1035,16 +1066,16 @@ public static class Attack
         var occurrence = step.ProcedureOccurrence ?? world.Agenda.Occurrence
             ?? throw new RulesNotImplementedException(
                 "indirect attack damage has no containing occurrence");
-        var assigned = (step.ProcedureCandidates ?? [])
-            .GroupBy(id => id)
-            .ToDictionary(group => group.Key, group => (long)group.Count());
+        var assigned = step.ProcedureAmounts
+            ?? throw new RulesNotImplementedException(
+                "indirect attack damage has no prepared recipient results");
 
         var attacker = world.Cards[step.Subject];
         var placed = new List<Damage.PlacedDamage>();
         foreach (var (id, amount) in assigned.OrderBy(pair => pair.Key))
         {
             var target = world.Cards[id];
-            placed.Add(Damage.Prepare(
+            placed.Add(Damage.PrepareAfterReplacement(
                 world, facts, attacker, target, amount,
                 Steps.AttackInitiated, events));
         }
