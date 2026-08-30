@@ -10157,6 +10157,140 @@ public sealed class ActionAbilityTests
             action.Card == source!.ObjectId);
     }
 
+    [Rule("rr:tough.2")]
+    [Fact]
+    public void GuaranteedToughProtectsALaterAreaSensitiveDamageStep()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "giveStatus": {
+                "card": { "titled": "Hydra Mercenary" }, "status": "tough"
+              } },
+              { "dealDamage": {
+                "cards": { "titled": "Hydra Mercenary" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        Card? minion = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 1);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+    }
+
+    [Rule("rr:for-each.1")]
+    [Rule("rr:and")]
+    [Rule("rr:cost.6")]
+    [Fact]
+    public void RepeatedAndGroupKeepsItsWholeIterationCountBeforeCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "forEach": { "count": 2, "effect": { "and": [
+                { "dealDamage": {
+                  "cards": { "titled": "Hydra Mercenary" }, "amount": 1
+                } },
+                { "draw": { "player": "you", "count": 1 } }
+              ] } } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? minion = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 2);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
+    }
+
+    [Rule("rr:tough.2")]
+    [Fact]
+    public void ConditionalUsesTheProjectedToughState()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "titled": "Hydra Mercenary" }, "amount": 1
+              } },
+              { "if": {
+                "test": { "hasStatus": {
+                  "card": { "titled": "Hydra Mercenary" }, "status": "tough"
+                } },
+                "then": { "dealDamage": {
+                  "cards": { "titled": "Hydra Mercenary" }, "amount": 1
+                } },
+                "else": { "draw": { "player": "you", "count": 1 } }
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """);
+        Card? source = null;
+        Card? minion = null;
+        var (_, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                minion = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                minion.TakeDamage(
+                    Damage.Health(board, board.Facts, minion) - 1);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+        Statuses.Give(world, minion!, Statuses.Tough);
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+    }
+
     [Rule("rr:search.1")]
     [Fact]
     public void InactiveBranchDoesNotMakeALaterAreaQueryUnstable()

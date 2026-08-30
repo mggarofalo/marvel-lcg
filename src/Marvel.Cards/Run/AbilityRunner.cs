@@ -16141,10 +16141,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var areas = CardsInAreaTypes(query, cast);
-        var changingPrior = cast.PriorSteps.FirstOrDefault(step =>
-            MayChangeAnyArea(step, areas, cast));
-        bool priorCanChange = changingPrior is not null
-            || EffectsMayChangeAnyArea(cast.PriorSteps, areas, cast);
+        bool priorCanChange = EffectsMayChangeAnyArea(
+            cast.PriorSteps, areas, cast);
         bool paymentCanChange = cast.PaymentCost is { } cost
             && MayChangeAnyArea(cost, areas, cast);
         if (priorCanChange || paymentCanChange)
@@ -16156,11 +16154,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' reaches a singular area query after its "
                 + "matching cards may change"
-                + (changingPrior is null
-                    ? cast.PriorSteps.Count > 0
-                        ? " cumulatively during prior effects"
-                        : " during payment"
-                    : $" during {changingPrior.Kind}"));
+                + (cast.PriorSteps.Count > 0
+                    ? " during prior effects"
+                    : " during payment"));
         }
         return true;
     }
@@ -16321,7 +16317,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (effect.Kind is "seq" or "and")
         {
             return EffectsMayChangeAnyArea(
-                Nodes(effect.Argument).ToList(), queried, cast);
+                Nodes(effect.Argument).ToList(), queried, cast, multiplier);
         }
 
         IEnumerable<AbilityNode> reachable = effect.Kind switch
@@ -16341,13 +16337,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
     private static bool EffectsMayChangeAnyArea(
         IReadOnlyList<AbilityNode> effects, IReadOnlySet<DeckType> queried,
-        Cast cast)
+        Cast cast, long baseMultiplier = 1)
     {
-        if (effects.Any(effect => MayChangeAnyArea(effect, queried, cast)))
-        {
-            return true;
-        }
-
         bool couldDiscard = false;
 
         bool DiscardedByDamage(AreaProjectionState state, Card target) =>
@@ -16379,11 +16370,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         List<AreaProjectionState> TraceSequence(
             IEnumerable<AbilityNode> sequence,
-            List<AreaProjectionState> states)
+            List<AreaProjectionState> states, long multiplier = 1)
         {
             foreach (var step in sequence)
             {
-                states = Trace(step, states);
+                states = Trace(step, states, baseMultiplier: multiplier);
             }
             return states;
         }
@@ -16502,6 +16493,26 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         SaturatingMultiply(repetitions, count), baseMultiplier);
             }
 
+            if (effect.Kind == "giveStatus")
+            {
+                string status = Word(effect.Require("status"));
+                if (status == Statuses.Tough)
+                {
+                    foreach (var state in states)
+                    {
+                        foreach (var target in Every(
+                                     effect.Require("card"), cast))
+                        {
+                            state.Tough[target.ObjectId] = Math.Min(
+                                Statuses.Limit(
+                                    cast.World, cast.World.Facts, target, status),
+                                state.ToughOf(cast, target) + 1);
+                        }
+                    }
+                }
+                return states;
+            }
+
             if (effect.Kind == "eachPlayer")
             {
                 int priorPlayer = cast.Player;
@@ -16524,34 +16535,72 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
             if (effect.Kind == "and")
             {
-                var simultaneous = Nodes(effect.Argument).ToList();
-                var order = Enumerable.Range(0, simultaneous.Count).ToList();
-                var branched = new List<AreaProjectionState>();
-                foreach (var state in states)
+                if (repetitions > 1)
                 {
-                    foreach (var permutation in PlayerPermutations(order))
+                    for (long repeat = 0; repeat < repetitions; repeat++)
                     {
-                        var projected = TraceSequence(
-                            permutation.Select(index => simultaneous[index]),
-                            [state.Clone()]);
-                        branched.AddRange(projected);
+                        states = Trace(
+                            effect, states, 1, baseMultiplier);
                     }
+                    return states;
                 }
-                return AreaProjectionState.Distinct(branched);
+                var simultaneous = Nodes(effect.Argument).ToList();
+                if (simultaneous.Count > 63)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' has an and-group with "
+                        + $"{simultaneous.Count} effects, whose orders cannot be projected");
+                }
+
+                var frontier = states
+                    .Select(state => (Mask: 0UL, State: state.Clone()))
+                    .ToList();
+                for (int depth = 0; depth < simultaneous.Count; depth++)
+                {
+                    var next = new List<(ulong Mask, AreaProjectionState State)>();
+                    foreach (var (mask, state) in frontier)
+                    {
+                        for (int index = 0; index < simultaneous.Count; index++)
+                        {
+                            ulong bit = 1UL << index;
+                            if ((mask & bit) != 0)
+                            {
+                                continue;
+                            }
+                            foreach (var projected in Trace(
+                                         simultaneous[index], [state.Clone()],
+                                         baseMultiplier: baseMultiplier))
+                            {
+                                next.Add((mask | bit, projected));
+                            }
+                        }
+                    }
+                    frontier = next
+                        .GroupBy(candidate =>
+                            (candidate.Mask, candidate.State.Key()))
+                        .Select(group => group.First()).ToList();
+                }
+                return AreaProjectionState.Distinct(
+                    frontier.Select(candidate => candidate.State));
             }
 
             if (effect.Kind == "if")
             {
-                var branches = ReachableMutationBranches(effect, cast).ToList();
-                if (branches.Count <= 1)
-                {
-                    return branches.Count == 0
-                        ? states
-                        : Trace(branches[0], states, repetitions, baseMultiplier);
-                }
+                var test = Tree(effect.Require("test"));
                 var branched = new List<AreaProjectionState>();
                 foreach (var state in states)
                 {
+                    bool? projected = ProjectedTest(test, state, cast);
+                    var branches = projected is { } result
+                        ? effect.Field(result ? "then" : "else") is { } taken
+                            ? [Tree(taken)]
+                            : []
+                        : ReachableMutationBranches(effect, cast).ToList();
+                    if (branches.Count == 0)
+                    {
+                        branched.Add(state);
+                        continue;
+                    }
                     foreach (var branch in branches)
                     {
                         branched.AddRange(Trace(
@@ -16566,6 +16615,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 return states;
             }
 
+            if (effect.Kind is "draw" or "drawToHandSize"
+                or "drawToPrintedHandSize" or "discard" or "removeFromGame"
+                or "returnToHand" or "reveal" or "putIntoPlay" or "search"
+                or "shuffleInto" or "dealEncounterCard" or "dealEncounterCards"
+                or "revealTop" or "discardTop" or "discardUntil"
+                or "createDrones" or "indirectDamage" or "discardFromHand"
+                or "discardUpToFromHand" or "discardAnyFromHand" or "spend"
+                or "spendPrinted" or "spendEnergyX")
+            {
+                couldDiscard |= MayChangeAnyArea(
+                    effect, queried, cast, baseMultiplier);
+                return states;
+            }
+
             if (repetitions > 1)
             {
                 for (long repeat = 0; repeat < repetitions; repeat++)
@@ -16574,11 +16637,42 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
                 return states;
             }
-            return TraceSequence(StructuralChildren(effect), states);
+            return TraceSequence(
+                StructuralChildren(effect), states, baseMultiplier);
         }
 
-        _ = TraceSequence(effects, [new AreaProjectionState(cast)]);
+        _ = TraceSequence(
+            effects, [new AreaProjectionState(cast)], baseMultiplier);
         return couldDiscard;
+    }
+
+    private static bool? ProjectedTest(
+        AbilityNode test, AreaProjectionState state, Cast cast)
+    {
+        if (test.Kind == "hasStatus"
+            && Word(test.Require("status")) == Statuses.Tough
+            && Find(test.Require("card"), cast) is { } target)
+        {
+            return state.ToughOf(cast, target) > 0;
+        }
+        if (test.Kind == "not")
+        {
+            return ProjectedTest(Tree(test.Argument), state, cast) is { } inner
+                ? !inner : null;
+        }
+        if (test.Kind is "and" or "or")
+        {
+            var values = Nodes(test.Argument)
+                .Select(child => ProjectedTest(child, state, cast)).ToList();
+            if (values.Any(value => value is null))
+            {
+                return null;
+            }
+            return test.Kind == "and"
+                ? values.All(value => value == true)
+                : values.Any(value => value == true);
+        }
+        return null;
     }
 
     private sealed class AreaProjectionState(Cast cast)
@@ -16620,7 +16714,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             states.GroupBy(state => state.Key(), StringComparer.Ordinal)
                 .Select(group => group.First()).ToList();
 
-        private string Key() => string.Join(
+        public string Key() => string.Join(
             ";",
             Damage.OrderBy(pair => pair.Key)
                 .Select(pair => $"d{pair.Key}:{pair.Value}")
