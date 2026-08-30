@@ -16517,6 +16517,24 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     }
                     if (carries)
                     {
+                        foreach (string status in new[]
+                                 {
+                                     Statuses.Tough,
+                                     Statuses.Stunned,
+                                     Statuses.Confused,
+                                 })
+                        {
+                            long carried = state.StatusOf(cast, target, status);
+                            if (status == Statuses.Tough)
+                            {
+                                state.Tough[next.ObjectId] = Math.Max(
+                                    state.ToughOf(cast, next), carried);
+                            }
+                            else
+                            {
+                                state.Status[(next.ObjectId, status)] = carried;
+                            }
+                        }
                         foreach (var attachment in ProjectedHostedCards(
                                      state, attachmentHost).ToList())
                         {
@@ -17122,10 +17140,31 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             .ToList();
         if (selector is AbilityValue.Word)
         {
+            if (selector is AbilityValue.Word { Value: "this" }
+                && !state.SourceReferenceCurrent)
+            {
+                return [];
+            }
             return found;
         }
 
         var node = Tree(selector);
+        if (node.Kind == "enemiesWithTrait")
+        {
+            string wanted = Word(node.Argument);
+            return
+            [
+                .. ProjectedEvery(
+                        new AbilityValue.Map(new Dictionary<string, AbilityValue>
+                        {
+                            ["query"] = new AbilityValue.Word("enemies"),
+                        }),
+                        state,
+                        cast)
+                    .Where(card => Rules.State.Traits.Has(
+                        cast.World, card, wanted, cast.World.Facts)),
+            ];
+        }
         if (node.Kind is "minBy" or "maxBy")
         {
             var among = ProjectedEvery(node.Require("of"), state, cast)

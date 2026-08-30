@@ -11129,28 +11129,126 @@ public sealed class ActionAbilityTests
             "Action",
             """
             { "seq": [
-              { "discard": "this" },
+              { "removeFromGame": "this" },
               { "putIntoPlay": { "card": "this", "where": "engagedWithYou" } },
-              { "removeFromGame": { "titled": "Hired Gun" } },
+              { "discard": "this" },
               { "removeFromGame": { "cardsIn": {
-                "area": "removed", "title": "Hired Gun"
+                "area": "encounterDiscardPile", "title": "Hired Gun"
               } } }
             ] }
             """);
         Card? source = null;
-
-        Assert.Throws<RulesNotImplementedException>(() => Playing(
+        var (_, world) = Playing(
             board =>
             {
                 source = board.CreateCard(
                     "02007", board.AreaOf(
                         DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-                board.CreateCard("02007", board.AreaOf(DeckType.RemovedArea));
+                board.CreateCard(
+                    "02007", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: AuthoredCards.Runner());
+
+        Assert.Contains(runner.Actions(world, 0), action =>
+            action.Card == source!.ObjectId);
+        Assert.Equal(DeckType.EngagedEnemiesArea, source!.Area.Type);
+    }
+
+    [Rule("rr:villain-defeat.3.2")]
+    [Rule("rr:status-cards.1")]
+    [Fact]
+    public void VillainAdvancementCarriesProjectedStatusCards()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "query": "villain" }, "amount": 100
+              } },
+              { "if": {
+                "test": { "hasStatus": {
+                  "card": { "query": "villain" }, "status": "stunned"
+                } },
+                "then": { "discard": { "titled": "Hired Gun" } }
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hired Gun"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? minion = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                Statuses.Give(
+                    board, board.TheCardIn(DeckType.VillainArea)!,
+                    Statuses.Stunned);
+                minion = board.CreateCard(
+                    "02007", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "02007", board.AreaOf(DeckType.EncounterDiscardPile));
             },
             hero: true,
             abilities: runner));
 
-        Assert.Equal(DeckType.EngagedEnemiesArea, source!.Area.Type);
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
+    }
+
+    [Rule("rr:enters-play")]
+    [Rule("rr:enemy")]
+    [Fact]
+    public void EnteredEnemyParticipatesInProjectedTraitQueries()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "putIntoPlay": {
+                "card": { "cardsIn": {
+                  "areas": [ "encounterDeck" ], "title": "Hired Gun"
+                } },
+                "where": "engagedWithYou"
+              } },
+              { "dealDamage": {
+                "cards": { "enemiesWithTrait": "CRIMINAL" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hired Gun"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? entrant = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var protectedMinion = board.CreateCard(
+                    "02007", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, protectedMinion, Statuses.Tough);
+                entrant = board.CreateCard(
+                    "02007", board.AreaOf(DeckType.EncounterDeck));
+                board.CreateCard(
+                    "02007", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EncounterDeck, entrant!.Area.Type);
     }
 
     [Rule("rr:villain-defeat.3.2")]
