@@ -877,6 +877,21 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return sources;
     }
 
+    /// <inheritdoc/>
+    public IReadOnlyList<ResourceSource> PrintedResourceAbilities(World world, int player)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        var available = ResourceAbilities(world, player);
+        return
+        [
+            .. available.Where(source => On(world.Cards[source.Effect]).Any(ability =>
+                ability.Trigger.Timing == AbilityType.Resource
+                && string.Equals(
+                    ability.PrintedResources, source.Generates, StringComparison.Ordinal))),
+        ];
+    }
+
     /// <summary>
     /// Whether an ability has uses left this round — <c>rr:limit</c>.
     /// </summary>
@@ -1877,6 +1892,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     .SelectMany(source => source.Generates)),
                 Word(cost.Argument).Length,
                 Word(cost.Argument)),
+            { Kind: "spendPrinted" } => Resources.PaysPrinted(
+                string.Concat(PrintedGenerators(world, player)
+                    .SelectMany(source => source.Generates)),
+                Word(cost.Argument).Length,
+                Word(cost.Argument)),
             { Kind: "spendEnergyX" } => Resources.Pays(
                 string.Concat(CardPlay.Generators(world, world.Facts, world.Seats[player])
                     .SelectMany(source => source.Generates)),
@@ -1907,7 +1927,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     private static bool SequencePayable(World world, Card card, int player, AbilityNode cost)
     {
         var steps = Nodes(cost.Argument).ToList();
-        var spends = steps.Where(step => step.Kind == "spend").ToList();
+        var spends = steps.Where(step => step.Kind is "spend" or "spendPrinted").ToList();
         if (spends.Count > 0)
         {
             if (player < 0)
@@ -1917,17 +1937,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     + "every player, so there is no hand to price them against");
             }
 
+            bool printed = spends.All(step => step.Kind == "spendPrinted");
+            if (!printed && spends.Any(step => step.Kind == "spendPrinted"))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{card.FaceId}' mixes printed and ordinary simultaneous "
+                    + "resource costs, whose allocation is not implemented");
+            }
+
             string required = string.Concat(spends.Select(step => Word(step.Argument)));
-            string pool = string.Concat(CardPlay.Generators(
-                    world, world.Facts, world.Seats[player])
+            string pool = string.Concat((printed
+                    ? PrintedGenerators(world, player)
+                    : CardPlay.Generators(world, world.Facts, world.Seats[player]))
                 .SelectMany(source => source.Generates));
-            if (!Resources.Pays(pool, required.Length, required))
+            bool pays = printed
+                ? Resources.PaysPrinted(pool, required.Length, required)
+                : Resources.Pays(pool, required.Length, required);
+            if (!pays)
             {
                 return false;
             }
         }
 
-        return steps.Where(step => step.Kind != "spend")
+        return steps.Where(step => step.Kind is not ("spend" or "spendPrinted"))
             .All(step => Payable(world, card, player, step));
     }
 
@@ -1967,9 +1999,18 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     {
         null => string.Empty,
         { Kind: "spend" } => Word(cost.Argument),
+        { Kind: "spendPrinted" } => throw new RulesNotImplementedException(
+            $"event '{card.FaceId}' combines its printed card cost with a printed-resource "
+            + "arrow cost, whose allocation is not implemented"),
         { Kind: "seq" } => string.Concat(Nodes(cost.Argument)
-            .Where(step => step.Kind == "spend")
-            .Select(step => Word(step.Argument))),
+            .Select(step => step.Kind switch
+            {
+                "spend" => Word(step.Argument),
+                "spendPrinted" => throw new RulesNotImplementedException(
+                    $"event '{card.FaceId}' combines its printed card cost with a "
+                    + "printed-resource arrow cost, whose allocation is not implemented"),
+                _ => string.Empty,
+            })),
         { Kind: "spendEnergyX" } => throw new RulesNotImplementedException(
             $"event '{card.FaceId}' combines a printed cost with a variable X cost"),
         _ => string.Empty,
@@ -2049,14 +2090,27 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     + "cannot be represented");
             }
 
+            var components = prices.SelectMany(price => price.ResourceCosts).ToList();
+            bool hasPrinted = components.Any(component => component.Printed);
+            if (hasPrinted && components.Any(component => !component.Printed))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{card.FaceId}' mixes printed and ordinary simultaneous "
+                    + "resource costs, whose allocation is not implemented");
+            }
+
             long total = prices.Sum(price => long.Parse(
                 price.Cost, System.Globalization.CultureInfo.InvariantCulture));
             return new CostOption(
                 card.ObjectId,
                 total.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 Rule: [string.Concat(prices.SelectMany(price => price.Rule ?? []))],
-                Sources: CardPlay.Generators(
-                    world, world.Facts, world.Seats[player]));
+                Sources: prices
+                    .SelectMany(price => price.Generators)
+                    .GroupBy(source => source.Effect)
+                    .Select(group => group.First())
+                    .ToList(),
+                Components: components);
         }
 
         if (cost is { Kind: "spendEnergyX" })
@@ -2069,6 +2123,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 card.ObjectId, "X", ["Y"],
                 Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]),
                 Variables: [new VariableRequest("X", 1, maximum)]);
+        }
+
+        if (cost is { Kind: "spendPrinted" })
+        {
+            string printedLetters = Word(cost.Argument);
+            return new CostOption(
+                Target: card.ObjectId,
+                Cost: printedLetters.Length.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture),
+                Rule: [printedLetters],
+                Sources: PrintedGenerators(world, player),
+                Components: [new ResourceCost(
+                    printedLetters.Length.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture),
+                    [printedLetters],
+                    Printed: true)]);
         }
 
         if (cost is not { Kind: "spend" })
@@ -2154,6 +2224,20 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         return CardPlay.Paying(world, world.Facts, world.Seats[player], card)
             .SelectMany(seat => CardPlay.Generators(world, world.Facts, seat, card))
             .Where(source => source.Effect != card.ObjectId)
+            .GroupBy(source => source.Effect)
+            .Select(group => group.First())
+            .ToList();
+    }
+
+    private static List<ResourceSource> PrintedGenerators(World world, int player)
+    {
+        var hand = world.Seats[player].Hand.Cards
+            .Select(card => new ResourceSource(
+                card.ObjectId,
+                Resources.GeneratedBy(card.FaceId, world.Facts)))
+            .Where(source => source.Generates.Length > 0);
+        return hand
+            .Concat(world.Abilities.PrintedResourceAbilities(world, player))
             .GroupBy(source => source.Effect)
             .Select(group => group.First())
             .ToList();
@@ -2336,7 +2420,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 }
 
                 int icon = available.IndexOf(declared);
-                if (icon < 0 && declared != Resources.Wild)
+                if (icon < 0
+                    && !components[allocation.Cost].Printed
+                    && declared != Resources.Wild)
                 {
                     icon = available.IndexOf(Resources.Wild);
                 }
@@ -2595,7 +2681,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
         IReadOnlyDictionary<string, long>? values, Cast cast)
     {
-        if (cost is null || cost.Kind is "spend" or "spendEnergyX")
+        if (cost is null || cost.Kind is "spend" or "spendPrinted" or "spendEnergyX")
         {
             return;
         }
@@ -2628,14 +2714,22 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (cost.Kind == "seq")
         {
             var steps = Nodes(cost.Argument).ToList();
-            var spends = steps.Where(step => step.Kind == "spend").ToList();
+            var spends = steps.Where(step => step.Kind is "spend" or "spendPrinted").ToList();
             if (spends.Count > 0)
             {
+                bool printed = spends.All(step => step.Kind == "spendPrinted");
+                if (!printed && spends.Any(step => step.Kind == "spendPrinted"))
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' mixes printed and ordinary simultaneous "
+                        + "resource costs, whose allocation is not implemented");
+                }
                 string required = string.Concat(spends.Select(step => Word(step.Argument)));
-                SpendAbilityResources(required, paying, cast);
+                SpendAbilityResources(required, paying, cast, printed);
             }
 
-            foreach (var step in steps.Where(step => step.Kind != "spend"))
+            foreach (var step in steps.Where(
+                         step => step.Kind is not ("spend" or "spendPrinted")))
             {
                 Pay(step, paying, chosen, values, cast);
             }
@@ -2651,6 +2745,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (cost.Kind == "spend")
         {
             SpendAbilityResources(Word(cost.Argument), paying, cast);
+            return;
+        }
+
+        if (cost.Kind == "spendPrinted")
+        {
+            SpendAbilityResources(Word(cost.Argument), paying, cast, printed: true);
             return;
         }
 
@@ -2680,7 +2780,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     private static void SpendAbilityResources(
-        string required, IReadOnlyList<int> paying, Cast cast) =>
+        string required, IReadOnlyList<int> paying, Cast cast, bool printed = false) =>
         CardPlay.Spend(
             cast.World,
             cast.World.Facts,
@@ -2707,7 +2807,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
 
         var steps = cost.Kind == "seq" ? Nodes(cost.Argument).ToList() : [cost];
-        var spends = steps.Where(step => step.Kind == "spend").ToList();
+        var spends = steps.Where(step => step.Kind is "spend" or "spendPrinted").ToList();
         if (spends.Count > 0)
         {
             if (paying.Distinct().Count() != paying.Count || paying.Intersect(chosen).Any())
@@ -2716,8 +2816,17 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     $"'{cast.Source.FaceId}' names a generator more than once across its costs");
             }
 
-            var generators = CardPlay.Generators(
-                cast.World, cast.World.Facts, cast.World.Seats[cast.Player]).ToList();
+            bool printed = spends.All(step => step.Kind == "spendPrinted");
+            if (!printed && spends.Any(step => step.Kind == "spendPrinted"))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' mixes printed and ordinary simultaneous "
+                    + "resource costs, whose allocation is not implemented");
+            }
+            var generators = printed
+                ? PrintedGenerators(cast.World, cast.Player)
+                : CardPlay.Generators(
+                    cast.World, cast.World.Facts, cast.World.Seats[cast.Player]).ToList();
             var selected = paying.ToHashSet();
             if (paying.Any(id => generators.All(source => source.Effect != id)))
             {
@@ -2729,7 +2838,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 .Where(source => selected.Contains(source.Effect))
                 .Select(source => source.Generates));
             string required = string.Concat(spends.Select(step => Word(step.Argument)));
-            if (!Resources.Pays(generated, required.Length, required))
+            bool pays = printed
+                ? Resources.PaysPrinted(generated, required.Length, required)
+                : Resources.Pays(generated, required.Length, required);
+            if (!pays)
             {
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' has simultaneous resource costs requiring "
@@ -2737,7 +2849,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             }
         }
 
-        foreach (var step in steps.Where(step => step.Kind != "spend"))
+        foreach (var step in steps.Where(
+                     step => step.Kind is not ("spend" or "spendPrinted")))
         {
             if (step.Kind == "spendEnergyX")
             {

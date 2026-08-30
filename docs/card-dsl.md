@@ -590,7 +590,7 @@ whole document exists to undo. A placeholder that grows is not a placeholder.
 | | |
 |---|---|
 | Envelope | `trigger { event, alsoHappened, timing, subject, actor, target, form, player }`, `name`, `cost`, `limitPerRound`, `effect`; and `attachTo` beside the abilities rather than in one. `event` is absent on a constant and on a "Setup" ability, and required on every other — see below. `actor` and `target` match explicit attack roles. |
-| Costs | `spend` (resource letters), `spendEnergyX` (a positive player-chosen X), `exhaust`, `discardFromHand` (a count) |
+| Costs | `spend` (resource letters), `spendPrinted` (exact printed resource letters), `spendEnergyX` (a positive player-chosen X), `exhaust`, `discardFromHand` (a count) |
 | Control | `seq`, `and`, `if`, `then`, `otherwise`, `forEach`, `eachTime`, `choose`, `chooseCard`, `chooseTopForHand`, `chooseDiscardToShuffle`, `thwartDifferentSchemes`, `makeTheCall`, `legalPractice`, `payOrExhaust`, `payOrEffect`, `eachPlayer`, `resolveSpecials`, `afterActivation` |
 | Tests | `and`, `or`, `not`, `exists`, `canMakeTheCall`, `canLegalPractice`, `canAutomaticThwart`, `hasStatus`, `hasTrait`, `cardSet`, `isTitle`, `inForm`, `activationIs`, `atLeast`, `titleInPlay`, `attackDamaged`, `discardedWithResource`, `paidWithResource`, `defeatedByYou`, `wasDefeated`, `heroDefended`, `undefendedAttack`, `inExpertMode`, `isKind`, `defeatedBy`, `threatCause`, `finalStep` |
 | Actions | `giveStatus`, `giveAdditionalBoost`, `alsoAttackEachOtherHero`, `attachTo`, `discard`, `discardHandWithResource`, `draw`, `drawToHandSize`, `drawToPrintedHandSize`, `dealEncounterCards`, `dealEncounterCard`, `createDrones`, `placeCounters`, `advanceMainScheme`, `grant`, `grantEach`, `grantUntil`, `grantCharactersControlledBy`, `delayUntil`, `gainSurge`, `enemyAttacks`, `enemySchemes`, `attack`, `thwart`, `thwartSchemes`, `power`, `dealDamage`, `dealAttackDamage`, `moveDamage`, `moveAttackDamage`, `placeThreat`, `placeAccelerationToken`, `removeThreat`, `preventThreat`, `replaceThreatWithDamage`, `preventThreatRemoval`, `preventDamageFrom`, `preventDamageWhile`, `preventReady`, `reduceNextCardCost`, `heal`, `search`, `addToHand`, `returnOwnedToHand`, `exhaust`, `ready`, `revealTop`, `reveal`, `shuffleInto`, `shuffle`, `discardUntil`, `discardAtRandom`, `changeForm`, `removeFromGame`, `indirectDamage`, `placeAtRandom`, `putIntoPlay`, `returnToHand`, `soakDamage`, `generate`, `generateTopDiscard`, `doubleResourceFor`, `requireAllyDefender` |
@@ -1377,6 +1377,16 @@ has modelled the menu of generators since MARVEL-169, `Decision.Resources` has
 carried which of them the player spent, and `CardPlay.Spend` has refused a
 payment that does not meet the cost. What was missing was ten characters of
 plumbing between the two.
+
+`spendPrinted` is the narrower resource-cost operator. Its value is the same
+resource-letter string as `spend`, but only literal icons on cards in hand and
+resource abilities carrying a matching `printedResources` field appear as
+generators. The field is authored on the ability because generated resources
+alone do not prove an icon is physically printed in its text box: Peter
+Parker's `"printedResources": "B"` qualifies, while Pepper Potts copying the
+top discard card does not. A printed cost component also travels with
+`Printed: true`, so a wild cannot be declared as a required energy, mental, or
+physical icon.
 
 #### The two questions an action never had to ask
 

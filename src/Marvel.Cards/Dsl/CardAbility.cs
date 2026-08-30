@@ -237,10 +237,15 @@ public static class AbilityPlayers
 /// Every parenthetical attack, defense, or thwart label printed on the
 /// ability. Multiple labels belong to one ability and are resolved together.
 /// </param>
+/// <param name="PrintedResources">
+/// Resource icons physically printed in this resource ability's text box.
+/// Empty when its generated resources are not printed icons there.
+/// </param>
 public sealed record CardAbility(
     string Card, string Name, AbilityTrigger Trigger, AbilityNode Effect,
     AbilityNode? Cost = null, long? Limit = null, AbilityNode? When = null,
-    bool AnyPlayer = false, IReadOnlyList<string>? Labels = null);
+    bool AnyPlayer = false, IReadOnlyList<string>? Labels = null,
+    string PrintedResources = "");
 
 /// <summary>
 /// Every authored card, and every ability on them.

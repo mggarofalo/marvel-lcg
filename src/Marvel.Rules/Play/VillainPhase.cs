@@ -81,6 +81,17 @@ public interface ICardAbilities : IWindowAbilities
     string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
         Resources.GeneratedBy(source.FaceId, world.Facts);
 
+    /// <summary>
+    /// Currently available resource abilities whose generated icons are
+    /// physically printed in their text box.
+    /// </summary>
+    /// <remarks>
+    /// <c>rr:printed.1</c> permits these abilities to pay a “printed resources”
+    /// cost. Ordinary resource abilities are deliberately absent: generating a
+    /// resource is not enough unless that icon is itself printed in the box.
+    /// </remarks>
+    IReadOnlyList<ResourceSource> PrintedResourceAbilities(World world, int player) => [];
+
     /// <summary>Applies card-specific restrictions to an attack's defenders.</summary>
     /// <param name="world">The board.</param>
     /// <param name="attack">The attack whose defender is being declared.</param>

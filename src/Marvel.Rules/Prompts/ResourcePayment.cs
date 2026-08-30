@@ -73,9 +73,10 @@ public static class ResourcePayment
                 return null;
             }
 
-            slots.AddRange(required.Select(resource => new Slot(component, resource)));
+            slots.AddRange(required.Select(resource =>
+                new Slot(component, resource, costs[component].Printed)));
             slots.AddRange(Enumerable.Repeat(
-                new Slot(component, Required: null),
+                new Slot(component, Required: null, costs[component].Printed),
                 checked((int)amount - required.Length)));
         }
 
@@ -101,7 +102,8 @@ public static class ResourcePayment
 
             var slot = slots[slotIndex];
             IEnumerable<int> candidates = Enumerable.Range(0, icons.Count)
-                .Where(index => !used[index] && Accepts(icons[index].Printed, slot.Required));
+                .Where(index => !used[index]
+                    && Accepts(icons[index].Printed, slot.Required, slot.Printed));
             if (slot.Required is { } required)
             {
                 // Spend the exact type before a wild. This is deterministic
@@ -155,10 +157,12 @@ public static class ResourcePayment
             out amount)
         || values is not null && values.TryGetValue(written, out amount);
 
-    private static bool Accepts(char printed, char? required) =>
-        required is null || printed == required || printed == Resources.Wild;
+    private static bool Accepts(char printed, char? required, bool printedCost) =>
+        required is null
+        || printed == required
+        || !printedCost && printed == Resources.Wild;
 
-    private readonly record struct Slot(int Component, char? Required);
+    private readonly record struct Slot(int Component, char? Required, bool Printed);
     private readonly record struct Icon(int Source, char Printed);
     private readonly record struct Choice(int Source, int Component, char Declared);
 }

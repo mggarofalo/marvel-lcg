@@ -29,6 +29,7 @@
           "name": "Scientist",
           "trigger": { "event": "WhenActionTriggered", "timing": "Resource", "subject": "this" },
           "limitPerRound": 1,
+          "printedResources": "B",
           "effect": { "generate": "B" }
         }
       ]
@@ -110,6 +111,7 @@
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Resource", "subject": "this", "form": "hero" },
           "cost": { "seq": [ { "exhaust": "this" }, { "removeCounters": "web" } ] },
+          "printedResources": "G",
           "effect": { "generate": "G" }
         }
       ]

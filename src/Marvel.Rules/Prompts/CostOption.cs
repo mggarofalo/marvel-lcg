@@ -81,7 +81,10 @@ public sealed record CostOption(
 }
 
 /// <summary>One component of a simultaneous resource payment.</summary>
-public sealed record ResourceCost(string Cost, IReadOnlyList<string>? Rule = null);
+public sealed record ResourceCost(
+    string Cost,
+    IReadOnlyList<string>? Rule = null,
+    bool Printed = false);
 
 /// <summary>A numerical value the player must define while initiating a cost.</summary>
 /// <param name="Name">The printed variable, such as <c>X</c>.</param>

@@ -89,4 +89,23 @@ public sealed class ResourcePaymentTests
 
         Assert.Null(ResourcePayment.Allocate(cost, [2]));
     }
+
+    [Rule("rr:printed.1.1")]
+    [Fact]
+    public void APrintedCostDoesNotDeclareAWildAsAnotherType()
+    {
+        // “Wild resources cannot be spent as other resource types for such a
+        // cost.” The same icon remains legal for an ordinary physical cost.
+        var printed = new CostOption(
+            0,
+            "1",
+            Rule: ["R"],
+            Sources: [new ResourceSource(7, "G")],
+            Components: [new ResourceCost("1", ["R"], Printed: true)]);
+
+        Assert.Null(ResourcePayment.Allocate(printed, [7]));
+        Assert.True(Resources.Pays("G", 1, "R"));
+        Assert.False(Resources.PaysPrinted("G", 1, "R"));
+        Assert.True(Resources.PaysPrinted("G", 1, "G"));
+    }
 }
