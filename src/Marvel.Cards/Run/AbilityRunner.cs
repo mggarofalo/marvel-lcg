@@ -1476,6 +1476,22 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public void ValidateForPlay(World world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        var incomplete = world.Cards.FirstOrDefault(card =>
+            DeckTypes.IsInPlay(card.Area.Type) && book.IsPlacementOnly(card.FaceId));
+        if (incomplete is not null)
+        {
+            throw new RulesNotImplementedException(
+                $"card '{incomplete.FaceId}' is in play, but only its setup placement "
+                + "and absence of a When Revealed ability are implemented; its remaining "
+                + "printed text is not implemented");
+        }
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<int>? AttachmentTargets(World world, Card card)
     {
         ArgumentNullException.ThrowIfNull(world);

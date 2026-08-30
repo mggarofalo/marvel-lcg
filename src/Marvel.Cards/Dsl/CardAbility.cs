@@ -324,6 +324,9 @@ public sealed record AbilityBook(
     public bool KnowsWhenRevealed(string card) =>
         Authored.Contains(card) || PlacementOnly?.Contains(card) is true;
 
+    /// <summary>Whether only this card's placement and reveal silence are known.</summary>
+    public bool IsPlacementOnly(string card) => PlacementOnly?.Contains(card) is true;
+
     /// <summary>The abilities on one printed face.</summary>
     /// <param name="card">A printed face id.</param>
     public IEnumerable<CardAbility> On(string card) =>

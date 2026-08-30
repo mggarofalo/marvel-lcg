@@ -480,6 +480,21 @@ public sealed class AbilityDataTests
     }
 
     [Fact]
+    public void PlacementOnlyTextDoesNotBlockWhileItsCardIsOutOfPlay()
+    {
+        // An aside card's resource, response, and constants cannot affect the
+        // game. The refusal begins only after setup has put it into play.
+        var world = new World(Printed, players: 1);
+        world.CreateSeat("p0");
+        world.CreateCard("16142", world.AreaOf(DeckType.AsideDeck));
+
+        var failure = Record.Exception(
+            () => AuthoredCards.Runner().ValidateForPlay(world));
+
+        Assert.Null(failure);
+    }
+
+    [Fact]
     public void ANodeWithTwoKindsIsRefused()
     {
         // The one-key rule is what makes a node's kind unambiguous. Two keys

@@ -1137,6 +1137,10 @@ seat, and setup places an ally or support in that player's corresponding area.
 owned by that player. A placement-only row omits `abilities`: it asserts the
 printed card has no When Revealed ability, while preserving the distinction
 between the one sentence the engine can place and its other unauthored text.
+`Game.Begin` asks the card layer to validate the dealt board and refuses an
+in-play placement-only card by printed id. That boundary is deliberately after
+setup: setup can prove where the card belongs, but no client can start playing
+a plausible board on which its mandatory remaining text silently disappears.
 
 ### An ability can answer a moment that is about nobody
 

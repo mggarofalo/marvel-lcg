@@ -184,6 +184,7 @@ public sealed class Game
         // like: a defeat happens deep inside `Damage.Deal`, four calls below
         // anything that was handed an `ICardAbilities`.
         world.Abilities = abilities ?? new NoCardAbilities();
+        world.Abilities.ValidateForPlay(world);
         return new Game(world, facts, world.Abilities);
     }
 

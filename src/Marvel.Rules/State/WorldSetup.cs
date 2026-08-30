@@ -209,7 +209,7 @@ public static class WorldSetup
         //     `rr:setup-keyword.1` names this step and nothing else about it,
         //     so where each card goes is the ordinary question of a card
         //     entering play, which `Play.Reveal` already answers.
-        SetupCards(world, facts, happened);
+        var pendingSetupCards = SetupCards(world, facts, happened);
         FinishSetupAgenda(world, facts, happened);
         TrackSetupEntrants(
             world, facts, happened, ref setupEventCursor,
@@ -223,6 +223,19 @@ public static class WorldSetup
         {
             // 12a. "Resolve any 'Setup' abilities on main scheme card 1A."
             happened.AddRange(world.Abilities.Setup(world, scheme));
+            FinishSetupAgenda(world, facts, happened);
+            TrackSetupEntrants(
+                world, facts, happened, ref setupEventCursor,
+                deferredReveals, deferredRevealSet);
+
+            // Loki has no villain at step 11: its scheme's Setup instruction
+            // reveals one here. The Rules Reference and that scenario do not
+            // say how to reconcile the ordering with Infinity Gauntlet's
+            // "attach to the villain" Setup card. The engine chooses to retain
+            // an unplaceable Setup card and retry after each scenario setup
+            // sub-step, then refuse it below if no destination ever appears.
+            pendingSetupCards = SetupCards(
+                world, facts, happened, pendingSetupCards);
             FinishSetupAgenda(world, facts, happened);
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
@@ -245,6 +258,13 @@ public static class WorldSetup
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
                 deferredReveals, deferredRevealSet);
+
+            pendingSetupCards = SetupCards(
+                world, facts, happened, pendingSetupCards);
+            FinishSetupAgenda(world, facts, happened);
+            TrackSetupEntrants(
+                world, facts, happened, ref setupEventCursor,
+                deferredReveals, deferredRevealSet);
         }
 
         // 12c. "Resolve any 'Setup' and 'When Revealed' abilities on the
@@ -263,6 +283,21 @@ public static class WorldSetup
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
                 deferredReveals, deferredRevealSet);
+        }
+
+        pendingSetupCards = SetupCards(
+            world, facts, happened, pendingSetupCards);
+        FinishSetupAgenda(world, facts, happened);
+        TrackSetupEntrants(
+            world, facts, happened, ref setupEventCursor,
+            deferredReveals, deferredRevealSet);
+        if (pendingSetupCards.Count > 0)
+        {
+            var card = pendingSetupCards[0];
+            throw new Play.RulesNotImplementedException(
+                $"card '{card.FaceId}' has the setup keyword and "
+                + "rr:appendix-ii-setup.step.11 puts it into play, and this engine has "
+                + "nowhere to put it. MARVEL-247");
         }
 
         // `rr:when-revealed-abilities.1`: encounter cards that entered play
@@ -378,22 +413,25 @@ public static class WorldSetup
     /// exactly what <see cref="Play.Reveal.Resolve"/> does.
     /// </para>
     /// <para>
-    /// <b>A card it cannot place stops the deal.</b> Where a card goes comes
-    /// from its type for a side scheme or an environment, and from its own text
-    /// for an attachment (<c>rr:attach-to</c>) or for a scenario's ally or
-    /// support (<c>rr:ownership-and-control.2.2</c>, "when a player takes
-    /// control of a […] player card with a player card back"). A card whose
-    /// text nobody has read is placed nowhere, and leaving it in the pile it
-    /// was searched out of would deal a board that is quietly missing a card
-    /// the rules put on the table.
+    /// <b>A card it cannot place after scenario setup stops the deal.</b> Where
+    /// a card goes comes from its type for a side scheme or an environment, and
+    /// from its own text for an attachment (<c>rr:attach-to</c>) or for a
+    /// scenario's ally or support (<c>rr:ownership-and-control.2.2</c>, "when a
+    /// player takes control of a […] player card with a player card back"). A card whose
+    /// text nobody has read is placed nowhere. Scenario setup may first create
+    /// the named destination, so unresolved cards are retried through step 12;
+    /// leaving one in the pile after that would deal a board quietly missing a
+    /// card the rules put on the table.
     /// </para>
     /// </remarks>
-    private static void SetupCards(
-        World world, ICardFacts facts, List<Events.GameEvent> happened)
+    private static List<Card> SetupCards(
+        World world, ICardFacts facts, List<Events.GameEvent> happened,
+        IReadOnlyList<Card>? candidates = null)
     {
+        var pending = new List<Card>();
         // A copy, because putting a card into play moves it between areas and
         // `World.Cards` is walked by object id rather than by place.
-        foreach (var card in world.Cards.ToList())
+        foreach (var card in candidates ?? world.Cards.ToList())
         {
             if (facts.PrintedValue(card.FaceId, "Setup", world.Players) <= 0
                 || DeckTypes.IsInPlay(card.Area.Type))
@@ -413,11 +451,10 @@ public static class WorldSetup
 
             if (card.Area == from)
             {
-                throw new Play.RulesNotImplementedException(
-                    $"card '{card.FaceId}' has the setup keyword and "
-                    + "rr:appendix-ii-setup.step.11 puts it into play, and this engine has "
-                    + "nowhere to put it. MARVEL-247");
+                pending.Add(card);
             }
         }
+
+        return pending;
     }
 }

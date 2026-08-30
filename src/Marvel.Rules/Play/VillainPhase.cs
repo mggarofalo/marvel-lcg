@@ -492,6 +492,11 @@ public interface ICardAbilities : IWindowAbilities
     /// <summary>The player this setup card's text says controls it, or null.</summary>
     int? SetupController(World world, Card card) => null;
 
+    /// <summary>Refuses a dealt board whose in-play card text is incomplete.</summary>
+    void ValidateForPlay(World world)
+    {
+    }
+
     /// <summary>Legal hosts a player may choose while playing an attachment.</summary>
     IReadOnlyList<int>? AttachmentTargets(World world, Card card);
 
@@ -729,6 +734,11 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual int? SetupController(World world, Card card) => null;
+
+    /// <inheritdoc/>
+    public virtual void ValidateForPlay(World world)
+    {
+    }
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<int>? AttachmentTargets(World world, Card card) => null;
