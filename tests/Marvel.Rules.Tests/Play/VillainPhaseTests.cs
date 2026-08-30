@@ -481,6 +481,32 @@ public sealed class VillainPhaseTests
                 .Count());
     }
 
+    [Rule("rr:forced.5")]
+    [Rule("rr:incite-x.1")]
+    [Rule("rr:surge.1")]
+    [Fact]
+    public void TheFirstPlayerOrdersTwoKeywordWhenRevealedAbilities()
+    {
+        var printed = new Printed()
+            .With("encounter", ("Incite", "2"), ("Surge", "1"));
+        printed.Kinds["encounter"] = CardKind.Minion;
+        var world = Board(printed, players: 1);
+        var encounter = world.AreaOf(DeckType.EncounterDeck).Cards
+            .Single(card => card.FaceId == "encounter");
+        world.Agenda.Add(new PhaseStep(
+            Steps.RevealEncounterCard, 1, 4,
+            Subject: encounter.ObjectId, Seat: 0));
+
+        var asked = Sequence.Work(
+            world, printed, new NoCardAbilities(), new List<GameEvent>());
+
+        Assert.NotNull(asked);
+        Assert.Equal(Question.Order, asked.Asking);
+        Assert.Equal(
+            ["Incite", "Surge"],
+            asked.Affordances.Select(option => option.Label));
+    }
+
     /// <summary>Schedules the villain phase and walks it to the end.</summary>
     private static List<GameEvent> Run(
         World world, Printed printed, ICardAbilities? abilities = null)

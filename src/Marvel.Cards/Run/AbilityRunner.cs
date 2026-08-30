@@ -198,7 +198,8 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             continuation.AbilityOrdinal, path, continuation.AbilityFace);
         cast.TrackResolution(continuation.AbilityOrdinal);
         RestorePersisted(cast, continuation);
-        if (cast.Results.GetValueOrDefault("activationMade") > 0)
+        if (cast.Results.GetValueOrDefault("activationMade") > 0
+            || cast.Results.GetValueOrDefault("procedureApplied") > 0)
         {
             cast.ResolveEffect();
         }

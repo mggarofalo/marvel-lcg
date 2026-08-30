@@ -135,6 +135,9 @@ public enum Stage
 /// The stable addresses of simultaneous or optional abilities offered by a
 /// suspended rules procedure.
 /// </param>
+/// <param name="ProcedurePlayersPassed">
+/// Seats that passed the current optional procedure opportunity.
+/// </param>
 /// <param name="ProcedureOccurrence">
 /// The rulebook occurrence local to a suspended procedure, when it differs
 /// from the agenda occurrence that contains it.
@@ -143,6 +146,8 @@ public enum Stage
 /// <param name="ProcedureTrigger">Event-stream provenance preserved by the procedure.</param>
 /// <param name="ProcedureVerb">The kind of effect preserved by the procedure.</param>
 /// <param name="ProcedureBy">The acting seat preserved by the procedure, or -1.</param>
+/// <param name="ProcedureAmount">A numeric result preserved for procedure cleanup.</param>
+/// <param name="ProcedureFlag">A boolean rule result preserved for procedure cleanup.</param>
 /// <param name="AbilityOrdinal">
 /// Which same-tier authored ability suspended. The ordinal is engine save data;
 /// it avoids guessing when one card has more than one ability at the same timing.
@@ -171,8 +176,10 @@ public readonly record struct PhaseStep(
     IReadOnlyList<int>? ProcedureCandidates = null,
     IReadOnlyList<int>? ActivationOrder = null,
     IReadOnlyList<PendingAbility>? ProcedureAbilities = null,
+    IReadOnlyList<int>? ProcedurePlayersPassed = null,
     Occurrence? ProcedureOccurrence = null, int ProcedureSource = -1,
     string ProcedureTrigger = "", string ProcedureVerb = "", int ProcedureBy = -1,
+    long ProcedureAmount = 0, bool ProcedureFlag = false,
     IReadOnlyList<string>? AbilityPath = null,
     IReadOnlyList<int>? AbilityActivationIds = null,
     IReadOnlyDictionary<string, long>? AbilityResults = null,
@@ -1352,11 +1359,23 @@ public static class Steps
     /// <summary>Resolve damage step 6 through a player decision.</summary>
     public const string ChooseWouldBeDefeated = "ChooseWouldBeDefeated";
 
+    /// <summary>Continue damage step 6 after a selected ability fully resolves.</summary>
+    public const string ResumeWouldBeDefeated = "ResumeWouldBeDefeated";
+
     /// <summary>Resolve damage step 7 through a player decision.</summary>
     public const string ChooseCardDefeatedAbility = "ChooseCardDefeatedAbility";
 
+    /// <summary>Continue damage step 7 after a selected ability fully resolves.</summary>
+    public const string ResumeCardDefeatedAbility = "ResumeCardDefeatedAbility";
+
     /// <summary>Order simultaneous keyword and printed reveal abilities.</summary>
     public const string ChooseRevealAbility = "ChooseRevealAbility";
+
+    /// <summary>Continue reveal step 3 after one ability fully resolves.</summary>
+    public const string ResumeRevealAbility = "ResumeRevealAbility";
+
+    /// <summary>Finish an attack after a suspended damage procedure resolves.</summary>
+    public const string FinishAttackDamage = "FinishAttackDamage";
 
     /// <summary>Order simultaneous post-reveal keyword responses.</summary>
     public const string ChoosePostRevealAbility = "ChoosePostRevealAbility";

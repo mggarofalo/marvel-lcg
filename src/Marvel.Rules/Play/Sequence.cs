@@ -90,7 +90,16 @@ public static class Sequence
                 // Answering a plan may schedule nested work. Advance the plan
                 // that was being worked rather than whichever item is now at
                 // the front of the agenda.
-                world.Agenda.Advance(planOccurrence);
+                if (step.What is Steps.ResumeWouldBeDefeated
+                    or Steps.ResumeCardDefeatedAbility
+                    or Steps.ResumeRevealAbility)
+                {
+                    world.Agenda.Advance(step, planOccurrence);
+                }
+                else
+                {
+                    world.Agenda.Advance(planOccurrence);
+                }
                 continue;
             }
 
@@ -215,7 +224,21 @@ public static class Sequence
             var occurrence = world.Agenda.Occurrence
                 ?? throw new InvalidOperationException("an asking agenda step has no occurrence");
             VillainPhase.Answered(world, facts, abilities, step, input, events);
-            world.Agenda.Advance(occurrence);
+            if (step.What is Steps.ChooseWouldBeDefeated
+                or Steps.ChooseCardDefeatedAbility
+                or Steps.ChooseRevealAbility)
+            {
+                // Resolving one selected ability can insert its own work and a
+                // procedure continuation ahead of this question. All three
+                // deliberately share the containing occurrence, so identity
+                // alone would advance the new continuation and replay the
+                // answered question.
+                world.Agenda.Advance(step, occurrence);
+            }
+            else
+            {
+                world.Agenda.Advance(occurrence);
+            }
             return;
         }
 

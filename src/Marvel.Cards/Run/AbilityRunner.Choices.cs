@@ -668,7 +668,7 @@ public sealed partial class AbilityRunner
                 share[card.ObjectId] = assigned;
             }
 
-            Resolve(cast, share);
+            Resolve(choice, cast, share);
             return Continue(source, cast, stoppedAt);
         }
 

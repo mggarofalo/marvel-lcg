@@ -142,7 +142,7 @@ public sealed partial class AbilityRunner
             // No division to choose. `.3.1`'s cap still applies -- a character
             // cannot be assigned more than would defeat it -- so what is over
             // the cap is simply not assigned.
-            Assign(cast, [eligible[0]], amount);
+            Assign(node, cast, [eligible[0]], amount);
             return;
         }
 
@@ -178,7 +178,8 @@ public sealed partial class AbilityRunner
     /// before any of it is dealt, which is what stops the first point defeating
     /// a character and making the rest illegal.
     /// </remarks>
-    private static void Assign(Cast cast, IReadOnlyList<Card> among, long amount)
+    private static void Assign(
+        AbilityNode node, Cast cast, IReadOnlyList<Card> among, long amount)
     {
         var assigned = new Dictionary<int, long>();
         long left = amount;
@@ -200,7 +201,7 @@ public sealed partial class AbilityRunner
             left -= take;
         }
 
-        Resolve(cast, assigned);
+        Resolve(node, cast, assigned);
     }
 
     /// <summary>Deals an assignment that is already worked out.</summary>
@@ -209,13 +210,19 @@ public sealed partial class AbilityRunner
     /// "simultaneously" and simultaneous still has to reach the event stream in
     /// some order — one the board cannot see and the wire can.
     /// </remarks>
-    private static void Resolve(Cast cast, Dictionary<int, long> assigned)
+    private static void Resolve(
+        AbilityNode node, Cast cast, Dictionary<int, long> assigned)
     {
+        bool suspended = false;
         foreach (var (card, damage) in assigned.OrderBy(each => each.Key))
         {
-            Damage.Deal(
+            suspended |= Damage.DealOutcome(
                 cast.World, cast.World.Facts, cast.Source, cast.World.Cards[card], damage,
-                cast.Trigger, "Indirect_Damage", cast.Events);
+                cast.Trigger, "Indirect_Damage", cast.Events) == Damage.Outcome.Suspended;
+        }
+        if (suspended)
+        {
+            SuspendAfterProcedure(node, cast);
         }
     }
 
@@ -237,16 +244,21 @@ public sealed partial class AbilityRunner
             amount = SaturatingSum(amount, [EventModifier(cast, "attackDamage")]);
         }
         string verb = node.Field("attack") is null ? "Deal_Damage" : "Attack";
+        bool suspended = false;
         foreach (var target in Every(node.Require("cards"), cast))
         {
             long before = target.Damage;
-            Damage.Deal(
+            suspended |= Damage.DealOutcome(
                 cast.World, cast.World.Facts, cast.Source, target, amount, cast.Trigger, verb,
-                cast.Events);
+                cast.Events) == Damage.Outcome.Suspended;
             if (cast.Power == BasicPowers.AttackVerb && target.Damage > before)
             {
                 cast.Occurrence.Also(Steps.DamageDealt);
             }
+        }
+        if (suspended)
+        {
+            SuspendAfterProcedure(node, cast);
         }
     }
 
@@ -267,9 +279,12 @@ public sealed partial class AbilityRunner
         Damage.Heal(
             cast.World, cast.World.Facts, from, amount,
             cast.Trigger, "Move_Damage", cast.Events);
-        Damage.Deal(
+        if (Damage.DealOutcome(
             cast.World, cast.World.Facts, cast.Source, to, amount,
-            cast.Trigger, "Attack", cast.Events);
+            cast.Trigger, "Attack", cast.Events) == Damage.Outcome.Suspended)
+        {
+            SuspendAfterProcedure(node, cast);
+        }
     }
 
     /// <summary>Damage from an attack event performed by the resolving identity.</summary>
@@ -296,6 +311,7 @@ public sealed partial class AbilityRunner
             Amount(node.Require("amount"), cast),
             [EventModifier(cast, "eventDamage"),
              SaturatingSum(0, attackModifiers.Select(effect => effect.Amount))]);
+        bool suspended = false;
         foreach (var target in DamageTargets(node.Require("cards"), cast))
         {
             var damaged = Damage.Attack(
@@ -307,6 +323,7 @@ public sealed partial class AbilityRunner
             {
                 cast.Occurrence.Also(Steps.DamageDealt);
             }
+            suspended |= damaged.Suspended;
         }
         // Inside an attack wrapper, every damage instance belongs to the same
         // attack and the wrapper consumes these after its whole effect. A
@@ -321,6 +338,10 @@ public sealed partial class AbilityRunner
         if (temporaryOverkill is not null)
         {
             cast.World.Effects.Use(temporaryOverkill);
+        }
+        if (suspended)
+        {
+            SuspendAfterProcedure(node, cast);
         }
     }
 
@@ -358,6 +379,10 @@ public sealed partial class AbilityRunner
         if (damaged.Characters.Count > 0)
         {
             cast.Occurrence.Also(Steps.DamageDealt);
+        }
+        if (damaged.Suspended)
+        {
+            SuspendAfterProcedure(node, cast);
         }
     }
 
@@ -517,9 +542,12 @@ public sealed partial class AbilityRunner
                 $"'{cast.Source.FaceId}' replaces threat with damage to a card that is not there");
         placement.Replace();
         cast.ResolveEffect();
-        Damage.Deal(
+        if (Damage.DealOutcome(
             cast.World, cast.World.Facts, cast.Source, target, damage,
-            cast.Trigger, "Deal_Damage", cast.Events);
+            cast.Trigger, "Deal_Damage", cast.Events) == Damage.Outcome.Suspended)
+        {
+            SuspendAfterProcedure(node, cast);
+        }
     }
 
     private static void RemoveThreat(AbilityNode node, Cast cast, long multiplier = 1)
@@ -1024,6 +1052,38 @@ public sealed partial class AbilityRunner
         PersistSource(cast, results);
         PersistChosen(cast, results);
         return results;
+    }
+
+    /// <summary>Resume the containing ability after a rules procedure finishes.</summary>
+    private static void SuspendAfterProcedure(AbilityNode node, Cast cast)
+    {
+        int abilityOrdinal = AbilityOrdinal(node, cast);
+        var results = ContinuationResults(cast, abilityOrdinal);
+        results["procedureApplied"] = 1;
+        cast.World.Agenda.Then(new PhaseStep(
+            Steps.ResumeAbility,
+            cast.World.Agenda.Current?.Round ?? 0,
+            2,
+            Index: cast.Position + 1,
+            Subject: cast.Source.ObjectId,
+            Seat: cast.Player,
+            Plan: true,
+            Tier: cast.Tier,
+            FinalStep: cast.FinalStep,
+            FinalPlayer: cast.FinalPlayer,
+            EachPlayerFrame: cast.EachPlayerFrame,
+            Trigger: cast.Trigger,
+            SurgeGained: cast.GainedKeywords.Contains("surge"),
+            Discarded: [.. cast.Discarded.Select(card => card.ObjectId)],
+            AbilityOrdinal: abilityOrdinal,
+            AbilityPath: [.. cast.AbilityPath],
+            AbilityResults: results,
+            AbilityOccurrence: cast.Occurrence,
+            AbilityFace: cast.AbilityFace,
+            AbilityPlayer: cast.AbilityPlayer,
+            AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
+            AbilityHasContinuation: cast.HasContinuation));
+        cast.Suspend();
     }
 
     private static Dictionary<string, long> ContinuationResults(
