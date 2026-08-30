@@ -16722,6 +16722,28 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 return states;
             }
 
+            if (effect.Kind == "grantUntil"
+                && effect.Field("trait") is { } gainedTrait)
+            {
+                string trait = Word(gainedTrait);
+                foreach (var state in states)
+                {
+                    var target = ProjectedFind(
+                        effect.Require("card"), state, cast);
+                    if (target is null)
+                    {
+                        continue;
+                    }
+                    if (!state.Traits.TryGetValue(
+                            target.ObjectId, out var granted))
+                    {
+                        state.Traits[target.ObjectId] = granted = [];
+                    }
+                    granted.Add(trait);
+                }
+                return states;
+            }
+
             if (effect.Kind == "eachPlayer")
             {
                 int priorPlayer = cast.Player;
@@ -17161,8 +17183,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                         }),
                         state,
                         cast)
-                    .Where(card => Rules.State.Traits.Has(
-                        cast.World, card, wanted, cast.World.Facts)),
+                    .Where(card => state.HasTrait(cast, card, wanted)),
             ];
         }
         if (node.Kind is "minBy" or "maxBy")
@@ -17200,8 +17221,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return
             [
                 .. ProjectedEvery(node.Require("cards"), state, cast)
-                    .Where(card => Rules.State.Traits.Has(
-                        cast.World, card, wanted, cast.World.Facts)),
+                    .Where(card => state.HasTrait(cast, card, wanted)),
             ];
         }
         if (node.Kind == "query"
@@ -17366,6 +17386,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public HashSet<int> Entered { get; } = [];
         public Dictionary<int, int> Hosts { get; } = [];
         public Dictionary<int, int> EngagedWith { get; } = [];
+        public Dictionary<int, HashSet<string>> Traits { get; } = [];
         public bool SourceReferenceCurrent { get; set; } = true;
         public int ActiveVillain { get; set; } =
             cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
@@ -17387,6 +17408,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         public long ThreatOf(Card card) => Threat.GetValueOrDefault(
             card.ObjectId, card.Tokens.GetValueOrDefault("k_threat"));
+
+        public bool HasTrait(Cast current, Card card, string trait) =>
+            Traits.TryGetValue(card.ObjectId, out var granted)
+                && granted.Contains(trait)
+            || Rules.State.Traits.Has(
+                current.World, card, trait, current.World.Facts);
 
         public AreaProjectionState Clone()
         {
@@ -17417,6 +17444,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 clone.EngagedWith[card] = player;
             }
+            foreach (var (card, traits) in Traits)
+            {
+                clone.Traits[card] = [.. traits];
+            }
             clone.ActiveVillain = ActiveVillain;
             clone.VillainAttachmentHost = VillainAttachmentHost;
             clone.SourceReferenceCurrent = SourceReferenceCurrent;
@@ -17446,6 +17477,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                     .Select(pair => $"h{pair.Key}:{pair.Value}"))
                 .Concat(EngagedWith.OrderBy(pair => pair.Key)
                     .Select(pair => $"e{pair.Key}:{pair.Value}"))
+                .Concat(Traits.OrderBy(pair => pair.Key)
+                    .SelectMany(pair => pair.Value.Order(StringComparer.Ordinal)
+                        .Select(trait => $"g{pair.Key}:{trait}")))
                 .Append($"v{ActiveVillain}:{VillainAttachmentHost}")
                 .Append($"r{SourceReferenceCurrent}"));
     }

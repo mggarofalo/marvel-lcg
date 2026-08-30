@@ -11251,6 +11251,54 @@ public sealed class ActionAbilityTests
         Assert.Equal(DeckType.EncounterDeck, entrant!.Area.Type);
     }
 
+    [Rule("rr:lasting-effects")]
+    [Rule("rr:traits.1")]
+    [Fact]
+    public void LastingTraitGrantChangesLaterProjectedTraitQuery()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "grantUntil": {
+                "card": { "titled": "Private Security Specialist" },
+                "trait": "CRIMINAL", "until": "EndOfRound"
+              } },
+              { "dealDamage": {
+                "cards": { "enemiesWithTrait": "CRIMINAL" }, "amount": 100
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile",
+                "title": "Private Security Specialist"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? specialist = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                var criminal = board.CreateCard(
+                    "02007", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, criminal, Statuses.Tough);
+                specialist = board.CreateCard(
+                    "02008", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "02008", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.EngagedEnemiesArea, specialist!.Area.Type);
+    }
+
     [Rule("rr:villain-defeat.3.2")]
     [Rule("rr:villain-defeat.4.2")]
     [Fact]
