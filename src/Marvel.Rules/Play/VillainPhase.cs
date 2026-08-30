@@ -1036,10 +1036,11 @@ public static class VillainPhase
                     world.Agenda.Cancel(occurrence);
                     throw;
                 }
-                // Advance the owner while it is still first. Continuations
-                // intentionally share its occurrence, so moving them ahead
-                // first would make identity-based advancement select a child.
-                world.Agenda.Advance(occurrence);
+                // A rules procedure can move a continuation in front of the
+                // Action before Act returns. Those children intentionally
+                // share its occurrence, so advance the exact owner rather
+                // than the first item carrying that occurrence.
+                world.Agenda.Advance(step, occurrence);
                 world.Agenda.BeforeResponses(occurrence);
                 break;
 
@@ -1501,6 +1502,7 @@ public static class VillainPhase
         var target = world.Cards[step.Subject];
         if (Damage.Health(world, facts, target) - target.Damage > 0)
         {
+            world.Effects.CompleteHealthDefeat(target);
             return;
         }
 
@@ -1557,7 +1559,9 @@ public static class VillainPhase
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
         var target = world.Cards[step.Subject];
-        if (Damage.Health(world, facts, target) - target.Damage <= 0)
+        world.Effects.CompleteHealthDefeat(target);
+        if (DeckTypes.IsInPlay(target.Area.Type)
+            && Damage.Health(world, facts, target) - target.Damage <= 0)
         {
             Defeat.Character(
                 world, facts, target, step.ProcedureTrigger, events,

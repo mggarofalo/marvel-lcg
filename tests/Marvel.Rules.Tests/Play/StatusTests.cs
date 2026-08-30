@@ -89,6 +89,150 @@ public sealed class StatusTests
         Assert.Equal(0, Statuses.Count(world, hero, Statuses.Confused));
     }
 
+    [Rule("rr:confuse-confused.5.1")]
+    [Fact]
+    public void AConfusedHeroMayAttemptAThwartWhenNoSchemeIsValid()
+    {
+        // "A confused character can still attempt to thwart or use a thwart
+        // ability even if there is no valid target." The only scheme has no
+        // threat, so the attempt exists solely to remove Confused.
+        var printed = Cards();
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        Statuses.Give(world, hero, Statuses.Confused);
+        Assert.Empty(BasicPowers.Thwartable(world, printed, 0));
+
+        BasicPowers.BasicThwart(world, printed, 0, scheme, []);
+
+        Assert.False(hero.Ready);
+        Assert.False(Statuses.Has(world, hero, Statuses.Confused));
+        Assert.Equal(0, scheme.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:stun-stunned.7")]
+    [Fact]
+    public void AStunCancelledAttemptIsNotAnAttack()
+    {
+        // "If an attack is canceled or replaced by an effect, the character
+        // is not considered to have attacked." No attack begins or finishes,
+        // so after-attack facts cannot be observed later in the window.
+        var printed = Cards();
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Statuses.Give(world, hero, Statuses.Stunned);
+
+        BasicPowers.BasicAttack(world, printed, 0, villain, []);
+
+        Assert.Null(world.Attack);
+        Assert.Null(world.FinishedAttack);
+        Assert.Equal(0, villain.Damage);
+    }
+
+    [Rule("rr:stalwart.2")]
+    [Fact]
+    public void AConstantThatGrantsStalwartRemovesExistingAfflictions()
+    {
+        // "If a character gains the stalwart keyword while they have a
+        // stunned and/or confused status card, each [...] card is removed."
+        // The source enters after both cards, so this is gaining Stalwart and
+        // not merely refusing a later status placement.
+        var printed = Cards();
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        Statuses.Give(world, hero, Statuses.Stunned);
+        Statuses.Give(world, hero, Statuses.Confused);
+        var source = world.CreateCard(
+            "source", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var abilities = new GrantsStalwart(source.ObjectId, hero.ObjectId);
+        world.Abilities = abilities;
+
+        Reveal.EnterPlay(world, printed, source, [], abilities: abilities);
+
+        Assert.False(Statuses.Has(world, hero, Statuses.Stunned));
+        Assert.False(Statuses.Has(world, hero, Statuses.Confused));
+    }
+
+    [Rule("rr:hit-points.2.3")]
+    [Rule("rr:hit-points.3.1")]
+    [Fact]
+    public void EndingAHitPointGrantDefeatsANowLethalMinion()
+    {
+        // A +3 hit-point effect raises the minion's pool from three to six.
+        // When it ceases, "if the amount of damage on the card is equal to or
+        // greater than the card's hit points, that card is defeated."
+        var printed = Cards().With("minion", ("HP", "3"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Effects.Register(new Marvel.Rules.Timing.ContinuousEffect(
+            Marvel.Rules.Timing.EffectSource.LastingEffect,
+            "health",
+            Amount: 3,
+            Affects: minion.ObjectId,
+            Lasts: Marvel.Rules.Timing.Duration.UntilEndOf(
+                Marvel.Rules.Timing.TimingPoints.EndOfRound)));
+        minion.TakeDamage(3);
+        Assert.Equal(3, Damage.Health(world, printed, minion) - minion.Damage);
+        Agendas.Happening(world);
+
+        world.Effects.Expire(Marvel.Rules.Timing.TimingPoints.EndOfRound, []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+    }
+
+    [Rule("rr:hit-points.2.1")]
+    [Rule("rr:hit-points.2.3")]
+    [Fact]
+    public void EndingAHitPointGrantEliminatesANowLethalIdentity()
+    {
+        // An identity's dial falls with the modifier. Ten damage is survivable
+        // at thirteen HP and becomes zero remaining HP when +3 ends.
+        var printed = Cards();
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        world.Effects.Register(new Marvel.Rules.Timing.ContinuousEffect(
+            Marvel.Rules.Timing.EffectSource.LastingEffect,
+            "health",
+            Amount: 3,
+            Affects: hero.ObjectId,
+            Lasts: Marvel.Rules.Timing.Duration.UntilEndOf(
+                Marvel.Rules.Timing.TimingPoints.EndOfRound)));
+        hero.TakeDamage(10);
+        Agendas.Happening(world);
+
+        world.Effects.Expire(Marvel.Rules.Timing.TimingPoints.EndOfRound, []);
+
+        Assert.True(world.Seats[0].Eliminated);
+    }
+
+    [Rule("rr:hit-points.2.2")]
+    [Rule("rr:hit-points.2.3")]
+    [Fact]
+    public void EndingAHitPointGrantDefeatsANowLethalVillainStage()
+    {
+        // The villain's dial follows the same rule. With no later stage, the
+        // zero-HP stage is removed and its defeat ends the game for the players.
+        var printed = Cards();
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.Effects.Register(new Marvel.Rules.Timing.ContinuousEffect(
+            Marvel.Rules.Timing.EffectSource.LastingEffect,
+            "health",
+            Amount: 3,
+            Affects: villain.ObjectId,
+            Lasts: Marvel.Rules.Timing.Duration.UntilEndOf(
+                Marvel.Rules.Timing.TimingPoints.EndOfRound)));
+        villain.TakeDamage(20);
+        Agendas.Happening(world);
+
+        world.Effects.Expire(Marvel.Rules.Timing.TimingPoints.EndOfRound, []);
+
+        Assert.Equal(DeckType.RemovedArea, villain.Area.Type);
+        Assert.Equal(Marvel.Rules.Play.Outcome.PlayersWin, world.Result);
+    }
+
     [Rule("rr:stun-stunned.1")]
     [Fact]
     public void AStunReplacesACardAbilityAttackAfterItsCostsArePaid()
@@ -549,6 +693,20 @@ public sealed class StatusTests
             List<Marvel.Rules.Events.GameEvent> events) => target.FaceId == "minion"
                 ? Math.Max(0, amount - 3)
                 : amount;
+    }
+
+    private sealed class GrantsStalwart(int source, int target) : NoCardAbilities
+    {
+        public override IReadOnlyList<Marvel.Rules.Timing.ContinuousEffect> Constant(
+            World world, Card card) => card.ObjectId == source
+                ? [new Marvel.Rules.Timing.ContinuousEffect(
+                    Marvel.Rules.Timing.EffectSource.ConstantAbility,
+                    "stalwart",
+                    Amount: 1,
+                    Card: source,
+                    Affects: target,
+                    Lasts: Marvel.Rules.Timing.Duration.WhileInPlay)]
+                : [];
     }
 
     /// <summary>Grants a keyword the way a card ability does.</summary>

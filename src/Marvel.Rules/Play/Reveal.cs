@@ -624,6 +624,12 @@ public static class Reveal
         // Card-specific entry state is still part of the transition and must
         // exist before an "after this card enters play" response is read.
         events.AddRange((abilities ?? world.Abilities).EntersPlay(world, card));
+
+        // A newly active constant may grant stalwart to its own character or
+        // to another one already in play. `rr:stalwart.2` removes both kinds of
+        // forbidden status card as part of gaining the keyword, before the
+        // after-entry response window opens.
+        Statuses.RemoveAfflictionsIfStalwart(world, facts, "stalwart", events);
         occurrence?.Also(Steps.CardEntersPlay);
     }
 }

@@ -210,6 +210,58 @@ public static class Statuses
             : null;
     }
 
+    /// <summary>Remove the statuses forbidden by newly gained stalwart.</summary>
+    /// <remarks>
+    /// <c>rr:stalwart.2</c>: "If a character gains the stalwart keyword while
+    /// they have a stunned and/or confused status card, each stunned and/or
+    /// confused status card is removed from that character." This is a
+    /// transition rule, not merely the zero limit returned by <see cref="Limit"/>.
+    /// </remarks>
+    public static void RemoveAfflictionsIfStalwart(
+        World world, ICardFacts facts, Card host, string trigger,
+        List<Events.GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(trigger);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (StateFields.Modified(world, host, "stalwart", facts, world.Players) <= 0)
+        {
+            return;
+        }
+
+        foreach (var status in On(world, host, Stunned)
+                     .Concat(On(world, host, Confused))
+                     .OrderBy(card => card.ObjectId)
+                     .ToList())
+        {
+            Play.Discard.Card(world, status, trigger, events);
+        }
+    }
+
+    /// <summary>Apply <c>rr:stalwart.2</c> to every character on the board.</summary>
+    public static void RemoveAfflictionsIfStalwart(
+        World world, ICardFacts facts, string trigger, List<Events.GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(trigger);
+        ArgumentNullException.ThrowIfNull(events);
+
+        foreach (var character in world.Cards
+                     .Where(card => DeckTypes.IsInPlay(card.Area.Type)
+                         && FacedownDrones.Kind(card, facts) is CardKind.Hero
+                             or CardKind.AlterEgo or CardKind.Ally or CardKind.Minion
+                             or CardKind.EncounterVillain)
+                     .OrderBy(card => card.ObjectId))
+        {
+            RemoveAfflictionsIfStalwart(
+                world, facts, character, trigger, events);
+        }
+    }
+
     /// <summary>
     /// Whether a character is discarded for becoming stunned or confused —
     /// <c>rr:vulnerable</c>.

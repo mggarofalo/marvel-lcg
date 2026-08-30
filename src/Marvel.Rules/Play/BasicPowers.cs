@@ -904,6 +904,18 @@ public static class BasicPowers
                 $"card {ally.ObjectId} has no usable {field} value");
         }
 
+        // A status-cancelled attempt needs no valid target
+        // (`rr:stun-stunned.5.1`, `rr:confuse-confused.5.1`). Check it before
+        // target legality so an ally can clear the status when the legal set
+        // is empty, and take no consequential damage (`rr:ally.3`).
+        string cancellingStatus = attacking ? Statuses.Stunned : Statuses.Confused;
+        if (Statuses.Afflicted(world, facts, ally, cancellingStatus))
+        {
+            Exhaust(ally, verb, events);
+            Cancelled(world, facts, ally, cancellingStatus, events);
+            return;
+        }
+
         var legal = attacking
             ? Attackable(world, facts, ally.Owner)
             : Thwartable(world, facts, ally.Owner);
@@ -915,16 +927,6 @@ public static class BasicPowers
         }
 
         Exhaust(ally, verb, events);
-
-        // `rr:stun-stunned.5` and `rr:confuse-confused.5` name the ally as well
-        // as the identity. **No consequential damage either** -- `rr:ally.3`'s
-        // parenthesis: "if an ally attempts to attack or thwart while stunned or
-        // confused, respectively, that ally will not take consequential damage".
-        if (Cancelled(
-            world, facts, ally, attacking ? Statuses.Stunned : Statuses.Confused, events))
-        {
-            return;
-        }
 
         // Scheduled, both halves -- and the consequential damage after the
         // power, because `rr:consequential-damage.1` deals it "after resolving
@@ -952,6 +954,34 @@ public static class BasicPowers
             Subject: ally.ObjectId,
             Seat: ally.Owner,
             Character: target.ObjectId));
+    }
+
+    /// <summary>Pay for a status-cancelled basic power with no legal target.</summary>
+    internal static void CancelledBasicPower(
+        World world, ICardFacts facts, Card character, string verb,
+        List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(character);
+        ArgumentNullException.ThrowIfNull(events);
+
+        bool attacking = string.Equals(verb, AttackVerb, StringComparison.Ordinal);
+        string field = attacking ? "ATK" : "THW";
+        string status = attacking ? Statuses.Stunned : Statuses.Confused;
+        if (!character.Ready || !CanUsePower(facts, character, field)
+            || !Statuses.Afflicted(world, facts, character, status))
+        {
+            throw new RulesNotImplementedException(
+                $"card {character.ObjectId} cannot make a targetless {verb} attempt");
+        }
+
+        Exhaust(character, verb, events);
+        if (!Cancelled(world, facts, character, status, events))
+        {
+            throw new InvalidOperationException(
+                $"card {character.ObjectId}'s targetless {verb} was not cancelled");
+        }
     }
 
     /// <summary>

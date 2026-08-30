@@ -1055,12 +1055,14 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Resume the containing ability after a rules procedure finishes.</summary>
-    private static void SuspendAfterProcedure(AbilityNode node, Cast cast)
+    private static void SuspendAfterProcedure(
+        AbilityNode node, Cast cast, PhaseStep? agendaOwner = null,
+        Occurrence? agendaOccurrence = null)
     {
         int abilityOrdinal = AbilityOrdinal(node, cast);
         var results = ContinuationResults(cast, abilityOrdinal);
         results["procedureApplied"] = 1;
-        cast.World.Agenda.Then(new PhaseStep(
+        var continuation = new PhaseStep(
             Steps.ResumeAbility,
             cast.World.Agenda.Current?.Round ?? 0,
             2,
@@ -1082,7 +1084,20 @@ public sealed partial class AbilityRunner
             AbilityFace: cast.AbilityFace,
             AbilityPlayer: cast.AbilityPlayer,
             AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
-            AbilityHasContinuation: cast.HasContinuation));
+            AbilityHasContinuation: cast.HasContinuation);
+        if (agendaOwner is null)
+        {
+            cast.World.Agenda.Then(continuation);
+        }
+        else
+        {
+            cast.World.Agenda.ContinueBeforeOwner(
+                agendaOccurrence
+                    ?? throw new InvalidOperationException(
+                        "a suspended rules procedure has no containing occurrence"),
+                agendaOwner.Value,
+                continuation);
+        }
         cast.Suspend();
     }
 

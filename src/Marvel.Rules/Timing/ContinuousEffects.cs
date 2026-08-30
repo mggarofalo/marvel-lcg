@@ -157,6 +157,7 @@ public sealed class ContinuousEffects(World world)
     private readonly HashSet<Entry> suppressed = [];
     private readonly List<ContinuousEffect> suppressedConstants = [];
     private readonly HashSet<int> departing = [];
+    private readonly HashSet<int> healthDefeatPending = [];
 
     // While constants are settling, a nested read sees the previous complete
     // pass. See `Constant` -- this is iteration state, not cached game state.
@@ -481,7 +482,9 @@ public sealed class ContinuousEffects(World world)
         {
             var restoredUses = RestoredUsesAfter(candidates);
             constantsEnding = PreflightDepartures(
-                restoredUses, includeHostedCards: true, moveRoots: true);
+                [.. restoredUses, .. LethalAfterHealthEnds(
+                    ending.Select(entry => entry.Effect))],
+                includeHostedCards: true, moveRoots: true);
         }
         finally
         {
@@ -515,6 +518,123 @@ public sealed class ContinuousEffects(World world)
         var restoredIds = restored.Select(card => card.ObjectId).ToHashSet();
         return restored.Where(card => !HasHostedAncestor(card, restoredIds)).ToArray();
     }
+
+    private Card[] LethalAfterHealthEnds(IEnumerable<ContinuousEffect> ending)
+    {
+        var health = ending.Where(effect =>
+                string.Equals(effect.Kind, "health", StringComparison.Ordinal)
+                && effect.Amount > 0)
+            .ToArray();
+        if (health.Length == 0)
+        {
+            return [];
+        }
+
+        return world.Cards.Where(card =>
+                DeckTypes.IsInPlay(card.Area.Type)
+                && FacedownDrones.Kind(card, world.Facts) is CardKind.Hero
+                    or CardKind.AlterEgo or CardKind.Ally or CardKind.Minion
+                    or CardKind.EncounterVillain
+                && StateFields.Modified(
+                    world, card, "is_infinite_health", world.Facts, world.Players) <= 0
+                && health.Where(effect => effect.AppliesTo(world, card))
+                    .Sum(effect => effect.Amount) is long lost and > 0
+                && card.Damage < Play.Damage.Health(world, world.Facts, card) + lost
+                && card.Damage >= Play.Damage.Health(world, world.Facts, card))
+            .ToArray();
+    }
+
+    /// <summary>Maximum hit points before a state change can alter constants.</summary>
+    public IReadOnlyDictionary<int, long> CaptureCharacterHealth() => world.Cards
+        .Where(card => DeckTypes.IsInPlay(card.Area.Type)
+            && IsCharacter(FacedownDrones.Kind(card, world.Facts)))
+        .OrderBy(card => card.ObjectId)
+        .ToDictionary(
+            card => card.ObjectId,
+            card => Play.Damage.Health(world, world.Facts, card));
+
+    /// <summary>Defeat characters made lethal by a health modifier ending.</summary>
+    /// <remarks>
+    /// <c>rr:hit-points.2.3</c> and <c>rr:hit-points.3.1</c> apply when a
+    /// conditional constant switches off just as they do when its source
+    /// leaves play. The before-image makes causality explicit: an unrelated
+    /// state change does not rediscover a character that was already at zero.
+    /// </remarks>
+    public bool SettleLostHealth(
+        IReadOnlyDictionary<int, long> before, string trigger,
+        List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(before);
+        ArgumentNullException.ThrowIfNull(trigger);
+        ArgumentNullException.ThrowIfNull(events);
+
+        bool suspended = false;
+        foreach (var (id, formerHealth) in before.OrderBy(pair => pair.Key))
+        {
+            if (id < 0 || id >= world.Cards.Count)
+            {
+                continue;
+            }
+            var card = world.Cards[id];
+            if (!DeckTypes.IsInPlay(card.Area.Type)
+                || !IsCharacter(FacedownDrones.Kind(card, world.Facts)))
+            {
+                continue;
+            }
+
+            long currentHealth = Play.Damage.Health(world, world.Facts, card);
+            if (currentHealth < formerHealth
+                && card.Damage < formerHealth
+                && card.Damage >= currentHealth)
+            {
+                suspended |= SettleHealthDefeat(card, trigger, events);
+            }
+        }
+        return suspended;
+    }
+
+    private static bool IsCharacter(CardKind kind) => kind is CardKind.Hero
+        or CardKind.AlterEgo or CardKind.Ally or CardKind.Minion
+        or CardKind.EncounterVillain;
+
+    private bool SettleHealthDefeat(Card card, string trigger, List<GameEvent> events)
+    {
+        if (StateFields.Modified(
+                world, card, "is_infinite_health", world.Facts, world.Players) > 0
+            || card.Damage < Play.Damage.Health(world, world.Facts, card))
+        {
+            return false;
+        }
+
+        if (healthDefeatPending.Contains(card.ObjectId))
+        {
+            return true;
+        }
+
+        // The Rules Reference names the condition but no event-stream verb;
+        // the engine chooses this spelling to distinguish it from damage.
+        const string verb = "Hit_Points_Reduced";
+        var occurrence = world.Agenda.Occurrence;
+        if (!world.Abilities.WouldBeDefeated(
+                world, card, card, trigger, verb, by: -1,
+                events: events, recordDefeatOn: occurrence))
+        {
+            healthDefeatPending.Add(card.ObjectId);
+            return true;
+        }
+
+        if (card.Damage >= Play.Damage.Health(world, world.Facts, card))
+        {
+            Defeat.Character(
+                world, world.Facts, card, trigger, events,
+                how: verb, recordOn: occurrence);
+        }
+        return false;
+    }
+
+    /// <summary>Marks a suspended health-loss defeat procedure as settled.</summary>
+    internal void CompleteHealthDefeat(Card card) =>
+        healthDefeatPending.Remove(card.ObjectId);
 
     private bool HasHostedAncestor(Card card, HashSet<int> candidates)
     {
@@ -629,6 +749,23 @@ public sealed class ContinuousEffects(World world)
                 suppressedConstants.AddRange(ending);
 
                 foreach (var card in RestoredUsesAfter(candidates))
+                {
+                    if (!definiteIds.Contains(card.ObjectId)
+                        && restoredIds.Add(card.ObjectId))
+                    {
+                        restored.Add(card);
+                    }
+                    if (!plannedIds.Contains(card.ObjectId))
+                    {
+                        int before = planned.Count;
+                        AddDeparture(card, includeHostedCards: true, planned, plannedIds);
+                        foreach (var added in planned.Skip(before))
+                        {
+                            pending.Enqueue(added);
+                        }
+                    }
+                }
+                foreach (var card in LethalAfterHealthEnds(ending))
                 {
                     if (!definiteIds.Contains(card.ObjectId)
                         && restoredIds.Add(card.ObjectId))
@@ -874,7 +1011,21 @@ public sealed class ContinuousEffects(World world)
         foreach (var card in restored.Where(card =>
             DeckTypes.IsInPlay(card.Area.Type)))
         {
-            Discard.Card(world, card, trigger, events);
+            // `rr:hit-points.3.1`: when an ally or minion's +X hit-point
+            // effect ends and its damage is now at least its hit points, that
+            // character is defeated. Other restored cards here regained a
+            // zero-use keyword and follow that keyword's discard rule.
+            if (IsCharacter(FacedownDrones.Kind(card, world.Facts))
+                && StateFields.Modified(
+                    world, card, "is_infinite_health", world.Facts, world.Players) <= 0
+                && card.Damage >= Play.Damage.Health(world, world.Facts, card))
+            {
+                _ = SettleHealthDefeat(card, trigger, events);
+            }
+            else
+            {
+                Discard.Card(world, card, trigger, events);
+            }
         }
     }
 
