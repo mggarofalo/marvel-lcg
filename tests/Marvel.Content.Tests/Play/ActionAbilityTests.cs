@@ -9594,6 +9594,210 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
     }
 
+    [Rule("rr:choose-option.2")]
+    [Rule("rr:search.1")]
+    [Fact]
+    public void ChoiceFiltersAnOptionThatWouldMakeTheSuffixAmbiguous()
+    {
+        // The discard option is locally legal but would add a second matching
+        // card before the singular suffix. It is filtered while the harmless
+        // draw remains available, before either option changes the board.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "choose": { "options": [
+                { "discard": { "titled": "Hydra Mercenary" } },
+                { "draw": { "player": "you", "count": 1 } }
+              ] } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? inPlay = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                inPlay = board.CreateCard(
+                    "01101", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.DoesNotContain(game.Pending!.Affordances, option => option.Id == 0);
+        Assert.Contains(game.Pending.Affordances, option => option.Id == 1);
+        Assert.Equal(DeckType.EngagedEnemiesArea, inPlay!.Area.Type);
+    }
+
+    [Rule("rr:search.1")]
+    [Fact]
+    public void InactiveBranchDoesNotMakeALaterAreaQueryUnstable()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "if": {
+                "test": { "inForm": { "player": "you", "form": "alterEgo" } },
+                "then": { "discard": { "titled": "Hydra Mercenary" } }
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? target = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                target = board.CreateCard(
+                    "01101", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(DeckType.RemovedArea, target!.Area.Type);
+    }
+
+    [Rule("rr:for-each.1")]
+    [Rule("rr:search.1")]
+    [Fact]
+    public void ZeroIterationDoesNotMakeALaterAreaQueryUnstable()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "forEach": { "count": 0, "effect": {
+                "discard": { "titled": "Hydra Mercenary" }
+              } } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? target = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                target = board.CreateCard(
+                    "01101", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(DeckType.RemovedArea, target!.Area.Type);
+    }
+
+    [Rule("rr:damage.3")]
+    [Rule("rr:search.1")]
+    [Fact]
+    public void NonlethalVillainDamageDoesNotMakeEncounterDiscardUnstable()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "dealDamage": {
+                "cards": { "query": "villain" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? target = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                target = board.CreateCard(
+                    "01101", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(1, villain.Damage);
+        Assert.Equal(DeckType.RemovedArea, target!.Area.Type);
+    }
+
+    [Rule("rr:cost.6")]
+    [Rule("rr:defeat.1")]
+    [Rule("rr:search.1")]
+    [Fact]
+    public void DefeatedSchemeCannotCreateAreaAmbiguityAfterActionCost()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "removeThreat": {
+                "scheme": { "titled": "Breakin' & Takin'" }, "amount": 1
+              } },
+              { "removeFromGame": { "cardsIn": {
+                "area": "encounterDiscardPile", "title": "Breakin' & Takin'"
+              } } }
+            ] }
+            """,
+            cost: """{ "exhaust": "this" }""");
+        Card? source = null;
+        Card? scheme = null;
+
+        Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                scheme = board.CreateCard(
+                    "01107", board.AreaOf(DeckType.SideSchemesArea));
+                scheme.PlaceTokens("k_threat", 1);
+                board.CreateCard(
+                    "01107", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner));
+
+        Assert.True(source!.Ready);
+        Assert.Equal(DeckType.SideSchemesArea, scheme!.Area.Type);
+        Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
+    }
+
     [Rule("rr:in-play-and-out-of-play.4")]
     [Rule("rr:permanent.4")]
     [Rule("rr:removed-from-the-game")]

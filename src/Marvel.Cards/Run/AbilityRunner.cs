@@ -3974,6 +3974,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
 
         var prior = cast.CaptureChosen();
         var priorSelection = cast.CapturePlayerSelection();
+        var priorSteps = cast.PriorSteps;
+        bool priorFiltering = cast.FilteringContinuationOption;
         try
         {
             ResolutionOutcome? pendingOutcome = cast.HasPendingDependency
@@ -3982,12 +3984,16 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             var before = new BindingCandidateState(
                 prior is null ? [] : [prior.Card], prior is null);
             var outcomes = BindingCandidatesAfter(option, cast, before);
+            cast.SetPriorSteps([.. priorSteps, option]);
+            cast.SetFilteringContinuationOption(true);
             return ContinuationCanResolve(outcomes, cast, pendingOutcome);
         }
         finally
         {
             cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
+            cast.SetPriorSteps(priorSteps);
+            cast.SetFilteringContinuationOption(priorFiltering);
         }
     }
 
@@ -4034,6 +4040,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         var prior = cast.CaptureChosen();
         var priorSelection = cast.CapturePlayerSelection();
+        var priorSteps = cast.PriorSteps;
+        bool priorFiltering = cast.FilteringContinuationOption;
         try
         {
             return legal.Where(candidate =>
@@ -4047,6 +4055,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 var outcomes = BindingCandidatesAfter(
                     effect, cast,
                     new BindingCandidateState([candidate], MayBeEmpty: false));
+                cast.SetPriorSteps([.. priorSteps, effect]);
+                cast.SetFilteringContinuationOption(true);
                 return ContinuationCanResolve(outcomes, cast, pendingOutcome);
             }).ToList();
         }
@@ -4054,6 +4064,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             cast.RestoreChosen(prior);
             cast.RestorePlayerSelection(priorSelection);
+            cast.SetPriorSteps(priorSteps);
+            cast.SetFilteringContinuationOption(priorFiltering);
         }
     }
 
@@ -4064,6 +4076,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         var outerCandidates = cast.PriorBindingCandidates;
         bool outerMayBeEmpty = cast.PriorBindingMayBeEmpty;
         bool outerBindingMayChange = cast.PriorBindingMayChange;
+        bool outerChecking = cast.CheckingInitiation;
         bool CanResolve(Card? binding)
         {
             cast.ChooseSelection(binding);
@@ -4083,6 +4096,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         }
         try
         {
+            cast.SetCheckingInitiation(true);
             return outcomes.Cards.Any(CanResolve)
                 || outcomes.MayBeEmpty && CanResolve(null);
         }
@@ -4091,6 +4105,7 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             cast.SetPriorBindingCandidates(outerCandidates);
             cast.SetPriorBindingMayBeEmpty(outerMayBeEmpty);
             cast.SetPriorBindingMayChange(outerBindingMayChange);
+            cast.SetCheckingInitiation(outerChecking);
         }
     }
 
@@ -8346,6 +8361,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 || cast.PaymentCost is { } cost
                     && MayChangeAnyArea(cost, searched, cast)))
         {
+            if (cast.FilteringContinuationOption)
+            {
+                return false;
+            }
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' searches an area after its matching "
                 + "cards may change");
@@ -15906,7 +15925,10 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             return Query(node, cast);
         }
 
-        RefuseUnstableSingularAreaQuery(node, cast);
+        if (!SingularAreaQueryIsStable(node, cast))
+        {
+            return null;
+        }
         var found = CardsIn(node, cast);
         return found.Count switch
         {
@@ -15918,12 +15940,12 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         };
     }
 
-    private static void RefuseUnstableSingularAreaQuery(
+    private static bool SingularAreaQueryIsStable(
         AbilityNode query, Cast cast)
     {
         if (!cast.CheckingInitiation)
         {
-            return;
+            return true;
         }
 
         var areas = CardsInAreaTypes(query, cast);
@@ -15933,10 +15955,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             && MayChangeAnyArea(cost, areas, cast);
         if (priorCanChange || paymentCanChange)
         {
+            if (cast.FilteringContinuationOption)
+            {
+                return false;
+            }
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' reaches a singular area query after its "
                 + "matching cards may change");
         }
+        return true;
     }
 
     private static HashSet<DeckType> CardsInAreaTypes(
@@ -15964,6 +15991,29 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             Every(selector, cast).Any(card => queried.Contains(card.Area.Type))
             || Includes(destinations);
 
+        bool DamageCouldDiscard(AbilityNode damage)
+        {
+            long amount = Amount(damage.Require("amount"), cast);
+            return DamageTargets(damage.Require("cards"), cast).Any(card =>
+                Damage.Health(cast.World, cast.World.Facts, card) - card.Damage <= amount
+                && (cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                        && queried.Contains(DeckType.EncounterDiscardPile)
+                    || cast.World.Facts.Kind(card.FaceId) == CardKind.Ally
+                        && queried.Contains(DeckType.DiscardPile)));
+        }
+
+        bool ThreatRemovalCouldDiscard(AbilityNode removal)
+        {
+            if (!queried.Contains(DeckType.EncounterDiscardPile))
+            {
+                return false;
+            }
+            long amount = Amount(removal.Require("amount"), cast);
+            return Every(removal.Require("scheme"), cast).Any(scheme =>
+                cast.World.Facts.Kind(scheme.FaceId) == CardKind.EncounterSideScheme
+                && scheme.Tokens.GetValueOrDefault("k_threat") <= amount);
+        }
+
         bool direct = effect.Kind switch
         {
             "draw" or "drawToHandSize" or "drawToPrintedHandSize" =>
@@ -15990,16 +16040,50 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 Includes(
                     DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
                     DeckType.RevealingArea, DeckType.DealtEncounterCardsDeck),
-            "dealDamage" or "dealAttackDamage" or "indirectDamage"
-                or "enemyAttacks" or "attack" =>
-                Includes(DeckType.EncounterDiscardPile, DeckType.DiscardPile),
+            "dealDamage" or "dealAttackDamage" => DamageCouldDiscard(effect),
+            "removeThreat" => ThreatRemovalCouldDiscard(effect),
+            "indirectDamage" => queried.Contains(DeckType.DiscardPile),
             "discardFromHand" or "discardUpToFromHand" or "discardAnyFromHand"
                 or "spend" or "spendPrinted" or "spendEnergyX" =>
                 Includes(DeckType.HandsArea, DeckType.DiscardPile),
             _ => false,
         };
-        return direct || StructuralChildren(effect).Any(child =>
-            MayChangeAnyArea(child, queried, cast));
+        if (direct)
+        {
+            return true;
+        }
+
+        IEnumerable<AbilityNode> reachable = effect.Kind switch
+        {
+            // A choice has not run during the enclosing sequence preflight.
+            // Its selected option/effect is added to PriorSteps when that
+            // answer is validated against the saved continuation.
+            "choose" or "chooseCard" => [],
+            "if" => ReachableMutationBranches(effect, cast),
+            "forEach" when CurrentlyZeroForEach(effect, cast) => [],
+            "forEach" or "defense" or "delayUntil" or "eachPlayer"
+                or "attack" or "thwart" => [Tree(effect.Require("effect"))],
+            _ => StructuralChildren(effect),
+        };
+        return reachable.Any(child => MayChangeAnyArea(child, queried, cast));
+    }
+
+    private static IEnumerable<AbilityNode> ReachableMutationBranches(
+        AbilityNode conditional, Cast cast)
+    {
+        var test = Tree(conditional.Require("test"));
+        bool canSwitch = PriorStepCanChange(test, cast)
+            || cast.PaymentMayMutate && PaymentCanChange(test)
+            || cast.PriorBindingMayChange && BindingCanChange(test.Argument);
+        if (canSwitch)
+        {
+            return Branches.Select(conditional.Field)
+                .Where(value => value is not null)
+                .Select(value => Tree(value!));
+        }
+        return conditional.Field(Test(test, cast) ? "then" : "else") is { } active
+            ? [Tree(active)]
+            : [];
     }
 
     private static HashSet<DeckType> SearchAreaTypes(
@@ -16464,6 +16548,11 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         public bool CheckingInitiation { get; private set; }
 
         public void SetCheckingInitiation(bool value) => CheckingInitiation = value;
+
+        public bool FilteringContinuationOption { get; private set; }
+
+        public void SetFilteringContinuationOption(bool value) =>
+            FilteringContinuationOption = value;
 
         public IReadOnlyList<AbilityNode> PriorSteps { get; private set; } = [];
 
