@@ -1054,6 +1054,11 @@ public static class Attack
         if (FinishIndirectDefeats(
                 world, facts, attacker,
                 [.. placed.Where(damage => damage.Landed)
+                    // Identity elimination clears that player's whole play
+                    // area. Finish every ally's simultaneous damage sequence
+                    // first so cleanup cannot erase its defeat and callbacks.
+                    .OrderBy(damage => world.Seats.Any(seat =>
+                        seat.IdentityCard.ObjectId == damage.Target.ObjectId))
                     .Select(damage => damage.Target.ObjectId)],
                 step.Character, occurrence, events))
         {

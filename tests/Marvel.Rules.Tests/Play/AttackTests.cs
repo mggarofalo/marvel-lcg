@@ -254,6 +254,41 @@ public sealed class AttackTests
         Assert.Equal(10, Assert.Single(abilities.Results).DamageDealt);
     }
 
+    [Rule("rr:indirect-damage.3")]
+    [Rule("rr:player-elimination.5.1")]
+    [Fact]
+    public void SimultaneouslyLethalAllyFinishesDefeatBeforeIdentityElimination()
+    {
+        // All thirteen assigned points land together. The ally's own lethal
+        // damage must complete its defeat callback before eliminating the
+        // identity clears the rest of that player's play area.
+        var printed = Printed(atk: 20, boost: 0);
+        var world = Board(printed, players: 2);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var identity = world.Seats[0].IdentityCard;
+        var abilities = new DefeatRecorder();
+        world.Abilities = abilities;
+        var events = new List<GameEvent>();
+
+        var defend = Sequence.Work(world, printed, abilities, events)!;
+        Attack.MakeIndirect(world);
+        Sequence.Answer(world, printed, abilities, defend, Decision.Decline, events);
+        var assign = Sequence.Work(world, printed, abilities, events)!;
+        Sequence.Answer(
+            world, printed, abilities, assign,
+            Decision.Take(
+                Assert.Single(assign.Affordances).Id,
+                [.. Enumerable.Repeat(identity.ObjectId, 10),
+                 .. Enumerable.Repeat(ally.ObjectId, 3)], []),
+            events);
+        Sequence.Finish(world, printed, abilities, events);
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.False(world.Seats[1].Eliminated);
+        Assert.Contains(ally.ObjectId, abilities.Defeated);
+    }
+
     [Rule("rr:attack-enemy-activation.step.1")]
     [Rule("rr:boost-boost-icon")]
     [Fact]
@@ -1152,6 +1187,18 @@ public sealed class AttackTests
             World world, EnemyActivation result)
         {
             Results.Add(result);
+            return [];
+        }
+    }
+
+    private sealed class DefeatRecorder : NoCardAbilities
+    {
+        public List<int> Defeated { get; } = [];
+
+        public override IReadOnlyList<GameEvent> WhenCardDefeated(
+            World world, Card card, Defeated defeated)
+        {
+            Defeated.Add(card.ObjectId);
             return [];
         }
     }
