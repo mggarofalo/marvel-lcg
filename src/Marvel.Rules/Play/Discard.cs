@@ -44,11 +44,16 @@ public static class Discard
     /// <summary>Whether a card effect may make one permanent target leave play.</summary>
     public static bool EffectCanRemove(
         World world, ICardFacts facts, State.Card source, State.Card target) =>
-        // `rr:removed-from-the-game.2`: a removed card "cannot re-enter the
-        // game by any means." A sequence can retain a binding after an earlier
-        // component removes it, but that stale object is no longer a legal
-        // target for another discard or removal component.
-        target.Area.Type != DeckType.RemovedArea
+        // `rr:in-play-and-out-of-play.4`: an ability cannot affect an
+        // out-of-play card unless it expressly refers to that area. These are
+        // the live resolution places reached by a generic discard/removal
+        // component; deck, pile, aside, Victory, and Removed cards require a
+        // separate area-naming operation rather than a retained stale binding.
+        (DeckTypes.IsInPlay(target.Area.Type)
+            || target.Area.Type is DeckType.HandsArea
+                or DeckType.BoostingArea
+                or DeckType.ProcessingArea
+                or DeckType.RevealingArea)
         && (StateFields.Modified(world, target, "permanent", facts, world.Players) <= 0
             || SameSet(facts, source, target));
 

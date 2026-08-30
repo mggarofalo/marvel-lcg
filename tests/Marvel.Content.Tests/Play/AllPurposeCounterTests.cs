@@ -150,6 +150,41 @@ public sealed class AllPurposeCounterTests
         Assert.Equal(DeckType.VictoryDisplay, shooter!.Area.Type);
     }
 
+    [Rule("rr:in-play-and-out-of-play.4")]
+    [Rule("rr:victory-x.1.3")]
+    [Fact]
+    public void LaterEffectCannotDiscardAUsesCardFromTheVictoryDisplay()
+    {
+        // Paying the cost removes the final counter and sends this card to the
+        // Victory display. The retained `this` binding is then out of play and
+        // the later discard effect cannot bring it back into the game.
+        Card? shooter = null;
+        var (game, world) = Playing(board =>
+        {
+            shooter = board.CreateCard(
+                "01008",
+                board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+            shooter.PlaceTokens("c_web", 1);
+            board.Effects.Register(new ContinuousEffect(
+                EffectSource.ConstantAbility,
+                "victory",
+                Amount: 0,
+                Card: shooter.ObjectId,
+                Affects: shooter.ObjectId,
+                Lasts: Duration.WhileInPlay));
+        }, Runner(
+            "01008",
+            """{ "removeCounters": "web" }""",
+            """{ "discard": "this" }"""));
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == shooter!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(DeckType.VictoryDisplay, shooter!.Area.Type);
+        Assert.Contains(shooter, world.AreaOf(DeckType.VictoryDisplay).Cards);
+    }
+
     [Rule("rr:all-purpose-counter.2")]
     [Fact]
     public void RemovingOneOfSeveralTypesRaisesBeforeChoosingForThePlayer()

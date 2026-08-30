@@ -405,6 +405,14 @@ public static class Defeat
             return false;
         }
 
+        MoveToVictoryDisplay(world, card, trigger, events);
+        return true;
+    }
+
+    /// <summary>Commits a Victory destination already proved on the trigger board.</summary>
+    private static void MoveToVictoryDisplay(
+        World world, Card card, string trigger, List<GameEvent> events)
+    {
         var display = world.AreaOf(DeckType.VictoryDisplay);
         var from = card.Area;
         var constantsEnding = world.Effects.PreflightConstantsEnding(card);
@@ -419,8 +427,6 @@ public static class Defeat
             Trigger = trigger, Verb = "Victory",
         });
         constantsEnding.Complete(trigger, events);
-
-        return true;
     }
 
     /// <summary>Total points currently in the shared victory display.</summary>
@@ -430,11 +436,12 @@ public static class Defeat
 
     /// <summary>Moves victory attachments away before ordinary hosted-card cleanup.</summary>
     private static void VictoryAttachments(
-        World world, ICardFacts facts, Card host, string trigger, List<GameEvent> events)
+        World world, IReadOnlyList<Card> attachments, string trigger,
+        List<GameEvent> events)
     {
-        foreach (var attachment in VictoryAttachmentsOn(world, facts, host))
+        foreach (var attachment in attachments)
         {
-            ToVictoryDisplay(world, facts, attachment, trigger, events);
+            MoveToVictoryDisplay(world, attachment, trigger, events);
         }
     }
 
@@ -451,7 +458,7 @@ public static class Defeat
     ];
 
     /// <summary>Preflights the hosted tree in its Victory-interrupt order.</summary>
-    private static void PreflightDefeatAttachments(
+    private static List<Card> PreflightDefeatAttachments(
         World world, ICardFacts facts, Card host)
     {
         var victory = VictoryAttachmentsOn(world, facts, host);
@@ -466,6 +473,7 @@ public static class Defeat
 
         Discard.PreflightAttachmentsExcept(
             world, host, victory.Select(card => card.ObjectId).ToHashSet());
+        return victory;
     }
 
     /// <summary>Moves Victory interrupts and their defeated host as one transaction.</summary>
@@ -473,13 +481,21 @@ public static class Defeat
         World world, ICardFacts facts, Card host, string trigger,
         List<GameEvent> events)
     {
-        PreflightDefeatAttachments(world, facts, host);
+        var victory = PreflightDefeatAttachments(world, facts, host);
+        bool hostHasVictory = Timing.Keywords.Has(world, host, "victory", facts);
+        var victoryTrees = DefeatDepartureCards(world, victory)
+            .Select(card => card.ObjectId)
+            .ToHashSet();
         var constantsEnding = world.Effects.PreflightConstantsEnding(
-            DefeatDepartureCards(world, host));
+            DefeatDepartureCards(world, [host]), victoryTrees);
         using var departure = constantsEnding.Begin();
 
-        VictoryAttachments(world, facts, host, trigger, events);
-        if (!ToVictoryDisplay(world, facts, host, trigger, events))
+        VictoryAttachments(world, victory, trigger, events);
+        if (hostHasVictory)
+        {
+            MoveToVictoryDisplay(world, host, trigger, events);
+        }
+        else
         {
             Discard.Card(world, host, trigger, events);
         }
@@ -488,14 +504,12 @@ public static class Defeat
     }
 
     /// <summary>The complete physical card set removed by one host defeat.</summary>
-    private static List<Card> DefeatDepartureCards(World world, Card host)
+    private static List<Card> DefeatDepartureCards(
+        World world, IReadOnlyList<Card> roots)
     {
-        var cards = new List<Card> { host };
-        var seen = new HashSet<int> { host.ObjectId };
-        var pending = new Stack<Card>(world.Areas
-            .Where(area => area.Host == host.ObjectId)
-            .SelectMany(area => area.Cards)
-            .Reverse());
+        var cards = new List<Card>();
+        var seen = new HashSet<int>();
+        var pending = new Stack<Card>(roots.Reverse());
         while (pending.TryPop(out var card))
         {
             if (!seen.Add(card.ObjectId))

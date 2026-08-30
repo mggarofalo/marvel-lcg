@@ -783,6 +783,75 @@ public sealed class KeywordTests
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
 
+    [Rule("rr:ability.5")]
+    [Rule("rr:loses")]
+    [Rule("rr:permanent.5")]
+    [Rule("rr:victory-x.1.2")]
+    [Theory]
+    [InlineData(true, DeckType.VictoryDisplay)]
+    [InlineData(false, DeckType.EncounterDiscardPile)]
+    public void VictoryAttachmentDestinationIsCapturedBeforeConstantsEnd(
+        bool granted, DeckType destination)
+    {
+        // The Forced Interrupt is determined while H's constant is active.
+        // A granted Victory+Permanent attachment therefore leaves first, and
+        // an attachment that loses printed Victory remains an ordinary discard
+        // even after H's departure ends the grant or loss.
+        var printed = new Printed()
+            .With("minion", ("HP", "1"))
+            .With(
+                "attachment",
+                granted
+                    ? [("Permanent", "1")]
+                    : [("Victory", "1")]);
+        var world = Board(printed);
+        var host = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId));
+        world.Abilities = new ConstantCharacteristic(
+            host.ObjectId,
+            attachment.ObjectId,
+            granted ? "victory" : Characteristics.LossOf("victory"));
+        Agendas.Happening(world);
+
+        Damage.Deal(world, printed, host, host, 1, "test", "test", []);
+
+        Assert.Equal(destination, attachment.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, host.Area.Type);
+    }
+
+    [Rule("rr:ability.5")]
+    [Rule("rr:permanent.5")]
+    [Fact]
+    public void DeparturePreflightProjectsAConstantsEndBeforeMovingAttachments()
+    {
+        // H temporarily makes A lose Permanent. Once H leaves, Permanent is
+        // restored before A loses its host, so unsupported reattachment must
+        // refuse the complete defeat without moving either card.
+        var printed = new Printed()
+            .With("minion", ("HP", "1"))
+            .With("attachment", ("Permanent", "1"));
+        var world = Board(printed);
+        var host = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId));
+        world.Abilities = new ConstantCharacteristic(
+            host.ObjectId,
+            attachment.ObjectId,
+            Characteristics.LossOf("permanent"));
+        Agendas.Happening(world);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Damage.Deal(world, printed, host, host, 1, "test", "test", []));
+
+        Assert.Equal(DeckType.EngagedEnemiesArea, host.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, attachment.Area.Type);
+    }
+
     [Rule("rr:tuck.1")]
     [Rule("rr:victory-x.3")]
     [Fact]
@@ -2059,6 +2128,23 @@ public sealed class KeywordTests
                     Affects: loss.Affected,
                     Lasts: Duration.WhileInPlay)),
         ];
+    }
+
+    private sealed class ConstantCharacteristic(
+        int source, int affected, string kind) : NoCardAbilities
+    {
+        public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card) =>
+            card.ObjectId == source
+                ?
+                [
+                    new ContinuousEffect(
+                        EffectSource.ConstantAbility,
+                        kind,
+                        Card: source,
+                        Affects: affected,
+                        Lasts: Duration.WhileInPlay),
+                ]
+                : [];
     }
 
     private sealed class DependentConstantUsesLoss(

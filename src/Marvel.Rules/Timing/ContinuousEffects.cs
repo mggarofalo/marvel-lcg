@@ -559,19 +559,22 @@ public sealed class ContinuousEffects(World world)
     }
 
     /// <summary>Proves one ordered transaction whose complete card set will depart.</summary>
-    internal ConstantEnding PreflightConstantsEnding(IReadOnlyList<Card> sources)
+    internal ConstantEnding PreflightConstantsEnding(
+        IReadOnlyList<Card> sources,
+        IReadOnlySet<int> attachmentPreflightExemptions)
     {
         ArgumentNullException.ThrowIfNull(sources);
+        ArgumentNullException.ThrowIfNull(attachmentPreflightExemptions);
         return PreflightDepartures(
             [.. sources.DistinctBy(card => card.ObjectId)],
             includeHostedCards: false,
             moveRoots: false,
-            preflightDefiniteAttachments: false);
+            attachmentPreflightExemptions);
     }
 
     private ConstantEnding PreflightDepartures(
         Card[] sources, bool includeHostedCards, bool moveRoots,
-        bool preflightDefiniteAttachments = true)
+        IReadOnlySet<int>? attachmentPreflightExemptions = null)
     {
         if (sources.Length == 0)
         {
@@ -672,7 +675,7 @@ public sealed class ContinuousEffects(World world)
 
             var selected = PreflightSelectedDepartures(
                 roots, definiteIds, definiteTrees, rootTrees,
-                preflightDefiniteAttachments);
+                attachmentPreflightExemptions ?? new HashSet<int>());
             var departures = definiteIds
                 .Concat(selected.SelectMany(card => rootTrees[card.ObjectId]))
                 .Distinct()
@@ -694,7 +697,7 @@ public sealed class ContinuousEffects(World world)
         IReadOnlySet<int> definiteIds,
         Dictionary<int, int[]> definiteTrees,
         Dictionary<int, int[]> rootTrees,
-        bool preflightDefiniteAttachments)
+        IReadOnlySet<int> attachmentPreflightExemptions)
     {
         var selected = new HashSet<int>();
         while (true)
@@ -723,20 +726,21 @@ public sealed class ContinuousEffects(World world)
                 .Where(card => !HasHostedAncestor(card, selected))
                 .ToArray();
 
-            // A hosted card is still in play when attachment legality is
-            // checked immediately before its host leaves. Do not project that
-            // tree away: its own constant can make it Permanent. Definite
-            // source trees are checked on the current board; tentative Uses
-            // roots are checked with only the initiating source projected.
-            foreach (var (root, tree) in preflightDefiniteAttachments
-                         ? definiteTrees
-                         : [])
-            {
-                Discard.PreflightProjectedAttachments(
-                    world, world.Cards[root], tree.Skip(1).Select(id => world.Cards[id]));
-            }
+            // Definite trees are checked after their sources' constants end.
+            // A captured Victory root leaves first and was already checked on
+            // the trigger board, so only that ordered subtree is exempt from
+            // the post-departure projection.
             using (ProjectOut([.. definiteIds]))
             {
+                foreach (var (root, tree) in definiteTrees)
+                {
+                    Discard.PreflightProjectedAttachments(
+                        world,
+                        world.Cards[root],
+                        tree.Skip(1)
+                            .Where(id => !attachmentPreflightExemptions.Contains(id))
+                            .Select(id => world.Cards[id]));
+                }
                 foreach (var root in selectedRoots)
                 {
                     Discard.PreflightProjectedAttachments(
