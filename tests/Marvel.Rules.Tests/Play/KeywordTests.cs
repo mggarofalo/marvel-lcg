@@ -668,6 +668,37 @@ public sealed class KeywordTests
             card => card.ObjectId == minion.ObjectId);
     }
 
+    [Rule("rr:victory-display")]
+    [Rule("rr:victory-x.1")]
+    [Rule("rr:victory-x.1.1")]
+    [Rule("rr:victory-x.1.2")]
+    [Rule("rr:victory-x.3")]
+    [Rule("rr:victory-x.5")]
+    [Fact]
+    public void ADefeatedHostsVictoryAttachmentJoinsTheSharedPointTotal()
+    {
+        // A victory attachment goes to the shared out-of-play display when its
+        // host is defeated; the host itself discards normally, and the printed
+        // victory values in the display are the scenario's point total.
+        var printed = new Printed()
+            .With("minion", ("HP", "1"))
+            .With("attachment", ("Victory", "2"));
+        var world = Board(printed);
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var attachment = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
+        Agendas.Happening(world);
+
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Equal(DeckType.VictoryDisplay, attachment.Area.Type);
+        Assert.False(DeckTypes.IsInPlay(attachment.Area.Type));
+        Assert.Equal(2, Defeat.VictoryPoints(world, printed));
+    }
+
     [Rule("rr:loses")]
     [Rule("rr:victory-x.2")]
     [Fact]

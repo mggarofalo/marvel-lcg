@@ -155,6 +155,7 @@ public static class Defeat
             case CardKind.Minion:
                 // `rr:defeat.1` -- discarded, to its owner's pile, which for a
                 // minion is the encounter discard. Unless it is worth points.
+                VictoryAttachments(world, facts, card, trigger, events);
                 if (!ToVictoryDisplay(world, facts, card, trigger, events))
                 {
                     Discard.Card(world, card, trigger, events);
@@ -232,6 +233,7 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(scheme);
         ArgumentNullException.ThrowIfNull(events);
 
+        VictoryAttachments(world, facts, scheme, trigger, events);
         if (!ToVictoryDisplay(world, facts, scheme, trigger, events))
         {
             Discard.Card(world, scheme, trigger, events);
@@ -414,6 +416,7 @@ public static class Defeat
         var constantsEnding = world.Effects.PreflightConstantsEnding(card);
         using var departure = constantsEnding.Begin();
         Discard.Attachments(world, card, trigger, events);
+        Discard.ResetLeavingState(world, card, trigger, events);
         World.MoveToTop(card, display);
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(display),
@@ -424,6 +427,26 @@ public static class Defeat
         constantsEnding.Complete(trigger, events);
 
         return true;
+    }
+
+    /// <summary>Total points currently in the shared victory display.</summary>
+    public static long VictoryPoints(World world, ICardFacts facts) =>
+        world.AreaOf(DeckType.VictoryDisplay).Cards.Sum(card =>
+            StateFields.Modified(world, card, "victory", facts, world.Players));
+
+    /// <summary>Moves victory attachments away before ordinary hosted-card cleanup.</summary>
+    private static void VictoryAttachments(
+        World world, ICardFacts facts, Card host, string trigger, List<GameEvent> events)
+    {
+        foreach (var attachment in world.Areas
+                     .Where(area => area.Host == host.ObjectId)
+                     .SelectMany(area => area.Cards)
+                     .Where(card => StateFields.Modified(
+                         world, card, "victory", facts, world.Players) > 0)
+                     .ToList())
+        {
+            ToVictoryDisplay(world, facts, attachment, trigger, events);
+        }
     }
 
     /// <summary>

@@ -7,6 +7,25 @@ namespace Marvel.Rules.Tests.Play;
 
 public sealed class MoveDamageTests
 {
+    [Rule("rr:move.1")]
+    [Fact]
+    public void DamageCannotMoveBackToItsCurrentPlacement()
+    {
+        // "When an element moves, it cannot move to its same placement."
+        var facts = new Printed();
+        var world = Board(facts);
+        var hero = world.Seats[0].IdentityCard;
+        var source = world.CreateCard(
+            "source", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        hero.TakeDamage(2);
+
+        long moved = Damage.MoveDamage(
+            world, facts, source, hero, hero, 2, "test", "Move_Damage", []);
+
+        Assert.Equal(0, moved);
+        Assert.Equal(2, hero.Damage);
+    }
+
     [Rule("rr:move.3.1")]
     [Rule("rr:move.4")]
     [Rule("rr:move.5")]

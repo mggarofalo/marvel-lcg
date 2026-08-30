@@ -63,6 +63,20 @@ public sealed class Card
         Owner = player;
     }
 
+    /// <summary>Makes a scenario-specific player card the named player's property.</summary>
+    /// <remarks>
+    /// <c>rr:ownership-and-control.2.2</c> changes ownership when a player takes
+    /// control of a campaign- or scenario-specific player card with a player
+    /// card back. This is deliberately separate from ordinary control, which
+    /// changes an area's play-area coordinate and leaves <see cref="Owner"/>
+    /// alone.
+    /// </remarks>
+    public void TransferScenarioOwnership(int player)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(player);
+        Owner = player;
+    }
+
     /// <summary>Where the card is.</summary>
     public Area Area { get; private set; } = null!;
 
@@ -171,6 +185,17 @@ public sealed class Card
     /// <summary>Readies the card. <c>rr:exhaust-ready</c>.</summary>
     public void Refresh() => Ready = true;
 
+    /// <summary>Clears state that cannot survive this card leaving play.</summary>
+    internal void ResetForNewCopy()
+    {
+        Damage = 0;
+        Ready = true;
+        foreach (string kind in tokens.Keys.ToList())
+        {
+            tokens[kind] = 0;
+        }
+    }
+
     /// <summary>Turns the card face up where it lies.</summary>
     /// <remarks>
     /// Revealing is not moving. An encounter card is revealed while it sits in
@@ -195,6 +220,14 @@ public sealed class Card
         if (DeckTypes.IsInPlay(area.Type)
             && (Area is null || !DeckTypes.IsInPlay(Area.Type)))
         {
+            if (Area is not null)
+            {
+                // `rr:leaves-play.1`: this is the moment the old, out-of-play
+                // card becomes a new in-play copy. Keep the dormant fields
+                // until now because an occurrence that already began can
+                // still finish after its source leaves play.
+                ResetForNewCopy();
+            }
             Incarnation++;
         }
 

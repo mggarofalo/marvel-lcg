@@ -9219,6 +9219,39 @@ public sealed class ActionAbilityTests
         Assert.True(source!.Ready);
     }
 
+    [Rule("rr:permanent.1")]
+    [Fact]
+    public void RankedDiscardCanTargetAPermanentFromTheSourcesSet()
+    {
+        // Permanent prevents a card from leaving play "except by card
+        // abilities in the same set." Both S.H.I.E.L.D. Tech cards carry the
+        // same printed set, so the target remains in the ranked candidates
+        // while the action is traced.
+        var runner = Runner(
+            "27182a",
+            "Action",
+            """
+            { "chooseCard": {
+              "from": { "minBy": {
+                "of": { "titled": "Wrist Navigator" }, "by": "cost"
+              } },
+              "effect": { "discard": "chosen" }
+            } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, "27182a");
+                InPlay(board, "27189a");
+            },
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+    }
+
     [Rule("rr:permanent.5")]
     [Rule("rr:labeled-ability.4")]
     [Fact]

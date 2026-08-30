@@ -138,6 +138,8 @@ public sealed class SearchAndDiscardCardsTests
     }
 
     [Rule("rr:search.3")]
+    [Rule("rr:shuffle.1")]
+    [Rule("rr:shuffle.2")]
     [Fact]
     public void SearchingTheEncounterDeckShufflesIt()
     {

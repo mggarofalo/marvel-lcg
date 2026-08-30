@@ -131,12 +131,74 @@ public sealed class EliminationTests
         Assert.Null(world.GameAreaOf(PlayArea.Of(0)));
         Assert.NotNull(world.GameAreaOf(PlayArea.Of(1)));
 
-        // **A card another player owns is not tested here and cannot be.**
-        // `World.AreaOf` matches on (type, play area, host) and not on owner,
-        // so one play area cannot hold two allies areas with different owners.
-        // Step 3.3's "each other card in its owner's discard pile" is written
-        // and unreachable on this model; see `Discard.Card`, which reads the
-        // owner off the card.
+    }
+
+    [Rule("rr:player-elimination.step.3")]
+    [Rule("rr:player-elimination.3")]
+    [Fact]
+    public void AnotherPlayersCardReturnsToItsOwnersDiscardPile()
+    {
+        // For a non-permanent card the ordered step says: "place each other
+        // card in its owner's discard pile."
+        var printed = Cards();
+        var world = Board(printed, players: 2);
+        var borrowed = world.CreateCard(
+            "ally", world.AreaOf(
+                DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+        CardPlay.TakeControl(world, printed, borrowed, 0);
+
+        Elimination.Eliminate(world, printed, 0, "test", []);
+
+        Assert.Equal(1, borrowed.Owner);
+        Assert.Equal(DeckType.DiscardPile, borrowed.Area.Type);
+        Assert.Equal(PlayArea.Of(1), borrowed.Area.PlayArea);
+    }
+
+    [Rule("rr:player-elimination.step.3")]
+    [Rule("rr:player-elimination.2")]
+    [Rule("rr:permanent.6")]
+    [Fact]
+    public void AnotherPlayersNonAttachmentPermanentIsRemoved()
+    {
+        // If a non-attachment permanent the eliminated player does not own is
+        // in their area, "remove that permanent card from the game."
+        var printed = Cards().With("ally", ("Permanent", "1"));
+        var world = Board(printed, players: 2);
+        var borrowed = world.CreateCard(
+            "ally", world.AreaOf(
+                DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+        CardPlay.TakeControl(world, printed, borrowed, 0);
+
+        Elimination.Eliminate(world, printed, 0, "test", []);
+
+        Assert.Equal(DeckType.RemovedArea, borrowed.Area.Type);
+    }
+
+    [Rule("rr:player-elimination.1")]
+    [Fact]
+    public void AnUnsupportedPermanentAttachmentRefusesEliminationAtomically()
+    {
+        // A permanent attachment must resolve its attach-to text or be removed.
+        // The engine cannot do that yet, so it refuses before step one changes
+        // the first-player token or any card moves.
+        var printed = Cards().With("attachment", ("Permanent", "1"));
+        var world = Board(printed, players: 2);
+        world.FirstPlayer = 0;
+        var ordinary = world.CreateCard(
+            "ally", world.AreaOf(
+                DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var permanent = world.CreateCard(
+            "attachment", world.AreaOf(
+                DeckType.UpgradesArea, PlayArea.Of(0),
+                world.Seats[0].IdentityCard.ObjectId));
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Elimination.Eliminate(world, printed, 0, "test", []));
+
+        Assert.False(world.Seats[0].Eliminated);
+        Assert.Equal(0, world.FirstPlayer);
+        Assert.Equal(DeckType.AlliesArea, ordinary.Area.Type);
+        Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
     }
 
     [Rule("rr:loses")]
@@ -306,6 +368,7 @@ public sealed class EliminationTests
             "sideScheme" => CardKind.EncounterSideScheme,
             "minion" => CardKind.Minion,
             "ally" => CardKind.Ally,
+            "attachment" => CardKind.Attachment,
             "tough" => CardKind.Status,
             _ => CardKind.Treachery,
         };

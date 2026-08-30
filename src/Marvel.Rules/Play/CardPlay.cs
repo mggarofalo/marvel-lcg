@@ -438,9 +438,11 @@ public static class CardPlay
     /// <para>
     /// <c>rr:play-put-into-play</c> ignores the ally's resource cost and the
     /// ordinary restrictions on playing it, then places it in its controller's
-    /// play area. The card's <see cref="Card.Owner"/> does not change; if it
-    /// later leaves play, <c>rr:ownership-and-control.7.2</c> sends it to its
-    /// owner's corresponding out-of-play area.
+    /// play area. Ordinarily the card's <see cref="Card.Owner"/> does not
+    /// change; if it later leaves play, <c>rr:ownership-and-control.7.2</c>
+    /// sends it to its owner's corresponding out-of-play area. The scenario
+    /// player-card exception in <c>rr:ownership-and-control.2.2</c> instead
+    /// makes its entering controller its owner.
     /// </para>
     /// <para>
     /// <c>rr:play-put-into-play.3</c> says this is not playing the card, so no
@@ -918,12 +920,78 @@ public static class CardPlay
                 + $"'{facts.Title(card.FaceId)}'");
         }
 
-        var destination = world.AreaOf(
-            card.Area.Type,
-            PlayArea.Of(player),
-            host: card.Area.Host,
-            cardOwner: card.Owner);
-        World.MoveToTop(card, destination);
+        MoveControlTree(world, card, player);
+        TakeScenarioCardOwnership(facts, card, player);
+    }
+
+    /// <summary>Returns a temporarily controlled card to its owner's control.</summary>
+    public static void ReturnToOwnerControl(World world, ICardFacts facts, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        if (card.Owner < 0)
+        {
+            throw new RulesNotImplementedException(
+                $"card {card.ObjectId} has no player owner whose control can resume");
+        }
+
+        // `rr:ownership-and-control.7.1`: when the ability changing control
+        // ceases, the card reverts to its owner's control. Reuse TakeControl so
+        // maxima are checked before any member of the hosted tree moves.
+        TakeControl(world, facts, card, card.Owner);
+    }
+
+    /// <summary>Transfers a root and every card hosted by it to one play area.</summary>
+    private static void MoveControlTree(World world, Card root, int player)
+    {
+        var moving = new List<(Area Source, Card Card)> { (root.Area, root) };
+        var pending = new Stack<Card>([root]);
+        var seen = new HashSet<int>();
+        while (pending.TryPop(out var host))
+        {
+            if (!seen.Add(host.ObjectId))
+            {
+                throw new RulesNotImplementedException(
+                    $"card {host.ObjectId} forms a hosting cycle during a control change");
+            }
+
+            foreach (var child in world.Areas
+                         .Where(area => area.Host == host.ObjectId)
+                         .SelectMany(area => area.Cards)
+                         .Reverse())
+            {
+                moving.Add((child.Area, child));
+                pending.Push(child);
+            }
+        }
+
+        foreach (var (source, movingCard) in moving)
+        {
+            bool faceUp = movingCard.FaceUp;
+            var destination = world.AreaOf(
+                source.Type, PlayArea.Of(player), source.Host, source.CardOwner);
+            World.MoveToTop(movingCard, destination);
+            if (!faceUp)
+            {
+                movingCard.TurnFaceDown();
+            }
+        }
+    }
+
+    /// <summary>Applies the scenario-player-card ownership exception.</summary>
+    internal static void TakeScenarioCardOwnership(
+        ICardFacts facts, Card card, int player)
+    {
+        if (card.Owner >= 0)
+        {
+            return;
+        }
+
+        if (facts.Kind(card.FaceId) is CardKind.Ally or CardKind.Support
+            or CardKind.Upgrade or CardKind.Event or CardKind.Resource
+            )
+        {
+            card.TransferScenarioOwnership(player);
+        }
     }
 
     /// <summary>Where a played card goes — <c>rr:enters-play</c>.</summary>

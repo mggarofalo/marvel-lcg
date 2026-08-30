@@ -8115,7 +8115,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (!TraceSelectorMatches(
                 node.Require("of"), candidate, currentVillain,
                 cast, discarded, traits, modifiers, engagement)
-            || TraceModified(candidate, "permanent", cast, discarded) > 0)
+            || TraceModified(candidate, "permanent", cast, discarded) > 0
+                && !Rules.Play.Discard.SameSet(
+                    cast.World.Facts, cast.Source, candidate))
         {
             return false;
         }
@@ -8134,7 +8136,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
                 && TraceSelectorMatches(
                     node.Require("of"), card, currentVillain,
                     cast, discarded, traits, modifiers, engagement)
-                && TraceModified(card, "permanent", cast, discarded) <= 0)
+                && (TraceModified(card, "permanent", cast, discarded) <= 0
+                    || Rules.Play.Discard.SameSet(
+                        cast.World.Facts, cast.Source, card)))
             .ToList();
         string key = Word(node.Require("by"));
         long Rank(Card card) => key switch
@@ -12783,7 +12787,9 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             // rr:target.2 lets a multi-target ability initiate when at least
             // one target is valid. A different target can therefore be absent
             // by resolution, and this effect simply has nothing to discard.
-            Rules.Play.Discard.Card(cast.World, target, cast.Trigger, cast.Events);
+            Rules.Play.Discard.CardFromEffect(
+                cast.World, cast.World.Facts, cast.Source, target,
+                cast.Trigger, cast.Events);
         }
     }
 
@@ -12841,6 +12847,14 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would remove a card that is not there");
 
+        if (!Rules.Play.Discard.EffectCanRemove(
+                cast.World, cast.World.Facts, cast.Source, card))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' cannot remove permanent card {card.ObjectId} "
+                + "because it is from another set");
+        }
+
         var from = card.Area;
         var removed = cast.World.AreaOf(DeckType.RemovedArea);
         var constantsEnding = cast.World.Effects.PreflightConstantsEnding(card);
@@ -12848,6 +12862,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         if (DeckTypes.IsInPlay(from.Type))
         {
             Rules.Play.Discard.Attachments(
+                cast.World, card, cast.Trigger, cast.Events);
+            Rules.Play.Discard.ResetLeavingState(
                 cast.World, card, cast.Trigger, cast.Events);
         }
         World.MoveToTop(card, removed);
@@ -12976,7 +12992,13 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             && !Characteristics.IsLost(cast.World, cast.Source, "uses")
             && Reveal.Uses(cast.World.Facts.Attributes(cast.Source.FaceId)).Count > 0)
         {
-            Rules.Play.Discard.Card(cast.World, cast.Source, cast.Trigger, cast.Events);
+            if (!Defeat.ToVictoryDisplay(
+                    cast.World, cast.World.Facts, cast.Source,
+                    cast.Trigger, cast.Events))
+            {
+                Rules.Play.Discard.Card(
+                    cast.World, cast.Source, cast.Trigger, cast.Events);
+            }
         }
     }
 
@@ -14866,12 +14888,15 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
             : [Area(Word(node.Require("from")), cast)];
         foreach (var deck in decks)
         {
-            for (long discarded = 0; discarded < count && deck.Cards.Count > 0; discarded++)
+            if (deck.Type == DeckType.PlayerDeck && deck.PlayArea.IsPlayers)
             {
-                var card = deck.Cards[^1];
-                Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-                cast.Discarded.Add(card);
+                cast.Discarded.AddRange(PlayerDeck.DiscardTop(
+                    cast.World, deck.PlayArea.Player, count, cast.Trigger, cast.Events));
+                continue;
             }
+
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' discards from unsupported deck {deck.Type}");
         }
     }
 
@@ -15670,8 +15695,8 @@ public sealed class AbilityRunner(AbilityBook book) : ICardAbilities
         // grant. Reading print alone would miss a permanence handed out in
         // play.
         var among = Every(node.Require("of"), cast)
-            .Where(card => StateFields.Modified(
-                cast.World, card, "permanent", cast.World.Facts, cast.World.Players) <= 0)
+            .Where(card => Rules.Play.Discard.EffectCanRemove(
+                cast.World, cast.World.Facts, cast.Source, card))
             .ToList();
 
         if (among.Count == 0)

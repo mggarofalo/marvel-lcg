@@ -509,6 +509,12 @@ public static class Reveal
             card.TransferLinkedOwnership(card.Area.PlayArea.Player);
         }
 
+        if (card.Area.PlayArea.IsPlayers)
+        {
+            CardPlay.TakeScenarioCardOwnership(
+                facts, card, card.Area.PlayArea.Player);
+        }
+
         // `rr:toughness.1`: "**Forced Response**: after this character enters
         // play, give it a tough status card." A status is a card, not a flag --
         // see `Statuses`.

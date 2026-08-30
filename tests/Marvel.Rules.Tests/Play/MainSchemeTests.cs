@@ -19,6 +19,7 @@ public sealed class MainSchemeTests
 {
     [Rule("rr:main-scheme-main-scheme-deck.2")]
     [Rule("rr:main-scheme-main-scheme-deck.step.1")]
+    [Rule("rr:double-sided-card.1")]
     [Fact]
     public void CompletingAStageRemovesItAndPutsTheNextIntoPlay()
     {

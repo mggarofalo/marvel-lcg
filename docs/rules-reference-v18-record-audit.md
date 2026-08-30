@@ -8,12 +8,12 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 648 |
+| Executable and cited | 741 |
 | Covered by a narrower rule | 50 |
 | Redirect or summary | 122 |
-| Not enforceable by an engine | 39 |
-| Outside the supported product boundary | 68 |
-| Unimplemented behavior | 291 |
+| Not enforceable by an engine | 44 |
+| Outside the supported product boundary | 104 |
+| Unimplemented behavior | 157 |
 | Total | 1,218 |
 
 The six dispositions are mutually exclusive:
@@ -85,7 +85,7 @@ items.
 | `rr:acceleration-token.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-token.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-token.2.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:acceleration-token.3` | Unimplemented behavior | MARVEL-271 | The lifecycle implementation owns clearing a non-main-scheme card's hosted acceleration token when it leaves play. |
+| `rr:acceleration-token.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:acceleration-token.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:action` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:action.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -110,7 +110,7 @@ items.
 | `rr:all-purpose-counter` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:all-purpose-counter.1` | Executable and cited | — | Typed counters share the card's token inventory, and a behavior test directly cites this record. |
 | `rr:all-purpose-counter.2` | Executable and cited | — | Generic counter references count every typed pool and spend an unambiguous pool; behavior tests directly cite this record. |
-| `rr:all-purpose-counter.3` | Unimplemented behavior | MARVEL-271 | The lifecycle work item owns counter identity and type when a counter moves between cards. |
+| `rr:all-purpose-counter.3` | Executable and cited | — | `AllPurposeCounterTests` holds moved counters to the destination card's counter type. |
 | `rr:alliance` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:alliance.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:alliance.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -243,10 +243,10 @@ items.
 | `rr:card-types` | Not enforceable by an engine | — | This record defines the term; the following clauses and dedicated entries carry the decisions. |
 | `rr:card-types.1` | Redirect or summary | — | This record lists the dedicated player-card type entries. |
 | `rr:card-types.2` | Redirect or summary | — | This record lists the dedicated encounter-card type entries. |
-| `rr:card-types.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:card-types.3.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:card-types.3.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:card-types.3.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:card-types.3` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns player side schemes and their encounter-side interactions. |
+| `rr:card-types.3.1` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns player side schemes and their encounter-side interactions. |
+| `rr:card-types.3.2` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns player side schemes and their encounter-side interactions. |
+| `rr:card-types.3.3` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns player side schemes and their encounter-side interactions. |
 | `rr:character` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:choose-game-element` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:choose-game-element.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -337,7 +337,7 @@ items.
 | `rr:deal-deal-an-encounter-card` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:deal-deal-an-encounter-card.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:deck` | Redirect or summary | — | This record lists the four dedicated deck entries. |
-| `rr:deck.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:deck.1` | Not enforceable by an engine | — | This defines the physical deck component and its facedown presentation. |
 | `rr:deck-customization` | Redirect or summary | — | This record redirects readers to Appendix I: Deck Customization; the destination carries the rule. |
 | `rr:def` | Redirect or summary | — | This record redirects readers to Basic Power, Defend; the destination carries the rule. |
 | `rr:defeat` | Executable and cited | — | A behavior test directly cites this record. |
@@ -373,21 +373,21 @@ items.
 | `rr:delayed-effect.1.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:delayed-effect.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:discard` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:discard.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:discard.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:discard.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:discard.1` | Executable and cited | — | `LifecycleRulesTests` holds player cards faceup on their owner's discard pile. |
+| `rr:discard.2` | Executable and cited | — | `LifecycleRulesTests` holds encounter cards faceup on the encounter discard pile. |
+| `rr:discard.3` | Outside the supported product boundary | MARVEL-275 | Resumable simultaneous-card ordering owns the affected-player choice. |
 | `rr:discard.4` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:discard.4.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:discard.4.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:discard.5` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:discard.4.1` | Outside the supported product boundary | MARVEL-275 | Resumable response windows own the defeat-before-discard ordering choice. |
+| `rr:discard.4.2` | Outside the supported product boundary | MARVEL-275 | Resumable response windows own the defeat-before-discard ordering choice. |
+| `rr:discard.5` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns player side schemes. |
 | `rr:discard-pile` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:discard-pile.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:discard-pile.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:discard-pile.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:discard-pile.4` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:double-sided-card` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:double-sided-card.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:double-sided-card.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:discard-pile.2` | Not enforceable by an engine | — | This states that discard-pile contents are open information to the players. |
+| `rr:discard-pile.3` | Not enforceable by an engine | — | This constrains unsolicited physical reordering rather than defining an engine decision. |
+| `rr:discard-pile.4` | Executable and cited | — | `LifecycleRulesTests` holds an empty encounter deck's immediate discard reshuffle. |
+| `rr:double-sided-card` | Not enforceable by an engine | — | This defines the double-sided-card component. |
+| `rr:double-sided-card.1` | Executable and cited | — | `MainSchemeTests` holds a stage completion to revealing the next side. |
+| `rr:double-sided-card.2` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns player side schemes. |
 | `rr:draw-drawing-cards` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:draw-drawing-cards.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:draw-drawing-cards.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -444,16 +444,16 @@ items.
 | `rr:expert-set` | Unimplemented behavior | MARVEL-269 | Setup includes the fixed expert set at expert difficulty; this existing behavior needs its narrow citation. |
 | `rr:expert-set.1` | Outside the supported product boundary | MARVEL-272 | Selecting or rejecting fixed encounter sets as modular choices needs product-level set validation. |
 | `rr:expert-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:find` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:find.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:find.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:find.2.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:find.2.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:find.2.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:find.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:find.3.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:find.3.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:find.3.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:find` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
+| `rr:find.1` | Not enforceable by an engine | — | This defines the term find. |
+| `rr:find.2` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
+| `rr:find.2.1` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
+| `rr:find.2.2` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
+| `rr:find.2.3` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
+| `rr:find.3` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
+| `rr:find.3.1` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
+| `rr:find.3.2` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
+| `rr:find.3.3` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
 | `rr:first-player` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:first-player.1` | Unimplemented behavior | MARVEL-275 | A tied card instruction still stops because the first-player decision cannot suspend and resume it. |
 | `rr:first-player.2` | Unimplemented behavior | MARVEL-275 | The resumable-choice work item owns instructions that leave the acting player unspecified. |
@@ -462,9 +462,9 @@ items.
 | `rr:first-player.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:flip` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:flip.1` | Outside the supported product boundary | MARVEL-272 | The supported two-sided identities flip correctly; foldable three-sided identities remain outside the product boundary. |
-| `rr:flip.2` | Unimplemented behavior | MARVEL-271 | The card-lifecycle work item owns retained or discarded hosted state across a flip. |
-| `rr:flip.2.1` | Unimplemented behavior | MARVEL-271 | The card-lifecycle work item owns same-type face changes. |
-| `rr:flip.2.2` | Unimplemented behavior | MARVEL-271 | The card-lifecycle work item owns different-type face changes. |
+| `rr:flip.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:flip.2.1` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:flip.2.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:for-each` | Unimplemented behavior | MARVEL-293 | The iterative and suspended-resolution work item owns this executable rule. |
 | `rr:for-each.1` | Unimplemented behavior | MARVEL-293 | The iterative and suspended-resolution work item owns this executable rule. |
 | `rr:for-each.1.1` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
@@ -490,7 +490,7 @@ items.
 | `rr:form-change-form.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:form-change-form.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:form-change-form.6.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:form-change-form.6.2` | Unimplemented behavior | MARVEL-271 | The lifecycle work item owns changing additional forms and preserving the identity flip budget. |
+| `rr:form-change-form.6.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:form-change-form.7` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:friendly` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:gains` | Executable and cited | — | A behavior test distinguishes runtime possession of gained traits and keywords from printed characteristics. |
@@ -653,12 +653,12 @@ items.
 | `rr:lasting-effects.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:lasting-effects.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:leader` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:leaves-play` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:leaves-play.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:leaves-play.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:leaves-play.2.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:leaves-play.2.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:leaves-play.2.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:leaves-play` | Executable and cited | — | `LifecycleRulesTests` holds an in-play card's move into its out-of-play discard area. |
+| `rr:leaves-play.1` | Executable and cited | — | `LifecycleRulesTests` holds a returning card to a new incarnation without its old state. |
+| `rr:leaves-play.2` | Executable and cited | — | `LifecycleRulesTests` holds the complete non-villain hosted-state cleanup. |
+| `rr:leaves-play.2.1` | Executable and cited | — | `LifecycleRulesTests` holds attached and tucked cards to discard with their host. |
+| `rr:leaves-play.2.2` | Executable and cited | — | `LifecycleRulesTests` holds boost cards to discard with their host. |
+| `rr:leaves-play.2.3` | Executable and cited | — | `LifecycleRulesTests` holds tokens and status cards to return to the supply. |
 | `rr:limit` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:limit.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:linked-card-title` | Executable and cited | — | Printed link resolution is covered by directly cited setup behavior tests. |
@@ -667,9 +667,9 @@ items.
 | `rr:linked-card-title.3` | Executable and cited | — | The cited setup test creates one product quantity per bringing deck. |
 | `rr:linked-card-title.3.1` | Executable and cited | — | The cited setup test deduplicates repeated bringing cards within one deck. |
 | `rr:linked-card-title.4` | Executable and cited | — | A directly cited entry test transfers linked-card ownership to its controller. |
-| `rr:look-looked-at` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:look-looked-at.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:look-looked-at.1.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:look-looked-at` | Outside the supported product boundary | MARVEL-272 | The hidden-information product-boundary item owns look instructions. |
+| `rr:look-looked-at.1` | Outside the supported product boundary | MARVEL-272 | The hidden-information product-boundary item owns look instructions. |
+| `rr:look-looked-at.1.1` | Outside the supported product boundary | MARVEL-272 | The hidden-information product-boundary item owns look instructions. |
 | `rr:loses` | Executable and cited | — | Runtime trait, keyword, and field queries suppress a characteristic while its loss effect is active. |
 | `rr:loses.1` | Executable and cited | — | A behavior test proves printed facts retain a characteristic that runtime possession suppresses. |
 | `rr:loses.2` | Executable and cited | — | A behavior test proves later grants cannot restore a characteristic while its loss remains active. |
@@ -731,15 +731,15 @@ items.
 | `rr:modular-encounter-set.2` | Unimplemented behavior | MARVEL-269 | Setup adds every card from a selected modular set; this existing behavior needs its narrow citation. |
 | `rr:modular-encounter-set.3` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
 | `rr:move` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:move.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:move.1` | Executable and cited | — | `MoveDamageTests` holds moving to the same entity to no change. |
 | `rr:move.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:move.3` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:move.3.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:move.3.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:move.3.2` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns player side schemes. |
 | `rr:move.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:move.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:move.6` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:move.7` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:move.6` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the revised move instruction. |
+| `rr:move.7` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the revised move instruction. |
 | `rr:nemesis-encounter-set` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:nemesis-encounter-set.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:nemesis-encounter-set.2` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
@@ -771,16 +771,16 @@ items.
 | `rr:ownership-and-control.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ownership-and-control.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ownership-and-control.2.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:ownership-and-control.2.2` | Unimplemented behavior | MARVEL-271 | The ownership lifecycle work item owns scenario player-card ownership transfer. |
+| `rr:ownership-and-control.2.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ownership-and-control.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ownership-and-control.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ownership-and-control.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:ownership-and-control.6` | Unimplemented behavior | MARVEL-271 | The ownership lifecycle work item owns upgrades following a host's control change. |
+| `rr:ownership-and-control.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ownership-and-control.7` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:ownership-and-control.7.1` | Unimplemented behavior | MARVEL-271 | The ownership lifecycle work item owns reverting control when its effect expires. |
+| `rr:ownership-and-control.7.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ownership-and-control.7.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:ownership-and-control.7.3` | Unimplemented behavior | MARVEL-271 | The ownership lifecycle work item owns cross-owner event discard. |
-| `rr:ownership-and-control.7.4` | Unimplemented behavior | MARVEL-271 | The ownership lifecycle work item owns cross-owner hand discard. |
+| `rr:ownership-and-control.7.3` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:ownership-and-control.7.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ownership-and-control.8` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:patrol` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:patrol.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -790,13 +790,13 @@ items.
 | `rr:peril` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:peril.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:permanent` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:permanent.1` | Unimplemented behavior | MARVEL-271 | The lifecycle work item owns same-set exceptions to permanent protection. |
+| `rr:permanent.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:permanent.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:permanent.3` | Outside the supported product boundary | MARVEL-272 | Deck construction and deck-size validation are product-boundary work. |
 | `rr:permanent.4` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:permanent.4.1` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:permanent.5` | Unimplemented behavior | MARVEL-271 | A permanent attachment cannot yet reattach or leave play atomically with its host. |
-| `rr:permanent.6` | Unimplemented behavior | MARVEL-271 | The elimination lifecycle must remove another owner's non-attachment permanent. |
+| `rr:permanent.5` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns permanent attachment reattachment. |
+| `rr:permanent.6` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:physical-resource` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:physical-resource.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:physical-resource.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -827,18 +827,18 @@ items.
 | `rr:player-deck` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:player-deck.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-deck.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:player-deck.3` | Unimplemented behavior | MARVEL-271 | The deck lifecycle work item owns stopping a discard effect at the reshuffle boundary. |
+| `rr:player-deck.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-deck.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-discard-pile` | Redirect or summary | — | This record redirects readers to Discard Pile; the destination carries the rule. |
 | `rr:player-elimination` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-elimination.step.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-elimination.step.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:player-elimination.step.3` | Unimplemented behavior | MARVEL-271 | The ownership lifecycle work item owns the ordered treatment of cards another player owns. |
+| `rr:player-elimination.step.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-elimination.step.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-elimination.step.5` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:player-elimination.1` | Unimplemented behavior | MARVEL-271 | Permanent attachments cannot yet resolve their attach-to text when their player is eliminated. |
-| `rr:player-elimination.2` | Unimplemented behavior | MARVEL-271 | The elimination lifecycle owns non-attachment permanent removal. |
-| `rr:player-elimination.3` | Unimplemented behavior | MARVEL-271 | The elimination lifecycle owns returning other cards to their owners' discard piles. |
+| `rr:player-elimination.1` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns permanent attachment reattachment during elimination. |
+| `rr:player-elimination.2` | Executable and cited | — | A behavior test directly cites this record. |
+| `rr:player-elimination.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-elimination.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-elimination.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:player-elimination.5.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -905,8 +905,8 @@ items.
 | `rr:remaining-hit-points.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:reminder-text` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:removed-from-the-game` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:removed-from-the-game.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:removed-from-the-game.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:removed-from-the-game.1` | Executable and cited | — | `LifecycleRulesTests` holds removed cards out of play. |
+| `rr:removed-from-the-game.2` | Executable and cited | — | `LifecycleRulesTests` holds removed cards against later movement. |
 | `rr:replacement-effect` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:replacement-effect.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:requirement-resources` | Executable and cited | — | A behavior test directly cites this record. |
@@ -983,8 +983,8 @@ items.
 | `rr:search.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:search.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:search.3` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:search.4` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:search.4.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:search.4` | Outside the supported product boundary | MARVEL-272 | The hidden-information product-boundary item owns searching a collection. |
+| `rr:search.4.1` | Outside the supported product boundary | MARVEL-272 | The hidden-information product-boundary item owns searching a collection. |
 | `rr:self-referential` | Redirect or summary | — | This record redirects readers to Referential Ability; the destination carries the rule. |
 | `rr:set-aside-set-aside` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:set-icon` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
@@ -994,9 +994,9 @@ items.
 | `rr:setup-triggered-ability.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:setup-triggered-ability.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:setup-triggered-ability.3` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
-| `rr:shuffle` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:shuffle.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:shuffle.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:shuffle` | Executable and cited | — | `SearchAndDiscardCardsTests` holds shuffling to randomized card order. |
+| `rr:shuffle.1` | Executable and cited | — | `SearchAndDiscardCardsTests` holds a searched deck to shuffle after the search. |
+| `rr:shuffle.2` | Executable and cited | — | `SearchAndDiscardCardsTests` holds a searched discard pile to shuffle into its deck. |
 | `rr:side-scheme` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:side-scheme.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:side-scheme.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -1044,14 +1044,14 @@ items.
 | `rr:sustained-damage` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:sustained-damage.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:sustained-damage.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:swap` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:swap.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:swap` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the swap instruction. |
+| `rr:swap.1` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the swap instruction. |
 | `rr:swap.1.1` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
-| `rr:swap.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:swap.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:swap.4` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:swap.4.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:swap.4.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:swap.2` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the swap instruction. |
+| `rr:swap.3` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the swap instruction. |
+| `rr:swap.4` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the swap instruction. |
+| `rr:swap.4.1` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the swap instruction. |
+| `rr:swap.4.2` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the swap instruction. |
 | `rr:table-talk` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:table-talk.1` | Not enforceable by an engine | — | This record defines vocabulary, printed anatomy, components, or table procedure rather than a game-state decision. |
 | `rr:target` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
@@ -1122,9 +1122,9 @@ items.
 | `rr:triggering-condition.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:triggering-condition.1.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:triggering-condition.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:tuck` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:tuck.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:tuck.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:tuck` | Executable and cited | — | `LifecycleRulesTests` holds tucking beneath a host. |
+| `rr:tuck.1` | Executable and cited | — | `LifecycleRulesTests` holds tucked cards faceup and out of play. |
+| `rr:tuck.2` | Executable and cited | — | `LifecycleRulesTests` holds tucked cards to discard with their host. |
 | `rr:undefended` | Redirect or summary | — | This record redirects readers to Attack (Enemy Activation); the destination carries the rule. |
 | `rr:unique-icon` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:unique-icon.1` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
@@ -1146,16 +1146,16 @@ items.
 | `rr:uses-x-type` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:uses-x-type.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:valid-target` | Redirect or summary | — | This record redirects readers to Target; the destination carries the rule. |
-| `rr:victory-display` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:victory-display` | Executable and cited | — | `KeywordTests` holds defeated Victory attachments to the victory display. |
 | `rr:victory-x` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:victory-x.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:victory-x.1.1` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:victory-x.1.2` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:victory-x.1.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:victory-x.1` | Executable and cited | — | `KeywordTests` holds defeated Victory cards to the victory display. |
+| `rr:victory-x.1.1` | Executable and cited | — | `KeywordTests` holds defeated Victory attachments to the victory display. |
+| `rr:victory-x.1.2` | Executable and cited | — | `KeywordTests` holds Victory attachments to score independently of their host. |
+| `rr:victory-x.1.3` | Executable and cited | — | `AllPurposeCounterTests` holds a Victory card discarded at zero uses to the victory display. |
 | `rr:victory-x.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:victory-x.3` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:victory-x.4` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
-| `rr:victory-x.5` | Unimplemented behavior | MARVEL-271 | The search, movement, and lifecycle work item owns this executable rule. |
+| `rr:victory-x.3` | Executable and cited | — | `KeywordTests` holds a Victory attachment to the display when its host is defeated. |
+| `rr:victory-x.4` | Executable and cited | — | `AllPurposeCounterTests` holds the card's Victory value while it is in the victory display. |
+| `rr:victory-x.5` | Executable and cited | — | `KeywordTests` holds the shared display's printed Victory values to a point total. |
 | `rr:villain-villain-deck` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:villain-villain-deck.1` | Unimplemented behavior | MARVEL-269 | No test directly cites this decision; MARVEL-269 owns the existing-behavior check and narrow citation. |
 | `rr:villain-defeat` | Executable and cited | — | A behavior test directly cites this record. |
@@ -1199,7 +1199,7 @@ items.
 | `rr:when-defeated-abilities.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:when-defeated-abilities.2.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:when-revealed-abilities` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:when-revealed-abilities.1` | Unimplemented behavior | MARVEL-271 | The setup lifecycle work owns encounter cards entering during setup and resolving later. |
+| `rr:when-revealed-abilities.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:when-revealed-abilities.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:when-revealed-abilities.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:wild-resource` | Executable and cited | — | A behavior test directly cites this record. |
