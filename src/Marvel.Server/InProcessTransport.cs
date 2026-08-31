@@ -7,5 +7,11 @@ public sealed class InProcessTransport(IEngineEndpoint endpoint) : IEngineTransp
         endpoint ?? throw new ArgumentNullException(nameof(endpoint));
 
     /// <inheritdoc />
-    public EngineResponse Exchange(EngineRequest request) => endpoint.Exchange(request);
+    public ValueTask<EngineResponse> ExchangeAsync(
+        EngineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return ValueTask.FromResult(endpoint.Exchange(request));
+    }
 }

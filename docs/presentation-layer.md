@@ -436,12 +436,14 @@ in-process for the bundled case, a socket for the container. The engine makes th
 straightforward, because `(state, input) -> (state, affordances, events)` says
 nothing about where the function runs.
 
-**Implemented by MARVEL-167.** `IEngineTransport.Exchange` is that client
+**Implemented by MARVEL-167.** `IEngineTransport.ExchangeAsync` is that client
 interface. `InProcessTransport` delegates to the host in the bundled case;
 `SocketTransport` sends the same `EngineRequest` and receives the same
 `EngineResponse` in the hosted case. The host itself is one synchronous
-`EngineHost`, so transport I/O never creates an async or concurrent path into
-game state.
+`EngineHost`. The socket side is awaitable and cancellable so network I/O never
+blocks the client loop; the in-process implementation calls the host
+synchronously before returning its completed value, so neither transport
+creates an async or concurrent path into game state.
 
 The socket protocol is version 1, source-generated JSON in a four-byte
 big-endian length frame, with a 4 MiB maximum. One connection carries one

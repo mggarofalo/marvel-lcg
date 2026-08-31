@@ -43,7 +43,8 @@ public sealed class TransportTests
         EngineResponse remote;
         try
         {
-            remote = socket.Exchange(request);
+            remote = await socket.ExchangeAsync(
+                request, TestContext.Current.CancellationToken);
         }
         finally
         {
@@ -51,7 +52,8 @@ public sealed class TransportTests
         }
 
         Assert.Equal(
-            EngineJson.Write(inProcess.Exchange(request)),
+            EngineJson.Write(await inProcess.ExchangeAsync(
+                request, TestContext.Current.CancellationToken)),
             EngineJson.Write(remote));
         Assert.Equal(2, endpoint.Calls);
     }
@@ -108,6 +110,20 @@ public sealed class TransportTests
         Assert.Throws<EndOfStreamException>(() => SocketFrame.Read(frame));
     }
 
+    [Fact]
+    public async Task ACancelledInProcessExchangeNeverReachesGameState()
+    {
+        var endpoint = new CountingEndpoint();
+        var transport = new InProcessTransport(endpoint);
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+            await transport.ExchangeAsync(
+                EngineRequest.CloseGame("cancelled", "game"), cancelled.Token));
+        Assert.Equal(0, endpoint.Calls);
+    }
+
     private sealed class EchoEndpoint(
         EngineRequest expectedRequest,
         EngineResponse response) : IEngineEndpoint
@@ -119,6 +135,17 @@ public sealed class TransportTests
             Calls++;
             Assert.Equal(EngineJson.Write(expectedRequest), EngineJson.Write(request));
             return response;
+        }
+    }
+
+    private sealed class CountingEndpoint : IEngineEndpoint
+    {
+        public int Calls { get; private set; }
+
+        public EngineResponse Exchange(EngineRequest request)
+        {
+            Calls++;
+            throw new InvalidOperationException("should not be called");
         }
     }
 }

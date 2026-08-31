@@ -20,7 +20,9 @@ public interface IEngineEndpoint
 public interface IEngineTransport
 {
     /// <summary>Sends one engine command and receives its result.</summary>
-    EngineResponse Exchange(EngineRequest request);
+    ValueTask<EngineResponse> ExchangeAsync(
+        EngineRequest request,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>Creates a fresh game without deciding where its content bytes came from.</summary>

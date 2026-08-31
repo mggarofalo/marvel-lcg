@@ -23,14 +23,18 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
         : throw new ArgumentOutOfRangeException(nameof(port));
 
     /// <inheritdoc />
-    public EngineResponse Exchange(EngineRequest request)
+    public async ValueTask<EngineResponse> ExchangeAsync(
+        EngineRequest request,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         using var client = new TcpClient();
-        client.Connect(host, port);
+        await client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
         using NetworkStream stream = client.GetStream();
-        SocketFrame.Write(stream, EngineJson.Write(request));
-        byte[] response = SocketFrame.Read(stream)
+        await SocketFrame.WriteAsync(
+            stream, EngineJson.Write(request), cancellationToken).ConfigureAwait(false);
+        byte[] response = await SocketFrame.ReadAsync(stream, cancellationToken)
+            .ConfigureAwait(false)
             ?? throw new EndOfStreamException("the engine host closed without a response");
         return EngineJson.ReadResponse(response);
     }
@@ -39,6 +43,7 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
 /// <summary>The standalone, sequential socket entry point for an engine endpoint.</summary>
 public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress address, int port)
 {
+    private const int ClientTimeoutMilliseconds = 30_000;
     private readonly IEngineEndpoint endpoint =
         endpoint ?? throw new ArgumentNullException(nameof(endpoint));
     private readonly IPAddress address =
@@ -60,7 +65,22 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
             while (!cancellationToken.IsCancellationRequested)
             {
                 using TcpClient client = listener.AcceptTcpClient();
-                Serve(client);
+                client.ReceiveTimeout = ClientTimeoutMilliseconds;
+                client.SendTimeout = ClientTimeoutMilliseconds;
+                try
+                {
+                    Serve(client);
+                }
+                catch (IOException)
+                {
+                    // A client that disappears or never finishes its frame
+                    // cannot take down the listener or hold its one engine
+                    // thread indefinitely. No game-state work happens after a
+                    // failed read; a failed response is simply disconnected.
+                }
+                catch (SocketException)
+                {
+                }
             }
         }
         catch (SocketException) when (cancellationToken.IsCancellationRequested)
@@ -143,6 +163,52 @@ internal static class SocketFrame
 
         var payload = new byte[length];
         ReadExactly(stream, payload);
+        return payload;
+    }
+
+    public static async ValueTask WriteAsync(
+        Stream stream,
+        ReadOnlyMemory<byte> payload,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        if (payload.Length > MaximumPayload)
+        {
+            throw new InvalidDataException(
+                $"socket payload is {payload.Length} bytes; maximum is {MaximumPayload}");
+        }
+
+        var header = new byte[sizeof(int)];
+        BinaryPrimitives.WriteInt32BigEndian(header, payload.Length);
+        await stream.WriteAsync(header, cancellationToken).ConfigureAwait(false);
+        await stream.WriteAsync(payload, cancellationToken).ConfigureAwait(false);
+        await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public static async ValueTask<byte[]?> ReadAsync(
+        Stream stream,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        var header = new byte[sizeof(int)];
+        int first = await stream.ReadAsync(header.AsMemory(0, 1), cancellationToken)
+            .ConfigureAwait(false);
+        if (first == 0)
+        {
+            return null;
+        }
+
+        await stream.ReadExactlyAsync(header.AsMemory(1), cancellationToken)
+            .ConfigureAwait(false);
+        int length = BinaryPrimitives.ReadInt32BigEndian(header);
+        if (length < 0 || length > MaximumPayload)
+        {
+            throw new InvalidDataException(
+                $"socket frame length {length} is outside 0..{MaximumPayload}");
+        }
+
+        var payload = new byte[length];
+        await stream.ReadExactlyAsync(payload, cancellationToken).ConfigureAwait(false);
         return payload;
     }
 

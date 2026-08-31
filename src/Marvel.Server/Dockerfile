@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# global.json is the build authority; the output still targets and runs on net8.0.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.302 AS build
 WORKDIR /source
 COPY . .
 RUN dotnet publish src/Marvel.Server/Marvel.Server.csproj \
