@@ -42,12 +42,12 @@ The same reason as `../marvelsdb/`: everything under `datasets/` must be readabl
 offline, years from now, with nothing but this repository. Fetching at read time
 makes correctness depend on a community-run site staying up and unchanged.
 
-This one is **vendored, not generated**. `datasets/cards/` has a
-`tools.cards.extract --check` gate that regenerates it and compares byte for
-byte; this has no such gate, because there is nothing a machine without a network
-could regenerate. What guards it instead is `unit_test/test_card_rulings.py`,
-which checks the snapshot is internally consistent and that every ruling still
-lands on a card the dataset has.
+This one is **vendored, not generated**. `datasets/cards/` has a build gate that
+regenerates it and compares byte for byte; this has no such gate, because a
+fresh observation starts at a website. The harvester makes that network boundary
+explicit: `fetch` writes a complete candidate outside the repository, while
+`write` and `check` consume that candidate without the network. The test suite
+holds the snapshot's accounting and canonical wire format offline.
 
 ## What is here
 
@@ -105,11 +105,7 @@ authoring, not something a spec is regenerated from. It is still worth reading
 the diff, because a *changed* ruling means a spec written against the old one may
 now be wrong.
 
-**There is no harvester.** The one that produced this snapshot has been
-removed, so a new ruling cannot currently be taken up — MARVEL-253. Whatever
-replaces it updates the harvest date and CLI version in the table above, and
-reads the
-diff on `faq.json`. Needs the CLI on `PATH`:
+The acquisition step needs the CLI on `PATH`:
 
 ```bash
 go install github.com/mggarofalo/marvelcdb-cli/cmd/marvelcdb@latest
@@ -118,6 +114,20 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 
 `marvelcdb` is an acquisition tool, not a dependency of this software. It runs
 here and nowhere else — see AGENTS.md.
+
+Fetch first. The default candidate lives under the user's local application
+data directory, outside the repository:
+
+```bash
+dotnet run --project tools/Marvel.MarvelCdb.Harvest -- fetch [candidate] [limit] [date]
+dotnet run --project tools/Marvel.MarvelCdb.Harvest -- check [candidate]
+dotnet run --project tools/Marvel.MarvelCdb.Harvest -- write [candidate] [candidate-directory]
+```
+
+Omit `limit` for a publishable observation. A limited run records itself as
+partial and `write`/`check` refuse it, so a wiring test cannot masquerade as a
+complete harvest. Review the resulting `faq.json` diff, including its harvest
+date and CLI version, before writing it into this directory.
 
 ## Provenance and licence
 

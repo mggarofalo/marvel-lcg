@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Marvel.MarvelCdb.Harvest</RootNamespace>
+    <AssemblyName>Marvel.MarvelCdb.Harvest</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../tests/Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
+  </ItemGroup>
+
+</Project>
