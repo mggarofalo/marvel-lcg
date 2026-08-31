@@ -1874,5 +1874,25 @@
 		"card_set_type_code": "nemesis",
 		"code": "echo_nemesis",
 		"name": "Echo Nemesis"
+	},
+	{
+		"card_set_type_code": "hero",
+		"code": "jessica_jones",
+		"name": "Jessica Jones"
+	},
+	{
+		"card_set_type_code": "nemesis",
+		"code": "jessica_jones_nemesis",
+		"name": "Jessica Jones Nemesis"
+	},
+	{
+		"card_set_type_code": "hero",
+		"code": "luke_cage",
+		"name": "Luke Cage"
+	},
+	{
+		"card_set_type_code": "nemesis",
+		"code": "luke_cage_nemesis",
+		"name": "Luke Cage Nemesis"
 	}
 ]

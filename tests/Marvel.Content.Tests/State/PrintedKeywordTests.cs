@@ -64,6 +64,20 @@ public sealed class PrintedKeywordTests
         Assert.Equal(expected, fields[field]);
     }
 
+    [Theory]
+    [InlineData("61029", "Hinder", "1*")]  // Defend Our City
+    [InlineData("61029", "Victory", "0")]
+    [InlineData("61032", "Hinder", "3*")]  // Indomitable Will
+    public void ALeadingStarDoesNotHidePrintedKeywords(
+        string faceId, string attribute, string expected)
+    {
+        // Both cards print a star immediately before Hinder. The icon points
+        // to expansion rules and is not part of the keyword's name. Defend Our
+        // City then prints Prerequisite before Victory, so it also proves the
+        // keyword line continues past a different keyword.
+        Assert.Equal(expected, Cards.Attributes(faceId)[attribute]);
+    }
+
     [Fact]
     public void EveryRegisteredFieldWithAPrintedAttributeOfTheSameNameIsMapped()
     {
@@ -199,7 +213,7 @@ public sealed class PrintedKeywordTests
         // The reading, held against the whole pool rather than three cards:
         // for every ally ATK/THW value, the number before the star is
         // MarvelSDB's printed value and the star count is its consequential
-        // damage. 640 of 644 agree; the four that do not are two cards
+        // damage. 663 of 667 agree; the four that do not are two cards
         // upstream records with a base of -1, where the star count still does.
         //
         // **Held against the vendored snapshot and not against the dataset.**
@@ -249,7 +263,7 @@ public sealed class PrintedKeywordTests
             }
         }
 
-        Assert.Equal(640, agree);
+        Assert.Equal(663, agree);
         Assert.Equal(4, differ);
     }
 

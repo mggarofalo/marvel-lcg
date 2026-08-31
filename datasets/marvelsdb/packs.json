@@ -607,5 +607,25 @@
 		"pack_type_code": "story",
 		"position": 60,
 		"size": 276
+	},
+	{
+		"cgdb_id": 61,
+		"code": "jj",
+		"date_release": "2026-08-21",
+		"name": "Jessica Jones",
+		"octgn_id": "79de0c38-0a41-40e6-b617-9a864607c595",
+		"pack_type_code": "hero",
+		"position": 61,
+		"size": 60
+	},
+	{
+		"cgdb_id": 62,
+		"code": "luke_cage",
+		"date_release": "2026-08-21",
+		"name": "Luke Cage",
+		"octgn_id": "a3c3eaa3-8300-4b7a-981d-d77e29778cdf",
+		"pack_type_code": "hero",
+		"position": 62,
+		"size": 60
 	}
 ]

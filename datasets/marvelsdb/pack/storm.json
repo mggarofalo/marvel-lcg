@@ -241,7 +241,7 @@
 		"pack_code": "storm",
 		"position": 12,
 		"quantity": 2,
-		"resource_energy": 1,
+		"resource_physical": 1,
 		"set_code": "storm",
 		"set_position": 12,
 		"text": "<b>Hero Interrupt</b> <i>(defense)</i>: When the villain attacks you, the villain and each minion engaged with you get -3 ATK while attacking you this phase. If Blizzard is in play, resolve its \"<b>Special</b>\" ability.",

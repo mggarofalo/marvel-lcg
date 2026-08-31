@@ -8,9 +8,9 @@ proofread by people who own the cards.
 | | |
 |---|---|
 | Upstream | https://github.com/zzorba/marvelsdb-json-data |
-| Commit | `dc6201686331c34c061ea57e0fdb3956585149cb` |
-| Committed | 2026-07-23 |
-| Vendored | 2026-08-06 |
+| Commit | `7cdf83e7a2189b27e94e2b0c0302627b1ee9395c` |
+| Committed | 2026-08-27 |
+| Vendored | 2026-08-31 |
 
 ## Why vendored rather than fetched
 
@@ -26,7 +26,7 @@ data in *this* repo.
 Copied verbatim from upstream, no reformatting:
 
 ```
-pack/*.json      one file per pack; 4,298 cards
+pack/*.json      one file per pack; 4,379 cards
 packs.json       pack code -> name, release date, size
 sets.json        set code -> name (a set is a hero's cards or an encounter set)
 types.json       type code -> name
@@ -51,12 +51,15 @@ cp /tmp/msdb/{packs,sets,types,factions,subtypes,settypes,packtypes}.json datase
 git -C /tmp/msdb rev-parse HEAD    # record above, with the commit date
 ```
 
-**`datasets/cards/` cannot be rebuilt from this** — the join that produced it
-has no implementation here. MARVEL-252. Until it does, refreshing this snapshot
-moves the input without moving the output, which is worse than not refreshing
-it: read that issue before running the above.
+Rebuild the generated dataset immediately after copying the snapshot:
 
-When it can be rebuilt, read the diff on `datasets/cards/cards.json`. A changed
+```bash
+dotnet run --project tools/Marvel.Cards.Extract -- diff
+dotnet run --project tools/Marvel.Cards.Extract -- write
+dotnet run --project tools/Marvel.Cards.Extract -- check
+```
+
+Read the diff on `datasets/cards/cards.json` before accepting it. A changed
 `text` on a card that already has a spec means the spec needs re-reading, not
 just regenerating.
 

@@ -281,9 +281,8 @@ short.
 
 Resources are letters, because `ResourceSource.Generates` carries "resource-type
 letters — one per resource". `B` is mental, `Y` energy, `R` physical and `G`
-wild, measured over the 1,717 single-type cards that carry both the engine's
-`RES` field and MarvelSDB's stat; three disagree and are filed rather than
-decided.
+wild. Those letters are the engine's wire-format choice; the generated card
+dataset maps MarvelSDB's structured resource flags to them.
 
 `rr:resource.4`'s specific types are **part of** the cost rather than additional
 to it, and a wild is spent only when no exact match is left — spending one that
