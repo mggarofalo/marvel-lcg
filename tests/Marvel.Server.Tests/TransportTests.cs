@@ -85,11 +85,41 @@ public sealed class TransportTests
     public void UnknownWireFieldsAreRejected()
     {
         byte[] request = Encoding.UTF8.GetBytes(
-            """
-            {"version":1,"request_id":"r","operation":"resolve","game_id":"g","decision":{"affordance":-1,"targets":[]},"surprise":true}
+            $$"""
+            {"version":{{EngineProtocol.Version}},"request_id":"r","operation":"resolve","game_id":"g","decision":{"affordance":-1,"targets":[]},"surprise":true}
             """);
 
         Assert.Throws<JsonException>(() => EngineJson.ReadRequest(request));
+    }
+
+    [Fact]
+    public void CurrentProtocolRoundTripsEveryTopologyEventKind()
+    {
+        var joined = new PlayAreaJoined(1, 4)
+        {
+            Trigger = "test",
+            Verb = "Join",
+        };
+        var detached = new PlayAreaDetached(1, 4)
+        {
+            Trigger = "test",
+            Verb = "Detach",
+        };
+        var response = new EngineResponse(
+            EngineProtocol.Version,
+            "topology",
+            "game",
+            Capability: null,
+            Prompt: null,
+            Events: [joined, detached]);
+
+        var again = EngineJson.ReadResponse(EngineJson.Write(response));
+
+        Assert.Equal(2, again.Version);
+        Assert.Collection(
+            again.Events,
+            happened => Assert.Equal(joined, Assert.IsType<PlayAreaJoined>(happened)),
+            happened => Assert.Equal(detached, Assert.IsType<PlayAreaDetached>(happened)));
     }
 
     [Fact]
