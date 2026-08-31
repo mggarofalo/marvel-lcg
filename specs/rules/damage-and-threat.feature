@@ -108,7 +108,7 @@ Feature: Damage and threat
   #
   # The icon is `stats.scheme_crisis` in the dataset and `Crisis` in the engine's
   # attributes, and no step in the catalogue can name it. It is printed as an
-  # icon rather than as text -- with exactly one exception in 4,344 cards: Crowd
+  # icon rather than as text -- with exactly one exception in 4,422 cards: Crowd
   # Control (01108), whose entire printed text is the reminder,
   #
   #     "(Crisis Icon: While this scheme is in play, you cannot remove threat
