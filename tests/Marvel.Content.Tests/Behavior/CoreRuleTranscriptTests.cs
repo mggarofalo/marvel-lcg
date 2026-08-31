@@ -7,6 +7,22 @@ namespace Marvel.Content.Tests.Behavior;
 public sealed class CoreRuleTranscriptTests
 {
     [Fact]
+    public void FormChangeBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        TranscriptResult result = Assert.Single(
+            suite.RunPassingCorpus(),
+            candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/form-change.feature::",
+                StringComparison.Ordinal));
+
+        Assert.Equal("behavior:rr:form-change-form.1:flip-identity", result.Obligation);
+        Assert.Equal(
+            "8ac76760febf2740557277dc71b65fbc299b5cef08e0a510bbb53a2c06a33a26",
+            result.Digest);
+    }
+
+    [Fact]
     public void PlayerEliminationBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);

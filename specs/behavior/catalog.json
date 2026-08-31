@@ -10079,16 +10079,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:form-change-form:published-result",
-          "summary": "A player can be in either hero or alter-ego form at a given time.",
+          "id": "behavior:rr:form-change-form:hero-or-alter-ego",
+          "summary": "A Core Set player is in hero or alter-ego form as indicated by their identity card.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::Flipping an identity changes only its form"
+          ],
+          "mutation": "CoreRuleTranscriptTests.FormChangeBranchesHavePinnedOutcomes distinguishes the hero face after a legal Core identity flip."
         }
       ]
     },
@@ -10101,8 +10103,22 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:form-change-form.1:published-result",
-          "summary": "Once each round, during their turn, each player is permitted to change form by flipping their identity card.",
+          "id": "behavior:rr:form-change-form.1:flip-identity",
+          "summary": "Changing between a Core identity's hero and alter-ego forms flips that identity card.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::Flipping an identity changes only its form"
+          ],
+          "mutation": "CoreRuleTranscriptTests.FormChangeBranchesHavePinnedOutcomes distinguishes the opposite printed identity face."
+        },
+        {
+          "id": "behavior:rr:form-change-form.1:voluntary-window-and-limit",
+          "summary": "Each player may voluntarily change form only once per round and only during their turn.",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -10120,15 +10136,95 @@
       "title": "FORM, CHANGE FORM",
       "fingerprint": "sha256:4697bf59c96cfa9458e889b743a580794d4b9d461d1aa5cad2f8f7c235aceec9",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
-          "id": "behavior:rr:form-change-form.2:published-result",
-          "summary": "When a player changes form, only the form changes.",
+          "id": "behavior:rr:form-change-form.2:retains-damage",
+          "summary": "A Core identity retains sustained damage when it changes form.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::Flipping an identity changes only its form"
+          ],
+          "mutation": "CoreRuleTranscriptTests.FormChangeBranchesHavePinnedOutcomes distinguishes retained sustained damage."
+        },
+        {
+          "id": "behavior:rr:form-change-form.2:retains-status-cards",
+          "summary": "A Core identity retains status cards when it changes form.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::Flipping an identity changes only its form"
+          ],
+          "mutation": "CoreRuleTranscriptTests.FormChangeBranchesHavePinnedOutcomes distinguishes the retained stunned status card."
+        },
+        {
+          "id": "behavior:rr:form-change-form.2:retains-attached-cards",
+          "summary": "A Core identity retains attached cards when it changes form.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::Flipping an identity changes only its form"
+          ],
+          "mutation": "CoreRuleTranscriptTests.FormChangeBranchesHavePinnedOutcomes distinguishes the retained identity upgrade."
+        },
+        {
+          "id": "behavior:rr:form-change-form.2:retains-readiness",
+          "summary": "A Core identity retains its ready or exhausted state when it changes form.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::Flipping an identity changes only its form"
+          ],
+          "mutation": "CoreRuleTranscriptTests.FormChangeBranchesHavePinnedOutcomes distinguishes the retained exhausted state."
+        },
+        {
+          "id": "behavior:rr:form-change-form.2:retains-lasting-effects",
+          "summary": "A Core identity retains lasting effects when it changes form.",
           "disposition": "executable",
           "reason": null,
           "target": null,
           "implementation": "unverified",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "id": "behavior:rr:form-change-form.2:retains-tucked-cards",
+          "summary": "An identity retains tucked cards when it changes form.",
+          "disposition": "outside-core",
+          "reason": "No supported Core Set card can tuck a card beneath an identity.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "id": "behavior:rr:form-change-form.2:retains-tokens",
+          "summary": "An identity retains tokens when it changes form.",
+          "disposition": "outside-core",
+          "reason": "No supported Core Set rule or card can place a token on an identity.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -11409,16 +11505,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:identity:published-result",
-          "summary": "Identity is a player card type that represents which character a player is playing in the game.",
+          "id": "behavior:rr:identity:face-indicates-form",
+          "summary": "A player's double-sided identity represents their hero and alter-ego, and its faceup side indicates their current form.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::Flipping an identity changes only its form"
+          ],
+          "mutation": "CoreRuleTranscriptTests.FormChangeBranchesHavePinnedOutcomes distinguishes form by the faceup side of the same physical identity card."
         }
       ]
     },

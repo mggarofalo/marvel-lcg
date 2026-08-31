@@ -231,6 +231,12 @@ internal sealed class CoreTranscriptRunner
         Bind("engage-minion", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a minion engaged with seat (?<seat>\d+)",
             EngageMinion),
+        Bind("attach-identity-upgrade", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is an upgrade attached to seat (?<seat>\d+)'s identity",
+            AttachIdentityUpgrade),
+        Bind("give-card-status", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has a (?<status>stunned|confused|tough) status card",
+            GiveCardStatus),
         Bind("stack-encounter-deck-discard", TranscriptStepKind.Given,
             "the encounter deck contains only these next cards with all other deck cards in the encounter discard pile",
             StackEncounterDeckWithDiscard),
@@ -266,6 +272,8 @@ internal sealed class CoreTranscriptRunner
             VillainDamagesCard),
         Bind("identity-defeated", TranscriptStepKind.When,
             @"seat (?<seat>\d+)'s identity is defeated", IdentityDefeated),
+        Bind("change-form", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) changes form by flipping their identity", ChangeForm),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("player-deck-count", TranscriptStepKind.Then,
@@ -319,6 +327,14 @@ internal sealed class CoreTranscriptRunner
         Bind("card-event-order", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) had a (?<first>[A-Za-z_]+) event before an (?<second>[A-Za-z_]+) event",
             CardEventOrder),
+        Bind("seat-form", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) is in (?<form>hero|alter-ego) form", SeatForm),
+        Bind("card-status", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has a (?<status>stunned|confused|tough) status card",
+            CardStatus),
+        Bind("upgrade-attached-identity", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) remains attached to seat (?<seat>\d+)'s identity",
+            UpgradeAttachedIdentity),
         Bind("cataloged-exception", TranscriptStepKind.Then,
             "the engine raises the cataloged unimplemented rule exception", CatalogedException),
     ];
@@ -415,6 +431,17 @@ internal sealed class CoreTranscriptRunner
         context.SceneRequired(step).Apply(new MoveSceneCard(
             SceneCard(match, step),
             new SceneDestination(SceneZone.EngagedMinion, Seat(match, step))));
+
+    private static void AttachIdentityUpgrade(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step),
+            new SceneDestination(SceneZone.Upgrade, Seat(match, step))));
+
+    private static void GiveCardStatus(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new GiveSceneStatus(
+            SceneCard(match, step), match.Groups["status"].Value));
 
     private static void StackEncounterDeckWithDiscard(
         TranscriptContext context, TranscriptStep step, Match match)
@@ -589,6 +616,15 @@ internal sealed class CoreTranscriptRunner
             Seat(match, step),
             "behavioral transcript",
             context.Events);
+    }
+
+    private static void ChangeForm(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Seat seat = context.World.Seats[Seat(match, step)];
+        _ = Forms.Change(seat, context.Cards);
     }
 
     private static void HandCount(
@@ -857,6 +893,48 @@ internal sealed class CoreTranscriptRunner
     private static bool EventLands(GameEvent gameEvent, int card) =>
         gameEvent is CardsMoved moved
         && moved.Cards.Any(landing => landing.Card == card);
+
+    private static void SeatForm(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        string expected = match.Groups["form"].Value == "alter-ego"
+            ? Forms.AlterEgo
+            : Forms.Hero;
+        if (!Forms.In(context.World, context.World.Seats[seat], context.Cards, expected))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected seat {seat + 1} in {expected} form");
+        }
+    }
+
+    private static void CardStatus(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (!Statuses.Has(context.World, card, match.Groups["status"].Value))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} to have "
+                + $"{match.Groups["status"].Value} status");
+        }
+    }
+
+    private static void UpgradeAttachedIdentity(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        Card identity = context.World.Seats[seat].IdentityCard;
+        if (card.Area.Type != DeckType.UpgradesArea
+            || card.Area.Host != identity.ObjectId
+            || card.Area.PlayArea != identity.Area.PlayArea)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} attached to "
+                + $"seat {seat + 1}'s identity; was {card.Area}");
+        }
+    }
 
     private static void Equal(int expected, int actual, string observation, TranscriptStep step)
     {
